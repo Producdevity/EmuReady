@@ -1,5 +1,6 @@
 'use client'
 
+import registerUser from '@/app/rest/registerUser'
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -17,26 +18,21 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError('')
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
+    registerUser({ name, email, password })
+      .then(() => {
+        setIsLoading(false)
+        router.push('/login?registered=true')
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed')
-      }
-
-      router.push('/login?registered=true')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
-      setIsLoading(false)
-    }
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Registration failed')
+        setIsLoading(false)
+      })
+      .finally(() => {
+        setIsLoading(false)
+        setName('')
+        setEmail('')
+        setPassword('')
+      })
   }
 
   return (
