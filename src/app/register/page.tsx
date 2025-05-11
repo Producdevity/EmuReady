@@ -1,6 +1,6 @@
 'use client'
 
-import registerUser from '@/app/rest/registerUser'
+import { registerUser } from '@/app/rest/user'
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -10,23 +10,19 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     setIsLoading(true)
-    setError('')
+    setErrorMessage('')
 
     registerUser({ name, email, password })
-      .then(() => {
-        setIsLoading(false)
-        router.push('/login?registered=true')
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Registration failed')
-        setIsLoading(false)
-      })
+      .then(() => router.push('/login?registered=true'))
+      .catch((error: Error) =>
+        setErrorMessage(error.message || 'Registration failed'),
+      )
       .finally(() => {
         setIsLoading(false)
         setName('')
@@ -104,9 +100,9 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {error && (
+          {errorMessage && (
             <div className="text-red-500 dark:text-red-400 text-sm text-center">
-              {error}
+              {errorMessage}
             </div>
           )}
 
