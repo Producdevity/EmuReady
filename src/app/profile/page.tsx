@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-// import { useRouter } from "next/navigation";
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
+import Link from 'next/link'
 
 export default function ProfilePage() {
   const { data: session } = useSession()
-  // const router = useRouter();
   const [isEditing, setIsEditing] = useState(false)
 
   // Redirect to login if not authenticated
@@ -20,6 +19,22 @@ export default function ProfilePage() {
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
             You need to be logged in to access this page.
+          </p>
+
+          <Link
+            href="/login"
+            className="mt-4 inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          >
+            Sign In
+          </Link>
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Don&#39;t have an account?{' '}
+            <Link
+              href="/register"
+              className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Register here
+            </Link>
           </p>
         </div>
       </div>
