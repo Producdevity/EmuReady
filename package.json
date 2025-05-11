@@ -28,15 +28,20 @@
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "csv-parse": "^5.6.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.2",
     "next": "15.3.2",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",
+    "postcss": "^8.5.3",
     "prisma": "^6.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "superjson": "^2.2.2",
     "tailwindcss": "^4",
-    "zod": "^3.24.4"
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+    "zod": "^3.24.4",
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -44,11 +49,6 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.2",
-    "postcss": "^8.5.3",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "@types/react-dom": "^19"
   }
 }
