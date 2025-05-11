@@ -40,8 +40,8 @@
     "superjson": "^2.2.2",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
-    "zod": "^3.24.4",
+    "typescript": "^5",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
