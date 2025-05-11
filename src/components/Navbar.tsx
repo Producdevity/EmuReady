@@ -1,25 +1,30 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Bars3Icon, XMarkIcon, MoonIcon, SunIcon } from "@heroicons/react/24/outline";
-import { signOut, useSession } from "next-auth/react";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
+import {
+  Bars3Icon,
+  XMarkIcon,
+  MoonIcon,
+  SunIcon,
+} from '@heroicons/react/24/outline'
+import { signOut, useSession } from 'next-auth/react'
 
 function Navbar() {
-  const { data: session } = useSession();
-  const { theme, setTheme } = useTheme();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
+  const { data: session } = useSession()
+  const { theme, setTheme } = useTheme()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
-  const isActive = (path: string) => pathname === path;
-  const userRole = session?.user?.role || "USER";
+  const isActive = (path: string) => pathname === path
+  const userRole = session?.user?.role || 'USER'
 
   return (
     <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg sticky top-0 z-50 transition-all">
@@ -27,26 +32,34 @@ function Navbar() {
         <div className="flex h-20 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
-              <span className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">EmuReady</span>
-              <p className="hidden sm:block text-sm text-blue-100 font-medium">Know before you load</p>
+              <span className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
+                EmuReady
+              </span>
+              <p className="hidden sm:block text-sm text-blue-100 font-medium">
+                Know before you load
+              </p>
             </Link>
 
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 <Link
                   href="/"
-                  className={`${isActive('/')
-                    ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                  className={`${
+                    isActive('/')
+                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  } 
                     px-3 py-2 rounded-md text-sm font-medium`}
                 >
                   Home
                 </Link>
                 <Link
                   href="/listings"
-                  className={`${isActive('/listings')
-                    ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                  className={`${
+                    isActive('/listings')
+                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  } 
                     px-3 py-2 rounded-md text-sm font-medium`}
                 >
                   Listings
@@ -75,30 +88,36 @@ function Navbar() {
                 <div className="flex items-center space-x-3">
                   <Link
                     href="/profile"
-                    className={`${isActive('/profile')
-                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                    className={`${
+                      isActive('/profile')
+                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    } 
                       px-3 py-2 rounded-md text-sm font-medium`}
                   >
                     Profile
                   </Link>
-                  {(userRole === "AUTHOR" || userRole === "ADMIN") && (
+                  {(userRole === 'AUTHOR' || userRole === 'ADMIN') && (
                     <Link
                       href="/create"
-                      className={`${isActive('/create')
-                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                      className={`${
+                        isActive('/create')
+                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      } 
                         px-3 py-2 rounded-md text-sm font-medium`}
                     >
                       Create Listing
                     </Link>
                   )}
-                  {userRole === "ADMIN" && (
+                  {userRole === 'ADMIN' && (
                     <Link
                       href="/admin"
-                      className={`${isActive('/admin')
-                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                      className={`${
+                        isActive('/admin')
+                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      } 
                         px-3 py-2 rounded-md text-sm font-medium`}
                     >
                       Admin
@@ -152,9 +171,11 @@ function Navbar() {
           <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
             <Link
               href="/"
-              className={`${isActive('/')
-                ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+              className={`${
+                isActive('/')
+                  ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              } 
                 block px-3 py-2 rounded-md text-base font-medium`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -162,9 +183,11 @@ function Navbar() {
             </Link>
             <Link
               href="/listings"
-              className={`${isActive('/listings')
-                ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+              className={`${
+                isActive('/listings')
+                  ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              } 
                 block px-3 py-2 rounded-md text-base font-medium`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -193,32 +216,38 @@ function Navbar() {
                 <>
                   <Link
                     href="/profile"
-                    className={`${isActive('/profile')
-                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                    className={`${
+                      isActive('/profile')
+                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    } 
                       block px-3 py-2 rounded-md text-base font-medium`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
                   </Link>
-                  {(userRole === "AUTHOR" || userRole === "ADMIN") && (
+                  {(userRole === 'AUTHOR' || userRole === 'ADMIN') && (
                     <Link
                       href="/create"
-                      className={`${isActive('/create')
-                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                      className={`${
+                        isActive('/create')
+                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      } 
                         block px-3 py-2 rounded-md text-base font-medium`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Create Listing
                     </Link>
                   )}
-                  {userRole === "ADMIN" && (
+                  {userRole === 'ADMIN' && (
                     <Link
                       href="/admin"
-                      className={`${isActive('/admin')
-                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} 
+                      className={`${
+                        isActive('/admin')
+                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      } 
                         block px-3 py-2 rounded-md text-base font-medium`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -227,8 +256,8 @@ function Navbar() {
                   )}
                   <button
                     onClick={() => {
-                      signOut();
-                      setMobileMenuOpen(false);
+                      signOut()
+                      setMobileMenuOpen(false)
                     }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium"
                   >
@@ -258,7 +287,7 @@ function Navbar() {
         </div>
       )}
     </nav>
-  );
+  )
 }
 
-export default Navbar;
+export default Navbar

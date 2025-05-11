@@ -1,9 +1,9 @@
-import { initTRPC, TRPCError } from "@trpc/server";
-import superjson from "superjson";
-import { ZodError } from "zod";
-import { type Session } from "next-auth";
+import { initTRPC, TRPCError } from '@trpc/server'
+import superjson from 'superjson'
+import { ZodError } from 'zod'
+import { type Session } from 'next-auth'
 
-import { prisma } from "@/server/db";
+import { prisma } from '@/server/db'
 
 /**
  * 1. CONTEXT
@@ -15,15 +15,15 @@ import { prisma } from "@/server/db";
  */
 
 interface CreateContextOptions {
-  session: Session | null;
-  prisma: typeof prisma;
+  session: Session | null
+  prisma: typeof prisma
 }
 
 /**
  * This is the actual context you'll use in your router. It will be used to
  * process every request that goes through your tRPC endpoint.
  */
-export type TRPCContext = CreateContextOptions;
+export type TRPCContext = CreateContextOptions
 
 /**
  * 2. INITIALIZATION
@@ -41,9 +41,9 @@ const t = initTRPC.context<TRPCContext>().create({
         zodError:
           error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
-    };
+    }
   },
-});
+})
 
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
@@ -55,79 +55,79 @@ const t = initTRPC.context<TRPCContext>().create({
 /**
  * This is how you create new routers and subrouters in your tRPC API
  */
-export const createTRPCRouter = t.router;
+export const createTRPCRouter = t.router
 
 /**
  * Public (unauthed) procedure
  */
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure
 
 /**
  * Middleware to check if a user is signed in
  */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
       prisma: ctx.prisma,
     },
-  });
-});
+  })
+})
 
 /**
  * Protected (authed) procedure
  */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthed)
 
 /**
  * Middleware to check if a user has at least Author role
  */
 const enforceUserIsAuthor = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
-  
-  if (ctx.session.user.role !== "AUTHOR" && ctx.session.user.role !== "ADMIN") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Author role required" });
+
+  if (ctx.session.user.role !== 'AUTHOR' && ctx.session.user.role !== 'ADMIN') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Author role required' })
   }
-  
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
       prisma: ctx.prisma,
     },
-  });
-});
+  })
+})
 
 /**
  * Author (at least author role) procedure
  */
-export const authorProcedure = t.procedure.use(enforceUserIsAuthor);
+export const authorProcedure = t.procedure.use(enforceUserIsAuthor)
 
 /**
  * Middleware to check if a user has Admin role
  */
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
-  
-  if (ctx.session.user.role !== "ADMIN") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Admin role required" });
+
+  if (ctx.session.user.role !== 'ADMIN') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin role required' })
   }
-  
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
       prisma: ctx.prisma,
     },
-  });
-});
+  })
+})
 
 /**
  * Admin procedure
  */
-export const adminProcedure = t.procedure.use(enforceUserIsAdmin); 
+export const adminProcedure = t.procedure.use(enforceUserIsAdmin)

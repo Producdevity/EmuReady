@@ -98,12 +98,12 @@ export default function AddListingPage() {
           <div className="flex gap-2 items-center">
             <div className="flex-1">
               <Autocomplete
-                options={
-                  (games?.games || []).map((game: { id: string; title: string }) => ({
+                options={(games?.games || []).map(
+                  (game: { id: string; title: string }) => ({
                     value: game.id,
                     label: game.title,
-                  }))
-                }
+                  }),
+                )}
                 value={gameId}
                 onChange={setGameId}
                 placeholder="Search or select a game..."
@@ -117,7 +117,7 @@ export default function AddListingPage() {
               variant="secondary"
               size="sm"
               className="ml-2 flex-shrink-0 flex items-center gap-1 px-3 py-2"
-              onClick={() => window.location.href = '/games/new'}
+              onClick={() => (window.location.href = '/games/new')}
               title="Add new game"
             >
               <PlusIcon className="w-4 h-4" />

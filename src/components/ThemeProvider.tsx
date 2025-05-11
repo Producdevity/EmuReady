@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import { ThemeProvider as NextThemeProvider } from 'next-themes'
 import { ReactNode, useEffect, useState } from 'react'
@@ -19,12 +19,8 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
         </div>
       )}
       {/* Fallback for SSR */}
-      {!mounted && (
-        <div className="dark:bg-gray-900 bg-white">
-          {children}
-        </div>
-      )}
+      {!mounted && <div className="dark:bg-gray-900 bg-white">{children}</div>}
       {/* {children} */}
     </NextThemeProvider>
   )
-} 
+}

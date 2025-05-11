@@ -1,23 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react'
 
 export interface AutocompleteOption {
-  value: string;
-  label: string;
-  icon?: React.ReactNode;
+  value: string
+  label: string
+  icon?: React.ReactNode
 }
 
 export interface AutocompleteProps {
-  options: AutocompleteOption[];
-  value?: string;
-  onChange: (value: string) => void;
-  onInputChange?: (input: string) => void;
-  placeholder?: string;
-  label?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  loading?: boolean;
-  disabled?: boolean;
-  className?: string;
+  options: AutocompleteOption[]
+  value?: string
+  onChange: (value: string) => void
+  onInputChange?: (input: string) => void
+  placeholder?: string
+  label?: string
+  leftIcon?: React.ReactNode
+  rightIcon?: React.ReactNode
+  loading?: boolean
+  disabled?: boolean
+  className?: string
 }
 
 export const Autocomplete: React.FC<AutocompleteProps> = ({
@@ -33,22 +33,22 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   disabled = false,
   className = '',
 }) => {
-  const [inputValue, setInputValue] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (value) {
-      const selected = options.find((o) => o.value === value);
-      setInputValue(selected ? selected.label : '');
+      const selected = options.find((o) => o.value === value)
+      setInputValue(selected ? selected.label : '')
     }
-  }, [value, options]);
+  }, [value, options])
 
   useEffect(() => {
-    if (onInputChange) onInputChange(inputValue);
-  }, [inputValue]);
+    if (onInputChange) onInputChange(inputValue)
+  }, [inputValue])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -58,52 +58,52 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase())
-  );
+    option.label.toLowerCase().includes(inputValue.toLowerCase()),
+  )
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    setIsOpen(true);
-    setHighlightedIndex(-1);
-  };
+    setInputValue(e.target.value)
+    setIsOpen(true)
+    setHighlightedIndex(-1)
+  }
 
   const handleOptionSelect = (option: AutocompleteOption) => {
-    setInputValue(option.label);
-    setIsOpen(false);
-    onChange(option.value);
-  };
+    setInputValue(option.label)
+    setIsOpen(false)
+    onChange(option.value)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      setIsOpen(true);
-      setHighlightedIndex(0);
-      return;
+      setIsOpen(true)
+      setHighlightedIndex(0)
+      return
     }
     if (e.key === 'ArrowDown') {
       setHighlightedIndex((prev) =>
-        prev < filteredOptions.length - 1 ? prev + 1 : 0
-      );
+        prev < filteredOptions.length - 1 ? prev + 1 : 0,
+      )
     } else if (e.key === 'ArrowUp') {
       setHighlightedIndex((prev) =>
-        prev > 0 ? prev - 1 : filteredOptions.length - 1
-      );
+        prev > 0 ? prev - 1 : filteredOptions.length - 1,
+      )
     } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-      handleOptionSelect(filteredOptions[highlightedIndex]);
+      handleOptionSelect(filteredOptions[highlightedIndex])
     } else if (e.key === 'Escape') {
-      setIsOpen(false);
+      setIsOpen(false)
     }
-  };
+  }
 
   return (
-    <div className={`relative ${className}`}> 
+    <div className={`relative ${className}`}>
       {label && (
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {label}
@@ -134,9 +134,24 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
         )}
         {loading && (
           <span className="absolute right-10 animate-spin">
-            <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <svg
+              className="h-5 w-5 text-blue-500"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           </span>
         )}
@@ -171,5 +186,5 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
         </div>
       )}
     </div>
-  );
-}; 
+  )
+}

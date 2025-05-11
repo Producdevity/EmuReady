@@ -1,0 +1,19 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "singleAttributePerLine": false,
+  "htmlWhitespaceSensitivity": "css",
+  "tabWidth": 2,
+  "useTabs": false,
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": ["*.json", ".prettierrc"],
+      "options": { "parser": "json" }
+    },
+    {
+      "files": [".md"],
+      "options": { "parser": "markdown" }
+    }
+  ]
+}

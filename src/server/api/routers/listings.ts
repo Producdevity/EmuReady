@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import { z } from 'zod'
+import { TRPCError } from '@trpc/server'
 
 import {
   createTRPCRouter,
@@ -7,7 +7,7 @@ import {
   protectedProcedure,
   authorProcedure,
   adminProcedure,
-} from "@/server/api/trpc";
+} from '@/server/api/trpc'
 
 export const listingsRouter = createTRPCRouter({
   list: publicProcedure
@@ -20,11 +20,19 @@ export const listingsRouter = createTRPCRouter({
         searchTerm: z.string().optional(),
         page: z.number().default(1),
         limit: z.number().default(10),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
-      const { systemId, deviceId, emulatorId, performanceId, searchTerm, page, limit } = input;
-      const skip = (page - 1) * limit;
+      const {
+        systemId,
+        deviceId,
+        emulatorId,
+        performanceId,
+        searchTerm,
+        page,
+        limit,
+      } = input
+      const skip = (page - 1) * limit
 
       // Build filters
       const filters = {
@@ -35,17 +43,21 @@ export const listingsRouter = createTRPCRouter({
         ...(searchTerm
           ? {
               OR: [
-                { game: { title: { contains: searchTerm, mode: "insensitive" } } },
-                { notes: { contains: searchTerm, mode: "insensitive" } },
+                {
+                  game: {
+                    title: { contains: searchTerm, mode: 'insensitive' },
+                  },
+                },
+                { notes: { contains: searchTerm, mode: 'insensitive' } },
               ],
             }
           : {}),
-      };
+      }
 
       // Count total matching records
       const total = await ctx.prisma.listing.count({
         where: filters,
-      });
+      })
 
       // Get paginated listings
       const listings = await ctx.prisma.listing.findMany({
@@ -84,11 +96,11 @@ export const listingsRouter = createTRPCRouter({
             : undefined,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: 'desc',
         },
         skip,
         take: limit,
-      });
+      })
 
       // For each listing calculate success rate
       const listingsWithStats = await Promise.all(
@@ -99,16 +111,19 @@ export const listingsRouter = createTRPCRouter({
               listingId: listing.id,
               value: true,
             },
-          });
+          })
 
           // Count all votes
-          const totalVotes = listing._count.votes;
+          const totalVotes = listing._count.votes
 
           // Calculate success rate
-          const successRate = totalVotes > 0 ? upVotes / totalVotes : 0;
+          const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
           // Get user's vote if logged in
-          const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null;
+          const userVote =
+            ctx.session && listing.votes.length > 0
+              ? listing.votes[0].value
+              : null
 
           return {
             ...listing,
@@ -116,9 +131,9 @@ export const listingsRouter = createTRPCRouter({
             userVote,
             // Remove the raw votes array from the response
             votes: undefined,
-          };
-        })
-      );
+          }
+        }),
+      )
 
       return {
         listings: listingsWithStats,
@@ -128,13 +143,13 @@ export const listingsRouter = createTRPCRouter({
           page,
           limit,
         },
-      };
+      }
     }),
 
   byId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const { id } = input;
+      const { id } = input
 
       const listing = await ctx.prisma.listing.findUnique({
         where: { id },
@@ -175,12 +190,12 @@ export const listingsRouter = createTRPCRouter({
                   },
                 },
                 orderBy: {
-                  createdAt: "asc",
+                  createdAt: 'asc',
                 },
               },
             },
             orderBy: {
-              createdAt: "desc",
+              createdAt: 'desc',
             },
           },
           _count: {
@@ -196,13 +211,13 @@ export const listingsRouter = createTRPCRouter({
               }
             : undefined,
         },
-      });
+      })
 
       if (!listing) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Listing not found",
-        });
+          code: 'NOT_FOUND',
+          message: 'Listing not found',
+        })
       }
 
       // Count upvotes
@@ -211,13 +226,15 @@ export const listingsRouter = createTRPCRouter({
           listingId: listing.id,
           value: true,
         },
-      });
+      })
 
       // Calculate success rate
-      const successRate = listing._count.votes > 0 ? upVotes / listing._count.votes : 0;
+      const successRate =
+        listing._count.votes > 0 ? upVotes / listing._count.votes : 0
 
       // Get user's vote if logged in
-      const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null;
+      const userVote =
+        ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
 
       return {
         ...listing,
@@ -225,7 +242,7 @@ export const listingsRouter = createTRPCRouter({
         userVote,
         // Remove the raw votes array from the response
         votes: undefined,
-      };
+      }
     }),
 
   create: authorProcedure
@@ -236,10 +253,10 @@ export const listingsRouter = createTRPCRouter({
         emulatorId: z.string(),
         performanceId: z.number(),
         notes: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { gameId, deviceId, emulatorId, performanceId, notes } = input;
+      const { gameId, deviceId, emulatorId, performanceId, notes } = input
 
       // Check if listing already exists
       const existingListing = await ctx.prisma.listing.findFirst({
@@ -248,13 +265,14 @@ export const listingsRouter = createTRPCRouter({
           deviceId,
           emulatorId,
         },
-      });
+      })
 
       if (existingListing) {
         throw new TRPCError({
-          code: "CONFLICT",
-          message: "A listing for this game, device, and emulator combination already exists",
-        });
+          code: 'CONFLICT',
+          message:
+            'A listing for this game, device, and emulator combination already exists',
+        })
       }
 
       // Create new listing
@@ -267,7 +285,7 @@ export const listingsRouter = createTRPCRouter({
           notes,
           authorId: ctx.session.user.id,
         },
-      });
+      })
     }),
 
   vote: protectedProcedure
@@ -275,22 +293,22 @@ export const listingsRouter = createTRPCRouter({
       z.object({
         listingId: z.string(),
         value: z.boolean(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { listingId, value } = input;
-      const userId = ctx.session.user.id;
+      const { listingId, value } = input
+      const userId = ctx.session.user.id
 
       // Check if listing exists
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-      });
+      })
 
       if (!listing) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Listing not found",
-        });
+          code: 'NOT_FOUND',
+          message: 'Listing not found',
+        })
       }
 
       // Check if user already voted
@@ -301,7 +319,7 @@ export const listingsRouter = createTRPCRouter({
             listingId,
           },
         },
-      });
+      })
 
       if (existingVote) {
         // If value is the same, remove the vote (toggle)
@@ -313,10 +331,10 @@ export const listingsRouter = createTRPCRouter({
                 listingId,
               },
             },
-          });
-          return { message: "Vote removed" };
+          })
+          return { message: 'Vote removed' }
         }
-        
+
         // Otherwise update the existing vote
         return ctx.prisma.vote.update({
           where: {
@@ -328,7 +346,7 @@ export const listingsRouter = createTRPCRouter({
           data: {
             value,
           },
-        });
+        })
       }
 
       // Create new vote
@@ -338,9 +356,9 @@ export const listingsRouter = createTRPCRouter({
           userId,
           listingId,
         },
-      });
+      })
     }),
-  
+
   // Add a comment to a listing
   comment: protectedProcedure
     .input(
@@ -348,35 +366,35 @@ export const listingsRouter = createTRPCRouter({
         listingId: z.string(),
         content: z.string().min(1).max(1000),
         parentId: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { listingId, content, parentId } = input;
-      const userId = ctx.session.user.id;
+      const { listingId, content, parentId } = input
+      const userId = ctx.session.user.id
 
       // Check if listing exists
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-      });
+      })
 
       if (!listing) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Listing not found",
-        });
+          code: 'NOT_FOUND',
+          message: 'Listing not found',
+        })
       }
 
       // If parentId is provided, check if parent comment exists
       if (parentId) {
         const parentComment = await ctx.prisma.comment.findUnique({
           where: { id: parentId },
-        });
+        })
 
         if (!parentComment) {
           throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Parent comment not found",
-          });
+            code: 'NOT_FOUND',
+            message: 'Parent comment not found',
+          })
         }
       }
 
@@ -396,39 +414,38 @@ export const listingsRouter = createTRPCRouter({
             },
           },
         },
-      });
+      })
     }),
 
   // Delete a listing (admin only)
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const { id } = input;
+      const { id } = input
 
       // Check if listing exists
       const listing = await ctx.prisma.listing.findUnique({
         where: { id },
-      });
+      })
 
       if (!listing) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Listing not found",
-        });
+          code: 'NOT_FOUND',
+          message: 'Listing not found',
+        })
       }
 
       // Delete listing
       await ctx.prisma.listing.delete({
         where: { id },
-      });
+      })
 
-      return { success: true };
+      return { success: true }
     }),
 
-  performanceScales: publicProcedure
-    .query(async ({ ctx }) => {
-      return ctx.prisma.performanceScale.findMany({
-        orderBy: { rank: "asc" },
-      });
-    }),
-}); 
+  performanceScales: publicProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.performanceScale.findMany({
+      orderBy: { rank: 'asc' },
+    })
+  }),
+})
