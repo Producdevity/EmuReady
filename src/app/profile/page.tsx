@@ -23,7 +23,7 @@ export default function ProfilePage() {
 
           <Link
             href="/login"
-            className="mt-4 inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white inline-block px-4 py-2 rounded-md text-sm font-medium"
           >
             Sign In
           </Link>
