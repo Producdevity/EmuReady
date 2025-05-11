@@ -9,10 +9,12 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
-    "vercel:build": "prisma generate && prisma migrate deploy && next build"
+    "vercel:migrate:build": "prisma generate && prisma migrate deploy && next build",
+    "vercel:build": "prisma generate && prisma db push && next build"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
