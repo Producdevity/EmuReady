@@ -1,4 +1,4 @@
-import React from 'react'
+import { type PropsWithChildren } from 'react'
 
 type BadgeVariant =
   | 'primary'
@@ -8,8 +8,7 @@ type BadgeVariant =
   | 'warning'
   | 'info'
 
-interface BadgeProps {
-  children: React.ReactNode
+interface Props extends PropsWithChildren {
   variant?: BadgeVariant
   className?: string
 }
@@ -24,17 +23,15 @@ const variantClasses: Record<BadgeVariant, string> = {
   info: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
 }
 
-export function Badge({
-  children,
-  variant = 'primary',
-  className = '',
-}: BadgeProps) {
+export function Badge(props: Props) {
+  const variant = props.variant ?? 'primary'
+  const className = props.className ?? ''
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
       ${variantClasses[variant]} ${className}`}
     >
-      {children}
+      {props.children}
     </span>
   )
 }
