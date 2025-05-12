@@ -2,7 +2,7 @@ import { type NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
 import { prisma } from '@/server/db'
-import { Role } from '@orm'
+import { type Role } from '@orm'
 
 // Extend the types to include our custom properties
 declare module 'next-auth' {
