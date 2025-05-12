@@ -77,6 +77,7 @@ export default function Home() {
                 width={400}
                 height={200}
                 className="w-full h-40 object-cover"
+                unoptimized
               />
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
@@ -112,6 +113,7 @@ export default function Home() {
                 width={400}
                 height={200}
                 className="w-full h-40 object-cover"
+                unoptimized
               />
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
@@ -147,6 +149,7 @@ export default function Home() {
                 width={400}
                 height={200}
                 className="w-full h-40 object-cover"
+                unoptimized
               />
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
