@@ -5,7 +5,7 @@ import { type PropsWithChildren } from 'react'
 import { TRPCProvider } from '@/lib/api'
 import ThemeProvider from './ThemeProvider'
 
-export function Providers(props: PropsWithChildren) {
+function Providers(props: PropsWithChildren) {
   return (
     <TRPCProvider>
       <SessionProvider>
@@ -14,3 +14,5 @@ export function Providers(props: PropsWithChildren) {
     </TRPCProvider>
   )
 }
+
+export default Providers
