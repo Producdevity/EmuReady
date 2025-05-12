@@ -1,15 +1,15 @@
 'use client'
 
 import { SessionProvider } from 'next-auth/react'
-import { ReactNode } from 'react'
+import { type PropsWithChildren } from 'react'
 import { TRPCProvider } from '@/lib/api'
 import ThemeProvider from './ThemeProvider'
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers(props: PropsWithChildren) {
   return (
     <TRPCProvider>
       <SessionProvider>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>{props.children}</ThemeProvider>
       </SessionProvider>
     </TRPCProvider>
   )
