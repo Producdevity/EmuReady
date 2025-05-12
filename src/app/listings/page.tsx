@@ -1,10 +1,10 @@
 'use client'
 import { api } from '@/lib/api'
-import { useState } from 'react'
+import type { Listing, PerformanceScale } from '@orm'
+import { useState, type ChangeEvent } from 'react'
 import { useSession } from 'next-auth/react'
 import { type Session } from 'next-auth'
 import { Badge, Input } from '@/components/ui'
-import type { Listing, PerformanceScale } from '@prisma/client'
 import Link from 'next/link'
 import {
   DevicePhoneMobileIcon,
@@ -78,22 +78,22 @@ export default function ListingsPage() {
   const { data: emulators } = api.emulators.list.useQuery()
   const { data: performanceScales } = api.listings.performanceScales.useQuery()
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSystemId(e.target.value)
     setPage(1)
   }
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value)
     setPage(1)
   }
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
   }
-  const handleDeviceChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+  const handleDeviceChange = (e: ChangeEvent<HTMLSelectElement>) =>
     setDeviceId(e.target.value)
-  const handleEmulatorChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+  const handleEmulatorChange = (e: ChangeEvent<HTMLSelectElement>) =>
     setEmulatorId(e.target.value)
-  const handlePerformanceChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+  const handlePerformanceChange = (e: ChangeEvent<HTMLSelectElement>) =>
     setPerformanceId(e.target.value)
 
   if (isLoading) return <div className="p-8 text-center">Loading games...</div>
@@ -136,7 +136,7 @@ export default function ListingsPage() {
               value={deviceId}
               onChange={(e) =>
                 handleDeviceChange(
-                  e as unknown as React.ChangeEvent<HTMLSelectElement>,
+                  e as unknown as ChangeEvent<HTMLSelectElement>,
                 )
               }
               className="mb-0"
@@ -160,7 +160,7 @@ export default function ListingsPage() {
               value={emulatorId}
               onChange={(e) =>
                 handleEmulatorChange(
-                  e as unknown as React.ChangeEvent<HTMLSelectElement>,
+                  e as unknown as ChangeEvent<HTMLSelectElement>,
                 )
               }
               className="mb-0"

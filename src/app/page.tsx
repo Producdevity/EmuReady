@@ -1,21 +1,7 @@
-'use client'
-
-// import { FormEvent, useState } from "react";
-// import { useRouter } from "next/navigation";
-// import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
-  // const router = useRouter();
-  // const [searchQuery, setSearchQuery] = useState("");
-
-  // const handleSearch = (ev: FormEvent) => {
-  //   ev.preventDefault();
-  //   if (searchQuery.trim()) {
-  //     router.push(`/listings?search=${encodeURIComponent(searchQuery.trim())}`);
-  //   }
-  // };
-
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 py-8">
@@ -85,7 +71,7 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-              <img
+              <Image
                 src="https://placehold.co/400x200"
                 alt="The Legend of Zelda: Breath of the Wild"
                 className="w-full h-40 object-cover"
@@ -118,7 +104,7 @@ export default function Home() {
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-              <img
+              <Image
                 src="https://placehold.co/400x200"
                 alt="Animal Crossing: New Horizons"
                 className="w-full h-40 object-cover"
@@ -151,7 +137,7 @@ export default function Home() {
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-              <img
+              <Image
                 src="https://placehold.co/400x200"
                 alt="God of War: Ragnarök"
                 className="w-full h-40 object-cover"
