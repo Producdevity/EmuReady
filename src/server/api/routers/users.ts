@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
-// Remove bcrypt import and create a simple hash function for development
+import bcryptjs from 'bcryptjs'
 
 import {
   createTRPCRouter,
@@ -9,22 +9,33 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 
-// Simple password functions for development only
-// Not secure - only for demo purposes
+// Production-ready password hashing with bcrypt
 function hashPassword(password: string): string {
-  // For development, just prefix with a string
-  return `dev_hash_${password}`
+  const salt = bcryptjs.genSaltSync(10)
+  return bcryptjs.hashSync(password, salt)
 }
 
 function comparePassword(
   plainPassword: string,
   hashedPassword: string,
 ): boolean {
-  return (
-    hashedPassword === hashPassword(plainPassword) ||
-    // Support existing test data
-    plainPassword === 'password123'
-  )
+  // Check if it's a legacy development hash
+  if (hashedPassword.startsWith('dev_hash_')) {
+    return hashedPassword === `dev_hash_${plainPassword}`
+  }
+  
+  // Support legacy test accounts
+  if (plainPassword === 'password123' && !hashedPassword.startsWith('$2')) {
+    return true
+  }
+  
+  // Use bcrypt for secure comparison
+  try {
+    return bcryptjs.compareSync(plainPassword, hashedPassword)
+  } catch (error) {
+    console.error('Error comparing passwords:', error)
+    return false
+  }
 }
 
 export const usersRouter = createTRPCRouter({

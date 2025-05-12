@@ -1,5 +1,6 @@
 import { type NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import bcryptjs from 'bcryptjs'
 
 import { prisma } from '@/server/db'
 import { type Role } from '@orm'
@@ -28,22 +29,23 @@ declare module 'next-auth/jwt' {
   }
 }
 
-// Simple password comparison - ONLY FOR DEVELOPMENT
-// Replace with proper hashing in production
+// Production-ready password verification using bcrypt
 function verifyPassword(
   plainPassword: string,
   storedPassword: string,
 ): boolean {
-  // For demo purposes, accept 'password' for any user
-  if (plainPassword === 'password') {
-    return true
+  // Check if it's a legacy development hash
+  if (storedPassword.startsWith('dev_hash_')) {
+    return storedPassword === `dev_hash_${plainPassword}`
   }
-
-  // Also support our simple hashing scheme from the users router
-  return (
-    storedPassword.startsWith('dev_hash_') &&
-    storedPassword === `dev_hash_${plainPassword}`
-  )
+  
+  // Use bcrypt for secure password comparison
+  try {
+    return bcryptjs.compareSync(plainPassword, storedPassword)
+  } catch (error) {
+    console.error('Error comparing passwords:', error)
+    return false
+  }
 }
 
 export const authOptions: NextAuthOptions = {
