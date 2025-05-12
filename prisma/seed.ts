@@ -1,6 +1,5 @@
 import { PrismaClient, Role } from '@prisma/client'
 import { parse } from 'csv-parse/sync'
-import { fileURLToPath } from 'url'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as bcryptjs from 'bcryptjs'
@@ -49,9 +48,6 @@ const users = [
     role: Role.USER,
   },
 ]
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 // Path to CSV file
 const csvPath = path.resolve(__dirname, './data/google_sheet.csv')

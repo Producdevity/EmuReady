@@ -12,8 +12,10 @@
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' ./prisma/seed.ts"
+    "db:push": "prisma db push"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} ./prisma/seed.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
