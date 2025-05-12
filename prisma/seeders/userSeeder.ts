@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Role } from '@orm'
 import bcryptjs from 'bcryptjs'
-import { Role } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
