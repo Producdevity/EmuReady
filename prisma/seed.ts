@@ -80,11 +80,13 @@ async function processCSV() {
       create: user,
     })
   }
+  console.log('Users seeded!')
 
   // Get admin user for listings
   const adminUser = await prisma.user.findUnique({
     where: { email: 'admin@emuready.com' },
   })
+  console.log('Admin user seeded!')
 
   if (!adminUser) {
     throw new Error('Admin user not found')
