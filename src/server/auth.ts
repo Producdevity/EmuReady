@@ -1,8 +1,8 @@
 import { type NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { Role } from '@prisma/client'
 
 import { prisma } from '@/server/db'
+import { Role } from '@orm'
 
 // Extend the types to include our custom properties
 declare module 'next-auth' {
@@ -40,14 +40,10 @@ function verifyPassword(
   }
 
   // Also support our simple hashing scheme from the users router
-  if (
+  return (
     storedPassword.startsWith('dev_hash_') &&
     storedPassword === `dev_hash_${plainPassword}`
-  ) {
-    return true
-  }
-
-  return false
+  )
 }
 
 export const authOptions: NextAuthOptions = {
