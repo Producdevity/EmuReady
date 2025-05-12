@@ -29,7 +29,7 @@ interface Props {
   className?: string
 }
 
-export const Autocomplete = (props: Props) => {
+export function Autocomplete(props: Props) {
   const placeholder = props.placeholder ?? 'Type to search...'
   const loading = props.loading ?? false
   const disabled = props.disabled ?? false
@@ -63,6 +63,7 @@ export const Autocomplete = (props: Props) => {
         setIsOpen(false)
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
