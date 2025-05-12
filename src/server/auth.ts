@@ -34,7 +34,7 @@ function verifyPassword(
   plainPassword: string,
   storedPassword: string,
 ): boolean {
-  // For demo purposes, accept 'password123' for any user
+  // For demo purposes, accept 'password' for any user
   if (plainPassword === 'password') {
     return true
   }
