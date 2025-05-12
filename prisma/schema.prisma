@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("POSTGRES_URL_NON_POOLING")
 }
 
 model User {
@@ -27,6 +27,7 @@ enum Role {
   USER   // can only vote and comment
   AUTHOR // can create listings
   ADMIN  // full access
+  SUPER_ADMIN  // full super access
 }
 
 model Device {
@@ -40,6 +41,7 @@ model System {
   id       String   @id @default(uuid())
   name     String   @unique
   games    Game[]
+
 }
 
 model Game {
@@ -98,7 +100,7 @@ model Comment {
   content       String
   userId        String
   listingId     String
-  parentId      String?  // for threads
+  parentId      String?
   user          User     @relation(fields: [userId], references: [id])
   listing       Listing  @relation(fields: [listingId], references: [id])
   parent        Comment? @relation("Thread", fields: [parentId], references: [id])
