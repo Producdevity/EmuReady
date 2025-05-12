@@ -1,5 +1,6 @@
-import { PrismaClient, Role } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import bcryptjs from 'bcryptjs'
+import { Role } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -42,10 +43,27 @@ const users = [
   },
 ]
 
-for (const user of users) {
-  await prisma.user.upsert({
-    where: { email: user.email },
-    update: {},
-    create: user,
-  })
+async function main() {
+  // Delete all existing users
+  await prisma.user.deleteMany()
+
+  for (const user of users) {
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: {},
+      create: user,
+    })
+  }
+
+  console.log('Users seeded successfully.')
 }
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })

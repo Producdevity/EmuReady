@@ -113,7 +113,7 @@ async function processCSV() {
   // Split into sections
   let currentSection: string[] = []
   let currentHeader = ''
-  let sectionName = ''
+  // let sectionName = ''
   let inMappingSection = false
   let inGameSection = false
   let currentSystem = ''
@@ -157,6 +157,7 @@ async function processCSV() {
           skip_empty_lines: true,
           relax_quotes: true,
           relax_column_count: true,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }) as any[]
         if (inMappingSection) {
           // Process mapping section for systems
