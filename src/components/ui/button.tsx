@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { type ButtonHTMLAttributes, type PropsWithChildren } from 'react'
 
 export type ButtonVariant =
   | 'primary'
@@ -8,16 +8,16 @@ export type ButtonVariant =
   | 'danger'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface Props
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    PropsWithChildren {
   variant?: ButtonVariant
   size?: ButtonSize
   isLoading?: boolean
   isFullWidth?: boolean
-  children: React.ReactNode
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export function Button({
   variant = 'primary',
   size = 'md',
   isLoading = false,
@@ -26,7 +26,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   disabled,
   ...props
-}) => {
+}: Props) {
   // Base styles
   const baseClasses =
     'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none'
