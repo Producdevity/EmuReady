@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client'
+import { PrismaClient, Role } from '@orm'
 import { parse } from 'csv-parse/sync'
 import * as fs from 'fs'
 import * as path from 'path'
