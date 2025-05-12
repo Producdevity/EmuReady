@@ -3,7 +3,7 @@ import superjson from 'superjson'
 import { ZodError } from 'zod'
 import { type Session } from 'next-auth'
 
-import { prisma } from '@/server/db'
+import { type prisma } from '@/server/db'
 
 /**
  * 1. CONTEXT
