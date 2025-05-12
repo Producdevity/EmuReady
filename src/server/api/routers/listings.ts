@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
+import { Prisma } from '@orm'
 
 import {
   createTRPCRouter,
@@ -35,23 +36,26 @@ export const listingsRouter = createTRPCRouter({
       const skip = (page - 1) * limit
 
       // Build filters
-      const filters = {
-        ...(systemId ? { game: { systemId } } : {}),
+      const gameFilter: Prisma.GameWhereInput = {}
+      if (systemId) {
+        gameFilter.systemId = systemId
+      }
+
+      const filters: Prisma.ListingWhereInput = {
         ...(deviceId ? { deviceId } : {}),
         ...(emulatorId ? { emulatorId } : {}),
         ...(performanceId ? { performanceId } : {}),
-        ...(searchTerm
-          ? {
-              OR: [
-                {
-                  game: {
-                    title: { contains: searchTerm, mode: 'insensitive' },
-                  },
-                },
-                { notes: { contains: searchTerm, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
+      }
+
+      if (searchTerm) {
+        filters.OR = [
+          Object.keys(gameFilter).length
+            ? { game: { is: { ...gameFilter, title: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } } }
+            : { game: { is: { title: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } } },
+          { notes: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } }
+        ]
+      } else if (Object.keys(gameFilter).length) {
+        filters.game = { is: gameFilter }
       }
 
       // Count total matching records
