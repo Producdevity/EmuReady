@@ -76,6 +76,7 @@ async function processCSV() {
 
   // Create sample users
   console.log('Seeding users...')
+
   for (const user of users) {
     await prisma.user.upsert({
       where: { email: user.email },
