@@ -7,14 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "ts-node prisma/seed.ts",
-    "vercel:migrate:build": "prisma generate && prisma migrate deploy && next build",
-    "vercel:build": "prisma generate && prisma db push && next build"
+    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' ./prisma/seed.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
