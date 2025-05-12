@@ -1,38 +1,39 @@
-import React, { useState, useRef, useEffect } from 'react'
+'use client'
 
-export interface AutocompleteOption {
+import {
+  useState,
+  useRef,
+  useEffect,
+  type ReactNode,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from 'react'
+
+interface AutocompleteOption {
   value: string
   label: string
-  icon?: React.ReactNode
+  icon?: ReactNode
 }
 
-export interface AutocompleteProps {
+interface Props {
   options: AutocompleteOption[]
   value?: string
   onChange: (value: string) => void
   onInputChange?: (input: string) => void
   placeholder?: string
   label?: string
-  leftIcon?: React.ReactNode
-  rightIcon?: React.ReactNode
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
   loading?: boolean
   disabled?: boolean
   className?: string
 }
 
-export const Autocomplete: React.FC<AutocompleteProps> = ({
-  options,
-  value,
-  onChange,
-  onInputChange,
-  placeholder = 'Type to search...',
-  label,
-  leftIcon,
-  rightIcon,
-  loading = false,
-  disabled = false,
-  className = '',
-}) => {
+export const Autocomplete = (props: Props) => {
+  const placeholder = props.placeholder ?? 'Type to search...'
+  const loading = props.loading ?? false
+  const disabled = props.disabled ?? false
+  const className = props.className ?? ''
   const [inputValue, setInputValue] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
@@ -40,15 +41,16 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (value) {
-      const selected = options.find((o) => o.value === value)
+    if (props.value) {
+      const selected = props.options.find((o) => o.value === props.value)
       setInputValue(selected ? selected.label : '')
     }
-  }, [value, options])
+  }, [props.value, props.options])
 
+  const onChange = props.onChange
   useEffect(() => {
-    if (onInputChange) onInputChange(inputValue)
-  }, [inputValue])
+    if (onChange) onChange(inputValue)
+  }, [inputValue, onChange])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -65,11 +67,11 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const filteredOptions = options.filter((option) =>
+  const filteredOptions = props.options.filter((option) =>
     option.label.toLowerCase().includes(inputValue.toLowerCase()),
   )
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value)
     setIsOpen(true)
     setHighlightedIndex(-1)
@@ -78,10 +80,10 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   const handleOptionSelect = (option: AutocompleteOption) => {
     setInputValue(option.label)
     setIsOpen(false)
-    onChange(option.value)
+    props.onChange(option.value)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       setIsOpen(true)
       setHighlightedIndex(0)
@@ -104,32 +106,32 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {label && (
+      {props.label && (
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {label}
+          {props.label}
         </label>
       )}
       <div className="relative flex items-center">
-        {leftIcon && (
+        {props.leftIcon && (
           <span className="absolute left-3 text-gray-400 dark:text-gray-500 flex items-center">
-            {leftIcon}
+            {props.leftIcon}
           </span>
         )}
         <input
           ref={inputRef}
           type="text"
-          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${leftIcon ? 'pl-10' : ''} ${rightIcon ? 'pr-10' : ''}`}
+          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${props.leftIcon ? 'pl-10' : ''} ${props.rightIcon ? 'pr-10' : ''}`}
           placeholder={placeholder}
           value={inputValue}
-          onChange={handleInputChange}
+          onChange={handleChange}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           autoComplete="off"
         />
-        {rightIcon && (
+        {props.rightIcon && (
           <span className="absolute right-3 text-gray-400 dark:text-gray-500 flex items-center">
-            {rightIcon}
+            {props.rightIcon}
           </span>
         )}
         {loading && (
