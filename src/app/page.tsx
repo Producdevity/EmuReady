@@ -74,6 +74,8 @@ export default function Home() {
               <Image
                 src="https://placehold.co/400x200"
                 alt="The Legend of Zelda: Breath of the Wild"
+                width={400}
+                height={200}
                 className="w-full h-40 object-cover"
               />
               <div className="p-4">
@@ -107,6 +109,8 @@ export default function Home() {
               <Image
                 src="https://placehold.co/400x200"
                 alt="Animal Crossing: New Horizons"
+                width={400}
+                height={200}
                 className="w-full h-40 object-cover"
               />
               <div className="p-4">
@@ -140,6 +144,8 @@ export default function Home() {
               <Image
                 src="https://placehold.co/400x200"
                 alt="God of War: Ragnarök"
+                width={400}
+                height={200}
                 className="w-full h-40 object-cover"
               />
               <div className="p-4">
