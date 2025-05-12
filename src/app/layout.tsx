@@ -1,5 +1,5 @@
 import './globals.css'
-import { PropsWithChildren } from 'react'
+import { type PropsWithChildren } from 'react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Inter } from 'next/font/google'
 import { Providers } from '@/components/Providers'
