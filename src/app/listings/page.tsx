@@ -2,12 +2,12 @@
 import { useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { Badge, Pagination, SuccessRateBar, LoadingSpinner } from '@/components/ui'
+import { Badge, Pagination, SuccessRateBar, LoadingSpinner, SortableHeader } from '@/components/ui'
 import { ListingFilters } from '@/components/listings/filters'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
-import { type ListingsFilter } from './types'
+import { type ListingsFilter, type SortDirection, type SortField } from './types'
 
 export default function ListingsPage() {
   const [systemId, setSystemId] = useState('')
@@ -17,6 +17,8 @@ export default function ListingsPage() {
   const [emulatorId, setEmulatorId] = useState('')
   const [performanceId, setPerformanceId] = useState('')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   const { data: session } = useSession()
   const userRole = session?.user?.role
@@ -37,6 +39,8 @@ export default function ListingsPage() {
     searchTerm: search || undefined,
     page,
     limit: 10,
+    sortField: sortField || undefined,
+    sortDirection: sortDirection || undefined,
   }
 
   // Fetch listings with filters
@@ -78,6 +82,28 @@ export default function ListingsPage() {
 
   const handlePerformanceChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setPerformanceId(e.target.value)
+    setPage(1)
+  }
+
+  // Sorting
+  const handleSort = (field: string) => {
+    // If clicking on the same field that is already sorted
+    if (sortField === field) {
+      // Cycle through: asc -> desc -> null
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        setSortField(null)
+        setSortDirection(null)
+      } else {
+        setSortDirection('asc')
+      }
+    } else {
+      // New field selected, start with ascending
+      setSortField(field as SortField)
+      setSortDirection('asc')
+    }
+    // Reset to first page
     setPage(1)
   }
 
@@ -143,27 +169,55 @@ export default function ListingsPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Game
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    System
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Device
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Emulator
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Performance
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Success Rate
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Author
-                  </th>
+                  <SortableHeader
+                    label="Game"
+                    field="game.title"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="System"
+                    field="game.system.name"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Device"
+                    field="device"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Emulator"
+                    field="emulator.name"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Performance"
+                    field="performance.label"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Success Rate"
+                    field="successRate"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Author"
+                    field="author.name"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                     Actions
                   </th>
@@ -211,7 +265,7 @@ export default function ListingsPage() {
                     </td>
                     <td className="px-4 py-2">
                       <SuccessRateBar 
-                        rate={listing.successRate} 
+                        rate={listing.successRate * 100} 
                         voteCount={listing._count.votes} 
                       />
                     </td>
