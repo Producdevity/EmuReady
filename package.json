@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:strict": "NEXT_STRICT_MODE=true next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,7 +13,12 @@
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "analyze": "ANALYZE=true next build",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "test": "echo \"No tests specified\" && exit 0",
+    "prepare-deploy": "npm run lint && npm run typecheck && npm run build"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} ./prisma/seed.ts"

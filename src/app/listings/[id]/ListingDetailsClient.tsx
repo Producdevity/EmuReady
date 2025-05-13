@@ -57,12 +57,12 @@ export default function ListingDetailsClient({
                 {l.game.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">System: {l.game.system?.name}</Badge>
-                <Badge variant="secondary">
+                <Badge variant="default">System: {l.game.system?.name}</Badge>
+                <Badge variant="default">
                   Device: {l.device?.brand} {l.device?.modelName}
                 </Badge>
-                <Badge variant="secondary">Emulator: {l.emulator?.name}</Badge>
-                <Badge variant="secondary">
+                <Badge variant="default">Emulator: {l.emulator?.name}</Badge>
+                <Badge variant="default">
                   Performance: {l.performance?.label}
                 </Badge>
               </div>

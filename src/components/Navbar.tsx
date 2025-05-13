@@ -1,27 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useTheme } from 'next-themes'
-import {
-  Bars3Icon,
-  XMarkIcon,
-  MoonIcon,
-  SunIcon,
-} from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { signOut, useSession } from 'next-auth/react'
+import { ThemeToggle } from '@/components/ui'
 
 function Navbar() {
   const { data: session } = useSession()
-  const { theme, setTheme } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const isActive = (path: string) => pathname === path
   const userRole = session?.user?.role || 'USER'
@@ -80,20 +69,7 @@ function Navbar() {
           </div>
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6 space-x-3">
-              {mounted && (
-                <button
-                  type="button"
-                  className="rounded-full bg-white dark:bg-gray-800 p-1 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                >
-                  <span className="sr-only">Toggle theme</span>
-                  {theme === 'dark' ? (
-                    <SunIcon className="h-6 w-6" aria-hidden="true" />
-                  ) : (
-                    <MoonIcon className="h-6 w-6" aria-hidden="true" />
-                  )}
-                </button>
-              )}
+              <ThemeToggle />
 
               {session ? (
                 <div className="flex items-center space-x-3">
@@ -219,20 +195,7 @@ function Navbar() {
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 pb-3 pt-4">
             <div className="flex items-center px-5">
-              {mounted && (
-                <button
-                  type="button"
-                  className="ml-auto flex-shrink-0 rounded-full bg-white dark:bg-gray-800 p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                >
-                  <span className="sr-only">Toggle theme</span>
-                  {theme === 'dark' ? (
-                    <SunIcon className="h-6 w-6" aria-hidden="true" />
-                  ) : (
-                    <MoonIcon className="h-6 w-6" aria-hidden="true" />
-                  )}
-                </button>
-              )}
+              <ThemeToggle className="ml-auto" />
             </div>
             <div className="mt-3 space-y-1 px-2">
               {session ? (
@@ -282,7 +245,7 @@ function Navbar() {
                       signOut()
                       setMobileMenuOpen(false)
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium"
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
                   >
                     Sign Out
                   </button>
@@ -291,14 +254,14 @@ function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/register"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white block px-3 py-2 rounded-md text-base font-medium"
+                    className="block px-3 py-2 rounded-md text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign Up
