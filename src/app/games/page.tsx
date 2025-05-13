@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Badge } from '@/components/ui'
@@ -69,7 +69,7 @@ export default function GamesPage() {
             <Input
               as="select"
               value={systemId}
-              onChange={handleSystemChange}
+              onChange={(e: React.SyntheticEvent) => handleSystemChange(e as ChangeEvent<HTMLSelectElement>)}
               className="mb-0"
             >
               <option value="">All Systems</option>
