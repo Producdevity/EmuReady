@@ -7,6 +7,7 @@ import {
   type ReactNode,
   type ChangeEvent,
   type KeyboardEvent,
+  useCallback,
 } from 'react'
 
 interface AutocompleteOption {
@@ -20,6 +21,7 @@ interface Props {
   value?: string
   onChange: (value: string) => void
   onInputChange?: (input: string) => void
+  onSearch?: (query: string) => Promise<void>
   placeholder?: string
   label?: string
   leftIcon?: ReactNode
@@ -27,6 +29,8 @@ interface Props {
   loading?: boolean
   disabled?: boolean
   className?: string
+  minCharsToSearch?: number
+  searchDebounce?: number
 }
 
 export function Autocomplete(props: Props) {
@@ -34,12 +38,16 @@ export function Autocomplete(props: Props) {
   const loading = props.loading ?? false
   const disabled = props.disabled ?? false
   const className = props.className ?? ''
+  const minCharsToSearch = props.minCharsToSearch ?? 2
+  const searchDebounce = props.searchDebounce ?? 300
+
   const [inputValue, setInputValue] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const [userIsTyping, setUserIsTyping] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Initialize inputValue only when component mounts or when props.value changes and user isn't typing
   useEffect(() => {
@@ -68,25 +76,53 @@ export function Autocomplete(props: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const debouncedSearch = useCallback(
+    (query: string) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+
+      if (props.onSearch && query.length >= minCharsToSearch) {
+        searchTimeoutRef.current = setTimeout(() => {
+          props.onSearch!(query)
+        }, searchDebounce)
+      }
+    },
+    [props.onSearch, minCharsToSearch, searchDebounce]
+  )
+
   const filteredOptions = props.options.filter((option) =>
     option.label.toLowerCase().includes(inputValue.toLowerCase()),
   )
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
     setUserIsTyping(true)
-    setInputValue(e.target.value)
+    setInputValue(newValue)
     setIsOpen(true)
     setHighlightedIndex(-1)
     
     // If user clears the input, reset the value
-    if (!e.target.value) {
+    if (!newValue) {
       props.onChange('')
     }
     
     // Let parent component know about input changes if handler provided
     if (props.onInputChange) {
-      props.onInputChange(e.target.value)
+      props.onInputChange(newValue)
     }
+
+    // Trigger search if we have a search function
+    debouncedSearch(newValue)
   }
 
   const handleOptionSelect = (option: AutocompleteOption) => {
@@ -136,6 +172,8 @@ export function Autocomplete(props: Props) {
       }
     }, 200)
   }
+
+  const showNoResults = isOpen && !loading && filteredOptions.length === 0 && inputValue.length >= minCharsToSearch
 
   return (
     <div className={`relative ${className}`}>
@@ -216,9 +254,14 @@ export function Autocomplete(props: Props) {
           ))}
         </div>
       )}
-      {isOpen && !loading && filteredOptions.length === 0 && (
+      {showNoResults && (
         <div className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-2 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-center animate-fade-in">
           No results found.
+        </div>
+      )}
+      {isOpen && inputValue.length < minCharsToSearch && !filteredOptions.length && (
+        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-2 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-center animate-fade-in">
+          Type at least {minCharsToSearch} characters to search
         </div>
       )}
     </div>

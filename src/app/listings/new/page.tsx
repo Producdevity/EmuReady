@@ -21,11 +21,17 @@ export default function AddListingPage() {
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
 
-  // Fetch options
-  const { data: games, isLoading: gamesLoading } = api.games.list.useQuery({
-    limit: 1000,
+  // Use a small initial limit for performance
+  const { data: games, isLoading: gamesLoading, refetch: refetchGames } = api.games.list.useQuery({
+    limit: 50,
+    search: searchTerm || undefined,
+  }, {
+    // Don't refetch automatically when window gets focus
+    refetchOnWindowFocus: false,
   })
+
   const { data: devices, isLoading: devicesLoading } =
     api.devices.list.useQuery()
   const { data: emulators, isLoading: emulatorsLoading } =
@@ -43,6 +49,12 @@ export default function AddListingPage() {
       return () => clearTimeout(timer)
     }
   }, [success, error])
+
+  // Search handler for the Autocomplete component
+  const handleGameSearch = async (query: string) => {
+    setSearchTerm(query)
+    refetchGames()
+  }
 
   if (status === 'loading') return <div>Loading...</div>
 
@@ -106,10 +118,13 @@ export default function AddListingPage() {
                 )}
                 value={gameId}
                 onChange={setGameId}
-                placeholder="Search or select a game..."
+                onSearch={handleGameSearch}
+                placeholder="Search for a game..."
                 leftIcon={<PuzzlePieceIcon className="w-5 h-5" />}
                 loading={gamesLoading}
                 disabled={gamesLoading}
+                minCharsToSearch={2}
+                searchDebounce={400}
               />
             </div>
             <Button
