@@ -39,18 +39,17 @@ export function Autocomplete(props: Props) {
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const [userIsTyping, setUserIsTyping] = useState(false)
 
+  // Initialize inputValue only when component mounts or when props.value changes and user isn't typing
   useEffect(() => {
-    if (props.value) {
+    if (props.value && !userIsTyping) {
       const selected = props.options.find((o) => o.value === props.value)
       setInputValue(selected ? selected.label : '')
+    } else if (!props.value && !userIsTyping) {
+      setInputValue('')
     }
-  }, [props.value, props.options])
-
-  const onChange = props.onChange
-  useEffect(() => {
-    if (onChange) onChange(inputValue)
-  }, [inputValue, onChange])
+  }, [props.value, props.options, userIsTyping])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -61,6 +60,7 @@ export function Autocomplete(props: Props) {
         !inputRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false)
+        setUserIsTyping(false)
       }
     }
 
@@ -73,12 +73,24 @@ export function Autocomplete(props: Props) {
   )
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setUserIsTyping(true)
     setInputValue(e.target.value)
     setIsOpen(true)
     setHighlightedIndex(-1)
+    
+    // If user clears the input, reset the value
+    if (!e.target.value) {
+      props.onChange('')
+    }
+    
+    // Let parent component know about input changes if handler provided
+    if (props.onInputChange) {
+      props.onInputChange(e.target.value)
+    }
   }
 
   const handleOptionSelect = (option: AutocompleteOption) => {
+    setUserIsTyping(false)
     setInputValue(option.label)
     setIsOpen(false)
     props.onChange(option.value)
@@ -102,7 +114,27 @@ export function Autocomplete(props: Props) {
       handleOptionSelect(filteredOptions[highlightedIndex])
     } else if (e.key === 'Escape') {
       setIsOpen(false)
+      setUserIsTyping(false)
     }
+  }
+
+  // When input loses focus
+  const handleBlur = () => {
+    // Small delay to allow click events on options to fire first
+    setTimeout(() => {
+      if (isOpen) {
+        setIsOpen(false)
+        setUserIsTyping(false)
+        
+        // If there's a valid option that matches input exactly, select it
+        const exactMatch = props.options.find(
+          option => option.label.toLowerCase() === inputValue.toLowerCase()
+        )
+        if (exactMatch) {
+          props.onChange(exactMatch.value)
+        }
+      }
+    }, 200)
   }
 
   return (
@@ -126,6 +158,7 @@ export function Autocomplete(props: Props) {
           value={inputValue}
           onChange={handleChange}
           onFocus={() => setIsOpen(true)}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           autoComplete="off"
