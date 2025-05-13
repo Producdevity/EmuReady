@@ -14,6 +14,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
+import { type ListingsFilter } from './types'
 
 export default function ListingsPage() {
   const [systemId, setSystemId] = useState('')
@@ -34,8 +35,8 @@ export default function ListingsPage() {
   const { data: emulators } = api.emulators.list.useQuery()
   const { data: performanceScales } = api.listings.performanceScales.useQuery()
   
-  // Fetch listings with filters
-  const { data, isLoading, error, refetch } = api.listings.list.useQuery({
+  // Prepare filter params
+  const filterParams: ListingsFilter = {
     systemId: systemId || undefined,
     deviceId: deviceId || undefined,
     emulatorId: emulatorId || undefined,
@@ -43,7 +44,10 @@ export default function ListingsPage() {
     searchTerm: search || undefined,
     page,
     limit: 10,
-  })
+  }
+  
+  // Fetch listings with filters
+  const { data, isLoading, error, refetch } = api.listings.list.useQuery(filterParams)
   
   const listings = data?.listings || []
   const pagination = data?.pagination
@@ -115,11 +119,11 @@ export default function ListingsPage() {
               leftIcon={<CpuChipIcon className="w-5 h-5" />}
               as="select"
               value={systemId}
-              onChange={(e) => handleFilterChange(e as unknown as React.ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) => handleFilterChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
               className="mb-0"
             >
               <option value="">All Systems</option>
-              {systems?.map((sys: { id: string; name: string }) => (
+              {systems?.map((sys) => (
                 <option key={sys.id} value={sys.id}>
                   {sys.name}
                 </option>
@@ -133,11 +137,11 @@ export default function ListingsPage() {
               leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
               as="select"
               value={deviceId}
-              onChange={(e) => handleDeviceChange(e as unknown as React.ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) => handleDeviceChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
               className="mb-0"
             >
               <option value="">All Devices</option>
-              {devices?.map((device: { id: string; brand: string; modelName: string }) => (
+              {devices?.map((device) => (
                 <option key={device.id} value={device.id}>
                   {device.brand} {device.modelName}
                 </option>
@@ -151,11 +155,11 @@ export default function ListingsPage() {
               leftIcon={<CpuChipIcon className="w-5 h-5" />}
               as="select"
               value={emulatorId}
-              onChange={(e) => handleEmulatorChange(e as unknown as React.ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) => handleEmulatorChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
               className="mb-0"
             >
               <option value="">All Emulators</option>
-              {emulators?.map((emulator: { id: string; name: string }) => (
+              {emulators?.map((emulator) => (
                 <option key={emulator.id} value={emulator.id}>
                   {emulator.name}
                 </option>
@@ -169,11 +173,11 @@ export default function ListingsPage() {
               leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
               as="select"
               value={performanceId}
-              onChange={(e) => handlePerformanceChange(e as unknown as React.ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) => handlePerformanceChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
               className="mb-0"
             >
               <option value="">All Performance</option>
-              {performanceScales?.map((perf: { id: number; label: string }) => (
+              {performanceScales?.map((perf) => (
                 <option key={perf.id} value={perf.id.toString()}>
                   {perf.label}
                 </option>
