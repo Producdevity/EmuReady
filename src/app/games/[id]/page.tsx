@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getGameById } from '../data'
 import { Badge } from '@/components/ui/badge'
 import { OptimizedImage } from '@/components/ui/optimizedImage'
@@ -55,12 +56,13 @@ export default async function GameDetailsPage({
                   fallbackSrc="/placeholder/game.svg"
                 />
               ) : (
-                <img 
-                  src="/placeholder/game.svg" 
+                <Image
+                  src="/placeholder/game.svg"
                   alt="No image available"
                   className="w-full rounded-lg shadow-md"
                   width={300}
                   height={400}
+                  unoptimized
                 />
               )}
             </div>

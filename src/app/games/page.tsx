@@ -8,18 +8,18 @@ import { api } from '@/lib/api'
 import type { ChangeEvent } from 'react'
 
 // Search and filter component for games
-const GameFilters = ({ 
-  search, 
-  systemId, 
-  systems, 
-  onSearchChange, 
-  onSystemChange 
-}: { 
-  search: string; 
-  systemId: string; 
-  systems: Array<{ id: string; name: string }> | undefined;
-  onSearchChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onSystemChange: (e: React.SyntheticEvent) => void;
+const GameFilters = ({
+  search,
+  systemId,
+  systems,
+  onSearchChange,
+  onSystemChange,
+}: {
+  search: string
+  systemId: string
+  systems: Array<{ id: string; name: string }> | undefined
+  onSearchChange: (e: ChangeEvent<HTMLInputElement>) => void
+  onSystemChange: (e: React.SyntheticEvent) => void
 }) => (
   <div className="flex flex-col sm:flex-row gap-4 mb-8">
     <div className="flex-1">
@@ -47,18 +47,18 @@ const GameFilters = ({
       </Input>
     </div>
   </div>
-);
+)
 
 // Game card component
-const GameCard = ({ 
-  game 
-}: { 
-  game: { 
-    id: string; 
-    title: string; 
-    system?: { name: string } | null; 
-    _count: { listings: number } 
-  } 
+const GameCard = ({
+  game,
+}: {
+  game: {
+    id: string
+    title: string
+    system?: { name: string } | null
+    _count: { listings: number }
+  }
 }) => (
   <Link
     key={game.id}
@@ -80,9 +80,7 @@ const GameCard = ({
         {game.title}
       </h2>
       <div className="flex items-center justify-between">
-        <Badge variant="default">
-          {game.system?.name || 'Unknown System'}
-        </Badge>
+        <Badge variant="default">{game.system?.name || 'Unknown System'}</Badge>
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {game._count.listings}{' '}
           {game._count.listings === 1 ? 'listing' : 'listings'}
@@ -90,7 +88,7 @@ const GameCard = ({
       </div>
     </div>
   </Link>
-);
+)
 
 export default function GamesPage() {
   const [search, setSearch] = useState('')
@@ -100,7 +98,7 @@ export default function GamesPage() {
 
   // Fetch systems for filter dropdown
   const { data: systems } = api.systems.list.useQuery()
-  
+
   // Fetch games with pagination and search
   const { data, isLoading } = api.games.list.useQuery({
     search: search || undefined,
@@ -108,7 +106,7 @@ export default function GamesPage() {
     limit,
     offset: (page - 1) * limit,
   })
-  
+
   const games = data?.games || []
   const pagination = data?.pagination
 
@@ -117,7 +115,7 @@ export default function GamesPage() {
     setSearch(e.target.value)
     setPage(1)
   }
-  
+
   // Handle system filter changes
   const handleSystemChange = (e: React.SyntheticEvent) => {
     setSystemId((e as unknown as ChangeEvent<HTMLSelectElement>).target.value)
@@ -135,16 +133,16 @@ export default function GamesPage() {
         <h1 className="text-3xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
-        
+
         {/* Search and filters */}
-        <GameFilters 
+        <GameFilters
           search={search}
           systemId={systemId}
           systems={systems}
           onSearchChange={handleSearchChange}
           onSystemChange={handleSystemChange}
         />
-        
+
         {isLoading ? (
           <LoadingSpinner text="Loading games..." />
         ) : (
@@ -154,7 +152,7 @@ export default function GamesPage() {
                 <GameCard key={game.id} game={game} />
               ))}
             </div>
-            
+
             {games.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-xl text-gray-500 dark:text-gray-400">
@@ -164,16 +162,16 @@ export default function GamesPage() {
             )}
           </>
         )}
-        
+
         {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
-          <Pagination 
-            currentPage={page} 
-            totalPages={pagination.pages} 
-            onPageChange={handlePageChange} 
+        {pagination?.pages && pagination.pages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={pagination.pages}
+            onPageChange={handlePageChange}
           />
         )}
-        
+
         <div className="mt-12 text-center">
           <Link
             href="/games/new"
