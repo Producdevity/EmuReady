@@ -284,7 +284,9 @@ export default function ListingsPage() {
                           {game.system?.name}
                         </td>
                         <td className="px-4 py-2">
-                          <Badge variant={badgeVariant}>{topPerf || 'N/A'}</Badge>
+                          <Badge variant={badgeVariant}>
+                            {topPerf || 'N/A'}
+                          </Badge>
                         </td>
                         <td className="px-4 py-2">
                           <SuccessRateBar rate={successRate} />
@@ -294,11 +296,38 @@ export default function ListingsPage() {
                         </td>
                         <td className="px-4 py-2">
                           {/* Empty, listings shown below */}
+                          <td className="flex gap-2 items-center">
+                            <Link
+                              href={`/listings/${game.id}`}
+                              passHref
+                              legacyBehavior
+                            >
+                              <a
+                                aria-label="View Listing"
+                                className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                              >
+                                <EyeIcon className="w-4 h-4" /> View
+                              </a>
+                            </Link>
+                            {(userRole === 'ADMIN' ||
+                              userRole === 'SUPER_ADMIN') && (
+                              <button
+                                aria-label="Delete Listing"
+                                className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs"
+                                onClick={() => setDeleteConfirmId(game.id)}
+                              >
+                                <TrashIcon className="w-4 h-4" /> Delete
+                              </button>
+                            )}
+                          </td>
                         </td>
                       </tr>
                       {game.listings && game.listings.length > 0 && (
                         <tr>
-                          <td colSpan={6} className="bg-gray-50 dark:bg-gray-800 px-8 py-2">
+                          <td
+                            colSpan={6}
+                            className="bg-gray-50 dark:bg-gray-800 px-8 py-2"
+                          >
                             <table className="w-full text-sm">
                               <thead>
                                 <tr>
@@ -312,12 +341,20 @@ export default function ListingsPage() {
                                 {game.listings.map((listing) => (
                                   <tr key={listing.id}>
                                     {/* @ts-expect-error: device may not exist on listing */}
-                                    <td>{listing.device?.brand ? `${listing.device.brand} ${listing.device.modelName}` : ''}</td>
+                                    <td>
+                                      {listing.device?.brand
+                                        ? `${listing.device.brand} ${listing.device.modelName}`
+                                        : ''}
+                                    </td>
                                     {/* @ts-expect-error: emulator may not exist on listing */}
                                     <td>{listing.emulator?.name || ''}</td>
                                     <td>{listing.performance?.label}</td>
                                     <td className="flex gap-2 items-center">
-                                      <Link href={`/listings/${listing.id}`} passHref legacyBehavior>
+                                      <Link
+                                        href={`/listings/${listing.id}`}
+                                        passHref
+                                        legacyBehavior
+                                      >
                                         <a
                                           aria-label="View Listing"
                                           className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
@@ -325,13 +362,17 @@ export default function ListingsPage() {
                                           <EyeIcon className="w-4 h-4" /> View
                                         </a>
                                       </Link>
-                                      {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+                                      {(userRole === 'ADMIN' ||
+                                        userRole === 'SUPER_ADMIN') && (
                                         <button
                                           aria-label="Delete Listing"
                                           className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs"
-                                          onClick={() => setDeleteConfirmId(listing.id)}
+                                          onClick={() =>
+                                            setDeleteConfirmId(listing.id)
+                                          }
                                         >
-                                          <TrashIcon className="w-4 h-4" /> Delete
+                                          <TrashIcon className="w-4 h-4" />{' '}
+                                          Delete
                                         </button>
                                       )}
                                     </td>
@@ -452,7 +493,10 @@ export default function ListingsPage() {
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md shadow-lg relative">
               <h2 className="text-xl font-bold mb-4">Delete Listing</h2>
-              <p>Are you sure you want to delete this listing? This action cannot be undone.</p>
+              <p>
+                Are you sure you want to delete this listing? This action cannot
+                be undone.
+              </p>
               <div className="flex justify-end gap-2 mt-4">
                 <button
                   type="button"
