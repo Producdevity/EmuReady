@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { prisma } from '@/server/db'
 
 interface ListingComment {
   id: string
@@ -11,25 +12,38 @@ interface ListingComment {
   user?: { id: string; name: string | null }
 }
 
-async function fetchListing(id: string) {
-  const res = await fetch(
-    `${process.env.NEXTAUTH_URL || ''}/api/trpc/listings.byId?input=${encodeURIComponent(JSON.stringify({ id }))}`,
-    { cache: 'no-store' }
-  )
-  if (!res.ok) throw new Error('Not found')
-  const data = await res.json()
-  // tRPC returns { result: { data: { ...listing } } }
-  return data.result?.data
-}
-
 export default async function ListingDetailsPage({ params }: { params: { id: string } }) {
-  let listing
-  try {
-    listing = await fetchListing(params.id)
-    if (!listing) throw new Error('Not found')
-  } catch {
-    notFound()
-  }
+  // Fetch the listing directly from the database using Prisma
+  const listing = await prisma.listing.findUnique({
+    where: { id: params.id },
+    include: {
+      game: { include: { system: true } },
+      device: true,
+      emulator: true,
+      performance: true,
+      author: { select: { id: true, name: true, email: true } },
+      comments: {
+        where: { parentId: null },
+        include: {
+          user: { select: { id: true, name: true } },
+          replies: {
+            include: { user: { select: { id: true, name: true } } },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+      _count: { select: { votes: true } },
+      votes: false, // not needed for this page
+    },
+  })
+
+  if (!listing) notFound()
+
+  // Calculate success rate
+  const upVotes = await prisma.vote.count({ where: { listingId: listing.id, value: true } })
+  const totalVotes = listing._count.votes
+  const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-10 px-4 flex justify-center items-start">
@@ -63,13 +77,13 @@ export default async function ListingDetailsPage({ params }: { params: { id: str
                 <motion.div
                   className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden"
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.round((listing.successRate || 0) * 100)}%` }}
+                  animate={{ width: `${Math.round(successRate * 100)}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 >
-                  <div className="h-full bg-green-500" style={{ width: `${Math.round((listing.successRate || 0) * 100)}%` }} />
+                  <div className="h-full bg-green-500" style={{ width: `${Math.round(successRate * 100)}%` }} />
                 </motion.div>
                 <span className="text-sm text-gray-500 dark:text-gray-400 mt-1 inline-block">
-                  {Math.round((listing.successRate || 0) * 100)}% success
+                  {Math.round(successRate * 100)}% success
                 </span>
               </div>
             </div>
