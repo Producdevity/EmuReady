@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
+import type { Prisma } from '@orm'
 
 import {
   createTRPCRouter,
@@ -23,17 +24,24 @@ export const gamesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { systemId, search, limit = 50, offset = 0 } = input || {}
 
-      // Build where clause
-      const where = {
+      // Build where clause with optimized search pattern
+      const where: Prisma.GameWhereInput = {
         ...(systemId ? { systemId } : {}),
-        ...(search ? { title: { contains: search } } : {}),
+      };
+
+      // Add optimized search with case insensitivity
+      if (search) {
+        where.title = {
+          contains: search,
+          mode: 'insensitive', // Case-insensitive search
+        };
       }
 
-      // Count total
-      const total = await ctx.prisma.game.count({ where })
-
-      // Get games
-      const games = await ctx.prisma.game.findMany({
+      // Only count when necessary for pagination
+      const countQuery = ctx.prisma.game.count({ where });
+      
+      // Get games with optimized query
+      const gamesQuery = ctx.prisma.game.findMany({
         where,
         include: {
           system: true,
@@ -44,11 +52,14 @@ export const gamesRouter = createTRPCRouter({
           },
         },
         orderBy: {
-          title: 'asc',
+          title: 'asc'
         },
         skip: offset,
         take: limit,
-      })
+      });
+
+      // Run queries in parallel for better performance
+      const [total, games] = await Promise.all([countQuery, gamesQuery]);
 
       return {
         games,
@@ -73,6 +84,13 @@ export const gamesRouter = createTRPCRouter({
               device: true,
               emulator: true,
               performance: true,
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
               _count: {
                 select: {
                   votes: true,
