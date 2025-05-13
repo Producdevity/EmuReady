@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, type ChangeEvent } from 'react'
 import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
-import { LoadingSpinner } from './loadingSpinner'
+import { LoadingSpinner } from '@/components'
+import Image from 'next/image'
 
 interface ImageUploadProps {
   onImageUploaded: (imageUrl: string) => void
@@ -15,15 +16,15 @@ export function ImageUpload({
   onImageUploaded,
   className = '',
   initialImage = '',
-  label = 'Upload Image'
+  label = 'Upload Image',
 }: ImageUploadProps) {
   const [image, setImage] = useState<string>(initialImage)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileChange = async (ev: ChangeEvent<HTMLInputElement>) => {
+    const file = ev.target.files?.[0]
     if (!file) return
 
     // Validate file type
@@ -81,7 +82,7 @@ export function ImageUpload({
   return (
     <div className={`${className}`}>
       {label && <label className="block mb-1 font-medium">{label}</label>}
-      
+
       <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4">
         <input
           type="file"
@@ -91,7 +92,7 @@ export function ImageUpload({
           onChange={handleFileChange}
           disabled={isUploading}
         />
-        
+
         {isUploading ? (
           <div className="flex flex-col items-center justify-center h-40 text-gray-500 dark:text-gray-400">
             <LoadingSpinner size="md" />
@@ -99,10 +100,12 @@ export function ImageUpload({
           </div>
         ) : image ? (
           <div className="relative">
-            <img 
-              src={image} 
-              alt="Uploaded preview" 
+            <Image
+              src={image}
+              alt="Uploaded preview"
               className="mx-auto max-h-60 max-w-full rounded-lg object-contain"
+              width={0}
+              height={0}
             />
             <button
               type="button"
@@ -114,7 +117,7 @@ export function ImageUpload({
             </button>
           </div>
         ) : (
-          <div 
+          <div
             className="flex flex-col items-center justify-center h-40 cursor-pointer"
             onClick={handleBrowseClick}
           >
@@ -130,13 +133,9 @@ export function ImageUpload({
             </button>
           </div>
         )}
-        
-        {error && (
-          <div className="mt-2 text-red-500 text-sm">
-            {error}
-          </div>
-        )}
+
+        {error && <div className="mt-2 text-red-500 text-sm">{error}</div>}
       </div>
     </div>
   )
-} 
+}

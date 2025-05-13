@@ -1,11 +1,11 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { ImageUpload } from '@/components/ui/imageUpload'
 
-export default function AddGamePage() {
+function AddGamePage() {
   const { data: session, status } = useSession()
   const [title, setTitle] = useState('')
   const [systemId, setSystemId] = useState('')
@@ -42,7 +42,7 @@ export default function AddGamePage() {
     )
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccess('')
@@ -128,3 +128,5 @@ export default function AddGamePage() {
     </div>
   )
 }
+
+export default AddGamePage
