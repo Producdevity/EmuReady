@@ -29,6 +29,9 @@ function Navbar() {
               </p>
             </Link>
 
+            <p className="pl-8 sm:block text-sm text-red-400 font-medium">
+              [BETA] - This is a work in progress, all data is mock data for testing purposes
+            </p>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 <Link
@@ -84,7 +87,9 @@ function Navbar() {
                   >
                     Profile
                   </Link>
-                  {(userRole === 'AUTHOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+                  {(userRole === 'AUTHOR' ||
+                    userRole === 'ADMIN' ||
+                    userRole === 'SUPER_ADMIN') && (
                     <Link
                       href="/listings/new"
                       className={`${
@@ -97,19 +102,20 @@ function Navbar() {
                       Create Listing
                     </Link>
                   )}
-                  {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' && (
-                    <Link
-                      href="/admin"
-                      className={`${
-                        isActive('/admin')
-                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      } 
+                  {userRole === 'ADMIN' ||
+                    (userRole === 'SUPER_ADMIN' && (
+                      <Link
+                        href="/admin"
+                        className={`${
+                          isActive('/admin')
+                            ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        } 
                         px-3 py-2 rounded-md text-sm font-medium`}
-                    >
-                      Admin
-                    </Link>
-                  )}
+                      >
+                        Admin
+                      </Link>
+                    ))}
                   <button
                     onClick={() => signOut()}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium"
@@ -212,7 +218,9 @@ function Navbar() {
                   >
                     Profile
                   </Link>
-                  {(userRole === 'AUTHOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+                  {(userRole === 'AUTHOR' ||
+                    userRole === 'ADMIN' ||
+                    userRole === 'SUPER_ADMIN') && (
                     <Link
                       href="/listings/new"
                       className={`${
@@ -226,20 +234,21 @@ function Navbar() {
                       Create Listing
                     </Link>
                   )}
-                  {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' && (
-                    <Link
-                      href="/admin"
-                      className={`${
-                        isActive('/admin')
-                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      } 
+                  {userRole === 'ADMIN' ||
+                    (userRole === 'SUPER_ADMIN' && (
+                      <Link
+                        href="/admin"
+                        className={`${
+                          isActive('/admin')
+                            ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        } 
                         block px-3 py-2 rounded-md text-base font-medium`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Admin
+                      </Link>
+                    ))}
                   <button
                     onClick={() => {
                       signOut()
