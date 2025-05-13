@@ -22,14 +22,17 @@ export default function AddListingPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
 
-  // Use a small initial limit for performance
+  // Use a small initial limit for performance and enable lazy loading
   const { data: games, isLoading: gamesLoading, refetch: refetchGames } = api.games.list.useQuery({
-    limit: 50,
+    limit: 100,
     search: searchTerm || undefined,
   }, {
     // Don't refetch automatically when window gets focus
     refetchOnWindowFocus: false,
+    // Only fetch when we have a search term of sufficient length
+    enabled: searchTerm.length >= 2 || searchTerm === '',
   })
 
   const { data: devices, isLoading: devicesLoading } =
@@ -50,10 +53,15 @@ export default function AddListingPage() {
     }
   }, [success, error])
 
-  // Search handler for the Autocomplete component
+  // Enhanced search handler for the Autocomplete component
   const handleGameSearch = async (query: string) => {
-    setSearchTerm(query)
-    refetchGames()
+    setIsSearching(true)
+    try {
+      setSearchTerm(query)
+      await refetchGames()
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   if (status === 'loading') return <div>Loading...</div>
@@ -121,7 +129,7 @@ export default function AddListingPage() {
                 onSearch={handleGameSearch}
                 placeholder="Search for a game..."
                 leftIcon={<PuzzlePieceIcon className="w-5 h-5" />}
-                loading={gamesLoading}
+                loading={gamesLoading || isSearching}
                 disabled={gamesLoading}
                 minCharsToSearch={2}
                 searchDebounce={400}
