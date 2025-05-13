@@ -279,73 +279,66 @@ export default function ListingsPage() {
                   else if (topPerf === 'Playable') badgeVariant = 'warning'
                   else if (topPerf === 'Unplayable') badgeVariant = 'danger'
                   return (
-                    <tr
-                      key={game.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                        {game.title}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {game.system?.name}
-                      </td>
-                      <td className="px-4 py-2">
-                        <Badge variant={badgeVariant}>{topPerf || 'N/A'}</Badge>
-                      </td>
-                      <td className="px-4 py-2">
-                        <SuccessRateBar rate={successRate} />
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        {game._count?.listings ?? 0}
-                      </td>
-                      <td className="px-4 py-2 flex gap-2">
-                        <Link href={`/listings/${game.id}`} passHref legacyBehavior>
-                          <a
-                            aria-label="View Listings"
-                            className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400"
-                          >
-                            <EyeIcon className="w-5 h-5" /> View
-                          </a>
-                        </Link>
-                        {session?.user.role === 'ADMIN' && (
-                          <>
-                            <button
-                              aria-label="Edit Game"
-                              className="flex items-center gap-1 px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-yellow-400"
-                              onClick={() => {
-                                setEditGame({
-                                  id: game.id,
-                                  title: game.title,
-                                  systemId: game.systemId,
-                                })
-                                setEditTitle(game.title)
-                                setEditSystemId(game.systemId)
-                                setEditModalOpen(true)
-                              }}
-                            >
-                              <PencilSquareIcon className="w-5 h-5" /> Edit
-                            </button>
-                            <button
-                              aria-label="Delete Game"
-                              className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400"
-                              onClick={async () => {
-                                if (
-                                  confirm(
-                                    `Delete game \"${game.title}\"? This cannot be undone.`,
-                                  )
-                                ) {
-                                  await deleteGame.mutateAsync({ id: game.id })
-                                }
-                              }}
-                              disabled={deleteGame.isPending}
-                            >
-                              <TrashIcon className="w-5 h-5" />{' '}
-                              {deleteGame.isPending ? 'Deleting...' : 'Delete'}
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
+                    <>
+                      <tr
+                        key={game.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
+                          {game.title}
+                        </td>
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                          {game.system?.name}
+                        </td>
+                        <td className="px-4 py-2">
+                          <Badge variant={badgeVariant}>{topPerf || 'N/A'}</Badge>
+                        </td>
+                        <td className="px-4 py-2">
+                          <SuccessRateBar rate={successRate} />
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          {game._count?.listings ?? 0}
+                        </td>
+                        <td className="px-4 py-2">
+                          {/* Empty, listings shown below */}
+                        </td>
+                      </tr>
+                      {game.listings && game.listings.length > 0 && (
+                        <tr>
+                          <td colSpan={6} className="bg-gray-50 dark:bg-gray-800 px-8 py-2">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr>
+                                  <th className="text-left">Device</th>
+                                  <th className="text-left">Emulator</th>
+                                  <th className="text-left">Performance</th>
+                                  <th className="text-left">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {game.listings.map((listing) => (
+                                  <tr key={listing.id}>
+                                    <td>{listing.device?.brand} {listing.device?.modelName}</td>
+                                    <td>{listing.emulator?.name}</td>
+                                    <td>{listing.performance?.label}</td>
+                                    <td>
+                                      <Link href={`/listings/${listing.id}`} passHref legacyBehavior>
+                                        <a
+                                          aria-label="View Listing"
+                                          className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                                        >
+                                          <EyeIcon className="w-4 h-4" /> View
+                                        </a>
+                                      </Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   )
                 },
               )}
