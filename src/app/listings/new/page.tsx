@@ -60,13 +60,14 @@ export default function AddListingPage() {
     }
   }, [success, error])
 
-  // Enhanced search handler for the Autocomplete component
+  // Simplified search handler for the Autocomplete component
   const handleGameSearch = async (query: string) => {
+    setSearchTerm(query)
     setIsSearching(true)
+    
     try {
-      setSearchTerm(query)
       await refetchGames()
-
+      
       // Simple debugging for search results
       console.log(
         `Search "${query}" found ${games?.games?.length || 0} results`,

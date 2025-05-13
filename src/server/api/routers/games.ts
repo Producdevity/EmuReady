@@ -33,37 +33,43 @@ export const gamesRouter = createTRPCRouter({
       if (search && search.trim() !== '') {
         const searchTerm = search.trim();
         
-        // Search conditions
-        const searchConditions: Prisma.GameWhereInput[] = [];
-        
-        // Add full phrase match condition
-        searchConditions.push({
-          title: {
-            contains: searchTerm,
-            mode: 'insensitive',
-          }
-        });
-        
-        // If multi-word search, add individual word conditions
+        // For multi-word searches, we need a different approach to ensure good matches
         if (searchTerm.includes(' ')) {
-          const words = searchTerm.split(/\s+/).filter(Boolean);
-          for (const word of words) {
-            if (word.length >= 2) { // Only search for words with 2+ characters
-              searchConditions.push({
+          // First, try to match the exact phrase
+          where = {
+            ...where,
+            OR: [
+              // Option 1: Full exact phrase match
+              {
                 title: {
-                  contains: word,
+                  contains: searchTerm,
                   mode: 'insensitive',
                 }
-              });
+              },
+              // Option 2: Match all words in any order (most flexible)
+              {
+                AND: searchTerm
+                  .split(/\s+/)
+                  .filter(word => word.length >= 2)
+                  .map(word => ({
+                    title: {
+                      contains: word,
+                      mode: 'insensitive',
+                    }
+                  }))
+              }
+            ]
+          };
+        } else {
+          // For single words, a simple contains is sufficient
+          where = {
+            ...where,
+            title: {
+              contains: searchTerm,
+              mode: 'insensitive',
             }
-          }
+          };
         }
-        
-        // Combine all search conditions with OR
-        where = {
-          ...where,
-          OR: searchConditions,
-        };
       }
 
       // For empty search with offset 0, we can optimize by returning fewer results initially

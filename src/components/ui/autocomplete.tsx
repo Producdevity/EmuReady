@@ -4,10 +4,12 @@ import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   type ReactNode,
   type ChangeEvent,
   type KeyboardEvent,
   useCallback,
+  useMemo,
 } from 'react'
 
 interface AutocompleteOption {
@@ -48,6 +50,43 @@ export function Autocomplete(props: Props) {
   const listRef = useRef<HTMLDivElement>(null)
   const [userIsTyping, setUserIsTyping] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const shouldMaintainFocusRef = useRef(false)
+  
+  // Memoize frequently changing values to prevent unnecessary rerenders
+  const filteredOptions = useMemo(() => 
+    props.options.filter((option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase())
+    ),
+    [props.options, inputValue]
+  )
+
+  // Force focus maintenance on any re-render if the ref says we should
+  useLayoutEffect(() => {
+    // Check if we need to maintain focus and that the input exists
+    if (shouldMaintainFocusRef.current && inputRef.current) {
+      // Set focus back to input
+      inputRef.current.focus();
+      
+      // We could also set the cursor position if needed
+      const length = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(length, length);
+    }
+  });
+
+  // Track loading state changes to maintain focus
+  useEffect(() => {
+    // When loading state changes, we want to maintain focus if input had focus
+    if (document.activeElement === inputRef.current) {
+      shouldMaintainFocusRef.current = true;
+      
+      // Clear the flag after a short delay to avoid infinite loops
+      return () => {
+        setTimeout(() => {
+          shouldMaintainFocusRef.current = false;
+        }, 100);
+      };
+    }
+  }, [loading]);
 
   // Initialize inputValue only when component mounts or when props.value changes and user isn't typing
   useEffect(() => {
@@ -100,12 +139,9 @@ export function Autocomplete(props: Props) {
     [props.onSearch, minCharsToSearch, searchDebounce]
   )
 
-  const filteredOptions = props.options.filter((option) =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase()),
-  )
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
+    shouldMaintainFocusRef.current = true; // Set flag to maintain focus after this change
     setUserIsTyping(true)
     setInputValue(newValue)
     setIsOpen(true)
@@ -130,6 +166,11 @@ export function Autocomplete(props: Props) {
     setInputValue(option.label)
     setIsOpen(false)
     props.onChange(option.value)
+    
+    // After selection, refocus the input
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -147,6 +188,7 @@ export function Autocomplete(props: Props) {
         prev > 0 ? prev - 1 : filteredOptions.length - 1,
       )
     } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault() // Prevent form submission
       handleOptionSelect(filteredOptions[highlightedIndex])
     } else if (e.key === 'Escape') {
       setIsOpen(false)
@@ -154,23 +196,24 @@ export function Autocomplete(props: Props) {
     }
   }
 
-  // When input loses focus
-  const handleBlur = () => {
-    // Small delay to allow click events on options to fire first
-    setTimeout(() => {
-      if (isOpen) {
-        setIsOpen(false)
-        setUserIsTyping(false)
-        
-        // If there's a valid option that matches input exactly, select it
-        const exactMatch = props.options.find(
-          option => option.label.toLowerCase() === inputValue.toLowerCase()
-        )
-        if (exactMatch) {
-          props.onChange(exactMatch.value)
-        }
-      }
-    }, 200)
+  // Improved blur handler that understands relatedTarget
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Don't hide dropdown if focus is moving to an option in the dropdown
+    if (listRef.current?.contains(e.relatedTarget as Node)) {
+      return
+    }
+    
+    // Otherwise, handle blur normally
+    setIsOpen(false)
+    setUserIsTyping(false)
+    
+    // If there's a valid option that matches input exactly, select it
+    const exactMatch = props.options.find(
+      option => option.label.toLowerCase() === inputValue.toLowerCase()
+    )
+    if (exactMatch) {
+      props.onChange(exactMatch.value)
+    }
   }
 
   const showNoResults = isOpen && !loading && filteredOptions.length === 0 && inputValue.length >= minCharsToSearch
@@ -191,23 +234,26 @@ export function Autocomplete(props: Props) {
         <input
           ref={inputRef}
           type="text"
-          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${props.leftIcon ? 'pl-10' : ''} ${props.rightIcon ? 'pr-10' : ''}`}
+          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${props.leftIcon ? 'pl-10' : ''} ${props.rightIcon || loading ? 'pr-10' : ''}`}
           placeholder={placeholder}
           value={inputValue}
           onChange={handleChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            setIsOpen(true);
+            shouldMaintainFocusRef.current = true;
+          }}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           autoComplete="off"
         />
-        {props.rightIcon && (
+        {props.rightIcon && !loading && (
           <span className="absolute right-3 text-gray-400 dark:text-gray-500 flex items-center">
             {props.rightIcon}
           </span>
         )}
         {loading && (
-          <span className="absolute right-10 animate-spin">
+          <span className="absolute right-3 animate-spin">
             <svg
               className="h-5 w-5 text-blue-500"
               fill="none"
