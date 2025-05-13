@@ -31,26 +31,39 @@ export const gamesRouter = createTRPCRouter({
 
       // Add optimized search with case insensitivity and performance optimizations
       if (search && search.trim() !== '') {
-        const searchTerms = search.trim().split(/\s+/).filter(Boolean);
+        const searchTerm = search.trim();
         
-        if (searchTerms.length > 1) {
-          // Multi-word search strategy: match any of the words for better results
-          where = {
-            ...where,
-            OR: searchTerms.map(term => ({
-              title: {
-                contains: term,
-                mode: 'insensitive',
-              }
-            }))
-          };
-        } else {
-          // Single word search is simpler
-          where.title = {
-            contains: search.trim(),
+        // Search conditions
+        const searchConditions: Prisma.GameWhereInput[] = [];
+        
+        // Add full phrase match condition
+        searchConditions.push({
+          title: {
+            contains: searchTerm,
             mode: 'insensitive',
-          };
+          }
+        });
+        
+        // If multi-word search, add individual word conditions
+        if (searchTerm.includes(' ')) {
+          const words = searchTerm.split(/\s+/).filter(Boolean);
+          for (const word of words) {
+            if (word.length >= 2) { // Only search for words with 2+ characters
+              searchConditions.push({
+                title: {
+                  contains: word,
+                  mode: 'insensitive',
+                }
+              });
+            }
+          }
         }
+        
+        // Combine all search conditions with OR
+        where = {
+          ...where,
+          OR: searchConditions,
+        };
       }
 
       // For empty search with offset 0, we can optimize by returning fewer results initially

@@ -25,15 +25,22 @@ export default function AddListingPage() {
   const [isSearching, setIsSearching] = useState(false)
 
   // Use a small initial limit for performance and enable lazy loading
-  const { data: games, isLoading: gamesLoading, refetch: refetchGames } = api.games.list.useQuery({
-    limit: 100,
-    search: searchTerm || undefined,
-  }, {
-    // Don't refetch automatically when window gets focus
-    refetchOnWindowFocus: false,
-    // Only fetch when we have a search term of sufficient length
-    enabled: searchTerm.length >= 2 || searchTerm === '',
-  })
+  const {
+    data: games,
+    isLoading: gamesLoading,
+    refetch: refetchGames,
+  } = api.games.list.useQuery(
+    {
+      limit: 100,
+      search: searchTerm || undefined,
+    },
+    {
+      // Don't refetch automatically when window gets focus
+      refetchOnWindowFocus: false,
+      // Only fetch when we have a search term of sufficient length
+      enabled: searchTerm.length >= 2 || searchTerm === '',
+    },
+  )
 
   const { data: devices, isLoading: devicesLoading } =
     api.devices.list.useQuery()
@@ -59,6 +66,14 @@ export default function AddListingPage() {
     try {
       setSearchTerm(query)
       await refetchGames()
+
+      // Simple debugging for search results
+      console.log(
+        `Search "${query}" found ${games?.games?.length || 0} results`,
+      )
+      if (games?.games?.length === 0 && query.length > 2) {
+        console.log('No results found. Try refining your search.')
+      }
     } finally {
       setIsSearching(false)
     }
@@ -68,7 +83,12 @@ export default function AddListingPage() {
 
   const userRole = session?.user?.role || 'USER'
 
-  if (!session || !userRole) {
+  if (
+    !session ||
+    (userRole !== 'SUPER_ADMIN' &&
+      userRole !== 'ADMIN' &&
+      userRole !== 'AUTHOR')
+  ) {
     return (
       <div className="p-8 text-center">
         You do not have permission to add listings.
