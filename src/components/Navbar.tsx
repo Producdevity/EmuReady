@@ -84,11 +84,11 @@ function Navbar() {
                   >
                     Profile
                   </Link>
-                  {(userRole === 'AUTHOR' || userRole === 'ADMIN') && (
+                  {(userRole === 'AUTHOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
                     <Link
-                      href="/create"
+                      href="/listings/new"
                       className={`${
-                        isActive('/create')
+                        isActive('/listings/new')
                           ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       } 
@@ -97,7 +97,7 @@ function Navbar() {
                       Create Listing
                     </Link>
                   )}
-                  {userRole === 'ADMIN' && (
+                  {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' && (
                     <Link
                       href="/admin"
                       className={`${
@@ -212,11 +212,11 @@ function Navbar() {
                   >
                     Profile
                   </Link>
-                  {(userRole === 'AUTHOR' || userRole === 'ADMIN') && (
+                  {(userRole === 'AUTHOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
                     <Link
-                      href="/create"
+                      href="/listings/new"
                       className={`${
-                        isActive('/create')
+                        isActive('/listings/new')
                           ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       } 
@@ -226,7 +226,7 @@ function Navbar() {
                       Create Listing
                     </Link>
                   )}
-                  {userRole === 'ADMIN' && (
+                  {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' && (
                     <Link
                       href="/admin"
                       className={`${
