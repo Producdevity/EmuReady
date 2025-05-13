@@ -3,11 +3,13 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
+import { ImageUpload } from '@/components/ui/imageUpload'
 
 export default function AddGamePage() {
   const { data: session, status } = useSession()
   const [title, setTitle] = useState('')
   const [systemId, setSystemId] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -43,14 +45,19 @@ export default function AddGamePage() {
     setError('')
     setSuccess('')
     if (!title || !systemId) {
-      setError('Please fill in all fields.')
+      setError('Please fill in all required fields.')
       return
     }
     try {
-      await createGame.mutateAsync({ title, systemId })
+      await createGame.mutateAsync({ 
+        title, 
+        systemId,
+        imageUrl: imageUrl || undefined 
+      })
       setSuccess('Game added!')
       setTitle('')
       setSystemId('')
+      setImageUrl('')
       // Optionally redirect or refetch listings
       // router.push("/listings");
     } catch (err) {
@@ -63,22 +70,24 @@ export default function AddGamePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 bg-white dark:bg-gray-800 rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Add New Game</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="max-w-lg mx-auto mt-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Add New Game</h1>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block mb-1 font-medium">Title</label>
+          <label className="block mb-1 font-medium">Game Title</label>
           <input
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter game title"
             required
           />
         </div>
+        
         <div>
           <label className="block mb-1 font-medium">System</label>
           <select
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             value={systemId}
             onChange={(e) => setSystemId(e.target.value)}
             required
@@ -92,6 +101,12 @@ export default function AddGamePage() {
             ))}
           </select>
         </div>
+        
+        <ImageUpload 
+          onImageUploaded={setImageUrl}
+          label="Game Cover Image (optional)"
+        />
+        
         {error && (
           <div className="text-red-500 fixed top-4 right-4 bg-white dark:bg-gray-800 border border-red-400 px-4 py-2 rounded shadow z-50">
             {error}
@@ -104,7 +119,7 @@ export default function AddGamePage() {
         )}
         <button
           type="submit"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200 transform hover:scale-105"
           disabled={createGame.isPending}
         >
           {createGame.isPending ? 'Adding...' : 'Add Game'}

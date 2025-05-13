@@ -50,6 +50,7 @@ model Game {
   title     String
   systemId  String
   system    System  @relation(fields: [systemId], references: [id])
+  imageUrl  String?  // URL to the image (can be null)
   listings  Listing[]
 }
 
