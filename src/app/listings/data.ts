@@ -48,7 +48,7 @@ export async function getAllListings(params: {
 
   // Count total matching records for pagination
   const total = await prisma.listing.count({ where })
-  
+
   // Fetch paginated records with all needed relations
   const listings = await prisma.listing.findMany({
     where,
@@ -83,7 +83,7 @@ export async function getAllListings(params: {
 
   // Calculate pagination info
   const totalPages = Math.ceil(total / pageSize)
-  
+
   return {
     listings,
     pagination: {
@@ -94,4 +94,4 @@ export async function getAllListings(params: {
       hasMore: page < totalPages,
     },
   }
-} 
+}

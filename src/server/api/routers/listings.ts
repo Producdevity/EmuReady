@@ -50,9 +50,30 @@ export const listingsRouter = createTRPCRouter({
       if (searchTerm) {
         filters.OR = [
           Object.keys(gameFilter).length
-            ? { game: { is: { ...gameFilter, title: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } } }
-            : { game: { is: { title: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } } } },
-          { notes: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } }
+            ? {
+                game: {
+                  is: {
+                    ...gameFilter,
+                    title: {
+                      contains: searchTerm,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              }
+            : {
+                game: {
+                  is: {
+                    title: {
+                      contains: searchTerm,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              },
+          {
+            notes: { contains: searchTerm, mode: Prisma.QueryMode.insensitive },
+          },
         ]
       } else if (Object.keys(gameFilter).length) {
         filters.game = { is: gameFilter }

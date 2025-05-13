@@ -38,7 +38,7 @@ function verifyPassword(
   if (storedPassword.startsWith('dev_hash_')) {
     return storedPassword === `dev_hash_${plainPassword}`
   }
-  
+
   // Use bcrypt for secure password comparison
   try {
     return bcryptjs.compareSync(plainPassword, storedPassword)

@@ -89,4 +89,4 @@ export interface ListingsFilter {
   searchTerm?: string
   page: number
   limit: number
-} 
+}

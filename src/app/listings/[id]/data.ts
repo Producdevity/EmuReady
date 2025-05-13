@@ -28,4 +28,4 @@ export async function getListingById(id: string) {
 
 export async function getListingUpVotes(listingId: string) {
   return prisma.vote.count({ where: { listingId, value: true } })
-} 
+}

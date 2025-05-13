@@ -47,7 +47,8 @@ export default function ListingsPage() {
   }
 
   // Fetch listings with filters
-  const { data, isLoading, error, refetch } = api.listings.list.useQuery(filterParams)
+  const { data, isLoading, error, refetch } =
+    api.listings.list.useQuery(filterParams)
 
   const listings = data?.listings || []
   const pagination = data?.pagination
@@ -102,14 +103,20 @@ export default function ListingsPage() {
   }
 
   // if (isLoading) return <div className="p-8 text-center">Loading listings...</div>
-  if (error) return <div className="p-8 text-center text-red-500">Failed to load listings.</div>
+  if (error)
+    return (
+      <div className="p-8 text-center text-red-500">
+        Failed to load listings.
+      </div>
+    )
 
   return (
     <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar for filters */}
       <aside className="w-full md:w-64 bg-white dark:bg-gray-800 p-4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 rounded-2xl shadow-xl">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <AdjustmentsHorizontalIcon className="w-5 h-5 text-blue-500" /> Filters
+          <AdjustmentsHorizontalIcon className="w-5 h-5 text-blue-500" />{' '}
+          Filters
         </h2>
 
         <div className="space-y-4">
@@ -119,7 +126,11 @@ export default function ListingsPage() {
               leftIcon={<CpuChipIcon className="w-5 h-5" />}
               as="select"
               value={systemId}
-              onChange={(e) => handleFilterChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) =>
+                handleFilterChange(
+                  e as unknown as ChangeEvent<HTMLSelectElement>,
+                )
+              }
               className="mb-0"
             >
               <option value="">All Systems</option>
@@ -137,7 +148,11 @@ export default function ListingsPage() {
               leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
               as="select"
               value={deviceId}
-              onChange={(e) => handleDeviceChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) =>
+                handleDeviceChange(
+                  e as unknown as ChangeEvent<HTMLSelectElement>,
+                )
+              }
               className="mb-0"
             >
               <option value="">All Devices</option>
@@ -155,7 +170,11 @@ export default function ListingsPage() {
               leftIcon={<CpuChipIcon className="w-5 h-5" />}
               as="select"
               value={emulatorId}
-              onChange={(e) => handleEmulatorChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) =>
+                handleEmulatorChange(
+                  e as unknown as ChangeEvent<HTMLSelectElement>,
+                )
+              }
               className="mb-0"
             >
               <option value="">All Emulators</option>
@@ -173,7 +192,11 @@ export default function ListingsPage() {
               leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
               as="select"
               value={performanceId}
-              onChange={(e) => handlePerformanceChange(e as unknown as ChangeEvent<HTMLSelectElement>)}
+              onChange={(e) =>
+                handlePerformanceChange(
+                  e as unknown as ChangeEvent<HTMLSelectElement>,
+                )
+              }
               className="mb-0"
             >
               <option value="">All Performance</option>
@@ -213,103 +236,136 @@ export default function ListingsPage() {
         </div>
 
         <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
-          {
-            isLoading ? (
-              <div className="p-8 text-center">
-                {/* Loading spinner... */}
-                <svg
-                  className="animate-spin h-8 w-8 text-blue-500 mx-auto"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" />
-                  <path className="opacity-75" d="M4 12a8 8 0 1 1 16 0A8 8 0 0 1 4 12z" />
-                </svg>
-                <p className="mt-4 text-gray-500 dark:text-gray-400">Loading listings...</p>
-              </div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-                <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Game</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">System</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Device</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Emulator</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Performance</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Author</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {listings.map((listing) => (
-                    <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                        <Link href={`/games/${listing.game.id}`} className="hover:text-blue-600 dark:hover:text-blue-400">
-                          {listing.game.title}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.game.system?.name || 'Unknown'}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.device ? `${listing.device.brand} ${listing.device.modelName}` : 'N/A'}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.emulator?.name || 'N/A'}
-                      </td>
-                      <td className="px-4 py-2">
-                        <Badge
-                          variant={
-                            listing.performance?.label === 'Perfect' ? 'success' :
-                              listing.performance?.label === 'Great' ? 'info' :
-                                listing.performance?.label === 'Playable' ? 'warning' :
-                                  'danger'
-                          }
+          {isLoading ? (
+            <div className="p-8 text-center">
+              {/* Loading spinner... */}
+              <svg
+                className="animate-spin h-8 w-8 text-blue-500 mx-auto"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" />
+                <path
+                  className="opacity-75"
+                  d="M4 12a8 8 0 1 1 16 0A8 8 0 0 1 4 12z"
+                />
+              </svg>
+              <p className="mt-4 text-gray-500 dark:text-gray-400">
+                Loading listings...
+              </p>
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+              <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Game
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    System
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Device
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Emulator
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Performance
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Author
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {listings.map((listing) => (
+                  <tr
+                    key={listing.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
+                      <Link
+                        href={`/games/${listing.game.id}`}
+                        className="hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {listing.game.title}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                      {listing.game.system?.name || 'Unknown'}
+                    </td>
+                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                      {listing.device
+                        ? `${listing.device.brand} ${listing.device.modelName}`
+                        : 'N/A'}
+                    </td>
+                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                      {listing.emulator?.name || 'N/A'}
+                    </td>
+                    <td className="px-4 py-2">
+                      <Badge
+                        variant={
+                          listing.performance?.label === 'Perfect'
+                            ? 'success'
+                            : listing.performance?.label === 'Great'
+                              ? 'info'
+                              : listing.performance?.label === 'Playable'
+                                ? 'warning'
+                                : 'danger'
+                        }
+                      >
+                        {listing.performance?.label || 'N/A'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                      {listing.author?.name || 'Anonymous'}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/listings/${listing.id}`}
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
                         >
-                          {listing.performance?.label || 'N/A'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.author?.name || 'Anonymous'}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/listings/${listing.id}`}
-                            className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
-                          >
-                            <EyeIcon className="w-4 h-4" /> View
-                          </Link>
+                          <EyeIcon className="w-4 h-4" /> View
+                        </Link>
 
-                          {isAdmin && (
-                            <button
-                              onClick={() => confirmDelete(listing.id)}
-                              className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${deleteConfirmId === listing.id
+                        {isAdmin && (
+                          <button
+                            onClick={() => confirmDelete(listing.id)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
+                              deleteConfirmId === listing.id
                                 ? 'bg-red-700 text-white hover:bg-red-800'
                                 : 'bg-red-600 text-white hover:bg-red-700'
-                                }`}
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                              {deleteConfirmId === listing.id ? 'Confirm' : 'Delete'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
+                            }`}
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                            {deleteConfirmId === listing.id
+                              ? 'Confirm'
+                              : 'Delete'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
 
           {!isLoading && listings.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-xl text-gray-500 dark:text-gray-400">No listings found matching the criteria.</p>
+              <p className="text-xl text-gray-500 dark:text-gray-400">
+                No listings found matching the criteria.
+              </p>
             </div>
           )}
         </div>
@@ -326,25 +382,26 @@ export default function ListingsPage() {
                 1
               </button>
             )}
-            
+
             {/* Ellipsis before */}
-            {page > 4 && (
-              <span className="px-3 py-1">...</span>
-            )}
-            
+            {page > 4 && <span className="px-3 py-1">...</span>}
+
             {/* Pages around current */}
             {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter(pageNum => {
+              .filter((pageNum) => {
                 // Show current page and 2 pages before and after
-                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2;
-                
+                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2
+
                 // Don't show page 1 in this section if we're showing it separately
-                const isNotFirstPage = page > 3 ? pageNum !== 1 : true;
-                
+                const isNotFirstPage = page > 3 ? pageNum !== 1 : true
+
                 // Don't show the last page in this section if we're showing it separately
-                const isNotLastPage = page < pagination.pages - 2 ? pageNum !== pagination.pages : true;
-                
-                return isNearCurrent && isNotFirstPage && isNotLastPage;
+                const isNotLastPage =
+                  page < pagination.pages - 2
+                    ? pageNum !== pagination.pages
+                    : true
+
+                return isNearCurrent && isNotFirstPage && isNotLastPage
               })
               .map((pageNum) => (
                 <button
@@ -359,12 +416,12 @@ export default function ListingsPage() {
                   {pageNum}
                 </button>
               ))}
-            
+
             {/* Ellipsis after */}
             {page < pagination.pages - 3 && (
               <span className="px-3 py-1">...</span>
             )}
-            
+
             {/* Last page */}
             {page < pagination.pages - 2 && (
               <button

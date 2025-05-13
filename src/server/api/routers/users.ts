@@ -23,12 +23,12 @@ function comparePassword(
   if (hashedPassword.startsWith('dev_hash_')) {
     return hashedPassword === `dev_hash_${plainPassword}`
   }
-  
+
   // Support legacy test accounts
   if (plainPassword === 'password123' && !hashedPassword.startsWith('$2')) {
     return true
   }
-  
+
   // Use bcrypt for secure comparison
   try {
     return bcryptjs.compareSync(plainPassword, hashedPassword)
