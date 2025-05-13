@@ -64,6 +64,17 @@ function Navbar() {
                 >
                   Listings
                 </Link>
+                <Link
+                  href="/games"
+                  className={`${
+                    isActive('/games')
+                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  } 
+                    px-3 py-2 rounded-md text-sm font-medium`}
+                >
+                  Games
+                </Link>
               </div>
             </div>
           </div>
@@ -192,6 +203,18 @@ function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Listings
+            </Link>
+            <Link
+              href="/games"
+              className={`${
+                isActive('/games')
+                  ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              } 
+                block px-3 py-2 rounded-md text-base font-medium`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Games
             </Link>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 pb-3 pt-4">
