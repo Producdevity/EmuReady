@@ -326,39 +326,47 @@ export default function ListingsPage() {
                 1
               </button>
             )}
-
+            
             {/* Ellipsis before */}
             {page > 4 && (
               <span className="px-3 py-1">...</span>
             )}
-
+            
             {/* Pages around current */}
             {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter(pageNum =>
-                pageNum === 1 ||
-                pageNum === pagination.pages ||
-                (pageNum >= page - 2 && pageNum <= page + 2)
-              )
-              .map(pageNum => (
+              .filter(pageNum => {
+                // Show current page and 2 pages before and after
+                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2;
+                
+                // Don't show page 1 in this section if we're showing it separately
+                const isNotFirstPage = page > 3 ? pageNum !== 1 : true;
+                
+                // Don't show the last page in this section if we're showing it separately
+                const isNotLastPage = page < pagination.pages - 2 ? pageNum !== pagination.pages : true;
+                
+                return isNearCurrent && isNotFirstPage && isNotLastPage;
+              })
+              .map((pageNum) => (
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`px-3 py-1 rounded-md ${pageNum === page
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'
-                    }`}
+                  className={`px-3 py-1 rounded-md ${
+                    pageNum === page
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'
+                  }`}
                 >
                   {pageNum}
                 </button>
               ))}
-
+            
             {/* Ellipsis after */}
             {page < pagination.pages - 3 && (
               <span className="px-3 py-1">...</span>
             )}
-
+            
             {/* Last page */}
-            {page < pagination.pages - 2 && pagination.pages > 3 && (
+            {page < pagination.pages - 2 && (
               <button
                 onClick={() => handlePageChange(pagination.pages)}
                 className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"

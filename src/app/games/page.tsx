@@ -142,11 +142,18 @@ export default function GamesPage() {
             
             {/* Pages around current */}
             {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter(pageNum => 
-                pageNum === 1 || 
-                pageNum === pagination.pages || 
-                (pageNum >= page - 2 && pageNum <= page + 2)
-              )
+              .filter(pageNum => {
+                // Show current page and 2 pages before and after
+                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2;
+                
+                // Don't show page 1 in this section if we're showing it separately
+                const isNotFirstPage = page > 3 ? pageNum !== 1 : true;
+                
+                // Don't show the last page in this section if we're showing it separately
+                const isNotLastPage = page < pagination.pages - 2 ? pageNum !== pagination.pages : true;
+                
+                return isNearCurrent && isNotFirstPage && isNotLastPage;
+              })
               .map(pageNum => (
                 <button
                   key={pageNum}
@@ -167,7 +174,7 @@ export default function GamesPage() {
             )}
             
             {/* Last page */}
-            {page < pagination.pages - 2 && pagination.pages > 3 && (
+            {page < pagination.pages - 2 && (
               <button
                 onClick={() => handlePageChange(pagination.pages)}
                 className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
