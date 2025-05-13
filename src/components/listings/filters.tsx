@@ -1,7 +1,12 @@
 'use client'
 
-import React, { type ChangeEventHandler } from 'react'
-import { Input } from '@/components/ui'
+import {
+  type ChangeEvent,
+  type ChangeEventHandler,
+  type SyntheticEvent,
+} from 'react'
+import { SelectInput, Input } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import {
   DevicePhoneMobileIcon,
   CpuChipIcon,
@@ -9,8 +14,6 @@ import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline'
-import type { ChangeEvent } from 'react'
-import SelectInput from '../ui/SelectInput'
 
 interface FiltersProps {
   systemId: string
@@ -45,6 +48,31 @@ export function ListingFilters({
   onPerformanceChange,
   onSearchChange,
 }: FiltersProps) {
+  const handleSystemChange = (ev: SyntheticEvent) => {
+    onSystemChange(ev)
+    analytics.filter.system((ev.target as HTMLSelectElement).value)
+  }
+
+  const handleDeviceChange = (ev: SyntheticEvent) => {
+    onDeviceChange(ev)
+    analytics.filter.device((ev.target as HTMLSelectElement).value)
+  }
+
+  const handleEmulatorChange = (ev: SyntheticEvent) => {
+    onEmulatorChange(ev)
+    analytics.filter.emulator((ev.target as HTMLSelectElement).value)
+  }
+
+  const handlePerformanceChange = (ev: SyntheticEvent) => {
+    onPerformanceChange(ev)
+    analytics.filter.performance((ev.target as HTMLSelectElement).value)
+  }
+
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    onSearchChange(ev)
+    analytics.filter.search(ev.target.value)
+  }
+
   return (
     <aside className="w-full md:w-64 bg-white dark:bg-gray-800 p-4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 rounded-2xl shadow-xl">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -56,7 +84,7 @@ export function ListingFilters({
           label="System"
           leftIcon={<CpuChipIcon className="w-5 h-5" />}
           value={systemId}
-          onChange={onSystemChange}
+          onChange={handleSystemChange}
           options={systems}
         />
 
@@ -64,7 +92,7 @@ export function ListingFilters({
           label="Device"
           leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
           value={deviceId}
-          onChange={onDeviceChange}
+          onChange={handleDeviceChange}
           options={devices.map((device) => ({
             id: device.id,
             name: `${device.brand} ${device.modelName}`,
@@ -75,7 +103,7 @@ export function ListingFilters({
           label="Emulator"
           leftIcon={<CpuChipIcon className="w-5 h-5" />}
           value={emulatorId}
-          onChange={onEmulatorChange}
+          onChange={handleEmulatorChange}
           options={emulators}
         />
 
@@ -83,7 +111,7 @@ export function ListingFilters({
           label="Performance"
           leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
           value={performanceId}
-          onChange={onPerformanceChange}
+          onChange={handlePerformanceChange}
           options={performanceScales.map(({ id, label }) => ({
             id: id.toString(),
             name: label,
@@ -95,9 +123,9 @@ export function ListingFilters({
           <Input
             leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
             type="text"
-            placeholder="Search games or notes..."
+            placeholder="Search..."
             value={searchTerm}
-            onChange={onSearchChange}
+            onChange={handleSearchChange}
           />
         </div>
       </div>

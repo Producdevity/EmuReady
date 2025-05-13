@@ -2,14 +2,24 @@
 import { useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { Badge, Pagination, SuccessRateBar, LoadingSpinner, SortableHeader } from '@/components/ui'
+import {
+  Badge,
+  Pagination,
+  SuccessRateBar,
+  LoadingSpinner,
+  SortableHeader,
+} from '@/components/ui'
 import { ListingFilters } from '@/components/listings/filters'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
-import { type ListingsFilter, type SortDirection, type SortField } from './types'
+import {
+  type ListingsFilter,
+  type SortDirection,
+  type SortField,
+} from './types'
 
-export default function ListingsPage() {
+function ListingsPage() {
   const [systemId, setSystemId] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -24,13 +34,11 @@ export default function ListingsPage() {
   const userRole = session?.user?.role
   const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
 
-  // Fetch all required data
   const { data: systems } = api.systems.list.useQuery()
   const { data: devices } = api.devices.list.useQuery()
   const { data: emulators } = api.emulators.list.useQuery()
   const { data: performanceScales } = api.listings.performanceScales.useQuery()
 
-  // Prepare filter params
   const filterParams: ListingsFilter = {
     systemId: systemId || undefined,
     deviceId: deviceId || undefined,
@@ -43,51 +51,45 @@ export default function ListingsPage() {
     sortDirection: sortDirection || undefined,
   }
 
-  // Fetch listings with filters
   const { data, isLoading, error, refetch } =
     api.listings.list.useQuery(filterParams)
 
   const listings = data?.listings || []
   const pagination = data?.pagination
 
-  // Delete mutation
   const deleteListing = api.listings.delete.useMutation({
     onSuccess: () => {
-      // Refetch listings after deletion
       refetch()
       setDeleteConfirmId(null)
     },
   })
 
-  // Handle filter changes
-  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSystemId(e.target.value)
+  const handleFilterChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+    setSystemId(ev.target.value)
     setPage(1)
   }
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value)
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setSearch(ev.target.value)
     setPage(1)
   }
 
-  const handleDeviceChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setDeviceId(e.target.value)
+  const handleDeviceChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+    setDeviceId(ev.target.value)
     setPage(1)
   }
 
-  const handleEmulatorChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setEmulatorId(e.target.value)
+  const handleEmulatorChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+    setEmulatorId(ev.target.value)
     setPage(1)
   }
 
-  const handlePerformanceChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setPerformanceId(e.target.value)
+  const handlePerformanceChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+    setPerformanceId(ev.target.value)
     setPage(1)
   }
 
-  // Sorting
   const handleSort = (field: string) => {
-    // If clicking on the same field that is already sorted
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
       if (sortDirection === 'asc') {
@@ -99,20 +101,12 @@ export default function ListingsPage() {
         setSortDirection('asc')
       }
     } else {
-      // New field selected, start with ascending
       setSortField(field as SortField)
       setSortDirection('asc')
     }
-    // Reset to first page
     setPage(1)
   }
 
-  // Pagination
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage)
-  }
-
-  // Delete confirmation
   const confirmDelete = (id: string) => {
     if (deleteConfirmId === id) {
       deleteListing.mutate({ id })
@@ -264,9 +258,9 @@ export default function ListingsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-2">
-                      <SuccessRateBar 
-                        rate={listing.successRate * 100} 
-                        voteCount={listing._count.votes} 
+                      <SuccessRateBar
+                        rate={listing.successRate * 100}
+                        voteCount={listing._count.votes}
                       />
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
@@ -315,13 +309,15 @@ export default function ListingsPage() {
 
         {/* Pagination */}
         {pagination && pagination.pages > 1 && (
-          <Pagination 
-            currentPage={page} 
-            totalPages={pagination.pages} 
-            onPageChange={handlePageChange} 
+          <Pagination
+            currentPage={page}
+            totalPages={pagination.pages}
+            onPageChange={setPage}
           />
         )}
       </section>
     </main>
   )
 }
+
+export default ListingsPage
