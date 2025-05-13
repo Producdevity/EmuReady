@@ -1,6 +1,6 @@
 'use client'
 
-import { registerUser } from '@/app/rest/user'
+import { registerUser } from '@/rest/user'
 import { type FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
