@@ -279,6 +279,9 @@ export default function ListingsPage() {
                     Performance
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Success Rate
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                     Author
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
@@ -325,6 +328,27 @@ export default function ListingsPage() {
                       >
                         {listing.performance?.label || 'N/A'}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              listing.successRate >= 75
+                                ? 'bg-green-500'
+                                : listing.successRate >= 50
+                                ? 'bg-yellow-500'
+                                : listing.successRate >= 25
+                                ? 'bg-orange-500'
+                                : 'bg-red-500'
+                            }`}
+                            style={{ width: `${listing.successRate}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {Math.round(listing.successRate)}% ({listing._count.votes} votes)
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
                       {listing.author?.name || 'Anonymous'}
