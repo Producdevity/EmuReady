@@ -16,7 +16,7 @@ export default function GamesPage() {
 
   // Fetch systems for filter dropdown
   const { data: systems } = api.systems.list.useQuery()
-  
+
   // Fetch games with pagination and search
   const { data, isLoading } = api.games.list.useQuery({
     search: search || undefined,
@@ -24,7 +24,7 @@ export default function GamesPage() {
     limit,
     offset: (page - 1) * limit,
   })
-  
+
   const games = data?.games || []
   const pagination = data?.pagination
 
@@ -33,7 +33,7 @@ export default function GamesPage() {
     setSearch(e.target.value)
     setPage(1)
   }
-  
+
   // Handle system filter changes
   const handleSystemChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSystemId(e.target.value)
@@ -53,7 +53,7 @@ export default function GamesPage() {
         <h1 className="text-3xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
-        
+
         {/* Search and filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="flex-1">
@@ -69,7 +69,9 @@ export default function GamesPage() {
             <Input
               as="select"
               value={systemId}
-              onChange={(e: React.SyntheticEvent) => handleSystemChange(e as ChangeEvent<HTMLSelectElement>)}
+              onChange={(e: React.SyntheticEvent) =>
+                handleSystemChange(e as ChangeEvent<HTMLSelectElement>)
+              }
               className="mb-0"
             >
               <option value="">All Systems</option>
@@ -81,7 +83,7 @@ export default function GamesPage() {
             </Input>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {games.map((game) => (
             <Link
@@ -108,20 +110,23 @@ export default function GamesPage() {
                     {game.system?.name || 'Unknown System'}
                   </Badge>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {game._count.listings} {game._count.listings === 1 ? 'listing' : 'listings'}
+                    {game._count.listings}{' '}
+                    {game._count.listings === 1 ? 'listing' : 'listings'}
                   </span>
                 </div>
               </div>
             </Link>
           ))}
         </div>
-        
+
         {games.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-500 dark:text-gray-400">No games found matching your criteria.</p>
+            <p className="text-xl text-gray-500 dark:text-gray-400">
+              No games found matching your criteria.
+            </p>
           </div>
         )}
-        
+
         {/* Pagination */}
         {pagination && pagination.pages > 1 && (
           <div className="flex justify-center gap-2 mt-8">
@@ -134,27 +139,28 @@ export default function GamesPage() {
                 1
               </button>
             )}
-            
+
             {/* Ellipsis before */}
-            {page > 4 && (
-              <span className="px-3 py-1">...</span>
-            )}
-            
+            {page > 4 && <span className="px-3 py-1">...</span>}
+
             {/* Pages around current */}
             {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter(pageNum => {
+              .filter((pageNum) => {
                 // Show current page and 2 pages before and after
-                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2;
-                
+                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2
+
                 // Don't show page 1 in this section if we're showing it separately
-                const isNotFirstPage = page > 3 ? pageNum !== 1 : true;
-                
+                const isNotFirstPage = page > 3 ? pageNum !== 1 : true
+
                 // Don't show the last page in this section if we're showing it separately
-                const isNotLastPage = page < pagination.pages - 2 ? pageNum !== pagination.pages : true;
-                
-                return isNearCurrent && isNotFirstPage && isNotLastPage;
+                const isNotLastPage =
+                  page < pagination.pages - 2
+                    ? pageNum !== pagination.pages
+                    : true
+
+                return isNearCurrent && isNotFirstPage && isNotLastPage
               })
-              .map(pageNum => (
+              .map((pageNum) => (
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
@@ -167,12 +173,12 @@ export default function GamesPage() {
                   {pageNum}
                 </button>
               ))}
-            
+
             {/* Ellipsis after */}
             {page < pagination.pages - 3 && (
               <span className="px-3 py-1">...</span>
             )}
-            
+
             {/* Last page */}
             {page < pagination.pages - 2 && (
               <button
@@ -184,7 +190,7 @@ export default function GamesPage() {
             )}
           </div>
         )}
-        
+
         <div className="mt-12 text-center">
           <Link
             href="/games/new"
@@ -196,4 +202,4 @@ export default function GamesPage() {
       </div>
     </main>
   )
-} 
+}

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -10,11 +10,27 @@ interface ListingDetailsClientProps {
   successRate: number
 }
 
-function isComment(obj: unknown): obj is { id: string; content: string; createdAt: string | Date; user?: { name?: string | null } } {
-  return !!obj && typeof obj === 'object' && 'id' in obj && 'content' in obj && 'createdAt' in obj;
+function isComment(
+  obj: unknown,
+): obj is {
+  id: string
+  content: string
+  createdAt: string | Date
+  user?: { name?: string | null }
+} {
+  return (
+    !!obj &&
+    typeof obj === 'object' &&
+    'id' in obj &&
+    'content' in obj &&
+    'createdAt' in obj
+  )
 }
 
-export default function ListingDetailsClient({ listing, successRate }: ListingDetailsClientProps) {
+export default function ListingDetailsClient({
+  listing,
+  successRate,
+}: ListingDetailsClientProps) {
   // Type assertion for listing (from server)
   const l = listing as {
     game: { title: string; system?: { name?: string } }
@@ -42,25 +58,36 @@ export default function ListingDetailsClient({ listing, successRate }: ListingDe
               </h1>
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge variant="secondary">System: {l.game.system?.name}</Badge>
-                <Badge variant="secondary">Device: {l.device?.brand} {l.device?.modelName}</Badge>
+                <Badge variant="secondary">
+                  Device: {l.device?.brand} {l.device?.modelName}
+                </Badge>
                 <Badge variant="secondary">Emulator: {l.emulator?.name}</Badge>
-                <Badge variant="secondary">Performance: {l.performance?.label}</Badge>
+                <Badge variant="secondary">
+                  Performance: {l.performance?.label}
+                </Badge>
               </div>
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">Notes</h2>
+                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
+                  Notes
+                </h2>
                 <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
                   {l.notes || 'No notes provided.'}
                 </p>
               </div>
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">Success Rate</h2>
+                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
+                  Success Rate
+                </h2>
                 <motion.div
                   className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden"
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.round(successRate * 100)}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 >
-                  <div className="h-full bg-green-500" style={{ width: `${Math.round(successRate * 100)}%` }} />
+                  <div
+                    className="h-full bg-green-500"
+                    style={{ width: `${Math.round(successRate * 100)}%` }}
+                  />
                 </motion.div>
                 <span className="text-sm text-gray-500 dark:text-gray-400 mt-1 inline-block">
                   {Math.round(successRate * 100)}% success
@@ -80,14 +107,19 @@ export default function ListingDetailsClient({ listing, successRate }: ListingDe
                   {l.author?.email || ''}
                 </div>
               </div>
-              <Link href={`/profile/${l.author?.id || ''}`} className="mt-2 text-indigo-600 hover:underline text-xs">
+              <Link
+                href={`/profile/${l.author?.id || ''}`}
+                className="mt-2 text-indigo-600 hover:underline text-xs"
+              >
                 View Profile
               </Link>
             </div>
           </div>
           {/* Comments Section */}
           <div className="mt-10">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Comments</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+              Comments
+            </h2>
             <div className="space-y-4">
               {(!l.comments || l.comments.length === 0) && (
                 <div className="text-gray-500">No comments yet.</div>
@@ -105,14 +137,18 @@ export default function ListingDetailsClient({ listing, successRate }: ListingDe
                       <div className="w-8 h-8 rounded-full bg-indigo-300 dark:bg-indigo-700 flex items-center justify-center text-lg font-bold text-white">
                         {comment.user?.name?.[0] || '?'}
                       </div>
-                      <span className="font-semibold text-gray-700 dark:text-gray-200">{comment.user?.name || 'Anonymous'}</span>
-                      <span className="text-xs text-gray-400 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">
+                        {comment.user?.name || 'Anonymous'}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-2">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </span>
                     </div>
                     <div className="text-gray-700 dark:text-gray-300">
                       {comment.content}
                     </div>
                   </motion.div>
-                ) : null
+                ) : null,
               )}
             </div>
           </div>
@@ -120,4 +156,4 @@ export default function ListingDetailsClient({ listing, successRate }: ListingDe
       </motion.div>
     </div>
   )
-} 
+}

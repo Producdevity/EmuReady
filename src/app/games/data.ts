@@ -54,4 +54,4 @@ export async function getSystemsList() {
       name: 'asc',
     },
   })
-} 
+}

@@ -7,7 +7,7 @@ export function SuccessRateBar({ rate }: { rate: number }) {
   if (rate >= 80) color = 'bg-green-500'
   else if (rate >= 50) color = 'bg-yellow-400'
   else if (rate > 0) color = 'bg-red-500'
-  
+
   return (
     <div className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded">
       <div
@@ -19,4 +19,4 @@ export function SuccessRateBar({ rate }: { rate: number }) {
       </span>
     </div>
   )
-} 
+}
