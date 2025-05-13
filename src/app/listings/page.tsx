@@ -3,7 +3,6 @@ import { api } from '@/lib/api'
 import type { Listing, PerformanceScale } from '@orm'
 import { useState, type ChangeEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { type Session } from 'next-auth'
 import { Badge, Input } from '@/components/ui'
 import Link from 'next/link'
 import {
@@ -48,11 +47,6 @@ export default function ListingsPage() {
   } | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editSystemId, setEditSystemId] = useState('')
-  const [listingsModalOpen, setListingsModalOpen] = useState(false)
-  const [selectedGame, setSelectedGame] = useState<{
-    id: string
-    title: string
-  } | null>(null)
   const [deviceId, setDeviceId] = useState('')
   const [emulatorId, setEmulatorId] = useState('')
   const [performanceId, setPerformanceId] = useState('')
@@ -305,16 +299,14 @@ export default function ListingsPage() {
                         {game._count?.listings ?? 0}
                       </td>
                       <td className="px-4 py-2 flex gap-2">
-                        <button
-                          aria-label="View Listings"
-                          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400"
-                          onClick={() => {
-                            setSelectedGame({ id: game.id, title: game.title })
-                            setListingsModalOpen(true)
-                          }}
-                        >
-                          <EyeIcon className="w-5 h-5" /> View
-                        </button>
+                        <Link href={`/listings/${game.id}`} passHref legacyBehavior>
+                          <a
+                            aria-label="View Listings"
+                            className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400"
+                          >
+                            <EyeIcon className="w-5 h-5" /> View
+                          </a>
+                        </Link>
                         {session?.user.role === 'ADMIN' && (
                           <>
                             <button
@@ -514,15 +506,6 @@ export default function ListingsPage() {
             </div>
           </div>
         )}
-        {/* Listings Modal */}
-        {listingsModalOpen && selectedGame && (
-          <GameListingsModal
-            gameId={selectedGame.id}
-            gameTitle={selectedGame.title}
-            onClose={() => setListingsModalOpen(false)}
-            session={session}
-          />
-        )}
         {session?.user && (
           <Link href="/listings/new">
             <button className="mt-10 px-8 py-4 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200 transform hover:scale-105 w-full max-w-xs mx-auto block">
@@ -532,72 +515,5 @@ export default function ListingsPage() {
         )}
       </section>
     </main>
-  )
-}
-
-// GameListingsModal component
-function GameListingsModal({
-  gameId,
-  gameTitle,
-  onClose,
-  session,
-}: {
-  gameId: string
-  gameTitle: string
-  onClose: () => void
-  session: Session | null
-}) {
-  const { data, isLoading, error } = api.listings.list.useQuery({
-    systemId: gameId,
-  })
-  const listings = data?.listings || []
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl shadow-lg relative">
-        <button
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-          onClick={onClose}
-        >
-          &times;
-        </button>
-        <h2 className="text-xl font-bold mb-4">Listings for {gameTitle}</h2>
-        {isLoading && <div>Loading...</div>}
-        {error && <div className="text-red-500">Failed to load listings.</div>}
-        <div className="space-y-4 max-h-96 overflow-y-auto">
-          {listings.length === 0 && (
-            <div className="text-gray-500">No listings yet.</div>
-          )}
-          {listings.map(
-            (listing: {
-              id: string
-              device?: { brand: string; modelName: string }
-              emulator?: { name: string }
-              performance?: { label: string }
-              author?: { name: string | null }
-            }) => (
-              <div
-                key={listing.id}
-                className="border border-gray-300 dark:border-gray-700 rounded p-4"
-              >
-                <div className="font-semibold">
-                  Device: {listing.device?.brand} {listing.device?.modelName}
-                </div>
-                <div>Emulator: {listing.emulator?.name}</div>
-                <div>Performance: {listing.performance?.label}</div>
-                <div>Author: {listing.author?.name}</div>
-              </div>
-            ),
-          )}
-        </div>
-        {session?.user && (
-          <button
-            className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            onClick={() => alert('Add listing not implemented yet')}
-          >
-            Add Listing
-          </button>
-        )}
-      </div>
-    </div>
   )
 }
