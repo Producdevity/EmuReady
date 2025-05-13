@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getGameById } from '../data'
 import { Badge } from '@/components/ui/badge'
+import { OptimizedImage } from '@/components/ui/optimizedImage'
 
 export default async function GameDetailsPage({
   params,
@@ -12,6 +13,9 @@ export default async function GameDetailsPage({
   const game = await getGameById(id)
 
   if (!game) notFound()
+
+  // Safely access the imageUrl property
+  const imageUrl = 'imageUrl' in game ? (game.imageUrl as string) : null
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
@@ -38,21 +42,46 @@ export default async function GameDetailsPage({
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {game.title}
-              </h1>
-              <div className="mt-2">
-                <Badge variant="default">System: {game.system?.name}</Badge>
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="w-full md:w-1/4 flex-shrink-0">
+              {imageUrl ? (
+                <OptimizedImage
+                  src={imageUrl}
+                  alt={game.title}
+                  width={300}
+                  height={400}
+                  className="w-full rounded-lg shadow-md"
+                  objectFit="contain"
+                  fallbackSrc="/placeholder/game.svg"
+                />
+              ) : (
+                <img 
+                  src="/placeholder/game.svg" 
+                  alt="No image available"
+                  className="w-full rounded-lg shadow-md"
+                  width={300}
+                  height={400}
+                />
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {game.title}
+                  </h1>
+                  <div className="mt-2">
+                    <Badge variant="default">System: {game.system?.name}</Badge>
+                  </div>
+                </div>
+                <Link
+                  href={`/listings/new?gameId=${game.id}`}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
+                >
+                  Add Listing for this Game
+                </Link>
               </div>
             </div>
-            <Link
-              href={`/listings/new?gameId=${game.id}`}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
-            >
-              Add Listing for this Game
-            </Link>
           </div>
         </div>
 

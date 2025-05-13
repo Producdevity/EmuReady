@@ -102,6 +102,7 @@ export const gamesRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1),
         systemId: z.string(),
+        imageUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -131,6 +132,7 @@ export const gamesRouter = createTRPCRouter({
         id: z.string(),
         title: z.string().min(1),
         systemId: z.string(),
+        imageUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

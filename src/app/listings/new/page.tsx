@@ -1,6 +1,6 @@
 'use client'
 import { useSession } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import {
@@ -56,7 +56,7 @@ export default function AddListingPage() {
     )
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccess('')
@@ -133,8 +133,7 @@ export default function AddListingPage() {
             value={deviceId}
             onChange={(e) =>
               setDeviceId(
-                (e as unknown as React.ChangeEvent<HTMLSelectElement>).target
-                  .value,
+                (e as unknown as ChangeEvent<HTMLSelectElement>).target.value,
               )
             }
             required
@@ -158,8 +157,7 @@ export default function AddListingPage() {
             value={emulatorId}
             onChange={(e) =>
               setEmulatorId(
-                (e as unknown as React.ChangeEvent<HTMLSelectElement>).target
-                  .value,
+                (e as unknown as ChangeEvent<HTMLSelectElement>).target.value,
               )
             }
             required
@@ -181,8 +179,7 @@ export default function AddListingPage() {
             value={performanceId}
             onChange={(e) =>
               setPerformanceId(
-                (e as unknown as React.ChangeEvent<HTMLSelectElement>).target
-                  .value,
+                (e as unknown as ChangeEvent<HTMLSelectElement>).target.value,
               )
             }
             required
@@ -204,8 +201,7 @@ export default function AddListingPage() {
             value={notes}
             onChange={(e) =>
               setNotes(
-                (e as unknown as React.ChangeEvent<HTMLTextAreaElement>).target
-                  .value,
+                (e as unknown as ChangeEvent<HTMLTextAreaElement>).target.value,
               )
             }
             rows={2}
