@@ -1,15 +1,18 @@
-// Re-export all UI components for easy importing
+import SelectInput from './SelectInput'
+import Pagination from './Pagination'
+import Input from './Input'
+
 export * from './badge'
 export * from './button'
 export * from './card'
 export * from './dropdown'
-export * from './input'
 export * from './toggle'
 export * from './autocomplete'
-export * from './pagination'
 export * from './successRateBar'
 export * from './loadingSpinner'
 export * from './sortableHeader'
 export * from './themeToggle'
 export * from './optimizedImage'
 export * from './errorBoundary'
+
+export { Input, SelectInput, Pagination }

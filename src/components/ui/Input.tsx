@@ -1,10 +1,17 @@
-import React from 'react'
+import {
+  forwardRef,
+  type Ref,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type InputHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react'
 
 export type InputAs = 'input' | 'select' | 'textarea'
 
-interface BaseInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  leftIcon?: React.ReactNode
-  rightIcon?: React.ReactNode
+interface BaseInputProps extends InputHTMLAttributes<HTMLInputElement> {
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
   className?: string
   as?: InputAs
 }
@@ -12,11 +19,11 @@ interface BaseInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 type InputProps = BaseInputProps &
   (
     | { as?: 'input' }
-    | { as: 'select'; children?: React.ReactNode }
+    | { as: 'select'; children?: ReactNode }
     | { as: 'textarea'; rows?: number }
   )
 
-export const Input = React.forwardRef<HTMLElement, InputProps>(
+const Input = forwardRef<HTMLElement, InputProps>(
   (
     { leftIcon, rightIcon, className = '', as = 'input', children, ...props },
     ref,
@@ -33,25 +40,25 @@ export const Input = React.forwardRef<HTMLElement, InputProps>(
         )}
         {as === 'input' && (
           <input
-            ref={ref as React.Ref<HTMLInputElement>}
+            ref={ref as Ref<HTMLInputElement>}
             className={`${baseClass} ${leftIcon ? 'pl-2' : ''} ${rightIcon ? 'pr-10' : ''}`}
             {...props}
           />
         )}
         {as === 'select' && (
           <select
-            ref={ref as React.Ref<HTMLSelectElement>}
+            ref={ref as Ref<HTMLSelectElement>}
             className={`${baseClass} ${leftIcon ? 'pl-2' : ''} ${rightIcon ? 'pr-10' : ''}`}
-            {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
+            {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
           >
             {children}
           </select>
         )}
         {as === 'textarea' && (
           <textarea
-            ref={ref as React.Ref<HTMLTextAreaElement>}
+            ref={ref as Ref<HTMLTextAreaElement>}
             className={`${baseClass} ${leftIcon ? 'pl-2' : ''} ${rightIcon ? 'pr-10' : ''}`}
-            {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
           />
         )}
         {rightIcon && (
@@ -63,4 +70,7 @@ export const Input = React.forwardRef<HTMLElement, InputProps>(
     )
   },
 )
+
 Input.displayName = 'Input'
+
+export default Input
