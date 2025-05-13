@@ -80,7 +80,7 @@ const GameCard = ({
         {game.title}
       </h2>
       <div className="flex items-center justify-between">
-        <Badge variant="secondary">
+        <Badge variant="default">
           {game.system?.name || 'Unknown System'}
         </Badge>
         <span className="text-sm text-gray-500 dark:text-gray-400">

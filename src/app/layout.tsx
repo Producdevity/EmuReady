@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import Providers from '@/components/Providers'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { ErrorBoundary } from '@/components/ui/errorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,11 +21,13 @@ export default function RootLayout(props: PropsWithChildren) {
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
-          <div className="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors">
-            <Navbar />
-            <main className="flex-1 flex flex-col">{props.children}</main>
-            <Footer />
-          </div>
+          <ErrorBoundary>
+            <div className="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors">
+              <Navbar />
+              <main className="flex-1 flex flex-col">{props.children}</main>
+              <Footer />
+            </div>
+          </ErrorBoundary>
         </Providers>
       </body>
       {GA_ID && <GoogleAnalytics gaId={GA_ID} />}

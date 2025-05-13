@@ -44,7 +44,7 @@ export default async function GameDetailsPage({
                 {game.title}
               </h1>
               <div className="mt-2">
-                <Badge variant="secondary">System: {game.system?.name}</Badge>
+                <Badge variant="default">System: {game.system?.name}</Badge>
               </div>
             </div>
             <Link
