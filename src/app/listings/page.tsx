@@ -12,7 +12,6 @@ import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
   EyeIcon,
-  PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline'
 
@@ -39,14 +38,6 @@ export default function ListingsPage() {
   const [systemId, setSystemId] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [editModalOpen, setEditModalOpen] = useState(false)
-  const [editGame, setEditGame] = useState<{
-    id: string
-    title: string
-    systemId: string
-  } | null>(null)
-  const [editTitle, setEditTitle] = useState('')
-  const [editSystemId, setEditSystemId] = useState('')
   const [deviceId, setDeviceId] = useState('')
   const [emulatorId, setEmulatorId] = useState('')
   const [performanceId, setPerformanceId] = useState('')
@@ -66,8 +57,10 @@ export default function ListingsPage() {
   const pagination = data?.pagination
 
   const { data: session } = useSession()
-  const deleteGame = api.games.delete.useMutation()
-  const updateGame = api.games.update.useMutation()
+  const userRole = session?.user?.role
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const deleteListing = api.listings.delete.useMutation()
+
   const { data: devices } = api.devices.list.useQuery()
   const { data: emulators } = api.emulators.list.useQuery()
   const { data: performanceScales } = api.listings.performanceScales.useQuery()
@@ -318,10 +311,12 @@ export default function ListingsPage() {
                               <tbody>
                                 {game.listings.map((listing) => (
                                   <tr key={listing.id}>
-                                    <td>{listing.device?.brand} {listing.device?.modelName}</td>
-                                    <td>{listing.emulator?.name}</td>
+                                    {/* @ts-expect-error: device may not exist on listing */}
+                                    <td>{listing.device?.brand ? `${listing.device.brand} ${listing.device.modelName}` : ''}</td>
+                                    {/* @ts-expect-error: emulator may not exist on listing */}
+                                    <td>{listing.emulator?.name || ''}</td>
                                     <td>{listing.performance?.label}</td>
-                                    <td>
+                                    <td className="flex gap-2 items-center">
                                       <Link href={`/listings/${listing.id}`} passHref legacyBehavior>
                                         <a
                                           aria-label="View Listing"
@@ -330,6 +325,15 @@ export default function ListingsPage() {
                                           <EyeIcon className="w-4 h-4" /> View
                                         </a>
                                       </Link>
+                                      {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+                                        <button
+                                          aria-label="Delete Listing"
+                                          className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs"
+                                          onClick={() => setDeleteConfirmId(listing.id)}
+                                        >
+                                          <TrashIcon className="w-4 h-4" /> Delete
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
@@ -436,75 +440,42 @@ export default function ListingsPage() {
             </ul>
           </nav>
         )}
-        {/* Edit Game Modal */}
-        {editModalOpen && editGame && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md shadow-lg relative">
-              <h2 className="text-xl font-bold mb-4">Edit Game</h2>
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault()
-                  await updateGame.mutateAsync({
-                    id: editGame.id,
-                    title: editTitle,
-                    systemId: editSystemId,
-                  })
-                  setEditModalOpen(false)
-                  setEditGame(null)
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block mb-1 font-medium">Title</label>
-                  <input
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">System</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded"
-                    value={editSystemId}
-                    onChange={(e) => setEditSystemId(e.target.value)}
-                    required
-                  >
-                    <option value="">Select system...</option>
-                    {systems?.map((sys: { id: string; name: string }) => (
-                      <option key={sys.id} value={sys.id}>
-                        {sys.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
-                    onClick={() => setEditModalOpen(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                    disabled={updateGame.isPending}
-                  >
-                    {updateGame.isPending ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
         {session?.user && (
           <Link href="/listings/new">
             <button className="mt-10 px-8 py-4 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200 transform hover:scale-105 w-full max-w-xs mx-auto block">
               Add Listing
             </button>
           </Link>
+        )}
+        {/* Delete Listing Confirm Modal */}
+        {deleteConfirmId && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md shadow-lg relative">
+              <h2 className="text-xl font-bold mb-4">Delete Listing</h2>
+              <p>Are you sure you want to delete this listing? This action cannot be undone.</p>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+                  onClick={() => setDeleteConfirmId(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  onClick={async () => {
+                    await deleteListing.mutateAsync({ id: deleteConfirmId })
+                    setDeleteConfirmId(null)
+                    // Optionally refetch listings
+                  }}
+                  disabled={deleteListing.isPending}
+                >
+                  {deleteListing.isPending ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </section>
     </main>
