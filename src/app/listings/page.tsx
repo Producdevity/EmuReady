@@ -2,17 +2,10 @@
 import { useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useSession } from 'next-auth/react'
-import { Badge, Input } from '@/components/ui'
+import { Badge, Pagination, SuccessRateBar, LoadingSpinner } from '@/components/ui'
+import { ListingFilters } from '@/components/listings/filters'
 import Link from 'next/link'
-import {
-  DevicePhoneMobileIcon,
-  CpuChipIcon,
-  RocketLaunchIcon,
-  MagnifyingGlassIcon,
-  AdjustmentsHorizontalIcon,
-  EyeIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline'
+import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
 import { type ListingsFilter } from './types'
 
@@ -102,7 +95,6 @@ export default function ListingsPage() {
     }
   }
 
-  // if (isLoading) return <div className="p-8 text-center">Loading listings...</div>
   if (error)
     return (
       <div className="p-8 text-center text-red-500">
@@ -113,113 +105,22 @@ export default function ListingsPage() {
   return (
     <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar for filters */}
-      <aside className="w-full md:w-64 bg-white dark:bg-gray-800 p-4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 rounded-2xl shadow-xl">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <AdjustmentsHorizontalIcon className="w-5 h-5 text-blue-500" />{' '}
-          Filters
-        </h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-1 font-medium">System</label>
-            <Input
-              leftIcon={<CpuChipIcon className="w-5 h-5" />}
-              as="select"
-              value={systemId}
-              onChange={(e) =>
-                handleFilterChange(
-                  e as unknown as ChangeEvent<HTMLSelectElement>,
-                )
-              }
-              className="mb-0"
-            >
-              <option value="">All Systems</option>
-              {systems?.map((sys) => (
-                <option key={sys.id} value={sys.id}>
-                  {sys.name}
-                </option>
-              ))}
-            </Input>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Device</label>
-            <Input
-              leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
-              as="select"
-              value={deviceId}
-              onChange={(e) =>
-                handleDeviceChange(
-                  e as unknown as ChangeEvent<HTMLSelectElement>,
-                )
-              }
-              className="mb-0"
-            >
-              <option value="">All Devices</option>
-              {devices?.map((device) => (
-                <option key={device.id} value={device.id}>
-                  {device.brand} {device.modelName}
-                </option>
-              ))}
-            </Input>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Emulator</label>
-            <Input
-              leftIcon={<CpuChipIcon className="w-5 h-5" />}
-              as="select"
-              value={emulatorId}
-              onChange={(e) =>
-                handleEmulatorChange(
-                  e as unknown as ChangeEvent<HTMLSelectElement>,
-                )
-              }
-              className="mb-0"
-            >
-              <option value="">All Emulators</option>
-              {emulators?.map((emulator) => (
-                <option key={emulator.id} value={emulator.id}>
-                  {emulator.name}
-                </option>
-              ))}
-            </Input>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Performance</label>
-            <Input
-              leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
-              as="select"
-              value={performanceId}
-              onChange={(e) =>
-                handlePerformanceChange(
-                  e as unknown as ChangeEvent<HTMLSelectElement>,
-                )
-              }
-              className="mb-0"
-            >
-              <option value="">All Performance</option>
-              {performanceScales?.map((perf) => (
-                <option key={perf.id} value={perf.id.toString()}>
-                  {perf.label}
-                </option>
-              ))}
-            </Input>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Search</label>
-            <Input
-              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
-              type="text"
-              placeholder="Search games or notes..."
-              value={search}
-              onChange={handleSearchChange}
-            />
-          </div>
-        </div>
-      </aside>
+      <ListingFilters
+        systemId={systemId}
+        deviceId={deviceId}
+        emulatorId={emulatorId}
+        performanceId={performanceId}
+        searchTerm={search}
+        systems={systems || []}
+        devices={devices || []}
+        emulators={emulators || []}
+        performanceScales={performanceScales || []}
+        onSystemChange={handleFilterChange}
+        onDeviceChange={handleDeviceChange}
+        onEmulatorChange={handleEmulatorChange}
+        onPerformanceChange={handlePerformanceChange}
+        onSearchChange={handleSearchChange}
+      />
 
       {/* Main Content - Listings */}
       <section className="flex-1 p-4 overflow-x-auto">
@@ -237,28 +138,7 @@ export default function ListingsPage() {
 
         <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
           {isLoading ? (
-            <div className="p-8 text-center">
-              {/* Loading spinner... */}
-              <svg
-                className="animate-spin h-8 w-8 text-blue-500 mx-auto"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle className="opacity-25" cx="12" cy="12" r="10" />
-                <path
-                  className="opacity-75"
-                  d="M4 12a8 8 0 1 1 16 0A8 8 0 0 1 4 12z"
-                />
-              </svg>
-              <p className="mt-4 text-gray-500 dark:text-gray-400">
-                Loading listings...
-              </p>
-            </div>
+            <LoadingSpinner text="Loading listings..." />
           ) : (
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
@@ -330,25 +210,10 @@ export default function ListingsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-2">
-                      <div className="flex flex-col gap-1">
-                        <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              listing.successRate >= 75
-                                ? 'bg-green-500'
-                                : listing.successRate >= 50
-                                ? 'bg-yellow-500'
-                                : listing.successRate >= 25
-                                ? 'bg-orange-500'
-                                : 'bg-red-500'
-                            }`}
-                            style={{ width: `${listing.successRate}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          {Math.round(listing.successRate)}% ({listing._count.votes} votes)
-                        </span>
-                      </div>
+                      <SuccessRateBar 
+                        rate={listing.successRate} 
+                        voteCount={listing._count.votes} 
+                      />
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
                       {listing.author?.name || 'Anonymous'}
@@ -396,66 +261,11 @@ export default function ListingsPage() {
 
         {/* Pagination */}
         {pagination && pagination.pages > 1 && (
-          <div className="flex justify-center gap-2 mt-8">
-            {/* First page */}
-            {page > 3 && (
-              <button
-                onClick={() => handlePageChange(1)}
-                className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-              >
-                1
-              </button>
-            )}
-
-            {/* Ellipsis before */}
-            {page > 4 && <span className="px-3 py-1">...</span>}
-
-            {/* Pages around current */}
-            {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter((pageNum) => {
-                // Show current page and 2 pages before and after
-                const isNearCurrent = pageNum >= page - 2 && pageNum <= page + 2
-
-                // Don't show page 1 in this section if we're showing it separately
-                const isNotFirstPage = page > 3 ? pageNum !== 1 : true
-
-                // Don't show the last page in this section if we're showing it separately
-                const isNotLastPage =
-                  page < pagination.pages - 2
-                    ? pageNum !== pagination.pages
-                    : true
-
-                return isNearCurrent && isNotFirstPage && isNotLastPage
-              })
-              .map((pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`px-3 py-1 rounded-md ${
-                    pageNum === page
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              ))}
-
-            {/* Ellipsis after */}
-            {page < pagination.pages - 3 && (
-              <span className="px-3 py-1">...</span>
-            )}
-
-            {/* Last page */}
-            {page < pagination.pages - 2 && (
-              <button
-                onClick={() => handlePageChange(pagination.pages)}
-                className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-              >
-                {pagination.pages}
-              </button>
-            )}
-          </div>
+          <Pagination 
+            currentPage={page} 
+            totalPages={pagination.pages} 
+            onPageChange={handlePageChange} 
+          />
         )}
       </section>
     </main>
