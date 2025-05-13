@@ -16,35 +16,63 @@ export const gamesRouter = createTRPCRouter({
         .object({
           systemId: z.string().optional(),
           search: z.string().optional(),
-          limit: z.number().default(50),
+          limit: z.number().default(100),
           offset: z.number().default(0),
         })
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const { systemId, search, limit = 50, offset = 0 } = input || {}
+      const { systemId, search, limit = 100, offset = 0 } = input || {}
 
       // Build where clause with optimized search pattern
-      const where: Prisma.GameWhereInput = {
+      let where: Prisma.GameWhereInput = {
         ...(systemId ? { systemId } : {}),
       };
 
-      // Add optimized search with case insensitivity
-      if (search) {
-        where.title = {
-          contains: search,
-          mode: 'insensitive', // Case-insensitive search
-        };
+      // Add optimized search with case insensitivity and performance optimizations
+      if (search && search.trim() !== '') {
+        const searchTerms = search.trim().split(/\s+/).filter(Boolean);
+        
+        if (searchTerms.length > 1) {
+          // Multi-word search strategy: match any of the words for better results
+          where = {
+            ...where,
+            OR: searchTerms.map(term => ({
+              title: {
+                contains: term,
+                mode: 'insensitive',
+              }
+            }))
+          };
+        } else {
+          // Single word search is simpler
+          where.title = {
+            contains: search.trim(),
+            mode: 'insensitive',
+          };
+        }
       }
 
-      // Only count when necessary for pagination
-      const countQuery = ctx.prisma.game.count({ where });
+      // For empty search with offset 0, we can optimize by returning fewer results initially
+      const effectiveLimit = !search && offset === 0 ? Math.min(limit, 50) : limit;
+
+      // Only count total results when needed for pagination or when explicitly searching
+      const shouldCount = offset > 0 || !!search;
       
-      // Get games with optimized query
+      // Get games with optimized query - only include essential fields for performance
       const gamesQuery = ctx.prisma.game.findMany({
         where,
-        include: {
-          system: true,
+        select: {
+          id: true,
+          title: true,
+          systemId: true,
+          imageUrl: true,
+          system: {
+            select: {
+              id: true,
+              name: true,
+            }
+          },
           _count: {
             select: {
               listings: true,
@@ -55,19 +83,24 @@ export const gamesRouter = createTRPCRouter({
           title: 'asc'
         },
         skip: offset,
-        take: limit,
+        take: effectiveLimit,
       });
 
-      // Run queries in parallel for better performance
-      const [total, games] = await Promise.all([countQuery, gamesQuery]);
+      // Conditionally run count query only when needed
+      let total = 0;
+      if (shouldCount) {
+        total = await ctx.prisma.game.count({ where });
+      }
+      
+      const games = await gamesQuery;
 
       return {
         games,
         pagination: {
-          total,
-          pages: Math.ceil(total / limit),
+          total: shouldCount ? total : null,
+          pages: shouldCount ? Math.ceil(total / limit) : null,
           offset,
-          limit,
+          limit: effectiveLimit,
         },
       }
     }),
