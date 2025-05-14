@@ -1,74 +1,47 @@
 'use client'
 
+import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { ProfileUpload } from '@/components/ui/profile-upload'
+import { ProfileUpload } from '@/components/ui'
+import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
+import ProfilePageError from './components/ProfilePageError'
 
-export default function ProfilePage() {
-  const { data: session } = useSession()
+function ProfilePage() {
+  const { data: session, status } = useSession()
   const [isEditing, setIsEditing] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
-  
-  // Redirect to log in if not authenticated
-  if (!session) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50 dark:bg-gray-900">
-        <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
-            Please sign in to view your profile
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            You need to be logged in to access this page.
-          </p>
 
-          <Link
-            href="/login"
-            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white inline-block px-4 py-2 rounded-md text-sm font-medium"
-          >
-            Sign In
-          </Link>
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Don&#39;t have an account?{' '}
-            <Link
-              href="/register"
-              className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Register here
-            </Link>
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  const { data: profile, isLoading } = api.users.getProfile.useQuery()
+  // Always call these hooks, regardless of session state
   const utils = api.useUtils()
+  const { data: profile, isLoading } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!session }, // Only fetch if session exists
+  )
+
   const updateProfile = api.users.update.useMutation({
     onMutate: async (newData) => {
       // Cancel any outgoing refetches to avoid overwriting optimistic update
       await utils.users.getProfile.cancel()
-      
+
       // Snapshot the previous value
       const previousProfile = utils.users.getProfile.getData()
-      
+
       // Optimistically update to the new value
       utils.users.getProfile.setData(undefined, (old) => {
         if (!old) return old
-        return {
-          ...old,
-          ...newData,
-        }
+        return { ...old, ...newData }
       })
-      
+
       // Return a context object with the snapshotted value
       return { previousProfile }
     },
-    onError: (err, newData, context) => {
+    onError: (err, _newData, context) => {
       // If the mutation fails, use the context returned from onMutate to rollback
       utils.users.getProfile.setData(undefined, context?.previousProfile)
-      console.error("Error updating profile:", err)
+      console.error('Error updating profile:', err)
     },
     onSettled: () => {
       // Always refetch after error or success to ensure data consistency
@@ -79,34 +52,20 @@ export default function ProfilePage() {
   // Handler for profile image upload
   const handleProfileImageUpload = (imageUrl: string) => {
     setProfileImage(imageUrl)
-    
+
     // Update profile image with optimistic updates
     updateProfile.mutate({
       profileImage: imageUrl,
     })
   }
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="animate-pulse">
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-8"></div>
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
-        </div>
-      </div>
-    )
-  }
+  // Loading state
+  if (status === 'loading' || (isLoading && session))
+    return <ProfilePageLoader />
 
-  if (!profile) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded">
-          <p>Error loading profile. Please try again later.</p>
-        </div>
-      </div>
-    )
-  }
+  if (status === 'unauthenticated') return <ProfilePageUnauthenticated />
+
+  if (!session || !profile) return <ProfilePageError />
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -126,9 +85,8 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-8">
-              {/* Profile Image */}
               <div className="md:w-1/3 flex flex-col items-center">
-                <ProfileUpload 
+                <ProfileUpload
                   currentImage={profileImage ?? profile.profileImage}
                   onUploadSuccess={handleProfileImageUpload}
                 />
@@ -207,7 +165,7 @@ export default function ProfilePage() {
                         Email
                       </h2>
                       <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                        {session.user?.email}
+                        {session.user?.email ?? 'No email provided'}
                       </p>
                     </div>
 
@@ -216,7 +174,7 @@ export default function ProfilePage() {
                         Role
                       </h2>
                       <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                        {session.user?.role || 'User'}
+                        {session.user?.role ?? 'User'}
                       </p>
                     </div>
 
@@ -261,11 +219,11 @@ export default function ProfilePage() {
                       You have not submitted any listings yet.
                     </p>
                     <div className="align-right ml-auto">
-                    <Link
-                      href="/listings/new"
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-                    >
-                      Create Listing
+                      <Link
+                        href="/listings/new"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                      >
+                        Create Listing
                       </Link>
                     </div>
                   </div>
@@ -278,3 +236,5 @@ export default function ProfilePage() {
     </div>
   )
 }
+
+export default ProfilePage

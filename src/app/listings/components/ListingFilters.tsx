@@ -30,7 +30,7 @@ interface FiltersProps {
 
 export type SelectInputEvent = ChangeEvent<HTMLInputElement>
 
-export function ListingFilters(props: FiltersProps) {
+ function ListingFilters(props: FiltersProps) {
   const handleSystemChange = (ev: SelectInputEvent) => {
     props.onSystemChange(ev)
     analytics.filter.system(ev.target.value)
@@ -115,3 +115,4 @@ export function ListingFilters(props: FiltersProps) {
     </aside>
   )
 }
+export default ListingFilters

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getGameById } from '../data'
 import { Badge } from '@/components/ui/badge'
-import { OptimizedImage } from '@/components/ui/optimizedImage'
+import { OptimizedImage } from '@/components/ui'
 
 interface Props {
   params: Promise<{ id: string }>

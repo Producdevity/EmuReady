@@ -1,13 +1,14 @@
 'use client'
-import React, { useState } from 'react'
+
+import { useState, type SyntheticEvent } from 'react'
 import Link from 'next/link'
 import { Pagination, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import type { ChangeEvent } from 'react'
-import GameFilters from '@/components/games/GameFilters'
-import GameCard from '@/components/games/GameCard'
+import GameFilters from './components/GameFilters'
+import GameCard from './components/GameCard'
 
-export default function GamesPage() {
+function GamesPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [systemId, setSystemId] = useState('')
@@ -34,7 +35,7 @@ export default function GamesPage() {
   }
 
   // Handle system filter changes
-  const handleSystemChange = (e: React.SyntheticEvent) => {
+  const handleSystemChange = (e: SyntheticEvent) => {
     setSystemId((e as unknown as ChangeEvent<HTMLSelectElement>).target.value)
     setPage(1)
   }
@@ -51,7 +52,6 @@ export default function GamesPage() {
           Games Library
         </h1>
 
-        {/* Search and filters */}
         <GameFilters
           search={search}
           systemId={systemId}
@@ -101,3 +101,5 @@ export default function GamesPage() {
     </main>
   )
 }
+
+export default GamesPage
