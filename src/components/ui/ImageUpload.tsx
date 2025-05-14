@@ -2,7 +2,7 @@
 
 import { useState, useRef, type ChangeEvent } from 'react'
 import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
-import { LoadingSpinner } from '@/components'
+import { LoadingSpinner } from '@/components/ui'
 import Image from 'next/image'
 
 interface ImageUploadProps {
@@ -12,7 +12,7 @@ interface ImageUploadProps {
   label?: string
 }
 
-export function ImageUpload({
+function ImageUpload({
   onImageUploaded,
   className = '',
   initialImage = '',
@@ -139,3 +139,5 @@ export function ImageUpload({
     </div>
   )
 }
+
+export default ImageUpload
