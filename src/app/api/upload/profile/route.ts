@@ -6,6 +6,12 @@ import { writeFile, mkdir } from 'fs/promises'
 import { authOptions } from '@/server/auth'
 import { prisma } from '@/server/db'
 
+// Set route to be dynamic to prevent caching
+export const dynamic = 'force-dynamic'
+
+// File size limit in bytes (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+
 // Helper function to check if file is an image
 function isImage(file: File) {
   return file.type.startsWith('image/')
@@ -39,8 +45,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'File size exceeds the 5MB limit' },
+        { status: 400 },
+      )
+    }
+
     // Create unique filename
-    const fileExtension = file.name.split('.').pop()
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
     const userId = session.user.id
     const timestamp = Date.now()
     const fileName = `profile-${userId}-${timestamp}.${fileExtension}`
@@ -64,10 +77,16 @@ export async function POST(request: NextRequest) {
       data: { profileImage: imageUrl },
     })
 
-    return NextResponse.json({
+    // Return success response with cache headers
+    const response = NextResponse.json({
       success: true,
       imageUrl,
     })
+    
+    // Set cache control headers to prevent caching
+    response.headers.set('Cache-Control', 'no-store, max-age=0')
+    
+    return response
   } catch (error: unknown) {
     console.error('Error uploading profile image:', error)
     const errorMessage =
