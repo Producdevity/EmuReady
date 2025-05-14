@@ -1,12 +1,14 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import {
   MoonIcon,
   SunIcon,
   ComputerDesktopIcon,
 } from '@heroicons/react/24/outline'
+
+const toggleThemeMap = { light: 'dark', dark: 'light', system: 'dark' }
 
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, setTheme } = useTheme()
@@ -17,18 +19,11 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return null
-  }
+  if (!mounted) return null
 
   const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark')
-    } else if (theme === 'dark') {
-      setTheme('system')
-    } else {
-      setTheme('light')
-    }
+    // TODO: handle "system" correctly
+    setTheme(toggleThemeMap[theme] || toggleThemeMap.system)
   }
 
   return (
@@ -56,9 +51,7 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return null
-  }
+  if (!mounted) return null
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
