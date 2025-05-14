@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, type FormEvent } from 'react'
 import { api } from '@/lib/api'
-import { ImageUpload } from '@/components/ui/imageUpload'
+import { ImageUpload } from '@/components/ui'
 
 function AddGamePage() {
   const { data: session, status } = useSession()

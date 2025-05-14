@@ -1,6 +1,7 @@
 import SelectInput from './SelectInput'
 import Pagination from './Pagination'
 import Input from './Input'
+import ImageUpload from './ImageUpload'
 
 export * from './badge'
 export * from './button'
@@ -15,4 +16,4 @@ export * from './themeToggle'
 export * from './optimizedImage'
 export * from './errorBoundary'
 
-export { Input, SelectInput, Pagination }
+export { ImageUpload, Input, SelectInput, Pagination }
