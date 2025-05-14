@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
+import type { Listing } from '@orm'
 
 export default function ProfilePage() {
   const { data: session } = useSession()
@@ -178,15 +179,39 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 px-8 py-6">
+          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-8 py-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Your Activity
             </h2>
             <div className="space-y-4">
               <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                <p className="text-gray-600 dark:text-gray-300">
-                  You have not submitted any compatibility reports yet.
-                </p>
+                {profile.listings.length > 0 ? (
+                  <div className="flex flex-col gap-4">
+                    {profile.listings.map((listing) => (
+                      <div key={listing.id}>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                          <Link href={`/listings/${listing.id}`}>
+                            {listing.game?.title}
+                          </Link>
+                        </h3>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-row gap-4">
+                    <p className="text-gray-600 dark:text-gray-300">
+                      You have not submitted any listings yet.
+                    </p>
+                    <div className="align-right ml-auto">
+                    <Link
+                      href="/listings/new"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                    >
+                      Create Listing
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

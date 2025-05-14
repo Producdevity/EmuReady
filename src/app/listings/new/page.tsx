@@ -11,6 +11,7 @@ import {
   PuzzlePieceIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 
 export default function AddListingPage() {
   const { data: session, status } = useSession()
@@ -19,6 +20,7 @@ export default function AddListingPage() {
   const [emulatorId, setEmulatorId] = useState('')
   const [performanceId, setPerformanceId] = useState('')
   const [notes, setNotes] = useState('')
+  const [listingId, setListingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -106,13 +108,14 @@ export default function AddListingPage() {
       return
     }
     try {
-      await createListing.mutateAsync({
+      const listing = await createListing.mutateAsync({
         gameId,
         deviceId,
         emulatorId,
         performanceId: Number(performanceId),
         notes: notes || undefined,
       })
+      setListingId(listing.id)
       setSuccess('Listing added!')
       setGameId('')
       setDeviceId('')
@@ -133,6 +136,16 @@ export default function AddListingPage() {
       <h1 className="text-3xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
         Add New Game Listing
       </h1>
+      {success && listingId && (
+        <div>
+          <p className="mt-2 text-center text-sm text-green-600 dark:text-green-400">
+            {success}
+          </p>
+          <p className="mt-2 text-center text-sm text-blue-600 dark:text-blue-400">
+            <Link href={`/listings/${listingId}`}>View Listing</Link>
+          </p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block mb-1 font-medium">Game</label>
