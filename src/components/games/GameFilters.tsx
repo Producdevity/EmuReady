@@ -1,6 +1,6 @@
 'use client'
 
-import { Input } from '@/components'
+import { Input } from '@/components/ui'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { type ChangeEvent, type SyntheticEvent } from 'react'
 
