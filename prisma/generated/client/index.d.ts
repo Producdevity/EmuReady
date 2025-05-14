@@ -1,9 +1,8 @@
-
 /**
  * Client
-**/
+ **/
 
-import * as runtime from './runtime/library.js';
+import * as runtime from './runtime/library.js'
 import $Types = runtime.Types // general types
 import $Public = runtime.Types.Public
 import $Utils = runtime.Types.Utils
@@ -12,80 +11,80 @@ import $Result = runtime.Types.Result
 
 export type PrismaPromise<T> = $Public.PrismaPromise<T>
 
-
 /**
  * Model User
- * 
+ *
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
  * Model Device
- * 
+ *
  */
 export type Device = $Result.DefaultSelection<Prisma.$DevicePayload>
 /**
  * Model System
- * 
+ *
  */
 export type System = $Result.DefaultSelection<Prisma.$SystemPayload>
 /**
  * Model Game
- * 
+ *
  */
 export type Game = $Result.DefaultSelection<Prisma.$GamePayload>
 /**
  * Model Emulator
- * 
+ *
  */
 export type Emulator = $Result.DefaultSelection<Prisma.$EmulatorPayload>
 /**
  * Model PerformanceScale
- * 
+ *
  */
-export type PerformanceScale = $Result.DefaultSelection<Prisma.$PerformanceScalePayload>
+export type PerformanceScale =
+  $Result.DefaultSelection<Prisma.$PerformanceScalePayload>
 /**
  * Model Listing
- * 
+ *
  */
 export type Listing = $Result.DefaultSelection<Prisma.$ListingPayload>
 /**
  * Model Vote
- * 
+ *
  */
 export type Vote = $Result.DefaultSelection<Prisma.$VotePayload>
 /**
  * Model Comment
- * 
+ *
  */
 export type Comment = $Result.DefaultSelection<Prisma.$CommentPayload>
 /**
  * Model ListingApproval
- * 
+ *
  */
-export type ListingApproval = $Result.DefaultSelection<Prisma.$ListingApprovalPayload>
+export type ListingApproval =
+  $Result.DefaultSelection<Prisma.$ListingApprovalPayload>
 
 /**
  * Enums
  */
 export namespace $Enums {
   export const Role: {
-  USER: 'USER',
-  AUTHOR: 'AUTHOR',
-  ADMIN: 'ADMIN',
-  SUPER_ADMIN: 'SUPER_ADMIN'
-};
+    USER: 'USER'
+    AUTHOR: 'AUTHOR'
+    ADMIN: 'ADMIN'
+    SUPER_ADMIN: 'SUPER_ADMIN'
+  }
 
-export type Role = (typeof Role)[keyof typeof Role]
+  export type Role = (typeof Role)[keyof typeof Role]
 
+  export const ApprovalStatus: {
+    PENDING: 'PENDING'
+    APPROVED: 'APPROVED'
+    REJECTED: 'REJECTED'
+  }
 
-export const ApprovalStatus: {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED'
-};
-
-export type ApprovalStatus = (typeof ApprovalStatus)[keyof typeof ApprovalStatus]
-
+  export type ApprovalStatus =
+    (typeof ApprovalStatus)[keyof typeof ApprovalStatus]
 }
 
 export type Role = $Enums.Role
@@ -112,12 +111,16 @@ export const ApprovalStatus: typeof $Enums.ApprovalStatus
  */
 export class PrismaClient<
   ClientOptions extends Prisma.PrismaClientOptions = Prisma.PrismaClientOptions,
-  U = 'log' extends keyof ClientOptions ? ClientOptions['log'] extends Array<Prisma.LogLevel | Prisma.LogDefinition> ? Prisma.GetEvents<ClientOptions['log']> : never : never,
-  ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs
+  U = 'log' extends keyof ClientOptions
+    ? ClientOptions['log'] extends Array<Prisma.LogLevel | Prisma.LogDefinition>
+      ? Prisma.GetEvents<ClientOptions['log']>
+      : never
+    : never,
+  ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
 > {
   [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['other'] }
 
-    /**
+  /**
    * ##  Prisma Client ʲˢ
    *
    * Type-safe database client for TypeScript & Node.js
@@ -132,18 +135,25 @@ export class PrismaClient<
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
    */
 
-  constructor(optionsArg ?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>);
-  $on<V extends U>(eventType: V, callback: (event: V extends 'query' ? Prisma.QueryEvent : Prisma.LogEvent) => void): PrismaClient;
+  constructor(
+    optionsArg?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>,
+  )
+  $on<V extends U>(
+    eventType: V,
+    callback: (
+      event: V extends 'query' ? Prisma.QueryEvent : Prisma.LogEvent,
+    ) => void,
+  ): PrismaClient
 
   /**
    * Connect with the database
    */
-  $connect(): $Utils.JsPromise<void>;
+  $connect(): $Utils.JsPromise<void>
 
   /**
    * Disconnect from the database
    */
-  $disconnect(): $Utils.JsPromise<void>;
+  $disconnect(): $Utils.JsPromise<void>
 
   /**
    * Add a middleware
@@ -152,7 +162,7 @@ export class PrismaClient<
    */
   $use(cb: Prisma.Middleware): void
 
-/**
+  /**
    * Executes a prepared raw query and returns the number of affected rows.
    * @example
    * ```
@@ -161,7 +171,10 @@ export class PrismaClient<
    *
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
-  $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
+  $executeRaw<T = unknown>(
+    query: TemplateStringsArray | Prisma.Sql,
+    ...values: any[]
+  ): Prisma.PrismaPromise<number>
 
   /**
    * Executes a raw query and returns the number of affected rows.
@@ -173,7 +186,10 @@ export class PrismaClient<
    *
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
-  $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
+  $executeRawUnsafe<T = unknown>(
+    query: string,
+    ...values: any[]
+  ): Prisma.PrismaPromise<number>
 
   /**
    * Performs a prepared raw query and returns the `SELECT` data.
@@ -184,7 +200,10 @@ export class PrismaClient<
    *
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
-  $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
+  $queryRaw<T = unknown>(
+    query: TemplateStringsArray | Prisma.Sql,
+    ...values: any[]
+  ): Prisma.PrismaPromise<T>
 
   /**
    * Performs a raw query and returns the `SELECT` data.
@@ -196,8 +215,10 @@ export class PrismaClient<
    *
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
-  $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
-
+  $queryRawUnsafe<T = unknown>(
+    query: string,
+    ...values: any[]
+  ): Prisma.PrismaPromise<T>
 
   /**
    * Allows the running of a sequence of read/write operations that are guaranteed to either succeed or fail as a whole.
@@ -209,117 +230,139 @@ export class PrismaClient<
    *   prisma.user.create({ data: { name: 'Alice' } }),
    * ])
    * ```
-   * 
+   *
    * Read more in our [docs](https://www.prisma.io/docs/concepts/components/prisma-client/transactions).
    */
-  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
+  $transaction<P extends Prisma.PrismaPromise<any>[]>(
+    arg: [...P],
+    options?: { isolationLevel?: Prisma.TransactionIsolationLevel },
+  ): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
-  $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => $Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<R>
+  $transaction<R>(
+    fn: (
+      prisma: Omit<PrismaClient, runtime.ITXClientDenyList>,
+    ) => $Utils.JsPromise<R>,
+    options?: {
+      maxWait?: number
+      timeout?: number
+      isolationLevel?: Prisma.TransactionIsolationLevel
+    },
+  ): $Utils.JsPromise<R>
 
+  $extends: $Extensions.ExtendsHook<
+    'extends',
+    Prisma.TypeMapCb<ClientOptions>,
+    ExtArgs,
+    $Utils.Call<
+      Prisma.TypeMapCb<ClientOptions>,
+      {
+        extArgs: ExtArgs
+      }
+    >
+  >
 
-  $extends: $Extensions.ExtendsHook<"extends", Prisma.TypeMapCb<ClientOptions>, ExtArgs, $Utils.Call<Prisma.TypeMapCb<ClientOptions>, {
-    extArgs: ExtArgs
-  }>>
-
-      /**
+  /**
    * `prisma.user`: Exposes CRUD operations for the **User** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Users
-    * const users = await prisma.user.findMany()
-    * ```
-    */
-  get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Users
+   * const users = await prisma.user.findMany()
+   * ```
+   */
+  get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.device`: Exposes CRUD operations for the **Device** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Devices
-    * const devices = await prisma.device.findMany()
-    * ```
-    */
-  get device(): Prisma.DeviceDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Devices
+   * const devices = await prisma.device.findMany()
+   * ```
+   */
+  get device(): Prisma.DeviceDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.system`: Exposes CRUD operations for the **System** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Systems
-    * const systems = await prisma.system.findMany()
-    * ```
-    */
-  get system(): Prisma.SystemDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Systems
+   * const systems = await prisma.system.findMany()
+   * ```
+   */
+  get system(): Prisma.SystemDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.game`: Exposes CRUD operations for the **Game** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Games
-    * const games = await prisma.game.findMany()
-    * ```
-    */
-  get game(): Prisma.GameDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Games
+   * const games = await prisma.game.findMany()
+   * ```
+   */
+  get game(): Prisma.GameDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.emulator`: Exposes CRUD operations for the **Emulator** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Emulators
-    * const emulators = await prisma.emulator.findMany()
-    * ```
-    */
-  get emulator(): Prisma.EmulatorDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Emulators
+   * const emulators = await prisma.emulator.findMany()
+   * ```
+   */
+  get emulator(): Prisma.EmulatorDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.performanceScale`: Exposes CRUD operations for the **PerformanceScale** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more PerformanceScales
-    * const performanceScales = await prisma.performanceScale.findMany()
-    * ```
-    */
-  get performanceScale(): Prisma.PerformanceScaleDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more PerformanceScales
+   * const performanceScales = await prisma.performanceScale.findMany()
+   * ```
+   */
+  get performanceScale(): Prisma.PerformanceScaleDelegate<
+    ExtArgs,
+    ClientOptions
+  >
 
   /**
    * `prisma.listing`: Exposes CRUD operations for the **Listing** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Listings
-    * const listings = await prisma.listing.findMany()
-    * ```
-    */
-  get listing(): Prisma.ListingDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Listings
+   * const listings = await prisma.listing.findMany()
+   * ```
+   */
+  get listing(): Prisma.ListingDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.vote`: Exposes CRUD operations for the **Vote** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Votes
-    * const votes = await prisma.vote.findMany()
-    * ```
-    */
-  get vote(): Prisma.VoteDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Votes
+   * const votes = await prisma.vote.findMany()
+   * ```
+   */
+  get vote(): Prisma.VoteDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.comment`: Exposes CRUD operations for the **Comment** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Comments
-    * const comments = await prisma.comment.findMany()
-    * ```
-    */
-  get comment(): Prisma.CommentDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more Comments
+   * const comments = await prisma.comment.findMany()
+   * ```
+   */
+  get comment(): Prisma.CommentDelegate<ExtArgs, ClientOptions>
 
   /**
    * `prisma.listingApproval`: Exposes CRUD operations for the **ListingApproval** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more ListingApprovals
-    * const listingApprovals = await prisma.listingApproval.findMany()
-    * ```
-    */
-  get listingApproval(): Prisma.ListingApprovalDelegate<ExtArgs, ClientOptions>;
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more ListingApprovals
+   * const listingApprovals = await prisma.listingApproval.findMany()
+   * ```
+   */
+  get listingApproval(): Prisma.ListingApprovalDelegate<ExtArgs, ClientOptions>
 }
 
 export namespace Prisma {
@@ -350,8 +393,6 @@ export namespace Prisma {
   export import raw = runtime.raw
   export import Sql = runtime.Sql
 
-
-
   /**
    * Decimal.js
    */
@@ -368,8 +409,8 @@ export namespace Prisma {
   export type MetricHistogramBucket = runtime.MetricHistogramBucket
 
   /**
-  * Extensions
-  */
+   * Extensions
+   */
   export import Extension = $Extensions.UserArgs
   export import getExtensionContext = runtime.Extensions.getExtensionContext
   export import Args = $Public.Args
@@ -391,7 +432,6 @@ export namespace Prisma {
    * Utility Types
    */
 
-
   export import JsonObject = runtime.JsonObject
   export import JsonArray = runtime.JsonArray
   export import JsonValue = runtime.JsonValue
@@ -406,36 +446,36 @@ export namespace Prisma {
    */
   namespace NullTypes {
     /**
-    * Type of `Prisma.DbNull`.
-    *
-    * You cannot use other instances of this class. Please use the `Prisma.DbNull` value.
-    *
-    * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
-    */
+     * Type of `Prisma.DbNull`.
+     *
+     * You cannot use other instances of this class. Please use the `Prisma.DbNull` value.
+     *
+     * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
+     */
     class DbNull {
       private DbNull: never
       private constructor()
     }
 
     /**
-    * Type of `Prisma.JsonNull`.
-    *
-    * You cannot use other instances of this class. Please use the `Prisma.JsonNull` value.
-    *
-    * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
-    */
+     * Type of `Prisma.JsonNull`.
+     *
+     * You cannot use other instances of this class. Please use the `Prisma.JsonNull` value.
+     *
+     * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
+     */
     class JsonNull {
       private JsonNull: never
       private constructor()
     }
 
     /**
-    * Type of `Prisma.AnyNull`.
-    *
-    * You cannot use other instances of this class. Please use the `Prisma.AnyNull` value.
-    *
-    * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
-    */
+     * Type of `Prisma.AnyNull`.
+     *
+     * You cannot use other instances of this class. Please use the `Prisma.AnyNull` value.
+     *
+     * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
+     */
     class AnyNull {
       private AnyNull: never
       private constructor()
@@ -476,22 +516,24 @@ export namespace Prisma {
   /**
    * Get the type of the value, that the Promise holds.
    */
-  export type PromiseType<T extends PromiseLike<any>> = T extends PromiseLike<infer U> ? U : T;
+  export type PromiseType<T extends PromiseLike<any>> =
+    T extends PromiseLike<infer U> ? U : T
 
   /**
    * Get the return type of a function which returns a Promise.
    */
-  export type PromiseReturnType<T extends (...args: any) => $Utils.JsPromise<any>> = PromiseType<ReturnType<T>>
+  export type PromiseReturnType<
+    T extends (...args: any) => $Utils.JsPromise<any>,
+  > = PromiseType<ReturnType<T>>
 
   /**
    * From T, pick a set of properties whose keys are in the union K
    */
   type Prisma__Pick<T, K extends keyof T> = {
-      [P in K]: T[P];
-  };
+    [P in K]: T[P]
+  }
 
-
-  export type Enumerable<T> = T | Array<T>;
+  export type Enumerable<T> = T | Array<T>
 
   export type RequiredKeys<T> = {
     [K in keyof T]-?: {} extends Prisma__Pick<T, K> ? never : K
@@ -508,8 +550,8 @@ export namespace Prisma {
    * @desc From `T` pick properties that exist in `U`. Simple version of Intersection
    */
   export type Subset<T, U> = {
-    [key in keyof T]: key extends keyof U ? T[key] : never;
-  };
+    [key in keyof T]: key extends keyof U ? T[key] : never
+  }
 
   /**
    * SelectSubset
@@ -518,12 +560,11 @@ export namespace Prisma {
    */
   export type SelectSubset<T, U> = {
     [key in keyof T]: key extends keyof U ? T[key] : never
-  } &
-    (T extends SelectAndInclude
-      ? 'Please either choose `select` or `include`.'
-      : T extends SelectAndOmit
-        ? 'Please either choose `select` or `omit`.'
-        : {})
+  } & (T extends SelectAndInclude
+    ? 'Please either choose `select` or `include`.'
+    : T extends SelectAndOmit
+      ? 'Please either choose `select` or `omit`.'
+      : {})
 
   /**
    * Subset + Intersection
@@ -531,37 +572,35 @@ export namespace Prisma {
    */
   export type SubsetIntersection<T, U, K> = {
     [key in keyof T]: key extends keyof U ? T[key] : never
-  } &
-    K
+  } & K
 
-  type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
+  type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never }
 
   /**
    * XOR is needed to have a real mutually exclusive union type
    * https://stackoverflow.com/questions/42123407/does-typescript-support-mutually-exclusive-types
    */
-  type XOR<T, U> =
-    T extends object ?
-    U extends object ?
-      (Without<T, U> & U) | (Without<U, T> & T)
-    : U : T
-
+  type XOR<T, U> = T extends object
+    ? U extends object
+      ? (Without<T, U> & U) | (Without<U, T> & T)
+      : U
+    : T
 
   /**
    * Is T a Record?
    */
-  type IsObject<T extends any> = T extends Array<any>
-  ? False
-  : T extends Date
-  ? False
-  : T extends Uint8Array
-  ? False
-  : T extends BigInt
-  ? False
-  : T extends object
-  ? True
-  : False
-
+  type IsObject<T extends any> =
+    T extends Array<any>
+      ? False
+      : T extends Date
+        ? False
+        : T extends Uint8Array
+          ? False
+          : T extends BigInt
+            ? False
+            : T extends object
+              ? True
+              : False
 
   /**
    * If it's T[], return T
@@ -582,11 +621,7 @@ export namespace Prisma {
 
   type EitherLoose<O extends object, K extends Key> = ComputeRaw<__Either<O, K>>
 
-  type _Either<
-    O extends object,
-    K extends Key,
-    strict extends Boolean
-  > = {
+  type _Either<O extends object, K extends Key, strict extends Boolean> = {
     1: EitherStrict<O, K>
     0: EitherLoose<O, K>
   }[strict]
@@ -594,7 +629,7 @@ export namespace Prisma {
   type Either<
     O extends object,
     K extends Key,
-    strict extends Boolean = 1
+    strict extends Boolean = 1,
   > = O extends unknown ? _Either<O, K, strict> : never
 
   export type Union = any
@@ -611,50 +646,69 @@ export namespace Prisma {
     : never
 
   export type Overwrite<O extends object, O1 extends object> = {
-      [K in keyof O]: K extends keyof O1 ? O1[K] : O[K];
-  } & {};
+    [K in keyof O]: K extends keyof O1 ? O1[K] : O[K]
+  } & {}
 
-  type _Merge<U extends object> = IntersectOf<Overwrite<U, {
-      [K in keyof U]-?: At<U, K>;
-  }>>;
+  type _Merge<U extends object> = IntersectOf<
+    Overwrite<
+      U,
+      {
+        [K in keyof U]-?: At<U, K>
+      }
+    >
+  >
 
-  type Key = string | number | symbol;
-  type AtBasic<O extends object, K extends Key> = K extends keyof O ? O[K] : never;
-  type AtStrict<O extends object, K extends Key> = O[K & keyof O];
-  type AtLoose<O extends object, K extends Key> = O extends unknown ? AtStrict<O, K> : never;
-  export type At<O extends object, K extends Key, strict extends Boolean = 1> = {
-      1: AtStrict<O, K>;
-      0: AtLoose<O, K>;
-  }[strict];
+  type Key = string | number | symbol
+  type AtBasic<O extends object, K extends Key> = K extends keyof O
+    ? O[K]
+    : never
+  type AtStrict<O extends object, K extends Key> = O[K & keyof O]
+  type AtLoose<O extends object, K extends Key> = O extends unknown
+    ? AtStrict<O, K>
+    : never
+  export type At<
+    O extends object,
+    K extends Key,
+    strict extends Boolean = 1,
+  > = {
+    1: AtStrict<O, K>
+    0: AtLoose<O, K>
+  }[strict]
 
-  export type ComputeRaw<A extends any> = A extends Function ? A : {
-    [K in keyof A]: A[K];
-  } & {};
+  export type ComputeRaw<A extends any> = A extends Function
+    ? A
+    : {
+        [K in keyof A]: A[K]
+      } & {}
 
   export type OptionalFlat<O> = {
-    [K in keyof O]?: O[K];
-  } & {};
+    [K in keyof O]?: O[K]
+  } & {}
 
   type _Record<K extends keyof any, T> = {
-    [P in K]: T;
-  };
+    [P in K]: T
+  }
 
   // cause typescript not to expand types and preserve names
-  type NoExpand<T> = T extends unknown ? T : never;
+  type NoExpand<T> = T extends unknown ? T : never
 
   // this type assumes the passed object is entirely optional
   type AtLeast<O extends object, K extends string> = NoExpand<
     O extends unknown
-    ? | (K extends keyof O ? { [P in K]: O[P] } & O : O)
-      | {[P in keyof O as P extends K ? P : never]-?: O[P]} & O
-    : never>;
+      ?
+          | (K extends keyof O ? { [P in K]: O[P] } & O : O)
+          | ({ [P in keyof O as P extends K ? P : never]-?: O[P] } & O)
+      : never
+  >
 
-  type _Strict<U, _U = U> = U extends unknown ? U & OptionalFlat<_Record<Exclude<Keys<_U>, keyof U>, never>> : never;
+  type _Strict<U, _U = U> = U extends unknown
+    ? U & OptionalFlat<_Record<Exclude<Keys<_U>, keyof U>, never>>
+    : never
 
-  export type Strict<U extends object> = ComputeRaw<_Strict<U>>;
+  export type Strict<U extends object> = ComputeRaw<_Strict<U>>
   /** End Helper Types for "Merge" **/
 
-  export type Merge<U extends object> = ComputeRaw<_Merge<Strict<U>>>;
+  export type Merge<U extends object> = ComputeRaw<_Merge<Strict<U>>>
 
   /**
   A [[Boolean]]
@@ -679,8 +733,8 @@ export namespace Prisma {
   export type Extends<A1 extends any, A2 extends any> = [A1] extends [never]
     ? 0 // anything `never` is false
     : A1 extends A2
-    ? 1
-    : 0
+      ? 1
+      : 0
 
   export type Has<U extends Union, U1 extends Union> = Not<
     Extends<Exclude<U1, U>, U1>
@@ -699,25 +753,23 @@ export namespace Prisma {
 
   export type Keys<U extends Union> = U extends unknown ? keyof U : never
 
-  type Cast<A, B> = A extends B ? A : B;
+  type Cast<A, B> = A extends B ? A : B
 
-  export const type: unique symbol;
-
-
+  export const type: unique symbol
 
   /**
    * Used by group by
    */
 
-  export type GetScalarType<T, O> = O extends object ? {
-    [P in keyof T]: P extends keyof O
-      ? O[P]
-      : never
-  } : never
+  export type GetScalarType<T, O> = O extends object
+    ? {
+        [P in keyof T]: P extends keyof O ? O[P] : never
+      }
+    : never
 
   type FieldPaths<
     T,
-    U = Omit<T, '_avg' | '_sum' | '_count' | '_min' | '_max'>
+    U = Omit<T, '_avg' | '_sum' | '_count' | '_min' | '_max'>,
   > = IsObject<T> extends True ? U : T
 
   type GetHavingFields<T> = {
@@ -729,11 +781,13 @@ export namespace Prisma {
         // based on the brilliant idea of Pierre-Antoine Mills
         // https://github.com/microsoft/TypeScript/issues/30188#issuecomment-478938437
         T[K] extends infer TK
-        ? GetHavingFields<UnEnumerate<TK> extends object ? Merge<UnEnumerate<TK>> : never>
+        ? GetHavingFields<
+            UnEnumerate<TK> extends object ? Merge<UnEnumerate<TK>> : never
+          >
         : never
       : {} extends FieldPaths<T[K]>
-      ? never
-      : K
+        ? never
+        : K
   }[keyof T]
 
   /**
@@ -746,49 +800,73 @@ export namespace Prisma {
   /**
    * Like `Pick`, but additionally can also accept an array of keys
    */
-  type PickEnumerable<T, K extends Enumerable<keyof T> | keyof T> = Prisma__Pick<T, MaybeTupleToUnion<K>>
+  type PickEnumerable<
+    T,
+    K extends Enumerable<keyof T> | keyof T,
+  > = Prisma__Pick<T, MaybeTupleToUnion<K>>
 
   /**
    * Exclude all keys with underscores
    */
-  type ExcludeUnderscoreKeys<T extends string> = T extends `_${string}` ? never : T
-
+  type ExcludeUnderscoreKeys<T extends string> = T extends `_${string}`
+    ? never
+    : T
 
   export type FieldRef<Model, FieldType> = runtime.FieldRef<Model, FieldType>
 
-  type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRef<Model, FieldType>
-
+  type FieldRefInputType<Model, FieldType> = Model extends never
+    ? never
+    : FieldRef<Model, FieldType>
 
   export const ModelName: {
-    User: 'User',
-    Device: 'Device',
-    System: 'System',
-    Game: 'Game',
-    Emulator: 'Emulator',
-    PerformanceScale: 'PerformanceScale',
-    Listing: 'Listing',
-    Vote: 'Vote',
-    Comment: 'Comment',
+    User: 'User'
+    Device: 'Device'
+    System: 'System'
+    Game: 'Game'
+    Emulator: 'Emulator'
+    PerformanceScale: 'PerformanceScale'
+    Listing: 'Listing'
+    Vote: 'Vote'
+    Comment: 'Comment'
     ListingApproval: 'ListingApproval'
-  };
+  }
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
-
 
   export type Datasources = {
     db?: Datasource
   }
 
-  interface TypeMapCb<ClientOptions = {}> extends $Utils.Fn<{extArgs: $Extensions.InternalArgs }, $Utils.Record<string, any>> {
-    returns: Prisma.TypeMap<this['params']['extArgs'], ClientOptions extends { omit: infer OmitOptions } ? OmitOptions : {}>
+  interface TypeMapCb<ClientOptions = {}>
+    extends $Utils.Fn<
+      { extArgs: $Extensions.InternalArgs },
+      $Utils.Record<string, any>
+    > {
+    returns: Prisma.TypeMap<
+      this['params']['extArgs'],
+      ClientOptions extends { omit: infer OmitOptions } ? OmitOptions : {}
+    >
   }
 
-  export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> = {
+  export type TypeMap<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > = {
     globalOmitOptions: {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "device" | "system" | "game" | "emulator" | "performanceScale" | "listing" | "vote" | "comment" | "listingApproval"
+      modelProps:
+        | 'user'
+        | 'device'
+        | 'system'
+        | 'game'
+        | 'emulator'
+        | 'performanceScale'
+        | 'listing'
+        | 'vote'
+        | 'comment'
+        | 'listingApproval'
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1232,7 +1310,9 @@ export namespace Prisma {
           }
           count: {
             args: Prisma.PerformanceScaleCountArgs<ExtArgs>
-            result: $Utils.Optional<PerformanceScaleCountAggregateOutputType> | number
+            result:
+              | $Utils.Optional<PerformanceScaleCountAggregateOutputType>
+              | number
           }
         }
       }
@@ -1528,7 +1608,9 @@ export namespace Prisma {
           }
           count: {
             args: Prisma.ListingApprovalCountArgs<ExtArgs>
-            result: $Utils.Optional<ListingApprovalCountAggregateOutputType> | number
+            result:
+              | $Utils.Optional<ListingApprovalCountAggregateOutputType>
+              | number
           }
         }
       }
@@ -1538,25 +1620,29 @@ export namespace Prisma {
       payload: any
       operations: {
         $executeRaw: {
-          args: [query: TemplateStringsArray | Prisma.Sql, ...values: any[]],
+          args: [query: TemplateStringsArray | Prisma.Sql, ...values: any[]]
           result: any
         }
         $executeRawUnsafe: {
-          args: [query: string, ...values: any[]],
+          args: [query: string, ...values: any[]]
           result: any
         }
         $queryRaw: {
-          args: [query: TemplateStringsArray | Prisma.Sql, ...values: any[]],
+          args: [query: TemplateStringsArray | Prisma.Sql, ...values: any[]]
           result: any
         }
         $queryRawUnsafe: {
-          args: [query: string, ...values: any[]],
+          args: [query: string, ...values: any[]]
           result: any
         }
       }
     }
   }
-  export const defineExtension: $Extensions.ExtendsHook<"define", Prisma.TypeMapCb, $Extensions.DefaultArgs>
+  export const defineExtension: $Extensions.ExtendsHook<
+    'define',
+    Prisma.TypeMapCb,
+    $Extensions.DefaultArgs
+  >
   export type DefaultPrismaClient = PrismaClient
   export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
   export interface PrismaClientOptions {
@@ -1577,7 +1663,7 @@ export namespace Prisma {
      * ```
      * // Defaults to stdout
      * log: ['query', 'info', 'warn', 'error']
-     * 
+     *
      * // Emit as events
      * log: [
      *   { emit: 'stdout', level: 'query' },
@@ -1601,7 +1687,7 @@ export namespace Prisma {
     }
     /**
      * Global configuration for omitting model fields by default.
-     * 
+     *
      * @example
      * ```
      * const prisma = new PrismaClient({
@@ -1635,10 +1721,20 @@ export namespace Prisma {
     emit: 'stdout' | 'event'
   }
 
-  export type GetLogType<T extends LogLevel | LogDefinition> = T extends LogDefinition ? T['emit'] extends 'event' ? T['level'] : never : never
-  export type GetEvents<T extends any> = T extends Array<LogLevel | LogDefinition> ?
-    GetLogType<T[0]> | GetLogType<T[1]> | GetLogType<T[2]> | GetLogType<T[3]>
-    : never
+  export type GetLogType<T extends LogLevel | LogDefinition> =
+    T extends LogDefinition
+      ? T['emit'] extends 'event'
+        ? T['level']
+        : never
+      : never
+  export type GetEvents<T extends any> =
+    T extends Array<LogLevel | LogDefinition>
+      ?
+          | GetLogType<T[0]>
+          | GetLogType<T[1]>
+          | GetLogType<T[2]>
+          | GetLogType<T[3]>
+      : never
 
   export type QueryEvent = {
     timestamp: Date
@@ -1654,7 +1750,6 @@ export namespace Prisma {
     target: string
   }
   /* End Types for Logging */
-
 
   export type PrismaAction =
     | 'findUnique'
@@ -1699,12 +1794,17 @@ export namespace Prisma {
   ) => $Utils.JsPromise<T>
 
   // tested in getLogLevel.test.ts
-  export function getLogLevel(log: Array<LogLevel | LogDefinition>): LogLevel | undefined;
+  export function getLogLevel(
+    log: Array<LogLevel | LogDefinition>,
+  ): LogLevel | undefined
 
   /**
    * `PrismaClient` proxy available in interactive transactions.
    */
-  export type TransactionClient = Omit<Prisma.DefaultPrismaClient, runtime.ITXClientDenyList>
+  export type TransactionClient = Omit<
+    Prisma.DefaultPrismaClient,
+    runtime.ITXClientDenyList
+  >
 
   export type Datasource = {
     url?: string
@@ -1713,7 +1813,6 @@ export namespace Prisma {
   /**
    * Count Types
    */
-
 
   /**
    * Count Type UserCountOutputType
@@ -1726,7 +1825,9 @@ export namespace Prisma {
     approvalsGiven: number
   }
 
-  export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | UserCountOutputTypeCountListingsArgs
     votes?: boolean | UserCountOutputTypeCountVotesArgs
     comments?: boolean | UserCountOutputTypeCountCommentsArgs
@@ -1737,7 +1838,9 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the UserCountOutputType
      */
@@ -1747,31 +1850,38 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeCountListingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingWhereInput
   }
 
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeCountVotesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: VoteWhereInput
   }
 
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountCommentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeCountCommentsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: CommentWhereInput
   }
 
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountApprovalsGivenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCountOutputTypeCountApprovalsGivenArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingApprovalWhereInput
   }
-
 
   /**
    * Count Type DeviceCountOutputType
@@ -1781,7 +1891,9 @@ export namespace Prisma {
     listings: number
   }
 
-  export type DeviceCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | DeviceCountOutputTypeCountListingsArgs
   }
 
@@ -1789,7 +1901,9 @@ export namespace Prisma {
   /**
    * DeviceCountOutputType without action
    */
-  export type DeviceCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the DeviceCountOutputType
      */
@@ -1799,10 +1913,11 @@ export namespace Prisma {
   /**
    * DeviceCountOutputType without action
    */
-  export type DeviceCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceCountOutputTypeCountListingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingWhereInput
   }
-
 
   /**
    * Count Type SystemCountOutputType
@@ -1812,7 +1927,9 @@ export namespace Prisma {
     games: number
   }
 
-  export type SystemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     games?: boolean | SystemCountOutputTypeCountGamesArgs
   }
 
@@ -1820,7 +1937,9 @@ export namespace Prisma {
   /**
    * SystemCountOutputType without action
    */
-  export type SystemCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the SystemCountOutputType
      */
@@ -1830,10 +1949,11 @@ export namespace Prisma {
   /**
    * SystemCountOutputType without action
    */
-  export type SystemCountOutputTypeCountGamesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemCountOutputTypeCountGamesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: GameWhereInput
   }
-
 
   /**
    * Count Type GameCountOutputType
@@ -1843,7 +1963,9 @@ export namespace Prisma {
     listings: number
   }
 
-  export type GameCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | GameCountOutputTypeCountListingsArgs
   }
 
@@ -1851,7 +1973,9 @@ export namespace Prisma {
   /**
    * GameCountOutputType without action
    */
-  export type GameCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the GameCountOutputType
      */
@@ -1861,10 +1985,11 @@ export namespace Prisma {
   /**
    * GameCountOutputType without action
    */
-  export type GameCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameCountOutputTypeCountListingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingWhereInput
   }
-
 
   /**
    * Count Type EmulatorCountOutputType
@@ -1874,7 +1999,9 @@ export namespace Prisma {
     listings: number
   }
 
-  export type EmulatorCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | EmulatorCountOutputTypeCountListingsArgs
   }
 
@@ -1882,7 +2009,9 @@ export namespace Prisma {
   /**
    * EmulatorCountOutputType without action
    */
-  export type EmulatorCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the EmulatorCountOutputType
      */
@@ -1892,10 +2021,11 @@ export namespace Prisma {
   /**
    * EmulatorCountOutputType without action
    */
-  export type EmulatorCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorCountOutputTypeCountListingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingWhereInput
   }
-
 
   /**
    * Count Type PerformanceScaleCountOutputType
@@ -1905,7 +2035,9 @@ export namespace Prisma {
     listings: number
   }
 
-  export type PerformanceScaleCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | PerformanceScaleCountOutputTypeCountListingsArgs
   }
 
@@ -1913,7 +2045,9 @@ export namespace Prisma {
   /**
    * PerformanceScaleCountOutputType without action
    */
-  export type PerformanceScaleCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScaleCountOutputType
      */
@@ -1923,10 +2057,11 @@ export namespace Prisma {
   /**
    * PerformanceScaleCountOutputType without action
    */
-  export type PerformanceScaleCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleCountOutputTypeCountListingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingWhereInput
   }
-
 
   /**
    * Count Type ListingCountOutputType
@@ -1938,7 +2073,9 @@ export namespace Prisma {
     approvals: number
   }
 
-  export type ListingCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     votes?: boolean | ListingCountOutputTypeCountVotesArgs
     comments?: boolean | ListingCountOutputTypeCountCommentsArgs
     approvals?: boolean | ListingCountOutputTypeCountApprovalsArgs
@@ -1948,7 +2085,9 @@ export namespace Prisma {
   /**
    * ListingCountOutputType without action
    */
-  export type ListingCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingCountOutputType
      */
@@ -1958,24 +2097,29 @@ export namespace Prisma {
   /**
    * ListingCountOutputType without action
    */
-  export type ListingCountOutputTypeCountVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCountOutputTypeCountVotesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: VoteWhereInput
   }
 
   /**
    * ListingCountOutputType without action
    */
-  export type ListingCountOutputTypeCountCommentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCountOutputTypeCountCommentsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: CommentWhereInput
   }
 
   /**
    * ListingCountOutputType without action
    */
-  export type ListingCountOutputTypeCountApprovalsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCountOutputTypeCountApprovalsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingApprovalWhereInput
   }
-
 
   /**
    * Count Type CommentCountOutputType
@@ -1985,7 +2129,9 @@ export namespace Prisma {
     replies: number
   }
 
-  export type CommentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentCountOutputTypeSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     replies?: boolean | CommentCountOutputTypeCountRepliesArgs
   }
 
@@ -1993,7 +2139,9 @@ export namespace Prisma {
   /**
    * CommentCountOutputType without action
    */
-  export type CommentCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentCountOutputTypeDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the CommentCountOutputType
      */
@@ -2003,10 +2151,11 @@ export namespace Prisma {
   /**
    * CommentCountOutputType without action
    */
-  export type CommentCountOutputTypeCountRepliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentCountOutputTypeCountRepliesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: CommentWhereInput
   }
-
 
   /**
    * Models
@@ -2053,7 +2202,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type UserMinAggregateInputType = {
     id?: true
     email?: true
@@ -2085,69 +2233,72 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type UserAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which User to aggregate.
      */
     where?: UserWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Users to fetch.
      */
     orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: UserWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Users from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Users.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Users
-    **/
+     **/
     _count?: true | UserCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: UserMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: UserMaxAggregateInputType
   }
 
   export type GetUserAggregateType<T extends UserAggregateArgs> = {
-        [P in keyof T & keyof AggregateUser]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateUser]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateUser[P]>
       : GetScalarType<T[P], AggregateUser[P]>
   }
 
-
-
-
-  export type UserGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: UserWhereInput
-    orderBy?: UserOrderByWithAggregationInput | UserOrderByWithAggregationInput[]
+    orderBy?:
+      | UserOrderByWithAggregationInput
+      | UserOrderByWithAggregationInput[]
     by: UserScalarFieldEnum[] | UserScalarFieldEnum
     having?: UserScalarWhereWithAggregatesInput
     take?: number
@@ -2172,52 +2323,65 @@ export namespace Prisma {
 
   type GetUserGroupByPayload<T extends UserGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<UserGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof UserGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], UserGroupByOutputType[P]>
+      PickEnumerable<UserGroupByOutputType, T['by']> & {
+        [P in keyof T & keyof UserGroupByOutputType]: P extends '_count'
+          ? T[P] extends boolean
+            ? number
             : GetScalarType<T[P], UserGroupByOutputType[P]>
-        }
-      >
+          : GetScalarType<T[P], UserGroupByOutputType[P]>
+      }
     >
+  >
 
+  export type UserSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      email?: boolean
+      hashedPassword?: boolean
+      name?: boolean
+      profileImage?: boolean
+      role?: boolean
+      createdAt?: boolean
+      listings?: boolean | User$listingsArgs<ExtArgs>
+      votes?: boolean | User$votesArgs<ExtArgs>
+      comments?: boolean | User$commentsArgs<ExtArgs>
+      approvalsGiven?: boolean | User$approvalsGivenArgs<ExtArgs>
+      _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['user']
+  >
 
-  export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    email?: boolean
-    hashedPassword?: boolean
-    name?: boolean
-    profileImage?: boolean
-    role?: boolean
-    createdAt?: boolean
-    listings?: boolean | User$listingsArgs<ExtArgs>
-    votes?: boolean | User$votesArgs<ExtArgs>
-    comments?: boolean | User$commentsArgs<ExtArgs>
-    approvalsGiven?: boolean | User$approvalsGivenArgs<ExtArgs>
-    _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["user"]>
+  export type UserSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      email?: boolean
+      hashedPassword?: boolean
+      name?: boolean
+      profileImage?: boolean
+      role?: boolean
+      createdAt?: boolean
+    },
+    ExtArgs['result']['user']
+  >
 
-  export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    email?: boolean
-    hashedPassword?: boolean
-    name?: boolean
-    profileImage?: boolean
-    role?: boolean
-    createdAt?: boolean
-  }, ExtArgs["result"]["user"]>
-
-  export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    email?: boolean
-    hashedPassword?: boolean
-    name?: boolean
-    profileImage?: boolean
-    role?: boolean
-    createdAt?: boolean
-  }, ExtArgs["result"]["user"]>
+  export type UserSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      email?: boolean
+      hashedPassword?: boolean
+      name?: boolean
+      profileImage?: boolean
+      role?: boolean
+      createdAt?: boolean
+    },
+    ExtArgs['result']['user']
+  >
 
   export type UserSelectScalar = {
     id?: boolean
@@ -2229,46 +2393,76 @@ export namespace Prisma {
     createdAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "hashedPassword" | "name" | "profileImage" | "role" | "createdAt", ExtArgs["result"]["user"]>
-  export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    | 'id'
+    | 'email'
+    | 'hashedPassword'
+    | 'name'
+    | 'profileImage'
+    | 'role'
+    | 'createdAt',
+    ExtArgs['result']['user']
+  >
+  export type UserInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | User$listingsArgs<ExtArgs>
     votes?: boolean | User$votesArgs<ExtArgs>
     comments?: boolean | User$commentsArgs<ExtArgs>
     approvalsGiven?: boolean | User$approvalsGivenArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type UserIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type UserIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
+  export type UserIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
 
-  export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "User"
+  export type $UserPayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'User'
     objects: {
       listings: Prisma.$ListingPayload<ExtArgs>[]
       votes: Prisma.$VotePayload<ExtArgs>[]
       comments: Prisma.$CommentPayload<ExtArgs>[]
       approvalsGiven: Prisma.$ListingApprovalPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      email: string
-      hashedPassword: string
-      name: string | null
-      profileImage: string | null
-      role: $Enums.Role
-      createdAt: Date
-    }, ExtArgs["result"]["user"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        email: string
+        hashedPassword: string
+        name: string | null
+        profileImage: string | null
+        role: $Enums.Role
+        createdAt: Date
+      },
+      ExtArgs['result']['user']
+    >
     composites: {}
   }
 
-  type UserGetPayload<S extends boolean | null | undefined | UserDefaultArgs> = $Result.GetResult<Prisma.$UserPayload, S>
+  type UserGetPayload<S extends boolean | null | undefined | UserDefaultArgs> =
+    $Result.GetResult<Prisma.$UserPayload, S>
 
-  type UserCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<UserFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: UserCountAggregateInputType | true
+  type UserCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<UserFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: UserCountAggregateInputType | true
+  }
+
+  export interface UserDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['User']
+      meta: { name: 'User' }
     }
-
-  export interface UserDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['User'], meta: { name: 'User' } }
     /**
      * Find zero or one User that matches the filter.
      * @param {UserFindUniqueArgs} args - Arguments to find a User
@@ -2280,7 +2474,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends UserFindUniqueArgs>(args: SelectSubset<T, UserFindUniqueArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends UserFindUniqueArgs>(
+      args: SelectSubset<T, UserFindUniqueArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one User that matches the filter or throw an error with `error.code='P2025'`
@@ -2294,7 +2500,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends UserFindUniqueOrThrowArgs>(args: SelectSubset<T, UserFindUniqueOrThrowArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends UserFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, UserFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first User that matches the filter.
@@ -2309,7 +2527,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends UserFindFirstArgs>(args?: SelectSubset<T, UserFindFirstArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends UserFindFirstArgs>(
+      args?: SelectSubset<T, UserFindFirstArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first User that matches the filter or
@@ -2325,7 +2555,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends UserFindFirstOrThrowArgs>(args?: SelectSubset<T, UserFindFirstOrThrowArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends UserFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, UserFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Users that matches the filter.
@@ -2335,15 +2577,24 @@ export namespace Prisma {
      * @example
      * // Get all Users
      * const users = await prisma.user.findMany()
-     * 
+     *
      * // Get first 10 Users
      * const users = await prisma.user.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const userWithIdOnly = await prisma.user.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends UserFindManyArgs>(args?: SelectSubset<T, UserFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends UserFindManyArgs>(
+      args?: SelectSubset<T, UserFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a User.
@@ -2355,9 +2606,21 @@ export namespace Prisma {
      *     // ... data to create a User
      *   }
      * })
-     * 
+     *
      */
-    create<T extends UserCreateArgs>(args: SelectSubset<T, UserCreateArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends UserCreateArgs>(
+      args: SelectSubset<T, UserCreateArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Users.
@@ -2369,9 +2632,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends UserCreateManyArgs>(args?: SelectSubset<T, UserCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends UserCreateManyArgs>(
+      args?: SelectSubset<T, UserCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Users and returns the data saved in the database.
@@ -2383,7 +2648,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Users and only return the `id`
      * const userWithIdOnly = await prisma.user.createManyAndReturn({
      *   select: { id: true },
@@ -2393,9 +2658,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends UserCreateManyAndReturnArgs>(args?: SelectSubset<T, UserCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends UserCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, UserCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a User.
@@ -2407,9 +2681,21 @@ export namespace Prisma {
      *     // ... filter to delete one User
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends UserDeleteArgs>(args: SelectSubset<T, UserDeleteArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends UserDeleteArgs>(
+      args: SelectSubset<T, UserDeleteArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one User.
@@ -2424,9 +2710,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends UserUpdateArgs>(args: SelectSubset<T, UserUpdateArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends UserUpdateArgs>(
+      args: SelectSubset<T, UserUpdateArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Users.
@@ -2438,9 +2736,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends UserDeleteManyArgs>(args?: SelectSubset<T, UserDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends UserDeleteManyArgs>(
+      args?: SelectSubset<T, UserDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Users.
@@ -2457,9 +2757,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends UserUpdateManyArgs>(args: SelectSubset<T, UserUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends UserUpdateManyArgs>(
+      args: SelectSubset<T, UserUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Users and returns the data updated in the database.
@@ -2474,7 +2776,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Users and only return the `id`
      * const userWithIdOnly = await prisma.user.updateManyAndReturn({
      *   select: { id: true },
@@ -2487,9 +2789,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends UserUpdateManyAndReturnArgs>(args: SelectSubset<T, UserUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends UserUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, UserUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one User.
@@ -2508,8 +2819,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends UserUpsertArgs>(args: SelectSubset<T, UserUpsertArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends UserUpsertArgs>(
+      args: SelectSubset<T, UserUpsertArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      $Result.GetResult<
+        Prisma.$UserPayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Users.
@@ -2523,7 +2845,7 @@ export namespace Prisma {
      *     // ... the filter for the Users we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends UserCountArgs>(
       args?: Subset<T, UserCountArgs>,
     ): Prisma.PrismaPromise<
@@ -2557,8 +2879,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends UserAggregateArgs>(args: Subset<T, UserAggregateArgs>): Prisma.PrismaPromise<GetUserAggregateType<T>>
+     **/
+    aggregate<T extends UserAggregateArgs>(
+      args: Subset<T, UserAggregateArgs>,
+    ): Prisma.PrismaPromise<GetUserAggregateType<T>>
 
     /**
      * Group by User.
@@ -2576,8 +2900,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends UserGroupByArgs,
       HasSelectOrTake extends Or<
@@ -2587,59 +2911,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: UserGroupByArgs['orderBy'] }
         : { orderBy?: UserGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, UserGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the User model
-   */
-  readonly fields: UserFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, UserGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetUserGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the User model
+     */
+    readonly fields: UserFieldRefs
   }
 
   /**
@@ -2648,25 +2978,84 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    listings<T extends User$listingsArgs<ExtArgs> = {}>(args?: Subset<T, User$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    votes<T extends User$votesArgs<ExtArgs> = {}>(args?: Subset<T, User$votesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    comments<T extends User$commentsArgs<ExtArgs> = {}>(args?: Subset<T, User$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    approvalsGiven<T extends User$approvalsGivenArgs<ExtArgs> = {}>(args?: Subset<T, User$approvalsGivenArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__UserClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    listings<T extends User$listingsArgs<ExtArgs> = {}>(
+      args?: Subset<T, User$listingsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
+    votes<T extends User$votesArgs<ExtArgs> = {}>(
+      args?: Subset<T, User$votesArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$VotePayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
+    comments<T extends User$commentsArgs<ExtArgs> = {}>(
+      args?: Subset<T, User$commentsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$CommentPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
+    approvalsGiven<T extends User$approvalsGivenArgs<ExtArgs> = {}>(
+      args?: Subset<T, User$approvalsGivenArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingApprovalPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -2676,28 +3065,26 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the User model
    */
   interface UserFieldRefs {
-    readonly id: FieldRef<"User", 'String'>
-    readonly email: FieldRef<"User", 'String'>
-    readonly hashedPassword: FieldRef<"User", 'String'>
-    readonly name: FieldRef<"User", 'String'>
-    readonly profileImage: FieldRef<"User", 'String'>
-    readonly role: FieldRef<"User", 'Role'>
-    readonly createdAt: FieldRef<"User", 'DateTime'>
+    readonly id: FieldRef<'User', 'String'>
+    readonly email: FieldRef<'User', 'String'>
+    readonly hashedPassword: FieldRef<'User', 'String'>
+    readonly name: FieldRef<'User', 'String'>
+    readonly profileImage: FieldRef<'User', 'String'>
+    readonly role: FieldRef<'User', 'Role'>
+    readonly createdAt: FieldRef<'User', 'DateTime'>
   }
-    
 
   // Custom InputTypes
   /**
    * User findUnique
    */
-  export type UserFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2719,7 +3106,9 @@ export namespace Prisma {
   /**
    * User findUniqueOrThrow
    */
-  export type UserFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2741,7 +3130,9 @@ export namespace Prisma {
   /**
    * User findFirst
    */
-  export type UserFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2760,31 +3151,31 @@ export namespace Prisma {
     where?: UserWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Users to fetch.
      */
     orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Users.
      */
     cursor?: UserWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Users from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Users.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Users.
      */
     distinct?: UserScalarFieldEnum | UserScalarFieldEnum[]
@@ -2793,7 +3184,9 @@ export namespace Prisma {
   /**
    * User findFirstOrThrow
    */
-  export type UserFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2812,31 +3205,31 @@ export namespace Prisma {
     where?: UserWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Users to fetch.
      */
     orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Users.
      */
     cursor?: UserWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Users from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Users.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Users.
      */
     distinct?: UserScalarFieldEnum | UserScalarFieldEnum[]
@@ -2845,7 +3238,9 @@ export namespace Prisma {
   /**
    * User findMany
    */
-  export type UserFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2864,25 +3259,25 @@ export namespace Prisma {
     where?: UserWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Users to fetch.
      */
     orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Users.
      */
     cursor?: UserWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Users from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Users.
      */
     skip?: number
@@ -2892,7 +3287,9 @@ export namespace Prisma {
   /**
    * User create
    */
-  export type UserCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2914,7 +3311,9 @@ export namespace Prisma {
   /**
    * User createMany
    */
-  export type UserCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Users.
      */
@@ -2925,7 +3324,9 @@ export namespace Prisma {
   /**
    * User createManyAndReturn
    */
-  export type UserCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2944,7 +3345,9 @@ export namespace Prisma {
   /**
    * User update
    */
-  export type UserUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -2970,7 +3373,9 @@ export namespace Prisma {
   /**
    * User updateMany
    */
-  export type UserUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Users.
      */
@@ -2988,7 +3393,9 @@ export namespace Prisma {
   /**
    * User updateManyAndReturn
    */
-  export type UserUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -3014,7 +3421,9 @@ export namespace Prisma {
   /**
    * User upsert
    */
-  export type UserUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -3044,7 +3453,9 @@ export namespace Prisma {
   /**
    * User delete
    */
-  export type UserDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -3066,7 +3477,9 @@ export namespace Prisma {
   /**
    * User deleteMany
    */
-  export type UserDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Users to delete
      */
@@ -3080,7 +3493,9 @@ export namespace Prisma {
   /**
    * User.listings
    */
-  export type User$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$listingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -3094,7 +3509,9 @@ export namespace Prisma {
      */
     include?: ListingInclude<ExtArgs> | null
     where?: ListingWhereInput
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     cursor?: ListingWhereUniqueInput
     take?: number
     skip?: number
@@ -3104,7 +3521,9 @@ export namespace Prisma {
   /**
    * User.votes
    */
-  export type User$votesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$votesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -3128,7 +3547,9 @@ export namespace Prisma {
   /**
    * User.comments
    */
-  export type User$commentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$commentsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -3142,7 +3563,9 @@ export namespace Prisma {
      */
     include?: CommentInclude<ExtArgs> | null
     where?: CommentWhereInput
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     cursor?: CommentWhereUniqueInput
     take?: number
     skip?: number
@@ -3152,7 +3575,9 @@ export namespace Prisma {
   /**
    * User.approvalsGiven
    */
-  export type User$approvalsGivenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$approvalsGivenArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -3166,7 +3591,9 @@ export namespace Prisma {
      */
     include?: ListingApprovalInclude<ExtArgs> | null
     where?: ListingApprovalWhereInput
-    orderBy?: ListingApprovalOrderByWithRelationInput | ListingApprovalOrderByWithRelationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithRelationInput
+      | ListingApprovalOrderByWithRelationInput[]
     cursor?: ListingApprovalWhereUniqueInput
     take?: number
     skip?: number
@@ -3176,7 +3603,9 @@ export namespace Prisma {
   /**
    * User without action
    */
-  export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type UserDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -3190,7 +3619,6 @@ export namespace Prisma {
      */
     include?: UserInclude<ExtArgs> | null
   }
-
 
   /**
    * Model Device
@@ -3221,7 +3649,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type DeviceMinAggregateInputType = {
     id?: true
     brand?: true
@@ -3241,69 +3668,72 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type DeviceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Device to aggregate.
      */
     where?: DeviceWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Devices to fetch.
      */
     orderBy?: DeviceOrderByWithRelationInput | DeviceOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: DeviceWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Devices from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Devices.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Devices
-    **/
+     **/
     _count?: true | DeviceCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: DeviceMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: DeviceMaxAggregateInputType
   }
 
   export type GetDeviceAggregateType<T extends DeviceAggregateArgs> = {
-        [P in keyof T & keyof AggregateDevice]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateDevice]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateDevice[P]>
       : GetScalarType<T[P], AggregateDevice[P]>
   }
 
-
-
-
-  export type DeviceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: DeviceWhereInput
-    orderBy?: DeviceOrderByWithAggregationInput | DeviceOrderByWithAggregationInput[]
+    orderBy?:
+      | DeviceOrderByWithAggregationInput
+      | DeviceOrderByWithAggregationInput[]
     by: DeviceScalarFieldEnum[] | DeviceScalarFieldEnum
     having?: DeviceScalarWhereWithAggregatesInput
     take?: number
@@ -3322,11 +3752,11 @@ export namespace Prisma {
     _max: DeviceMaxAggregateOutputType | null
   }
 
-  type GetDeviceGroupByPayload<T extends DeviceGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<DeviceGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof DeviceGroupByOutputType))]: P extends '_count'
+  type GetDeviceGroupByPayload<T extends DeviceGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<DeviceGroupByOutputType, T['by']> & {
+          [P in keyof T & keyof DeviceGroupByOutputType]: P extends '_count'
             ? T[P] extends boolean
               ? number
               : GetScalarType<T[P], DeviceGroupByOutputType[P]>
@@ -3335,26 +3765,40 @@ export namespace Prisma {
       >
     >
 
+  export type DeviceSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      brand?: boolean
+      modelName?: boolean
+      listings?: boolean | Device$listingsArgs<ExtArgs>
+      _count?: boolean | DeviceCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['device']
+  >
 
-  export type DeviceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    brand?: boolean
-    modelName?: boolean
-    listings?: boolean | Device$listingsArgs<ExtArgs>
-    _count?: boolean | DeviceCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["device"]>
+  export type DeviceSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      brand?: boolean
+      modelName?: boolean
+    },
+    ExtArgs['result']['device']
+  >
 
-  export type DeviceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    brand?: boolean
-    modelName?: boolean
-  }, ExtArgs["result"]["device"]>
-
-  export type DeviceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    brand?: boolean
-    modelName?: boolean
-  }, ExtArgs["result"]["device"]>
+  export type DeviceSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      brand?: boolean
+      modelName?: boolean
+    },
+    ExtArgs['result']['device']
+  >
 
   export type DeviceSelectScalar = {
     id?: boolean
@@ -3362,36 +3806,61 @@ export namespace Prisma {
     modelName?: boolean
   }
 
-  export type DeviceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brand" | "modelName", ExtArgs["result"]["device"]>
-  export type DeviceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    'id' | 'brand' | 'modelName',
+    ExtArgs['result']['device']
+  >
+  export type DeviceInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | Device$listingsArgs<ExtArgs>
     _count?: boolean | DeviceCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type DeviceIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type DeviceIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type DeviceIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
+  export type DeviceIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
 
-  export type $DevicePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Device"
+  export type $DevicePayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'Device'
     objects: {
       listings: Prisma.$ListingPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      brand: string
-      modelName: string
-    }, ExtArgs["result"]["device"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        brand: string
+        modelName: string
+      },
+      ExtArgs['result']['device']
+    >
     composites: {}
   }
 
-  type DeviceGetPayload<S extends boolean | null | undefined | DeviceDefaultArgs> = $Result.GetResult<Prisma.$DevicePayload, S>
+  type DeviceGetPayload<
+    S extends boolean | null | undefined | DeviceDefaultArgs,
+  > = $Result.GetResult<Prisma.$DevicePayload, S>
 
-  type DeviceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<DeviceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: DeviceCountAggregateInputType | true
+  type DeviceCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<DeviceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: DeviceCountAggregateInputType | true
+  }
+
+  export interface DeviceDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['Device']
+      meta: { name: 'Device' }
     }
-
-  export interface DeviceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Device'], meta: { name: 'Device' } }
     /**
      * Find zero or one Device that matches the filter.
      * @param {DeviceFindUniqueArgs} args - Arguments to find a Device
@@ -3403,7 +3872,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends DeviceFindUniqueArgs>(args: SelectSubset<T, DeviceFindUniqueArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends DeviceFindUniqueArgs>(
+      args: SelectSubset<T, DeviceFindUniqueArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one Device that matches the filter or throw an error with `error.code='P2025'`
@@ -3417,7 +3898,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends DeviceFindUniqueOrThrowArgs>(args: SelectSubset<T, DeviceFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends DeviceFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, DeviceFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Device that matches the filter.
@@ -3432,7 +3925,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends DeviceFindFirstArgs>(args?: SelectSubset<T, DeviceFindFirstArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends DeviceFindFirstArgs>(
+      args?: SelectSubset<T, DeviceFindFirstArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Device that matches the filter or
@@ -3448,7 +3953,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends DeviceFindFirstOrThrowArgs>(args?: SelectSubset<T, DeviceFindFirstOrThrowArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends DeviceFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, DeviceFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Devices that matches the filter.
@@ -3458,15 +3975,24 @@ export namespace Prisma {
      * @example
      * // Get all Devices
      * const devices = await prisma.device.findMany()
-     * 
+     *
      * // Get first 10 Devices
      * const devices = await prisma.device.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const deviceWithIdOnly = await prisma.device.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends DeviceFindManyArgs>(args?: SelectSubset<T, DeviceFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends DeviceFindManyArgs>(
+      args?: SelectSubset<T, DeviceFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a Device.
@@ -3478,9 +4004,21 @@ export namespace Prisma {
      *     // ... data to create a Device
      *   }
      * })
-     * 
+     *
      */
-    create<T extends DeviceCreateArgs>(args: SelectSubset<T, DeviceCreateArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends DeviceCreateArgs>(
+      args: SelectSubset<T, DeviceCreateArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Devices.
@@ -3492,9 +4030,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends DeviceCreateManyArgs>(args?: SelectSubset<T, DeviceCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends DeviceCreateManyArgs>(
+      args?: SelectSubset<T, DeviceCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Devices and returns the data saved in the database.
@@ -3506,7 +4046,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Devices and only return the `id`
      * const deviceWithIdOnly = await prisma.device.createManyAndReturn({
      *   select: { id: true },
@@ -3516,9 +4056,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends DeviceCreateManyAndReturnArgs>(args?: SelectSubset<T, DeviceCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends DeviceCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, DeviceCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a Device.
@@ -3530,9 +4079,21 @@ export namespace Prisma {
      *     // ... filter to delete one Device
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends DeviceDeleteArgs>(args: SelectSubset<T, DeviceDeleteArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends DeviceDeleteArgs>(
+      args: SelectSubset<T, DeviceDeleteArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one Device.
@@ -3547,9 +4108,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends DeviceUpdateArgs>(args: SelectSubset<T, DeviceUpdateArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends DeviceUpdateArgs>(
+      args: SelectSubset<T, DeviceUpdateArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Devices.
@@ -3561,9 +4134,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends DeviceDeleteManyArgs>(args?: SelectSubset<T, DeviceDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends DeviceDeleteManyArgs>(
+      args?: SelectSubset<T, DeviceDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Devices.
@@ -3580,9 +4155,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends DeviceUpdateManyArgs>(args: SelectSubset<T, DeviceUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends DeviceUpdateManyArgs>(
+      args: SelectSubset<T, DeviceUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Devices and returns the data updated in the database.
@@ -3597,7 +4174,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Devices and only return the `id`
      * const deviceWithIdOnly = await prisma.device.updateManyAndReturn({
      *   select: { id: true },
@@ -3610,9 +4187,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends DeviceUpdateManyAndReturnArgs>(args: SelectSubset<T, DeviceUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends DeviceUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, DeviceUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one Device.
@@ -3631,8 +4217,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends DeviceUpsertArgs>(args: SelectSubset<T, DeviceUpsertArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends DeviceUpsertArgs>(
+      args: SelectSubset<T, DeviceUpsertArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      $Result.GetResult<
+        Prisma.$DevicePayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Devices.
@@ -3646,7 +4243,7 @@ export namespace Prisma {
      *     // ... the filter for the Devices we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends DeviceCountArgs>(
       args?: Subset<T, DeviceCountArgs>,
     ): Prisma.PrismaPromise<
@@ -3680,8 +4277,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends DeviceAggregateArgs>(args: Subset<T, DeviceAggregateArgs>): Prisma.PrismaPromise<GetDeviceAggregateType<T>>
+     **/
+    aggregate<T extends DeviceAggregateArgs>(
+      args: Subset<T, DeviceAggregateArgs>,
+    ): Prisma.PrismaPromise<GetDeviceAggregateType<T>>
 
     /**
      * Group by Device.
@@ -3699,8 +4298,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends DeviceGroupByArgs,
       HasSelectOrTake extends Or<
@@ -3710,59 +4309,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: DeviceGroupByArgs['orderBy'] }
         : { orderBy?: DeviceGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, DeviceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDeviceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Device model
-   */
-  readonly fields: DeviceFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, DeviceGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetDeviceGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the Device model
+     */
+    readonly fields: DeviceFieldRefs
   }
 
   /**
@@ -3771,22 +4376,51 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__DeviceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    listings<T extends Device$listingsArgs<ExtArgs> = {}>(args?: Subset<T, Device$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__DeviceClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    listings<T extends Device$listingsArgs<ExtArgs> = {}>(
+      args?: Subset<T, Device$listingsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -3796,24 +4430,22 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the Device model
    */
   interface DeviceFieldRefs {
-    readonly id: FieldRef<"Device", 'String'>
-    readonly brand: FieldRef<"Device", 'String'>
-    readonly modelName: FieldRef<"Device", 'String'>
+    readonly id: FieldRef<'Device', 'String'>
+    readonly brand: FieldRef<'Device', 'String'>
+    readonly modelName: FieldRef<'Device', 'String'>
   }
-    
 
   // Custom InputTypes
   /**
    * Device findUnique
    */
-  export type DeviceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -3835,7 +4467,9 @@ export namespace Prisma {
   /**
    * Device findUniqueOrThrow
    */
-  export type DeviceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -3857,7 +4491,9 @@ export namespace Prisma {
   /**
    * Device findFirst
    */
-  export type DeviceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -3876,31 +4512,31 @@ export namespace Prisma {
     where?: DeviceWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Devices to fetch.
      */
     orderBy?: DeviceOrderByWithRelationInput | DeviceOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Devices.
      */
     cursor?: DeviceWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Devices from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Devices.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Devices.
      */
     distinct?: DeviceScalarFieldEnum | DeviceScalarFieldEnum[]
@@ -3909,7 +4545,9 @@ export namespace Prisma {
   /**
    * Device findFirstOrThrow
    */
-  export type DeviceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -3928,31 +4566,31 @@ export namespace Prisma {
     where?: DeviceWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Devices to fetch.
      */
     orderBy?: DeviceOrderByWithRelationInput | DeviceOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Devices.
      */
     cursor?: DeviceWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Devices from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Devices.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Devices.
      */
     distinct?: DeviceScalarFieldEnum | DeviceScalarFieldEnum[]
@@ -3961,7 +4599,9 @@ export namespace Prisma {
   /**
    * Device findMany
    */
-  export type DeviceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -3980,25 +4620,25 @@ export namespace Prisma {
     where?: DeviceWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Devices to fetch.
      */
     orderBy?: DeviceOrderByWithRelationInput | DeviceOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Devices.
      */
     cursor?: DeviceWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Devices from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Devices.
      */
     skip?: number
@@ -4008,7 +4648,9 @@ export namespace Prisma {
   /**
    * Device create
    */
-  export type DeviceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4030,7 +4672,9 @@ export namespace Prisma {
   /**
    * Device createMany
    */
-  export type DeviceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Devices.
      */
@@ -4041,7 +4685,9 @@ export namespace Prisma {
   /**
    * Device createManyAndReturn
    */
-  export type DeviceCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4060,7 +4706,9 @@ export namespace Prisma {
   /**
    * Device update
    */
-  export type DeviceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4086,7 +4734,9 @@ export namespace Prisma {
   /**
    * Device updateMany
    */
-  export type DeviceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Devices.
      */
@@ -4104,7 +4754,9 @@ export namespace Prisma {
   /**
    * Device updateManyAndReturn
    */
-  export type DeviceUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4130,7 +4782,9 @@ export namespace Prisma {
   /**
    * Device upsert
    */
-  export type DeviceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4160,7 +4814,9 @@ export namespace Prisma {
   /**
    * Device delete
    */
-  export type DeviceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4182,7 +4838,9 @@ export namespace Prisma {
   /**
    * Device deleteMany
    */
-  export type DeviceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Devices to delete
      */
@@ -4196,7 +4854,9 @@ export namespace Prisma {
   /**
    * Device.listings
    */
-  export type Device$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Device$listingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -4210,7 +4870,9 @@ export namespace Prisma {
      */
     include?: ListingInclude<ExtArgs> | null
     where?: ListingWhereInput
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     cursor?: ListingWhereUniqueInput
     take?: number
     skip?: number
@@ -4220,7 +4882,9 @@ export namespace Prisma {
   /**
    * Device without action
    */
-  export type DeviceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DeviceDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Device
      */
@@ -4234,7 +4898,6 @@ export namespace Prisma {
      */
     include?: DeviceInclude<ExtArgs> | null
   }
-
 
   /**
    * Model System
@@ -4262,7 +4925,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type SystemMinAggregateInputType = {
     id?: true
     name?: true
@@ -4279,69 +4941,72 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type SystemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which System to aggregate.
      */
     where?: SystemWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Systems to fetch.
      */
     orderBy?: SystemOrderByWithRelationInput | SystemOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: SystemWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Systems from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Systems.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Systems
-    **/
+     **/
     _count?: true | SystemCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: SystemMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: SystemMaxAggregateInputType
   }
 
   export type GetSystemAggregateType<T extends SystemAggregateArgs> = {
-        [P in keyof T & keyof AggregateSystem]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateSystem]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateSystem[P]>
       : GetScalarType<T[P], AggregateSystem[P]>
   }
 
-
-
-
-  export type SystemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: SystemWhereInput
-    orderBy?: SystemOrderByWithAggregationInput | SystemOrderByWithAggregationInput[]
+    orderBy?:
+      | SystemOrderByWithAggregationInput
+      | SystemOrderByWithAggregationInput[]
     by: SystemScalarFieldEnum[] | SystemScalarFieldEnum
     having?: SystemScalarWhereWithAggregatesInput
     take?: number
@@ -4359,11 +5024,11 @@ export namespace Prisma {
     _max: SystemMaxAggregateOutputType | null
   }
 
-  type GetSystemGroupByPayload<T extends SystemGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<SystemGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof SystemGroupByOutputType))]: P extends '_count'
+  type GetSystemGroupByPayload<T extends SystemGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<SystemGroupByOutputType, T['by']> & {
+          [P in keyof T & keyof SystemGroupByOutputType]: P extends '_count'
             ? T[P] extends boolean
               ? number
               : GetScalarType<T[P], SystemGroupByOutputType[P]>
@@ -4372,58 +5037,94 @@ export namespace Prisma {
       >
     >
 
+  export type SystemSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      name?: boolean
+      games?: boolean | System$gamesArgs<ExtArgs>
+      _count?: boolean | SystemCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['system']
+  >
 
-  export type SystemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-    games?: boolean | System$gamesArgs<ExtArgs>
-    _count?: boolean | SystemCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["system"]>
+  export type SystemSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      name?: boolean
+    },
+    ExtArgs['result']['system']
+  >
 
-  export type SystemSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-  }, ExtArgs["result"]["system"]>
-
-  export type SystemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-  }, ExtArgs["result"]["system"]>
+  export type SystemSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      name?: boolean
+    },
+    ExtArgs['result']['system']
+  >
 
   export type SystemSelectScalar = {
     id?: boolean
     name?: boolean
   }
 
-  export type SystemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name", ExtArgs["result"]["system"]>
-  export type SystemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<'id' | 'name', ExtArgs['result']['system']>
+  export type SystemInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     games?: boolean | System$gamesArgs<ExtArgs>
     _count?: boolean | SystemCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type SystemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type SystemIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type SystemIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
+  export type SystemIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
 
-  export type $SystemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "System"
+  export type $SystemPayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'System'
     objects: {
       games: Prisma.$GamePayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      name: string
-    }, ExtArgs["result"]["system"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        name: string
+      },
+      ExtArgs['result']['system']
+    >
     composites: {}
   }
 
-  type SystemGetPayload<S extends boolean | null | undefined | SystemDefaultArgs> = $Result.GetResult<Prisma.$SystemPayload, S>
+  type SystemGetPayload<
+    S extends boolean | null | undefined | SystemDefaultArgs,
+  > = $Result.GetResult<Prisma.$SystemPayload, S>
 
-  type SystemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<SystemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: SystemCountAggregateInputType | true
+  type SystemCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<SystemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: SystemCountAggregateInputType | true
+  }
+
+  export interface SystemDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['System']
+      meta: { name: 'System' }
     }
-
-  export interface SystemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['System'], meta: { name: 'System' } }
     /**
      * Find zero or one System that matches the filter.
      * @param {SystemFindUniqueArgs} args - Arguments to find a System
@@ -4435,7 +5136,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends SystemFindUniqueArgs>(args: SelectSubset<T, SystemFindUniqueArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends SystemFindUniqueArgs>(
+      args: SelectSubset<T, SystemFindUniqueArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one System that matches the filter or throw an error with `error.code='P2025'`
@@ -4449,7 +5162,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends SystemFindUniqueOrThrowArgs>(args: SelectSubset<T, SystemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends SystemFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, SystemFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first System that matches the filter.
@@ -4464,7 +5189,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends SystemFindFirstArgs>(args?: SelectSubset<T, SystemFindFirstArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends SystemFindFirstArgs>(
+      args?: SelectSubset<T, SystemFindFirstArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first System that matches the filter or
@@ -4480,7 +5217,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends SystemFindFirstOrThrowArgs>(args?: SelectSubset<T, SystemFindFirstOrThrowArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends SystemFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, SystemFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Systems that matches the filter.
@@ -4490,15 +5239,24 @@ export namespace Prisma {
      * @example
      * // Get all Systems
      * const systems = await prisma.system.findMany()
-     * 
+     *
      * // Get first 10 Systems
      * const systems = await prisma.system.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const systemWithIdOnly = await prisma.system.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends SystemFindManyArgs>(args?: SelectSubset<T, SystemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends SystemFindManyArgs>(
+      args?: SelectSubset<T, SystemFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a System.
@@ -4510,9 +5268,21 @@ export namespace Prisma {
      *     // ... data to create a System
      *   }
      * })
-     * 
+     *
      */
-    create<T extends SystemCreateArgs>(args: SelectSubset<T, SystemCreateArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends SystemCreateArgs>(
+      args: SelectSubset<T, SystemCreateArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Systems.
@@ -4524,9 +5294,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends SystemCreateManyArgs>(args?: SelectSubset<T, SystemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends SystemCreateManyArgs>(
+      args?: SelectSubset<T, SystemCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Systems and returns the data saved in the database.
@@ -4538,7 +5310,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Systems and only return the `id`
      * const systemWithIdOnly = await prisma.system.createManyAndReturn({
      *   select: { id: true },
@@ -4548,9 +5320,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends SystemCreateManyAndReturnArgs>(args?: SelectSubset<T, SystemCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends SystemCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, SystemCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a System.
@@ -4562,9 +5343,21 @@ export namespace Prisma {
      *     // ... filter to delete one System
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends SystemDeleteArgs>(args: SelectSubset<T, SystemDeleteArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends SystemDeleteArgs>(
+      args: SelectSubset<T, SystemDeleteArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one System.
@@ -4579,9 +5372,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends SystemUpdateArgs>(args: SelectSubset<T, SystemUpdateArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends SystemUpdateArgs>(
+      args: SelectSubset<T, SystemUpdateArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Systems.
@@ -4593,9 +5398,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends SystemDeleteManyArgs>(args?: SelectSubset<T, SystemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends SystemDeleteManyArgs>(
+      args?: SelectSubset<T, SystemDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Systems.
@@ -4612,9 +5419,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends SystemUpdateManyArgs>(args: SelectSubset<T, SystemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends SystemUpdateManyArgs>(
+      args: SelectSubset<T, SystemUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Systems and returns the data updated in the database.
@@ -4629,7 +5438,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Systems and only return the `id`
      * const systemWithIdOnly = await prisma.system.updateManyAndReturn({
      *   select: { id: true },
@@ -4642,9 +5451,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends SystemUpdateManyAndReturnArgs>(args: SelectSubset<T, SystemUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends SystemUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, SystemUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one System.
@@ -4663,8 +5481,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends SystemUpsertArgs>(args: SelectSubset<T, SystemUpsertArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends SystemUpsertArgs>(
+      args: SelectSubset<T, SystemUpsertArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      $Result.GetResult<
+        Prisma.$SystemPayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Systems.
@@ -4678,7 +5507,7 @@ export namespace Prisma {
      *     // ... the filter for the Systems we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends SystemCountArgs>(
       args?: Subset<T, SystemCountArgs>,
     ): Prisma.PrismaPromise<
@@ -4712,8 +5541,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends SystemAggregateArgs>(args: Subset<T, SystemAggregateArgs>): Prisma.PrismaPromise<GetSystemAggregateType<T>>
+     **/
+    aggregate<T extends SystemAggregateArgs>(
+      args: Subset<T, SystemAggregateArgs>,
+    ): Prisma.PrismaPromise<GetSystemAggregateType<T>>
 
     /**
      * Group by System.
@@ -4731,8 +5562,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends SystemGroupByArgs,
       HasSelectOrTake extends Or<
@@ -4742,59 +5573,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: SystemGroupByArgs['orderBy'] }
         : { orderBy?: SystemGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, SystemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSystemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the System model
-   */
-  readonly fields: SystemFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, SystemGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetSystemGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the System model
+     */
+    readonly fields: SystemFieldRefs
   }
 
   /**
@@ -4803,22 +5640,51 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__SystemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    games<T extends System$gamesArgs<ExtArgs> = {}>(args?: Subset<T, System$gamesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__SystemClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    games<T extends System$gamesArgs<ExtArgs> = {}>(
+      args?: Subset<T, System$gamesArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$GamePayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -4828,23 +5694,21 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the System model
    */
   interface SystemFieldRefs {
-    readonly id: FieldRef<"System", 'String'>
-    readonly name: FieldRef<"System", 'String'>
+    readonly id: FieldRef<'System', 'String'>
+    readonly name: FieldRef<'System', 'String'>
   }
-    
 
   // Custom InputTypes
   /**
    * System findUnique
    */
-  export type SystemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -4866,7 +5730,9 @@ export namespace Prisma {
   /**
    * System findUniqueOrThrow
    */
-  export type SystemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -4888,7 +5754,9 @@ export namespace Prisma {
   /**
    * System findFirst
    */
-  export type SystemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -4907,31 +5775,31 @@ export namespace Prisma {
     where?: SystemWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Systems to fetch.
      */
     orderBy?: SystemOrderByWithRelationInput | SystemOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Systems.
      */
     cursor?: SystemWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Systems from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Systems.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Systems.
      */
     distinct?: SystemScalarFieldEnum | SystemScalarFieldEnum[]
@@ -4940,7 +5808,9 @@ export namespace Prisma {
   /**
    * System findFirstOrThrow
    */
-  export type SystemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -4959,31 +5829,31 @@ export namespace Prisma {
     where?: SystemWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Systems to fetch.
      */
     orderBy?: SystemOrderByWithRelationInput | SystemOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Systems.
      */
     cursor?: SystemWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Systems from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Systems.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Systems.
      */
     distinct?: SystemScalarFieldEnum | SystemScalarFieldEnum[]
@@ -4992,7 +5862,9 @@ export namespace Prisma {
   /**
    * System findMany
    */
-  export type SystemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5011,25 +5883,25 @@ export namespace Prisma {
     where?: SystemWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Systems to fetch.
      */
     orderBy?: SystemOrderByWithRelationInput | SystemOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Systems.
      */
     cursor?: SystemWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Systems from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Systems.
      */
     skip?: number
@@ -5039,7 +5911,9 @@ export namespace Prisma {
   /**
    * System create
    */
-  export type SystemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5061,7 +5935,9 @@ export namespace Prisma {
   /**
    * System createMany
    */
-  export type SystemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Systems.
      */
@@ -5072,7 +5948,9 @@ export namespace Prisma {
   /**
    * System createManyAndReturn
    */
-  export type SystemCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5091,7 +5969,9 @@ export namespace Prisma {
   /**
    * System update
    */
-  export type SystemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5117,7 +5997,9 @@ export namespace Prisma {
   /**
    * System updateMany
    */
-  export type SystemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Systems.
      */
@@ -5135,7 +6017,9 @@ export namespace Prisma {
   /**
    * System updateManyAndReturn
    */
-  export type SystemUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5161,7 +6045,9 @@ export namespace Prisma {
   /**
    * System upsert
    */
-  export type SystemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5191,7 +6077,9 @@ export namespace Prisma {
   /**
    * System delete
    */
-  export type SystemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5213,7 +6101,9 @@ export namespace Prisma {
   /**
    * System deleteMany
    */
-  export type SystemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Systems to delete
      */
@@ -5227,7 +6117,9 @@ export namespace Prisma {
   /**
    * System.games
    */
-  export type System$gamesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type System$gamesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -5251,7 +6143,9 @@ export namespace Prisma {
   /**
    * System without action
    */
-  export type SystemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type SystemDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the System
      */
@@ -5265,7 +6159,6 @@ export namespace Prisma {
      */
     include?: SystemInclude<ExtArgs> | null
   }
-
 
   /**
    * Model Game
@@ -5299,7 +6192,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type GameMinAggregateInputType = {
     id?: true
     title?: true
@@ -5322,69 +6214,72 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type GameAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Game to aggregate.
      */
     where?: GameWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Games to fetch.
      */
     orderBy?: GameOrderByWithRelationInput | GameOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: GameWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Games from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Games.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Games
-    **/
+     **/
     _count?: true | GameCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: GameMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: GameMaxAggregateInputType
   }
 
   export type GetGameAggregateType<T extends GameAggregateArgs> = {
-        [P in keyof T & keyof AggregateGame]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateGame]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateGame[P]>
       : GetScalarType<T[P], AggregateGame[P]>
   }
 
-
-
-
-  export type GameGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: GameWhereInput
-    orderBy?: GameOrderByWithAggregationInput | GameOrderByWithAggregationInput[]
+    orderBy?:
+      | GameOrderByWithAggregationInput
+      | GameOrderByWithAggregationInput[]
     by: GameScalarFieldEnum[] | GameScalarFieldEnum
     having?: GameScalarWhereWithAggregatesInput
     take?: number
@@ -5406,43 +6301,56 @@ export namespace Prisma {
 
   type GetGameGroupByPayload<T extends GameGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<GameGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof GameGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], GameGroupByOutputType[P]>
+      PickEnumerable<GameGroupByOutputType, T['by']> & {
+        [P in keyof T & keyof GameGroupByOutputType]: P extends '_count'
+          ? T[P] extends boolean
+            ? number
             : GetScalarType<T[P], GameGroupByOutputType[P]>
-        }
-      >
+          : GetScalarType<T[P], GameGroupByOutputType[P]>
+      }
     >
+  >
 
+  export type GameSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      title?: boolean
+      systemId?: boolean
+      imageUrl?: boolean
+      system?: boolean | SystemDefaultArgs<ExtArgs>
+      listings?: boolean | Game$listingsArgs<ExtArgs>
+      _count?: boolean | GameCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['game']
+  >
 
-  export type GameSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    title?: boolean
-    systemId?: boolean
-    imageUrl?: boolean
-    system?: boolean | SystemDefaultArgs<ExtArgs>
-    listings?: boolean | Game$listingsArgs<ExtArgs>
-    _count?: boolean | GameCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["game"]>
+  export type GameSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      title?: boolean
+      systemId?: boolean
+      imageUrl?: boolean
+      system?: boolean | SystemDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['game']
+  >
 
-  export type GameSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    title?: boolean
-    systemId?: boolean
-    imageUrl?: boolean
-    system?: boolean | SystemDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["game"]>
-
-  export type GameSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    title?: boolean
-    systemId?: boolean
-    imageUrl?: boolean
-    system?: boolean | SystemDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["game"]>
+  export type GameSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      title?: boolean
+      systemId?: boolean
+      imageUrl?: boolean
+      system?: boolean | SystemDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['game']
+  >
 
   export type GameSelectScalar = {
     id?: boolean
@@ -5451,43 +6359,67 @@ export namespace Prisma {
     imageUrl?: boolean
   }
 
-  export type GameOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "systemId" | "imageUrl", ExtArgs["result"]["game"]>
-  export type GameInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    'id' | 'title' | 'systemId' | 'imageUrl',
+    ExtArgs['result']['game']
+  >
+  export type GameInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     system?: boolean | SystemDefaultArgs<ExtArgs>
     listings?: boolean | Game$listingsArgs<ExtArgs>
     _count?: boolean | GameCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type GameIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     system?: boolean | SystemDefaultArgs<ExtArgs>
   }
-  export type GameIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     system?: boolean | SystemDefaultArgs<ExtArgs>
   }
 
-  export type $GamePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Game"
+  export type $GamePayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'Game'
     objects: {
       system: Prisma.$SystemPayload<ExtArgs>
       listings: Prisma.$ListingPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      title: string
-      systemId: string
-      imageUrl: string | null
-    }, ExtArgs["result"]["game"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        title: string
+        systemId: string
+        imageUrl: string | null
+      },
+      ExtArgs['result']['game']
+    >
     composites: {}
   }
 
-  type GameGetPayload<S extends boolean | null | undefined | GameDefaultArgs> = $Result.GetResult<Prisma.$GamePayload, S>
+  type GameGetPayload<S extends boolean | null | undefined | GameDefaultArgs> =
+    $Result.GetResult<Prisma.$GamePayload, S>
 
-  type GameCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<GameFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: GameCountAggregateInputType | true
+  type GameCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<GameFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: GameCountAggregateInputType | true
+  }
+
+  export interface GameDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['Game']
+      meta: { name: 'Game' }
     }
-
-  export interface GameDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Game'], meta: { name: 'Game' } }
     /**
      * Find zero or one Game that matches the filter.
      * @param {GameFindUniqueArgs} args - Arguments to find a Game
@@ -5499,7 +6431,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends GameFindUniqueArgs>(args: SelectSubset<T, GameFindUniqueArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends GameFindUniqueArgs>(
+      args: SelectSubset<T, GameFindUniqueArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one Game that matches the filter or throw an error with `error.code='P2025'`
@@ -5513,7 +6457,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends GameFindUniqueOrThrowArgs>(args: SelectSubset<T, GameFindUniqueOrThrowArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends GameFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, GameFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Game that matches the filter.
@@ -5528,7 +6484,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends GameFindFirstArgs>(args?: SelectSubset<T, GameFindFirstArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends GameFindFirstArgs>(
+      args?: SelectSubset<T, GameFindFirstArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Game that matches the filter or
@@ -5544,7 +6512,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends GameFindFirstOrThrowArgs>(args?: SelectSubset<T, GameFindFirstOrThrowArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends GameFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, GameFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Games that matches the filter.
@@ -5554,15 +6534,24 @@ export namespace Prisma {
      * @example
      * // Get all Games
      * const games = await prisma.game.findMany()
-     * 
+     *
      * // Get first 10 Games
      * const games = await prisma.game.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const gameWithIdOnly = await prisma.game.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends GameFindManyArgs>(args?: SelectSubset<T, GameFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends GameFindManyArgs>(
+      args?: SelectSubset<T, GameFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a Game.
@@ -5574,9 +6563,21 @@ export namespace Prisma {
      *     // ... data to create a Game
      *   }
      * })
-     * 
+     *
      */
-    create<T extends GameCreateArgs>(args: SelectSubset<T, GameCreateArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends GameCreateArgs>(
+      args: SelectSubset<T, GameCreateArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Games.
@@ -5588,9 +6589,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends GameCreateManyArgs>(args?: SelectSubset<T, GameCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends GameCreateManyArgs>(
+      args?: SelectSubset<T, GameCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Games and returns the data saved in the database.
@@ -5602,7 +6605,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Games and only return the `id`
      * const gameWithIdOnly = await prisma.game.createManyAndReturn({
      *   select: { id: true },
@@ -5612,9 +6615,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends GameCreateManyAndReturnArgs>(args?: SelectSubset<T, GameCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends GameCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, GameCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a Game.
@@ -5626,9 +6638,21 @@ export namespace Prisma {
      *     // ... filter to delete one Game
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends GameDeleteArgs>(args: SelectSubset<T, GameDeleteArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends GameDeleteArgs>(
+      args: SelectSubset<T, GameDeleteArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one Game.
@@ -5643,9 +6667,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends GameUpdateArgs>(args: SelectSubset<T, GameUpdateArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends GameUpdateArgs>(
+      args: SelectSubset<T, GameUpdateArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Games.
@@ -5657,9 +6693,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends GameDeleteManyArgs>(args?: SelectSubset<T, GameDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends GameDeleteManyArgs>(
+      args?: SelectSubset<T, GameDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Games.
@@ -5676,9 +6714,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends GameUpdateManyArgs>(args: SelectSubset<T, GameUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends GameUpdateManyArgs>(
+      args: SelectSubset<T, GameUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Games and returns the data updated in the database.
@@ -5693,7 +6733,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Games and only return the `id`
      * const gameWithIdOnly = await prisma.game.updateManyAndReturn({
      *   select: { id: true },
@@ -5706,9 +6746,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends GameUpdateManyAndReturnArgs>(args: SelectSubset<T, GameUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends GameUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, GameUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one Game.
@@ -5727,8 +6776,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends GameUpsertArgs>(args: SelectSubset<T, GameUpsertArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends GameUpsertArgs>(
+      args: SelectSubset<T, GameUpsertArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      $Result.GetResult<
+        Prisma.$GamePayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Games.
@@ -5742,7 +6802,7 @@ export namespace Prisma {
      *     // ... the filter for the Games we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends GameCountArgs>(
       args?: Subset<T, GameCountArgs>,
     ): Prisma.PrismaPromise<
@@ -5776,8 +6836,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends GameAggregateArgs>(args: Subset<T, GameAggregateArgs>): Prisma.PrismaPromise<GetGameAggregateType<T>>
+     **/
+    aggregate<T extends GameAggregateArgs>(
+      args: Subset<T, GameAggregateArgs>,
+    ): Prisma.PrismaPromise<GetGameAggregateType<T>>
 
     /**
      * Group by Game.
@@ -5795,8 +6857,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends GameGroupByArgs,
       HasSelectOrTake extends Or<
@@ -5806,59 +6868,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: GameGroupByArgs['orderBy'] }
         : { orderBy?: GameGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, GameGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetGameGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Game model
-   */
-  readonly fields: GameFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, GameGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetGameGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the Game model
+     */
+    readonly fields: GameFieldRefs
   }
 
   /**
@@ -5867,23 +6935,65 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__GameClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    system<T extends SystemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SystemDefaultArgs<ExtArgs>>): Prisma__SystemClient<$Result.GetResult<Prisma.$SystemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    listings<T extends Game$listingsArgs<ExtArgs> = {}>(args?: Subset<T, Game$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__GameClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    system<T extends SystemDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, SystemDefaultArgs<ExtArgs>>,
+    ): Prisma__SystemClient<
+      | $Result.GetResult<
+          Prisma.$SystemPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    listings<T extends Game$listingsArgs<ExtArgs> = {}>(
+      args?: Subset<T, Game$listingsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -5893,25 +7003,23 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the Game model
    */
   interface GameFieldRefs {
-    readonly id: FieldRef<"Game", 'String'>
-    readonly title: FieldRef<"Game", 'String'>
-    readonly systemId: FieldRef<"Game", 'String'>
-    readonly imageUrl: FieldRef<"Game", 'String'>
+    readonly id: FieldRef<'Game', 'String'>
+    readonly title: FieldRef<'Game', 'String'>
+    readonly systemId: FieldRef<'Game', 'String'>
+    readonly imageUrl: FieldRef<'Game', 'String'>
   }
-    
 
   // Custom InputTypes
   /**
    * Game findUnique
    */
-  export type GameFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -5933,7 +7041,9 @@ export namespace Prisma {
   /**
    * Game findUniqueOrThrow
    */
-  export type GameFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -5955,7 +7065,9 @@ export namespace Prisma {
   /**
    * Game findFirst
    */
-  export type GameFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -5974,31 +7086,31 @@ export namespace Prisma {
     where?: GameWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Games to fetch.
      */
     orderBy?: GameOrderByWithRelationInput | GameOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Games.
      */
     cursor?: GameWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Games from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Games.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Games.
      */
     distinct?: GameScalarFieldEnum | GameScalarFieldEnum[]
@@ -6007,7 +7119,9 @@ export namespace Prisma {
   /**
    * Game findFirstOrThrow
    */
-  export type GameFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6026,31 +7140,31 @@ export namespace Prisma {
     where?: GameWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Games to fetch.
      */
     orderBy?: GameOrderByWithRelationInput | GameOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Games.
      */
     cursor?: GameWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Games from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Games.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Games.
      */
     distinct?: GameScalarFieldEnum | GameScalarFieldEnum[]
@@ -6059,7 +7173,9 @@ export namespace Prisma {
   /**
    * Game findMany
    */
-  export type GameFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6078,25 +7194,25 @@ export namespace Prisma {
     where?: GameWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Games to fetch.
      */
     orderBy?: GameOrderByWithRelationInput | GameOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Games.
      */
     cursor?: GameWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Games from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Games.
      */
     skip?: number
@@ -6106,7 +7222,9 @@ export namespace Prisma {
   /**
    * Game create
    */
-  export type GameCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6128,7 +7246,9 @@ export namespace Prisma {
   /**
    * Game createMany
    */
-  export type GameCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Games.
      */
@@ -6139,7 +7259,9 @@ export namespace Prisma {
   /**
    * Game createManyAndReturn
    */
-  export type GameCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6162,7 +7284,9 @@ export namespace Prisma {
   /**
    * Game update
    */
-  export type GameUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6188,7 +7312,9 @@ export namespace Prisma {
   /**
    * Game updateMany
    */
-  export type GameUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Games.
      */
@@ -6206,7 +7332,9 @@ export namespace Prisma {
   /**
    * Game updateManyAndReturn
    */
-  export type GameUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6236,7 +7364,9 @@ export namespace Prisma {
   /**
    * Game upsert
    */
-  export type GameUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6266,7 +7396,9 @@ export namespace Prisma {
   /**
    * Game delete
    */
-  export type GameDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6288,7 +7420,9 @@ export namespace Prisma {
   /**
    * Game deleteMany
    */
-  export type GameDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Games to delete
      */
@@ -6302,7 +7436,9 @@ export namespace Prisma {
   /**
    * Game.listings
    */
-  export type Game$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Game$listingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -6316,7 +7452,9 @@ export namespace Prisma {
      */
     include?: ListingInclude<ExtArgs> | null
     where?: ListingWhereInput
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     cursor?: ListingWhereUniqueInput
     take?: number
     skip?: number
@@ -6326,7 +7464,9 @@ export namespace Prisma {
   /**
    * Game without action
    */
-  export type GameDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type GameDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Game
      */
@@ -6340,7 +7480,6 @@ export namespace Prisma {
      */
     include?: GameInclude<ExtArgs> | null
   }
-
 
   /**
    * Model Emulator
@@ -6368,7 +7507,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type EmulatorMinAggregateInputType = {
     id?: true
     name?: true
@@ -6385,69 +7523,74 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type EmulatorAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Emulator to aggregate.
      */
     where?: EmulatorWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Emulators to fetch.
      */
-    orderBy?: EmulatorOrderByWithRelationInput | EmulatorOrderByWithRelationInput[]
+    orderBy?:
+      | EmulatorOrderByWithRelationInput
+      | EmulatorOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: EmulatorWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Emulators from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Emulators.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Emulators
-    **/
+     **/
     _count?: true | EmulatorCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: EmulatorMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: EmulatorMaxAggregateInputType
   }
 
   export type GetEmulatorAggregateType<T extends EmulatorAggregateArgs> = {
-        [P in keyof T & keyof AggregateEmulator]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateEmulator]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateEmulator[P]>
       : GetScalarType<T[P], AggregateEmulator[P]>
   }
 
-
-
-
-  export type EmulatorGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: EmulatorWhereInput
-    orderBy?: EmulatorOrderByWithAggregationInput | EmulatorOrderByWithAggregationInput[]
+    orderBy?:
+      | EmulatorOrderByWithAggregationInput
+      | EmulatorOrderByWithAggregationInput[]
     by: EmulatorScalarFieldEnum[] | EmulatorScalarFieldEnum
     having?: EmulatorScalarWhereWithAggregatesInput
     take?: number
@@ -6465,11 +7608,11 @@ export namespace Prisma {
     _max: EmulatorMaxAggregateOutputType | null
   }
 
-  type GetEmulatorGroupByPayload<T extends EmulatorGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<EmulatorGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof EmulatorGroupByOutputType))]: P extends '_count'
+  type GetEmulatorGroupByPayload<T extends EmulatorGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<EmulatorGroupByOutputType, T['by']> & {
+          [P in keyof T & keyof EmulatorGroupByOutputType]: P extends '_count'
             ? T[P] extends boolean
               ? number
               : GetScalarType<T[P], EmulatorGroupByOutputType[P]>
@@ -6478,58 +7621,94 @@ export namespace Prisma {
       >
     >
 
+  export type EmulatorSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      name?: boolean
+      listings?: boolean | Emulator$listingsArgs<ExtArgs>
+      _count?: boolean | EmulatorCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['emulator']
+  >
 
-  export type EmulatorSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-    listings?: boolean | Emulator$listingsArgs<ExtArgs>
-    _count?: boolean | EmulatorCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["emulator"]>
+  export type EmulatorSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      name?: boolean
+    },
+    ExtArgs['result']['emulator']
+  >
 
-  export type EmulatorSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-  }, ExtArgs["result"]["emulator"]>
-
-  export type EmulatorSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-  }, ExtArgs["result"]["emulator"]>
+  export type EmulatorSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      name?: boolean
+    },
+    ExtArgs['result']['emulator']
+  >
 
   export type EmulatorSelectScalar = {
     id?: boolean
     name?: boolean
   }
 
-  export type EmulatorOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name", ExtArgs["result"]["emulator"]>
-  export type EmulatorInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<'id' | 'name', ExtArgs['result']['emulator']>
+  export type EmulatorInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | Emulator$listingsArgs<ExtArgs>
     _count?: boolean | EmulatorCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type EmulatorIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type EmulatorIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type EmulatorIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
+  export type EmulatorIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
 
-  export type $EmulatorPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Emulator"
+  export type $EmulatorPayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'Emulator'
     objects: {
       listings: Prisma.$ListingPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      name: string
-    }, ExtArgs["result"]["emulator"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        name: string
+      },
+      ExtArgs['result']['emulator']
+    >
     composites: {}
   }
 
-  type EmulatorGetPayload<S extends boolean | null | undefined | EmulatorDefaultArgs> = $Result.GetResult<Prisma.$EmulatorPayload, S>
+  type EmulatorGetPayload<
+    S extends boolean | null | undefined | EmulatorDefaultArgs,
+  > = $Result.GetResult<Prisma.$EmulatorPayload, S>
 
-  type EmulatorCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<EmulatorFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: EmulatorCountAggregateInputType | true
+  type EmulatorCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<EmulatorFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: EmulatorCountAggregateInputType | true
+  }
+
+  export interface EmulatorDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['Emulator']
+      meta: { name: 'Emulator' }
     }
-
-  export interface EmulatorDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Emulator'], meta: { name: 'Emulator' } }
     /**
      * Find zero or one Emulator that matches the filter.
      * @param {EmulatorFindUniqueArgs} args - Arguments to find a Emulator
@@ -6541,7 +7720,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends EmulatorFindUniqueArgs>(args: SelectSubset<T, EmulatorFindUniqueArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends EmulatorFindUniqueArgs>(
+      args: SelectSubset<T, EmulatorFindUniqueArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one Emulator that matches the filter or throw an error with `error.code='P2025'`
@@ -6555,7 +7746,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends EmulatorFindUniqueOrThrowArgs>(args: SelectSubset<T, EmulatorFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends EmulatorFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, EmulatorFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Emulator that matches the filter.
@@ -6570,7 +7773,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends EmulatorFindFirstArgs>(args?: SelectSubset<T, EmulatorFindFirstArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends EmulatorFindFirstArgs>(
+      args?: SelectSubset<T, EmulatorFindFirstArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Emulator that matches the filter or
@@ -6586,7 +7801,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends EmulatorFindFirstOrThrowArgs>(args?: SelectSubset<T, EmulatorFindFirstOrThrowArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends EmulatorFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, EmulatorFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Emulators that matches the filter.
@@ -6596,15 +7823,24 @@ export namespace Prisma {
      * @example
      * // Get all Emulators
      * const emulators = await prisma.emulator.findMany()
-     * 
+     *
      * // Get first 10 Emulators
      * const emulators = await prisma.emulator.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const emulatorWithIdOnly = await prisma.emulator.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends EmulatorFindManyArgs>(args?: SelectSubset<T, EmulatorFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends EmulatorFindManyArgs>(
+      args?: SelectSubset<T, EmulatorFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a Emulator.
@@ -6616,9 +7852,21 @@ export namespace Prisma {
      *     // ... data to create a Emulator
      *   }
      * })
-     * 
+     *
      */
-    create<T extends EmulatorCreateArgs>(args: SelectSubset<T, EmulatorCreateArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends EmulatorCreateArgs>(
+      args: SelectSubset<T, EmulatorCreateArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Emulators.
@@ -6630,9 +7878,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends EmulatorCreateManyArgs>(args?: SelectSubset<T, EmulatorCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends EmulatorCreateManyArgs>(
+      args?: SelectSubset<T, EmulatorCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Emulators and returns the data saved in the database.
@@ -6644,7 +7894,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Emulators and only return the `id`
      * const emulatorWithIdOnly = await prisma.emulator.createManyAndReturn({
      *   select: { id: true },
@@ -6654,9 +7904,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends EmulatorCreateManyAndReturnArgs>(args?: SelectSubset<T, EmulatorCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends EmulatorCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, EmulatorCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a Emulator.
@@ -6668,9 +7927,21 @@ export namespace Prisma {
      *     // ... filter to delete one Emulator
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends EmulatorDeleteArgs>(args: SelectSubset<T, EmulatorDeleteArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends EmulatorDeleteArgs>(
+      args: SelectSubset<T, EmulatorDeleteArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one Emulator.
@@ -6685,9 +7956,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends EmulatorUpdateArgs>(args: SelectSubset<T, EmulatorUpdateArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends EmulatorUpdateArgs>(
+      args: SelectSubset<T, EmulatorUpdateArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Emulators.
@@ -6699,9 +7982,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends EmulatorDeleteManyArgs>(args?: SelectSubset<T, EmulatorDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends EmulatorDeleteManyArgs>(
+      args?: SelectSubset<T, EmulatorDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Emulators.
@@ -6718,9 +8003,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends EmulatorUpdateManyArgs>(args: SelectSubset<T, EmulatorUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends EmulatorUpdateManyArgs>(
+      args: SelectSubset<T, EmulatorUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Emulators and returns the data updated in the database.
@@ -6735,7 +8022,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Emulators and only return the `id`
      * const emulatorWithIdOnly = await prisma.emulator.updateManyAndReturn({
      *   select: { id: true },
@@ -6748,9 +8035,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends EmulatorUpdateManyAndReturnArgs>(args: SelectSubset<T, EmulatorUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends EmulatorUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, EmulatorUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one Emulator.
@@ -6769,8 +8065,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends EmulatorUpsertArgs>(args: SelectSubset<T, EmulatorUpsertArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends EmulatorUpsertArgs>(
+      args: SelectSubset<T, EmulatorUpsertArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      $Result.GetResult<
+        Prisma.$EmulatorPayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Emulators.
@@ -6784,7 +8091,7 @@ export namespace Prisma {
      *     // ... the filter for the Emulators we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends EmulatorCountArgs>(
       args?: Subset<T, EmulatorCountArgs>,
     ): Prisma.PrismaPromise<
@@ -6818,8 +8125,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends EmulatorAggregateArgs>(args: Subset<T, EmulatorAggregateArgs>): Prisma.PrismaPromise<GetEmulatorAggregateType<T>>
+     **/
+    aggregate<T extends EmulatorAggregateArgs>(
+      args: Subset<T, EmulatorAggregateArgs>,
+    ): Prisma.PrismaPromise<GetEmulatorAggregateType<T>>
 
     /**
      * Group by Emulator.
@@ -6837,8 +8146,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends EmulatorGroupByArgs,
       HasSelectOrTake extends Or<
@@ -6848,59 +8157,66 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: EmulatorGroupByArgs['orderBy'] }
         : { orderBy?: EmulatorGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, EmulatorGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEmulatorGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Emulator model
-   */
-  readonly fields: EmulatorFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, EmulatorGroupByArgs, OrderByArg> &
+        InputErrors,
+    ): {} extends InputErrors
+      ? GetEmulatorGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the Emulator model
+     */
+    readonly fields: EmulatorFieldRefs
   }
 
   /**
@@ -6909,22 +8225,51 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__EmulatorClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    listings<T extends Emulator$listingsArgs<ExtArgs> = {}>(args?: Subset<T, Emulator$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__EmulatorClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    listings<T extends Emulator$listingsArgs<ExtArgs> = {}>(
+      args?: Subset<T, Emulator$listingsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -6934,23 +8279,21 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the Emulator model
    */
   interface EmulatorFieldRefs {
-    readonly id: FieldRef<"Emulator", 'String'>
-    readonly name: FieldRef<"Emulator", 'String'>
+    readonly id: FieldRef<'Emulator', 'String'>
+    readonly name: FieldRef<'Emulator', 'String'>
   }
-    
 
   // Custom InputTypes
   /**
    * Emulator findUnique
    */
-  export type EmulatorFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -6972,7 +8315,9 @@ export namespace Prisma {
   /**
    * Emulator findUniqueOrThrow
    */
-  export type EmulatorFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -6994,7 +8339,9 @@ export namespace Prisma {
   /**
    * Emulator findFirst
    */
-  export type EmulatorFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7013,31 +8360,33 @@ export namespace Prisma {
     where?: EmulatorWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Emulators to fetch.
      */
-    orderBy?: EmulatorOrderByWithRelationInput | EmulatorOrderByWithRelationInput[]
+    orderBy?:
+      | EmulatorOrderByWithRelationInput
+      | EmulatorOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Emulators.
      */
     cursor?: EmulatorWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Emulators from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Emulators.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Emulators.
      */
     distinct?: EmulatorScalarFieldEnum | EmulatorScalarFieldEnum[]
@@ -7046,7 +8395,9 @@ export namespace Prisma {
   /**
    * Emulator findFirstOrThrow
    */
-  export type EmulatorFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7065,31 +8416,33 @@ export namespace Prisma {
     where?: EmulatorWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Emulators to fetch.
      */
-    orderBy?: EmulatorOrderByWithRelationInput | EmulatorOrderByWithRelationInput[]
+    orderBy?:
+      | EmulatorOrderByWithRelationInput
+      | EmulatorOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Emulators.
      */
     cursor?: EmulatorWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Emulators from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Emulators.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Emulators.
      */
     distinct?: EmulatorScalarFieldEnum | EmulatorScalarFieldEnum[]
@@ -7098,7 +8451,9 @@ export namespace Prisma {
   /**
    * Emulator findMany
    */
-  export type EmulatorFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7117,25 +8472,27 @@ export namespace Prisma {
     where?: EmulatorWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Emulators to fetch.
      */
-    orderBy?: EmulatorOrderByWithRelationInput | EmulatorOrderByWithRelationInput[]
+    orderBy?:
+      | EmulatorOrderByWithRelationInput
+      | EmulatorOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Emulators.
      */
     cursor?: EmulatorWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Emulators from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Emulators.
      */
     skip?: number
@@ -7145,7 +8502,9 @@ export namespace Prisma {
   /**
    * Emulator create
    */
-  export type EmulatorCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7167,7 +8526,9 @@ export namespace Prisma {
   /**
    * Emulator createMany
    */
-  export type EmulatorCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Emulators.
      */
@@ -7178,7 +8539,9 @@ export namespace Prisma {
   /**
    * Emulator createManyAndReturn
    */
-  export type EmulatorCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7197,7 +8560,9 @@ export namespace Prisma {
   /**
    * Emulator update
    */
-  export type EmulatorUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7223,7 +8588,9 @@ export namespace Prisma {
   /**
    * Emulator updateMany
    */
-  export type EmulatorUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Emulators.
      */
@@ -7241,7 +8608,9 @@ export namespace Prisma {
   /**
    * Emulator updateManyAndReturn
    */
-  export type EmulatorUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7267,7 +8636,9 @@ export namespace Prisma {
   /**
    * Emulator upsert
    */
-  export type EmulatorUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7297,7 +8668,9 @@ export namespace Prisma {
   /**
    * Emulator delete
    */
-  export type EmulatorDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7319,7 +8692,9 @@ export namespace Prisma {
   /**
    * Emulator deleteMany
    */
-  export type EmulatorDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Emulators to delete
      */
@@ -7333,7 +8708,9 @@ export namespace Prisma {
   /**
    * Emulator.listings
    */
-  export type Emulator$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Emulator$listingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -7347,7 +8724,9 @@ export namespace Prisma {
      */
     include?: ListingInclude<ExtArgs> | null
     where?: ListingWhereInput
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     cursor?: ListingWhereUniqueInput
     take?: number
     skip?: number
@@ -7357,7 +8736,9 @@ export namespace Prisma {
   /**
    * Emulator without action
    */
-  export type EmulatorDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type EmulatorDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Emulator
      */
@@ -7371,7 +8752,6 @@ export namespace Prisma {
      */
     include?: EmulatorInclude<ExtArgs> | null
   }
-
 
   /**
    * Model PerformanceScale
@@ -7414,7 +8794,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type PerformanceScaleAvgAggregateInputType = {
     id?: true
     rank?: true
@@ -7444,81 +8823,90 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type PerformanceScaleAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which PerformanceScale to aggregate.
      */
     where?: PerformanceScaleWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of PerformanceScales to fetch.
      */
-    orderBy?: PerformanceScaleOrderByWithRelationInput | PerformanceScaleOrderByWithRelationInput[]
+    orderBy?:
+      | PerformanceScaleOrderByWithRelationInput
+      | PerformanceScaleOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: PerformanceScaleWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` PerformanceScales from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` PerformanceScales.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned PerformanceScales
-    **/
+     **/
     _count?: true | PerformanceScaleCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to average
-    **/
+     **/
     _avg?: PerformanceScaleAvgAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to sum
-    **/
+     **/
     _sum?: PerformanceScaleSumAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: PerformanceScaleMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: PerformanceScaleMaxAggregateInputType
   }
 
-  export type GetPerformanceScaleAggregateType<T extends PerformanceScaleAggregateArgs> = {
-        [P in keyof T & keyof AggregatePerformanceScale]: P extends '_count' | 'count'
+  export type GetPerformanceScaleAggregateType<
+    T extends PerformanceScaleAggregateArgs,
+  > = {
+    [P in keyof T & keyof AggregatePerformanceScale]: P extends
+      | '_count'
+      | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregatePerformanceScale[P]>
       : GetScalarType<T[P], AggregatePerformanceScale[P]>
   }
 
-
-
-
-  export type PerformanceScaleGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: PerformanceScaleWhereInput
-    orderBy?: PerformanceScaleOrderByWithAggregationInput | PerformanceScaleOrderByWithAggregationInput[]
+    orderBy?:
+      | PerformanceScaleOrderByWithAggregationInput
+      | PerformanceScaleOrderByWithAggregationInput[]
     by: PerformanceScaleScalarFieldEnum[] | PerformanceScaleScalarFieldEnum
     having?: PerformanceScaleScalarWhereWithAggregatesInput
     take?: number
@@ -7541,39 +8929,55 @@ export namespace Prisma {
     _max: PerformanceScaleMaxAggregateOutputType | null
   }
 
-  type GetPerformanceScaleGroupByPayload<T extends PerformanceScaleGroupByArgs> = Prisma.PrismaPromise<
+  type GetPerformanceScaleGroupByPayload<
+    T extends PerformanceScaleGroupByArgs,
+  > = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<PerformanceScaleGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof PerformanceScaleGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], PerformanceScaleGroupByOutputType[P]>
+      PickEnumerable<PerformanceScaleGroupByOutputType, T['by']> & {
+        [P in keyof T &
+          keyof PerformanceScaleGroupByOutputType]: P extends '_count'
+          ? T[P] extends boolean
+            ? number
             : GetScalarType<T[P], PerformanceScaleGroupByOutputType[P]>
-        }
-      >
+          : GetScalarType<T[P], PerformanceScaleGroupByOutputType[P]>
+      }
     >
+  >
 
+  export type PerformanceScaleSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      label?: boolean
+      rank?: boolean
+      listings?: boolean | PerformanceScale$listingsArgs<ExtArgs>
+      _count?: boolean | PerformanceScaleCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['performanceScale']
+  >
 
-  export type PerformanceScaleSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    label?: boolean
-    rank?: boolean
-    listings?: boolean | PerformanceScale$listingsArgs<ExtArgs>
-    _count?: boolean | PerformanceScaleCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["performanceScale"]>
+  export type PerformanceScaleSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      label?: boolean
+      rank?: boolean
+    },
+    ExtArgs['result']['performanceScale']
+  >
 
-  export type PerformanceScaleSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    label?: boolean
-    rank?: boolean
-  }, ExtArgs["result"]["performanceScale"]>
-
-  export type PerformanceScaleSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    label?: boolean
-    rank?: boolean
-  }, ExtArgs["result"]["performanceScale"]>
+  export type PerformanceScaleSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      label?: boolean
+      rank?: boolean
+    },
+    ExtArgs['result']['performanceScale']
+  >
 
   export type PerformanceScaleSelectScalar = {
     id?: boolean
@@ -7581,36 +8985,64 @@ export namespace Prisma {
     rank?: boolean
   }
 
-  export type PerformanceScaleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "label" | "rank", ExtArgs["result"]["performanceScale"]>
-  export type PerformanceScaleInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    'id' | 'label' | 'rank',
+    ExtArgs['result']['performanceScale']
+  >
+  export type PerformanceScaleInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listings?: boolean | PerformanceScale$listingsArgs<ExtArgs>
     _count?: boolean | PerformanceScaleCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type PerformanceScaleIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type PerformanceScaleIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type PerformanceScaleIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
+  export type PerformanceScaleIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {}
 
-  export type $PerformanceScalePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "PerformanceScale"
+  export type $PerformanceScalePayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'PerformanceScale'
     objects: {
       listings: Prisma.$ListingPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: number
-      label: string
-      rank: number
-    }, ExtArgs["result"]["performanceScale"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: number
+        label: string
+        rank: number
+      },
+      ExtArgs['result']['performanceScale']
+    >
     composites: {}
   }
 
-  type PerformanceScaleGetPayload<S extends boolean | null | undefined | PerformanceScaleDefaultArgs> = $Result.GetResult<Prisma.$PerformanceScalePayload, S>
+  type PerformanceScaleGetPayload<
+    S extends boolean | null | undefined | PerformanceScaleDefaultArgs,
+  > = $Result.GetResult<Prisma.$PerformanceScalePayload, S>
 
-  type PerformanceScaleCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<PerformanceScaleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: PerformanceScaleCountAggregateInputType | true
+  type PerformanceScaleCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<
+    PerformanceScaleFindManyArgs,
+    'select' | 'include' | 'distinct' | 'omit'
+  > & {
+    select?: PerformanceScaleCountAggregateInputType | true
+  }
+
+  export interface PerformanceScaleDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['PerformanceScale']
+      meta: { name: 'PerformanceScale' }
     }
-
-  export interface PerformanceScaleDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PerformanceScale'], meta: { name: 'PerformanceScale' } }
     /**
      * Find zero or one PerformanceScale that matches the filter.
      * @param {PerformanceScaleFindUniqueArgs} args - Arguments to find a PerformanceScale
@@ -7622,7 +9054,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends PerformanceScaleFindUniqueArgs>(args: SelectSubset<T, PerformanceScaleFindUniqueArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends PerformanceScaleFindUniqueArgs>(
+      args: SelectSubset<T, PerformanceScaleFindUniqueArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one PerformanceScale that matches the filter or throw an error with `error.code='P2025'`
@@ -7636,7 +9080,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends PerformanceScaleFindUniqueOrThrowArgs>(args: SelectSubset<T, PerformanceScaleFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends PerformanceScaleFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, PerformanceScaleFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first PerformanceScale that matches the filter.
@@ -7651,7 +9107,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends PerformanceScaleFindFirstArgs>(args?: SelectSubset<T, PerformanceScaleFindFirstArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends PerformanceScaleFindFirstArgs>(
+      args?: SelectSubset<T, PerformanceScaleFindFirstArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first PerformanceScale that matches the filter or
@@ -7667,7 +9135,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends PerformanceScaleFindFirstOrThrowArgs>(args?: SelectSubset<T, PerformanceScaleFindFirstOrThrowArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends PerformanceScaleFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, PerformanceScaleFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more PerformanceScales that matches the filter.
@@ -7677,15 +9157,24 @@ export namespace Prisma {
      * @example
      * // Get all PerformanceScales
      * const performanceScales = await prisma.performanceScale.findMany()
-     * 
+     *
      * // Get first 10 PerformanceScales
      * const performanceScales = await prisma.performanceScale.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const performanceScaleWithIdOnly = await prisma.performanceScale.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends PerformanceScaleFindManyArgs>(args?: SelectSubset<T, PerformanceScaleFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends PerformanceScaleFindManyArgs>(
+      args?: SelectSubset<T, PerformanceScaleFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a PerformanceScale.
@@ -7697,9 +9186,21 @@ export namespace Prisma {
      *     // ... data to create a PerformanceScale
      *   }
      * })
-     * 
+     *
      */
-    create<T extends PerformanceScaleCreateArgs>(args: SelectSubset<T, PerformanceScaleCreateArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends PerformanceScaleCreateArgs>(
+      args: SelectSubset<T, PerformanceScaleCreateArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many PerformanceScales.
@@ -7711,9 +9212,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends PerformanceScaleCreateManyArgs>(args?: SelectSubset<T, PerformanceScaleCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends PerformanceScaleCreateManyArgs>(
+      args?: SelectSubset<T, PerformanceScaleCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many PerformanceScales and returns the data saved in the database.
@@ -7725,7 +9228,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many PerformanceScales and only return the `id`
      * const performanceScaleWithIdOnly = await prisma.performanceScale.createManyAndReturn({
      *   select: { id: true },
@@ -7735,9 +9238,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends PerformanceScaleCreateManyAndReturnArgs>(args?: SelectSubset<T, PerformanceScaleCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends PerformanceScaleCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, PerformanceScaleCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a PerformanceScale.
@@ -7749,9 +9261,21 @@ export namespace Prisma {
      *     // ... filter to delete one PerformanceScale
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends PerformanceScaleDeleteArgs>(args: SelectSubset<T, PerformanceScaleDeleteArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends PerformanceScaleDeleteArgs>(
+      args: SelectSubset<T, PerformanceScaleDeleteArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one PerformanceScale.
@@ -7766,9 +9290,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends PerformanceScaleUpdateArgs>(args: SelectSubset<T, PerformanceScaleUpdateArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends PerformanceScaleUpdateArgs>(
+      args: SelectSubset<T, PerformanceScaleUpdateArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more PerformanceScales.
@@ -7780,9 +9316,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends PerformanceScaleDeleteManyArgs>(args?: SelectSubset<T, PerformanceScaleDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends PerformanceScaleDeleteManyArgs>(
+      args?: SelectSubset<T, PerformanceScaleDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more PerformanceScales.
@@ -7799,9 +9337,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends PerformanceScaleUpdateManyArgs>(args: SelectSubset<T, PerformanceScaleUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends PerformanceScaleUpdateManyArgs>(
+      args: SelectSubset<T, PerformanceScaleUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more PerformanceScales and returns the data updated in the database.
@@ -7816,7 +9356,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more PerformanceScales and only return the `id`
      * const performanceScaleWithIdOnly = await prisma.performanceScale.updateManyAndReturn({
      *   select: { id: true },
@@ -7829,9 +9369,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends PerformanceScaleUpdateManyAndReturnArgs>(args: SelectSubset<T, PerformanceScaleUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends PerformanceScaleUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, PerformanceScaleUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one PerformanceScale.
@@ -7850,8 +9399,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends PerformanceScaleUpsertArgs>(args: SelectSubset<T, PerformanceScaleUpsertArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends PerformanceScaleUpsertArgs>(
+      args: SelectSubset<T, PerformanceScaleUpsertArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      $Result.GetResult<
+        Prisma.$PerformanceScalePayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of PerformanceScales.
@@ -7865,7 +9425,7 @@ export namespace Prisma {
      *     // ... the filter for the PerformanceScales we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends PerformanceScaleCountArgs>(
       args?: Subset<T, PerformanceScaleCountArgs>,
     ): Prisma.PrismaPromise<
@@ -7899,8 +9459,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends PerformanceScaleAggregateArgs>(args: Subset<T, PerformanceScaleAggregateArgs>): Prisma.PrismaPromise<GetPerformanceScaleAggregateType<T>>
+     **/
+    aggregate<T extends PerformanceScaleAggregateArgs>(
+      args: Subset<T, PerformanceScaleAggregateArgs>,
+    ): Prisma.PrismaPromise<GetPerformanceScaleAggregateType<T>>
 
     /**
      * Group by PerformanceScale.
@@ -7918,8 +9480,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends PerformanceScaleGroupByArgs,
       HasSelectOrTake extends Or<
@@ -7929,59 +9491,66 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: PerformanceScaleGroupByArgs['orderBy'] }
         : { orderBy?: PerformanceScaleGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, PerformanceScaleGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPerformanceScaleGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the PerformanceScale model
-   */
-  readonly fields: PerformanceScaleFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, PerformanceScaleGroupByArgs, OrderByArg> &
+        InputErrors,
+    ): {} extends InputErrors
+      ? GetPerformanceScaleGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the PerformanceScale model
+     */
+    readonly fields: PerformanceScaleFieldRefs
   }
 
   /**
@@ -7990,22 +9559,51 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__PerformanceScaleClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    listings<T extends PerformanceScale$listingsArgs<ExtArgs> = {}>(args?: Subset<T, PerformanceScale$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__PerformanceScaleClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    listings<T extends PerformanceScale$listingsArgs<ExtArgs> = {}>(
+      args?: Subset<T, PerformanceScale$listingsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -8015,24 +9613,22 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the PerformanceScale model
    */
   interface PerformanceScaleFieldRefs {
-    readonly id: FieldRef<"PerformanceScale", 'Int'>
-    readonly label: FieldRef<"PerformanceScale", 'String'>
-    readonly rank: FieldRef<"PerformanceScale", 'Int'>
+    readonly id: FieldRef<'PerformanceScale', 'Int'>
+    readonly label: FieldRef<'PerformanceScale', 'String'>
+    readonly rank: FieldRef<'PerformanceScale', 'Int'>
   }
-    
 
   // Custom InputTypes
   /**
    * PerformanceScale findUnique
    */
-  export type PerformanceScaleFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8054,7 +9650,9 @@ export namespace Prisma {
   /**
    * PerformanceScale findUniqueOrThrow
    */
-  export type PerformanceScaleFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8076,7 +9674,9 @@ export namespace Prisma {
   /**
    * PerformanceScale findFirst
    */
-  export type PerformanceScaleFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8095,40 +9695,46 @@ export namespace Prisma {
     where?: PerformanceScaleWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of PerformanceScales to fetch.
      */
-    orderBy?: PerformanceScaleOrderByWithRelationInput | PerformanceScaleOrderByWithRelationInput[]
+    orderBy?:
+      | PerformanceScaleOrderByWithRelationInput
+      | PerformanceScaleOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for PerformanceScales.
      */
     cursor?: PerformanceScaleWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` PerformanceScales from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` PerformanceScales.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of PerformanceScales.
      */
-    distinct?: PerformanceScaleScalarFieldEnum | PerformanceScaleScalarFieldEnum[]
+    distinct?:
+      | PerformanceScaleScalarFieldEnum
+      | PerformanceScaleScalarFieldEnum[]
   }
 
   /**
    * PerformanceScale findFirstOrThrow
    */
-  export type PerformanceScaleFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8147,40 +9753,46 @@ export namespace Prisma {
     where?: PerformanceScaleWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of PerformanceScales to fetch.
      */
-    orderBy?: PerformanceScaleOrderByWithRelationInput | PerformanceScaleOrderByWithRelationInput[]
+    orderBy?:
+      | PerformanceScaleOrderByWithRelationInput
+      | PerformanceScaleOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for PerformanceScales.
      */
     cursor?: PerformanceScaleWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` PerformanceScales from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` PerformanceScales.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of PerformanceScales.
      */
-    distinct?: PerformanceScaleScalarFieldEnum | PerformanceScaleScalarFieldEnum[]
+    distinct?:
+      | PerformanceScaleScalarFieldEnum
+      | PerformanceScaleScalarFieldEnum[]
   }
 
   /**
    * PerformanceScale findMany
    */
-  export type PerformanceScaleFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8199,35 +9811,41 @@ export namespace Prisma {
     where?: PerformanceScaleWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of PerformanceScales to fetch.
      */
-    orderBy?: PerformanceScaleOrderByWithRelationInput | PerformanceScaleOrderByWithRelationInput[]
+    orderBy?:
+      | PerformanceScaleOrderByWithRelationInput
+      | PerformanceScaleOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing PerformanceScales.
      */
     cursor?: PerformanceScaleWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` PerformanceScales from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` PerformanceScales.
      */
     skip?: number
-    distinct?: PerformanceScaleScalarFieldEnum | PerformanceScaleScalarFieldEnum[]
+    distinct?:
+      | PerformanceScaleScalarFieldEnum
+      | PerformanceScaleScalarFieldEnum[]
   }
 
   /**
    * PerformanceScale create
    */
-  export type PerformanceScaleCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8249,7 +9867,9 @@ export namespace Prisma {
   /**
    * PerformanceScale createMany
    */
-  export type PerformanceScaleCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many PerformanceScales.
      */
@@ -8260,7 +9880,9 @@ export namespace Prisma {
   /**
    * PerformanceScale createManyAndReturn
    */
-  export type PerformanceScaleCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8279,7 +9901,9 @@ export namespace Prisma {
   /**
    * PerformanceScale update
    */
-  export type PerformanceScaleUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8305,11 +9929,16 @@ export namespace Prisma {
   /**
    * PerformanceScale updateMany
    */
-  export type PerformanceScaleUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update PerformanceScales.
      */
-    data: XOR<PerformanceScaleUpdateManyMutationInput, PerformanceScaleUncheckedUpdateManyInput>
+    data: XOR<
+      PerformanceScaleUpdateManyMutationInput,
+      PerformanceScaleUncheckedUpdateManyInput
+    >
     /**
      * Filter which PerformanceScales to update
      */
@@ -8323,7 +9952,9 @@ export namespace Prisma {
   /**
    * PerformanceScale updateManyAndReturn
    */
-  export type PerformanceScaleUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8335,7 +9966,10 @@ export namespace Prisma {
     /**
      * The data used to update PerformanceScales.
      */
-    data: XOR<PerformanceScaleUpdateManyMutationInput, PerformanceScaleUncheckedUpdateManyInput>
+    data: XOR<
+      PerformanceScaleUpdateManyMutationInput,
+      PerformanceScaleUncheckedUpdateManyInput
+    >
     /**
      * Filter which PerformanceScales to update
      */
@@ -8349,7 +9983,9 @@ export namespace Prisma {
   /**
    * PerformanceScale upsert
    */
-  export type PerformanceScaleUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8369,17 +10005,25 @@ export namespace Prisma {
     /**
      * In case the PerformanceScale found by the `where` argument doesn't exist, create a new PerformanceScale with this data.
      */
-    create: XOR<PerformanceScaleCreateInput, PerformanceScaleUncheckedCreateInput>
+    create: XOR<
+      PerformanceScaleCreateInput,
+      PerformanceScaleUncheckedCreateInput
+    >
     /**
      * In case the PerformanceScale was found with the provided `where` argument, update it with this data.
      */
-    update: XOR<PerformanceScaleUpdateInput, PerformanceScaleUncheckedUpdateInput>
+    update: XOR<
+      PerformanceScaleUpdateInput,
+      PerformanceScaleUncheckedUpdateInput
+    >
   }
 
   /**
    * PerformanceScale delete
    */
-  export type PerformanceScaleDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8401,7 +10045,9 @@ export namespace Prisma {
   /**
    * PerformanceScale deleteMany
    */
-  export type PerformanceScaleDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which PerformanceScales to delete
      */
@@ -8415,7 +10061,9 @@ export namespace Prisma {
   /**
    * PerformanceScale.listings
    */
-  export type PerformanceScale$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScale$listingsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -8429,7 +10077,9 @@ export namespace Prisma {
      */
     include?: ListingInclude<ExtArgs> | null
     where?: ListingWhereInput
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     cursor?: ListingWhereUniqueInput
     take?: number
     skip?: number
@@ -8439,7 +10089,9 @@ export namespace Prisma {
   /**
    * PerformanceScale without action
    */
-  export type PerformanceScaleDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type PerformanceScaleDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the PerformanceScale
      */
@@ -8453,7 +10105,6 @@ export namespace Prisma {
      */
     include?: PerformanceScaleInclude<ExtArgs> | null
   }
-
 
   /**
    * Model Listing
@@ -8509,7 +10160,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type ListingAvgAggregateInputType = {
     performanceId?: true
   }
@@ -8552,81 +10202,86 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type ListingAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Listing to aggregate.
      */
     where?: ListingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Listings to fetch.
      */
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: ListingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Listings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Listings.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Listings
-    **/
+     **/
     _count?: true | ListingCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to average
-    **/
+     **/
     _avg?: ListingAvgAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to sum
-    **/
+     **/
     _sum?: ListingSumAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: ListingMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: ListingMaxAggregateInputType
   }
 
   export type GetListingAggregateType<T extends ListingAggregateArgs> = {
-        [P in keyof T & keyof AggregateListing]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateListing]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateListing[P]>
       : GetScalarType<T[P], AggregateListing[P]>
   }
 
-
-
-
-  export type ListingGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingWhereInput
-    orderBy?: ListingOrderByWithAggregationInput | ListingOrderByWithAggregationInput[]
+    orderBy?:
+      | ListingOrderByWithAggregationInput
+      | ListingOrderByWithAggregationInput[]
     by: ListingScalarFieldEnum[] | ListingScalarFieldEnum
     having?: ListingScalarWhereWithAggregatesInput
     take?: number
@@ -8654,11 +10309,11 @@ export namespace Prisma {
     _max: ListingMaxAggregateOutputType | null
   }
 
-  type GetListingGroupByPayload<T extends ListingGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<ListingGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof ListingGroupByOutputType))]: P extends '_count'
+  type GetListingGroupByPayload<T extends ListingGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<ListingGroupByOutputType, T['by']> & {
+          [P in keyof T & keyof ListingGroupByOutputType]: P extends '_count'
             ? T[P] extends boolean
               ? number
               : GetScalarType<T[P], ListingGroupByOutputType[P]>
@@ -8667,58 +10322,72 @@ export namespace Prisma {
       >
     >
 
+  export type ListingSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      deviceId?: boolean
+      gameId?: boolean
+      emulatorId?: boolean
+      performanceId?: boolean
+      notes?: boolean
+      authorId?: boolean
+      createdAt?: boolean
+      device?: boolean | DeviceDefaultArgs<ExtArgs>
+      game?: boolean | GameDefaultArgs<ExtArgs>
+      emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+      performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+      author?: boolean | UserDefaultArgs<ExtArgs>
+      votes?: boolean | Listing$votesArgs<ExtArgs>
+      comments?: boolean | Listing$commentsArgs<ExtArgs>
+      approvals?: boolean | Listing$approvalsArgs<ExtArgs>
+      _count?: boolean | ListingCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['listing']
+  >
 
-  export type ListingSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    deviceId?: boolean
-    gameId?: boolean
-    emulatorId?: boolean
-    performanceId?: boolean
-    notes?: boolean
-    authorId?: boolean
-    createdAt?: boolean
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
-    author?: boolean | UserDefaultArgs<ExtArgs>
-    votes?: boolean | Listing$votesArgs<ExtArgs>
-    comments?: boolean | Listing$commentsArgs<ExtArgs>
-    approvals?: boolean | Listing$approvalsArgs<ExtArgs>
-    _count?: boolean | ListingCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["listing"]>
+  export type ListingSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      deviceId?: boolean
+      gameId?: boolean
+      emulatorId?: boolean
+      performanceId?: boolean
+      notes?: boolean
+      authorId?: boolean
+      createdAt?: boolean
+      device?: boolean | DeviceDefaultArgs<ExtArgs>
+      game?: boolean | GameDefaultArgs<ExtArgs>
+      emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+      performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+      author?: boolean | UserDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['listing']
+  >
 
-  export type ListingSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    deviceId?: boolean
-    gameId?: boolean
-    emulatorId?: boolean
-    performanceId?: boolean
-    notes?: boolean
-    authorId?: boolean
-    createdAt?: boolean
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
-    author?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["listing"]>
-
-  export type ListingSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    deviceId?: boolean
-    gameId?: boolean
-    emulatorId?: boolean
-    performanceId?: boolean
-    notes?: boolean
-    authorId?: boolean
-    createdAt?: boolean
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
-    author?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["listing"]>
+  export type ListingSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      deviceId?: boolean
+      gameId?: boolean
+      emulatorId?: boolean
+      performanceId?: boolean
+      notes?: boolean
+      authorId?: boolean
+      createdAt?: boolean
+      device?: boolean | DeviceDefaultArgs<ExtArgs>
+      game?: boolean | GameDefaultArgs<ExtArgs>
+      emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+      performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+      author?: boolean | UserDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['listing']
+  >
 
   export type ListingSelectScalar = {
     id?: boolean
@@ -8731,8 +10400,22 @@ export namespace Prisma {
     createdAt?: boolean
   }
 
-  export type ListingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "deviceId" | "gameId" | "emulatorId" | "performanceId" | "notes" | "authorId" | "createdAt", ExtArgs["result"]["listing"]>
-  export type ListingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    | 'id'
+    | 'deviceId'
+    | 'gameId'
+    | 'emulatorId'
+    | 'performanceId'
+    | 'notes'
+    | 'authorId'
+    | 'createdAt',
+    ExtArgs['result']['listing']
+  >
+  export type ListingInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     device?: boolean | DeviceDefaultArgs<ExtArgs>
     game?: boolean | GameDefaultArgs<ExtArgs>
     emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
@@ -8743,14 +10426,18 @@ export namespace Prisma {
     approvals?: boolean | Listing$approvalsArgs<ExtArgs>
     _count?: boolean | ListingCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type ListingIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     device?: boolean | DeviceDefaultArgs<ExtArgs>
     game?: boolean | GameDefaultArgs<ExtArgs>
     emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
     performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
     author?: boolean | UserDefaultArgs<ExtArgs>
   }
-  export type ListingIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     device?: boolean | DeviceDefaultArgs<ExtArgs>
     game?: boolean | GameDefaultArgs<ExtArgs>
     emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
@@ -8758,8 +10445,10 @@ export namespace Prisma {
     author?: boolean | UserDefaultArgs<ExtArgs>
   }
 
-  export type $ListingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Listing"
+  export type $ListingPayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'Listing'
     objects: {
       device: Prisma.$DevicePayload<ExtArgs>
       game: Prisma.$GamePayload<ExtArgs>
@@ -8770,28 +10459,40 @@ export namespace Prisma {
       comments: Prisma.$CommentPayload<ExtArgs>[]
       approvals: Prisma.$ListingApprovalPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      deviceId: string
-      gameId: string
-      emulatorId: string
-      performanceId: number
-      notes: string | null
-      authorId: string
-      createdAt: Date
-    }, ExtArgs["result"]["listing"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        deviceId: string
+        gameId: string
+        emulatorId: string
+        performanceId: number
+        notes: string | null
+        authorId: string
+        createdAt: Date
+      },
+      ExtArgs['result']['listing']
+    >
     composites: {}
   }
 
-  type ListingGetPayload<S extends boolean | null | undefined | ListingDefaultArgs> = $Result.GetResult<Prisma.$ListingPayload, S>
+  type ListingGetPayload<
+    S extends boolean | null | undefined | ListingDefaultArgs,
+  > = $Result.GetResult<Prisma.$ListingPayload, S>
 
-  type ListingCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<ListingFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: ListingCountAggregateInputType | true
+  type ListingCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<ListingFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: ListingCountAggregateInputType | true
+  }
+
+  export interface ListingDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['Listing']
+      meta: { name: 'Listing' }
     }
-
-  export interface ListingDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Listing'], meta: { name: 'Listing' } }
     /**
      * Find zero or one Listing that matches the filter.
      * @param {ListingFindUniqueArgs} args - Arguments to find a Listing
@@ -8803,7 +10504,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends ListingFindUniqueArgs>(args: SelectSubset<T, ListingFindUniqueArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends ListingFindUniqueArgs>(
+      args: SelectSubset<T, ListingFindUniqueArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one Listing that matches the filter or throw an error with `error.code='P2025'`
@@ -8817,7 +10530,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends ListingFindUniqueOrThrowArgs>(args: SelectSubset<T, ListingFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends ListingFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, ListingFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Listing that matches the filter.
@@ -8832,7 +10557,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends ListingFindFirstArgs>(args?: SelectSubset<T, ListingFindFirstArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends ListingFindFirstArgs>(
+      args?: SelectSubset<T, ListingFindFirstArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Listing that matches the filter or
@@ -8848,7 +10585,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends ListingFindFirstOrThrowArgs>(args?: SelectSubset<T, ListingFindFirstOrThrowArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends ListingFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, ListingFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Listings that matches the filter.
@@ -8858,15 +10607,24 @@ export namespace Prisma {
      * @example
      * // Get all Listings
      * const listings = await prisma.listing.findMany()
-     * 
+     *
      * // Get first 10 Listings
      * const listings = await prisma.listing.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const listingWithIdOnly = await prisma.listing.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends ListingFindManyArgs>(args?: SelectSubset<T, ListingFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends ListingFindManyArgs>(
+      args?: SelectSubset<T, ListingFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a Listing.
@@ -8878,9 +10636,21 @@ export namespace Prisma {
      *     // ... data to create a Listing
      *   }
      * })
-     * 
+     *
      */
-    create<T extends ListingCreateArgs>(args: SelectSubset<T, ListingCreateArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends ListingCreateArgs>(
+      args: SelectSubset<T, ListingCreateArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Listings.
@@ -8892,9 +10662,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends ListingCreateManyArgs>(args?: SelectSubset<T, ListingCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends ListingCreateManyArgs>(
+      args?: SelectSubset<T, ListingCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Listings and returns the data saved in the database.
@@ -8906,7 +10678,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Listings and only return the `id`
      * const listingWithIdOnly = await prisma.listing.createManyAndReturn({
      *   select: { id: true },
@@ -8916,9 +10688,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends ListingCreateManyAndReturnArgs>(args?: SelectSubset<T, ListingCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends ListingCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, ListingCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a Listing.
@@ -8930,9 +10711,21 @@ export namespace Prisma {
      *     // ... filter to delete one Listing
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends ListingDeleteArgs>(args: SelectSubset<T, ListingDeleteArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends ListingDeleteArgs>(
+      args: SelectSubset<T, ListingDeleteArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one Listing.
@@ -8947,9 +10740,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends ListingUpdateArgs>(args: SelectSubset<T, ListingUpdateArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends ListingUpdateArgs>(
+      args: SelectSubset<T, ListingUpdateArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Listings.
@@ -8961,9 +10766,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends ListingDeleteManyArgs>(args?: SelectSubset<T, ListingDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends ListingDeleteManyArgs>(
+      args?: SelectSubset<T, ListingDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Listings.
@@ -8980,9 +10787,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends ListingUpdateManyArgs>(args: SelectSubset<T, ListingUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends ListingUpdateManyArgs>(
+      args: SelectSubset<T, ListingUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Listings and returns the data updated in the database.
@@ -8997,7 +10806,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Listings and only return the `id`
      * const listingWithIdOnly = await prisma.listing.updateManyAndReturn({
      *   select: { id: true },
@@ -9010,9 +10819,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends ListingUpdateManyAndReturnArgs>(args: SelectSubset<T, ListingUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends ListingUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, ListingUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one Listing.
@@ -9031,8 +10849,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends ListingUpsertArgs>(args: SelectSubset<T, ListingUpsertArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends ListingUpsertArgs>(
+      args: SelectSubset<T, ListingUpsertArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      $Result.GetResult<
+        Prisma.$ListingPayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Listings.
@@ -9046,7 +10875,7 @@ export namespace Prisma {
      *     // ... the filter for the Listings we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends ListingCountArgs>(
       args?: Subset<T, ListingCountArgs>,
     ): Prisma.PrismaPromise<
@@ -9080,8 +10909,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends ListingAggregateArgs>(args: Subset<T, ListingAggregateArgs>): Prisma.PrismaPromise<GetListingAggregateType<T>>
+     **/
+    aggregate<T extends ListingAggregateArgs>(
+      args: Subset<T, ListingAggregateArgs>,
+    ): Prisma.PrismaPromise<GetListingAggregateType<T>>
 
     /**
      * Group by Listing.
@@ -9099,8 +10930,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends ListingGroupByArgs,
       HasSelectOrTake extends Or<
@@ -9110,59 +10941,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: ListingGroupByArgs['orderBy'] }
         : { orderBy?: ListingGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, ListingGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetListingGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Listing model
-   */
-  readonly fields: ListingFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, ListingGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetListingGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the Listing model
+     */
+    readonly fields: ListingFieldRefs
   }
 
   /**
@@ -9171,29 +11008,143 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__ListingClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    device<T extends DeviceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeviceDefaultArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    game<T extends GameDefaultArgs<ExtArgs> = {}>(args?: Subset<T, GameDefaultArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    emulator<T extends EmulatorDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EmulatorDefaultArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    performance<T extends PerformanceScaleDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PerformanceScaleDefaultArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    author<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    votes<T extends Listing$votesArgs<ExtArgs> = {}>(args?: Subset<T, Listing$votesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    comments<T extends Listing$commentsArgs<ExtArgs> = {}>(args?: Subset<T, Listing$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    approvals<T extends Listing$approvalsArgs<ExtArgs> = {}>(args?: Subset<T, Listing$approvalsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__ListingClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    device<T extends DeviceDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, DeviceDefaultArgs<ExtArgs>>,
+    ): Prisma__DeviceClient<
+      | $Result.GetResult<
+          Prisma.$DevicePayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    game<T extends GameDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, GameDefaultArgs<ExtArgs>>,
+    ): Prisma__GameClient<
+      | $Result.GetResult<
+          Prisma.$GamePayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    emulator<T extends EmulatorDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, EmulatorDefaultArgs<ExtArgs>>,
+    ): Prisma__EmulatorClient<
+      | $Result.GetResult<
+          Prisma.$EmulatorPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    performance<T extends PerformanceScaleDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, PerformanceScaleDefaultArgs<ExtArgs>>,
+    ): Prisma__PerformanceScaleClient<
+      | $Result.GetResult<
+          Prisma.$PerformanceScalePayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    author<T extends UserDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, UserDefaultArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      | $Result.GetResult<
+          Prisma.$UserPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    votes<T extends Listing$votesArgs<ExtArgs> = {}>(
+      args?: Subset<T, Listing$votesArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$VotePayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
+    comments<T extends Listing$commentsArgs<ExtArgs> = {}>(
+      args?: Subset<T, Listing$commentsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$CommentPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
+    approvals<T extends Listing$approvalsArgs<ExtArgs> = {}>(
+      args?: Subset<T, Listing$approvalsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$ListingApprovalPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -9203,29 +11154,27 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the Listing model
    */
   interface ListingFieldRefs {
-    readonly id: FieldRef<"Listing", 'String'>
-    readonly deviceId: FieldRef<"Listing", 'String'>
-    readonly gameId: FieldRef<"Listing", 'String'>
-    readonly emulatorId: FieldRef<"Listing", 'String'>
-    readonly performanceId: FieldRef<"Listing", 'Int'>
-    readonly notes: FieldRef<"Listing", 'String'>
-    readonly authorId: FieldRef<"Listing", 'String'>
-    readonly createdAt: FieldRef<"Listing", 'DateTime'>
+    readonly id: FieldRef<'Listing', 'String'>
+    readonly deviceId: FieldRef<'Listing', 'String'>
+    readonly gameId: FieldRef<'Listing', 'String'>
+    readonly emulatorId: FieldRef<'Listing', 'String'>
+    readonly performanceId: FieldRef<'Listing', 'Int'>
+    readonly notes: FieldRef<'Listing', 'String'>
+    readonly authorId: FieldRef<'Listing', 'String'>
+    readonly createdAt: FieldRef<'Listing', 'DateTime'>
   }
-    
 
   // Custom InputTypes
   /**
    * Listing findUnique
    */
-  export type ListingFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9247,7 +11196,9 @@ export namespace Prisma {
   /**
    * Listing findUniqueOrThrow
    */
-  export type ListingFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9269,7 +11220,9 @@ export namespace Prisma {
   /**
    * Listing findFirst
    */
-  export type ListingFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9288,31 +11241,33 @@ export namespace Prisma {
     where?: ListingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Listings to fetch.
      */
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Listings.
      */
     cursor?: ListingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Listings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Listings.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Listings.
      */
     distinct?: ListingScalarFieldEnum | ListingScalarFieldEnum[]
@@ -9321,7 +11276,9 @@ export namespace Prisma {
   /**
    * Listing findFirstOrThrow
    */
-  export type ListingFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9340,31 +11297,33 @@ export namespace Prisma {
     where?: ListingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Listings to fetch.
      */
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Listings.
      */
     cursor?: ListingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Listings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Listings.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Listings.
      */
     distinct?: ListingScalarFieldEnum | ListingScalarFieldEnum[]
@@ -9373,7 +11332,9 @@ export namespace Prisma {
   /**
    * Listing findMany
    */
-  export type ListingFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9392,25 +11353,27 @@ export namespace Prisma {
     where?: ListingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Listings to fetch.
      */
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    orderBy?:
+      | ListingOrderByWithRelationInput
+      | ListingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Listings.
      */
     cursor?: ListingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Listings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Listings.
      */
     skip?: number
@@ -9420,7 +11383,9 @@ export namespace Prisma {
   /**
    * Listing create
    */
-  export type ListingCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9442,7 +11407,9 @@ export namespace Prisma {
   /**
    * Listing createMany
    */
-  export type ListingCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Listings.
      */
@@ -9453,7 +11420,9 @@ export namespace Prisma {
   /**
    * Listing createManyAndReturn
    */
-  export type ListingCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9476,7 +11445,9 @@ export namespace Prisma {
   /**
    * Listing update
    */
-  export type ListingUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9502,7 +11473,9 @@ export namespace Prisma {
   /**
    * Listing updateMany
    */
-  export type ListingUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Listings.
      */
@@ -9520,7 +11493,9 @@ export namespace Prisma {
   /**
    * Listing updateManyAndReturn
    */
-  export type ListingUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9550,7 +11525,9 @@ export namespace Prisma {
   /**
    * Listing upsert
    */
-  export type ListingUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9580,7 +11557,9 @@ export namespace Prisma {
   /**
    * Listing delete
    */
-  export type ListingDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9602,7 +11581,9 @@ export namespace Prisma {
   /**
    * Listing deleteMany
    */
-  export type ListingDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Listings to delete
      */
@@ -9616,7 +11597,9 @@ export namespace Prisma {
   /**
    * Listing.votes
    */
-  export type Listing$votesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Listing$votesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -9640,7 +11623,9 @@ export namespace Prisma {
   /**
    * Listing.comments
    */
-  export type Listing$commentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Listing$commentsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -9654,7 +11639,9 @@ export namespace Prisma {
      */
     include?: CommentInclude<ExtArgs> | null
     where?: CommentWhereInput
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     cursor?: CommentWhereUniqueInput
     take?: number
     skip?: number
@@ -9664,7 +11651,9 @@ export namespace Prisma {
   /**
    * Listing.approvals
    */
-  export type Listing$approvalsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Listing$approvalsArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -9678,7 +11667,9 @@ export namespace Prisma {
      */
     include?: ListingApprovalInclude<ExtArgs> | null
     where?: ListingApprovalWhereInput
-    orderBy?: ListingApprovalOrderByWithRelationInput | ListingApprovalOrderByWithRelationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithRelationInput
+      | ListingApprovalOrderByWithRelationInput[]
     cursor?: ListingApprovalWhereUniqueInput
     take?: number
     skip?: number
@@ -9688,7 +11679,9 @@ export namespace Prisma {
   /**
    * Listing without action
    */
-  export type ListingDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Listing
      */
@@ -9702,7 +11695,6 @@ export namespace Prisma {
      */
     include?: ListingInclude<ExtArgs> | null
   }
-
 
   /**
    * Model Vote
@@ -9736,7 +11728,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type VoteMinAggregateInputType = {
     id?: true
     value?: true
@@ -9759,69 +11750,72 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type VoteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Vote to aggregate.
      */
     where?: VoteWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Votes to fetch.
      */
     orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: VoteWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Votes from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Votes.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Votes
-    **/
+     **/
     _count?: true | VoteCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: VoteMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: VoteMaxAggregateInputType
   }
 
   export type GetVoteAggregateType<T extends VoteAggregateArgs> = {
-        [P in keyof T & keyof AggregateVote]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateVote]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateVote[P]>
       : GetScalarType<T[P], AggregateVote[P]>
   }
 
-
-
-
-  export type VoteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: VoteWhereInput
-    orderBy?: VoteOrderByWithAggregationInput | VoteOrderByWithAggregationInput[]
+    orderBy?:
+      | VoteOrderByWithAggregationInput
+      | VoteOrderByWithAggregationInput[]
     by: VoteScalarFieldEnum[] | VoteScalarFieldEnum
     having?: VoteScalarWhereWithAggregatesInput
     take?: number
@@ -9843,44 +11837,57 @@ export namespace Prisma {
 
   type GetVoteGroupByPayload<T extends VoteGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<VoteGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof VoteGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], VoteGroupByOutputType[P]>
+      PickEnumerable<VoteGroupByOutputType, T['by']> & {
+        [P in keyof T & keyof VoteGroupByOutputType]: P extends '_count'
+          ? T[P] extends boolean
+            ? number
             : GetScalarType<T[P], VoteGroupByOutputType[P]>
-        }
-      >
+          : GetScalarType<T[P], VoteGroupByOutputType[P]>
+      }
     >
+  >
 
+  export type VoteSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      value?: boolean
+      userId?: boolean
+      listingId?: boolean
+      user?: boolean | UserDefaultArgs<ExtArgs>
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['vote']
+  >
 
-  export type VoteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    value?: boolean
-    userId?: boolean
-    listingId?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["vote"]>
+  export type VoteSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      value?: boolean
+      userId?: boolean
+      listingId?: boolean
+      user?: boolean | UserDefaultArgs<ExtArgs>
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['vote']
+  >
 
-  export type VoteSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    value?: boolean
-    userId?: boolean
-    listingId?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["vote"]>
-
-  export type VoteSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    value?: boolean
-    userId?: boolean
-    listingId?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["vote"]>
+  export type VoteSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      value?: boolean
+      userId?: boolean
+      listingId?: boolean
+      user?: boolean | UserDefaultArgs<ExtArgs>
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['vote']
+  >
 
   export type VoteSelectScalar = {
     id?: boolean
@@ -9889,44 +11896,68 @@ export namespace Prisma {
     listingId?: boolean
   }
 
-  export type VoteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "value" | "userId" | "listingId", ExtArgs["result"]["vote"]>
-  export type VoteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    'id' | 'value' | 'userId' | 'listingId',
+    ExtArgs['result']['vote']
+  >
+  export type VoteInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
   }
-  export type VoteIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
   }
-  export type VoteIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
   }
 
-  export type $VotePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Vote"
+  export type $VotePayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'Vote'
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
       listing: Prisma.$ListingPayload<ExtArgs>
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      value: boolean
-      userId: string
-      listingId: string
-    }, ExtArgs["result"]["vote"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        value: boolean
+        userId: string
+        listingId: string
+      },
+      ExtArgs['result']['vote']
+    >
     composites: {}
   }
 
-  type VoteGetPayload<S extends boolean | null | undefined | VoteDefaultArgs> = $Result.GetResult<Prisma.$VotePayload, S>
+  type VoteGetPayload<S extends boolean | null | undefined | VoteDefaultArgs> =
+    $Result.GetResult<Prisma.$VotePayload, S>
 
-  type VoteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<VoteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: VoteCountAggregateInputType | true
+  type VoteCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<VoteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: VoteCountAggregateInputType | true
+  }
+
+  export interface VoteDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['Vote']
+      meta: { name: 'Vote' }
     }
-
-  export interface VoteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Vote'], meta: { name: 'Vote' } }
     /**
      * Find zero or one Vote that matches the filter.
      * @param {VoteFindUniqueArgs} args - Arguments to find a Vote
@@ -9938,7 +11969,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends VoteFindUniqueArgs>(args: SelectSubset<T, VoteFindUniqueArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends VoteFindUniqueArgs>(
+      args: SelectSubset<T, VoteFindUniqueArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one Vote that matches the filter or throw an error with `error.code='P2025'`
@@ -9952,7 +11995,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends VoteFindUniqueOrThrowArgs>(args: SelectSubset<T, VoteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends VoteFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, VoteFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Vote that matches the filter.
@@ -9967,7 +12022,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends VoteFindFirstArgs>(args?: SelectSubset<T, VoteFindFirstArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends VoteFindFirstArgs>(
+      args?: SelectSubset<T, VoteFindFirstArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Vote that matches the filter or
@@ -9983,7 +12050,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends VoteFindFirstOrThrowArgs>(args?: SelectSubset<T, VoteFindFirstOrThrowArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends VoteFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, VoteFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Votes that matches the filter.
@@ -9993,15 +12072,24 @@ export namespace Prisma {
      * @example
      * // Get all Votes
      * const votes = await prisma.vote.findMany()
-     * 
+     *
      * // Get first 10 Votes
      * const votes = await prisma.vote.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const voteWithIdOnly = await prisma.vote.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends VoteFindManyArgs>(args?: SelectSubset<T, VoteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends VoteFindManyArgs>(
+      args?: SelectSubset<T, VoteFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a Vote.
@@ -10013,9 +12101,21 @@ export namespace Prisma {
      *     // ... data to create a Vote
      *   }
      * })
-     * 
+     *
      */
-    create<T extends VoteCreateArgs>(args: SelectSubset<T, VoteCreateArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends VoteCreateArgs>(
+      args: SelectSubset<T, VoteCreateArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Votes.
@@ -10027,9 +12127,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends VoteCreateManyArgs>(args?: SelectSubset<T, VoteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends VoteCreateManyArgs>(
+      args?: SelectSubset<T, VoteCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Votes and returns the data saved in the database.
@@ -10041,7 +12143,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Votes and only return the `id`
      * const voteWithIdOnly = await prisma.vote.createManyAndReturn({
      *   select: { id: true },
@@ -10051,9 +12153,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends VoteCreateManyAndReturnArgs>(args?: SelectSubset<T, VoteCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends VoteCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, VoteCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a Vote.
@@ -10065,9 +12176,21 @@ export namespace Prisma {
      *     // ... filter to delete one Vote
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends VoteDeleteArgs>(args: SelectSubset<T, VoteDeleteArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends VoteDeleteArgs>(
+      args: SelectSubset<T, VoteDeleteArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one Vote.
@@ -10082,9 +12205,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends VoteUpdateArgs>(args: SelectSubset<T, VoteUpdateArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends VoteUpdateArgs>(
+      args: SelectSubset<T, VoteUpdateArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Votes.
@@ -10096,9 +12231,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends VoteDeleteManyArgs>(args?: SelectSubset<T, VoteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends VoteDeleteManyArgs>(
+      args?: SelectSubset<T, VoteDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Votes.
@@ -10115,9 +12252,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends VoteUpdateManyArgs>(args: SelectSubset<T, VoteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends VoteUpdateManyArgs>(
+      args: SelectSubset<T, VoteUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Votes and returns the data updated in the database.
@@ -10132,7 +12271,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Votes and only return the `id`
      * const voteWithIdOnly = await prisma.vote.updateManyAndReturn({
      *   select: { id: true },
@@ -10145,9 +12284,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends VoteUpdateManyAndReturnArgs>(args: SelectSubset<T, VoteUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends VoteUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, VoteUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one Vote.
@@ -10166,8 +12314,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends VoteUpsertArgs>(args: SelectSubset<T, VoteUpsertArgs<ExtArgs>>): Prisma__VoteClient<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends VoteUpsertArgs>(
+      args: SelectSubset<T, VoteUpsertArgs<ExtArgs>>,
+    ): Prisma__VoteClient<
+      $Result.GetResult<
+        Prisma.$VotePayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Votes.
@@ -10181,7 +12340,7 @@ export namespace Prisma {
      *     // ... the filter for the Votes we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends VoteCountArgs>(
       args?: Subset<T, VoteCountArgs>,
     ): Prisma.PrismaPromise<
@@ -10215,8 +12374,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends VoteAggregateArgs>(args: Subset<T, VoteAggregateArgs>): Prisma.PrismaPromise<GetVoteAggregateType<T>>
+     **/
+    aggregate<T extends VoteAggregateArgs>(
+      args: Subset<T, VoteAggregateArgs>,
+    ): Prisma.PrismaPromise<GetVoteAggregateType<T>>
 
     /**
      * Group by Vote.
@@ -10234,8 +12395,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends VoteGroupByArgs,
       HasSelectOrTake extends Or<
@@ -10245,59 +12406,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: VoteGroupByArgs['orderBy'] }
         : { orderBy?: VoteGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, VoteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetVoteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Vote model
-   */
-  readonly fields: VoteFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, VoteGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetVoteGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the Vote model
+     */
+    readonly fields: VoteFieldRefs
   }
 
   /**
@@ -10306,23 +12473,68 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__VoteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  export interface Prisma__VoteClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, UserDefaultArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      | $Result.GetResult<
+          Prisma.$UserPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, ListingDefaultArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -10332,25 +12544,23 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the Vote model
    */
   interface VoteFieldRefs {
-    readonly id: FieldRef<"Vote", 'String'>
-    readonly value: FieldRef<"Vote", 'Boolean'>
-    readonly userId: FieldRef<"Vote", 'String'>
-    readonly listingId: FieldRef<"Vote", 'String'>
+    readonly id: FieldRef<'Vote', 'String'>
+    readonly value: FieldRef<'Vote', 'Boolean'>
+    readonly userId: FieldRef<'Vote', 'String'>
+    readonly listingId: FieldRef<'Vote', 'String'>
   }
-    
 
   // Custom InputTypes
   /**
    * Vote findUnique
    */
-  export type VoteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10372,7 +12582,9 @@ export namespace Prisma {
   /**
    * Vote findUniqueOrThrow
    */
-  export type VoteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10394,7 +12606,9 @@ export namespace Prisma {
   /**
    * Vote findFirst
    */
-  export type VoteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10413,31 +12627,31 @@ export namespace Prisma {
     where?: VoteWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Votes to fetch.
      */
     orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Votes.
      */
     cursor?: VoteWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Votes from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Votes.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Votes.
      */
     distinct?: VoteScalarFieldEnum | VoteScalarFieldEnum[]
@@ -10446,7 +12660,9 @@ export namespace Prisma {
   /**
    * Vote findFirstOrThrow
    */
-  export type VoteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10465,31 +12681,31 @@ export namespace Prisma {
     where?: VoteWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Votes to fetch.
      */
     orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Votes.
      */
     cursor?: VoteWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Votes from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Votes.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Votes.
      */
     distinct?: VoteScalarFieldEnum | VoteScalarFieldEnum[]
@@ -10498,7 +12714,9 @@ export namespace Prisma {
   /**
    * Vote findMany
    */
-  export type VoteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10517,25 +12735,25 @@ export namespace Prisma {
     where?: VoteWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Votes to fetch.
      */
     orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Votes.
      */
     cursor?: VoteWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Votes from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Votes.
      */
     skip?: number
@@ -10545,7 +12763,9 @@ export namespace Prisma {
   /**
    * Vote create
    */
-  export type VoteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10567,7 +12787,9 @@ export namespace Prisma {
   /**
    * Vote createMany
    */
-  export type VoteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Votes.
      */
@@ -10578,7 +12800,9 @@ export namespace Prisma {
   /**
    * Vote createManyAndReturn
    */
-  export type VoteCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10601,7 +12825,9 @@ export namespace Prisma {
   /**
    * Vote update
    */
-  export type VoteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10627,7 +12853,9 @@ export namespace Prisma {
   /**
    * Vote updateMany
    */
-  export type VoteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Votes.
      */
@@ -10645,7 +12873,9 @@ export namespace Prisma {
   /**
    * Vote updateManyAndReturn
    */
-  export type VoteUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10675,7 +12905,9 @@ export namespace Prisma {
   /**
    * Vote upsert
    */
-  export type VoteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10705,7 +12937,9 @@ export namespace Prisma {
   /**
    * Vote delete
    */
-  export type VoteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10727,7 +12961,9 @@ export namespace Prisma {
   /**
    * Vote deleteMany
    */
-  export type VoteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Votes to delete
      */
@@ -10741,7 +12977,9 @@ export namespace Prisma {
   /**
    * Vote without action
    */
-  export type VoteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type VoteDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Vote
      */
@@ -10755,7 +12993,6 @@ export namespace Prisma {
      */
     include?: VoteInclude<ExtArgs> | null
   }
-
 
   /**
    * Model Comment
@@ -10795,7 +13032,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type CommentMinAggregateInputType = {
     id?: true
     content?: true
@@ -10824,69 +13060,74 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type CommentAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Comment to aggregate.
      */
     where?: CommentWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Comments to fetch.
      */
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: CommentWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Comments from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Comments.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned Comments
-    **/
+     **/
     _count?: true | CommentCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: CommentMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: CommentMaxAggregateInputType
   }
 
   export type GetCommentAggregateType<T extends CommentAggregateArgs> = {
-        [P in keyof T & keyof AggregateComment]: P extends '_count' | 'count'
+    [P in keyof T & keyof AggregateComment]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateComment[P]>
       : GetScalarType<T[P], AggregateComment[P]>
   }
 
-
-
-
-  export type CommentGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: CommentWhereInput
-    orderBy?: CommentOrderByWithAggregationInput | CommentOrderByWithAggregationInput[]
+    orderBy?:
+      | CommentOrderByWithAggregationInput
+      | CommentOrderByWithAggregationInput[]
     by: CommentScalarFieldEnum[] | CommentScalarFieldEnum
     having?: CommentScalarWhereWithAggregatesInput
     take?: number
@@ -10908,11 +13149,11 @@ export namespace Prisma {
     _max: CommentMaxAggregateOutputType | null
   }
 
-  type GetCommentGroupByPayload<T extends CommentGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<CommentGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof CommentGroupByOutputType))]: P extends '_count'
+  type GetCommentGroupByPayload<T extends CommentGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<CommentGroupByOutputType, T['by']> & {
+          [P in keyof T & keyof CommentGroupByOutputType]: P extends '_count'
             ? T[P] extends boolean
               ? number
               : GetScalarType<T[P], CommentGroupByOutputType[P]>
@@ -10921,44 +13162,58 @@ export namespace Prisma {
       >
     >
 
+  export type CommentSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      content?: boolean
+      userId?: boolean
+      listingId?: boolean
+      parentId?: boolean
+      createdAt?: boolean
+      user?: boolean | UserDefaultArgs<ExtArgs>
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+      parent?: boolean | Comment$parentArgs<ExtArgs>
+      replies?: boolean | Comment$repliesArgs<ExtArgs>
+      _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['comment']
+  >
 
-  export type CommentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    content?: boolean
-    userId?: boolean
-    listingId?: boolean
-    parentId?: boolean
-    createdAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-    parent?: boolean | Comment$parentArgs<ExtArgs>
-    replies?: boolean | Comment$repliesArgs<ExtArgs>
-    _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["comment"]>
+  export type CommentSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      content?: boolean
+      userId?: boolean
+      listingId?: boolean
+      parentId?: boolean
+      createdAt?: boolean
+      user?: boolean | UserDefaultArgs<ExtArgs>
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+      parent?: boolean | Comment$parentArgs<ExtArgs>
+    },
+    ExtArgs['result']['comment']
+  >
 
-  export type CommentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    content?: boolean
-    userId?: boolean
-    listingId?: boolean
-    parentId?: boolean
-    createdAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-    parent?: boolean | Comment$parentArgs<ExtArgs>
-  }, ExtArgs["result"]["comment"]>
-
-  export type CommentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    content?: boolean
-    userId?: boolean
-    listingId?: boolean
-    parentId?: boolean
-    createdAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-    parent?: boolean | Comment$parentArgs<ExtArgs>
-  }, ExtArgs["result"]["comment"]>
+  export type CommentSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      content?: boolean
+      userId?: boolean
+      listingId?: boolean
+      parentId?: boolean
+      createdAt?: boolean
+      user?: boolean | UserDefaultArgs<ExtArgs>
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+      parent?: boolean | Comment$parentArgs<ExtArgs>
+    },
+    ExtArgs['result']['comment']
+  >
 
   export type CommentSelectScalar = {
     id?: boolean
@@ -10969,53 +13224,78 @@ export namespace Prisma {
     createdAt?: boolean
   }
 
-  export type CommentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "userId" | "listingId" | "parentId" | "createdAt", ExtArgs["result"]["comment"]>
-  export type CommentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    'id' | 'content' | 'userId' | 'listingId' | 'parentId' | 'createdAt',
+    ExtArgs['result']['comment']
+  >
+  export type CommentInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
     replies?: boolean | Comment$repliesArgs<ExtArgs>
     _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type CommentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
   }
-  export type CommentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
   }
 
-  export type $CommentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Comment"
+  export type $CommentPayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'Comment'
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
       listing: Prisma.$ListingPayload<ExtArgs>
       parent: Prisma.$CommentPayload<ExtArgs> | null
       replies: Prisma.$CommentPayload<ExtArgs>[]
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      content: string
-      userId: string
-      listingId: string
-      parentId: string | null
-      createdAt: Date
-    }, ExtArgs["result"]["comment"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        content: string
+        userId: string
+        listingId: string
+        parentId: string | null
+        createdAt: Date
+      },
+      ExtArgs['result']['comment']
+    >
     composites: {}
   }
 
-  type CommentGetPayload<S extends boolean | null | undefined | CommentDefaultArgs> = $Result.GetResult<Prisma.$CommentPayload, S>
+  type CommentGetPayload<
+    S extends boolean | null | undefined | CommentDefaultArgs,
+  > = $Result.GetResult<Prisma.$CommentPayload, S>
 
-  type CommentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<CommentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: CommentCountAggregateInputType | true
+  type CommentCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<CommentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: CommentCountAggregateInputType | true
+  }
+
+  export interface CommentDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['Comment']
+      meta: { name: 'Comment' }
     }
-
-  export interface CommentDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Comment'], meta: { name: 'Comment' } }
     /**
      * Find zero or one Comment that matches the filter.
      * @param {CommentFindUniqueArgs} args - Arguments to find a Comment
@@ -11027,7 +13307,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends CommentFindUniqueArgs>(args: SelectSubset<T, CommentFindUniqueArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends CommentFindUniqueArgs>(
+      args: SelectSubset<T, CommentFindUniqueArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one Comment that matches the filter or throw an error with `error.code='P2025'`
@@ -11041,7 +13333,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends CommentFindUniqueOrThrowArgs>(args: SelectSubset<T, CommentFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends CommentFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, CommentFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Comment that matches the filter.
@@ -11056,7 +13360,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends CommentFindFirstArgs>(args?: SelectSubset<T, CommentFindFirstArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends CommentFindFirstArgs>(
+      args?: SelectSubset<T, CommentFindFirstArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first Comment that matches the filter or
@@ -11072,7 +13388,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends CommentFindFirstOrThrowArgs>(args?: SelectSubset<T, CommentFindFirstOrThrowArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends CommentFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, CommentFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more Comments that matches the filter.
@@ -11082,15 +13410,24 @@ export namespace Prisma {
      * @example
      * // Get all Comments
      * const comments = await prisma.comment.findMany()
-     * 
+     *
      * // Get first 10 Comments
      * const comments = await prisma.comment.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const commentWithIdOnly = await prisma.comment.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends CommentFindManyArgs>(args?: SelectSubset<T, CommentFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends CommentFindManyArgs>(
+      args?: SelectSubset<T, CommentFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a Comment.
@@ -11102,9 +13439,21 @@ export namespace Prisma {
      *     // ... data to create a Comment
      *   }
      * })
-     * 
+     *
      */
-    create<T extends CommentCreateArgs>(args: SelectSubset<T, CommentCreateArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends CommentCreateArgs>(
+      args: SelectSubset<T, CommentCreateArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many Comments.
@@ -11116,9 +13465,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends CommentCreateManyArgs>(args?: SelectSubset<T, CommentCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends CommentCreateManyArgs>(
+      args?: SelectSubset<T, CommentCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many Comments and returns the data saved in the database.
@@ -11130,7 +13481,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many Comments and only return the `id`
      * const commentWithIdOnly = await prisma.comment.createManyAndReturn({
      *   select: { id: true },
@@ -11140,9 +13491,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends CommentCreateManyAndReturnArgs>(args?: SelectSubset<T, CommentCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends CommentCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, CommentCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a Comment.
@@ -11154,9 +13514,21 @@ export namespace Prisma {
      *     // ... filter to delete one Comment
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends CommentDeleteArgs>(args: SelectSubset<T, CommentDeleteArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends CommentDeleteArgs>(
+      args: SelectSubset<T, CommentDeleteArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one Comment.
@@ -11171,9 +13543,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends CommentUpdateArgs>(args: SelectSubset<T, CommentUpdateArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends CommentUpdateArgs>(
+      args: SelectSubset<T, CommentUpdateArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more Comments.
@@ -11185,9 +13569,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends CommentDeleteManyArgs>(args?: SelectSubset<T, CommentDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends CommentDeleteManyArgs>(
+      args?: SelectSubset<T, CommentDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Comments.
@@ -11204,9 +13590,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends CommentUpdateManyArgs>(args: SelectSubset<T, CommentUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends CommentUpdateManyArgs>(
+      args: SelectSubset<T, CommentUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more Comments and returns the data updated in the database.
@@ -11221,7 +13609,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more Comments and only return the `id`
      * const commentWithIdOnly = await prisma.comment.updateManyAndReturn({
      *   select: { id: true },
@@ -11234,9 +13622,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends CommentUpdateManyAndReturnArgs>(args: SelectSubset<T, CommentUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends CommentUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, CommentUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one Comment.
@@ -11255,8 +13652,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends CommentUpsertArgs>(args: SelectSubset<T, CommentUpsertArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends CommentUpsertArgs>(
+      args: SelectSubset<T, CommentUpsertArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of Comments.
@@ -11270,7 +13678,7 @@ export namespace Prisma {
      *     // ... the filter for the Comments we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends CommentCountArgs>(
       args?: Subset<T, CommentCountArgs>,
     ): Prisma.PrismaPromise<
@@ -11304,8 +13712,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends CommentAggregateArgs>(args: Subset<T, CommentAggregateArgs>): Prisma.PrismaPromise<GetCommentAggregateType<T>>
+     **/
+    aggregate<T extends CommentAggregateArgs>(
+      args: Subset<T, CommentAggregateArgs>,
+    ): Prisma.PrismaPromise<GetCommentAggregateType<T>>
 
     /**
      * Group by Comment.
@@ -11323,8 +13733,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends CommentGroupByArgs,
       HasSelectOrTake extends Or<
@@ -11334,59 +13744,65 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: CommentGroupByArgs['orderBy'] }
         : { orderBy?: CommentGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, CommentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCommentGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Comment model
-   */
-  readonly fields: CommentFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, CommentGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors
+      ? GetCommentGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the Comment model
+     */
+    readonly fields: CommentFieldRefs
   }
 
   /**
@@ -11395,25 +13811,92 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__CommentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    parent<T extends Comment$parentArgs<ExtArgs> = {}>(args?: Subset<T, Comment$parentArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    replies<T extends Comment$repliesArgs<ExtArgs> = {}>(args?: Subset<T, Comment$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  export interface Prisma__CommentClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, UserDefaultArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      | $Result.GetResult<
+          Prisma.$UserPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, ListingDefaultArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    parent<T extends Comment$parentArgs<ExtArgs> = {}>(
+      args?: Subset<T, Comment$parentArgs<ExtArgs>>,
+    ): Prisma__CommentClient<
+      $Result.GetResult<
+        Prisma.$CommentPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    replies<T extends Comment$repliesArgs<ExtArgs> = {}>(
+      args?: Subset<T, Comment$repliesArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      | $Result.GetResult<
+          Prisma.$CommentPayload<ExtArgs>,
+          T,
+          'findMany',
+          GlobalOmitOptions
+        >
+      | Null
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -11423,27 +13906,25 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the Comment model
    */
   interface CommentFieldRefs {
-    readonly id: FieldRef<"Comment", 'String'>
-    readonly content: FieldRef<"Comment", 'String'>
-    readonly userId: FieldRef<"Comment", 'String'>
-    readonly listingId: FieldRef<"Comment", 'String'>
-    readonly parentId: FieldRef<"Comment", 'String'>
-    readonly createdAt: FieldRef<"Comment", 'DateTime'>
+    readonly id: FieldRef<'Comment', 'String'>
+    readonly content: FieldRef<'Comment', 'String'>
+    readonly userId: FieldRef<'Comment', 'String'>
+    readonly listingId: FieldRef<'Comment', 'String'>
+    readonly parentId: FieldRef<'Comment', 'String'>
+    readonly createdAt: FieldRef<'Comment', 'DateTime'>
   }
-    
 
   // Custom InputTypes
   /**
    * Comment findUnique
    */
-  export type CommentFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11465,7 +13946,9 @@ export namespace Prisma {
   /**
    * Comment findUniqueOrThrow
    */
-  export type CommentFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11487,7 +13970,9 @@ export namespace Prisma {
   /**
    * Comment findFirst
    */
-  export type CommentFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11506,31 +13991,33 @@ export namespace Prisma {
     where?: CommentWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Comments to fetch.
      */
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Comments.
      */
     cursor?: CommentWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Comments from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Comments.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Comments.
      */
     distinct?: CommentScalarFieldEnum | CommentScalarFieldEnum[]
@@ -11539,7 +14026,9 @@ export namespace Prisma {
   /**
    * Comment findFirstOrThrow
    */
-  export type CommentFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11558,31 +14047,33 @@ export namespace Prisma {
     where?: CommentWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Comments to fetch.
      */
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for Comments.
      */
     cursor?: CommentWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Comments from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Comments.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of Comments.
      */
     distinct?: CommentScalarFieldEnum | CommentScalarFieldEnum[]
@@ -11591,7 +14082,9 @@ export namespace Prisma {
   /**
    * Comment findMany
    */
-  export type CommentFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11610,25 +14103,27 @@ export namespace Prisma {
     where?: CommentWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of Comments to fetch.
      */
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing Comments.
      */
     cursor?: CommentWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` Comments from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` Comments.
      */
     skip?: number
@@ -11638,7 +14133,9 @@ export namespace Prisma {
   /**
    * Comment create
    */
-  export type CommentCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11660,7 +14157,9 @@ export namespace Prisma {
   /**
    * Comment createMany
    */
-  export type CommentCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many Comments.
      */
@@ -11671,7 +14170,9 @@ export namespace Prisma {
   /**
    * Comment createManyAndReturn
    */
-  export type CommentCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11694,7 +14195,9 @@ export namespace Prisma {
   /**
    * Comment update
    */
-  export type CommentUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11720,7 +14223,9 @@ export namespace Prisma {
   /**
    * Comment updateMany
    */
-  export type CommentUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update Comments.
      */
@@ -11738,7 +14243,9 @@ export namespace Prisma {
   /**
    * Comment updateManyAndReturn
    */
-  export type CommentUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11768,7 +14275,9 @@ export namespace Prisma {
   /**
    * Comment upsert
    */
-  export type CommentUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11798,7 +14307,9 @@ export namespace Prisma {
   /**
    * Comment delete
    */
-  export type CommentDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11820,7 +14331,9 @@ export namespace Prisma {
   /**
    * Comment deleteMany
    */
-  export type CommentDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which Comments to delete
      */
@@ -11834,7 +14347,9 @@ export namespace Prisma {
   /**
    * Comment.parent
    */
-  export type Comment$parentArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Comment$parentArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11853,7 +14368,9 @@ export namespace Prisma {
   /**
    * Comment.replies
    */
-  export type Comment$repliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Comment$repliesArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11867,7 +14384,9 @@ export namespace Prisma {
      */
     include?: CommentInclude<ExtArgs> | null
     where?: CommentWhereInput
-    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    orderBy?:
+      | CommentOrderByWithRelationInput
+      | CommentOrderByWithRelationInput[]
     cursor?: CommentWhereUniqueInput
     take?: number
     skip?: number
@@ -11877,7 +14396,9 @@ export namespace Prisma {
   /**
    * Comment without action
    */
-  export type CommentDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type CommentDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -11891,7 +14412,6 @@ export namespace Prisma {
      */
     include?: CommentInclude<ExtArgs> | null
   }
-
 
   /**
    * Model ListingApproval
@@ -11934,7 +14454,6 @@ export namespace Prisma {
     _all: number
   }
 
-
   export type ListingApprovalMinAggregateInputType = {
     id?: true
     listingId?: true
@@ -11966,69 +14485,78 @@ export namespace Prisma {
     _all?: true
   }
 
-  export type ListingApprovalAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which ListingApproval to aggregate.
      */
     where?: ListingApprovalWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of ListingApprovals to fetch.
      */
-    orderBy?: ListingApprovalOrderByWithRelationInput | ListingApprovalOrderByWithRelationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithRelationInput
+      | ListingApprovalOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the start position
      */
     cursor?: ListingApprovalWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` ListingApprovals from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` ListingApprovals.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Count returned ListingApprovals
-    **/
+     **/
     _count?: true | ListingApprovalCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the minimum value
-    **/
+     **/
     _min?: ListingApprovalMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
+     *
      * Select which fields to find the maximum value
-    **/
+     **/
     _max?: ListingApprovalMaxAggregateInputType
   }
 
-  export type GetListingApprovalAggregateType<T extends ListingApprovalAggregateArgs> = {
-        [P in keyof T & keyof AggregateListingApproval]: P extends '_count' | 'count'
+  export type GetListingApprovalAggregateType<
+    T extends ListingApprovalAggregateArgs,
+  > = {
+    [P in keyof T & keyof AggregateListingApproval]: P extends
+      | '_count'
+      | 'count'
       ? T[P] extends true
         ? number
         : GetScalarType<T[P], AggregateListingApproval[P]>
       : GetScalarType<T[P], AggregateListingApproval[P]>
   }
 
-
-
-
-  export type ListingApprovalGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     where?: ListingApprovalWhereInput
-    orderBy?: ListingApprovalOrderByWithAggregationInput | ListingApprovalOrderByWithAggregationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithAggregationInput
+      | ListingApprovalOrderByWithAggregationInput[]
     by: ListingApprovalScalarFieldEnum[] | ListingApprovalScalarFieldEnum
     having?: ListingApprovalScalarWhereWithAggregatesInput
     take?: number
@@ -12051,11 +14579,12 @@ export namespace Prisma {
     _max: ListingApprovalMaxAggregateOutputType | null
   }
 
-  type GetListingApprovalGroupByPayload<T extends ListingApprovalGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<ListingApprovalGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof ListingApprovalGroupByOutputType))]: P extends '_count'
+  type GetListingApprovalGroupByPayload<T extends ListingApprovalGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<ListingApprovalGroupByOutputType, T['by']> & {
+          [P in keyof T &
+            keyof ListingApprovalGroupByOutputType]: P extends '_count'
             ? T[P] extends boolean
               ? number
               : GetScalarType<T[P], ListingApprovalGroupByOutputType[P]>
@@ -12064,42 +14593,56 @@ export namespace Prisma {
       >
     >
 
+  export type ListingApprovalSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      listingId?: boolean
+      approvedById?: boolean
+      approvedByRole?: boolean
+      approvedAt?: boolean
+      status?: boolean
+      notes?: boolean
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+      approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['listingApproval']
+  >
 
-  export type ListingApprovalSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    listingId?: boolean
-    approvedById?: boolean
-    approvedByRole?: boolean
-    approvedAt?: boolean
-    status?: boolean
-    notes?: boolean
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["listingApproval"]>
+  export type ListingApprovalSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      listingId?: boolean
+      approvedById?: boolean
+      approvedByRole?: boolean
+      approvedAt?: boolean
+      status?: boolean
+      notes?: boolean
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+      approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['listingApproval']
+  >
 
-  export type ListingApprovalSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    listingId?: boolean
-    approvedById?: boolean
-    approvedByRole?: boolean
-    approvedAt?: boolean
-    status?: boolean
-    notes?: boolean
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["listingApproval"]>
-
-  export type ListingApprovalSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    listingId?: boolean
-    approvedById?: boolean
-    approvedByRole?: boolean
-    approvedAt?: boolean
-    status?: boolean
-    notes?: boolean
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
-    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["listingApproval"]>
+  export type ListingApprovalSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean
+      listingId?: boolean
+      approvedById?: boolean
+      approvedByRole?: boolean
+      approvedAt?: boolean
+      status?: boolean
+      notes?: boolean
+      listing?: boolean | ListingDefaultArgs<ExtArgs>
+      approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    },
+    ExtArgs['result']['listingApproval']
+  >
 
   export type ListingApprovalSelectScalar = {
     id?: boolean
@@ -12111,47 +14654,81 @@ export namespace Prisma {
     notes?: boolean
   }
 
-  export type ListingApprovalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "listingId" | "approvedById" | "approvedByRole" | "approvedAt" | "status" | "notes", ExtArgs["result"]["listingApproval"]>
-  export type ListingApprovalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    | 'id'
+    | 'listingId'
+    | 'approvedById'
+    | 'approvedByRole'
+    | 'approvedAt'
+    | 'status'
+    | 'notes',
+    ExtArgs['result']['listingApproval']
+  >
+  export type ListingApprovalInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
   }
-  export type ListingApprovalIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
   }
-  export type ListingApprovalIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
   }
 
-  export type $ListingApprovalPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "ListingApproval"
+  export type $ListingApprovalPayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: 'ListingApproval'
     objects: {
       listing: Prisma.$ListingPayload<ExtArgs>
       approvedBy: Prisma.$UserPayload<ExtArgs>
     }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      listingId: string
-      approvedById: string
-      approvedByRole: $Enums.Role
-      approvedAt: Date
-      status: $Enums.ApprovalStatus
-      notes: string | null
-    }, ExtArgs["result"]["listingApproval"]>
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string
+        listingId: string
+        approvedById: string
+        approvedByRole: $Enums.Role
+        approvedAt: Date
+        status: $Enums.ApprovalStatus
+        notes: string | null
+      },
+      ExtArgs['result']['listingApproval']
+    >
     composites: {}
   }
 
-  type ListingApprovalGetPayload<S extends boolean | null | undefined | ListingApprovalDefaultArgs> = $Result.GetResult<Prisma.$ListingApprovalPayload, S>
+  type ListingApprovalGetPayload<
+    S extends boolean | null | undefined | ListingApprovalDefaultArgs,
+  > = $Result.GetResult<Prisma.$ListingApprovalPayload, S>
 
-  type ListingApprovalCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<ListingApprovalFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: ListingApprovalCountAggregateInputType | true
+  type ListingApprovalCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<
+    ListingApprovalFindManyArgs,
+    'select' | 'include' | 'distinct' | 'omit'
+  > & {
+    select?: ListingApprovalCountAggregateInputType | true
+  }
+
+  export interface ListingApprovalDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>['model']['ListingApproval']
+      meta: { name: 'ListingApproval' }
     }
-
-  export interface ListingApprovalDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ListingApproval'], meta: { name: 'ListingApproval' } }
     /**
      * Find zero or one ListingApproval that matches the filter.
      * @param {ListingApprovalFindUniqueArgs} args - Arguments to find a ListingApproval
@@ -12163,7 +14740,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUnique<T extends ListingApprovalFindUniqueArgs>(args: SelectSubset<T, ListingApprovalFindUniqueArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends ListingApprovalFindUniqueArgs>(
+      args: SelectSubset<T, ListingApprovalFindUniqueArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'findUnique',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find one ListingApproval that matches the filter or throw an error with `error.code='P2025'`
@@ -12177,7 +14766,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findUniqueOrThrow<T extends ListingApprovalFindUniqueOrThrowArgs>(args: SelectSubset<T, ListingApprovalFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends ListingApprovalFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, ListingApprovalFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'findUniqueOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first ListingApproval that matches the filter.
@@ -12192,7 +14793,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirst<T extends ListingApprovalFindFirstArgs>(args?: SelectSubset<T, ListingApprovalFindFirstArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends ListingApprovalFindFirstArgs>(
+      args?: SelectSubset<T, ListingApprovalFindFirstArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'findFirst',
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find the first ListingApproval that matches the filter or
@@ -12208,7 +14821,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    findFirstOrThrow<T extends ListingApprovalFindFirstOrThrowArgs>(args?: SelectSubset<T, ListingApprovalFindFirstOrThrowArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends ListingApprovalFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, ListingApprovalFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'findFirstOrThrow',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Find zero or more ListingApprovals that matches the filter.
@@ -12218,15 +14843,24 @@ export namespace Prisma {
      * @example
      * // Get all ListingApprovals
      * const listingApprovals = await prisma.listingApproval.findMany()
-     * 
+     *
      * // Get first 10 ListingApprovals
      * const listingApprovals = await prisma.listingApproval.findMany({ take: 10 })
-     * 
+     *
      * // Only select the `id`
      * const listingApprovalWithIdOnly = await prisma.listingApproval.findMany({ select: { id: true } })
-     * 
+     *
      */
-    findMany<T extends ListingApprovalFindManyArgs>(args?: SelectSubset<T, ListingApprovalFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends ListingApprovalFindManyArgs>(
+      args?: SelectSubset<T, ListingApprovalFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'findMany',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create a ListingApproval.
@@ -12238,9 +14872,21 @@ export namespace Prisma {
      *     // ... data to create a ListingApproval
      *   }
      * })
-     * 
+     *
      */
-    create<T extends ListingApprovalCreateArgs>(args: SelectSubset<T, ListingApprovalCreateArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends ListingApprovalCreateArgs>(
+      args: SelectSubset<T, ListingApprovalCreateArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'create',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Create many ListingApprovals.
@@ -12252,9 +14898,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     *     
+     *
      */
-    createMany<T extends ListingApprovalCreateManyArgs>(args?: SelectSubset<T, ListingApprovalCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends ListingApprovalCreateManyArgs>(
+      args?: SelectSubset<T, ListingApprovalCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Create many ListingApprovals and returns the data saved in the database.
@@ -12266,7 +14914,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Create many ListingApprovals and only return the `id`
      * const listingApprovalWithIdOnly = await prisma.listingApproval.createManyAndReturn({
      *   select: { id: true },
@@ -12276,9 +14924,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    createManyAndReturn<T extends ListingApprovalCreateManyAndReturnArgs>(args?: SelectSubset<T, ListingApprovalCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends ListingApprovalCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, ListingApprovalCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'createManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Delete a ListingApproval.
@@ -12290,9 +14947,21 @@ export namespace Prisma {
      *     // ... filter to delete one ListingApproval
      *   }
      * })
-     * 
+     *
      */
-    delete<T extends ListingApprovalDeleteArgs>(args: SelectSubset<T, ListingApprovalDeleteArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends ListingApprovalDeleteArgs>(
+      args: SelectSubset<T, ListingApprovalDeleteArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'delete',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Update one ListingApproval.
@@ -12307,9 +14976,21 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    update<T extends ListingApprovalUpdateArgs>(args: SelectSubset<T, ListingApprovalUpdateArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends ListingApprovalUpdateArgs>(
+      args: SelectSubset<T, ListingApprovalUpdateArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'update',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Delete zero or more ListingApprovals.
@@ -12321,9 +15002,11 @@ export namespace Prisma {
      *     // ... provide filter here
      *   }
      * })
-     * 
+     *
      */
-    deleteMany<T extends ListingApprovalDeleteManyArgs>(args?: SelectSubset<T, ListingApprovalDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends ListingApprovalDeleteManyArgs>(
+      args?: SelectSubset<T, ListingApprovalDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more ListingApprovals.
@@ -12340,9 +15023,11 @@ export namespace Prisma {
      *     // ... provide data here
      *   }
      * })
-     * 
+     *
      */
-    updateMany<T extends ListingApprovalUpdateManyArgs>(args: SelectSubset<T, ListingApprovalUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends ListingApprovalUpdateManyArgs>(
+      args: SelectSubset<T, ListingApprovalUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>
 
     /**
      * Update zero or more ListingApprovals and returns the data updated in the database.
@@ -12357,7 +15042,7 @@ export namespace Prisma {
      *     // ... provide data here
      *   ]
      * })
-     * 
+     *
      * // Update zero or more ListingApprovals and only return the `id`
      * const listingApprovalWithIdOnly = await prisma.listingApproval.updateManyAndReturn({
      *   select: { id: true },
@@ -12370,9 +15055,18 @@ export namespace Prisma {
      * })
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * 
+     *
      */
-    updateManyAndReturn<T extends ListingApprovalUpdateManyAndReturnArgs>(args: SelectSubset<T, ListingApprovalUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends ListingApprovalUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, ListingApprovalUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'updateManyAndReturn',
+        GlobalOmitOptions
+      >
+    >
 
     /**
      * Create or update one ListingApproval.
@@ -12391,8 +15085,19 @@ export namespace Prisma {
      *   }
      * })
      */
-    upsert<T extends ListingApprovalUpsertArgs>(args: SelectSubset<T, ListingApprovalUpsertArgs<ExtArgs>>): Prisma__ListingApprovalClient<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
+    upsert<T extends ListingApprovalUpsertArgs>(
+      args: SelectSubset<T, ListingApprovalUpsertArgs<ExtArgs>>,
+    ): Prisma__ListingApprovalClient<
+      $Result.GetResult<
+        Prisma.$ListingApprovalPayload<ExtArgs>,
+        T,
+        'upsert',
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >
 
     /**
      * Count the number of ListingApprovals.
@@ -12406,7 +15111,7 @@ export namespace Prisma {
      *     // ... the filter for the ListingApprovals we want to count
      *   }
      * })
-    **/
+     **/
     count<T extends ListingApprovalCountArgs>(
       args?: Subset<T, ListingApprovalCountArgs>,
     ): Prisma.PrismaPromise<
@@ -12440,8 +15145,10 @@ export namespace Prisma {
      *   },
      *   take: 10,
      * })
-    **/
-    aggregate<T extends ListingApprovalAggregateArgs>(args: Subset<T, ListingApprovalAggregateArgs>): Prisma.PrismaPromise<GetListingApprovalAggregateType<T>>
+     **/
+    aggregate<T extends ListingApprovalAggregateArgs>(
+      args: Subset<T, ListingApprovalAggregateArgs>,
+    ): Prisma.PrismaPromise<GetListingApprovalAggregateType<T>>
 
     /**
      * Group by ListingApproval.
@@ -12459,8 +15166,8 @@ export namespace Prisma {
      *     _all: true
      *   },
      * })
-     * 
-    **/
+     *
+     **/
     groupBy<
       T extends ListingApprovalGroupByArgs,
       HasSelectOrTake extends Or<
@@ -12470,59 +15177,66 @@ export namespace Prisma {
       OrderByArg extends True extends HasSelectOrTake
         ? { orderBy: ListingApprovalGroupByArgs['orderBy'] }
         : { orderBy?: ListingApprovalGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T['orderBy']>>
+      >,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
       HavingFields extends GetHavingFields<T['having']>,
       HavingValid extends Has<ByFields, HavingFields>,
       ByEmpty extends T['by'] extends never[] ? True : False,
       InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
                 ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, ListingApprovalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetListingApprovalGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the ListingApproval model
-   */
-  readonly fields: ListingApprovalFieldRefs;
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      'Field ',
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ]
+            }[HavingFields]
+          : 'take' extends Keys<T>
+            ? 'orderBy' extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : 'skip' extends Keys<T>
+              ? 'orderBy' extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, ListingApprovalGroupByArgs, OrderByArg> &
+        InputErrors,
+    ): {} extends InputErrors
+      ? GetListingApprovalGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>
+    /**
+     * Fields of the ListingApproval model
+     */
+    readonly fields: ListingApprovalFieldRefs
   }
 
   /**
@@ -12531,23 +15245,68 @@ export namespace Prisma {
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__ListingApprovalClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    approvedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  export interface Prisma__ListingApprovalClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise'
+    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, ListingDefaultArgs<ExtArgs>>,
+    ): Prisma__ListingClient<
+      | $Result.GetResult<
+          Prisma.$ListingPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
+    approvedBy<T extends UserDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, UserDefaultArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      | $Result.GetResult<
+          Prisma.$UserPayload<ExtArgs>,
+          T,
+          'findUniqueOrThrow',
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of which ever callback is executed.
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
      * resolved value cannot be modified from the callback.
@@ -12557,28 +15316,26 @@ export namespace Prisma {
     finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
   }
 
-
-
-
   /**
    * Fields of the ListingApproval model
    */
   interface ListingApprovalFieldRefs {
-    readonly id: FieldRef<"ListingApproval", 'String'>
-    readonly listingId: FieldRef<"ListingApproval", 'String'>
-    readonly approvedById: FieldRef<"ListingApproval", 'String'>
-    readonly approvedByRole: FieldRef<"ListingApproval", 'Role'>
-    readonly approvedAt: FieldRef<"ListingApproval", 'DateTime'>
-    readonly status: FieldRef<"ListingApproval", 'ApprovalStatus'>
-    readonly notes: FieldRef<"ListingApproval", 'String'>
+    readonly id: FieldRef<'ListingApproval', 'String'>
+    readonly listingId: FieldRef<'ListingApproval', 'String'>
+    readonly approvedById: FieldRef<'ListingApproval', 'String'>
+    readonly approvedByRole: FieldRef<'ListingApproval', 'Role'>
+    readonly approvedAt: FieldRef<'ListingApproval', 'DateTime'>
+    readonly status: FieldRef<'ListingApproval', 'ApprovalStatus'>
+    readonly notes: FieldRef<'ListingApproval', 'String'>
   }
-    
 
   // Custom InputTypes
   /**
    * ListingApproval findUnique
    */
-  export type ListingApprovalFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12600,7 +15357,9 @@ export namespace Prisma {
   /**
    * ListingApproval findUniqueOrThrow
    */
-  export type ListingApprovalFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12622,7 +15381,9 @@ export namespace Prisma {
   /**
    * ListingApproval findFirst
    */
-  export type ListingApprovalFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12641,31 +15402,33 @@ export namespace Prisma {
     where?: ListingApprovalWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of ListingApprovals to fetch.
      */
-    orderBy?: ListingApprovalOrderByWithRelationInput | ListingApprovalOrderByWithRelationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithRelationInput
+      | ListingApprovalOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for ListingApprovals.
      */
     cursor?: ListingApprovalWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` ListingApprovals from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` ListingApprovals.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of ListingApprovals.
      */
     distinct?: ListingApprovalScalarFieldEnum | ListingApprovalScalarFieldEnum[]
@@ -12674,7 +15437,9 @@ export namespace Prisma {
   /**
    * ListingApproval findFirstOrThrow
    */
-  export type ListingApprovalFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12693,31 +15458,33 @@ export namespace Prisma {
     where?: ListingApprovalWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of ListingApprovals to fetch.
      */
-    orderBy?: ListingApprovalOrderByWithRelationInput | ListingApprovalOrderByWithRelationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithRelationInput
+      | ListingApprovalOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for searching for ListingApprovals.
      */
     cursor?: ListingApprovalWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` ListingApprovals from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` ListingApprovals.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
+     *
      * Filter by unique combinations of ListingApprovals.
      */
     distinct?: ListingApprovalScalarFieldEnum | ListingApprovalScalarFieldEnum[]
@@ -12726,7 +15493,9 @@ export namespace Prisma {
   /**
    * ListingApproval findMany
    */
-  export type ListingApprovalFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12745,25 +15514,27 @@ export namespace Prisma {
     where?: ListingApprovalWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
+     *
      * Determine the order of ListingApprovals to fetch.
      */
-    orderBy?: ListingApprovalOrderByWithRelationInput | ListingApprovalOrderByWithRelationInput[]
+    orderBy?:
+      | ListingApprovalOrderByWithRelationInput
+      | ListingApprovalOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
+     *
      * Sets the position for listing ListingApprovals.
      */
     cursor?: ListingApprovalWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Take `±n` ListingApprovals from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
+     *
      * Skip the first `n` ListingApprovals.
      */
     skip?: number
@@ -12773,7 +15544,9 @@ export namespace Prisma {
   /**
    * ListingApproval create
    */
-  export type ListingApprovalCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12795,7 +15568,9 @@ export namespace Prisma {
   /**
    * ListingApproval createMany
    */
-  export type ListingApprovalCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to create many ListingApprovals.
      */
@@ -12806,7 +15581,9 @@ export namespace Prisma {
   /**
    * ListingApproval createManyAndReturn
    */
-  export type ListingApprovalCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12829,7 +15606,9 @@ export namespace Prisma {
   /**
    * ListingApproval update
    */
-  export type ListingApprovalUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12855,11 +15634,16 @@ export namespace Prisma {
   /**
    * ListingApproval updateMany
    */
-  export type ListingApprovalUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * The data used to update ListingApprovals.
      */
-    data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyInput>
+    data: XOR<
+      ListingApprovalUpdateManyMutationInput,
+      ListingApprovalUncheckedUpdateManyInput
+    >
     /**
      * Filter which ListingApprovals to update
      */
@@ -12873,7 +15657,9 @@ export namespace Prisma {
   /**
    * ListingApproval updateManyAndReturn
    */
-  export type ListingApprovalUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12885,7 +15671,10 @@ export namespace Prisma {
     /**
      * The data used to update ListingApprovals.
      */
-    data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyInput>
+    data: XOR<
+      ListingApprovalUpdateManyMutationInput,
+      ListingApprovalUncheckedUpdateManyInput
+    >
     /**
      * Filter which ListingApprovals to update
      */
@@ -12903,7 +15692,9 @@ export namespace Prisma {
   /**
    * ListingApproval upsert
    */
-  export type ListingApprovalUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12933,7 +15724,9 @@ export namespace Prisma {
   /**
    * ListingApproval delete
    */
-  export type ListingApprovalDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12955,7 +15748,9 @@ export namespace Prisma {
   /**
    * ListingApproval deleteMany
    */
-  export type ListingApprovalDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Filter which ListingApprovals to delete
      */
@@ -12969,7 +15764,9 @@ export namespace Prisma {
   /**
    * ListingApproval without action
    */
-  export type ListingApprovalDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type ListingApprovalDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
     /**
      * Select specific fields to fetch from the ListingApproval
      */
@@ -12984,261 +15781,268 @@ export namespace Prisma {
     include?: ListingApprovalInclude<ExtArgs> | null
   }
 
-
   /**
    * Enums
    */
 
   export const TransactionIsolationLevel: {
-    ReadUncommitted: 'ReadUncommitted',
-    ReadCommitted: 'ReadCommitted',
-    RepeatableRead: 'RepeatableRead',
+    ReadUncommitted: 'ReadUncommitted'
+    ReadCommitted: 'ReadCommitted'
+    RepeatableRead: 'RepeatableRead'
     Serializable: 'Serializable'
-  };
+  }
 
-  export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
-
+  export type TransactionIsolationLevel =
+    (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
   export const UserScalarFieldEnum: {
-    id: 'id',
-    email: 'email',
-    hashedPassword: 'hashedPassword',
-    name: 'name',
-    profileImage: 'profileImage',
-    role: 'role',
+    id: 'id'
+    email: 'email'
+    hashedPassword: 'hashedPassword'
+    name: 'name'
+    profileImage: 'profileImage'
+    role: 'role'
     createdAt: 'createdAt'
-  };
+  }
 
-  export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
-
+  export type UserScalarFieldEnum =
+    (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
   export const DeviceScalarFieldEnum: {
-    id: 'id',
-    brand: 'brand',
+    id: 'id'
+    brand: 'brand'
     modelName: 'modelName'
-  };
+  }
 
-  export type DeviceScalarFieldEnum = (typeof DeviceScalarFieldEnum)[keyof typeof DeviceScalarFieldEnum]
-
+  export type DeviceScalarFieldEnum =
+    (typeof DeviceScalarFieldEnum)[keyof typeof DeviceScalarFieldEnum]
 
   export const SystemScalarFieldEnum: {
-    id: 'id',
+    id: 'id'
     name: 'name'
-  };
+  }
 
-  export type SystemScalarFieldEnum = (typeof SystemScalarFieldEnum)[keyof typeof SystemScalarFieldEnum]
-
+  export type SystemScalarFieldEnum =
+    (typeof SystemScalarFieldEnum)[keyof typeof SystemScalarFieldEnum]
 
   export const GameScalarFieldEnum: {
-    id: 'id',
-    title: 'title',
-    systemId: 'systemId',
+    id: 'id'
+    title: 'title'
+    systemId: 'systemId'
     imageUrl: 'imageUrl'
-  };
+  }
 
-  export type GameScalarFieldEnum = (typeof GameScalarFieldEnum)[keyof typeof GameScalarFieldEnum]
-
+  export type GameScalarFieldEnum =
+    (typeof GameScalarFieldEnum)[keyof typeof GameScalarFieldEnum]
 
   export const EmulatorScalarFieldEnum: {
-    id: 'id',
+    id: 'id'
     name: 'name'
-  };
+  }
 
-  export type EmulatorScalarFieldEnum = (typeof EmulatorScalarFieldEnum)[keyof typeof EmulatorScalarFieldEnum]
-
+  export type EmulatorScalarFieldEnum =
+    (typeof EmulatorScalarFieldEnum)[keyof typeof EmulatorScalarFieldEnum]
 
   export const PerformanceScaleScalarFieldEnum: {
-    id: 'id',
-    label: 'label',
+    id: 'id'
+    label: 'label'
     rank: 'rank'
-  };
+  }
 
-  export type PerformanceScaleScalarFieldEnum = (typeof PerformanceScaleScalarFieldEnum)[keyof typeof PerformanceScaleScalarFieldEnum]
-
+  export type PerformanceScaleScalarFieldEnum =
+    (typeof PerformanceScaleScalarFieldEnum)[keyof typeof PerformanceScaleScalarFieldEnum]
 
   export const ListingScalarFieldEnum: {
-    id: 'id',
-    deviceId: 'deviceId',
-    gameId: 'gameId',
-    emulatorId: 'emulatorId',
-    performanceId: 'performanceId',
-    notes: 'notes',
-    authorId: 'authorId',
+    id: 'id'
+    deviceId: 'deviceId'
+    gameId: 'gameId'
+    emulatorId: 'emulatorId'
+    performanceId: 'performanceId'
+    notes: 'notes'
+    authorId: 'authorId'
     createdAt: 'createdAt'
-  };
+  }
 
-  export type ListingScalarFieldEnum = (typeof ListingScalarFieldEnum)[keyof typeof ListingScalarFieldEnum]
-
+  export type ListingScalarFieldEnum =
+    (typeof ListingScalarFieldEnum)[keyof typeof ListingScalarFieldEnum]
 
   export const VoteScalarFieldEnum: {
-    id: 'id',
-    value: 'value',
-    userId: 'userId',
+    id: 'id'
+    value: 'value'
+    userId: 'userId'
     listingId: 'listingId'
-  };
+  }
 
-  export type VoteScalarFieldEnum = (typeof VoteScalarFieldEnum)[keyof typeof VoteScalarFieldEnum]
-
+  export type VoteScalarFieldEnum =
+    (typeof VoteScalarFieldEnum)[keyof typeof VoteScalarFieldEnum]
 
   export const CommentScalarFieldEnum: {
-    id: 'id',
-    content: 'content',
-    userId: 'userId',
-    listingId: 'listingId',
-    parentId: 'parentId',
+    id: 'id'
+    content: 'content'
+    userId: 'userId'
+    listingId: 'listingId'
+    parentId: 'parentId'
     createdAt: 'createdAt'
-  };
+  }
 
-  export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
-
+  export type CommentScalarFieldEnum =
+    (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
 
   export const ListingApprovalScalarFieldEnum: {
-    id: 'id',
-    listingId: 'listingId',
-    approvedById: 'approvedById',
-    approvedByRole: 'approvedByRole',
-    approvedAt: 'approvedAt',
-    status: 'status',
+    id: 'id'
+    listingId: 'listingId'
+    approvedById: 'approvedById'
+    approvedByRole: 'approvedByRole'
+    approvedAt: 'approvedAt'
+    status: 'status'
     notes: 'notes'
-  };
+  }
 
-  export type ListingApprovalScalarFieldEnum = (typeof ListingApprovalScalarFieldEnum)[keyof typeof ListingApprovalScalarFieldEnum]
-
+  export type ListingApprovalScalarFieldEnum =
+    (typeof ListingApprovalScalarFieldEnum)[keyof typeof ListingApprovalScalarFieldEnum]
 
   export const SortOrder: {
-    asc: 'asc',
+    asc: 'asc'
     desc: 'desc'
-  };
+  }
 
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
-
   export const QueryMode: {
-    default: 'default',
+    default: 'default'
     insensitive: 'insensitive'
-  };
+  }
 
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
-
   export const NullsOrder: {
-    first: 'first',
+    first: 'first'
     last: 'last'
-  };
+  }
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
 
   /**
    * Field references
    */
 
-
   /**
    * Reference to a field of type 'String'
    */
-  export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
-    
-
+  export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'String'
+  >
 
   /**
    * Reference to a field of type 'String[]'
    */
-  export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
-    
-
+  export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'String[]'
+  >
 
   /**
    * Reference to a field of type 'Role'
    */
-  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
-    
-
+  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Role'
+  >
 
   /**
    * Reference to a field of type 'Role[]'
    */
-  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
-    
-
+  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Role[]'
+  >
 
   /**
    * Reference to a field of type 'DateTime'
    */
-  export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
+  export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'DateTime'
+  >
 
   /**
    * Reference to a field of type 'DateTime[]'
    */
-  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
-    
-
+  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'DateTime[]'
+  >
 
   /**
    * Reference to a field of type 'Int'
    */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Int'
+  >
 
   /**
    * Reference to a field of type 'Int[]'
    */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Int[]'
+  >
 
   /**
    * Reference to a field of type 'Boolean'
    */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Boolean'
+  >
 
   /**
    * Reference to a field of type 'ApprovalStatus'
    */
-  export type EnumApprovalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalStatus'>
-    
-
+  export type EnumApprovalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'ApprovalStatus'
+  >
 
   /**
    * Reference to a field of type 'ApprovalStatus[]'
    */
-  export type ListEnumApprovalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalStatus[]'>
-    
-
+  export type ListEnumApprovalStatusFieldRefInput<$PrismaModel> =
+    FieldRefInputType<$PrismaModel, 'ApprovalStatus[]'>
 
   /**
    * Reference to a field of type 'Float'
    */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Float'
+  >
 
   /**
    * Reference to a field of type 'Float[]'
    */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
-    
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    'Float[]'
+  >
+
   /**
    * Deep Input Types
    */
-
 
   export type UserWhereInput = {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    id?: StringFilter<"User"> | string
-    email?: StringFilter<"User"> | string
-    hashedPassword?: StringFilter<"User"> | string
-    name?: StringNullableFilter<"User"> | string | null
-    profileImage?: StringNullableFilter<"User"> | string | null
-    role?: EnumRoleFilter<"User"> | $Enums.Role
-    createdAt?: DateTimeFilter<"User"> | Date | string
+    id?: StringFilter<'User'> | string
+    email?: StringFilter<'User'> | string
+    hashedPassword?: StringFilter<'User'> | string
+    name?: StringNullableFilter<'User'> | string | null
+    profileImage?: StringNullableFilter<'User'> | string | null
+    role?: EnumRoleFilter<'User'> | $Enums.Role
+    createdAt?: DateTimeFilter<'User'> | Date | string
     listings?: ListingListRelationFilter
     votes?: VoteListRelationFilter
     comments?: CommentListRelationFilter
@@ -13259,22 +16063,25 @@ export namespace Prisma {
     approvalsGiven?: ListingApprovalOrderByRelationAggregateInput
   }
 
-  export type UserWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    email?: string
-    AND?: UserWhereInput | UserWhereInput[]
-    OR?: UserWhereInput[]
-    NOT?: UserWhereInput | UserWhereInput[]
-    hashedPassword?: StringFilter<"User"> | string
-    name?: StringNullableFilter<"User"> | string | null
-    profileImage?: StringNullableFilter<"User"> | string | null
-    role?: EnumRoleFilter<"User"> | $Enums.Role
-    createdAt?: DateTimeFilter<"User"> | Date | string
-    listings?: ListingListRelationFilter
-    votes?: VoteListRelationFilter
-    comments?: CommentListRelationFilter
-    approvalsGiven?: ListingApprovalListRelationFilter
-  }, "id" | "email">
+  export type UserWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      email?: string
+      AND?: UserWhereInput | UserWhereInput[]
+      OR?: UserWhereInput[]
+      NOT?: UserWhereInput | UserWhereInput[]
+      hashedPassword?: StringFilter<'User'> | string
+      name?: StringNullableFilter<'User'> | string | null
+      profileImage?: StringNullableFilter<'User'> | string | null
+      role?: EnumRoleFilter<'User'> | $Enums.Role
+      createdAt?: DateTimeFilter<'User'> | Date | string
+      listings?: ListingListRelationFilter
+      votes?: VoteListRelationFilter
+      comments?: CommentListRelationFilter
+      approvalsGiven?: ListingApprovalListRelationFilter
+    },
+    'id' | 'email'
+  >
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13290,25 +16097,29 @@ export namespace Prisma {
   }
 
   export type UserScalarWhereWithAggregatesInput = {
-    AND?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
+    AND?:
+      | UserScalarWhereWithAggregatesInput
+      | UserScalarWhereWithAggregatesInput[]
     OR?: UserScalarWhereWithAggregatesInput[]
-    NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"User"> | string
-    email?: StringWithAggregatesFilter<"User"> | string
-    hashedPassword?: StringWithAggregatesFilter<"User"> | string
-    name?: StringNullableWithAggregatesFilter<"User"> | string | null
-    profileImage?: StringNullableWithAggregatesFilter<"User"> | string | null
-    role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
-    createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+    NOT?:
+      | UserScalarWhereWithAggregatesInput
+      | UserScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'User'> | string
+    email?: StringWithAggregatesFilter<'User'> | string
+    hashedPassword?: StringWithAggregatesFilter<'User'> | string
+    name?: StringNullableWithAggregatesFilter<'User'> | string | null
+    profileImage?: StringNullableWithAggregatesFilter<'User'> | string | null
+    role?: EnumRoleWithAggregatesFilter<'User'> | $Enums.Role
+    createdAt?: DateTimeWithAggregatesFilter<'User'> | Date | string
   }
 
   export type DeviceWhereInput = {
     AND?: DeviceWhereInput | DeviceWhereInput[]
     OR?: DeviceWhereInput[]
     NOT?: DeviceWhereInput | DeviceWhereInput[]
-    id?: StringFilter<"Device"> | string
-    brand?: StringFilter<"Device"> | string
-    modelName?: StringFilter<"Device"> | string
+    id?: StringFilter<'Device'> | string
+    brand?: StringFilter<'Device'> | string
+    modelName?: StringFilter<'Device'> | string
     listings?: ListingListRelationFilter
   }
 
@@ -13319,15 +16130,18 @@ export namespace Prisma {
     listings?: ListingOrderByRelationAggregateInput
   }
 
-  export type DeviceWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: DeviceWhereInput | DeviceWhereInput[]
-    OR?: DeviceWhereInput[]
-    NOT?: DeviceWhereInput | DeviceWhereInput[]
-    brand?: StringFilter<"Device"> | string
-    modelName?: StringFilter<"Device"> | string
-    listings?: ListingListRelationFilter
-  }, "id">
+  export type DeviceWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      AND?: DeviceWhereInput | DeviceWhereInput[]
+      OR?: DeviceWhereInput[]
+      NOT?: DeviceWhereInput | DeviceWhereInput[]
+      brand?: StringFilter<'Device'> | string
+      modelName?: StringFilter<'Device'> | string
+      listings?: ListingListRelationFilter
+    },
+    'id'
+  >
 
   export type DeviceOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13339,20 +16153,24 @@ export namespace Prisma {
   }
 
   export type DeviceScalarWhereWithAggregatesInput = {
-    AND?: DeviceScalarWhereWithAggregatesInput | DeviceScalarWhereWithAggregatesInput[]
+    AND?:
+      | DeviceScalarWhereWithAggregatesInput
+      | DeviceScalarWhereWithAggregatesInput[]
     OR?: DeviceScalarWhereWithAggregatesInput[]
-    NOT?: DeviceScalarWhereWithAggregatesInput | DeviceScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Device"> | string
-    brand?: StringWithAggregatesFilter<"Device"> | string
-    modelName?: StringWithAggregatesFilter<"Device"> | string
+    NOT?:
+      | DeviceScalarWhereWithAggregatesInput
+      | DeviceScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'Device'> | string
+    brand?: StringWithAggregatesFilter<'Device'> | string
+    modelName?: StringWithAggregatesFilter<'Device'> | string
   }
 
   export type SystemWhereInput = {
     AND?: SystemWhereInput | SystemWhereInput[]
     OR?: SystemWhereInput[]
     NOT?: SystemWhereInput | SystemWhereInput[]
-    id?: StringFilter<"System"> | string
-    name?: StringFilter<"System"> | string
+    id?: StringFilter<'System'> | string
+    name?: StringFilter<'System'> | string
     games?: GameListRelationFilter
   }
 
@@ -13362,14 +16180,17 @@ export namespace Prisma {
     games?: GameOrderByRelationAggregateInput
   }
 
-  export type SystemWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    name?: string
-    AND?: SystemWhereInput | SystemWhereInput[]
-    OR?: SystemWhereInput[]
-    NOT?: SystemWhereInput | SystemWhereInput[]
-    games?: GameListRelationFilter
-  }, "id" | "name">
+  export type SystemWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      name?: string
+      AND?: SystemWhereInput | SystemWhereInput[]
+      OR?: SystemWhereInput[]
+      NOT?: SystemWhereInput | SystemWhereInput[]
+      games?: GameListRelationFilter
+    },
+    'id' | 'name'
+  >
 
   export type SystemOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13380,21 +16201,25 @@ export namespace Prisma {
   }
 
   export type SystemScalarWhereWithAggregatesInput = {
-    AND?: SystemScalarWhereWithAggregatesInput | SystemScalarWhereWithAggregatesInput[]
+    AND?:
+      | SystemScalarWhereWithAggregatesInput
+      | SystemScalarWhereWithAggregatesInput[]
     OR?: SystemScalarWhereWithAggregatesInput[]
-    NOT?: SystemScalarWhereWithAggregatesInput | SystemScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"System"> | string
-    name?: StringWithAggregatesFilter<"System"> | string
+    NOT?:
+      | SystemScalarWhereWithAggregatesInput
+      | SystemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'System'> | string
+    name?: StringWithAggregatesFilter<'System'> | string
   }
 
   export type GameWhereInput = {
     AND?: GameWhereInput | GameWhereInput[]
     OR?: GameWhereInput[]
     NOT?: GameWhereInput | GameWhereInput[]
-    id?: StringFilter<"Game"> | string
-    title?: StringFilter<"Game"> | string
-    systemId?: StringFilter<"Game"> | string
-    imageUrl?: StringNullableFilter<"Game"> | string | null
+    id?: StringFilter<'Game'> | string
+    title?: StringFilter<'Game'> | string
+    systemId?: StringFilter<'Game'> | string
+    imageUrl?: StringNullableFilter<'Game'> | string | null
     system?: XOR<SystemScalarRelationFilter, SystemWhereInput>
     listings?: ListingListRelationFilter
   }
@@ -13408,17 +16233,20 @@ export namespace Prisma {
     listings?: ListingOrderByRelationAggregateInput
   }
 
-  export type GameWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: GameWhereInput | GameWhereInput[]
-    OR?: GameWhereInput[]
-    NOT?: GameWhereInput | GameWhereInput[]
-    title?: StringFilter<"Game"> | string
-    systemId?: StringFilter<"Game"> | string
-    imageUrl?: StringNullableFilter<"Game"> | string | null
-    system?: XOR<SystemScalarRelationFilter, SystemWhereInput>
-    listings?: ListingListRelationFilter
-  }, "id">
+  export type GameWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      AND?: GameWhereInput | GameWhereInput[]
+      OR?: GameWhereInput[]
+      NOT?: GameWhereInput | GameWhereInput[]
+      title?: StringFilter<'Game'> | string
+      systemId?: StringFilter<'Game'> | string
+      imageUrl?: StringNullableFilter<'Game'> | string | null
+      system?: XOR<SystemScalarRelationFilter, SystemWhereInput>
+      listings?: ListingListRelationFilter
+    },
+    'id'
+  >
 
   export type GameOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13431,21 +16259,25 @@ export namespace Prisma {
   }
 
   export type GameScalarWhereWithAggregatesInput = {
-    AND?: GameScalarWhereWithAggregatesInput | GameScalarWhereWithAggregatesInput[]
+    AND?:
+      | GameScalarWhereWithAggregatesInput
+      | GameScalarWhereWithAggregatesInput[]
     OR?: GameScalarWhereWithAggregatesInput[]
-    NOT?: GameScalarWhereWithAggregatesInput | GameScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Game"> | string
-    title?: StringWithAggregatesFilter<"Game"> | string
-    systemId?: StringWithAggregatesFilter<"Game"> | string
-    imageUrl?: StringNullableWithAggregatesFilter<"Game"> | string | null
+    NOT?:
+      | GameScalarWhereWithAggregatesInput
+      | GameScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'Game'> | string
+    title?: StringWithAggregatesFilter<'Game'> | string
+    systemId?: StringWithAggregatesFilter<'Game'> | string
+    imageUrl?: StringNullableWithAggregatesFilter<'Game'> | string | null
   }
 
   export type EmulatorWhereInput = {
     AND?: EmulatorWhereInput | EmulatorWhereInput[]
     OR?: EmulatorWhereInput[]
     NOT?: EmulatorWhereInput | EmulatorWhereInput[]
-    id?: StringFilter<"Emulator"> | string
-    name?: StringFilter<"Emulator"> | string
+    id?: StringFilter<'Emulator'> | string
+    name?: StringFilter<'Emulator'> | string
     listings?: ListingListRelationFilter
   }
 
@@ -13455,14 +16287,17 @@ export namespace Prisma {
     listings?: ListingOrderByRelationAggregateInput
   }
 
-  export type EmulatorWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    name?: string
-    AND?: EmulatorWhereInput | EmulatorWhereInput[]
-    OR?: EmulatorWhereInput[]
-    NOT?: EmulatorWhereInput | EmulatorWhereInput[]
-    listings?: ListingListRelationFilter
-  }, "id" | "name">
+  export type EmulatorWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      name?: string
+      AND?: EmulatorWhereInput | EmulatorWhereInput[]
+      OR?: EmulatorWhereInput[]
+      NOT?: EmulatorWhereInput | EmulatorWhereInput[]
+      listings?: ListingListRelationFilter
+    },
+    'id' | 'name'
+  >
 
   export type EmulatorOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13473,20 +16308,24 @@ export namespace Prisma {
   }
 
   export type EmulatorScalarWhereWithAggregatesInput = {
-    AND?: EmulatorScalarWhereWithAggregatesInput | EmulatorScalarWhereWithAggregatesInput[]
+    AND?:
+      | EmulatorScalarWhereWithAggregatesInput
+      | EmulatorScalarWhereWithAggregatesInput[]
     OR?: EmulatorScalarWhereWithAggregatesInput[]
-    NOT?: EmulatorScalarWhereWithAggregatesInput | EmulatorScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Emulator"> | string
-    name?: StringWithAggregatesFilter<"Emulator"> | string
+    NOT?:
+      | EmulatorScalarWhereWithAggregatesInput
+      | EmulatorScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'Emulator'> | string
+    name?: StringWithAggregatesFilter<'Emulator'> | string
   }
 
   export type PerformanceScaleWhereInput = {
     AND?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
     OR?: PerformanceScaleWhereInput[]
     NOT?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
-    id?: IntFilter<"PerformanceScale"> | number
-    label?: StringFilter<"PerformanceScale"> | string
-    rank?: IntFilter<"PerformanceScale"> | number
+    id?: IntFilter<'PerformanceScale'> | number
+    label?: StringFilter<'PerformanceScale'> | string
+    rank?: IntFilter<'PerformanceScale'> | number
     listings?: ListingListRelationFilter
   }
 
@@ -13497,15 +16336,18 @@ export namespace Prisma {
     listings?: ListingOrderByRelationAggregateInput
   }
 
-  export type PerformanceScaleWhereUniqueInput = Prisma.AtLeast<{
-    id?: number
-    label?: string
-    AND?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
-    OR?: PerformanceScaleWhereInput[]
-    NOT?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
-    rank?: IntFilter<"PerformanceScale"> | number
-    listings?: ListingListRelationFilter
-  }, "id" | "label">
+  export type PerformanceScaleWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: number
+      label?: string
+      AND?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
+      OR?: PerformanceScaleWhereInput[]
+      NOT?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
+      rank?: IntFilter<'PerformanceScale'> | number
+      listings?: ListingListRelationFilter
+    },
+    'id' | 'label'
+  >
 
   export type PerformanceScaleOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13519,30 +16361,37 @@ export namespace Prisma {
   }
 
   export type PerformanceScaleScalarWhereWithAggregatesInput = {
-    AND?: PerformanceScaleScalarWhereWithAggregatesInput | PerformanceScaleScalarWhereWithAggregatesInput[]
+    AND?:
+      | PerformanceScaleScalarWhereWithAggregatesInput
+      | PerformanceScaleScalarWhereWithAggregatesInput[]
     OR?: PerformanceScaleScalarWhereWithAggregatesInput[]
-    NOT?: PerformanceScaleScalarWhereWithAggregatesInput | PerformanceScaleScalarWhereWithAggregatesInput[]
-    id?: IntWithAggregatesFilter<"PerformanceScale"> | number
-    label?: StringWithAggregatesFilter<"PerformanceScale"> | string
-    rank?: IntWithAggregatesFilter<"PerformanceScale"> | number
+    NOT?:
+      | PerformanceScaleScalarWhereWithAggregatesInput
+      | PerformanceScaleScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<'PerformanceScale'> | number
+    label?: StringWithAggregatesFilter<'PerformanceScale'> | string
+    rank?: IntWithAggregatesFilter<'PerformanceScale'> | number
   }
 
   export type ListingWhereInput = {
     AND?: ListingWhereInput | ListingWhereInput[]
     OR?: ListingWhereInput[]
     NOT?: ListingWhereInput | ListingWhereInput[]
-    id?: StringFilter<"Listing"> | string
-    deviceId?: StringFilter<"Listing"> | string
-    gameId?: StringFilter<"Listing"> | string
-    emulatorId?: StringFilter<"Listing"> | string
-    performanceId?: IntFilter<"Listing"> | number
-    notes?: StringNullableFilter<"Listing"> | string | null
-    authorId?: StringFilter<"Listing"> | string
-    createdAt?: DateTimeFilter<"Listing"> | Date | string
+    id?: StringFilter<'Listing'> | string
+    deviceId?: StringFilter<'Listing'> | string
+    gameId?: StringFilter<'Listing'> | string
+    emulatorId?: StringFilter<'Listing'> | string
+    performanceId?: IntFilter<'Listing'> | number
+    notes?: StringNullableFilter<'Listing'> | string | null
+    authorId?: StringFilter<'Listing'> | string
+    createdAt?: DateTimeFilter<'Listing'> | Date | string
     device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
     game?: XOR<GameScalarRelationFilter, GameWhereInput>
     emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
-    performance?: XOR<PerformanceScaleScalarRelationFilter, PerformanceScaleWhereInput>
+    performance?: XOR<
+      PerformanceScaleScalarRelationFilter,
+      PerformanceScaleWhereInput
+    >
     author?: XOR<UserScalarRelationFilter, UserWhereInput>
     votes?: VoteListRelationFilter
     comments?: CommentListRelationFilter
@@ -13568,27 +16417,33 @@ export namespace Prisma {
     approvals?: ListingApprovalOrderByRelationAggregateInput
   }
 
-  export type ListingWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: ListingWhereInput | ListingWhereInput[]
-    OR?: ListingWhereInput[]
-    NOT?: ListingWhereInput | ListingWhereInput[]
-    deviceId?: StringFilter<"Listing"> | string
-    gameId?: StringFilter<"Listing"> | string
-    emulatorId?: StringFilter<"Listing"> | string
-    performanceId?: IntFilter<"Listing"> | number
-    notes?: StringNullableFilter<"Listing"> | string | null
-    authorId?: StringFilter<"Listing"> | string
-    createdAt?: DateTimeFilter<"Listing"> | Date | string
-    device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
-    game?: XOR<GameScalarRelationFilter, GameWhereInput>
-    emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
-    performance?: XOR<PerformanceScaleScalarRelationFilter, PerformanceScaleWhereInput>
-    author?: XOR<UserScalarRelationFilter, UserWhereInput>
-    votes?: VoteListRelationFilter
-    comments?: CommentListRelationFilter
-    approvals?: ListingApprovalListRelationFilter
-  }, "id">
+  export type ListingWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      AND?: ListingWhereInput | ListingWhereInput[]
+      OR?: ListingWhereInput[]
+      NOT?: ListingWhereInput | ListingWhereInput[]
+      deviceId?: StringFilter<'Listing'> | string
+      gameId?: StringFilter<'Listing'> | string
+      emulatorId?: StringFilter<'Listing'> | string
+      performanceId?: IntFilter<'Listing'> | number
+      notes?: StringNullableFilter<'Listing'> | string | null
+      authorId?: StringFilter<'Listing'> | string
+      createdAt?: DateTimeFilter<'Listing'> | Date | string
+      device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
+      game?: XOR<GameScalarRelationFilter, GameWhereInput>
+      emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
+      performance?: XOR<
+        PerformanceScaleScalarRelationFilter,
+        PerformanceScaleWhereInput
+      >
+      author?: XOR<UserScalarRelationFilter, UserWhereInput>
+      votes?: VoteListRelationFilter
+      comments?: CommentListRelationFilter
+      approvals?: ListingApprovalListRelationFilter
+    },
+    'id'
+  >
 
   export type ListingOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13607,27 +16462,31 @@ export namespace Prisma {
   }
 
   export type ListingScalarWhereWithAggregatesInput = {
-    AND?: ListingScalarWhereWithAggregatesInput | ListingScalarWhereWithAggregatesInput[]
+    AND?:
+      | ListingScalarWhereWithAggregatesInput
+      | ListingScalarWhereWithAggregatesInput[]
     OR?: ListingScalarWhereWithAggregatesInput[]
-    NOT?: ListingScalarWhereWithAggregatesInput | ListingScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Listing"> | string
-    deviceId?: StringWithAggregatesFilter<"Listing"> | string
-    gameId?: StringWithAggregatesFilter<"Listing"> | string
-    emulatorId?: StringWithAggregatesFilter<"Listing"> | string
-    performanceId?: IntWithAggregatesFilter<"Listing"> | number
-    notes?: StringNullableWithAggregatesFilter<"Listing"> | string | null
-    authorId?: StringWithAggregatesFilter<"Listing"> | string
-    createdAt?: DateTimeWithAggregatesFilter<"Listing"> | Date | string
+    NOT?:
+      | ListingScalarWhereWithAggregatesInput
+      | ListingScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'Listing'> | string
+    deviceId?: StringWithAggregatesFilter<'Listing'> | string
+    gameId?: StringWithAggregatesFilter<'Listing'> | string
+    emulatorId?: StringWithAggregatesFilter<'Listing'> | string
+    performanceId?: IntWithAggregatesFilter<'Listing'> | number
+    notes?: StringNullableWithAggregatesFilter<'Listing'> | string | null
+    authorId?: StringWithAggregatesFilter<'Listing'> | string
+    createdAt?: DateTimeWithAggregatesFilter<'Listing'> | Date | string
   }
 
   export type VoteWhereInput = {
     AND?: VoteWhereInput | VoteWhereInput[]
     OR?: VoteWhereInput[]
     NOT?: VoteWhereInput | VoteWhereInput[]
-    id?: StringFilter<"Vote"> | string
-    value?: BoolFilter<"Vote"> | boolean
-    userId?: StringFilter<"Vote"> | string
-    listingId?: StringFilter<"Vote"> | string
+    id?: StringFilter<'Vote'> | string
+    value?: BoolFilter<'Vote'> | boolean
+    userId?: StringFilter<'Vote'> | string
+    listingId?: StringFilter<'Vote'> | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
   }
@@ -13641,18 +16500,21 @@ export namespace Prisma {
     listing?: ListingOrderByWithRelationInput
   }
 
-  export type VoteWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    userId_listingId?: VoteUserIdListingIdCompoundUniqueInput
-    AND?: VoteWhereInput | VoteWhereInput[]
-    OR?: VoteWhereInput[]
-    NOT?: VoteWhereInput | VoteWhereInput[]
-    value?: BoolFilter<"Vote"> | boolean
-    userId?: StringFilter<"Vote"> | string
-    listingId?: StringFilter<"Vote"> | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
-  }, "id" | "userId_listingId">
+  export type VoteWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      userId_listingId?: VoteUserIdListingIdCompoundUniqueInput
+      AND?: VoteWhereInput | VoteWhereInput[]
+      OR?: VoteWhereInput[]
+      NOT?: VoteWhereInput | VoteWhereInput[]
+      value?: BoolFilter<'Vote'> | boolean
+      userId?: StringFilter<'Vote'> | string
+      listingId?: StringFilter<'Vote'> | string
+      user?: XOR<UserScalarRelationFilter, UserWhereInput>
+      listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    },
+    'id' | 'userId_listingId'
+  >
 
   export type VoteOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13665,25 +16527,29 @@ export namespace Prisma {
   }
 
   export type VoteScalarWhereWithAggregatesInput = {
-    AND?: VoteScalarWhereWithAggregatesInput | VoteScalarWhereWithAggregatesInput[]
+    AND?:
+      | VoteScalarWhereWithAggregatesInput
+      | VoteScalarWhereWithAggregatesInput[]
     OR?: VoteScalarWhereWithAggregatesInput[]
-    NOT?: VoteScalarWhereWithAggregatesInput | VoteScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Vote"> | string
-    value?: BoolWithAggregatesFilter<"Vote"> | boolean
-    userId?: StringWithAggregatesFilter<"Vote"> | string
-    listingId?: StringWithAggregatesFilter<"Vote"> | string
+    NOT?:
+      | VoteScalarWhereWithAggregatesInput
+      | VoteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'Vote'> | string
+    value?: BoolWithAggregatesFilter<'Vote'> | boolean
+    userId?: StringWithAggregatesFilter<'Vote'> | string
+    listingId?: StringWithAggregatesFilter<'Vote'> | string
   }
 
   export type CommentWhereInput = {
     AND?: CommentWhereInput | CommentWhereInput[]
     OR?: CommentWhereInput[]
     NOT?: CommentWhereInput | CommentWhereInput[]
-    id?: StringFilter<"Comment"> | string
-    content?: StringFilter<"Comment"> | string
-    userId?: StringFilter<"Comment"> | string
-    listingId?: StringFilter<"Comment"> | string
-    parentId?: StringNullableFilter<"Comment"> | string | null
-    createdAt?: DateTimeFilter<"Comment"> | Date | string
+    id?: StringFilter<'Comment'> | string
+    content?: StringFilter<'Comment'> | string
+    userId?: StringFilter<'Comment'> | string
+    listingId?: StringFilter<'Comment'> | string
+    parentId?: StringNullableFilter<'Comment'> | string | null
+    createdAt?: DateTimeFilter<'Comment'> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
     parent?: XOR<CommentNullableScalarRelationFilter, CommentWhereInput> | null
@@ -13703,21 +16569,27 @@ export namespace Prisma {
     replies?: CommentOrderByRelationAggregateInput
   }
 
-  export type CommentWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: CommentWhereInput | CommentWhereInput[]
-    OR?: CommentWhereInput[]
-    NOT?: CommentWhereInput | CommentWhereInput[]
-    content?: StringFilter<"Comment"> | string
-    userId?: StringFilter<"Comment"> | string
-    listingId?: StringFilter<"Comment"> | string
-    parentId?: StringNullableFilter<"Comment"> | string | null
-    createdAt?: DateTimeFilter<"Comment"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
-    parent?: XOR<CommentNullableScalarRelationFilter, CommentWhereInput> | null
-    replies?: CommentListRelationFilter
-  }, "id">
+  export type CommentWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      AND?: CommentWhereInput | CommentWhereInput[]
+      OR?: CommentWhereInput[]
+      NOT?: CommentWhereInput | CommentWhereInput[]
+      content?: StringFilter<'Comment'> | string
+      userId?: StringFilter<'Comment'> | string
+      listingId?: StringFilter<'Comment'> | string
+      parentId?: StringNullableFilter<'Comment'> | string | null
+      createdAt?: DateTimeFilter<'Comment'> | Date | string
+      user?: XOR<UserScalarRelationFilter, UserWhereInput>
+      listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+      parent?: XOR<
+        CommentNullableScalarRelationFilter,
+        CommentWhereInput
+      > | null
+      replies?: CommentListRelationFilter
+    },
+    'id'
+  >
 
   export type CommentOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13732,28 +16604,32 @@ export namespace Prisma {
   }
 
   export type CommentScalarWhereWithAggregatesInput = {
-    AND?: CommentScalarWhereWithAggregatesInput | CommentScalarWhereWithAggregatesInput[]
+    AND?:
+      | CommentScalarWhereWithAggregatesInput
+      | CommentScalarWhereWithAggregatesInput[]
     OR?: CommentScalarWhereWithAggregatesInput[]
-    NOT?: CommentScalarWhereWithAggregatesInput | CommentScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Comment"> | string
-    content?: StringWithAggregatesFilter<"Comment"> | string
-    userId?: StringWithAggregatesFilter<"Comment"> | string
-    listingId?: StringWithAggregatesFilter<"Comment"> | string
-    parentId?: StringNullableWithAggregatesFilter<"Comment"> | string | null
-    createdAt?: DateTimeWithAggregatesFilter<"Comment"> | Date | string
+    NOT?:
+      | CommentScalarWhereWithAggregatesInput
+      | CommentScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'Comment'> | string
+    content?: StringWithAggregatesFilter<'Comment'> | string
+    userId?: StringWithAggregatesFilter<'Comment'> | string
+    listingId?: StringWithAggregatesFilter<'Comment'> | string
+    parentId?: StringNullableWithAggregatesFilter<'Comment'> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<'Comment'> | Date | string
   }
 
   export type ListingApprovalWhereInput = {
     AND?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
     OR?: ListingApprovalWhereInput[]
     NOT?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
-    id?: StringFilter<"ListingApproval"> | string
-    listingId?: StringFilter<"ListingApproval"> | string
-    approvedById?: StringFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleFilter<"ListingApproval"> | $Enums.Role
-    approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusFilter<"ListingApproval"> | $Enums.ApprovalStatus
-    notes?: StringNullableFilter<"ListingApproval"> | string | null
+    id?: StringFilter<'ListingApproval'> | string
+    listingId?: StringFilter<'ListingApproval'> | string
+    approvedById?: StringFilter<'ListingApproval'> | string
+    approvedByRole?: EnumRoleFilter<'ListingApproval'> | $Enums.Role
+    approvedAt?: DateTimeFilter<'ListingApproval'> | Date | string
+    status?: EnumApprovalStatusFilter<'ListingApproval'> | $Enums.ApprovalStatus
+    notes?: StringNullableFilter<'ListingApproval'> | string | null
     listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
     approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
@@ -13770,20 +16646,25 @@ export namespace Prisma {
     approvedBy?: UserOrderByWithRelationInput
   }
 
-  export type ListingApprovalWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
-    OR?: ListingApprovalWhereInput[]
-    NOT?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
-    listingId?: StringFilter<"ListingApproval"> | string
-    approvedById?: StringFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleFilter<"ListingApproval"> | $Enums.Role
-    approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusFilter<"ListingApproval"> | $Enums.ApprovalStatus
-    notes?: StringNullableFilter<"ListingApproval"> | string | null
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
-    approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id">
+  export type ListingApprovalWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string
+      AND?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
+      OR?: ListingApprovalWhereInput[]
+      NOT?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
+      listingId?: StringFilter<'ListingApproval'> | string
+      approvedById?: StringFilter<'ListingApproval'> | string
+      approvedByRole?: EnumRoleFilter<'ListingApproval'> | $Enums.Role
+      approvedAt?: DateTimeFilter<'ListingApproval'> | Date | string
+      status?:
+        | EnumApprovalStatusFilter<'ListingApproval'>
+        | $Enums.ApprovalStatus
+      notes?: StringNullableFilter<'ListingApproval'> | string | null
+      listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+      approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    },
+    'id'
+  >
 
   export type ListingApprovalOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13799,16 +16680,27 @@ export namespace Prisma {
   }
 
   export type ListingApprovalScalarWhereWithAggregatesInput = {
-    AND?: ListingApprovalScalarWhereWithAggregatesInput | ListingApprovalScalarWhereWithAggregatesInput[]
+    AND?:
+      | ListingApprovalScalarWhereWithAggregatesInput
+      | ListingApprovalScalarWhereWithAggregatesInput[]
     OR?: ListingApprovalScalarWhereWithAggregatesInput[]
-    NOT?: ListingApprovalScalarWhereWithAggregatesInput | ListingApprovalScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"ListingApproval"> | string
-    listingId?: StringWithAggregatesFilter<"ListingApproval"> | string
-    approvedById?: StringWithAggregatesFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleWithAggregatesFilter<"ListingApproval"> | $Enums.Role
-    approvedAt?: DateTimeWithAggregatesFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusWithAggregatesFilter<"ListingApproval"> | $Enums.ApprovalStatus
-    notes?: StringNullableWithAggregatesFilter<"ListingApproval"> | string | null
+    NOT?:
+      | ListingApprovalScalarWhereWithAggregatesInput
+      | ListingApprovalScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<'ListingApproval'> | string
+    listingId?: StringWithAggregatesFilter<'ListingApproval'> | string
+    approvedById?: StringWithAggregatesFilter<'ListingApproval'> | string
+    approvedByRole?:
+      | EnumRoleWithAggregatesFilter<'ListingApproval'>
+      | $Enums.Role
+    approvedAt?: DateTimeWithAggregatesFilter<'ListingApproval'> | Date | string
+    status?:
+      | EnumApprovalStatusWithAggregatesFilter<'ListingApproval'>
+      | $Enums.ApprovalStatus
+    notes?:
+      | StringNullableWithAggregatesFilter<'ListingApproval'>
+      | string
+      | null
   }
 
   export type UserCreateInput = {
@@ -14335,7 +17227,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     listing?: ListingUpdateOneRequiredWithoutApprovalsNestedInput
     approvedBy?: UserUpdateOneRequiredWithoutApprovalsGivenNestedInput
@@ -14347,7 +17241,9 @@ export namespace Prisma {
     approvedById?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -14365,7 +17261,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -14375,7 +17273,9 @@ export namespace Prisma {
     approvedById?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -14844,9 +17744,15 @@ export namespace Prisma {
   }
 
   export type EnumApprovalStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    equals?:
+      | $Enums.ApprovalStatus
+      | EnumApprovalStatusFieldRefInput<$PrismaModel>
+    in?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    notIn?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
     not?: NestedEnumApprovalStatusFilter<$PrismaModel> | $Enums.ApprovalStatus
   }
 
@@ -14881,69 +17787,139 @@ export namespace Prisma {
   }
 
   export type EnumApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel> | $Enums.ApprovalStatus
+    equals?:
+      | $Enums.ApprovalStatus
+      | EnumApprovalStatusFieldRefInput<$PrismaModel>
+    in?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    notIn?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    not?:
+      | NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel>
+      | $Enums.ApprovalStatus
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumApprovalStatusFilter<$PrismaModel>
     _max?: NestedEnumApprovalStatusFilter<$PrismaModel>
   }
 
   export type ListingCreateNestedManyWithoutAuthorInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutAuthorInput,
+          ListingUncheckedCreateWithoutAuthorInput
+        >
+      | ListingCreateWithoutAuthorInput[]
+      | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutAuthorInput
+      | ListingCreateOrConnectWithoutAuthorInput[]
     createMany?: ListingCreateManyAuthorInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type VoteCreateNestedManyWithoutUserInput = {
-    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
+    create?:
+      | XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput>
+      | VoteCreateWithoutUserInput[]
+      | VoteUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutUserInput
+      | VoteCreateOrConnectWithoutUserInput[]
     createMany?: VoteCreateManyUserInputEnvelope
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
   }
 
   export type CommentCreateNestedManyWithoutUserInput = {
-    create?: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput> | CommentCreateWithoutUserInput[] | CommentUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutUserInput | CommentCreateOrConnectWithoutUserInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutUserInput,
+          CommentUncheckedCreateWithoutUserInput
+        >
+      | CommentCreateWithoutUserInput[]
+      | CommentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutUserInput
+      | CommentCreateOrConnectWithoutUserInput[]
     createMany?: CommentCreateManyUserInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type ListingApprovalCreateNestedManyWithoutApprovedByInput = {
-    create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutApprovedByInput,
+          ListingApprovalUncheckedCreateWithoutApprovedByInput
+        >
+      | ListingApprovalCreateWithoutApprovedByInput[]
+      | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
     createMany?: ListingApprovalCreateManyApprovedByInputEnvelope
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
   }
 
   export type ListingUncheckedCreateNestedManyWithoutAuthorInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutAuthorInput,
+          ListingUncheckedCreateWithoutAuthorInput
+        >
+      | ListingCreateWithoutAuthorInput[]
+      | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutAuthorInput
+      | ListingCreateOrConnectWithoutAuthorInput[]
     createMany?: ListingCreateManyAuthorInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type VoteUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
+    create?:
+      | XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput>
+      | VoteCreateWithoutUserInput[]
+      | VoteUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutUserInput
+      | VoteCreateOrConnectWithoutUserInput[]
     createMany?: VoteCreateManyUserInputEnvelope
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
   }
 
   export type CommentUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput> | CommentCreateWithoutUserInput[] | CommentUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutUserInput | CommentCreateOrConnectWithoutUserInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutUserInput,
+          CommentUncheckedCreateWithoutUserInput
+        >
+      | CommentCreateWithoutUserInput[]
+      | CommentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutUserInput
+      | CommentCreateOrConnectWithoutUserInput[]
     createMany?: CommentCreateManyUserInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput = {
-    create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutApprovedByInput,
+          ListingApprovalUncheckedCreateWithoutApprovedByInput
+        >
+      | ListingApprovalCreateWithoutApprovedByInput[]
+      | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
     createMany?: ListingApprovalCreateManyApprovedByInputEnvelope
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -14963,309 +17939,619 @@ export namespace Prisma {
   }
 
   export type ListingUpdateManyWithoutAuthorNestedInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutAuthorInput | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutAuthorInput,
+          ListingUncheckedCreateWithoutAuthorInput
+        >
+      | ListingCreateWithoutAuthorInput[]
+      | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutAuthorInput
+      | ListingCreateOrConnectWithoutAuthorInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutAuthorInput
+      | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
     createMany?: ListingCreateManyAuthorInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutAuthorInput | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutAuthorInput | ListingUpdateManyWithWhereWithoutAuthorInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutAuthorInput
+      | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutAuthorInput
+      | ListingUpdateManyWithWhereWithoutAuthorInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type VoteUpdateManyWithoutUserNestedInput = {
-    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
-    upsert?: VoteUpsertWithWhereUniqueWithoutUserInput | VoteUpsertWithWhereUniqueWithoutUserInput[]
+    create?:
+      | XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput>
+      | VoteCreateWithoutUserInput[]
+      | VoteUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutUserInput
+      | VoteCreateOrConnectWithoutUserInput[]
+    upsert?:
+      | VoteUpsertWithWhereUniqueWithoutUserInput
+      | VoteUpsertWithWhereUniqueWithoutUserInput[]
     createMany?: VoteCreateManyUserInputEnvelope
     set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    update?: VoteUpdateWithWhereUniqueWithoutUserInput | VoteUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: VoteUpdateManyWithWhereWithoutUserInput | VoteUpdateManyWithWhereWithoutUserInput[]
+    update?:
+      | VoteUpdateWithWhereUniqueWithoutUserInput
+      | VoteUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?:
+      | VoteUpdateManyWithWhereWithoutUserInput
+      | VoteUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type CommentUpdateManyWithoutUserNestedInput = {
-    create?: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput> | CommentCreateWithoutUserInput[] | CommentUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutUserInput | CommentCreateOrConnectWithoutUserInput[]
-    upsert?: CommentUpsertWithWhereUniqueWithoutUserInput | CommentUpsertWithWhereUniqueWithoutUserInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutUserInput,
+          CommentUncheckedCreateWithoutUserInput
+        >
+      | CommentCreateWithoutUserInput[]
+      | CommentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutUserInput
+      | CommentCreateOrConnectWithoutUserInput[]
+    upsert?:
+      | CommentUpsertWithWhereUniqueWithoutUserInput
+      | CommentUpsertWithWhereUniqueWithoutUserInput[]
     createMany?: CommentCreateManyUserInputEnvelope
     set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-    update?: CommentUpdateWithWhereUniqueWithoutUserInput | CommentUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: CommentUpdateManyWithWhereWithoutUserInput | CommentUpdateManyWithWhereWithoutUserInput[]
+    update?:
+      | CommentUpdateWithWhereUniqueWithoutUserInput
+      | CommentUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?:
+      | CommentUpdateManyWithWhereWithoutUserInput
+      | CommentUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
   export type ListingApprovalUpdateManyWithoutApprovedByNestedInput = {
-    create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
-    upsert?: ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput | ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutApprovedByInput,
+          ListingApprovalUncheckedCreateWithoutApprovedByInput
+        >
+      | ListingApprovalCreateWithoutApprovedByInput[]
+      | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
+    upsert?:
+      | ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput
+      | ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput[]
     createMany?: ListingApprovalCreateManyApprovedByInputEnvelope
     set?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    disconnect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    disconnect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
     delete?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    update?: ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
-    updateMany?: ListingApprovalUpdateManyWithWhereWithoutApprovedByInput | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
-    deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
+    update?:
+      | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput
+      | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
+    updateMany?:
+      | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput
+      | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
+    deleteMany?:
+      | ListingApprovalScalarWhereInput
+      | ListingApprovalScalarWhereInput[]
   }
 
   export type ListingUncheckedUpdateManyWithoutAuthorNestedInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutAuthorInput | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutAuthorInput,
+          ListingUncheckedCreateWithoutAuthorInput
+        >
+      | ListingCreateWithoutAuthorInput[]
+      | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutAuthorInput
+      | ListingCreateOrConnectWithoutAuthorInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutAuthorInput
+      | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
     createMany?: ListingCreateManyAuthorInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutAuthorInput | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutAuthorInput | ListingUpdateManyWithWhereWithoutAuthorInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutAuthorInput
+      | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutAuthorInput
+      | ListingUpdateManyWithWhereWithoutAuthorInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type VoteUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
-    upsert?: VoteUpsertWithWhereUniqueWithoutUserInput | VoteUpsertWithWhereUniqueWithoutUserInput[]
+    create?:
+      | XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput>
+      | VoteCreateWithoutUserInput[]
+      | VoteUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutUserInput
+      | VoteCreateOrConnectWithoutUserInput[]
+    upsert?:
+      | VoteUpsertWithWhereUniqueWithoutUserInput
+      | VoteUpsertWithWhereUniqueWithoutUserInput[]
     createMany?: VoteCreateManyUserInputEnvelope
     set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    update?: VoteUpdateWithWhereUniqueWithoutUserInput | VoteUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: VoteUpdateManyWithWhereWithoutUserInput | VoteUpdateManyWithWhereWithoutUserInput[]
+    update?:
+      | VoteUpdateWithWhereUniqueWithoutUserInput
+      | VoteUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?:
+      | VoteUpdateManyWithWhereWithoutUserInput
+      | VoteUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type CommentUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput> | CommentCreateWithoutUserInput[] | CommentUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutUserInput | CommentCreateOrConnectWithoutUserInput[]
-    upsert?: CommentUpsertWithWhereUniqueWithoutUserInput | CommentUpsertWithWhereUniqueWithoutUserInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutUserInput,
+          CommentUncheckedCreateWithoutUserInput
+        >
+      | CommentCreateWithoutUserInput[]
+      | CommentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutUserInput
+      | CommentCreateOrConnectWithoutUserInput[]
+    upsert?:
+      | CommentUpsertWithWhereUniqueWithoutUserInput
+      | CommentUpsertWithWhereUniqueWithoutUserInput[]
     createMany?: CommentCreateManyUserInputEnvelope
     set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-    update?: CommentUpdateWithWhereUniqueWithoutUserInput | CommentUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: CommentUpdateManyWithWhereWithoutUserInput | CommentUpdateManyWithWhereWithoutUserInput[]
+    update?:
+      | CommentUpdateWithWhereUniqueWithoutUserInput
+      | CommentUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?:
+      | CommentUpdateManyWithWhereWithoutUserInput
+      | CommentUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
   export type ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput = {
-    create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
-    upsert?: ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput | ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutApprovedByInput,
+          ListingApprovalUncheckedCreateWithoutApprovedByInput
+        >
+      | ListingApprovalCreateWithoutApprovedByInput[]
+      | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput
+      | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
+    upsert?:
+      | ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput
+      | ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput[]
     createMany?: ListingApprovalCreateManyApprovedByInputEnvelope
     set?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    disconnect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    disconnect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
     delete?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    update?: ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
-    updateMany?: ListingApprovalUpdateManyWithWhereWithoutApprovedByInput | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
-    deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
+    update?:
+      | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput
+      | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
+    updateMany?:
+      | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput
+      | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
+    deleteMany?:
+      | ListingApprovalScalarWhereInput
+      | ListingApprovalScalarWhereInput[]
   }
 
   export type ListingCreateNestedManyWithoutDeviceInput = {
-    create?: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput> | ListingCreateWithoutDeviceInput[] | ListingUncheckedCreateWithoutDeviceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutDeviceInput | ListingCreateOrConnectWithoutDeviceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutDeviceInput,
+          ListingUncheckedCreateWithoutDeviceInput
+        >
+      | ListingCreateWithoutDeviceInput[]
+      | ListingUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutDeviceInput
+      | ListingCreateOrConnectWithoutDeviceInput[]
     createMany?: ListingCreateManyDeviceInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type ListingUncheckedCreateNestedManyWithoutDeviceInput = {
-    create?: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput> | ListingCreateWithoutDeviceInput[] | ListingUncheckedCreateWithoutDeviceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutDeviceInput | ListingCreateOrConnectWithoutDeviceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutDeviceInput,
+          ListingUncheckedCreateWithoutDeviceInput
+        >
+      | ListingCreateWithoutDeviceInput[]
+      | ListingUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutDeviceInput
+      | ListingCreateOrConnectWithoutDeviceInput[]
     createMany?: ListingCreateManyDeviceInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type ListingUpdateManyWithoutDeviceNestedInput = {
-    create?: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput> | ListingCreateWithoutDeviceInput[] | ListingUncheckedCreateWithoutDeviceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutDeviceInput | ListingCreateOrConnectWithoutDeviceInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutDeviceInput | ListingUpsertWithWhereUniqueWithoutDeviceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutDeviceInput,
+          ListingUncheckedCreateWithoutDeviceInput
+        >
+      | ListingCreateWithoutDeviceInput[]
+      | ListingUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutDeviceInput
+      | ListingCreateOrConnectWithoutDeviceInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutDeviceInput
+      | ListingUpsertWithWhereUniqueWithoutDeviceInput[]
     createMany?: ListingCreateManyDeviceInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutDeviceInput | ListingUpdateWithWhereUniqueWithoutDeviceInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutDeviceInput | ListingUpdateManyWithWhereWithoutDeviceInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutDeviceInput
+      | ListingUpdateWithWhereUniqueWithoutDeviceInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutDeviceInput
+      | ListingUpdateManyWithWhereWithoutDeviceInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type ListingUncheckedUpdateManyWithoutDeviceNestedInput = {
-    create?: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput> | ListingCreateWithoutDeviceInput[] | ListingUncheckedCreateWithoutDeviceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutDeviceInput | ListingCreateOrConnectWithoutDeviceInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutDeviceInput | ListingUpsertWithWhereUniqueWithoutDeviceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutDeviceInput,
+          ListingUncheckedCreateWithoutDeviceInput
+        >
+      | ListingCreateWithoutDeviceInput[]
+      | ListingUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutDeviceInput
+      | ListingCreateOrConnectWithoutDeviceInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutDeviceInput
+      | ListingUpsertWithWhereUniqueWithoutDeviceInput[]
     createMany?: ListingCreateManyDeviceInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutDeviceInput | ListingUpdateWithWhereUniqueWithoutDeviceInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutDeviceInput | ListingUpdateManyWithWhereWithoutDeviceInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutDeviceInput
+      | ListingUpdateWithWhereUniqueWithoutDeviceInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutDeviceInput
+      | ListingUpdateManyWithWhereWithoutDeviceInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type GameCreateNestedManyWithoutSystemInput = {
-    create?: XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput> | GameCreateWithoutSystemInput[] | GameUncheckedCreateWithoutSystemInput[]
-    connectOrCreate?: GameCreateOrConnectWithoutSystemInput | GameCreateOrConnectWithoutSystemInput[]
+    create?:
+      | XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput>
+      | GameCreateWithoutSystemInput[]
+      | GameUncheckedCreateWithoutSystemInput[]
+    connectOrCreate?:
+      | GameCreateOrConnectWithoutSystemInput
+      | GameCreateOrConnectWithoutSystemInput[]
     createMany?: GameCreateManySystemInputEnvelope
     connect?: GameWhereUniqueInput | GameWhereUniqueInput[]
   }
 
   export type GameUncheckedCreateNestedManyWithoutSystemInput = {
-    create?: XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput> | GameCreateWithoutSystemInput[] | GameUncheckedCreateWithoutSystemInput[]
-    connectOrCreate?: GameCreateOrConnectWithoutSystemInput | GameCreateOrConnectWithoutSystemInput[]
+    create?:
+      | XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput>
+      | GameCreateWithoutSystemInput[]
+      | GameUncheckedCreateWithoutSystemInput[]
+    connectOrCreate?:
+      | GameCreateOrConnectWithoutSystemInput
+      | GameCreateOrConnectWithoutSystemInput[]
     createMany?: GameCreateManySystemInputEnvelope
     connect?: GameWhereUniqueInput | GameWhereUniqueInput[]
   }
 
   export type GameUpdateManyWithoutSystemNestedInput = {
-    create?: XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput> | GameCreateWithoutSystemInput[] | GameUncheckedCreateWithoutSystemInput[]
-    connectOrCreate?: GameCreateOrConnectWithoutSystemInput | GameCreateOrConnectWithoutSystemInput[]
-    upsert?: GameUpsertWithWhereUniqueWithoutSystemInput | GameUpsertWithWhereUniqueWithoutSystemInput[]
+    create?:
+      | XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput>
+      | GameCreateWithoutSystemInput[]
+      | GameUncheckedCreateWithoutSystemInput[]
+    connectOrCreate?:
+      | GameCreateOrConnectWithoutSystemInput
+      | GameCreateOrConnectWithoutSystemInput[]
+    upsert?:
+      | GameUpsertWithWhereUniqueWithoutSystemInput
+      | GameUpsertWithWhereUniqueWithoutSystemInput[]
     createMany?: GameCreateManySystemInputEnvelope
     set?: GameWhereUniqueInput | GameWhereUniqueInput[]
     disconnect?: GameWhereUniqueInput | GameWhereUniqueInput[]
     delete?: GameWhereUniqueInput | GameWhereUniqueInput[]
     connect?: GameWhereUniqueInput | GameWhereUniqueInput[]
-    update?: GameUpdateWithWhereUniqueWithoutSystemInput | GameUpdateWithWhereUniqueWithoutSystemInput[]
-    updateMany?: GameUpdateManyWithWhereWithoutSystemInput | GameUpdateManyWithWhereWithoutSystemInput[]
+    update?:
+      | GameUpdateWithWhereUniqueWithoutSystemInput
+      | GameUpdateWithWhereUniqueWithoutSystemInput[]
+    updateMany?:
+      | GameUpdateManyWithWhereWithoutSystemInput
+      | GameUpdateManyWithWhereWithoutSystemInput[]
     deleteMany?: GameScalarWhereInput | GameScalarWhereInput[]
   }
 
   export type GameUncheckedUpdateManyWithoutSystemNestedInput = {
-    create?: XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput> | GameCreateWithoutSystemInput[] | GameUncheckedCreateWithoutSystemInput[]
-    connectOrCreate?: GameCreateOrConnectWithoutSystemInput | GameCreateOrConnectWithoutSystemInput[]
-    upsert?: GameUpsertWithWhereUniqueWithoutSystemInput | GameUpsertWithWhereUniqueWithoutSystemInput[]
+    create?:
+      | XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput>
+      | GameCreateWithoutSystemInput[]
+      | GameUncheckedCreateWithoutSystemInput[]
+    connectOrCreate?:
+      | GameCreateOrConnectWithoutSystemInput
+      | GameCreateOrConnectWithoutSystemInput[]
+    upsert?:
+      | GameUpsertWithWhereUniqueWithoutSystemInput
+      | GameUpsertWithWhereUniqueWithoutSystemInput[]
     createMany?: GameCreateManySystemInputEnvelope
     set?: GameWhereUniqueInput | GameWhereUniqueInput[]
     disconnect?: GameWhereUniqueInput | GameWhereUniqueInput[]
     delete?: GameWhereUniqueInput | GameWhereUniqueInput[]
     connect?: GameWhereUniqueInput | GameWhereUniqueInput[]
-    update?: GameUpdateWithWhereUniqueWithoutSystemInput | GameUpdateWithWhereUniqueWithoutSystemInput[]
-    updateMany?: GameUpdateManyWithWhereWithoutSystemInput | GameUpdateManyWithWhereWithoutSystemInput[]
+    update?:
+      | GameUpdateWithWhereUniqueWithoutSystemInput
+      | GameUpdateWithWhereUniqueWithoutSystemInput[]
+    updateMany?:
+      | GameUpdateManyWithWhereWithoutSystemInput
+      | GameUpdateManyWithWhereWithoutSystemInput[]
     deleteMany?: GameScalarWhereInput | GameScalarWhereInput[]
   }
 
   export type SystemCreateNestedOneWithoutGamesInput = {
-    create?: XOR<SystemCreateWithoutGamesInput, SystemUncheckedCreateWithoutGamesInput>
+    create?: XOR<
+      SystemCreateWithoutGamesInput,
+      SystemUncheckedCreateWithoutGamesInput
+    >
     connectOrCreate?: SystemCreateOrConnectWithoutGamesInput
     connect?: SystemWhereUniqueInput
   }
 
   export type ListingCreateNestedManyWithoutGameInput = {
-    create?: XOR<ListingCreateWithoutGameInput, ListingUncheckedCreateWithoutGameInput> | ListingCreateWithoutGameInput[] | ListingUncheckedCreateWithoutGameInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutGameInput | ListingCreateOrConnectWithoutGameInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutGameInput,
+          ListingUncheckedCreateWithoutGameInput
+        >
+      | ListingCreateWithoutGameInput[]
+      | ListingUncheckedCreateWithoutGameInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutGameInput
+      | ListingCreateOrConnectWithoutGameInput[]
     createMany?: ListingCreateManyGameInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type ListingUncheckedCreateNestedManyWithoutGameInput = {
-    create?: XOR<ListingCreateWithoutGameInput, ListingUncheckedCreateWithoutGameInput> | ListingCreateWithoutGameInput[] | ListingUncheckedCreateWithoutGameInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutGameInput | ListingCreateOrConnectWithoutGameInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutGameInput,
+          ListingUncheckedCreateWithoutGameInput
+        >
+      | ListingCreateWithoutGameInput[]
+      | ListingUncheckedCreateWithoutGameInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutGameInput
+      | ListingCreateOrConnectWithoutGameInput[]
     createMany?: ListingCreateManyGameInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type SystemUpdateOneRequiredWithoutGamesNestedInput = {
-    create?: XOR<SystemCreateWithoutGamesInput, SystemUncheckedCreateWithoutGamesInput>
+    create?: XOR<
+      SystemCreateWithoutGamesInput,
+      SystemUncheckedCreateWithoutGamesInput
+    >
     connectOrCreate?: SystemCreateOrConnectWithoutGamesInput
     upsert?: SystemUpsertWithoutGamesInput
     connect?: SystemWhereUniqueInput
-    update?: XOR<XOR<SystemUpdateToOneWithWhereWithoutGamesInput, SystemUpdateWithoutGamesInput>, SystemUncheckedUpdateWithoutGamesInput>
+    update?: XOR<
+      XOR<
+        SystemUpdateToOneWithWhereWithoutGamesInput,
+        SystemUpdateWithoutGamesInput
+      >,
+      SystemUncheckedUpdateWithoutGamesInput
+    >
   }
 
   export type ListingUpdateManyWithoutGameNestedInput = {
-    create?: XOR<ListingCreateWithoutGameInput, ListingUncheckedCreateWithoutGameInput> | ListingCreateWithoutGameInput[] | ListingUncheckedCreateWithoutGameInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutGameInput | ListingCreateOrConnectWithoutGameInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutGameInput | ListingUpsertWithWhereUniqueWithoutGameInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutGameInput,
+          ListingUncheckedCreateWithoutGameInput
+        >
+      | ListingCreateWithoutGameInput[]
+      | ListingUncheckedCreateWithoutGameInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutGameInput
+      | ListingCreateOrConnectWithoutGameInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutGameInput
+      | ListingUpsertWithWhereUniqueWithoutGameInput[]
     createMany?: ListingCreateManyGameInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutGameInput | ListingUpdateWithWhereUniqueWithoutGameInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutGameInput | ListingUpdateManyWithWhereWithoutGameInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutGameInput
+      | ListingUpdateWithWhereUniqueWithoutGameInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutGameInput
+      | ListingUpdateManyWithWhereWithoutGameInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type ListingUncheckedUpdateManyWithoutGameNestedInput = {
-    create?: XOR<ListingCreateWithoutGameInput, ListingUncheckedCreateWithoutGameInput> | ListingCreateWithoutGameInput[] | ListingUncheckedCreateWithoutGameInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutGameInput | ListingCreateOrConnectWithoutGameInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutGameInput | ListingUpsertWithWhereUniqueWithoutGameInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutGameInput,
+          ListingUncheckedCreateWithoutGameInput
+        >
+      | ListingCreateWithoutGameInput[]
+      | ListingUncheckedCreateWithoutGameInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutGameInput
+      | ListingCreateOrConnectWithoutGameInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutGameInput
+      | ListingUpsertWithWhereUniqueWithoutGameInput[]
     createMany?: ListingCreateManyGameInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutGameInput | ListingUpdateWithWhereUniqueWithoutGameInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutGameInput | ListingUpdateManyWithWhereWithoutGameInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutGameInput
+      | ListingUpdateWithWhereUniqueWithoutGameInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutGameInput
+      | ListingUpdateManyWithWhereWithoutGameInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type ListingCreateNestedManyWithoutEmulatorInput = {
-    create?: XOR<ListingCreateWithoutEmulatorInput, ListingUncheckedCreateWithoutEmulatorInput> | ListingCreateWithoutEmulatorInput[] | ListingUncheckedCreateWithoutEmulatorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutEmulatorInput | ListingCreateOrConnectWithoutEmulatorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutEmulatorInput,
+          ListingUncheckedCreateWithoutEmulatorInput
+        >
+      | ListingCreateWithoutEmulatorInput[]
+      | ListingUncheckedCreateWithoutEmulatorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutEmulatorInput
+      | ListingCreateOrConnectWithoutEmulatorInput[]
     createMany?: ListingCreateManyEmulatorInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type ListingUncheckedCreateNestedManyWithoutEmulatorInput = {
-    create?: XOR<ListingCreateWithoutEmulatorInput, ListingUncheckedCreateWithoutEmulatorInput> | ListingCreateWithoutEmulatorInput[] | ListingUncheckedCreateWithoutEmulatorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutEmulatorInput | ListingCreateOrConnectWithoutEmulatorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutEmulatorInput,
+          ListingUncheckedCreateWithoutEmulatorInput
+        >
+      | ListingCreateWithoutEmulatorInput[]
+      | ListingUncheckedCreateWithoutEmulatorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutEmulatorInput
+      | ListingCreateOrConnectWithoutEmulatorInput[]
     createMany?: ListingCreateManyEmulatorInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type ListingUpdateManyWithoutEmulatorNestedInput = {
-    create?: XOR<ListingCreateWithoutEmulatorInput, ListingUncheckedCreateWithoutEmulatorInput> | ListingCreateWithoutEmulatorInput[] | ListingUncheckedCreateWithoutEmulatorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutEmulatorInput | ListingCreateOrConnectWithoutEmulatorInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutEmulatorInput | ListingUpsertWithWhereUniqueWithoutEmulatorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutEmulatorInput,
+          ListingUncheckedCreateWithoutEmulatorInput
+        >
+      | ListingCreateWithoutEmulatorInput[]
+      | ListingUncheckedCreateWithoutEmulatorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutEmulatorInput
+      | ListingCreateOrConnectWithoutEmulatorInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutEmulatorInput
+      | ListingUpsertWithWhereUniqueWithoutEmulatorInput[]
     createMany?: ListingCreateManyEmulatorInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutEmulatorInput | ListingUpdateWithWhereUniqueWithoutEmulatorInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutEmulatorInput | ListingUpdateManyWithWhereWithoutEmulatorInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutEmulatorInput
+      | ListingUpdateWithWhereUniqueWithoutEmulatorInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutEmulatorInput
+      | ListingUpdateManyWithWhereWithoutEmulatorInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type ListingUncheckedUpdateManyWithoutEmulatorNestedInput = {
-    create?: XOR<ListingCreateWithoutEmulatorInput, ListingUncheckedCreateWithoutEmulatorInput> | ListingCreateWithoutEmulatorInput[] | ListingUncheckedCreateWithoutEmulatorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutEmulatorInput | ListingCreateOrConnectWithoutEmulatorInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutEmulatorInput | ListingUpsertWithWhereUniqueWithoutEmulatorInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutEmulatorInput,
+          ListingUncheckedCreateWithoutEmulatorInput
+        >
+      | ListingCreateWithoutEmulatorInput[]
+      | ListingUncheckedCreateWithoutEmulatorInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutEmulatorInput
+      | ListingCreateOrConnectWithoutEmulatorInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutEmulatorInput
+      | ListingUpsertWithWhereUniqueWithoutEmulatorInput[]
     createMany?: ListingCreateManyEmulatorInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutEmulatorInput | ListingUpdateWithWhereUniqueWithoutEmulatorInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutEmulatorInput | ListingUpdateManyWithWhereWithoutEmulatorInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutEmulatorInput
+      | ListingUpdateWithWhereUniqueWithoutEmulatorInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutEmulatorInput
+      | ListingUpdateManyWithWhereWithoutEmulatorInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type ListingCreateNestedManyWithoutPerformanceInput = {
-    create?: XOR<ListingCreateWithoutPerformanceInput, ListingUncheckedCreateWithoutPerformanceInput> | ListingCreateWithoutPerformanceInput[] | ListingUncheckedCreateWithoutPerformanceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutPerformanceInput | ListingCreateOrConnectWithoutPerformanceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutPerformanceInput,
+          ListingUncheckedCreateWithoutPerformanceInput
+        >
+      | ListingCreateWithoutPerformanceInput[]
+      | ListingUncheckedCreateWithoutPerformanceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutPerformanceInput
+      | ListingCreateOrConnectWithoutPerformanceInput[]
     createMany?: ListingCreateManyPerformanceInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
   export type ListingUncheckedCreateNestedManyWithoutPerformanceInput = {
-    create?: XOR<ListingCreateWithoutPerformanceInput, ListingUncheckedCreateWithoutPerformanceInput> | ListingCreateWithoutPerformanceInput[] | ListingUncheckedCreateWithoutPerformanceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutPerformanceInput | ListingCreateOrConnectWithoutPerformanceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutPerformanceInput,
+          ListingUncheckedCreateWithoutPerformanceInput
+        >
+      | ListingCreateWithoutPerformanceInput[]
+      | ListingUncheckedCreateWithoutPerformanceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutPerformanceInput
+      | ListingCreateOrConnectWithoutPerformanceInput[]
     createMany?: ListingCreateManyPerformanceInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
@@ -15279,237 +18565,479 @@ export namespace Prisma {
   }
 
   export type ListingUpdateManyWithoutPerformanceNestedInput = {
-    create?: XOR<ListingCreateWithoutPerformanceInput, ListingUncheckedCreateWithoutPerformanceInput> | ListingCreateWithoutPerformanceInput[] | ListingUncheckedCreateWithoutPerformanceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutPerformanceInput | ListingCreateOrConnectWithoutPerformanceInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutPerformanceInput | ListingUpsertWithWhereUniqueWithoutPerformanceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutPerformanceInput,
+          ListingUncheckedCreateWithoutPerformanceInput
+        >
+      | ListingCreateWithoutPerformanceInput[]
+      | ListingUncheckedCreateWithoutPerformanceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutPerformanceInput
+      | ListingCreateOrConnectWithoutPerformanceInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutPerformanceInput
+      | ListingUpsertWithWhereUniqueWithoutPerformanceInput[]
     createMany?: ListingCreateManyPerformanceInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutPerformanceInput | ListingUpdateWithWhereUniqueWithoutPerformanceInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutPerformanceInput | ListingUpdateManyWithWhereWithoutPerformanceInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutPerformanceInput
+      | ListingUpdateWithWhereUniqueWithoutPerformanceInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutPerformanceInput
+      | ListingUpdateManyWithWhereWithoutPerformanceInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type ListingUncheckedUpdateManyWithoutPerformanceNestedInput = {
-    create?: XOR<ListingCreateWithoutPerformanceInput, ListingUncheckedCreateWithoutPerformanceInput> | ListingCreateWithoutPerformanceInput[] | ListingUncheckedCreateWithoutPerformanceInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutPerformanceInput | ListingCreateOrConnectWithoutPerformanceInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutPerformanceInput | ListingUpsertWithWhereUniqueWithoutPerformanceInput[]
+    create?:
+      | XOR<
+          ListingCreateWithoutPerformanceInput,
+          ListingUncheckedCreateWithoutPerformanceInput
+        >
+      | ListingCreateWithoutPerformanceInput[]
+      | ListingUncheckedCreateWithoutPerformanceInput[]
+    connectOrCreate?:
+      | ListingCreateOrConnectWithoutPerformanceInput
+      | ListingCreateOrConnectWithoutPerformanceInput[]
+    upsert?:
+      | ListingUpsertWithWhereUniqueWithoutPerformanceInput
+      | ListingUpsertWithWhereUniqueWithoutPerformanceInput[]
     createMany?: ListingCreateManyPerformanceInputEnvelope
     set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutPerformanceInput | ListingUpdateWithWhereUniqueWithoutPerformanceInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutPerformanceInput | ListingUpdateManyWithWhereWithoutPerformanceInput[]
+    update?:
+      | ListingUpdateWithWhereUniqueWithoutPerformanceInput
+      | ListingUpdateWithWhereUniqueWithoutPerformanceInput[]
+    updateMany?:
+      | ListingUpdateManyWithWhereWithoutPerformanceInput
+      | ListingUpdateManyWithWhereWithoutPerformanceInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
   export type DeviceCreateNestedOneWithoutListingsInput = {
-    create?: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      DeviceCreateWithoutListingsInput,
+      DeviceUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: DeviceCreateOrConnectWithoutListingsInput
     connect?: DeviceWhereUniqueInput
   }
 
   export type GameCreateNestedOneWithoutListingsInput = {
-    create?: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      GameCreateWithoutListingsInput,
+      GameUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: GameCreateOrConnectWithoutListingsInput
     connect?: GameWhereUniqueInput
   }
 
   export type EmulatorCreateNestedOneWithoutListingsInput = {
-    create?: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      EmulatorCreateWithoutListingsInput,
+      EmulatorUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: EmulatorCreateOrConnectWithoutListingsInput
     connect?: EmulatorWhereUniqueInput
   }
 
   export type PerformanceScaleCreateNestedOneWithoutListingsInput = {
-    create?: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      PerformanceScaleCreateWithoutListingsInput,
+      PerformanceScaleUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: PerformanceScaleCreateOrConnectWithoutListingsInput
     connect?: PerformanceScaleWhereUniqueInput
   }
 
   export type UserCreateNestedOneWithoutListingsInput = {
-    create?: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      UserCreateWithoutListingsInput,
+      UserUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutListingsInput
     connect?: UserWhereUniqueInput
   }
 
   export type VoteCreateNestedManyWithoutListingInput = {
-    create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
+    create?:
+      | XOR<
+          VoteCreateWithoutListingInput,
+          VoteUncheckedCreateWithoutListingInput
+        >
+      | VoteCreateWithoutListingInput[]
+      | VoteUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutListingInput
+      | VoteCreateOrConnectWithoutListingInput[]
     createMany?: VoteCreateManyListingInputEnvelope
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
   }
 
   export type CommentCreateNestedManyWithoutListingInput = {
-    create?: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput> | CommentCreateWithoutListingInput[] | CommentUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutListingInput | CommentCreateOrConnectWithoutListingInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutListingInput,
+          CommentUncheckedCreateWithoutListingInput
+        >
+      | CommentCreateWithoutListingInput[]
+      | CommentUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutListingInput
+      | CommentCreateOrConnectWithoutListingInput[]
     createMany?: CommentCreateManyListingInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type ListingApprovalCreateNestedManyWithoutListingInput = {
-    create?: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput> | ListingApprovalCreateWithoutListingInput[] | ListingApprovalUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutListingInput | ListingApprovalCreateOrConnectWithoutListingInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutListingInput,
+          ListingApprovalUncheckedCreateWithoutListingInput
+        >
+      | ListingApprovalCreateWithoutListingInput[]
+      | ListingApprovalUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutListingInput
+      | ListingApprovalCreateOrConnectWithoutListingInput[]
     createMany?: ListingApprovalCreateManyListingInputEnvelope
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
   }
 
   export type VoteUncheckedCreateNestedManyWithoutListingInput = {
-    create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
+    create?:
+      | XOR<
+          VoteCreateWithoutListingInput,
+          VoteUncheckedCreateWithoutListingInput
+        >
+      | VoteCreateWithoutListingInput[]
+      | VoteUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutListingInput
+      | VoteCreateOrConnectWithoutListingInput[]
     createMany?: VoteCreateManyListingInputEnvelope
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
   }
 
   export type CommentUncheckedCreateNestedManyWithoutListingInput = {
-    create?: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput> | CommentCreateWithoutListingInput[] | CommentUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutListingInput | CommentCreateOrConnectWithoutListingInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutListingInput,
+          CommentUncheckedCreateWithoutListingInput
+        >
+      | CommentCreateWithoutListingInput[]
+      | CommentUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutListingInput
+      | CommentCreateOrConnectWithoutListingInput[]
     createMany?: CommentCreateManyListingInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type ListingApprovalUncheckedCreateNestedManyWithoutListingInput = {
-    create?: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput> | ListingApprovalCreateWithoutListingInput[] | ListingApprovalUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutListingInput | ListingApprovalCreateOrConnectWithoutListingInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutListingInput,
+          ListingApprovalUncheckedCreateWithoutListingInput
+        >
+      | ListingApprovalCreateWithoutListingInput[]
+      | ListingApprovalUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutListingInput
+      | ListingApprovalCreateOrConnectWithoutListingInput[]
     createMany?: ListingApprovalCreateManyListingInputEnvelope
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
   }
 
   export type DeviceUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      DeviceCreateWithoutListingsInput,
+      DeviceUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: DeviceCreateOrConnectWithoutListingsInput
     upsert?: DeviceUpsertWithoutListingsInput
     connect?: DeviceWhereUniqueInput
-    update?: XOR<XOR<DeviceUpdateToOneWithWhereWithoutListingsInput, DeviceUpdateWithoutListingsInput>, DeviceUncheckedUpdateWithoutListingsInput>
+    update?: XOR<
+      XOR<
+        DeviceUpdateToOneWithWhereWithoutListingsInput,
+        DeviceUpdateWithoutListingsInput
+      >,
+      DeviceUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type GameUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      GameCreateWithoutListingsInput,
+      GameUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: GameCreateOrConnectWithoutListingsInput
     upsert?: GameUpsertWithoutListingsInput
     connect?: GameWhereUniqueInput
-    update?: XOR<XOR<GameUpdateToOneWithWhereWithoutListingsInput, GameUpdateWithoutListingsInput>, GameUncheckedUpdateWithoutListingsInput>
+    update?: XOR<
+      XOR<
+        GameUpdateToOneWithWhereWithoutListingsInput,
+        GameUpdateWithoutListingsInput
+      >,
+      GameUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type EmulatorUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      EmulatorCreateWithoutListingsInput,
+      EmulatorUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: EmulatorCreateOrConnectWithoutListingsInput
     upsert?: EmulatorUpsertWithoutListingsInput
     connect?: EmulatorWhereUniqueInput
-    update?: XOR<XOR<EmulatorUpdateToOneWithWhereWithoutListingsInput, EmulatorUpdateWithoutListingsInput>, EmulatorUncheckedUpdateWithoutListingsInput>
+    update?: XOR<
+      XOR<
+        EmulatorUpdateToOneWithWhereWithoutListingsInput,
+        EmulatorUpdateWithoutListingsInput
+      >,
+      EmulatorUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      PerformanceScaleCreateWithoutListingsInput,
+      PerformanceScaleUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: PerformanceScaleCreateOrConnectWithoutListingsInput
     upsert?: PerformanceScaleUpsertWithoutListingsInput
     connect?: PerformanceScaleWhereUniqueInput
-    update?: XOR<XOR<PerformanceScaleUpdateToOneWithWhereWithoutListingsInput, PerformanceScaleUpdateWithoutListingsInput>, PerformanceScaleUncheckedUpdateWithoutListingsInput>
+    update?: XOR<
+      XOR<
+        PerformanceScaleUpdateToOneWithWhereWithoutListingsInput,
+        PerformanceScaleUpdateWithoutListingsInput
+      >,
+      PerformanceScaleUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type UserUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+    create?: XOR<
+      UserCreateWithoutListingsInput,
+      UserUncheckedCreateWithoutListingsInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutListingsInput
     upsert?: UserUpsertWithoutListingsInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutListingsInput, UserUpdateWithoutListingsInput>, UserUncheckedUpdateWithoutListingsInput>
+    update?: XOR<
+      XOR<
+        UserUpdateToOneWithWhereWithoutListingsInput,
+        UserUpdateWithoutListingsInput
+      >,
+      UserUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type VoteUpdateManyWithoutListingNestedInput = {
-    create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
-    upsert?: VoteUpsertWithWhereUniqueWithoutListingInput | VoteUpsertWithWhereUniqueWithoutListingInput[]
+    create?:
+      | XOR<
+          VoteCreateWithoutListingInput,
+          VoteUncheckedCreateWithoutListingInput
+        >
+      | VoteCreateWithoutListingInput[]
+      | VoteUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutListingInput
+      | VoteCreateOrConnectWithoutListingInput[]
+    upsert?:
+      | VoteUpsertWithWhereUniqueWithoutListingInput
+      | VoteUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: VoteCreateManyListingInputEnvelope
     set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    update?: VoteUpdateWithWhereUniqueWithoutListingInput | VoteUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: VoteUpdateManyWithWhereWithoutListingInput | VoteUpdateManyWithWhereWithoutListingInput[]
+    update?:
+      | VoteUpdateWithWhereUniqueWithoutListingInput
+      | VoteUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?:
+      | VoteUpdateManyWithWhereWithoutListingInput
+      | VoteUpdateManyWithWhereWithoutListingInput[]
     deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type CommentUpdateManyWithoutListingNestedInput = {
-    create?: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput> | CommentCreateWithoutListingInput[] | CommentUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutListingInput | CommentCreateOrConnectWithoutListingInput[]
-    upsert?: CommentUpsertWithWhereUniqueWithoutListingInput | CommentUpsertWithWhereUniqueWithoutListingInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutListingInput,
+          CommentUncheckedCreateWithoutListingInput
+        >
+      | CommentCreateWithoutListingInput[]
+      | CommentUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutListingInput
+      | CommentCreateOrConnectWithoutListingInput[]
+    upsert?:
+      | CommentUpsertWithWhereUniqueWithoutListingInput
+      | CommentUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: CommentCreateManyListingInputEnvelope
     set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-    update?: CommentUpdateWithWhereUniqueWithoutListingInput | CommentUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: CommentUpdateManyWithWhereWithoutListingInput | CommentUpdateManyWithWhereWithoutListingInput[]
+    update?:
+      | CommentUpdateWithWhereUniqueWithoutListingInput
+      | CommentUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?:
+      | CommentUpdateManyWithWhereWithoutListingInput
+      | CommentUpdateManyWithWhereWithoutListingInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
   export type ListingApprovalUpdateManyWithoutListingNestedInput = {
-    create?: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput> | ListingApprovalCreateWithoutListingInput[] | ListingApprovalUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutListingInput | ListingApprovalCreateOrConnectWithoutListingInput[]
-    upsert?: ListingApprovalUpsertWithWhereUniqueWithoutListingInput | ListingApprovalUpsertWithWhereUniqueWithoutListingInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutListingInput,
+          ListingApprovalUncheckedCreateWithoutListingInput
+        >
+      | ListingApprovalCreateWithoutListingInput[]
+      | ListingApprovalUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutListingInput
+      | ListingApprovalCreateOrConnectWithoutListingInput[]
+    upsert?:
+      | ListingApprovalUpsertWithWhereUniqueWithoutListingInput
+      | ListingApprovalUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: ListingApprovalCreateManyListingInputEnvelope
     set?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    disconnect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    disconnect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
     delete?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    update?: ListingApprovalUpdateWithWhereUniqueWithoutListingInput | ListingApprovalUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: ListingApprovalUpdateManyWithWhereWithoutListingInput | ListingApprovalUpdateManyWithWhereWithoutListingInput[]
-    deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
+    update?:
+      | ListingApprovalUpdateWithWhereUniqueWithoutListingInput
+      | ListingApprovalUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?:
+      | ListingApprovalUpdateManyWithWhereWithoutListingInput
+      | ListingApprovalUpdateManyWithWhereWithoutListingInput[]
+    deleteMany?:
+      | ListingApprovalScalarWhereInput
+      | ListingApprovalScalarWhereInput[]
   }
 
   export type VoteUncheckedUpdateManyWithoutListingNestedInput = {
-    create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
-    upsert?: VoteUpsertWithWhereUniqueWithoutListingInput | VoteUpsertWithWhereUniqueWithoutListingInput[]
+    create?:
+      | XOR<
+          VoteCreateWithoutListingInput,
+          VoteUncheckedCreateWithoutListingInput
+        >
+      | VoteCreateWithoutListingInput[]
+      | VoteUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | VoteCreateOrConnectWithoutListingInput
+      | VoteCreateOrConnectWithoutListingInput[]
+    upsert?:
+      | VoteUpsertWithWhereUniqueWithoutListingInput
+      | VoteUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: VoteCreateManyListingInputEnvelope
     set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    update?: VoteUpdateWithWhereUniqueWithoutListingInput | VoteUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: VoteUpdateManyWithWhereWithoutListingInput | VoteUpdateManyWithWhereWithoutListingInput[]
+    update?:
+      | VoteUpdateWithWhereUniqueWithoutListingInput
+      | VoteUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?:
+      | VoteUpdateManyWithWhereWithoutListingInput
+      | VoteUpdateManyWithWhereWithoutListingInput[]
     deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type CommentUncheckedUpdateManyWithoutListingNestedInput = {
-    create?: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput> | CommentCreateWithoutListingInput[] | CommentUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutListingInput | CommentCreateOrConnectWithoutListingInput[]
-    upsert?: CommentUpsertWithWhereUniqueWithoutListingInput | CommentUpsertWithWhereUniqueWithoutListingInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutListingInput,
+          CommentUncheckedCreateWithoutListingInput
+        >
+      | CommentCreateWithoutListingInput[]
+      | CommentUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutListingInput
+      | CommentCreateOrConnectWithoutListingInput[]
+    upsert?:
+      | CommentUpsertWithWhereUniqueWithoutListingInput
+      | CommentUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: CommentCreateManyListingInputEnvelope
     set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-    update?: CommentUpdateWithWhereUniqueWithoutListingInput | CommentUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: CommentUpdateManyWithWhereWithoutListingInput | CommentUpdateManyWithWhereWithoutListingInput[]
+    update?:
+      | CommentUpdateWithWhereUniqueWithoutListingInput
+      | CommentUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?:
+      | CommentUpdateManyWithWhereWithoutListingInput
+      | CommentUpdateManyWithWhereWithoutListingInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
   export type ListingApprovalUncheckedUpdateManyWithoutListingNestedInput = {
-    create?: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput> | ListingApprovalCreateWithoutListingInput[] | ListingApprovalUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: ListingApprovalCreateOrConnectWithoutListingInput | ListingApprovalCreateOrConnectWithoutListingInput[]
-    upsert?: ListingApprovalUpsertWithWhereUniqueWithoutListingInput | ListingApprovalUpsertWithWhereUniqueWithoutListingInput[]
+    create?:
+      | XOR<
+          ListingApprovalCreateWithoutListingInput,
+          ListingApprovalUncheckedCreateWithoutListingInput
+        >
+      | ListingApprovalCreateWithoutListingInput[]
+      | ListingApprovalUncheckedCreateWithoutListingInput[]
+    connectOrCreate?:
+      | ListingApprovalCreateOrConnectWithoutListingInput
+      | ListingApprovalCreateOrConnectWithoutListingInput[]
+    upsert?:
+      | ListingApprovalUpsertWithWhereUniqueWithoutListingInput
+      | ListingApprovalUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: ListingApprovalCreateManyListingInputEnvelope
     set?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    disconnect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+    disconnect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
     delete?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
-    update?: ListingApprovalUpdateWithWhereUniqueWithoutListingInput | ListingApprovalUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: ListingApprovalUpdateManyWithWhereWithoutListingInput | ListingApprovalUpdateManyWithWhereWithoutListingInput[]
-    deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+    connect?:
+      | ListingApprovalWhereUniqueInput
+      | ListingApprovalWhereUniqueInput[]
+    update?:
+      | ListingApprovalUpdateWithWhereUniqueWithoutListingInput
+      | ListingApprovalUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?:
+      | ListingApprovalUpdateManyWithWhereWithoutListingInput
+      | ListingApprovalUpdateManyWithWhereWithoutListingInput[]
+    deleteMany?:
+      | ListingApprovalScalarWhereInput
+      | ListingApprovalScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutVotesInput = {
-    create?: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+    create?: XOR<
+      UserCreateWithoutVotesInput,
+      UserUncheckedCreateWithoutVotesInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutVotesInput
     connect?: UserWhereUniqueInput
   }
 
   export type ListingCreateNestedOneWithoutVotesInput = {
-    create?: XOR<ListingCreateWithoutVotesInput, ListingUncheckedCreateWithoutVotesInput>
+    create?: XOR<
+      ListingCreateWithoutVotesInput,
+      ListingUncheckedCreateWithoutVotesInput
+    >
     connectOrCreate?: ListingCreateOrConnectWithoutVotesInput
     connect?: ListingWhereUniqueInput
   }
@@ -15519,115 +19047,219 @@ export namespace Prisma {
   }
 
   export type UserUpdateOneRequiredWithoutVotesNestedInput = {
-    create?: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+    create?: XOR<
+      UserCreateWithoutVotesInput,
+      UserUncheckedCreateWithoutVotesInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutVotesInput
     upsert?: UserUpsertWithoutVotesInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutVotesInput, UserUpdateWithoutVotesInput>, UserUncheckedUpdateWithoutVotesInput>
+    update?: XOR<
+      XOR<
+        UserUpdateToOneWithWhereWithoutVotesInput,
+        UserUpdateWithoutVotesInput
+      >,
+      UserUncheckedUpdateWithoutVotesInput
+    >
   }
 
   export type ListingUpdateOneRequiredWithoutVotesNestedInput = {
-    create?: XOR<ListingCreateWithoutVotesInput, ListingUncheckedCreateWithoutVotesInput>
+    create?: XOR<
+      ListingCreateWithoutVotesInput,
+      ListingUncheckedCreateWithoutVotesInput
+    >
     connectOrCreate?: ListingCreateOrConnectWithoutVotesInput
     upsert?: ListingUpsertWithoutVotesInput
     connect?: ListingWhereUniqueInput
-    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutVotesInput, ListingUpdateWithoutVotesInput>, ListingUncheckedUpdateWithoutVotesInput>
+    update?: XOR<
+      XOR<
+        ListingUpdateToOneWithWhereWithoutVotesInput,
+        ListingUpdateWithoutVotesInput
+      >,
+      ListingUncheckedUpdateWithoutVotesInput
+    >
   }
 
   export type UserCreateNestedOneWithoutCommentsInput = {
-    create?: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+    create?: XOR<
+      UserCreateWithoutCommentsInput,
+      UserUncheckedCreateWithoutCommentsInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutCommentsInput
     connect?: UserWhereUniqueInput
   }
 
   export type ListingCreateNestedOneWithoutCommentsInput = {
-    create?: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    create?: XOR<
+      ListingCreateWithoutCommentsInput,
+      ListingUncheckedCreateWithoutCommentsInput
+    >
     connectOrCreate?: ListingCreateOrConnectWithoutCommentsInput
     connect?: ListingWhereUniqueInput
   }
 
   export type CommentCreateNestedOneWithoutRepliesInput = {
-    create?: XOR<CommentCreateWithoutRepliesInput, CommentUncheckedCreateWithoutRepliesInput>
+    create?: XOR<
+      CommentCreateWithoutRepliesInput,
+      CommentUncheckedCreateWithoutRepliesInput
+    >
     connectOrCreate?: CommentCreateOrConnectWithoutRepliesInput
     connect?: CommentWhereUniqueInput
   }
 
   export type CommentCreateNestedManyWithoutParentInput = {
-    create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutParentInput,
+          CommentUncheckedCreateWithoutParentInput
+        >
+      | CommentCreateWithoutParentInput[]
+      | CommentUncheckedCreateWithoutParentInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutParentInput
+      | CommentCreateOrConnectWithoutParentInput[]
     createMany?: CommentCreateManyParentInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type CommentUncheckedCreateNestedManyWithoutParentInput = {
-    create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutParentInput,
+          CommentUncheckedCreateWithoutParentInput
+        >
+      | CommentCreateWithoutParentInput[]
+      | CommentUncheckedCreateWithoutParentInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutParentInput
+      | CommentCreateOrConnectWithoutParentInput[]
     createMany?: CommentCreateManyParentInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type UserUpdateOneRequiredWithoutCommentsNestedInput = {
-    create?: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+    create?: XOR<
+      UserCreateWithoutCommentsInput,
+      UserUncheckedCreateWithoutCommentsInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutCommentsInput
     upsert?: UserUpsertWithoutCommentsInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCommentsInput, UserUpdateWithoutCommentsInput>, UserUncheckedUpdateWithoutCommentsInput>
+    update?: XOR<
+      XOR<
+        UserUpdateToOneWithWhereWithoutCommentsInput,
+        UserUpdateWithoutCommentsInput
+      >,
+      UserUncheckedUpdateWithoutCommentsInput
+    >
   }
 
   export type ListingUpdateOneRequiredWithoutCommentsNestedInput = {
-    create?: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    create?: XOR<
+      ListingCreateWithoutCommentsInput,
+      ListingUncheckedCreateWithoutCommentsInput
+    >
     connectOrCreate?: ListingCreateOrConnectWithoutCommentsInput
     upsert?: ListingUpsertWithoutCommentsInput
     connect?: ListingWhereUniqueInput
-    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutCommentsInput, ListingUpdateWithoutCommentsInput>, ListingUncheckedUpdateWithoutCommentsInput>
+    update?: XOR<
+      XOR<
+        ListingUpdateToOneWithWhereWithoutCommentsInput,
+        ListingUpdateWithoutCommentsInput
+      >,
+      ListingUncheckedUpdateWithoutCommentsInput
+    >
   }
 
   export type CommentUpdateOneWithoutRepliesNestedInput = {
-    create?: XOR<CommentCreateWithoutRepliesInput, CommentUncheckedCreateWithoutRepliesInput>
+    create?: XOR<
+      CommentCreateWithoutRepliesInput,
+      CommentUncheckedCreateWithoutRepliesInput
+    >
     connectOrCreate?: CommentCreateOrConnectWithoutRepliesInput
     upsert?: CommentUpsertWithoutRepliesInput
     disconnect?: CommentWhereInput | boolean
     delete?: CommentWhereInput | boolean
     connect?: CommentWhereUniqueInput
-    update?: XOR<XOR<CommentUpdateToOneWithWhereWithoutRepliesInput, CommentUpdateWithoutRepliesInput>, CommentUncheckedUpdateWithoutRepliesInput>
+    update?: XOR<
+      XOR<
+        CommentUpdateToOneWithWhereWithoutRepliesInput,
+        CommentUpdateWithoutRepliesInput
+      >,
+      CommentUncheckedUpdateWithoutRepliesInput
+    >
   }
 
   export type CommentUpdateManyWithoutParentNestedInput = {
-    create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
-    upsert?: CommentUpsertWithWhereUniqueWithoutParentInput | CommentUpsertWithWhereUniqueWithoutParentInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutParentInput,
+          CommentUncheckedCreateWithoutParentInput
+        >
+      | CommentCreateWithoutParentInput[]
+      | CommentUncheckedCreateWithoutParentInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutParentInput
+      | CommentCreateOrConnectWithoutParentInput[]
+    upsert?:
+      | CommentUpsertWithWhereUniqueWithoutParentInput
+      | CommentUpsertWithWhereUniqueWithoutParentInput[]
     createMany?: CommentCreateManyParentInputEnvelope
     set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-    update?: CommentUpdateWithWhereUniqueWithoutParentInput | CommentUpdateWithWhereUniqueWithoutParentInput[]
-    updateMany?: CommentUpdateManyWithWhereWithoutParentInput | CommentUpdateManyWithWhereWithoutParentInput[]
+    update?:
+      | CommentUpdateWithWhereUniqueWithoutParentInput
+      | CommentUpdateWithWhereUniqueWithoutParentInput[]
+    updateMany?:
+      | CommentUpdateManyWithWhereWithoutParentInput
+      | CommentUpdateManyWithWhereWithoutParentInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
   export type CommentUncheckedUpdateManyWithoutParentNestedInput = {
-    create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
-    upsert?: CommentUpsertWithWhereUniqueWithoutParentInput | CommentUpsertWithWhereUniqueWithoutParentInput[]
+    create?:
+      | XOR<
+          CommentCreateWithoutParentInput,
+          CommentUncheckedCreateWithoutParentInput
+        >
+      | CommentCreateWithoutParentInput[]
+      | CommentUncheckedCreateWithoutParentInput[]
+    connectOrCreate?:
+      | CommentCreateOrConnectWithoutParentInput
+      | CommentCreateOrConnectWithoutParentInput[]
+    upsert?:
+      | CommentUpsertWithWhereUniqueWithoutParentInput
+      | CommentUpsertWithWhereUniqueWithoutParentInput[]
     createMany?: CommentCreateManyParentInputEnvelope
     set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-    update?: CommentUpdateWithWhereUniqueWithoutParentInput | CommentUpdateWithWhereUniqueWithoutParentInput[]
-    updateMany?: CommentUpdateManyWithWhereWithoutParentInput | CommentUpdateManyWithWhereWithoutParentInput[]
+    update?:
+      | CommentUpdateWithWhereUniqueWithoutParentInput
+      | CommentUpdateWithWhereUniqueWithoutParentInput[]
+    updateMany?:
+      | CommentUpdateManyWithWhereWithoutParentInput
+      | CommentUpdateManyWithWhereWithoutParentInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
   export type ListingCreateNestedOneWithoutApprovalsInput = {
-    create?: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
+    create?: XOR<
+      ListingCreateWithoutApprovalsInput,
+      ListingUncheckedCreateWithoutApprovalsInput
+    >
     connectOrCreate?: ListingCreateOrConnectWithoutApprovalsInput
     connect?: ListingWhereUniqueInput
   }
 
   export type UserCreateNestedOneWithoutApprovalsGivenInput = {
-    create?: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
+    create?: XOR<
+      UserCreateWithoutApprovalsGivenInput,
+      UserUncheckedCreateWithoutApprovalsGivenInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutApprovalsGivenInput
     connect?: UserWhereUniqueInput
   }
@@ -15637,19 +19269,37 @@ export namespace Prisma {
   }
 
   export type ListingUpdateOneRequiredWithoutApprovalsNestedInput = {
-    create?: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
+    create?: XOR<
+      ListingCreateWithoutApprovalsInput,
+      ListingUncheckedCreateWithoutApprovalsInput
+    >
     connectOrCreate?: ListingCreateOrConnectWithoutApprovalsInput
     upsert?: ListingUpsertWithoutApprovalsInput
     connect?: ListingWhereUniqueInput
-    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutApprovalsInput, ListingUpdateWithoutApprovalsInput>, ListingUncheckedUpdateWithoutApprovalsInput>
+    update?: XOR<
+      XOR<
+        ListingUpdateToOneWithWhereWithoutApprovalsInput,
+        ListingUpdateWithoutApprovalsInput
+      >,
+      ListingUncheckedUpdateWithoutApprovalsInput
+    >
   }
 
   export type UserUpdateOneRequiredWithoutApprovalsGivenNestedInput = {
-    create?: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
+    create?: XOR<
+      UserCreateWithoutApprovalsGivenInput,
+      UserUncheckedCreateWithoutApprovalsGivenInput
+    >
     connectOrCreate?: UserCreateOrConnectWithoutApprovalsGivenInput
     upsert?: UserUpsertWithoutApprovalsGivenInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutApprovalsGivenInput, UserUpdateWithoutApprovalsGivenInput>, UserUncheckedUpdateWithoutApprovalsGivenInput>
+    update?: XOR<
+      XOR<
+        UserUpdateToOneWithWhereWithoutApprovalsGivenInput,
+        UserUpdateWithoutApprovalsGivenInput
+      >,
+      UserUncheckedUpdateWithoutApprovalsGivenInput
+    >
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -15819,17 +19469,33 @@ export namespace Prisma {
   }
 
   export type NestedEnumApprovalStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    equals?:
+      | $Enums.ApprovalStatus
+      | EnumApprovalStatusFieldRefInput<$PrismaModel>
+    in?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    notIn?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
     not?: NestedEnumApprovalStatusFilter<$PrismaModel> | $Enums.ApprovalStatus
   }
 
-  export type NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel> | $Enums.ApprovalStatus
+  export type NestedEnumApprovalStatusWithAggregatesFilter<
+    $PrismaModel = never,
+  > = {
+    equals?:
+      | $Enums.ApprovalStatus
+      | EnumApprovalStatusFieldRefInput<$PrismaModel>
+    in?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    notIn?:
+      | $Enums.ApprovalStatus[]
+      | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
+    not?:
+      | NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel>
+      | $Enums.ApprovalStatus
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumApprovalStatusFilter<$PrismaModel>
     _max?: NestedEnumApprovalStatusFilter<$PrismaModel>
@@ -15863,7 +19529,10 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutAuthorInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput>
+    create: XOR<
+      ListingCreateWithoutAuthorInput,
+      ListingUncheckedCreateWithoutAuthorInput
+    >
   }
 
   export type ListingCreateManyAuthorInputEnvelope = {
@@ -15913,7 +19582,10 @@ export namespace Prisma {
 
   export type CommentCreateOrConnectWithoutUserInput = {
     where: CommentWhereUniqueInput
-    create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
+    create: XOR<
+      CommentCreateWithoutUserInput,
+      CommentUncheckedCreateWithoutUserInput
+    >
   }
 
   export type CommentCreateManyUserInputEnvelope = {
@@ -15941,42 +19613,59 @@ export namespace Prisma {
 
   export type ListingApprovalCreateOrConnectWithoutApprovedByInput = {
     where: ListingApprovalWhereUniqueInput
-    create: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput>
+    create: XOR<
+      ListingApprovalCreateWithoutApprovedByInput,
+      ListingApprovalUncheckedCreateWithoutApprovedByInput
+    >
   }
 
   export type ListingApprovalCreateManyApprovedByInputEnvelope = {
-    data: ListingApprovalCreateManyApprovedByInput | ListingApprovalCreateManyApprovedByInput[]
+    data:
+      | ListingApprovalCreateManyApprovedByInput
+      | ListingApprovalCreateManyApprovedByInput[]
     skipDuplicates?: boolean
   }
 
   export type ListingUpsertWithWhereUniqueWithoutAuthorInput = {
     where: ListingWhereUniqueInput
-    update: XOR<ListingUpdateWithoutAuthorInput, ListingUncheckedUpdateWithoutAuthorInput>
-    create: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput>
+    update: XOR<
+      ListingUpdateWithoutAuthorInput,
+      ListingUncheckedUpdateWithoutAuthorInput
+    >
+    create: XOR<
+      ListingCreateWithoutAuthorInput,
+      ListingUncheckedCreateWithoutAuthorInput
+    >
   }
 
   export type ListingUpdateWithWhereUniqueWithoutAuthorInput = {
     where: ListingWhereUniqueInput
-    data: XOR<ListingUpdateWithoutAuthorInput, ListingUncheckedUpdateWithoutAuthorInput>
+    data: XOR<
+      ListingUpdateWithoutAuthorInput,
+      ListingUncheckedUpdateWithoutAuthorInput
+    >
   }
 
   export type ListingUpdateManyWithWhereWithoutAuthorInput = {
     where: ListingScalarWhereInput
-    data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutAuthorInput>
+    data: XOR<
+      ListingUpdateManyMutationInput,
+      ListingUncheckedUpdateManyWithoutAuthorInput
+    >
   }
 
   export type ListingScalarWhereInput = {
     AND?: ListingScalarWhereInput | ListingScalarWhereInput[]
     OR?: ListingScalarWhereInput[]
     NOT?: ListingScalarWhereInput | ListingScalarWhereInput[]
-    id?: StringFilter<"Listing"> | string
-    deviceId?: StringFilter<"Listing"> | string
-    gameId?: StringFilter<"Listing"> | string
-    emulatorId?: StringFilter<"Listing"> | string
-    performanceId?: IntFilter<"Listing"> | number
-    notes?: StringNullableFilter<"Listing"> | string | null
-    authorId?: StringFilter<"Listing"> | string
-    createdAt?: DateTimeFilter<"Listing"> | Date | string
+    id?: StringFilter<'Listing'> | string
+    deviceId?: StringFilter<'Listing'> | string
+    gameId?: StringFilter<'Listing'> | string
+    emulatorId?: StringFilter<'Listing'> | string
+    performanceId?: IntFilter<'Listing'> | number
+    notes?: StringNullableFilter<'Listing'> | string | null
+    authorId?: StringFilter<'Listing'> | string
+    createdAt?: DateTimeFilter<'Listing'> | Date | string
   }
 
   export type VoteUpsertWithWhereUniqueWithoutUserInput = {
@@ -15992,74 +19681,101 @@ export namespace Prisma {
 
   export type VoteUpdateManyWithWhereWithoutUserInput = {
     where: VoteScalarWhereInput
-    data: XOR<VoteUpdateManyMutationInput, VoteUncheckedUpdateManyWithoutUserInput>
+    data: XOR<
+      VoteUpdateManyMutationInput,
+      VoteUncheckedUpdateManyWithoutUserInput
+    >
   }
 
   export type VoteScalarWhereInput = {
     AND?: VoteScalarWhereInput | VoteScalarWhereInput[]
     OR?: VoteScalarWhereInput[]
     NOT?: VoteScalarWhereInput | VoteScalarWhereInput[]
-    id?: StringFilter<"Vote"> | string
-    value?: BoolFilter<"Vote"> | boolean
-    userId?: StringFilter<"Vote"> | string
-    listingId?: StringFilter<"Vote"> | string
+    id?: StringFilter<'Vote'> | string
+    value?: BoolFilter<'Vote'> | boolean
+    userId?: StringFilter<'Vote'> | string
+    listingId?: StringFilter<'Vote'> | string
   }
 
   export type CommentUpsertWithWhereUniqueWithoutUserInput = {
     where: CommentWhereUniqueInput
-    update: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
-    create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
+    update: XOR<
+      CommentUpdateWithoutUserInput,
+      CommentUncheckedUpdateWithoutUserInput
+    >
+    create: XOR<
+      CommentCreateWithoutUserInput,
+      CommentUncheckedCreateWithoutUserInput
+    >
   }
 
   export type CommentUpdateWithWhereUniqueWithoutUserInput = {
     where: CommentWhereUniqueInput
-    data: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
+    data: XOR<
+      CommentUpdateWithoutUserInput,
+      CommentUncheckedUpdateWithoutUserInput
+    >
   }
 
   export type CommentUpdateManyWithWhereWithoutUserInput = {
     where: CommentScalarWhereInput
-    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutUserInput>
+    data: XOR<
+      CommentUpdateManyMutationInput,
+      CommentUncheckedUpdateManyWithoutUserInput
+    >
   }
 
   export type CommentScalarWhereInput = {
     AND?: CommentScalarWhereInput | CommentScalarWhereInput[]
     OR?: CommentScalarWhereInput[]
     NOT?: CommentScalarWhereInput | CommentScalarWhereInput[]
-    id?: StringFilter<"Comment"> | string
-    content?: StringFilter<"Comment"> | string
-    userId?: StringFilter<"Comment"> | string
-    listingId?: StringFilter<"Comment"> | string
-    parentId?: StringNullableFilter<"Comment"> | string | null
-    createdAt?: DateTimeFilter<"Comment"> | Date | string
+    id?: StringFilter<'Comment'> | string
+    content?: StringFilter<'Comment'> | string
+    userId?: StringFilter<'Comment'> | string
+    listingId?: StringFilter<'Comment'> | string
+    parentId?: StringNullableFilter<'Comment'> | string | null
+    createdAt?: DateTimeFilter<'Comment'> | Date | string
   }
 
   export type ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput = {
     where: ListingApprovalWhereUniqueInput
-    update: XOR<ListingApprovalUpdateWithoutApprovedByInput, ListingApprovalUncheckedUpdateWithoutApprovedByInput>
-    create: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput>
+    update: XOR<
+      ListingApprovalUpdateWithoutApprovedByInput,
+      ListingApprovalUncheckedUpdateWithoutApprovedByInput
+    >
+    create: XOR<
+      ListingApprovalCreateWithoutApprovedByInput,
+      ListingApprovalUncheckedCreateWithoutApprovedByInput
+    >
   }
 
   export type ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput = {
     where: ListingApprovalWhereUniqueInput
-    data: XOR<ListingApprovalUpdateWithoutApprovedByInput, ListingApprovalUncheckedUpdateWithoutApprovedByInput>
+    data: XOR<
+      ListingApprovalUpdateWithoutApprovedByInput,
+      ListingApprovalUncheckedUpdateWithoutApprovedByInput
+    >
   }
 
   export type ListingApprovalUpdateManyWithWhereWithoutApprovedByInput = {
     where: ListingApprovalScalarWhereInput
-    data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyWithoutApprovedByInput>
+    data: XOR<
+      ListingApprovalUpdateManyMutationInput,
+      ListingApprovalUncheckedUpdateManyWithoutApprovedByInput
+    >
   }
 
   export type ListingApprovalScalarWhereInput = {
     AND?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
     OR?: ListingApprovalScalarWhereInput[]
     NOT?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
-    id?: StringFilter<"ListingApproval"> | string
-    listingId?: StringFilter<"ListingApproval"> | string
-    approvedById?: StringFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleFilter<"ListingApproval"> | $Enums.Role
-    approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusFilter<"ListingApproval"> | $Enums.ApprovalStatus
-    notes?: StringNullableFilter<"ListingApproval"> | string | null
+    id?: StringFilter<'ListingApproval'> | string
+    listingId?: StringFilter<'ListingApproval'> | string
+    approvedById?: StringFilter<'ListingApproval'> | string
+    approvedByRole?: EnumRoleFilter<'ListingApproval'> | $Enums.Role
+    approvedAt?: DateTimeFilter<'ListingApproval'> | Date | string
+    status?: EnumApprovalStatusFilter<'ListingApproval'> | $Enums.ApprovalStatus
+    notes?: StringNullableFilter<'ListingApproval'> | string | null
   }
 
   export type ListingCreateWithoutDeviceInput = {
@@ -16090,7 +19806,10 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutDeviceInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput>
+    create: XOR<
+      ListingCreateWithoutDeviceInput,
+      ListingUncheckedCreateWithoutDeviceInput
+    >
   }
 
   export type ListingCreateManyDeviceInputEnvelope = {
@@ -16100,18 +19819,30 @@ export namespace Prisma {
 
   export type ListingUpsertWithWhereUniqueWithoutDeviceInput = {
     where: ListingWhereUniqueInput
-    update: XOR<ListingUpdateWithoutDeviceInput, ListingUncheckedUpdateWithoutDeviceInput>
-    create: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput>
+    update: XOR<
+      ListingUpdateWithoutDeviceInput,
+      ListingUncheckedUpdateWithoutDeviceInput
+    >
+    create: XOR<
+      ListingCreateWithoutDeviceInput,
+      ListingUncheckedCreateWithoutDeviceInput
+    >
   }
 
   export type ListingUpdateWithWhereUniqueWithoutDeviceInput = {
     where: ListingWhereUniqueInput
-    data: XOR<ListingUpdateWithoutDeviceInput, ListingUncheckedUpdateWithoutDeviceInput>
+    data: XOR<
+      ListingUpdateWithoutDeviceInput,
+      ListingUncheckedUpdateWithoutDeviceInput
+    >
   }
 
   export type ListingUpdateManyWithWhereWithoutDeviceInput = {
     where: ListingScalarWhereInput
-    data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutDeviceInput>
+    data: XOR<
+      ListingUpdateManyMutationInput,
+      ListingUncheckedUpdateManyWithoutDeviceInput
+    >
   }
 
   export type GameCreateWithoutSystemInput = {
@@ -16130,7 +19861,10 @@ export namespace Prisma {
 
   export type GameCreateOrConnectWithoutSystemInput = {
     where: GameWhereUniqueInput
-    create: XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput>
+    create: XOR<
+      GameCreateWithoutSystemInput,
+      GameUncheckedCreateWithoutSystemInput
+    >
   }
 
   export type GameCreateManySystemInputEnvelope = {
@@ -16140,28 +19874,40 @@ export namespace Prisma {
 
   export type GameUpsertWithWhereUniqueWithoutSystemInput = {
     where: GameWhereUniqueInput
-    update: XOR<GameUpdateWithoutSystemInput, GameUncheckedUpdateWithoutSystemInput>
-    create: XOR<GameCreateWithoutSystemInput, GameUncheckedCreateWithoutSystemInput>
+    update: XOR<
+      GameUpdateWithoutSystemInput,
+      GameUncheckedUpdateWithoutSystemInput
+    >
+    create: XOR<
+      GameCreateWithoutSystemInput,
+      GameUncheckedCreateWithoutSystemInput
+    >
   }
 
   export type GameUpdateWithWhereUniqueWithoutSystemInput = {
     where: GameWhereUniqueInput
-    data: XOR<GameUpdateWithoutSystemInput, GameUncheckedUpdateWithoutSystemInput>
+    data: XOR<
+      GameUpdateWithoutSystemInput,
+      GameUncheckedUpdateWithoutSystemInput
+    >
   }
 
   export type GameUpdateManyWithWhereWithoutSystemInput = {
     where: GameScalarWhereInput
-    data: XOR<GameUpdateManyMutationInput, GameUncheckedUpdateManyWithoutSystemInput>
+    data: XOR<
+      GameUpdateManyMutationInput,
+      GameUncheckedUpdateManyWithoutSystemInput
+    >
   }
 
   export type GameScalarWhereInput = {
     AND?: GameScalarWhereInput | GameScalarWhereInput[]
     OR?: GameScalarWhereInput[]
     NOT?: GameScalarWhereInput | GameScalarWhereInput[]
-    id?: StringFilter<"Game"> | string
-    title?: StringFilter<"Game"> | string
-    systemId?: StringFilter<"Game"> | string
-    imageUrl?: StringNullableFilter<"Game"> | string | null
+    id?: StringFilter<'Game'> | string
+    title?: StringFilter<'Game'> | string
+    systemId?: StringFilter<'Game'> | string
+    imageUrl?: StringNullableFilter<'Game'> | string | null
   }
 
   export type SystemCreateWithoutGamesInput = {
@@ -16176,7 +19922,10 @@ export namespace Prisma {
 
   export type SystemCreateOrConnectWithoutGamesInput = {
     where: SystemWhereUniqueInput
-    create: XOR<SystemCreateWithoutGamesInput, SystemUncheckedCreateWithoutGamesInput>
+    create: XOR<
+      SystemCreateWithoutGamesInput,
+      SystemUncheckedCreateWithoutGamesInput
+    >
   }
 
   export type ListingCreateWithoutGameInput = {
@@ -16207,7 +19956,10 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutGameInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutGameInput, ListingUncheckedCreateWithoutGameInput>
+    create: XOR<
+      ListingCreateWithoutGameInput,
+      ListingUncheckedCreateWithoutGameInput
+    >
   }
 
   export type ListingCreateManyGameInputEnvelope = {
@@ -16216,14 +19968,23 @@ export namespace Prisma {
   }
 
   export type SystemUpsertWithoutGamesInput = {
-    update: XOR<SystemUpdateWithoutGamesInput, SystemUncheckedUpdateWithoutGamesInput>
-    create: XOR<SystemCreateWithoutGamesInput, SystemUncheckedCreateWithoutGamesInput>
+    update: XOR<
+      SystemUpdateWithoutGamesInput,
+      SystemUncheckedUpdateWithoutGamesInput
+    >
+    create: XOR<
+      SystemCreateWithoutGamesInput,
+      SystemUncheckedCreateWithoutGamesInput
+    >
     where?: SystemWhereInput
   }
 
   export type SystemUpdateToOneWithWhereWithoutGamesInput = {
     where?: SystemWhereInput
-    data: XOR<SystemUpdateWithoutGamesInput, SystemUncheckedUpdateWithoutGamesInput>
+    data: XOR<
+      SystemUpdateWithoutGamesInput,
+      SystemUncheckedUpdateWithoutGamesInput
+    >
   }
 
   export type SystemUpdateWithoutGamesInput = {
@@ -16238,18 +19999,30 @@ export namespace Prisma {
 
   export type ListingUpsertWithWhereUniqueWithoutGameInput = {
     where: ListingWhereUniqueInput
-    update: XOR<ListingUpdateWithoutGameInput, ListingUncheckedUpdateWithoutGameInput>
-    create: XOR<ListingCreateWithoutGameInput, ListingUncheckedCreateWithoutGameInput>
+    update: XOR<
+      ListingUpdateWithoutGameInput,
+      ListingUncheckedUpdateWithoutGameInput
+    >
+    create: XOR<
+      ListingCreateWithoutGameInput,
+      ListingUncheckedCreateWithoutGameInput
+    >
   }
 
   export type ListingUpdateWithWhereUniqueWithoutGameInput = {
     where: ListingWhereUniqueInput
-    data: XOR<ListingUpdateWithoutGameInput, ListingUncheckedUpdateWithoutGameInput>
+    data: XOR<
+      ListingUpdateWithoutGameInput,
+      ListingUncheckedUpdateWithoutGameInput
+    >
   }
 
   export type ListingUpdateManyWithWhereWithoutGameInput = {
     where: ListingScalarWhereInput
-    data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutGameInput>
+    data: XOR<
+      ListingUpdateManyMutationInput,
+      ListingUncheckedUpdateManyWithoutGameInput
+    >
   }
 
   export type ListingCreateWithoutEmulatorInput = {
@@ -16280,7 +20053,10 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutEmulatorInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutEmulatorInput, ListingUncheckedCreateWithoutEmulatorInput>
+    create: XOR<
+      ListingCreateWithoutEmulatorInput,
+      ListingUncheckedCreateWithoutEmulatorInput
+    >
   }
 
   export type ListingCreateManyEmulatorInputEnvelope = {
@@ -16290,18 +20066,30 @@ export namespace Prisma {
 
   export type ListingUpsertWithWhereUniqueWithoutEmulatorInput = {
     where: ListingWhereUniqueInput
-    update: XOR<ListingUpdateWithoutEmulatorInput, ListingUncheckedUpdateWithoutEmulatorInput>
-    create: XOR<ListingCreateWithoutEmulatorInput, ListingUncheckedCreateWithoutEmulatorInput>
+    update: XOR<
+      ListingUpdateWithoutEmulatorInput,
+      ListingUncheckedUpdateWithoutEmulatorInput
+    >
+    create: XOR<
+      ListingCreateWithoutEmulatorInput,
+      ListingUncheckedCreateWithoutEmulatorInput
+    >
   }
 
   export type ListingUpdateWithWhereUniqueWithoutEmulatorInput = {
     where: ListingWhereUniqueInput
-    data: XOR<ListingUpdateWithoutEmulatorInput, ListingUncheckedUpdateWithoutEmulatorInput>
+    data: XOR<
+      ListingUpdateWithoutEmulatorInput,
+      ListingUncheckedUpdateWithoutEmulatorInput
+    >
   }
 
   export type ListingUpdateManyWithWhereWithoutEmulatorInput = {
     where: ListingScalarWhereInput
-    data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutEmulatorInput>
+    data: XOR<
+      ListingUpdateManyMutationInput,
+      ListingUncheckedUpdateManyWithoutEmulatorInput
+    >
   }
 
   export type ListingCreateWithoutPerformanceInput = {
@@ -16332,28 +20120,45 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutPerformanceInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutPerformanceInput, ListingUncheckedCreateWithoutPerformanceInput>
+    create: XOR<
+      ListingCreateWithoutPerformanceInput,
+      ListingUncheckedCreateWithoutPerformanceInput
+    >
   }
 
   export type ListingCreateManyPerformanceInputEnvelope = {
-    data: ListingCreateManyPerformanceInput | ListingCreateManyPerformanceInput[]
+    data:
+      | ListingCreateManyPerformanceInput
+      | ListingCreateManyPerformanceInput[]
     skipDuplicates?: boolean
   }
 
   export type ListingUpsertWithWhereUniqueWithoutPerformanceInput = {
     where: ListingWhereUniqueInput
-    update: XOR<ListingUpdateWithoutPerformanceInput, ListingUncheckedUpdateWithoutPerformanceInput>
-    create: XOR<ListingCreateWithoutPerformanceInput, ListingUncheckedCreateWithoutPerformanceInput>
+    update: XOR<
+      ListingUpdateWithoutPerformanceInput,
+      ListingUncheckedUpdateWithoutPerformanceInput
+    >
+    create: XOR<
+      ListingCreateWithoutPerformanceInput,
+      ListingUncheckedCreateWithoutPerformanceInput
+    >
   }
 
   export type ListingUpdateWithWhereUniqueWithoutPerformanceInput = {
     where: ListingWhereUniqueInput
-    data: XOR<ListingUpdateWithoutPerformanceInput, ListingUncheckedUpdateWithoutPerformanceInput>
+    data: XOR<
+      ListingUpdateWithoutPerformanceInput,
+      ListingUncheckedUpdateWithoutPerformanceInput
+    >
   }
 
   export type ListingUpdateManyWithWhereWithoutPerformanceInput = {
     where: ListingScalarWhereInput
-    data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutPerformanceInput>
+    data: XOR<
+      ListingUpdateManyMutationInput,
+      ListingUncheckedUpdateManyWithoutPerformanceInput
+    >
   }
 
   export type DeviceCreateWithoutListingsInput = {
@@ -16370,7 +20175,10 @@ export namespace Prisma {
 
   export type DeviceCreateOrConnectWithoutListingsInput = {
     where: DeviceWhereUniqueInput
-    create: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    create: XOR<
+      DeviceCreateWithoutListingsInput,
+      DeviceUncheckedCreateWithoutListingsInput
+    >
   }
 
   export type GameCreateWithoutListingsInput = {
@@ -16389,7 +20197,10 @@ export namespace Prisma {
 
   export type GameCreateOrConnectWithoutListingsInput = {
     where: GameWhereUniqueInput
-    create: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
+    create: XOR<
+      GameCreateWithoutListingsInput,
+      GameUncheckedCreateWithoutListingsInput
+    >
   }
 
   export type EmulatorCreateWithoutListingsInput = {
@@ -16404,7 +20215,10 @@ export namespace Prisma {
 
   export type EmulatorCreateOrConnectWithoutListingsInput = {
     where: EmulatorWhereUniqueInput
-    create: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    create: XOR<
+      EmulatorCreateWithoutListingsInput,
+      EmulatorUncheckedCreateWithoutListingsInput
+    >
   }
 
   export type PerformanceScaleCreateWithoutListingsInput = {
@@ -16420,7 +20234,10 @@ export namespace Prisma {
 
   export type PerformanceScaleCreateOrConnectWithoutListingsInput = {
     where: PerformanceScaleWhereUniqueInput
-    create: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    create: XOR<
+      PerformanceScaleCreateWithoutListingsInput,
+      PerformanceScaleUncheckedCreateWithoutListingsInput
+    >
   }
 
   export type UserCreateWithoutListingsInput = {
@@ -16451,7 +20268,10 @@ export namespace Prisma {
 
   export type UserCreateOrConnectWithoutListingsInput = {
     where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+    create: XOR<
+      UserCreateWithoutListingsInput,
+      UserUncheckedCreateWithoutListingsInput
+    >
   }
 
   export type VoteCreateWithoutListingInput = {
@@ -16468,7 +20288,10 @@ export namespace Prisma {
 
   export type VoteCreateOrConnectWithoutListingInput = {
     where: VoteWhereUniqueInput
-    create: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput>
+    create: XOR<
+      VoteCreateWithoutListingInput,
+      VoteUncheckedCreateWithoutListingInput
+    >
   }
 
   export type VoteCreateManyListingInputEnvelope = {
@@ -16496,7 +20319,10 @@ export namespace Prisma {
 
   export type CommentCreateOrConnectWithoutListingInput = {
     where: CommentWhereUniqueInput
-    create: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput>
+    create: XOR<
+      CommentCreateWithoutListingInput,
+      CommentUncheckedCreateWithoutListingInput
+    >
   }
 
   export type CommentCreateManyListingInputEnvelope = {
@@ -16524,23 +20350,37 @@ export namespace Prisma {
 
   export type ListingApprovalCreateOrConnectWithoutListingInput = {
     where: ListingApprovalWhereUniqueInput
-    create: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput>
+    create: XOR<
+      ListingApprovalCreateWithoutListingInput,
+      ListingApprovalUncheckedCreateWithoutListingInput
+    >
   }
 
   export type ListingApprovalCreateManyListingInputEnvelope = {
-    data: ListingApprovalCreateManyListingInput | ListingApprovalCreateManyListingInput[]
+    data:
+      | ListingApprovalCreateManyListingInput
+      | ListingApprovalCreateManyListingInput[]
     skipDuplicates?: boolean
   }
 
   export type DeviceUpsertWithoutListingsInput = {
-    update: XOR<DeviceUpdateWithoutListingsInput, DeviceUncheckedUpdateWithoutListingsInput>
-    create: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    update: XOR<
+      DeviceUpdateWithoutListingsInput,
+      DeviceUncheckedUpdateWithoutListingsInput
+    >
+    create: XOR<
+      DeviceCreateWithoutListingsInput,
+      DeviceUncheckedCreateWithoutListingsInput
+    >
     where?: DeviceWhereInput
   }
 
   export type DeviceUpdateToOneWithWhereWithoutListingsInput = {
     where?: DeviceWhereInput
-    data: XOR<DeviceUpdateWithoutListingsInput, DeviceUncheckedUpdateWithoutListingsInput>
+    data: XOR<
+      DeviceUpdateWithoutListingsInput,
+      DeviceUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type DeviceUpdateWithoutListingsInput = {
@@ -16556,14 +20396,23 @@ export namespace Prisma {
   }
 
   export type GameUpsertWithoutListingsInput = {
-    update: XOR<GameUpdateWithoutListingsInput, GameUncheckedUpdateWithoutListingsInput>
-    create: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
+    update: XOR<
+      GameUpdateWithoutListingsInput,
+      GameUncheckedUpdateWithoutListingsInput
+    >
+    create: XOR<
+      GameCreateWithoutListingsInput,
+      GameUncheckedCreateWithoutListingsInput
+    >
     where?: GameWhereInput
   }
 
   export type GameUpdateToOneWithWhereWithoutListingsInput = {
     where?: GameWhereInput
-    data: XOR<GameUpdateWithoutListingsInput, GameUncheckedUpdateWithoutListingsInput>
+    data: XOR<
+      GameUpdateWithoutListingsInput,
+      GameUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type GameUpdateWithoutListingsInput = {
@@ -16581,14 +20430,23 @@ export namespace Prisma {
   }
 
   export type EmulatorUpsertWithoutListingsInput = {
-    update: XOR<EmulatorUpdateWithoutListingsInput, EmulatorUncheckedUpdateWithoutListingsInput>
-    create: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    update: XOR<
+      EmulatorUpdateWithoutListingsInput,
+      EmulatorUncheckedUpdateWithoutListingsInput
+    >
+    create: XOR<
+      EmulatorCreateWithoutListingsInput,
+      EmulatorUncheckedCreateWithoutListingsInput
+    >
     where?: EmulatorWhereInput
   }
 
   export type EmulatorUpdateToOneWithWhereWithoutListingsInput = {
     where?: EmulatorWhereInput
-    data: XOR<EmulatorUpdateWithoutListingsInput, EmulatorUncheckedUpdateWithoutListingsInput>
+    data: XOR<
+      EmulatorUpdateWithoutListingsInput,
+      EmulatorUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type EmulatorUpdateWithoutListingsInput = {
@@ -16602,14 +20460,23 @@ export namespace Prisma {
   }
 
   export type PerformanceScaleUpsertWithoutListingsInput = {
-    update: XOR<PerformanceScaleUpdateWithoutListingsInput, PerformanceScaleUncheckedUpdateWithoutListingsInput>
-    create: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    update: XOR<
+      PerformanceScaleUpdateWithoutListingsInput,
+      PerformanceScaleUncheckedUpdateWithoutListingsInput
+    >
+    create: XOR<
+      PerformanceScaleCreateWithoutListingsInput,
+      PerformanceScaleUncheckedCreateWithoutListingsInput
+    >
     where?: PerformanceScaleWhereInput
   }
 
   export type PerformanceScaleUpdateToOneWithWhereWithoutListingsInput = {
     where?: PerformanceScaleWhereInput
-    data: XOR<PerformanceScaleUpdateWithoutListingsInput, PerformanceScaleUncheckedUpdateWithoutListingsInput>
+    data: XOR<
+      PerformanceScaleUpdateWithoutListingsInput,
+      PerformanceScaleUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type PerformanceScaleUpdateWithoutListingsInput = {
@@ -16624,14 +20491,23 @@ export namespace Prisma {
   }
 
   export type UserUpsertWithoutListingsInput = {
-    update: XOR<UserUpdateWithoutListingsInput, UserUncheckedUpdateWithoutListingsInput>
-    create: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+    update: XOR<
+      UserUpdateWithoutListingsInput,
+      UserUncheckedUpdateWithoutListingsInput
+    >
+    create: XOR<
+      UserCreateWithoutListingsInput,
+      UserUncheckedCreateWithoutListingsInput
+    >
     where?: UserWhereInput
   }
 
   export type UserUpdateToOneWithWhereWithoutListingsInput = {
     where?: UserWhereInput
-    data: XOR<UserUpdateWithoutListingsInput, UserUncheckedUpdateWithoutListingsInput>
+    data: XOR<
+      UserUpdateWithoutListingsInput,
+      UserUncheckedUpdateWithoutListingsInput
+    >
   }
 
   export type UserUpdateWithoutListingsInput = {
@@ -16662,50 +20538,86 @@ export namespace Prisma {
 
   export type VoteUpsertWithWhereUniqueWithoutListingInput = {
     where: VoteWhereUniqueInput
-    update: XOR<VoteUpdateWithoutListingInput, VoteUncheckedUpdateWithoutListingInput>
-    create: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput>
+    update: XOR<
+      VoteUpdateWithoutListingInput,
+      VoteUncheckedUpdateWithoutListingInput
+    >
+    create: XOR<
+      VoteCreateWithoutListingInput,
+      VoteUncheckedCreateWithoutListingInput
+    >
   }
 
   export type VoteUpdateWithWhereUniqueWithoutListingInput = {
     where: VoteWhereUniqueInput
-    data: XOR<VoteUpdateWithoutListingInput, VoteUncheckedUpdateWithoutListingInput>
+    data: XOR<
+      VoteUpdateWithoutListingInput,
+      VoteUncheckedUpdateWithoutListingInput
+    >
   }
 
   export type VoteUpdateManyWithWhereWithoutListingInput = {
     where: VoteScalarWhereInput
-    data: XOR<VoteUpdateManyMutationInput, VoteUncheckedUpdateManyWithoutListingInput>
+    data: XOR<
+      VoteUpdateManyMutationInput,
+      VoteUncheckedUpdateManyWithoutListingInput
+    >
   }
 
   export type CommentUpsertWithWhereUniqueWithoutListingInput = {
     where: CommentWhereUniqueInput
-    update: XOR<CommentUpdateWithoutListingInput, CommentUncheckedUpdateWithoutListingInput>
-    create: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput>
+    update: XOR<
+      CommentUpdateWithoutListingInput,
+      CommentUncheckedUpdateWithoutListingInput
+    >
+    create: XOR<
+      CommentCreateWithoutListingInput,
+      CommentUncheckedCreateWithoutListingInput
+    >
   }
 
   export type CommentUpdateWithWhereUniqueWithoutListingInput = {
     where: CommentWhereUniqueInput
-    data: XOR<CommentUpdateWithoutListingInput, CommentUncheckedUpdateWithoutListingInput>
+    data: XOR<
+      CommentUpdateWithoutListingInput,
+      CommentUncheckedUpdateWithoutListingInput
+    >
   }
 
   export type CommentUpdateManyWithWhereWithoutListingInput = {
     where: CommentScalarWhereInput
-    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutListingInput>
+    data: XOR<
+      CommentUpdateManyMutationInput,
+      CommentUncheckedUpdateManyWithoutListingInput
+    >
   }
 
   export type ListingApprovalUpsertWithWhereUniqueWithoutListingInput = {
     where: ListingApprovalWhereUniqueInput
-    update: XOR<ListingApprovalUpdateWithoutListingInput, ListingApprovalUncheckedUpdateWithoutListingInput>
-    create: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput>
+    update: XOR<
+      ListingApprovalUpdateWithoutListingInput,
+      ListingApprovalUncheckedUpdateWithoutListingInput
+    >
+    create: XOR<
+      ListingApprovalCreateWithoutListingInput,
+      ListingApprovalUncheckedCreateWithoutListingInput
+    >
   }
 
   export type ListingApprovalUpdateWithWhereUniqueWithoutListingInput = {
     where: ListingApprovalWhereUniqueInput
-    data: XOR<ListingApprovalUpdateWithoutListingInput, ListingApprovalUncheckedUpdateWithoutListingInput>
+    data: XOR<
+      ListingApprovalUpdateWithoutListingInput,
+      ListingApprovalUncheckedUpdateWithoutListingInput
+    >
   }
 
   export type ListingApprovalUpdateManyWithWhereWithoutListingInput = {
     where: ListingApprovalScalarWhereInput
-    data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyWithoutListingInput>
+    data: XOR<
+      ListingApprovalUpdateManyMutationInput,
+      ListingApprovalUncheckedUpdateManyWithoutListingInput
+    >
   }
 
   export type UserCreateWithoutVotesInput = {
@@ -16736,7 +20648,10 @@ export namespace Prisma {
 
   export type UserCreateOrConnectWithoutVotesInput = {
     where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+    create: XOR<
+      UserCreateWithoutVotesInput,
+      UserUncheckedCreateWithoutVotesInput
+    >
   }
 
   export type ListingCreateWithoutVotesInput = {
@@ -16767,12 +20682,21 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutVotesInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutVotesInput, ListingUncheckedCreateWithoutVotesInput>
+    create: XOR<
+      ListingCreateWithoutVotesInput,
+      ListingUncheckedCreateWithoutVotesInput
+    >
   }
 
   export type UserUpsertWithoutVotesInput = {
-    update: XOR<UserUpdateWithoutVotesInput, UserUncheckedUpdateWithoutVotesInput>
-    create: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+    update: XOR<
+      UserUpdateWithoutVotesInput,
+      UserUncheckedUpdateWithoutVotesInput
+    >
+    create: XOR<
+      UserCreateWithoutVotesInput,
+      UserUncheckedCreateWithoutVotesInput
+    >
     where?: UserWhereInput
   }
 
@@ -16808,14 +20732,23 @@ export namespace Prisma {
   }
 
   export type ListingUpsertWithoutVotesInput = {
-    update: XOR<ListingUpdateWithoutVotesInput, ListingUncheckedUpdateWithoutVotesInput>
-    create: XOR<ListingCreateWithoutVotesInput, ListingUncheckedCreateWithoutVotesInput>
+    update: XOR<
+      ListingUpdateWithoutVotesInput,
+      ListingUncheckedUpdateWithoutVotesInput
+    >
+    create: XOR<
+      ListingCreateWithoutVotesInput,
+      ListingUncheckedCreateWithoutVotesInput
+    >
     where?: ListingWhereInput
   }
 
   export type ListingUpdateToOneWithWhereWithoutVotesInput = {
     where?: ListingWhereInput
-    data: XOR<ListingUpdateWithoutVotesInput, ListingUncheckedUpdateWithoutVotesInput>
+    data: XOR<
+      ListingUpdateWithoutVotesInput,
+      ListingUncheckedUpdateWithoutVotesInput
+    >
   }
 
   export type ListingUpdateWithoutVotesInput = {
@@ -16872,7 +20805,10 @@ export namespace Prisma {
 
   export type UserCreateOrConnectWithoutCommentsInput = {
     where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+    create: XOR<
+      UserCreateWithoutCommentsInput,
+      UserUncheckedCreateWithoutCommentsInput
+    >
   }
 
   export type ListingCreateWithoutCommentsInput = {
@@ -16903,7 +20839,10 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutCommentsInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    create: XOR<
+      ListingCreateWithoutCommentsInput,
+      ListingUncheckedCreateWithoutCommentsInput
+    >
   }
 
   export type CommentCreateWithoutRepliesInput = {
@@ -16926,7 +20865,10 @@ export namespace Prisma {
 
   export type CommentCreateOrConnectWithoutRepliesInput = {
     where: CommentWhereUniqueInput
-    create: XOR<CommentCreateWithoutRepliesInput, CommentUncheckedCreateWithoutRepliesInput>
+    create: XOR<
+      CommentCreateWithoutRepliesInput,
+      CommentUncheckedCreateWithoutRepliesInput
+    >
   }
 
   export type CommentCreateWithoutParentInput = {
@@ -16949,7 +20891,10 @@ export namespace Prisma {
 
   export type CommentCreateOrConnectWithoutParentInput = {
     where: CommentWhereUniqueInput
-    create: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput>
+    create: XOR<
+      CommentCreateWithoutParentInput,
+      CommentUncheckedCreateWithoutParentInput
+    >
   }
 
   export type CommentCreateManyParentInputEnvelope = {
@@ -16958,14 +20903,23 @@ export namespace Prisma {
   }
 
   export type UserUpsertWithoutCommentsInput = {
-    update: XOR<UserUpdateWithoutCommentsInput, UserUncheckedUpdateWithoutCommentsInput>
-    create: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+    update: XOR<
+      UserUpdateWithoutCommentsInput,
+      UserUncheckedUpdateWithoutCommentsInput
+    >
+    create: XOR<
+      UserCreateWithoutCommentsInput,
+      UserUncheckedCreateWithoutCommentsInput
+    >
     where?: UserWhereInput
   }
 
   export type UserUpdateToOneWithWhereWithoutCommentsInput = {
     where?: UserWhereInput
-    data: XOR<UserUpdateWithoutCommentsInput, UserUncheckedUpdateWithoutCommentsInput>
+    data: XOR<
+      UserUpdateWithoutCommentsInput,
+      UserUncheckedUpdateWithoutCommentsInput
+    >
   }
 
   export type UserUpdateWithoutCommentsInput = {
@@ -16995,14 +20949,23 @@ export namespace Prisma {
   }
 
   export type ListingUpsertWithoutCommentsInput = {
-    update: XOR<ListingUpdateWithoutCommentsInput, ListingUncheckedUpdateWithoutCommentsInput>
-    create: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    update: XOR<
+      ListingUpdateWithoutCommentsInput,
+      ListingUncheckedUpdateWithoutCommentsInput
+    >
+    create: XOR<
+      ListingCreateWithoutCommentsInput,
+      ListingUncheckedCreateWithoutCommentsInput
+    >
     where?: ListingWhereInput
   }
 
   export type ListingUpdateToOneWithWhereWithoutCommentsInput = {
     where?: ListingWhereInput
-    data: XOR<ListingUpdateWithoutCommentsInput, ListingUncheckedUpdateWithoutCommentsInput>
+    data: XOR<
+      ListingUpdateWithoutCommentsInput,
+      ListingUncheckedUpdateWithoutCommentsInput
+    >
   }
 
   export type ListingUpdateWithoutCommentsInput = {
@@ -17032,14 +20995,23 @@ export namespace Prisma {
   }
 
   export type CommentUpsertWithoutRepliesInput = {
-    update: XOR<CommentUpdateWithoutRepliesInput, CommentUncheckedUpdateWithoutRepliesInput>
-    create: XOR<CommentCreateWithoutRepliesInput, CommentUncheckedCreateWithoutRepliesInput>
+    update: XOR<
+      CommentUpdateWithoutRepliesInput,
+      CommentUncheckedUpdateWithoutRepliesInput
+    >
+    create: XOR<
+      CommentCreateWithoutRepliesInput,
+      CommentUncheckedCreateWithoutRepliesInput
+    >
     where?: CommentWhereInput
   }
 
   export type CommentUpdateToOneWithWhereWithoutRepliesInput = {
     where?: CommentWhereInput
-    data: XOR<CommentUpdateWithoutRepliesInput, CommentUncheckedUpdateWithoutRepliesInput>
+    data: XOR<
+      CommentUpdateWithoutRepliesInput,
+      CommentUncheckedUpdateWithoutRepliesInput
+    >
   }
 
   export type CommentUpdateWithoutRepliesInput = {
@@ -17062,18 +21034,30 @@ export namespace Prisma {
 
   export type CommentUpsertWithWhereUniqueWithoutParentInput = {
     where: CommentWhereUniqueInput
-    update: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
-    create: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput>
+    update: XOR<
+      CommentUpdateWithoutParentInput,
+      CommentUncheckedUpdateWithoutParentInput
+    >
+    create: XOR<
+      CommentCreateWithoutParentInput,
+      CommentUncheckedCreateWithoutParentInput
+    >
   }
 
   export type CommentUpdateWithWhereUniqueWithoutParentInput = {
     where: CommentWhereUniqueInput
-    data: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
+    data: XOR<
+      CommentUpdateWithoutParentInput,
+      CommentUncheckedUpdateWithoutParentInput
+    >
   }
 
   export type CommentUpdateManyWithWhereWithoutParentInput = {
     where: CommentScalarWhereInput
-    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutParentInput>
+    data: XOR<
+      CommentUpdateManyMutationInput,
+      CommentUncheckedUpdateManyWithoutParentInput
+    >
   }
 
   export type ListingCreateWithoutApprovalsInput = {
@@ -17104,7 +21088,10 @@ export namespace Prisma {
 
   export type ListingCreateOrConnectWithoutApprovalsInput = {
     where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
+    create: XOR<
+      ListingCreateWithoutApprovalsInput,
+      ListingUncheckedCreateWithoutApprovalsInput
+    >
   }
 
   export type UserCreateWithoutApprovalsGivenInput = {
@@ -17135,18 +21122,30 @@ export namespace Prisma {
 
   export type UserCreateOrConnectWithoutApprovalsGivenInput = {
     where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
+    create: XOR<
+      UserCreateWithoutApprovalsGivenInput,
+      UserUncheckedCreateWithoutApprovalsGivenInput
+    >
   }
 
   export type ListingUpsertWithoutApprovalsInput = {
-    update: XOR<ListingUpdateWithoutApprovalsInput, ListingUncheckedUpdateWithoutApprovalsInput>
-    create: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
+    update: XOR<
+      ListingUpdateWithoutApprovalsInput,
+      ListingUncheckedUpdateWithoutApprovalsInput
+    >
+    create: XOR<
+      ListingCreateWithoutApprovalsInput,
+      ListingUncheckedCreateWithoutApprovalsInput
+    >
     where?: ListingWhereInput
   }
 
   export type ListingUpdateToOneWithWhereWithoutApprovalsInput = {
     where?: ListingWhereInput
-    data: XOR<ListingUpdateWithoutApprovalsInput, ListingUncheckedUpdateWithoutApprovalsInput>
+    data: XOR<
+      ListingUpdateWithoutApprovalsInput,
+      ListingUncheckedUpdateWithoutApprovalsInput
+    >
   }
 
   export type ListingUpdateWithoutApprovalsInput = {
@@ -17176,14 +21175,23 @@ export namespace Prisma {
   }
 
   export type UserUpsertWithoutApprovalsGivenInput = {
-    update: XOR<UserUpdateWithoutApprovalsGivenInput, UserUncheckedUpdateWithoutApprovalsGivenInput>
-    create: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
+    update: XOR<
+      UserUpdateWithoutApprovalsGivenInput,
+      UserUncheckedUpdateWithoutApprovalsGivenInput
+    >
+    create: XOR<
+      UserCreateWithoutApprovalsGivenInput,
+      UserUncheckedCreateWithoutApprovalsGivenInput
+    >
     where?: UserWhereInput
   }
 
   export type UserUpdateToOneWithWhereWithoutApprovalsGivenInput = {
     where?: UserWhereInput
-    data: XOR<UserUpdateWithoutApprovalsGivenInput, UserUncheckedUpdateWithoutApprovalsGivenInput>
+    data: XOR<
+      UserUpdateWithoutApprovalsGivenInput,
+      UserUncheckedUpdateWithoutApprovalsGivenInput
+    >
   }
 
   export type UserUpdateWithoutApprovalsGivenInput = {
@@ -17329,7 +21337,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     listing?: ListingUpdateOneRequiredWithoutApprovalsNestedInput
   }
@@ -17339,7 +21349,9 @@ export namespace Prisma {
     listingId?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -17348,7 +21360,9 @@ export namespace Prisma {
     listingId?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -17633,7 +21647,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approvedBy?: UserUpdateOneRequiredWithoutApprovalsGivenNestedInput
   }
@@ -17643,7 +21659,9 @@ export namespace Prisma {
     approvedById?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -17652,7 +21670,9 @@ export namespace Prisma {
     approvedById?: StringFieldUpdateOperationsInput | string
     approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?:
+      | EnumApprovalStatusFieldUpdateOperationsInput
+      | $Enums.ApprovalStatus
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -17689,8 +21709,6 @@ export namespace Prisma {
     listingId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
-
-
 
   /**
    * Batch Payload for updateMany & deleteMany & createMany

@@ -12,33 +12,33 @@ const UserSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    
+
     // Validate request body
     const result = UserSchema.safeParse(body)
     if (!result.success) {
       return NextResponse.json(
         { message: 'Invalid input data', errors: result.error.flatten() },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     const { name, email, password } = result.data
-    
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     })
-    
+
     if (existingUser) {
       return NextResponse.json(
         { message: 'User with this email already exists' },
-        { status: 409 }
+        { status: 409 },
       )
     }
-    
+
     // Hash password
     const hashedPassword = await bcryptjs.hash(password, 10)
-    
+
     // Create new user
     const user = await prisma.user.create({
       data: {
@@ -55,13 +55,13 @@ export async function POST(request: Request) {
         createdAt: true,
       },
     })
-    
+
     return NextResponse.json(user, { status: 200 })
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(
       { message: 'An error occurred during registration' },
-      { status: 500 }
+      { status: 500 },
     )
   }
-} 
+}

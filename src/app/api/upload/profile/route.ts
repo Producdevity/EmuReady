@@ -82,10 +82,10 @@ export async function POST(request: NextRequest) {
       success: true,
       imageUrl,
     })
-    
+
     // Set cache control headers to prevent caching
     response.headers.set('Cache-Control', 'no-store, max-age=0')
-    
+
     return response
   } catch (error: unknown) {
     console.error('Error uploading profile image:', error)
@@ -93,4 +93,4 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : 'An error occurred during upload'
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
-} 
+}
