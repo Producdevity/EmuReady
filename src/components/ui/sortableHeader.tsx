@@ -1,11 +1,10 @@
 'use client'
 
-import React from 'react'
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid'
 
-export type SortDirection = 'asc' | 'desc' | null
+type SortDirection = 'asc' | 'desc' | null
 
-interface SortableHeaderProps {
+interface Props {
   label: string
   field: string
   currentSortField: string | null
@@ -14,27 +13,20 @@ interface SortableHeaderProps {
   className?: string
 }
 
-export function SortableHeader({
-  label,
-  field,
-  currentSortField,
-  currentSortDirection,
-  onSort,
-  className = '',
-}: SortableHeaderProps) {
-  const isActive = currentSortField === field
+function SortableHeader(props: Props) {
+  const isActive = props.currentSortField === props.field
 
   return (
     <th
-      className={`px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer select-none group ${className}`}
-      onClick={() => onSort(field)}
+      className={`px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer select-none group ${props.className ?? ''}`}
+      onClick={() => props.onSort(props.field)}
     >
       <div className="flex items-center gap-1">
-        <span>{label}</span>
+        <span>{props.label}</span>
         <div className="flex flex-col opacity-70">
-          {isActive && currentSortDirection === 'asc' ? (
+          {isActive && props.currentSortDirection === 'asc' ? (
             <ChevronUpIcon className="w-4 h-4 text-blue-500" />
-          ) : isActive && currentSortDirection === 'desc' ? (
+          ) : isActive && props.currentSortDirection === 'desc' ? (
             <ChevronDownIcon className="w-4 h-4 text-blue-500" />
           ) : (
             <div className="opacity-0 group-hover:opacity-50 transition-opacity">
@@ -46,3 +38,5 @@ export function SortableHeader({
     </th>
   )
 }
+
+export default SortableHeader
