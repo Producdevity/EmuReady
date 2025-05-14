@@ -44,10 +44,35 @@ export default function ProfilePage() {
   }
 
   const { data: profile, isLoading } = api.users.getProfile.useQuery()
+  const utils = api.useUtils()
   const updateProfile = api.users.update.useMutation({
-    onSuccess: () => {
-      // Refetch profile data after successful update
-      window.location.reload()
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await utils.users.getProfile.cancel()
+      
+      // Snapshot the previous value
+      const previousProfile = utils.users.getProfile.getData()
+      
+      // Optimistically update to the new value
+      utils.users.getProfile.setData(undefined, (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          ...newData,
+        }
+      })
+      
+      // Return a context object with the snapshotted value
+      return { previousProfile }
+    },
+    onError: (err, newData, context) => {
+      // If the mutation fails, use the context returned from onMutate to rollback
+      utils.users.getProfile.setData(undefined, context?.previousProfile)
+      console.error("Error updating profile:", err)
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure data consistency
+      utils.users.getProfile.invalidate()
     },
   })
 
@@ -55,7 +80,7 @@ export default function ProfilePage() {
   const handleProfileImageUpload = (imageUrl: string) => {
     setProfileImage(imageUrl)
     
-    // Optionally update profile immediately on image upload
+    // Update profile image with optimistic updates
     updateProfile.mutate({
       profileImage: imageUrl,
     })
