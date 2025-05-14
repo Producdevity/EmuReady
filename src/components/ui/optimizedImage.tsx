@@ -1,10 +1,10 @@
 'use client'
 
-import React from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
-import { LoadingSpinner } from './loadingSpinner'
+import { LoadingSpinner } from '@/components/ui'
 
-interface OptimizedImageProps {
+interface Props {
   src: string
   alt: string
   width?: number
@@ -16,23 +16,9 @@ interface OptimizedImageProps {
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 }
 
-export function OptimizedImage({
-  src,
-  alt,
-  width = 300,
-  height = 300,
-  className = '',
-  priority = false,
-  quality = 85,
-  fallbackSrc = '/placeholder.svg',
-  objectFit = 'cover',
-}: OptimizedImageProps) {
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [error, setError] = React.useState(false)
-
-  const handleLoad = () => {
-    setIsLoading(false)
-  }
+function OptimizedImage(props: Props) {
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   const handleError = () => {
     setIsLoading(false)
@@ -40,24 +26,29 @@ export function OptimizedImage({
   }
 
   return (
-    <div className={`relative ${className}`} style={{ width, height }}>
+    <div
+      className={`relative ${props.className ?? ''}`}
+      style={{ width: props.width, height: props.height }}
+    >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 animate-pulse">
           <LoadingSpinner size="sm" />
         </div>
       )}
       <Image
-        src={error ? fallbackSrc : src}
-        alt={alt}
-        width={width}
-        height={height}
+        src={error ? (props.fallbackSrc ?? '/placeholder.svg') : props.src}
+        alt={props.alt}
+        width={props.width ?? 300}
+        height={props.height ?? 300}
         className={`transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-        style={{ objectFit }}
-        priority={priority}
-        quality={quality}
-        onLoad={handleLoad}
+        style={{ objectFit: props.objectFit ?? 'cover' }}
+        priority={props.priority ?? false}
+        quality={props.quality ?? 85}
+        onLoad={() => setIsLoading(false)}
         onError={handleError}
       />
     </div>
   )
 }
+
+export default OptimizedImage

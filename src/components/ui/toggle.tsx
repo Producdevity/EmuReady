@@ -1,6 +1,6 @@
-import React from 'react'
+'use client'
 
-interface ToggleProps {
+interface Props {
   checked: boolean
   onChange: (checked: boolean) => void
   label?: string
@@ -8,39 +8,35 @@ interface ToggleProps {
   className?: string
 }
 
-export function Toggle({
-  checked,
-  onChange,
-  label,
-  disabled = false,
-  className = '',
-}: ToggleProps) {
+function Toggle(props: Props) {
   return (
     <label
-      className={`inline-flex items-center cursor-pointer ${disabled ? 'opacity-50' : ''} ${className}`}
+      className={`inline-flex items-center cursor-pointer ${props.disabled ? 'opacity-50' : ''} ${props.className ?? ''}`}
     >
       <div className="relative">
         <input
           type="checkbox"
           className="sr-only"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
+          checked={props.checked}
+          disabled={props.disabled ?? false}
+          onChange={(ev) => props.onChange(ev.target.checked)}
         />
         <div
           className={`w-10 h-5 bg-gray-200 rounded-full peer dark:bg-gray-700 
-          ${checked ? 'bg-blue-600' : ''}`}
-        ></div>
+          ${props.checked ? 'bg-blue-600' : ''}`}
+        />
         <div
           className={`absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-all
-          ${checked ? 'translate-x-5' : 'translate-x-0'}`}
-        ></div>
+          ${props.checked ? 'translate-x-5' : 'translate-x-0'}`}
+        />
       </div>
-      {label && (
+      {props.label && (
         <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-          {label}
+          {props.label}
         </span>
       )}
     </label>
   )
 }
+
+export default Toggle

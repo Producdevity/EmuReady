@@ -8,10 +8,9 @@ import {
   LoadingSpinner,
   SortableHeader,
 } from '@/components/ui'
-import {
-  ListingFilters,
+import ListingFilters, {
   type SelectInputEvent,
-} from '@/components/listings/filters'
+} from './components/ListingFilters'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
@@ -126,7 +125,6 @@ function ListingsPage() {
 
   return (
     <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar for filters */}
       <ListingFilters
         systemId={systemId}
         deviceId={deviceId}

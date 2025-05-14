@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
 
 interface DropdownOption {
   value: string
@@ -14,7 +16,7 @@ interface DropdownProps {
   className?: string
 }
 
-export function Dropdown({
+ function Dropdown({
   options,
   value,
   onChange,
@@ -97,3 +99,5 @@ export function Dropdown({
     </div>
   )
 }
+
+export default Dropdown
