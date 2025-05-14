@@ -18,7 +18,7 @@ export const devicesRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const { search, limit } = input || {}
+      const { search, limit } = input ?? {}
 
       return ctx.prisma.device.findMany({
         where: search

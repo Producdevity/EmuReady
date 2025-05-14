@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import type { ChangeEvent } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Badge,
@@ -9,7 +8,10 @@ import {
   LoadingSpinner,
   SortableHeader,
 } from '@/components/ui'
-import { ListingFilters } from '@/components/listings/filters'
+import {
+  ListingFilters,
+  type SelectInputEvent,
+} from '@/components/listings/filters'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
@@ -47,14 +49,14 @@ function ListingsPage() {
     searchTerm: search || undefined,
     page,
     limit: 10,
-    sortField: sortField || undefined,
-    sortDirection: sortDirection || undefined,
+    sortField: sortField ?? undefined,
+    sortDirection: sortDirection ?? undefined,
   }
 
   const { data, isLoading, error, refetch } =
     api.listings.list.useQuery(filterParams)
 
-  const listings = data?.listings || []
+  const listings = data?.listings ?? []
   const pagination = data?.pagination
 
   const deleteListing = api.listings.delete.useMutation({
@@ -64,28 +66,28 @@ function ListingsPage() {
     },
   })
 
-  const handleFilterChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (ev: SelectInputEvent) => {
     setSystemId(ev.target.value)
     setPage(1)
   }
 
-  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    setSearch(ev.target.value)
-    setPage(1)
-  }
-
-  const handleDeviceChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+  const handleDeviceChange = (ev: SelectInputEvent) => {
     setDeviceId(ev.target.value)
     setPage(1)
   }
 
-  const handleEmulatorChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+  const handleEmulatorChange = (ev: SelectInputEvent) => {
     setEmulatorId(ev.target.value)
     setPage(1)
   }
 
-  const handlePerformanceChange = (ev: ChangeEvent<HTMLSelectElement>) => {
+  const handlePerformanceChange = (ev: SelectInputEvent) => {
     setPerformanceId(ev.target.value)
+    setPage(1)
+  }
+
+  const handleSearchChange = (ev: SelectInputEvent) => {
+    setSearch(ev.target.value)
     setPage(1)
   }
 
@@ -131,10 +133,10 @@ function ListingsPage() {
         emulatorId={emulatorId}
         performanceId={performanceId}
         searchTerm={search}
-        systems={systems || []}
-        devices={devices || []}
-        emulators={emulators || []}
-        performanceScales={performanceScales || []}
+        systems={systems ?? []}
+        devices={devices ?? []}
+        emulators={emulators ?? []}
+        performanceScales={performanceScales ?? []}
         onSystemChange={handleFilterChange}
         onDeviceChange={handleDeviceChange}
         onEmulatorChange={handleEmulatorChange}
@@ -264,7 +266,7 @@ function ListingsPage() {
                       />
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.author?.name || 'Anonymous'}
+                      {listing.author?.name ?? 'Anonymous'}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <div className="flex items-center gap-2">

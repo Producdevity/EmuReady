@@ -2,12 +2,12 @@ import { notFound } from 'next/navigation'
 import { getListingById, getListingUpVotes } from './data'
 import ListingDetailsClient from './ListingDetailsClient'
 
-export default async function ListingDetailsPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+}
+
+export default async function ListingDetailsPage(props: Props) {
+  const { id } = await props.params
 
   // Fetch the listing directly from the database using Prisma
   const listing = await getListingById(id)

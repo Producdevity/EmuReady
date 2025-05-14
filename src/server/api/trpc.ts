@@ -10,7 +10,7 @@ import { type prisma } from '@/server/db'
  *
  * This section defines the "contexts" that are available in the backend API.
  *
- * These allow you to access things like the database, the session, etc, when
+ * These allow you to access things like the database, the session, etc., when
  * processing a request.
  */
 

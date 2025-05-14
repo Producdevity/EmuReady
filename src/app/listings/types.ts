@@ -81,17 +81,17 @@ export interface ListingsResponse {
   pagination: Pagination
 }
 
-export type SortDirection = 'asc' | 'desc' | null;
+export type SortDirection = 'asc' | 'desc' | null
 
-export type SortField = 
-  | 'game.title' 
-  | 'game.system.name' 
-  | 'device' 
-  | 'emulator.name' 
+export type SortField =
+  | 'game.title'
+  | 'game.system.name'
+  | 'device'
+  | 'emulator.name'
   | 'performance.label'
   | 'successRate'
   | 'author.name'
-  | 'createdAt';
+  | 'createdAt'
 
 export interface ListingsFilter {
   systemId?: string

@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { MoonIcon, SunIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline'
+import {
+  MoonIcon,
+  SunIcon,
+  ComputerDesktopIcon,
+} from '@heroicons/react/24/outline'
 
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, setTheme } = useTheme()
@@ -58,13 +62,15 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        Theme:
+      </span>
       <div className="flex border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
         <button
           onClick={() => setTheme('light')}
           className={`p-1.5 ${
-            theme === 'light' 
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+            theme === 'light'
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
           aria-label="Use light theme"
@@ -74,8 +80,8 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
         <button
           onClick={() => setTheme('dark')}
           className={`p-1.5 ${
-            theme === 'dark' 
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+            theme === 'dark'
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
           aria-label="Use dark theme"
@@ -85,8 +91,8 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
         <button
           onClick={() => setTheme('system')}
           className={`p-1.5 ${
-            theme === 'system' 
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+            theme === 'system'
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
           aria-label="Use system theme"
@@ -96,4 +102,4 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
       </div>
     </div>
   )
-} 
+}

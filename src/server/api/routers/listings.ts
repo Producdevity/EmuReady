@@ -21,16 +21,18 @@ export const listingsRouter = createTRPCRouter({
         searchTerm: z.string().optional(),
         page: z.number().default(1),
         limit: z.number().default(10),
-        sortField: z.enum([
-          'game.title',
-          'game.system.name',
-          'device',
-          'emulator.name',
-          'performance.label',
-          'successRate',
-          'author.name',
-          'createdAt'
-        ]).optional(),
+        sortField: z
+          .enum([
+            'game.title',
+            'game.system.name',
+            'device',
+            'emulator.name',
+            'performance.label',
+            'successRate',
+            'author.name',
+            'createdAt',
+          ])
+          .optional(),
         sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
       }),
     )
@@ -103,34 +105,34 @@ export const listingsRouter = createTRPCRouter({
       if (sortField && sortDirection) {
         switch (sortField) {
           case 'game.title':
-            orderBy.push({ game: { title: sortDirection } });
-            break;
+            orderBy.push({ game: { title: sortDirection } })
+            break
           case 'game.system.name':
-            orderBy.push({ game: { system: { name: sortDirection } } });
-            break;
+            orderBy.push({ game: { system: { name: sortDirection } } })
+            break
           case 'device':
-            orderBy.push({ device: { brand: sortDirection } });
-            orderBy.push({ device: { modelName: sortDirection } });
-            break;
+            orderBy.push({ device: { brand: sortDirection } })
+            orderBy.push({ device: { modelName: sortDirection } })
+            break
           case 'emulator.name':
-            orderBy.push({ emulator: { name: sortDirection } });
-            break;
+            orderBy.push({ emulator: { name: sortDirection } })
+            break
           case 'performance.label':
-            orderBy.push({ performance: { label: sortDirection } });
-            break;
+            orderBy.push({ performance: { label: sortDirection } })
+            break
           case 'author.name':
-            orderBy.push({ author: { name: sortDirection } });
-            break;
+            orderBy.push({ author: { name: sortDirection } })
+            break
           case 'createdAt':
-            orderBy.push({ createdAt: sortDirection });
-            break;
+            orderBy.push({ createdAt: sortDirection })
+            break
           // 'successRate' will be handled after fetching the data
         }
       }
 
       // Default ordering if no sort specified or for secondary sort
       if (!orderBy.length || sortField !== 'createdAt') {
-        orderBy.push({ createdAt: 'desc' });
+        orderBy.push({ createdAt: 'desc' })
       }
 
       // Get paginated listings
@@ -210,10 +212,10 @@ export const listingsRouter = createTRPCRouter({
       // Handle sorting by success rate since it's calculated after the database query
       if (sortField === 'successRate' && sortDirection) {
         listingsWithStats.sort((a, b) => {
-          return sortDirection === 'asc' 
+          return sortDirection === 'asc'
             ? a.successRate - b.successRate
-            : b.successRate - a.successRate;
-        });
+            : b.successRate - a.successRate
+        })
       }
 
       return {

@@ -1,74 +1,72 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { join } from 'path';
-import { writeFile, mkdir } from 'fs/promises';
-import { authOptions } from '@/server/auth';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { join } from 'path'
+import { writeFile, mkdir } from 'fs/promises'
+import { authOptions } from '@/server/auth'
 
 // Helper function to check if file is an image
 function isImage(file: File) {
-  return file.type.startsWith('image/');
+  return file.type.startsWith('image/')
 }
 
 // Main API route handler
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !['AUTHOR', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
+    const session = await getServerSession(authOptions)
+    if (
+      !session ||
+      !['AUTHOR', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
+    ) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
-        { status: 401 }
-      );
+        { status: 401 },
+      )
     }
 
     // Get form data
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    const formData = await request.formData()
+    const file = formData.get('file') as File | null
 
     // Validate
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file uploaded' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
     if (!isImage(file)) {
       return NextResponse.json(
         { error: 'Uploaded file is not an image' },
-        { status: 400 }
-      );
+        { status: 400 },
+      )
     }
 
     // Create unique filename
-    const fileExtension = file.name.split('.').pop();
-    const timestamp = Date.now();
-    const fileName = `game-${timestamp}.${fileExtension}`;
-    
+    const fileExtension = file.name.split('.').pop()
+    const timestamp = Date.now()
+    const fileName = `game-${timestamp}.${fileExtension}`
+
     // Create directory if it doesn't exist
-    const publicDir = join(process.cwd(), 'public');
-    const uploadDir = join(publicDir, 'uploads', 'games');
-    await mkdir(uploadDir, { recursive: true });
-    
+    const publicDir = join(process.cwd(), 'public')
+    const uploadDir = join(publicDir, 'uploads', 'games')
+    await mkdir(uploadDir, { recursive: true })
+
     // Write file to disk
-    const filePath = join(uploadDir, fileName);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
-    
+    const filePath = join(uploadDir, fileName)
+    const buffer = Buffer.from(await file.arrayBuffer())
+    await writeFile(filePath, buffer)
+
     // Generate public URL
-    const imageUrl = `/uploads/games/${fileName}`;
-    
-    return NextResponse.json({ 
+    const imageUrl = `/uploads/games/${fileName}`
+
+    return NextResponse.json({
       success: true,
-      imageUrl 
-    });
+      imageUrl,
+    })
   } catch (error: unknown) {
-    console.error('Error uploading file:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An error occurred during upload';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    console.error('Error uploading file:', error)
+    const errorMessage =
+      error instanceof Error ? error.message : 'An error occurred during upload'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
-} 
+}

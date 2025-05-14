@@ -1,8 +1,5 @@
 import { Input } from '@/components'
-import {
-  type ChangeEventHandler,
-  type ReactNode,
-} from 'react'
+import { type ChangeEventHandler, type ReactNode } from 'react'
 
 type Option = {
   id: string

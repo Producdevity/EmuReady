@@ -80,7 +80,7 @@ const GameCard = ({
         {game.title}
       </h2>
       <div className="flex items-center justify-between">
-        <Badge variant="default">{game.system?.name || 'Unknown System'}</Badge>
+        <Badge variant="default">{game.system?.name ?? 'Unknown System'}</Badge>
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {game._count.listings}{' '}
           {game._count.listings === 1 ? 'listing' : 'listings'}
@@ -107,7 +107,7 @@ export default function GamesPage() {
     offset: (page - 1) * limit,
   })
 
-  const games = data?.games || []
+  const games = data?.games ?? []
   const pagination = data?.pagination
 
   // Handle search changes

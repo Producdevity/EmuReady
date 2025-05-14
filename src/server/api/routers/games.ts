@@ -22,17 +22,17 @@ export const gamesRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const { systemId, search, limit = 100, offset = 0 } = input || {}
+      const { systemId, search, limit = 100, offset = 0 } = input ?? {}
 
       // Build where clause with optimized search pattern
       let where: Prisma.GameWhereInput = {
         ...(systemId ? { systemId } : {}),
-      };
+      }
 
       // Add optimized search with case insensitivity and performance optimizations
       if (search && search.trim() !== '') {
-        const searchTerm = search.trim();
-        
+        const searchTerm = search.trim()
+
         // For multi-word searches, we need a different approach to ensure good matches
         if (searchTerm.includes(' ')) {
           // First, try to match the exact phrase
@@ -44,22 +44,22 @@ export const gamesRouter = createTRPCRouter({
                 title: {
                   contains: searchTerm,
                   mode: 'insensitive',
-                }
+                },
               },
               // Option 2: Match all words in any order (most flexible)
               {
                 AND: searchTerm
                   .split(/\s+/)
-                  .filter(word => word.length >= 2)
-                  .map(word => ({
+                  .filter((word) => word.length >= 2)
+                  .map((word) => ({
                     title: {
                       contains: word,
                       mode: 'insensitive',
-                    }
-                  }))
-              }
-            ]
-          };
+                    },
+                  })),
+              },
+            ],
+          }
         } else {
           // For single words, a simple contains is sufficient
           where = {
@@ -67,17 +67,18 @@ export const gamesRouter = createTRPCRouter({
             title: {
               contains: searchTerm,
               mode: 'insensitive',
-            }
-          };
+            },
+          }
         }
       }
 
       // For empty search with offset 0, we can optimize by returning fewer results initially
-      const effectiveLimit = !search && offset === 0 ? Math.min(limit, 50) : limit;
+      const effectiveLimit =
+        !search && offset === 0 ? Math.min(limit, 50) : limit
 
       // Only count total results when needed for pagination or when explicitly searching
-      const shouldCount = offset > 0 || !!search;
-      
+      const shouldCount = offset > 0 || !!search
+
       // Get games with optimized query - only include essential fields for performance
       const gamesQuery = ctx.prisma.game.findMany({
         where,
@@ -90,7 +91,7 @@ export const gamesRouter = createTRPCRouter({
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           _count: {
             select: {
@@ -99,19 +100,19 @@ export const gamesRouter = createTRPCRouter({
           },
         },
         orderBy: {
-          title: 'asc'
+          title: 'asc',
         },
         skip: offset,
         take: effectiveLimit,
-      });
+      })
 
       // Conditionally run count query only when needed
-      let total = 0;
+      let total = 0
       if (shouldCount) {
-        total = await ctx.prisma.game.count({ where });
+        total = await ctx.prisma.game.count({ where })
       }
-      
-      const games = await gamesQuery;
+
+      const games = await gamesQuery
 
       return {
         games,
