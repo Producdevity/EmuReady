@@ -9,7 +9,7 @@ export default function ProfilePage() {
   const { data: session } = useSession()
   const [isEditing, setIsEditing] = useState(false)
 
-  // Redirect to login if not authenticated
+  // Redirect to log in if not authenticated
   if (!session) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] bg-gray-50 dark:bg-gray-900">
@@ -90,7 +90,7 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
-                    defaultValue={session.user?.name || ''}
+                    defaultValue={session.user?.name ?? ''}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
@@ -101,7 +101,7 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="email"
-                    defaultValue={session.user?.email || ''}
+                    defaultValue={session.user?.email ?? ''}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     disabled
                   />
@@ -144,7 +144,7 @@ export default function ProfilePage() {
                     Name
                   </h2>
                   <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                    {session.user?.name || 'No name provided'}
+                    {session.user?.name ?? 'No name provided'}
                   </p>
                 </div>
 

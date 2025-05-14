@@ -16,7 +16,7 @@ export async function registerUser(userData: z.infer<typeof User>) {
     password: user.password,
   })
   if (res.status !== 200) {
-    throw new Error(res.data.message || 'Registration failed')
+    throw new Error(res.data.message ?? 'Registration failed')
   }
   return res.data
 }

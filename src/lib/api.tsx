@@ -10,26 +10,27 @@ import superjson from 'superjson'
 export const api = createTRPCReact<AppRouter>()
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        // Default settings for all queries
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        gcTime: 1000 * 60 * 30, // 30 minutes (was cacheTime in v4)
-        refetchOnWindowFocus: false, // Don't refetch on window focus
-        refetchOnReconnect: true, // Refetch when reconnecting
-        retry: 3, // Retry failed queries 3 times
-        retryDelay: (attemptIndex) => Math.min(
-          1000 * 2 ** attemptIndex,
-          30000
-        ), // Exponential backoff
-      },
-      mutations: {
-        retry: 1, // Retry failed mutations once
-      },
-    },
-  }))
-  
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Default settings for all queries
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 30, // 30 minutes (was cacheTime in v4)
+            refetchOnWindowFocus: false, // Don't refetch on window focus
+            refetchOnReconnect: true, // Refetch when reconnecting
+            retry: 3, // Retry failed queries 3 times
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+          },
+          mutations: {
+            retry: 1, // Retry failed mutations once
+          },
+        },
+      }),
+  )
+
   const [trpcClient] = React.useState(() =>
     api.createClient({
       links: [

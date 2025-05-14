@@ -5,12 +5,12 @@ import { getGameById } from '../data'
 import { Badge } from '@/components/ui/badge'
 import { OptimizedImage } from '@/components/ui/optimizedImage'
 
-export default async function GameDetailsPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+}
+
+export default async function GameDetailsPage(props: Props) {
+  const { id } = await props.params
   const game = await getGameById(id)
 
   if (!game) notFound()
@@ -147,7 +147,7 @@ export default async function GameDetailsPage({
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {listing.author?.name || 'Anonymous'}
+                        {listing.author?.name ?? 'Anonymous'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {listing._count.comments || 0}

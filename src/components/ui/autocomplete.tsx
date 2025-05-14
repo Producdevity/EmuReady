@@ -218,10 +218,11 @@ export function Autocomplete(props: Props) {
           {filteredOptions.map((option, idx) => (
             <div
               key={option.value}
-              className={`flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl ${idx === highlightedIndex
-                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
-                : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+              className={`flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl ${
+                idx === highlightedIndex
+                  ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
+                  : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
               onMouseDown={() => handleOptionSelect(option)}
               onMouseEnter={() => setHighlightedIndex(idx)}
               aria-selected={idx === highlightedIndex}

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
@@ -16,8 +16,8 @@ export default function AdminEmulatorsPage() {
   const [success, setSuccess] = useState('')
 
   const openModal = (emulator?: { id: string; name: string }) => {
-    setEditId(emulator?.id || null)
-    setName(emulator?.name || '')
+    setEditId(emulator?.id ?? null)
+    setName(emulator?.name ?? '')
     setModalOpen(true)
     setError('')
     setSuccess('')
@@ -28,7 +28,7 @@ export default function AdminEmulatorsPage() {
     setName('')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccess('')

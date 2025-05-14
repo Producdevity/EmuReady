@@ -7,6 +7,7 @@ A community-driven platform for tracking emulation compatibility across differen
 The codebase has been significantly improved with the following enhancements:
 
 ### UI Components
+
 - Created an **ErrorBoundary** component for better error handling and recovery
 - Added an **OptimizedImage** component using Next.js Image component for better performance
 - Improved **Pagination** with accessibility features, keyboard navigation, and better UX
@@ -15,23 +16,27 @@ The codebase has been significantly improved with the following enhancements:
 - Implemented **SortableHeader** for table sorting with visual indicators
 
 ### Caching & Performance
+
 - Improved React Query configuration with better defaults for caching, stale times, and retry logic
 - Added image optimization for device images
 - Implemented proper error handling throughout the application
 
 ### Accessibility
+
 - Enhanced keyboard navigation for interactive elements
 - Added proper ARIA labels and roles
 - Improved focus management
 - Better color contrast in UI components
 
 ### Developer Experience
+
 - Added additional npm scripts for development workflow
 - Better project structure with consistent exports
 - Enhanced error feedback with custom ErrorBoundary
 - Improved 404 page with helpful navigation options
 
 ### Theming
+
 - Added system theme preference detection
 - Created theme toggle with multiple UI options
 - Improved dark mode implementation across components
@@ -39,20 +44,27 @@ The codebase has been significantly improved with the following enhancements:
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 20+
 - npm/yarn
 
 ### Installation
+
 1. Clone the repository
 2. Install dependencies
+
 ```bash
 npm install
 ```
+
 3. Set up environment variables
+
 ```bash
 cp .env.example .env
 ```
+
 4. Run the development server
+
 ```bash
 npm run dev
 ```

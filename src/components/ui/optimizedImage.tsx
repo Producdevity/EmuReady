@@ -25,7 +25,7 @@ export function OptimizedImage({
   priority = false,
   quality = 85,
   fallbackSrc = '/placeholder.svg',
-  objectFit = 'cover'
+  objectFit = 'cover',
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
@@ -60,4 +60,4 @@ export function OptimizedImage({
       />
     </div>
   )
-} 
+}

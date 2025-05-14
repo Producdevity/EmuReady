@@ -17,7 +17,7 @@ export const emulatorsRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const { search } = input || {}
+      const { search } = input ?? {}
 
       return ctx.prisma.emulator.findMany({
         where: search

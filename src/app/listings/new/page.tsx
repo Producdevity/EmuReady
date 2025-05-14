@@ -64,13 +64,13 @@ export default function AddListingPage() {
   const handleGameSearch = async (query: string) => {
     setSearchTerm(query)
     setIsSearching(true)
-    
+
     try {
       await refetchGames()
-      
+
       // Simple debugging for search results
       console.log(
-        `Search "${query}" found ${games?.games?.length || 0} results`,
+        `Search "${query}" found ${games?.games?.length ?? 0} results`,
       )
       if (games?.games?.length === 0 && query.length > 2) {
         console.log('No results found. Try refining your search.')
@@ -82,7 +82,7 @@ export default function AddListingPage() {
 
   if (status === 'loading') return <div>Loading...</div>
 
-  const userRole = session?.user?.role || 'USER'
+  const userRole = session?.user?.role ?? 'USER'
 
   if (
     !session ||
@@ -139,7 +139,7 @@ export default function AddListingPage() {
           <div className="flex gap-2 items-center">
             <div className="flex-1">
               <Autocomplete
-                options={(games?.games || []).map(
+                options={(games?.games ?? []).map(
                   (game: { id: string; title: string }) => ({
                     value: game.id,
                     label: game.title,

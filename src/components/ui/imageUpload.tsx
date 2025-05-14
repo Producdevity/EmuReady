@@ -54,7 +54,7 @@ export function ImageUpload({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload image')
+        throw new Error(data.error ?? 'Failed to upload image')
       }
 
       setImage(data.imageUrl)

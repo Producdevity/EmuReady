@@ -20,12 +20,12 @@ export function SortableHeader({
   currentSortField,
   currentSortDirection,
   onSort,
-  className = ''
+  className = '',
 }: SortableHeaderProps) {
   const isActive = currentSortField === field
-  
+
   return (
-    <th 
+    <th
       className={`px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer select-none group ${className}`}
       onClick={() => onSort(field)}
     >
@@ -45,4 +45,4 @@ export function SortableHeader({
       </div>
     </th>
   )
-} 
+}

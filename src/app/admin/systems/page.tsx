@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
@@ -16,8 +16,8 @@ export default function AdminSystemsPage() {
   const [success, setSuccess] = useState('')
 
   const openModal = (system?: { id: string; name: string }) => {
-    setEditId(system?.id || null)
-    setName(system?.name || '')
+    setEditId(system?.id ?? null)
+    setName(system?.name ?? '')
     setModalOpen(true)
     setError('')
     setSuccess('')
@@ -28,8 +28,8 @@ export default function AdminSystemsPage() {
     setName('')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     setError('')
     setSuccess('')
     try {

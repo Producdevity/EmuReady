@@ -10,9 +10,7 @@ interface ListingDetailsClientProps {
   successRate: number
 }
 
-function isComment(
-  obj: unknown,
-): obj is {
+function isComment(obj: unknown): obj is {
   id: string
   content: string
   createdAt: string | Date
@@ -27,12 +25,10 @@ function isComment(
   )
 }
 
-export default function ListingDetailsClient({
-  listing,
-  successRate,
-}: ListingDetailsClientProps) {
+export default function ListingDetailsClient(props: ListingDetailsClientProps) {
   // Type assertion for listing (from server)
-  const l = listing as {
+  // TODO: use proper Prisma types
+  const l = props.listing as {
     game: { title: string; system?: { name?: string } }
     device?: { brand?: string; modelName?: string }
     emulator?: { name?: string }
@@ -71,7 +67,7 @@ export default function ListingDetailsClient({
                   Notes
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-                  {l.notes || 'No notes provided.'}
+                  {l.notes ?? 'No notes provided.'}
                 </p>
               </div>
               <div className="mb-6">
@@ -81,34 +77,34 @@ export default function ListingDetailsClient({
                 <motion.div
                   className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden"
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.round(successRate * 100)}%` }}
+                  animate={{ width: `${Math.round(props.successRate * 100)}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 >
                   <div
                     className="h-full bg-green-500"
-                    style={{ width: `${Math.round(successRate * 100)}%` }}
+                    style={{ width: `${Math.round(props.successRate * 100)}%` }}
                   />
                 </motion.div>
                 <span className="text-sm text-gray-500 dark:text-gray-400 mt-1 inline-block">
-                  {Math.round(successRate * 100)}% success
+                  {Math.round(props.successRate * 100)}% success
                 </span>
               </div>
             </div>
             {/* Author Info */}
             <div className="flex flex-col items-center gap-2 min-w-[140px]">
               <div className="w-16 h-16 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center text-2xl font-bold text-indigo-700 dark:text-indigo-200">
-                {l.author?.name?.[0] || '?'}
+                {l.author?.name?.[0] ?? '?'}
               </div>
               <div className="text-center">
                 <div className="font-semibold text-gray-900 dark:text-white">
-                  {l.author?.name || 'Unknown'}
+                  {l.author?.name ?? 'Unknown'}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {l.author?.email || ''}
+                  {l.author?.email ?? ''}
                 </div>
               </div>
               <Link
-                href={`/profile/${l.author?.id || ''}`}
+                href={`/profile/${l.author?.id ?? ''}`}
                 className="mt-2 text-indigo-600 hover:underline text-xs"
               >
                 View Profile
@@ -135,10 +131,10 @@ export default function ListingDetailsClient({
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-8 h-8 rounded-full bg-indigo-300 dark:bg-indigo-700 flex items-center justify-center text-lg font-bold text-white">
-                        {comment.user?.name?.[0] || '?'}
+                        {comment.user?.name?.[0] ?? '?'}
                       </div>
                       <span className="font-semibold text-gray-700 dark:text-gray-200">
-                        {comment.user?.name || 'Anonymous'}
+                        {comment.user?.name ?? 'Anonymous'}
                       </span>
                       <span className="text-xs text-gray-400 ml-2">
                         {new Date(comment.createdAt).toLocaleString()}

@@ -13,7 +13,7 @@ function Navbar() {
   const pathname = usePathname()
 
   const isActive = (path: string) => pathname === path
-  const userRole = session?.user?.role || 'USER'
+  const userRole = session?.user?.role ?? 'USER'
 
   return (
     <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg sticky top-0 z-50 transition-all">
@@ -30,7 +30,8 @@ function Navbar() {
             </Link>
 
             <p className="pl-8 sm:block text-sm text-red-400 font-medium">
-              [BETA] - This is a work in progress, all data is mock data for testing purposes
+              [BETA] - This is a work in progress, all data is mock data for
+              testing purposes
             </p>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">

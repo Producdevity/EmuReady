@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
@@ -21,9 +21,9 @@ export default function AdminDevicesPage() {
     brand: string
     modelName: string
   }) => {
-    setEditId(device?.id || null)
-    setBrand(device?.brand || '')
-    setModelName(device?.modelName || '')
+    setEditId(device?.id ?? null)
+    setBrand(device?.brand ?? '')
+    setModelName(device?.modelName ?? '')
     setModalOpen(true)
     setError('')
     setSuccess('')
@@ -35,8 +35,8 @@ export default function AdminDevicesPage() {
     setModelName('')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     setError('')
     setSuccess('')
     try {

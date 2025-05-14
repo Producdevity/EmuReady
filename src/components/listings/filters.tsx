@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  type ChangeEvent,
-  type ChangeEventHandler,
-  type SyntheticEvent,
-} from 'react'
+import { type ChangeEvent, type ChangeEventHandler } from 'react'
 import { SelectInput, Input } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import {
@@ -32,44 +28,31 @@ interface FiltersProps {
   onSearchChange: ChangeEventHandler<HTMLInputElement>
 }
 
-export function ListingFilters({
-  systemId,
-  deviceId,
-  emulatorId,
-  performanceId,
-  searchTerm,
-  systems = [],
-  devices = [],
-  emulators = [],
-  performanceScales = [],
-  onSystemChange,
-  onDeviceChange,
-  onEmulatorChange,
-  onPerformanceChange,
-  onSearchChange,
-}: FiltersProps) {
-  const handleSystemChange = (ev: SyntheticEvent) => {
-    onSystemChange(ev)
-    analytics.filter.system((ev.target as HTMLSelectElement).value)
+export type SelectInputEvent = ChangeEvent<HTMLInputElement>
+
+export function ListingFilters(props: FiltersProps) {
+  const handleSystemChange = (ev: SelectInputEvent) => {
+    props.onSystemChange(ev)
+    analytics.filter.system(ev.target.value)
   }
 
-  const handleDeviceChange = (ev: SyntheticEvent) => {
-    onDeviceChange(ev)
-    analytics.filter.device((ev.target as HTMLSelectElement).value)
+  const handleDeviceChange = (ev: SelectInputEvent) => {
+    props.onDeviceChange(ev)
+    analytics.filter.device(ev.target.value)
   }
 
-  const handleEmulatorChange = (ev: SyntheticEvent) => {
-    onEmulatorChange(ev)
-    analytics.filter.emulator((ev.target as HTMLSelectElement).value)
+  const handleEmulatorChange = (ev: SelectInputEvent) => {
+    props.onEmulatorChange(ev)
+    analytics.filter.emulator(ev.target.value)
   }
 
-  const handlePerformanceChange = (ev: SyntheticEvent) => {
-    onPerformanceChange(ev)
-    analytics.filter.performance((ev.target as HTMLSelectElement).value)
+  const handlePerformanceChange = (ev: SelectInputEvent) => {
+    props.onPerformanceChange(ev)
+    analytics.filter.performance(ev.target.value)
   }
 
-  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    onSearchChange(ev)
+  const handleSearchChange = (ev: SelectInputEvent) => {
+    props.onSearchChange(ev)
     analytics.filter.search(ev.target.value)
   }
 
@@ -83,17 +66,17 @@ export function ListingFilters({
         <SelectInput
           label="System"
           leftIcon={<CpuChipIcon className="w-5 h-5" />}
-          value={systemId}
+          value={props.systemId}
           onChange={handleSystemChange}
-          options={systems}
+          options={props.systems}
         />
 
         <SelectInput
           label="Device"
           leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
-          value={deviceId}
+          value={props.deviceId}
           onChange={handleDeviceChange}
-          options={devices.map((device) => ({
+          options={props.devices.map((device) => ({
             id: device.id,
             name: `${device.brand} ${device.modelName}`,
           }))}
@@ -102,17 +85,17 @@ export function ListingFilters({
         <SelectInput
           label="Emulator"
           leftIcon={<CpuChipIcon className="w-5 h-5" />}
-          value={emulatorId}
+          value={props.emulatorId}
           onChange={handleEmulatorChange}
-          options={emulators}
+          options={props.emulators}
         />
 
         <SelectInput
           label="Performance"
           leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
-          value={performanceId}
+          value={props.performanceId}
           onChange={handlePerformanceChange}
-          options={performanceScales.map(({ id, label }) => ({
+          options={props.performanceScales.map(({ id, label }) => ({
             id: id.toString(),
             name: label,
           }))}
@@ -124,7 +107,7 @@ export function ListingFilters({
             leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
             type="text"
             placeholder="Search..."
-            value={searchTerm}
+            value={props.searchTerm}
             onChange={handleSearchChange}
           />
         </div>

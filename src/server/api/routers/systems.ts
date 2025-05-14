@@ -1,11 +1,10 @@
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-
 import {
+  adminProcedure,
   createTRPCRouter,
   publicProcedure,
-  adminProcedure,
 } from '@/server/api/trpc'
+import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 
 export const systemsRouter = createTRPCRouter({
   list: publicProcedure
@@ -17,9 +16,9 @@ export const systemsRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const { search } = input || {}
+      const { search } = input ?? {}
 
-      const systems = await ctx.prisma.system.findMany({
+      return await ctx.prisma.system.findMany({
         where: search
           ? {
               name: { contains: search },
@@ -36,8 +35,6 @@ export const systemsRouter = createTRPCRouter({
           name: 'asc',
         },
       })
-
-      return systems
     }),
 
   byId: publicProcedure

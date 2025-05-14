@@ -1,13 +1,12 @@
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import bcryptjs from 'bcryptjs'
-
 import {
+  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
-  adminProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { TRPCError } from '@trpc/server'
+import bcryptjs from 'bcryptjs'
+import { z } from 'zod'
 
 // Production-ready password hashing with bcrypt
 function hashPassword(password: string): string {
@@ -232,7 +231,7 @@ export const usersRouter = createTRPCRouter({
       }
 
       // Update user
-      const updatedUser = await ctx.prisma.user.update({
+      return await ctx.prisma.user.update({
         where: { id: userId },
         data: {
           ...(name && { name }),
@@ -246,13 +245,11 @@ export const usersRouter = createTRPCRouter({
           role: true,
         },
       })
-
-      return updatedUser
     }),
 
   // Admin-only routes
   getAll: adminProcedure.query(async ({ ctx }) => {
-    const users = await ctx.prisma.user.findMany({
+    return await ctx.prisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -268,8 +265,6 @@ export const usersRouter = createTRPCRouter({
         },
       },
     })
-
-    return users
   }),
 
   updateRole: adminProcedure
@@ -290,7 +285,7 @@ export const usersRouter = createTRPCRouter({
         })
       }
 
-      const updatedUser = await ctx.prisma.user.update({
+      return await ctx.prisma.user.update({
         where: { id: userId },
         data: { role },
         select: {
@@ -300,8 +295,6 @@ export const usersRouter = createTRPCRouter({
           role: true,
         },
       })
-
-      return updatedUser
     }),
 
   delete: adminProcedure
