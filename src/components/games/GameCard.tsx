@@ -1,4 +1,4 @@
-import { Badge } from '@/components'
+import { Badge } from '@/components/ui'
 import type { Game } from '@orm'
 import Image from 'next/image'
 import Link from 'next/link'

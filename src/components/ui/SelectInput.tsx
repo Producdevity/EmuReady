@@ -1,4 +1,4 @@
-import { Input } from '@/components'
+import { Input } from '@/components/ui'
 import { type ChangeEventHandler, type ReactNode } from 'react'
 
 type Option = {
