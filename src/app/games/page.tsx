@@ -1,94 +1,11 @@
 'use client'
 import React, { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Badge, Input, Pagination, LoadingSpinner } from '@/components/ui'
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { Pagination, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import type { ChangeEvent } from 'react'
-
-// Search and filter component for games
-const GameFilters = ({
-  search,
-  systemId,
-  systems,
-  onSearchChange,
-  onSystemChange,
-}: {
-  search: string
-  systemId: string
-  systems: Array<{ id: string; name: string }> | undefined
-  onSearchChange: (e: ChangeEvent<HTMLInputElement>) => void
-  onSystemChange: (e: React.SyntheticEvent) => void
-}) => (
-  <div className="flex flex-col sm:flex-row gap-4 mb-8">
-    <div className="flex-1">
-      <Input
-        leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
-        type="text"
-        placeholder="Search games..."
-        value={search}
-        onChange={onSearchChange}
-      />
-    </div>
-    <div className="w-full sm:w-64">
-      <Input
-        as="select"
-        value={systemId}
-        onChange={onSystemChange}
-        className="mb-0"
-      >
-        <option value="">All Systems</option>
-        {systems?.map((system) => (
-          <option key={system.id} value={system.id}>
-            {system.name}
-          </option>
-        ))}
-      </Input>
-    </div>
-  </div>
-)
-
-// Game card component
-const GameCard = ({
-  game,
-}: {
-  game: {
-    id: string
-    title: string
-    system?: { name: string } | null
-    _count: { listings: number }
-  }
-}) => (
-  <Link
-    key={game.id}
-    href={`/games/${game.id}`}
-    className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-  >
-    <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
-      <Image
-        src={`https://placehold.co/400x300/9ca3af/1e293b?text=${encodeURIComponent(game.title.substring(0, 15))}`}
-        alt={game.title}
-        fill
-        className="object-cover"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        priority={false}
-      />
-    </div>
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white truncate">
-        {game.title}
-      </h2>
-      <div className="flex items-center justify-between">
-        <Badge variant="default">{game.system?.name ?? 'Unknown System'}</Badge>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {game._count.listings}{' '}
-          {game._count.listings === 1 ? 'listing' : 'listings'}
-        </span>
-      </div>
-    </div>
-  </Link>
-)
+import GameFilters from '@/components/games/GameFilters'
+import GameCard from '@/components/games/GameCard'
 
 export default function GamesPage() {
   const [search, setSearch] = useState('')
