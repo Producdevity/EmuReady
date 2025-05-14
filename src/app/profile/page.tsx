@@ -188,12 +188,15 @@ export default function ProfilePage() {
                 {profile.listings.length > 0 ? (
                   <div className="flex flex-col gap-4">
                     {profile.listings.map((listing) => (
-                      <div key={listing.id}>
+                      <div key={listing.id} className="flex flex-row gap-4">
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                           <Link href={`/listings/${listing.id}`}>
                             {listing.game?.title}
                           </Link>
                         </h3>
+                        <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
+                          {listing.createdAt.toLocaleDateString()}
+                        </p>
                       </div>
                     ))}
                   </div>
