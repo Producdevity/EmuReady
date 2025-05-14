@@ -13,10 +13,19 @@ type UserVote = UserProfile['votes'][0]
 
 export default function UserProfilePage() {
   const params = useParams()
-  const userId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : ''
-  
+  const userId =
+    typeof params.id === 'string'
+      ? params.id
+      : Array.isArray(params.id)
+        ? params.id[0]
+        : ''
+
   // Fetch user profile by ID
-  const { data: profile, isLoading, error } = api.users.getUserById.useQuery({ userId })
+  const {
+    data: profile,
+    isLoading,
+    error,
+  } = api.users.getUserById.useQuery({ userId })
 
   if (isLoading) {
     return (
@@ -97,7 +106,7 @@ export default function UserProfilePage() {
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Activity
             </h2>
-            
+
             {/* User's listings */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
@@ -111,7 +120,8 @@ export default function UserProfilePage() {
                         <div key={listing.id} className="flex flex-row gap-4">
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             <Link href={`/listings/${listing.id}`}>
-                              {listing.game?.title} on {listing.device?.brand} {listing.device?.modelName}
+                              {listing.game?.title} on {listing.device?.brand}{' '}
+                              {listing.device?.modelName}
                             </Link>
                           </h3>
                           <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
@@ -130,7 +140,7 @@ export default function UserProfilePage() {
                 )}
               </div>
             </div>
-            
+
             {/* User's contributions */}
             <div>
               <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
@@ -142,14 +152,21 @@ export default function UserProfilePage() {
                     <div className="flex flex-col gap-4">
                       {profile.votes.map((vote: UserVote) => (
                         <div key={vote.id} className="flex flex-row gap-4">
-                          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium
-                            ${vote.value ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 
-                              'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}`}>
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                            ${
+                              vote.value
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                            }`}
+                          >
                             {vote.value ? 'Upvoted' : 'Downvoted'}
                           </span>
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             <Link href={`/listings/${vote.listing.id}`}>
-                              {vote.listing.game?.title} on {vote.listing.device?.brand} {vote.listing.device?.modelName}
+                              {vote.listing.game?.title} on{' '}
+                              {vote.listing.device?.brand}{' '}
+                              {vote.listing.device?.modelName}
                             </Link>
                           </h3>
                         </div>
@@ -170,4 +187,4 @@ export default function UserProfilePage() {
       </div>
     </div>
   )
-} 
+}

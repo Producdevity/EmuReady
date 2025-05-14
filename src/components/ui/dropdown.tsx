@@ -16,7 +16,7 @@ interface DropdownProps {
   className?: string
 }
 
- function Dropdown({
+function Dropdown({
   options,
   value,
   onChange,

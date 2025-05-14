@@ -35,11 +35,11 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
     emulator?: { name?: string }
     performance?: { label?: string }
     notes?: string
-    author?: { 
-      name?: string; 
-      email?: string; 
-      id?: string;
-      profileImage?: string | null;
+    author?: {
+      name?: string
+      email?: string
+      id?: string
+      profileImage?: string | null
     }
     comments?: unknown[]
   }
