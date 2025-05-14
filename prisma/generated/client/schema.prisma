@@ -16,6 +16,7 @@ model User {
   email          String            @unique
   hashedPassword String
   name           String?
+  profileImage   String? // URL to the profile image (can be null)
   role           Role              @default(USER)
   listings       Listing[]
   votes          Vote[]

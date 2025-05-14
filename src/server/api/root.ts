@@ -5,6 +5,7 @@ import { systemsRouter } from './routers/systems'
 import { gamesRouter } from './routers/games'
 import { emulatorsRouter } from './routers/emulators'
 import { usersRouter } from './routers/users'
+import type { inferRouterOutputs } from '@trpc/server'
 
 /**
  * This is the primary router for your server.
@@ -22,3 +23,6 @@ export const appRouter = createTRPCRouter({
 
 // export type definition of API
 export type AppRouter = typeof appRouter
+
+// Export RouterOutputs to use in the frontend
+export type RouterOutputs = inferRouterOutputs<AppRouter>

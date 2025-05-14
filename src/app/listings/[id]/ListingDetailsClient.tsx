@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import React from 'react'
+import Image from 'next/image'
 
 interface ListingDetailsClientProps {
   listing: unknown
@@ -34,7 +35,12 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
     emulator?: { name?: string }
     performance?: { label?: string }
     notes?: string
-    author?: { name?: string; email?: string; id?: string }
+    author?: { 
+      name?: string; 
+      email?: string; 
+      id?: string;
+      profileImage?: string | null;
+    }
     comments?: unknown[]
   }
   return (
@@ -92,8 +98,20 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
             </div>
             {/* Author Info */}
             <div className="flex flex-col items-center gap-2 min-w-[140px]">
-              <div className="w-16 h-16 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center text-2xl font-bold text-indigo-700 dark:text-indigo-200">
-                {l.author?.name?.[0] ?? '?'}
+              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-indigo-200 dark:bg-indigo-800">
+                {l.author?.profileImage ? (
+                  <Image
+                    src={l.author.profileImage}
+                    alt={`${l.author?.name ?? 'Author'}'s profile`}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-indigo-700 dark:text-indigo-200">
+                    {l.author?.name?.[0] ?? '?'}
+                  </div>
+                )}
               </div>
               <div className="text-center">
                 <div className="font-semibold text-gray-900 dark:text-white">
@@ -104,7 +122,7 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
                 </div>
               </div>
               <Link
-                href={`/profile/${l.author?.id ?? ''}`}
+                href={`/users/${l.author?.id ?? ''}`}
                 className="mt-2 text-indigo-600 hover:underline text-xs"
               >
                 View Profile

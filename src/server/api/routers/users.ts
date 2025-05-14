@@ -94,6 +94,7 @@ export const usersRouter = createTRPCRouter({
         id: true,
         name: true,
         email: true,
+        profileImage: true,
         role: true,
         createdAt: true,
         listings: {
@@ -168,6 +169,92 @@ export const usersRouter = createTRPCRouter({
     return user
   }),
 
+  // New procedure to get a user profile by ID (public)
+  getUserById: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { userId } = input
+
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          profileImage: true,
+          role: true,
+          createdAt: true,
+          listings: {
+            select: {
+              id: true,
+              createdAt: true,
+              device: {
+                select: {
+                  brand: true,
+                  modelName: true,
+                },
+              },
+              game: {
+                select: {
+                  title: true,
+                },
+              },
+              emulator: {
+                select: {
+                  name: true,
+                },
+              },
+              performance: {
+                select: {
+                  label: true,
+                },
+              },
+            },
+          },
+          votes: {
+            select: {
+              id: true,
+              value: true,
+              listing: {
+                select: {
+                  id: true,
+                  device: {
+                    select: {
+                      brand: true,
+                      modelName: true,
+                    },
+                  },
+                  game: {
+                    select: {
+                      title: true,
+                    },
+                  },
+                  emulator: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                  performance: {
+                    select: {
+                      label: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        })
+      }
+
+      return user
+    }),
+
   update: protectedProcedure
     .input(
       z.object({
@@ -175,10 +262,11 @@ export const usersRouter = createTRPCRouter({
         email: z.string().email().optional(),
         currentPassword: z.string().optional(),
         newPassword: z.string().min(8).optional(),
+        profileImage: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { name, email, currentPassword, newPassword } = input
+      const { name, email, currentPassword, newPassword, profileImage } = input
       const userId = ctx.session.user.id
 
       // Get the current user
@@ -237,11 +325,13 @@ export const usersRouter = createTRPCRouter({
           ...(name && { name }),
           ...(email && { email }),
           ...(hashedPassword && { hashedPassword }),
+          ...(profileImage && { profileImage }),
         },
         select: {
           id: true,
           name: true,
           email: true,
+          profileImage: true,
           role: true,
         },
       })

@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import type { Listing } from '@orm'
+import { ProfileUpload } from '@/components/ui/profile-upload'
 
 export default function ProfilePage() {
   const { data: session } = useSession()
   const [isEditing, setIsEditing] = useState(false)
-
+  const [profileImage, setProfileImage] = useState<string | null>(null)
+  
   // Redirect to log in if not authenticated
   if (!session) {
     return (
@@ -43,6 +44,22 @@ export default function ProfilePage() {
   }
 
   const { data: profile, isLoading } = api.users.getProfile.useQuery()
+  const updateProfile = api.users.update.useMutation({
+    onSuccess: () => {
+      // Refetch profile data after successful update
+      window.location.reload()
+    },
+  })
+
+  // Handler for profile image upload
+  const handleProfileImageUpload = (imageUrl: string) => {
+    setProfileImage(imageUrl)
+    
+    // Optionally update profile immediately on image upload
+    updateProfile.mutate({
+      profileImage: imageUrl,
+    })
+  }
 
   if (isLoading) {
     return (
@@ -83,100 +100,113 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {isEditing ? (
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={session.user?.name ?? ''}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    defaultValue={session.user?.email ?? ''}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    disabled
-                  />
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Email cannot be changed
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Bio
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    rows={4}
-                    defaultValue={''}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Name
-                  </h2>
-                  <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                    {session.user?.name ?? 'No name provided'}
-                  </p>
-                </div>
-
-                <div>
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Email
-                  </h2>
-                  <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                    {session.user?.email}
-                  </p>
-                </div>
-
-                <div>
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Role
-                  </h2>
-                  <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                    {session.user?.role || 'User'}
-                  </p>
-                </div>
-
-                <div>
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Bio
-                  </h2>
-                  <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                    No bio available
-                  </p>
-                </div>
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Profile Image */}
+              <div className="md:w-1/3 flex flex-col items-center">
+                <ProfileUpload 
+                  currentImage={profileImage ?? profile.profileImage}
+                  onUploadSuccess={handleProfileImageUpload}
+                />
               </div>
-            )}
+
+              {/* Profile Details */}
+              <div className="md:w-2/3">
+                {isEditing ? (
+                  <form className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={session.user?.name ?? ''}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        defaultValue={session.user?.email ?? ''}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled
+                      />
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        Email cannot be changed
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Bio
+                      </label>
+                      <textarea
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        rows={4}
+                        defaultValue={''}
+                      />
+                    </div>
+
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Name
+                      </h2>
+                      <p className="mt-1 text-lg text-gray-900 dark:text-white">
+                        {session.user?.name ?? 'No name provided'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Email
+                      </h2>
+                      <p className="mt-1 text-lg text-gray-900 dark:text-white">
+                        {session.user?.email}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Role
+                      </h2>
+                      <p className="mt-1 text-lg text-gray-900 dark:text-white">
+                        {session.user?.role || 'User'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Bio
+                      </h2>
+                      <p className="mt-1 text-lg text-gray-900 dark:text-white">
+                        No bio available
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-8 py-6">
@@ -195,7 +225,7 @@ export default function ProfilePage() {
                           </Link>
                         </h3>
                         <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
-                          {listing.createdAt.toLocaleDateString()}
+                          {new Date(listing.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     ))}
