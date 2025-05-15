@@ -95,6 +95,16 @@ export default function AddListingPage() {
     return (
       <div className="p-8 text-center">
         You do not have permission to add listings.
+        <br />
+        {!session?.user && (
+          <span>
+            Please{' '}
+            <Link href="/login" className="text-blue-500">
+              sign in
+            </Link>{' '}
+            to add listings.
+          </span>
+        )}
       </div>
     )
   }
