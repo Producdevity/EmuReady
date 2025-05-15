@@ -1,4 +1,4 @@
-import { type PrismaClient } from '../generated/client'
+import { type PrismaClient } from '@orm'
 
 type ListingData = {
   gameTitle: string
@@ -18,7 +18,8 @@ const listings: ListingData[] = [
     deviceModel: 'Kun',
     emulatorName: 'Yuzu',
     performanceLabel: 'Great',
-    notes: 'Runs at 30-40 FPS with occasional dips in demanding areas. No major graphical glitches.',
+    notes:
+      'Runs at 30-40 FPS with occasional dips in demanding areas. No major graphical glitches.',
   },
   {
     gameTitle: 'Animal Crossing: New Horizons',
@@ -63,74 +64,89 @@ const listings: ListingData[] = [
     deviceModel: 'Odin 2',
     emulatorName: 'Citra',
     performanceLabel: 'Playable',
-    notes: 'Generally runs at full speed but has some frame drops during battles.',
+    notes:
+      'Generally runs at full speed but has some frame drops during battles.',
   },
 ]
 
 async function listingsSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding listings...')
-  
+
   // Get an admin user for authoring the listings
   const adminUser = await prisma.user.findFirst({
-    where: { role: 'ADMIN' }
+    where: { role: 'ADMIN' },
   })
-  
+
   if (!adminUser) {
     console.warn('No admin user found, skipping listings seeding')
     return
   }
-  
+
   // Get all the lookups we need
   const games = await prisma.game.findMany({
-    include: { system: true }
+    include: { system: true },
   })
   const gameMap = new Map()
-  games.forEach(game => {
+  games.forEach((game) => {
     gameMap.set(`${game.title}-${game.system.name}`, game.id)
   })
-  
+
   const devices = await prisma.device.findMany()
   const deviceMap = new Map()
-  devices.forEach(device => {
+  devices.forEach((device) => {
     deviceMap.set(`${device.brand}-${device.modelName}`, device.id)
   })
-  
+
   const emulators = await prisma.emulator.findMany()
-  const emulatorMap = new Map(emulators.map(emulator => [emulator.name, emulator.id]))
-  
+  const emulatorMap = new Map(
+    emulators.map((emulator) => [emulator.name, emulator.id]),
+  )
+
   const performanceScales = await prisma.performanceScale.findMany()
-  const performanceMap = new Map(performanceScales.map(scale => [scale.label, scale.id]))
-  
+  const performanceMap = new Map(
+    performanceScales.map((scale) => [scale.label, scale.id]),
+  )
+
   // Create listings
   for (const listing of listings) {
     // Find the game ID
     const gameId = gameMap.get(`${listing.gameTitle}-${listing.systemName}`)
     if (!gameId) {
-      console.warn(`Game "${listing.gameTitle}" for system "${listing.systemName}" not found, skipping listing`)
+      console.warn(
+        `Game "${listing.gameTitle}" for system "${listing.systemName}" not found, skipping listing`,
+      )
       continue
     }
-    
+
     // Find the device ID
-    const deviceId = deviceMap.get(`${listing.deviceBrand}-${listing.deviceModel}`)
+    const deviceId = deviceMap.get(
+      `${listing.deviceBrand}-${listing.deviceModel}`,
+    )
     if (!deviceId) {
-      console.warn(`Device "${listing.deviceBrand} ${listing.deviceModel}" not found, skipping listing`)
+      console.warn(
+        `Device "${listing.deviceBrand} ${listing.deviceModel}" not found, skipping listing`,
+      )
       continue
     }
-    
+
     // Find the emulator ID
     const emulatorId = emulatorMap.get(listing.emulatorName)
     if (!emulatorId) {
-      console.warn(`Emulator "${listing.emulatorName}" not found, skipping listing`)
+      console.warn(
+        `Emulator "${listing.emulatorName}" not found, skipping listing`,
+      )
       continue
     }
-    
+
     // Find the performance scale ID
     const performanceId = performanceMap.get(listing.performanceLabel)
     if (!performanceId) {
-      console.warn(`Performance scale "${listing.performanceLabel}" not found, skipping listing`)
+      console.warn(
+        `Performance scale "${listing.performanceLabel}" not found, skipping listing`,
+      )
       continue
     }
-    
+
     // Create or update the listing
     await prisma.listing.upsert({
       where: {
@@ -154,8 +170,8 @@ async function listingsSeeder(prisma: PrismaClient) {
       },
     })
   }
-  
+
   console.log('✅ Listings seeded successfully')
 }
 
-export default listingsSeeder 
+export default listingsSeeder

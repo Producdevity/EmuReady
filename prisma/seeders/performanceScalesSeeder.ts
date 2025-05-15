@@ -1,4 +1,4 @@
-import { type PrismaClient } from '../generated/client'
+import { type PrismaClient } from '@orm'
 
 type PerformanceScaleData = {
   label: string
@@ -21,7 +21,7 @@ const performanceScales: PerformanceScaleData[] = [
 
 async function performanceScalesSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding performance scales...')
-  
+
   for (const scale of performanceScales) {
     await prisma.performanceScale.upsert({
       where: { label: scale.label },

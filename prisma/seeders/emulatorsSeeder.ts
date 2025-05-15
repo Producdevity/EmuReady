@@ -1,4 +1,4 @@
-import { type PrismaClient } from '../generated/client'
+import { type PrismaClient } from '@orm'
 
 type EmulatorData = {
   name: string
@@ -25,7 +25,7 @@ const emulators: EmulatorData[] = [
 
 async function emulatorsSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding emulators...')
-  
+
   for (const emulator of emulators) {
     await prisma.emulator.upsert({
       where: { name: emulator.name },

@@ -15,7 +15,7 @@ if (process.env.NODE_ENV === 'production') {
     log: ['error'],
     datasources: {
       db: {
-        url: process.env.POSTGRES_PRISMA_URL
+        url: process.env.DATABASE_URL
       }
     }
   })
@@ -25,7 +25,7 @@ if (process.env.NODE_ENV === 'production') {
     log: ['query', 'error', 'warn'],
     datasources: {
       db: {
-        url: process.env.POSTGRES_PRISMA_URL
+        url: process.env.DATABASE_URL
       }
     }
   })

@@ -1,4 +1,4 @@
-import { type PrismaClient } from '../generated/client'
+import { type PrismaClient } from '@orm'
 
 type DeviceData = {
   brand: string
@@ -31,10 +31,10 @@ const devices: DeviceData[] = [
 
 async function devicesSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding devices...')
-  
+
   // First, delete all existing devices
   await prisma.device.deleteMany()
-  
+
   // Then create new ones
   for (const device of devices) {
     await prisma.device.create({
