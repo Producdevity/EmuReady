@@ -380,6 +380,8 @@ export const listingsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { listingId, value } = input
+      
+      // Get user ID from session
       const userId = ctx.session.user.id
 
       // Check if listing exists
@@ -391,6 +393,19 @@ export const listingsRouter = createTRPCRouter({
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Listing not found',
+        })
+      }
+      
+      // Verify user exists in database
+      const userExists = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      })
+      
+      if (!userExists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `User with ID ${userId} does not exist in database`,
         })
       }
 
@@ -453,6 +468,8 @@ export const listingsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { listingId, content, parentId } = input
+      
+      // Get user ID from session
       const userId = ctx.session.user.id
 
       // Check if listing exists
@@ -479,6 +496,19 @@ export const listingsRouter = createTRPCRouter({
             message: 'Parent comment not found',
           })
         }
+      }
+      
+      // Verify user exists in database
+      const userExists = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      })
+      
+      if (!userExists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `User with ID ${userId} does not exist in database`,
+        })
       }
 
       // Create comment

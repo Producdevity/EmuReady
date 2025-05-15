@@ -16,7 +16,7 @@ function ProfileUpload(props: ProfileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const displayImage =
-    previewUrl ?? props.currentImage ?? '/placeholder/profile.png'
+    previewUrl ?? props.currentImage ?? '/placeholder/profile.svg'
 
   const handleFileChange = (ev: ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0]
