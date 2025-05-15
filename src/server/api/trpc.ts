@@ -5,6 +5,8 @@ import { ZodError } from 'zod'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/server/db'
 import hasPermission from '@/utils/hasPermission'
+import { authOptions } from '@/server/auth'
+import type { Session } from 'next-auth'
 
 /**
  * 1. CONTEXT
@@ -16,31 +18,19 @@ import hasPermission from '@/utils/hasPermission'
  */
 
 type CreateContextOptions = {
-  session: Awaited<ReturnType<typeof getServerSession>> | null
+  session: Session | null
 }
 
 export const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     session: opts.session,
-    prisma: prisma.$extends({
-      query: {
-        $allOperations({ args, query }) {
-          // Add connection pooling configuration
-          const config = {
-            ...args,
-            // Force new transaction for each query
-            isolationLevel: 'Serializable' as const,
-          }
-          return query(config)
-        },
-      },
-    }),
+    prisma,
   }
 }
 
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { req, res } = opts
-  const session = await getServerSession(req, res)
+  const session = await getServerSession(req, res, authOptions)
 
   return createInnerTRPCContext({
     session,
@@ -51,7 +41,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
  * This is the actual context you'll use in your router. It will be used to
  * process every request that goes through your tRPC endpoint.
  */
-export type TRPCContext = CreateContextOptions
+export type TRPCContext = ReturnType<typeof createInnerTRPCContext>
 
 /**
  * 2. INITIALIZATION

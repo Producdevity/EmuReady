@@ -1,21 +1,22 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
-import { prisma } from '@/server/db'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/server/auth'
+import { createInnerTRPCContext } from '@/server/api/trpc'
 
 const handler = async (req: NextRequest) => {
+  // Get the session with proper authOptions
   const session = await getServerSession(authOptions)
+  
+  // Create context using createInnerTRPCContext which handles types correctly
+  const ctx = createInnerTRPCContext({ session });
 
   return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: () => ({
-      prisma,
-      session, // Pass the session to the context
-    }),
+    createContext: () => ctx,
     onError:
       process.env.NODE_ENV === 'development'
         ? ({ path, error }) => {
