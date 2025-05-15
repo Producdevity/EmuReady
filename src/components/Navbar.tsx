@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { signOut, useSession } from 'next-auth/react'
@@ -21,7 +22,16 @@ function Navbar() {
         <div className="flex h-20 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
-              <span className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
+              <Image
+                src="/logo/EmuReady_icon_logo.png"
+                alt="EmuReady Logo"
+                width={40}
+                height={40}
+                className="h-14 w-14"
+              />
+            </Link>
+            <Link href="/" className="flex-shrink-0">
+              <span className="text-2xl font-extrabold bg-gradient-to-r from-green-300 via-green-200 to-purple-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
                 EmuReady
               </span>
               <p className="hidden sm:block text-sm text-blue-100 font-medium">
