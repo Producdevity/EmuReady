@@ -36,6 +36,7 @@ model Device {
   id        String   @id @default(uuid())
   brand     String
   modelName String
+  @@unique([brand, modelName])
   listings  Listing[]
 }
 
