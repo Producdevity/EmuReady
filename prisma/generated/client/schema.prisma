@@ -37,6 +37,8 @@ model Device {
   brand     String
   modelName String
   listings  Listing[]
+
+  @@unique([brand, modelName])
 }
 
 model System {
@@ -61,10 +63,11 @@ model Emulator {
 }
 
 model PerformanceScale {
-  id       Int       @id @default(autoincrement())
-  label    String    @unique // e.g. Playable, Slow, Unplayable
-  rank     Int // lower rank is better
-  listings Listing[]
+  id          Int       @id @default(autoincrement())
+  label       String    @unique // e.g. Playable, Slow, Unplayable
+  rank        Int // higher rank is better
+  description String?
+  listings    Listing[]
 }
 
 model Listing {
