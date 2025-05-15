@@ -1,12 +1,17 @@
-import { type PrismaClient } from '@orm'
+import { type PrismaClient, type PerformanceScale } from '@orm'
 
-const performanceScales = [
-  { label: 'Nothing', rank: 1, discription: 'Does not work at all.' },
-  { label: 'Loadable', rank: 2, discription: 'Loads but does not play.' },
-  { label: 'Intro', rank: 3, discription: 'Does not play past intro or menu.' },
-  { label: 'Ingame', rank: 4, discription: 'Plays but has major issues.' },
-  { label: 'Playable', rank: 5, discription: 'Plays but has minor issues.' },
-  { label: 'Perfect', rank: 6, discription: 'Plays perfectly.' },
+type PerformanceScaleData = Pick<
+  PerformanceScale,
+  'label' | 'rank' | 'description'
+>
+
+const performanceScales: PerformanceScaleData[] = [
+  { label: 'Nothing', rank: 1, description: 'Does not work at all.' },
+  { label: 'Loadable', rank: 2, description: 'Loads but does not play.' },
+  { label: 'Intro', rank: 3, description: 'Does not play past intro or menu.' },
+  { label: 'Ingame', rank: 4, description: 'Plays but has major issues.' },
+  { label: 'Playable', rank: 5, description: 'Plays but has minor issues.' },
+  { label: 'Perfect', rank: 6, description: 'Plays perfectly.' },
 ]
 
 async function performanceScalesSeeder(prisma: PrismaClient) {
