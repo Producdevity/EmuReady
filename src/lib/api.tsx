@@ -41,6 +41,8 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             // Add authorization if needed
             return {}
           },
+          // Reduce batch size to minimize connection issues
+          maxURLLength: 2000,
         }),
       ],
     }),

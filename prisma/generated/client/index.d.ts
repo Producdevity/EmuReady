@@ -65,38 +65,6 @@ export type Comment = $Result.DefaultSelection<Prisma.$CommentPayload>
 export type ListingApproval = $Result.DefaultSelection<Prisma.$ListingApprovalPayload>
 
 /**
- * Enums
- */
-export namespace $Enums {
-  export const Role: {
-  USER: 'USER',
-  AUTHOR: 'AUTHOR',
-  ADMIN: 'ADMIN',
-  SUPER_ADMIN: 'SUPER_ADMIN'
-};
-
-export type Role = (typeof Role)[keyof typeof Role]
-
-
-export const ApprovalStatus: {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED'
-};
-
-export type ApprovalStatus = (typeof ApprovalStatus)[keyof typeof ApprovalStatus]
-
-}
-
-export type Role = $Enums.Role
-
-export const Role: typeof $Enums.Role
-
-export type ApprovalStatus = $Enums.ApprovalStatus
-
-export const ApprovalStatus: typeof $Enums.ApprovalStatus
-
-/**
  * ##  Prisma Client ʲˢ
  *
  * Type-safe database client for TypeScript & Node.js
@@ -1720,17 +1688,17 @@ export namespace Prisma {
    */
 
   export type UserCountOutputType = {
-    listings: number
-    votes: number
     comments: number
+    listings: number
     approvalsGiven: number
+    votes: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    listings?: boolean | UserCountOutputTypeCountListingsArgs
-    votes?: boolean | UserCountOutputTypeCountVotesArgs
     comments?: boolean | UserCountOutputTypeCountCommentsArgs
+    listings?: boolean | UserCountOutputTypeCountListingsArgs
     approvalsGiven?: boolean | UserCountOutputTypeCountApprovalsGivenArgs
+    votes?: boolean | UserCountOutputTypeCountVotesArgs
   }
 
   // Custom InputTypes
@@ -1747,20 +1715,6 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: ListingWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
-  export type UserCountOutputTypeCountVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: VoteWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
   export type UserCountOutputTypeCountCommentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CommentWhereInput
   }
@@ -1768,8 +1722,22 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
+  export type UserCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ListingWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
   export type UserCountOutputTypeCountApprovalsGivenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ListingApprovalWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VoteWhereInput
   }
 
 
@@ -1933,15 +1901,15 @@ export namespace Prisma {
    */
 
   export type ListingCountOutputType = {
-    votes: number
     comments: number
     approvals: number
+    votes: number
   }
 
   export type ListingCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    votes?: boolean | ListingCountOutputTypeCountVotesArgs
     comments?: boolean | ListingCountOutputTypeCountCommentsArgs
     approvals?: boolean | ListingCountOutputTypeCountApprovalsArgs
+    votes?: boolean | ListingCountOutputTypeCountVotesArgs
   }
 
   // Custom InputTypes
@@ -1958,13 +1926,6 @@ export namespace Prisma {
   /**
    * ListingCountOutputType without action
    */
-  export type ListingCountOutputTypeCountVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: VoteWhereInput
-  }
-
-  /**
-   * ListingCountOutputType without action
-   */
   export type ListingCountOutputTypeCountCommentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CommentWhereInput
   }
@@ -1974,6 +1935,13 @@ export namespace Prisma {
    */
   export type ListingCountOutputTypeCountApprovalsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ListingApprovalWhereInput
+  }
+
+  /**
+   * ListingCountOutputType without action
+   */
+  export type ListingCountOutputTypeCountVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VoteWhereInput
   }
 
 
@@ -2028,7 +1996,7 @@ export namespace Prisma {
     hashedPassword: string | null
     name: string | null
     profileImage: string | null
-    role: $Enums.Role | null
+    role: string | null
     createdAt: Date | null
   }
 
@@ -2038,7 +2006,7 @@ export namespace Prisma {
     hashedPassword: string | null
     name: string | null
     profileImage: string | null
-    role: $Enums.Role | null
+    role: string | null
     createdAt: Date | null
   }
 
@@ -2163,7 +2131,7 @@ export namespace Prisma {
     hashedPassword: string
     name: string | null
     profileImage: string | null
-    role: $Enums.Role
+    role: string
     createdAt: Date
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
@@ -2192,10 +2160,10 @@ export namespace Prisma {
     profileImage?: boolean
     role?: boolean
     createdAt?: boolean
-    listings?: boolean | User$listingsArgs<ExtArgs>
-    votes?: boolean | User$votesArgs<ExtArgs>
     comments?: boolean | User$commentsArgs<ExtArgs>
+    listings?: boolean | User$listingsArgs<ExtArgs>
     approvalsGiven?: boolean | User$approvalsGivenArgs<ExtArgs>
+    votes?: boolean | User$votesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -2231,10 +2199,10 @@ export namespace Prisma {
 
   export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "hashedPassword" | "name" | "profileImage" | "role" | "createdAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    listings?: boolean | User$listingsArgs<ExtArgs>
-    votes?: boolean | User$votesArgs<ExtArgs>
     comments?: boolean | User$commentsArgs<ExtArgs>
+    listings?: boolean | User$listingsArgs<ExtArgs>
     approvalsGiven?: boolean | User$approvalsGivenArgs<ExtArgs>
+    votes?: boolean | User$votesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -2243,10 +2211,10 @@ export namespace Prisma {
   export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "User"
     objects: {
-      listings: Prisma.$ListingPayload<ExtArgs>[]
-      votes: Prisma.$VotePayload<ExtArgs>[]
       comments: Prisma.$CommentPayload<ExtArgs>[]
+      listings: Prisma.$ListingPayload<ExtArgs>[]
       approvalsGiven: Prisma.$ListingApprovalPayload<ExtArgs>[]
+      votes: Prisma.$VotePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2254,7 +2222,7 @@ export namespace Prisma {
       hashedPassword: string
       name: string | null
       profileImage: string | null
-      role: $Enums.Role
+      role: string
       createdAt: Date
     }, ExtArgs["result"]["user"]>
     composites: {}
@@ -2650,10 +2618,10 @@ export namespace Prisma {
    */
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    listings<T extends User$listingsArgs<ExtArgs> = {}>(args?: Subset<T, User$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    votes<T extends User$votesArgs<ExtArgs> = {}>(args?: Subset<T, User$votesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     comments<T extends User$commentsArgs<ExtArgs> = {}>(args?: Subset<T, User$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    listings<T extends User$listingsArgs<ExtArgs> = {}>(args?: Subset<T, User$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     approvalsGiven<T extends User$approvalsGivenArgs<ExtArgs> = {}>(args?: Subset<T, User$approvalsGivenArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    votes<T extends User$votesArgs<ExtArgs> = {}>(args?: Subset<T, User$votesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2688,7 +2656,7 @@ export namespace Prisma {
     readonly hashedPassword: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
     readonly profileImage: FieldRef<"User", 'String'>
-    readonly role: FieldRef<"User", 'Role'>
+    readonly role: FieldRef<"User", 'String'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
   }
     
@@ -3078,54 +3046,6 @@ export namespace Prisma {
   }
 
   /**
-   * User.listings
-   */
-  export type User$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Listing
-     */
-    select?: ListingSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Listing
-     */
-    omit?: ListingOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ListingInclude<ExtArgs> | null
-    where?: ListingWhereInput
-    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
-    cursor?: ListingWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: ListingScalarFieldEnum | ListingScalarFieldEnum[]
-  }
-
-  /**
-   * User.votes
-   */
-  export type User$votesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Vote
-     */
-    select?: VoteSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Vote
-     */
-    omit?: VoteOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: VoteInclude<ExtArgs> | null
-    where?: VoteWhereInput
-    orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
-    cursor?: VoteWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: VoteScalarFieldEnum | VoteScalarFieldEnum[]
-  }
-
-  /**
    * User.comments
    */
   export type User$commentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3150,6 +3070,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.listings
+   */
+  export type User$listingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Listing
+     */
+    select?: ListingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Listing
+     */
+    omit?: ListingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ListingInclude<ExtArgs> | null
+    where?: ListingWhereInput
+    orderBy?: ListingOrderByWithRelationInput | ListingOrderByWithRelationInput[]
+    cursor?: ListingWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ListingScalarFieldEnum | ListingScalarFieldEnum[]
+  }
+
+  /**
    * User.approvalsGiven
    */
   export type User$approvalsGivenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3171,6 +3115,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ListingApprovalScalarFieldEnum | ListingApprovalScalarFieldEnum[]
+  }
+
+  /**
+   * User.votes
+   */
+  export type User$votesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Vote
+     */
+    select?: VoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Vote
+     */
+    omit?: VoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VoteInclude<ExtArgs> | null
+    where?: VoteWhereInput
+    orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
+    cursor?: VoteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: VoteScalarFieldEnum | VoteScalarFieldEnum[]
   }
 
   /**
@@ -8677,14 +8645,14 @@ export namespace Prisma {
     notes?: boolean
     authorId?: boolean
     createdAt?: boolean
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
-    author?: boolean | UserDefaultArgs<ExtArgs>
-    votes?: boolean | Listing$votesArgs<ExtArgs>
     comments?: boolean | Listing$commentsArgs<ExtArgs>
+    author?: boolean | UserDefaultArgs<ExtArgs>
+    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+    game?: boolean | GameDefaultArgs<ExtArgs>
+    device?: boolean | DeviceDefaultArgs<ExtArgs>
     approvals?: boolean | Listing$approvalsArgs<ExtArgs>
+    votes?: boolean | Listing$votesArgs<ExtArgs>
     _count?: boolean | ListingCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["listing"]>
 
@@ -8697,11 +8665,11 @@ export namespace Prisma {
     notes?: boolean
     authorId?: boolean
     createdAt?: boolean
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
     author?: boolean | UserDefaultArgs<ExtArgs>
+    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+    game?: boolean | GameDefaultArgs<ExtArgs>
+    device?: boolean | DeviceDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["listing"]>
 
   export type ListingSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -8713,11 +8681,11 @@ export namespace Prisma {
     notes?: boolean
     authorId?: boolean
     createdAt?: boolean
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
     author?: boolean | UserDefaultArgs<ExtArgs>
+    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+    game?: boolean | GameDefaultArgs<ExtArgs>
+    device?: boolean | DeviceDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["listing"]>
 
   export type ListingSelectScalar = {
@@ -8733,42 +8701,42 @@ export namespace Prisma {
 
   export type ListingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "deviceId" | "gameId" | "emulatorId" | "performanceId" | "notes" | "authorId" | "createdAt", ExtArgs["result"]["listing"]>
   export type ListingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
-    author?: boolean | UserDefaultArgs<ExtArgs>
-    votes?: boolean | Listing$votesArgs<ExtArgs>
     comments?: boolean | Listing$commentsArgs<ExtArgs>
+    author?: boolean | UserDefaultArgs<ExtArgs>
+    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+    game?: boolean | GameDefaultArgs<ExtArgs>
+    device?: boolean | DeviceDefaultArgs<ExtArgs>
     approvals?: boolean | Listing$approvalsArgs<ExtArgs>
+    votes?: boolean | Listing$votesArgs<ExtArgs>
     _count?: boolean | ListingCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type ListingIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
     author?: boolean | UserDefaultArgs<ExtArgs>
+    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+    game?: boolean | GameDefaultArgs<ExtArgs>
+    device?: boolean | DeviceDefaultArgs<ExtArgs>
   }
   export type ListingIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    device?: boolean | DeviceDefaultArgs<ExtArgs>
-    game?: boolean | GameDefaultArgs<ExtArgs>
-    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
-    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
     author?: boolean | UserDefaultArgs<ExtArgs>
+    performance?: boolean | PerformanceScaleDefaultArgs<ExtArgs>
+    emulator?: boolean | EmulatorDefaultArgs<ExtArgs>
+    game?: boolean | GameDefaultArgs<ExtArgs>
+    device?: boolean | DeviceDefaultArgs<ExtArgs>
   }
 
   export type $ListingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Listing"
     objects: {
-      device: Prisma.$DevicePayload<ExtArgs>
-      game: Prisma.$GamePayload<ExtArgs>
-      emulator: Prisma.$EmulatorPayload<ExtArgs>
-      performance: Prisma.$PerformanceScalePayload<ExtArgs>
-      author: Prisma.$UserPayload<ExtArgs>
-      votes: Prisma.$VotePayload<ExtArgs>[]
       comments: Prisma.$CommentPayload<ExtArgs>[]
+      author: Prisma.$UserPayload<ExtArgs>
+      performance: Prisma.$PerformanceScalePayload<ExtArgs>
+      emulator: Prisma.$EmulatorPayload<ExtArgs>
+      game: Prisma.$GamePayload<ExtArgs>
+      device: Prisma.$DevicePayload<ExtArgs>
       approvals: Prisma.$ListingApprovalPayload<ExtArgs>[]
+      votes: Prisma.$VotePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -9173,14 +9141,14 @@ export namespace Prisma {
    */
   export interface Prisma__ListingClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    device<T extends DeviceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeviceDefaultArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    game<T extends GameDefaultArgs<ExtArgs> = {}>(args?: Subset<T, GameDefaultArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    emulator<T extends EmulatorDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EmulatorDefaultArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    performance<T extends PerformanceScaleDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PerformanceScaleDefaultArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    author<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    votes<T extends Listing$votesArgs<ExtArgs> = {}>(args?: Subset<T, Listing$votesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     comments<T extends Listing$commentsArgs<ExtArgs> = {}>(args?: Subset<T, Listing$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    author<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    performance<T extends PerformanceScaleDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PerformanceScaleDefaultArgs<ExtArgs>>): Prisma__PerformanceScaleClient<$Result.GetResult<Prisma.$PerformanceScalePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    emulator<T extends EmulatorDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EmulatorDefaultArgs<ExtArgs>>): Prisma__EmulatorClient<$Result.GetResult<Prisma.$EmulatorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    game<T extends GameDefaultArgs<ExtArgs> = {}>(args?: Subset<T, GameDefaultArgs<ExtArgs>>): Prisma__GameClient<$Result.GetResult<Prisma.$GamePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    device<T extends DeviceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeviceDefaultArgs<ExtArgs>>): Prisma__DeviceClient<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     approvals<T extends Listing$approvalsArgs<ExtArgs> = {}>(args?: Subset<T, Listing$approvalsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    votes<T extends Listing$votesArgs<ExtArgs> = {}>(args?: Subset<T, Listing$votesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9614,30 +9582,6 @@ export namespace Prisma {
   }
 
   /**
-   * Listing.votes
-   */
-  export type Listing$votesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Vote
-     */
-    select?: VoteSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Vote
-     */
-    omit?: VoteOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: VoteInclude<ExtArgs> | null
-    where?: VoteWhereInput
-    orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
-    cursor?: VoteWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: VoteScalarFieldEnum | VoteScalarFieldEnum[]
-  }
-
-  /**
    * Listing.comments
    */
   export type Listing$commentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9683,6 +9627,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ListingApprovalScalarFieldEnum | ListingApprovalScalarFieldEnum[]
+  }
+
+  /**
+   * Listing.votes
+   */
+  export type Listing$votesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Vote
+     */
+    select?: VoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Vote
+     */
+    omit?: VoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VoteInclude<ExtArgs> | null
+    where?: VoteWhereInput
+    orderBy?: VoteOrderByWithRelationInput | VoteOrderByWithRelationInput[]
+    cursor?: VoteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: VoteScalarFieldEnum | VoteScalarFieldEnum[]
   }
 
   /**
@@ -9860,8 +9828,8 @@ export namespace Prisma {
     value?: boolean
     userId?: boolean
     listingId?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["vote"]>
 
   export type VoteSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -9869,8 +9837,8 @@ export namespace Prisma {
     value?: boolean
     userId?: boolean
     listingId?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["vote"]>
 
   export type VoteSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -9878,8 +9846,8 @@ export namespace Prisma {
     value?: boolean
     userId?: boolean
     listingId?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["vote"]>
 
   export type VoteSelectScalar = {
@@ -9891,23 +9859,23 @@ export namespace Prisma {
 
   export type VoteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "value" | "userId" | "listingId", ExtArgs["result"]["vote"]>
   export type VoteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type VoteIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type VoteIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
     listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }
 
   export type $VotePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Vote"
     objects: {
-      user: Prisma.$UserPayload<ExtArgs>
       listing: Prisma.$ListingPayload<ExtArgs>
+      user: Prisma.$UserPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -10308,8 +10276,8 @@ export namespace Prisma {
    */
   export interface Prisma__VoteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -10774,6 +10742,9 @@ export namespace Prisma {
     listingId: string | null
     parentId: string | null
     createdAt: Date | null
+    updatedAt: Date | null
+    deletedAt: Date | null
+    isEdited: boolean | null
   }
 
   export type CommentMaxAggregateOutputType = {
@@ -10783,6 +10754,9 @@ export namespace Prisma {
     listingId: string | null
     parentId: string | null
     createdAt: Date | null
+    updatedAt: Date | null
+    deletedAt: Date | null
+    isEdited: boolean | null
   }
 
   export type CommentCountAggregateOutputType = {
@@ -10792,6 +10766,9 @@ export namespace Prisma {
     listingId: number
     parentId: number
     createdAt: number
+    updatedAt: number
+    deletedAt: number
+    isEdited: number
     _all: number
   }
 
@@ -10803,6 +10780,9 @@ export namespace Prisma {
     listingId?: true
     parentId?: true
     createdAt?: true
+    updatedAt?: true
+    deletedAt?: true
+    isEdited?: true
   }
 
   export type CommentMaxAggregateInputType = {
@@ -10812,6 +10792,9 @@ export namespace Prisma {
     listingId?: true
     parentId?: true
     createdAt?: true
+    updatedAt?: true
+    deletedAt?: true
+    isEdited?: true
   }
 
   export type CommentCountAggregateInputType = {
@@ -10821,6 +10804,9 @@ export namespace Prisma {
     listingId?: true
     parentId?: true
     createdAt?: true
+    updatedAt?: true
+    deletedAt?: true
+    isEdited?: true
     _all?: true
   }
 
@@ -10903,6 +10889,9 @@ export namespace Prisma {
     listingId: string
     parentId: string | null
     createdAt: Date
+    updatedAt: Date
+    deletedAt: Date | null
+    isEdited: boolean
     _count: CommentCountAggregateOutputType | null
     _min: CommentMinAggregateOutputType | null
     _max: CommentMaxAggregateOutputType | null
@@ -10929,10 +10918,13 @@ export namespace Prisma {
     listingId?: boolean
     parentId?: boolean
     createdAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    updatedAt?: boolean
+    deletedAt?: boolean
+    isEdited?: boolean
     parent?: boolean | Comment$parentArgs<ExtArgs>
     replies?: boolean | Comment$repliesArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
     _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["comment"]>
 
@@ -10943,9 +10935,12 @@ export namespace Prisma {
     listingId?: boolean
     parentId?: boolean
     createdAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    updatedAt?: boolean
+    deletedAt?: boolean
+    isEdited?: boolean
     parent?: boolean | Comment$parentArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["comment"]>
 
   export type CommentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -10955,9 +10950,12 @@ export namespace Prisma {
     listingId?: boolean
     parentId?: boolean
     createdAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    updatedAt?: boolean
+    deletedAt?: boolean
+    isEdited?: boolean
     parent?: boolean | Comment$parentArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["comment"]>
 
   export type CommentSelectScalar = {
@@ -10967,34 +10965,37 @@ export namespace Prisma {
     listingId?: boolean
     parentId?: boolean
     createdAt?: boolean
+    updatedAt?: boolean
+    deletedAt?: boolean
+    isEdited?: boolean
   }
 
-  export type CommentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "userId" | "listingId" | "parentId" | "createdAt", ExtArgs["result"]["comment"]>
+  export type CommentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "userId" | "listingId" | "parentId" | "createdAt" | "updatedAt" | "deletedAt" | "isEdited", ExtArgs["result"]["comment"]>
   export type CommentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
     replies?: boolean | Comment$repliesArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
     _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type CommentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type CommentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
   }
 
   export type $CommentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Comment"
     objects: {
-      user: Prisma.$UserPayload<ExtArgs>
-      listing: Prisma.$ListingPayload<ExtArgs>
       parent: Prisma.$CommentPayload<ExtArgs> | null
       replies: Prisma.$CommentPayload<ExtArgs>[]
+      listing: Prisma.$ListingPayload<ExtArgs>
+      user: Prisma.$UserPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -11003,6 +11004,9 @@ export namespace Prisma {
       listingId: string
       parentId: string | null
       createdAt: Date
+      updatedAt: Date
+      deletedAt: Date | null
+      isEdited: boolean
     }, ExtArgs["result"]["comment"]>
     composites: {}
   }
@@ -11397,10 +11401,10 @@ export namespace Prisma {
    */
   export interface Prisma__CommentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     parent<T extends Comment$parentArgs<ExtArgs> = {}>(args?: Subset<T, Comment$parentArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     replies<T extends Comment$repliesArgs<ExtArgs> = {}>(args?: Subset<T, Comment$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -11436,6 +11440,9 @@ export namespace Prisma {
     readonly listingId: FieldRef<"Comment", 'String'>
     readonly parentId: FieldRef<"Comment", 'String'>
     readonly createdAt: FieldRef<"Comment", 'DateTime'>
+    readonly updatedAt: FieldRef<"Comment", 'DateTime'>
+    readonly deletedAt: FieldRef<"Comment", 'DateTime'>
+    readonly isEdited: FieldRef<"Comment", 'Boolean'>
   }
     
 
@@ -11907,9 +11914,9 @@ export namespace Prisma {
     id: string | null
     listingId: string | null
     approvedById: string | null
-    approvedByRole: $Enums.Role | null
+    approvedByRole: string | null
     approvedAt: Date | null
-    status: $Enums.ApprovalStatus | null
+    status: string | null
     notes: string | null
   }
 
@@ -11917,9 +11924,9 @@ export namespace Prisma {
     id: string | null
     listingId: string | null
     approvedById: string | null
-    approvedByRole: $Enums.Role | null
+    approvedByRole: string | null
     approvedAt: Date | null
-    status: $Enums.ApprovalStatus | null
+    status: string | null
     notes: string | null
   }
 
@@ -12042,9 +12049,9 @@ export namespace Prisma {
     id: string
     listingId: string
     approvedById: string
-    approvedByRole: $Enums.Role
+    approvedByRole: string
     approvedAt: Date
-    status: $Enums.ApprovalStatus
+    status: string
     notes: string | null
     _count: ListingApprovalCountAggregateOutputType | null
     _min: ListingApprovalMinAggregateOutputType | null
@@ -12073,8 +12080,8 @@ export namespace Prisma {
     approvedAt?: boolean
     status?: boolean
     notes?: boolean
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["listingApproval"]>
 
   export type ListingApprovalSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -12085,8 +12092,8 @@ export namespace Prisma {
     approvedAt?: boolean
     status?: boolean
     notes?: boolean
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["listingApproval"]>
 
   export type ListingApprovalSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -12097,8 +12104,8 @@ export namespace Prisma {
     approvedAt?: boolean
     status?: boolean
     notes?: boolean
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["listingApproval"]>
 
   export type ListingApprovalSelectScalar = {
@@ -12113,31 +12120,31 @@ export namespace Prisma {
 
   export type ListingApprovalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "listingId" | "approvedById" | "approvedByRole" | "approvedAt" | "status" | "notes", ExtArgs["result"]["listingApproval"]>
   export type ListingApprovalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
   }
   export type ListingApprovalIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
   }
   export type ListingApprovalIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    listing?: boolean | ListingDefaultArgs<ExtArgs>
     approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+    listing?: boolean | ListingDefaultArgs<ExtArgs>
   }
 
   export type $ListingApprovalPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "ListingApproval"
     objects: {
-      listing: Prisma.$ListingPayload<ExtArgs>
       approvedBy: Prisma.$UserPayload<ExtArgs>
+      listing: Prisma.$ListingPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       listingId: string
       approvedById: string
-      approvedByRole: $Enums.Role
+      approvedByRole: string
       approvedAt: Date
-      status: $Enums.ApprovalStatus
+      status: string
       notes: string | null
     }, ExtArgs["result"]["listingApproval"]>
     composites: {}
@@ -12533,8 +12540,8 @@ export namespace Prisma {
    */
   export interface Prisma__ListingApprovalClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     approvedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    listing<T extends ListingDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ListingDefaultArgs<ExtArgs>>): Prisma__ListingClient<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -12567,9 +12574,9 @@ export namespace Prisma {
     readonly id: FieldRef<"ListingApproval", 'String'>
     readonly listingId: FieldRef<"ListingApproval", 'String'>
     readonly approvedById: FieldRef<"ListingApproval", 'String'>
-    readonly approvedByRole: FieldRef<"ListingApproval", 'Role'>
+    readonly approvedByRole: FieldRef<"ListingApproval", 'String'>
     readonly approvedAt: FieldRef<"ListingApproval", 'DateTime'>
-    readonly status: FieldRef<"ListingApproval", 'ApprovalStatus'>
+    readonly status: FieldRef<"ListingApproval", 'String'>
     readonly notes: FieldRef<"ListingApproval", 'String'>
   }
     
@@ -13086,7 +13093,10 @@ export namespace Prisma {
     userId: 'userId',
     listingId: 'listingId',
     parentId: 'parentId',
-    createdAt: 'createdAt'
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    deletedAt: 'deletedAt',
+    isEdited: 'isEdited'
   };
 
   export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
@@ -13149,20 +13159,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Role'
-   */
-  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
-    
-
-
-  /**
-   * Reference to a field of type 'Role[]'
-   */
-  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
-    
-
-
-  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -13198,20 +13194,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'ApprovalStatus'
-   */
-  export type EnumApprovalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalStatus'>
-    
-
-
-  /**
-   * Reference to a field of type 'ApprovalStatus[]'
-   */
-  export type ListEnumApprovalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalStatus[]'>
-    
-
-
-  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -13237,12 +13219,12 @@ export namespace Prisma {
     hashedPassword?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
     profileImage?: StringNullableFilter<"User"> | string | null
-    role?: EnumRoleFilter<"User"> | $Enums.Role
+    role?: StringFilter<"User"> | string
     createdAt?: DateTimeFilter<"User"> | Date | string
-    listings?: ListingListRelationFilter
-    votes?: VoteListRelationFilter
     comments?: CommentListRelationFilter
+    listings?: ListingListRelationFilter
     approvalsGiven?: ListingApprovalListRelationFilter
+    votes?: VoteListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -13253,10 +13235,10 @@ export namespace Prisma {
     profileImage?: SortOrderInput | SortOrder
     role?: SortOrder
     createdAt?: SortOrder
-    listings?: ListingOrderByRelationAggregateInput
-    votes?: VoteOrderByRelationAggregateInput
     comments?: CommentOrderByRelationAggregateInput
+    listings?: ListingOrderByRelationAggregateInput
     approvalsGiven?: ListingApprovalOrderByRelationAggregateInput
+    votes?: VoteOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -13268,12 +13250,12 @@ export namespace Prisma {
     hashedPassword?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
     profileImage?: StringNullableFilter<"User"> | string | null
-    role?: EnumRoleFilter<"User"> | $Enums.Role
+    role?: StringFilter<"User"> | string
     createdAt?: DateTimeFilter<"User"> | Date | string
-    listings?: ListingListRelationFilter
-    votes?: VoteListRelationFilter
     comments?: CommentListRelationFilter
+    listings?: ListingListRelationFilter
     approvalsGiven?: ListingApprovalListRelationFilter
+    votes?: VoteListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -13298,7 +13280,7 @@ export namespace Prisma {
     hashedPassword?: StringWithAggregatesFilter<"User"> | string
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
     profileImage?: StringNullableWithAggregatesFilter<"User"> | string | null
-    role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+    role?: StringWithAggregatesFilter<"User"> | string
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
 
@@ -13410,6 +13392,7 @@ export namespace Prisma {
 
   export type GameWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    title_systemId?: GameTitleSystemIdCompoundUniqueInput
     AND?: GameWhereInput | GameWhereInput[]
     OR?: GameWhereInput[]
     NOT?: GameWhereInput | GameWhereInput[]
@@ -13418,7 +13401,7 @@ export namespace Prisma {
     imageUrl?: StringNullableFilter<"Game"> | string | null
     system?: XOR<SystemScalarRelationFilter, SystemWhereInput>
     listings?: ListingListRelationFilter
-  }, "id">
+  }, "id" | "title_systemId">
 
   export type GameOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13539,14 +13522,14 @@ export namespace Prisma {
     notes?: StringNullableFilter<"Listing"> | string | null
     authorId?: StringFilter<"Listing"> | string
     createdAt?: DateTimeFilter<"Listing"> | Date | string
-    device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
-    game?: XOR<GameScalarRelationFilter, GameWhereInput>
-    emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
-    performance?: XOR<PerformanceScaleScalarRelationFilter, PerformanceScaleWhereInput>
-    author?: XOR<UserScalarRelationFilter, UserWhereInput>
-    votes?: VoteListRelationFilter
     comments?: CommentListRelationFilter
+    author?: XOR<UserScalarRelationFilter, UserWhereInput>
+    performance?: XOR<PerformanceScaleScalarRelationFilter, PerformanceScaleWhereInput>
+    emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
+    game?: XOR<GameScalarRelationFilter, GameWhereInput>
+    device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
     approvals?: ListingApprovalListRelationFilter
+    votes?: VoteListRelationFilter
   }
 
   export type ListingOrderByWithRelationInput = {
@@ -13558,18 +13541,19 @@ export namespace Prisma {
     notes?: SortOrderInput | SortOrder
     authorId?: SortOrder
     createdAt?: SortOrder
-    device?: DeviceOrderByWithRelationInput
-    game?: GameOrderByWithRelationInput
-    emulator?: EmulatorOrderByWithRelationInput
-    performance?: PerformanceScaleOrderByWithRelationInput
-    author?: UserOrderByWithRelationInput
-    votes?: VoteOrderByRelationAggregateInput
     comments?: CommentOrderByRelationAggregateInput
+    author?: UserOrderByWithRelationInput
+    performance?: PerformanceScaleOrderByWithRelationInput
+    emulator?: EmulatorOrderByWithRelationInput
+    game?: GameOrderByWithRelationInput
+    device?: DeviceOrderByWithRelationInput
     approvals?: ListingApprovalOrderByRelationAggregateInput
+    votes?: VoteOrderByRelationAggregateInput
   }
 
   export type ListingWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    gameId_deviceId_emulatorId?: ListingGameIdDeviceIdEmulatorIdCompoundUniqueInput
     AND?: ListingWhereInput | ListingWhereInput[]
     OR?: ListingWhereInput[]
     NOT?: ListingWhereInput | ListingWhereInput[]
@@ -13580,15 +13564,15 @@ export namespace Prisma {
     notes?: StringNullableFilter<"Listing"> | string | null
     authorId?: StringFilter<"Listing"> | string
     createdAt?: DateTimeFilter<"Listing"> | Date | string
-    device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
-    game?: XOR<GameScalarRelationFilter, GameWhereInput>
-    emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
-    performance?: XOR<PerformanceScaleScalarRelationFilter, PerformanceScaleWhereInput>
-    author?: XOR<UserScalarRelationFilter, UserWhereInput>
-    votes?: VoteListRelationFilter
     comments?: CommentListRelationFilter
+    author?: XOR<UserScalarRelationFilter, UserWhereInput>
+    performance?: XOR<PerformanceScaleScalarRelationFilter, PerformanceScaleWhereInput>
+    emulator?: XOR<EmulatorScalarRelationFilter, EmulatorWhereInput>
+    game?: XOR<GameScalarRelationFilter, GameWhereInput>
+    device?: XOR<DeviceScalarRelationFilter, DeviceWhereInput>
     approvals?: ListingApprovalListRelationFilter
-  }, "id">
+    votes?: VoteListRelationFilter
+  }, "id" | "gameId_deviceId_emulatorId">
 
   export type ListingOrderByWithAggregationInput = {
     id?: SortOrder
@@ -13628,8 +13612,8 @@ export namespace Prisma {
     value?: BoolFilter<"Vote"> | boolean
     userId?: StringFilter<"Vote"> | string
     listingId?: StringFilter<"Vote"> | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
     listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
 
   export type VoteOrderByWithRelationInput = {
@@ -13637,8 +13621,8 @@ export namespace Prisma {
     value?: SortOrder
     userId?: SortOrder
     listingId?: SortOrder
-    user?: UserOrderByWithRelationInput
     listing?: ListingOrderByWithRelationInput
+    user?: UserOrderByWithRelationInput
   }
 
   export type VoteWhereUniqueInput = Prisma.AtLeast<{
@@ -13650,8 +13634,8 @@ export namespace Prisma {
     value?: BoolFilter<"Vote"> | boolean
     userId?: StringFilter<"Vote"> | string
     listingId?: StringFilter<"Vote"> | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
     listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "id" | "userId_listingId">
 
   export type VoteOrderByWithAggregationInput = {
@@ -13684,10 +13668,13 @@ export namespace Prisma {
     listingId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    updatedAt?: DateTimeFilter<"Comment"> | Date | string
+    deletedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
+    isEdited?: BoolFilter<"Comment"> | boolean
     parent?: XOR<CommentNullableScalarRelationFilter, CommentWhereInput> | null
     replies?: CommentListRelationFilter
+    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
 
   export type CommentOrderByWithRelationInput = {
@@ -13697,10 +13684,13 @@ export namespace Prisma {
     listingId?: SortOrder
     parentId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
-    user?: UserOrderByWithRelationInput
-    listing?: ListingOrderByWithRelationInput
+    updatedAt?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
+    isEdited?: SortOrder
     parent?: CommentOrderByWithRelationInput
     replies?: CommentOrderByRelationAggregateInput
+    listing?: ListingOrderByWithRelationInput
+    user?: UserOrderByWithRelationInput
   }
 
   export type CommentWhereUniqueInput = Prisma.AtLeast<{
@@ -13713,10 +13703,13 @@ export namespace Prisma {
     listingId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    updatedAt?: DateTimeFilter<"Comment"> | Date | string
+    deletedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
+    isEdited?: BoolFilter<"Comment"> | boolean
     parent?: XOR<CommentNullableScalarRelationFilter, CommentWhereInput> | null
     replies?: CommentListRelationFilter
+    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "id">
 
   export type CommentOrderByWithAggregationInput = {
@@ -13726,6 +13719,9 @@ export namespace Prisma {
     listingId?: SortOrder
     parentId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
+    isEdited?: SortOrder
     _count?: CommentCountOrderByAggregateInput
     _max?: CommentMaxOrderByAggregateInput
     _min?: CommentMinOrderByAggregateInput
@@ -13741,6 +13737,9 @@ export namespace Prisma {
     listingId?: StringWithAggregatesFilter<"Comment"> | string
     parentId?: StringNullableWithAggregatesFilter<"Comment"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Comment"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Comment"> | Date | string
+    deletedAt?: DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
+    isEdited?: BoolWithAggregatesFilter<"Comment"> | boolean
   }
 
   export type ListingApprovalWhereInput = {
@@ -13750,12 +13749,12 @@ export namespace Prisma {
     id?: StringFilter<"ListingApproval"> | string
     listingId?: StringFilter<"ListingApproval"> | string
     approvedById?: StringFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleFilter<"ListingApproval"> | $Enums.Role
+    approvedByRole?: StringFilter<"ListingApproval"> | string
     approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusFilter<"ListingApproval"> | $Enums.ApprovalStatus
+    status?: StringFilter<"ListingApproval"> | string
     notes?: StringNullableFilter<"ListingApproval"> | string | null
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
     approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
   }
 
   export type ListingApprovalOrderByWithRelationInput = {
@@ -13766,8 +13765,8 @@ export namespace Prisma {
     approvedAt?: SortOrder
     status?: SortOrder
     notes?: SortOrderInput | SortOrder
-    listing?: ListingOrderByWithRelationInput
     approvedBy?: UserOrderByWithRelationInput
+    listing?: ListingOrderByWithRelationInput
   }
 
   export type ListingApprovalWhereUniqueInput = Prisma.AtLeast<{
@@ -13777,12 +13776,12 @@ export namespace Prisma {
     NOT?: ListingApprovalWhereInput | ListingApprovalWhereInput[]
     listingId?: StringFilter<"ListingApproval"> | string
     approvedById?: StringFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleFilter<"ListingApproval"> | $Enums.Role
+    approvedByRole?: StringFilter<"ListingApproval"> | string
     approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusFilter<"ListingApproval"> | $Enums.ApprovalStatus
+    status?: StringFilter<"ListingApproval"> | string
     notes?: StringNullableFilter<"ListingApproval"> | string | null
-    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
     approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    listing?: XOR<ListingScalarRelationFilter, ListingWhereInput>
   }, "id">
 
   export type ListingApprovalOrderByWithAggregationInput = {
@@ -13805,9 +13804,9 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"ListingApproval"> | string
     listingId?: StringWithAggregatesFilter<"ListingApproval"> | string
     approvedById?: StringWithAggregatesFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleWithAggregatesFilter<"ListingApproval"> | $Enums.Role
+    approvedByRole?: StringWithAggregatesFilter<"ListingApproval"> | string
     approvedAt?: DateTimeWithAggregatesFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusWithAggregatesFilter<"ListingApproval"> | $Enums.ApprovalStatus
+    status?: StringWithAggregatesFilter<"ListingApproval"> | string
     notes?: StringNullableWithAggregatesFilter<"ListingApproval"> | string | null
   }
 
@@ -13817,12 +13816,12 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: $Enums.Role
+    role?: string
     createdAt?: Date | string
-    listings?: ListingCreateNestedManyWithoutAuthorInput
-    votes?: VoteCreateNestedManyWithoutUserInput
     comments?: CommentCreateNestedManyWithoutUserInput
+    listings?: ListingCreateNestedManyWithoutAuthorInput
     approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+    votes?: VoteCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -13831,12 +13830,12 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: $Enums.Role
+    role?: string
     createdAt?: Date | string
-    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
-    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
     comments?: CommentUncheckedCreateNestedManyWithoutUserInput
+    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
     approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -13845,12 +13844,12 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    listings?: ListingUpdateManyWithoutAuthorNestedInput
-    votes?: VoteUpdateManyWithoutUserNestedInput
     comments?: CommentUpdateManyWithoutUserNestedInput
+    listings?: ListingUpdateManyWithoutAuthorNestedInput
     approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
+    votes?: VoteUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -13859,12 +13858,12 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
-    votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
     comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
+    listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
     approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -13873,7 +13872,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: $Enums.Role
+    role?: string
     createdAt?: Date | string
   }
 
@@ -13883,7 +13882,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -13893,7 +13892,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -14120,14 +14119,14 @@ export namespace Prisma {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateInput = {
@@ -14139,23 +14138,23 @@ export namespace Prisma {
     notes?: string | null
     authorId: string
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
     approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateInput = {
@@ -14167,9 +14166,9 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
     comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type ListingCreateManyInput = {
@@ -14203,8 +14202,8 @@ export namespace Prisma {
   export type VoteCreateInput = {
     id?: string
     value: boolean
-    user: UserCreateNestedOneWithoutVotesInput
     listing: ListingCreateNestedOneWithoutVotesInput
+    user: UserCreateNestedOneWithoutVotesInput
   }
 
   export type VoteUncheckedCreateInput = {
@@ -14217,8 +14216,8 @@ export namespace Prisma {
   export type VoteUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     value?: BoolFieldUpdateOperationsInput | boolean
-    user?: UserUpdateOneRequiredWithoutVotesNestedInput
     listing?: ListingUpdateOneRequiredWithoutVotesNestedInput
+    user?: UserUpdateOneRequiredWithoutVotesNestedInput
   }
 
   export type VoteUncheckedUpdateInput = {
@@ -14251,10 +14250,13 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
-    user: UserCreateNestedOneWithoutCommentsInput
-    listing: ListingCreateNestedOneWithoutCommentsInput
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
     parent?: CommentCreateNestedOneWithoutRepliesInput
     replies?: CommentCreateNestedManyWithoutParentInput
+    listing: ListingCreateNestedOneWithoutCommentsInput
+    user: UserCreateNestedOneWithoutCommentsInput
   }
 
   export type CommentUncheckedCreateInput = {
@@ -14264,6 +14266,9 @@ export namespace Prisma {
     listingId: string
     parentId?: string | null
     createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
   }
 
@@ -14271,10 +14276,13 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
-    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
     parent?: CommentUpdateOneWithoutRepliesNestedInput
     replies?: CommentUpdateManyWithoutParentNestedInput
+    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
+    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
   }
 
   export type CommentUncheckedUpdateInput = {
@@ -14284,6 +14292,9 @@ export namespace Prisma {
     listingId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
   }
 
@@ -14294,12 +14305,18 @@ export namespace Prisma {
     listingId: string
     parentId?: string | null
     createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
   }
 
   export type CommentUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type CommentUncheckedUpdateManyInput = {
@@ -14309,45 +14326,48 @@ export namespace Prisma {
     listingId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type ListingApprovalCreateInput = {
     id?: string
-    approvedByRole: $Enums.Role
+    approvedByRole: string
     approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
+    status: string
     notes?: string | null
-    listing: ListingCreateNestedOneWithoutApprovalsInput
     approvedBy: UserCreateNestedOneWithoutApprovalsGivenInput
+    listing: ListingCreateNestedOneWithoutApprovalsInput
   }
 
   export type ListingApprovalUncheckedCreateInput = {
     id?: string
     listingId: string
     approvedById: string
-    approvedByRole: $Enums.Role
+    approvedByRole: string
     approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
+    status: string
     notes?: string | null
   }
 
   export type ListingApprovalUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    approvedByRole?: StringFieldUpdateOperationsInput | string
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
-    listing?: ListingUpdateOneRequiredWithoutApprovalsNestedInput
     approvedBy?: UserUpdateOneRequiredWithoutApprovalsGivenNestedInput
+    listing?: ListingUpdateOneRequiredWithoutApprovalsNestedInput
   }
 
   export type ListingApprovalUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     listingId?: StringFieldUpdateOperationsInput | string
     approvedById?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    approvedByRole?: StringFieldUpdateOperationsInput | string
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -14355,17 +14375,17 @@ export namespace Prisma {
     id?: string
     listingId: string
     approvedById: string
-    approvedByRole: $Enums.Role
+    approvedByRole: string
     approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
+    status: string
     notes?: string | null
   }
 
   export type ListingApprovalUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    approvedByRole?: StringFieldUpdateOperationsInput | string
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -14373,9 +14393,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     listingId?: StringFieldUpdateOperationsInput | string
     approvedById?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    approvedByRole?: StringFieldUpdateOperationsInput | string
     approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
+    status?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -14409,13 +14429,6 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type EnumRoleFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
-  }
-
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -14427,22 +14440,16 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
-  export type ListingListRelationFilter = {
-    every?: ListingWhereInput
-    some?: ListingWhereInput
-    none?: ListingWhereInput
-  }
-
-  export type VoteListRelationFilter = {
-    every?: VoteWhereInput
-    some?: VoteWhereInput
-    none?: VoteWhereInput
-  }
-
   export type CommentListRelationFilter = {
     every?: CommentWhereInput
     some?: CommentWhereInput
     none?: CommentWhereInput
+  }
+
+  export type ListingListRelationFilter = {
+    every?: ListingWhereInput
+    some?: ListingWhereInput
+    none?: ListingWhereInput
   }
 
   export type ListingApprovalListRelationFilter = {
@@ -14451,24 +14458,30 @@ export namespace Prisma {
     none?: ListingApprovalWhereInput
   }
 
+  export type VoteListRelationFilter = {
+    every?: VoteWhereInput
+    some?: VoteWhereInput
+    none?: VoteWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
-  }
-
-  export type ListingOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type VoteOrderByRelationAggregateInput = {
-    _count?: SortOrder
   }
 
   export type CommentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
+  export type ListingOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type ListingApprovalOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type VoteOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -14538,16 +14551,6 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type EnumRoleWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumRoleFilter<$PrismaModel>
-    _max?: NestedEnumRoleFilter<$PrismaModel>
-  }
-
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -14608,6 +14611,11 @@ export namespace Prisma {
   export type SystemScalarRelationFilter = {
     is?: SystemWhereInput
     isNot?: SystemWhereInput
+  }
+
+  export type GameTitleSystemIdCompoundUniqueInput = {
+    title: string
+    systemId: string
   }
 
   export type GameCountOrderByAggregateInput = {
@@ -14701,19 +14709,9 @@ export namespace Prisma {
     _max?: NestedIntFilter<$PrismaModel>
   }
 
-  export type DeviceScalarRelationFilter = {
-    is?: DeviceWhereInput
-    isNot?: DeviceWhereInput
-  }
-
-  export type GameScalarRelationFilter = {
-    is?: GameWhereInput
-    isNot?: GameWhereInput
-  }
-
-  export type EmulatorScalarRelationFilter = {
-    is?: EmulatorWhereInput
-    isNot?: EmulatorWhereInput
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
   }
 
   export type PerformanceScaleScalarRelationFilter = {
@@ -14721,9 +14719,25 @@ export namespace Prisma {
     isNot?: PerformanceScaleWhereInput
   }
 
-  export type UserScalarRelationFilter = {
-    is?: UserWhereInput
-    isNot?: UserWhereInput
+  export type EmulatorScalarRelationFilter = {
+    is?: EmulatorWhereInput
+    isNot?: EmulatorWhereInput
+  }
+
+  export type GameScalarRelationFilter = {
+    is?: GameWhereInput
+    isNot?: GameWhereInput
+  }
+
+  export type DeviceScalarRelationFilter = {
+    is?: DeviceWhereInput
+    isNot?: DeviceWhereInput
+  }
+
+  export type ListingGameIdDeviceIdEmulatorIdCompoundUniqueInput = {
+    gameId: string
+    deviceId: string
+    emulatorId: string
   }
 
   export type ListingCountOrderByAggregateInput = {
@@ -14811,6 +14825,17 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type CommentNullableScalarRelationFilter = {
     is?: CommentWhereInput | null
     isNot?: CommentWhereInput | null
@@ -14823,6 +14848,9 @@ export namespace Prisma {
     listingId?: SortOrder
     parentId?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
+    deletedAt?: SortOrder
+    isEdited?: SortOrder
   }
 
   export type CommentMaxOrderByAggregateInput = {
@@ -14832,6 +14860,9 @@ export namespace Prisma {
     listingId?: SortOrder
     parentId?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
+    deletedAt?: SortOrder
+    isEdited?: SortOrder
   }
 
   export type CommentMinOrderByAggregateInput = {
@@ -14841,13 +14872,23 @@ export namespace Prisma {
     listingId?: SortOrder
     parentId?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
+    deletedAt?: SortOrder
+    isEdited?: SortOrder
   }
 
-  export type EnumApprovalStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumApprovalStatusFilter<$PrismaModel> | $Enums.ApprovalStatus
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type ListingApprovalCountOrderByAggregateInput = {
@@ -14880,14 +14921,11 @@ export namespace Prisma {
     notes?: SortOrder
   }
 
-  export type EnumApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel> | $Enums.ApprovalStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumApprovalStatusFilter<$PrismaModel>
-    _max?: NestedEnumApprovalStatusFilter<$PrismaModel>
+  export type CommentCreateNestedManyWithoutUserInput = {
+    create?: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput> | CommentCreateWithoutUserInput[] | CommentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: CommentCreateOrConnectWithoutUserInput | CommentCreateOrConnectWithoutUserInput[]
+    createMany?: CommentCreateManyUserInputEnvelope
+    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type ListingCreateNestedManyWithoutAuthorInput = {
@@ -14897,20 +14935,6 @@ export namespace Prisma {
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
-  export type VoteCreateNestedManyWithoutUserInput = {
-    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
-    createMany?: VoteCreateManyUserInputEnvelope
-    connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-  }
-
-  export type CommentCreateNestedManyWithoutUserInput = {
-    create?: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput> | CommentCreateWithoutUserInput[] | CommentUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutUserInput | CommentCreateOrConnectWithoutUserInput[]
-    createMany?: CommentCreateManyUserInputEnvelope
-    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
-  }
-
   export type ListingApprovalCreateNestedManyWithoutApprovedByInput = {
     create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
     connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
@@ -14918,14 +14942,7 @@ export namespace Prisma {
     connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
   }
 
-  export type ListingUncheckedCreateNestedManyWithoutAuthorInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
-    createMany?: ListingCreateManyAuthorInputEnvelope
-    connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-  }
-
-  export type VoteUncheckedCreateNestedManyWithoutUserInput = {
+  export type VoteCreateNestedManyWithoutUserInput = {
     create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
     connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
     createMany?: VoteCreateManyUserInputEnvelope
@@ -14939,11 +14956,25 @@ export namespace Prisma {
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
+  export type ListingUncheckedCreateNestedManyWithoutAuthorInput = {
+    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
+    createMany?: ListingCreateManyAuthorInputEnvelope
+    connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+  }
+
   export type ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput = {
     create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
     connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
     createMany?: ListingApprovalCreateManyApprovedByInputEnvelope
     connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
+  }
+
+  export type VoteUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
+    createMany?: VoteCreateManyUserInputEnvelope
+    connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -14954,40 +14985,8 @@ export namespace Prisma {
     set?: string | null
   }
 
-  export type EnumRoleFieldUpdateOperationsInput = {
-    set?: $Enums.Role
-  }
-
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
-  }
-
-  export type ListingUpdateManyWithoutAuthorNestedInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutAuthorInput | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
-    createMany?: ListingCreateManyAuthorInputEnvelope
-    set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutAuthorInput | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutAuthorInput | ListingUpdateManyWithWhereWithoutAuthorInput[]
-    deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
-  }
-
-  export type VoteUpdateManyWithoutUserNestedInput = {
-    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
-    upsert?: VoteUpsertWithWhereUniqueWithoutUserInput | VoteUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: VoteCreateManyUserInputEnvelope
-    set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    update?: VoteUpdateWithWhereUniqueWithoutUserInput | VoteUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: VoteUpdateManyWithWhereWithoutUserInput | VoteUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type CommentUpdateManyWithoutUserNestedInput = {
@@ -15004,6 +15003,20 @@ export namespace Prisma {
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
+  export type ListingUpdateManyWithoutAuthorNestedInput = {
+    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
+    upsert?: ListingUpsertWithWhereUniqueWithoutAuthorInput | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
+    createMany?: ListingCreateManyAuthorInputEnvelope
+    set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    update?: ListingUpdateWithWhereUniqueWithoutAuthorInput | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
+    updateMany?: ListingUpdateManyWithWhereWithoutAuthorInput | ListingUpdateManyWithWhereWithoutAuthorInput[]
+    deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
+  }
+
   export type ListingApprovalUpdateManyWithoutApprovedByNestedInput = {
     create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
     connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
@@ -15018,21 +15031,7 @@ export namespace Prisma {
     deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
   }
 
-  export type ListingUncheckedUpdateManyWithoutAuthorNestedInput = {
-    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
-    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
-    upsert?: ListingUpsertWithWhereUniqueWithoutAuthorInput | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
-    createMany?: ListingCreateManyAuthorInputEnvelope
-    set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
-    update?: ListingUpdateWithWhereUniqueWithoutAuthorInput | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
-    updateMany?: ListingUpdateManyWithWhereWithoutAuthorInput | ListingUpdateManyWithWhereWithoutAuthorInput[]
-    deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
-  }
-
-  export type VoteUncheckedUpdateManyWithoutUserNestedInput = {
+  export type VoteUpdateManyWithoutUserNestedInput = {
     create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
     connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
     upsert?: VoteUpsertWithWhereUniqueWithoutUserInput | VoteUpsertWithWhereUniqueWithoutUserInput[]
@@ -15060,6 +15059,20 @@ export namespace Prisma {
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
+  export type ListingUncheckedUpdateManyWithoutAuthorNestedInput = {
+    create?: XOR<ListingCreateWithoutAuthorInput, ListingUncheckedCreateWithoutAuthorInput> | ListingCreateWithoutAuthorInput[] | ListingUncheckedCreateWithoutAuthorInput[]
+    connectOrCreate?: ListingCreateOrConnectWithoutAuthorInput | ListingCreateOrConnectWithoutAuthorInput[]
+    upsert?: ListingUpsertWithWhereUniqueWithoutAuthorInput | ListingUpsertWithWhereUniqueWithoutAuthorInput[]
+    createMany?: ListingCreateManyAuthorInputEnvelope
+    set?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    disconnect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    delete?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+    update?: ListingUpdateWithWhereUniqueWithoutAuthorInput | ListingUpdateWithWhereUniqueWithoutAuthorInput[]
+    updateMany?: ListingUpdateManyWithWhereWithoutAuthorInput | ListingUpdateManyWithWhereWithoutAuthorInput[]
+    deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
+  }
+
   export type ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput = {
     create?: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput> | ListingApprovalCreateWithoutApprovedByInput[] | ListingApprovalUncheckedCreateWithoutApprovedByInput[]
     connectOrCreate?: ListingApprovalCreateOrConnectWithoutApprovedByInput | ListingApprovalCreateOrConnectWithoutApprovedByInput[]
@@ -15072,6 +15085,20 @@ export namespace Prisma {
     update?: ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput | ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
     updateMany?: ListingApprovalUpdateManyWithWhereWithoutApprovedByInput | ListingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
     deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+  }
+
+  export type VoteUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<VoteCreateWithoutUserInput, VoteUncheckedCreateWithoutUserInput> | VoteCreateWithoutUserInput[] | VoteUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: VoteCreateOrConnectWithoutUserInput | VoteCreateOrConnectWithoutUserInput[]
+    upsert?: VoteUpsertWithWhereUniqueWithoutUserInput | VoteUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: VoteCreateManyUserInputEnvelope
+    set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    update?: VoteUpdateWithWhereUniqueWithoutUserInput | VoteUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: VoteUpdateManyWithWhereWithoutUserInput | VoteUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type ListingCreateNestedManyWithoutDeviceInput = {
@@ -15306,28 +15333,11 @@ export namespace Prisma {
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
-  export type DeviceCreateNestedOneWithoutListingsInput = {
-    create?: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: DeviceCreateOrConnectWithoutListingsInput
-    connect?: DeviceWhereUniqueInput
-  }
-
-  export type GameCreateNestedOneWithoutListingsInput = {
-    create?: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: GameCreateOrConnectWithoutListingsInput
-    connect?: GameWhereUniqueInput
-  }
-
-  export type EmulatorCreateNestedOneWithoutListingsInput = {
-    create?: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: EmulatorCreateOrConnectWithoutListingsInput
-    connect?: EmulatorWhereUniqueInput
-  }
-
-  export type PerformanceScaleCreateNestedOneWithoutListingsInput = {
-    create?: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: PerformanceScaleCreateOrConnectWithoutListingsInput
-    connect?: PerformanceScaleWhereUniqueInput
+  export type CommentCreateNestedManyWithoutListingInput = {
+    create?: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput> | CommentCreateWithoutListingInput[] | CommentUncheckedCreateWithoutListingInput[]
+    connectOrCreate?: CommentCreateOrConnectWithoutListingInput | CommentCreateOrConnectWithoutListingInput[]
+    createMany?: CommentCreateManyListingInputEnvelope
+    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
   export type UserCreateNestedOneWithoutListingsInput = {
@@ -15336,18 +15346,28 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
-  export type VoteCreateNestedManyWithoutListingInput = {
-    create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
-    createMany?: VoteCreateManyListingInputEnvelope
-    connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+  export type PerformanceScaleCreateNestedOneWithoutListingsInput = {
+    create?: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: PerformanceScaleCreateOrConnectWithoutListingsInput
+    connect?: PerformanceScaleWhereUniqueInput
   }
 
-  export type CommentCreateNestedManyWithoutListingInput = {
-    create?: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput> | CommentCreateWithoutListingInput[] | CommentUncheckedCreateWithoutListingInput[]
-    connectOrCreate?: CommentCreateOrConnectWithoutListingInput | CommentCreateOrConnectWithoutListingInput[]
-    createMany?: CommentCreateManyListingInputEnvelope
-    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+  export type EmulatorCreateNestedOneWithoutListingsInput = {
+    create?: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: EmulatorCreateOrConnectWithoutListingsInput
+    connect?: EmulatorWhereUniqueInput
+  }
+
+  export type GameCreateNestedOneWithoutListingsInput = {
+    create?: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: GameCreateOrConnectWithoutListingsInput
+    connect?: GameWhereUniqueInput
+  }
+
+  export type DeviceCreateNestedOneWithoutListingsInput = {
+    create?: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: DeviceCreateOrConnectWithoutListingsInput
+    connect?: DeviceWhereUniqueInput
   }
 
   export type ListingApprovalCreateNestedManyWithoutListingInput = {
@@ -15357,7 +15377,7 @@ export namespace Prisma {
     connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
   }
 
-  export type VoteUncheckedCreateNestedManyWithoutListingInput = {
+  export type VoteCreateNestedManyWithoutListingInput = {
     create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
     connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
     createMany?: VoteCreateManyListingInputEnvelope
@@ -15378,58 +15398,11 @@ export namespace Prisma {
     connect?: ListingApprovalWhereUniqueInput | ListingApprovalWhereUniqueInput[]
   }
 
-  export type DeviceUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: DeviceCreateOrConnectWithoutListingsInput
-    upsert?: DeviceUpsertWithoutListingsInput
-    connect?: DeviceWhereUniqueInput
-    update?: XOR<XOR<DeviceUpdateToOneWithWhereWithoutListingsInput, DeviceUpdateWithoutListingsInput>, DeviceUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type GameUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: GameCreateOrConnectWithoutListingsInput
-    upsert?: GameUpsertWithoutListingsInput
-    connect?: GameWhereUniqueInput
-    update?: XOR<XOR<GameUpdateToOneWithWhereWithoutListingsInput, GameUpdateWithoutListingsInput>, GameUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type EmulatorUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: EmulatorCreateOrConnectWithoutListingsInput
-    upsert?: EmulatorUpsertWithoutListingsInput
-    connect?: EmulatorWhereUniqueInput
-    update?: XOR<XOR<EmulatorUpdateToOneWithWhereWithoutListingsInput, EmulatorUpdateWithoutListingsInput>, EmulatorUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: PerformanceScaleCreateOrConnectWithoutListingsInput
-    upsert?: PerformanceScaleUpsertWithoutListingsInput
-    connect?: PerformanceScaleWhereUniqueInput
-    update?: XOR<XOR<PerformanceScaleUpdateToOneWithWhereWithoutListingsInput, PerformanceScaleUpdateWithoutListingsInput>, PerformanceScaleUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type UserUpdateOneRequiredWithoutListingsNestedInput = {
-    create?: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutListingsInput
-    upsert?: UserUpsertWithoutListingsInput
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutListingsInput, UserUpdateWithoutListingsInput>, UserUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type VoteUpdateManyWithoutListingNestedInput = {
+  export type VoteUncheckedCreateNestedManyWithoutListingInput = {
     create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
     connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
-    upsert?: VoteUpsertWithWhereUniqueWithoutListingInput | VoteUpsertWithWhereUniqueWithoutListingInput[]
     createMany?: VoteCreateManyListingInputEnvelope
-    set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
     connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
-    update?: VoteUpdateWithWhereUniqueWithoutListingInput | VoteUpdateWithWhereUniqueWithoutListingInput[]
-    updateMany?: VoteUpdateManyWithWhereWithoutListingInput | VoteUpdateManyWithWhereWithoutListingInput[]
-    deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type CommentUpdateManyWithoutListingNestedInput = {
@@ -15446,6 +15419,46 @@ export namespace Prisma {
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
+  export type UserUpdateOneRequiredWithoutListingsNestedInput = {
+    create?: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutListingsInput
+    upsert?: UserUpsertWithoutListingsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutListingsInput, UserUpdateWithoutListingsInput>, UserUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput = {
+    create?: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: PerformanceScaleCreateOrConnectWithoutListingsInput
+    upsert?: PerformanceScaleUpsertWithoutListingsInput
+    connect?: PerformanceScaleWhereUniqueInput
+    update?: XOR<XOR<PerformanceScaleUpdateToOneWithWhereWithoutListingsInput, PerformanceScaleUpdateWithoutListingsInput>, PerformanceScaleUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type EmulatorUpdateOneRequiredWithoutListingsNestedInput = {
+    create?: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: EmulatorCreateOrConnectWithoutListingsInput
+    upsert?: EmulatorUpsertWithoutListingsInput
+    connect?: EmulatorWhereUniqueInput
+    update?: XOR<XOR<EmulatorUpdateToOneWithWhereWithoutListingsInput, EmulatorUpdateWithoutListingsInput>, EmulatorUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type GameUpdateOneRequiredWithoutListingsNestedInput = {
+    create?: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: GameCreateOrConnectWithoutListingsInput
+    upsert?: GameUpsertWithoutListingsInput
+    connect?: GameWhereUniqueInput
+    update?: XOR<XOR<GameUpdateToOneWithWhereWithoutListingsInput, GameUpdateWithoutListingsInput>, GameUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type DeviceUpdateOneRequiredWithoutListingsNestedInput = {
+    create?: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    connectOrCreate?: DeviceCreateOrConnectWithoutListingsInput
+    upsert?: DeviceUpsertWithoutListingsInput
+    connect?: DeviceWhereUniqueInput
+    update?: XOR<XOR<DeviceUpdateToOneWithWhereWithoutListingsInput, DeviceUpdateWithoutListingsInput>, DeviceUncheckedUpdateWithoutListingsInput>
+  }
+
   export type ListingApprovalUpdateManyWithoutListingNestedInput = {
     create?: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput> | ListingApprovalCreateWithoutListingInput[] | ListingApprovalUncheckedCreateWithoutListingInput[]
     connectOrCreate?: ListingApprovalCreateOrConnectWithoutListingInput | ListingApprovalCreateOrConnectWithoutListingInput[]
@@ -15460,7 +15473,7 @@ export namespace Prisma {
     deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
   }
 
-  export type VoteUncheckedUpdateManyWithoutListingNestedInput = {
+  export type VoteUpdateManyWithoutListingNestedInput = {
     create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
     connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
     upsert?: VoteUpsertWithWhereUniqueWithoutListingInput | VoteUpsertWithWhereUniqueWithoutListingInput[]
@@ -15502,10 +15515,18 @@ export namespace Prisma {
     deleteMany?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
   }
 
-  export type UserCreateNestedOneWithoutVotesInput = {
-    create?: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
-    connectOrCreate?: UserCreateOrConnectWithoutVotesInput
-    connect?: UserWhereUniqueInput
+  export type VoteUncheckedUpdateManyWithoutListingNestedInput = {
+    create?: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput> | VoteCreateWithoutListingInput[] | VoteUncheckedCreateWithoutListingInput[]
+    connectOrCreate?: VoteCreateOrConnectWithoutListingInput | VoteCreateOrConnectWithoutListingInput[]
+    upsert?: VoteUpsertWithWhereUniqueWithoutListingInput | VoteUpsertWithWhereUniqueWithoutListingInput[]
+    createMany?: VoteCreateManyListingInputEnvelope
+    set?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    disconnect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    delete?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    connect?: VoteWhereUniqueInput | VoteWhereUniqueInput[]
+    update?: VoteUpdateWithWhereUniqueWithoutListingInput | VoteUpdateWithWhereUniqueWithoutListingInput[]
+    updateMany?: VoteUpdateManyWithWhereWithoutListingInput | VoteUpdateManyWithWhereWithoutListingInput[]
+    deleteMany?: VoteScalarWhereInput | VoteScalarWhereInput[]
   }
 
   export type ListingCreateNestedOneWithoutVotesInput = {
@@ -15514,16 +15535,14 @@ export namespace Prisma {
     connect?: ListingWhereUniqueInput
   }
 
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
-  }
-
-  export type UserUpdateOneRequiredWithoutVotesNestedInput = {
+  export type UserCreateNestedOneWithoutVotesInput = {
     create?: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
     connectOrCreate?: UserCreateOrConnectWithoutVotesInput
-    upsert?: UserUpsertWithoutVotesInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutVotesInput, UserUpdateWithoutVotesInput>, UserUncheckedUpdateWithoutVotesInput>
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
   }
 
   export type ListingUpdateOneRequiredWithoutVotesNestedInput = {
@@ -15534,16 +15553,12 @@ export namespace Prisma {
     update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutVotesInput, ListingUpdateWithoutVotesInput>, ListingUncheckedUpdateWithoutVotesInput>
   }
 
-  export type UserCreateNestedOneWithoutCommentsInput = {
-    create?: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutCommentsInput
+  export type UserUpdateOneRequiredWithoutVotesNestedInput = {
+    create?: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVotesInput
+    upsert?: UserUpsertWithoutVotesInput
     connect?: UserWhereUniqueInput
-  }
-
-  export type ListingCreateNestedOneWithoutCommentsInput = {
-    create?: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
-    connectOrCreate?: ListingCreateOrConnectWithoutCommentsInput
-    connect?: ListingWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutVotesInput, UserUpdateWithoutVotesInput>, UserUncheckedUpdateWithoutVotesInput>
   }
 
   export type CommentCreateNestedOneWithoutRepliesInput = {
@@ -15559,6 +15574,18 @@ export namespace Prisma {
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
+  export type ListingCreateNestedOneWithoutCommentsInput = {
+    create?: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    connectOrCreate?: ListingCreateOrConnectWithoutCommentsInput
+    connect?: ListingWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutCommentsInput = {
+    create?: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommentsInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type CommentUncheckedCreateNestedManyWithoutParentInput = {
     create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
     connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
@@ -15566,20 +15593,8 @@ export namespace Prisma {
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
-  export type UserUpdateOneRequiredWithoutCommentsNestedInput = {
-    create?: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutCommentsInput
-    upsert?: UserUpsertWithoutCommentsInput
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCommentsInput, UserUpdateWithoutCommentsInput>, UserUncheckedUpdateWithoutCommentsInput>
-  }
-
-  export type ListingUpdateOneRequiredWithoutCommentsNestedInput = {
-    create?: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
-    connectOrCreate?: ListingCreateOrConnectWithoutCommentsInput
-    upsert?: ListingUpsertWithoutCommentsInput
-    connect?: ListingWhereUniqueInput
-    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutCommentsInput, ListingUpdateWithoutCommentsInput>, ListingUncheckedUpdateWithoutCommentsInput>
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
   }
 
   export type CommentUpdateOneWithoutRepliesNestedInput = {
@@ -15606,6 +15621,22 @@ export namespace Prisma {
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
+  export type ListingUpdateOneRequiredWithoutCommentsNestedInput = {
+    create?: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    connectOrCreate?: ListingCreateOrConnectWithoutCommentsInput
+    upsert?: ListingUpsertWithoutCommentsInput
+    connect?: ListingWhereUniqueInput
+    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutCommentsInput, ListingUpdateWithoutCommentsInput>, ListingUncheckedUpdateWithoutCommentsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutCommentsNestedInput = {
+    create?: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommentsInput
+    upsert?: UserUpsertWithoutCommentsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCommentsInput, UserUpdateWithoutCommentsInput>, UserUncheckedUpdateWithoutCommentsInput>
+  }
+
   export type CommentUncheckedUpdateManyWithoutParentNestedInput = {
     create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
     connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
@@ -15620,28 +15651,16 @@ export namespace Prisma {
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
-  export type ListingCreateNestedOneWithoutApprovalsInput = {
-    create?: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
-    connectOrCreate?: ListingCreateOrConnectWithoutApprovalsInput
-    connect?: ListingWhereUniqueInput
-  }
-
   export type UserCreateNestedOneWithoutApprovalsGivenInput = {
     create?: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
     connectOrCreate?: UserCreateOrConnectWithoutApprovalsGivenInput
     connect?: UserWhereUniqueInput
   }
 
-  export type EnumApprovalStatusFieldUpdateOperationsInput = {
-    set?: $Enums.ApprovalStatus
-  }
-
-  export type ListingUpdateOneRequiredWithoutApprovalsNestedInput = {
+  export type ListingCreateNestedOneWithoutApprovalsInput = {
     create?: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
     connectOrCreate?: ListingCreateOrConnectWithoutApprovalsInput
-    upsert?: ListingUpsertWithoutApprovalsInput
     connect?: ListingWhereUniqueInput
-    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutApprovalsInput, ListingUpdateWithoutApprovalsInput>, ListingUncheckedUpdateWithoutApprovalsInput>
   }
 
   export type UserUpdateOneRequiredWithoutApprovalsGivenNestedInput = {
@@ -15650,6 +15669,14 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutApprovalsGivenInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutApprovalsGivenInput, UserUpdateWithoutApprovalsGivenInput>, UserUncheckedUpdateWithoutApprovalsGivenInput>
+  }
+
+  export type ListingUpdateOneRequiredWithoutApprovalsNestedInput = {
+    create?: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
+    connectOrCreate?: ListingCreateOrConnectWithoutApprovalsInput
+    upsert?: ListingUpsertWithoutApprovalsInput
+    connect?: ListingWhereUniqueInput
+    update?: XOR<XOR<ListingUpdateToOneWithWhereWithoutApprovalsInput, ListingUpdateWithoutApprovalsInput>, ListingUncheckedUpdateWithoutApprovalsInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -15678,13 +15705,6 @@ export namespace Prisma {
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
-  }
-
-  export type NestedEnumRoleFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -15754,16 +15774,6 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedEnumRoleWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumRoleFilter<$PrismaModel>
-    _max?: NestedEnumRoleFilter<$PrismaModel>
-  }
-
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -15818,34 +15828,76 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
-  export type NestedEnumApprovalStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumApprovalStatusFilter<$PrismaModel> | $Enums.ApprovalStatus
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
-  export type NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.ApprovalStatus | EnumApprovalStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ApprovalStatus[] | ListEnumApprovalStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel> | $Enums.ApprovalStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumApprovalStatusFilter<$PrismaModel>
-    _max?: NestedEnumApprovalStatusFilter<$PrismaModel>
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type CommentCreateWithoutUserInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
+    parent?: CommentCreateNestedOneWithoutRepliesInput
+    replies?: CommentCreateNestedManyWithoutParentInput
+    listing: ListingCreateNestedOneWithoutCommentsInput
+  }
+
+  export type CommentUncheckedCreateWithoutUserInput = {
+    id?: string
+    content: string
+    listingId: string
+    parentId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
+    replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+  }
+
+  export type CommentCreateOrConnectWithoutUserInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
+  }
+
+  export type CommentCreateManyUserInputEnvelope = {
+    data: CommentCreateManyUserInput | CommentCreateManyUserInput[]
+    skipDuplicates?: boolean
   }
 
   export type ListingCreateWithoutAuthorInput = {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateWithoutAuthorInput = {
@@ -15856,9 +15908,9 @@ export namespace Prisma {
     performanceId: number
     notes?: string | null
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
     approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingCreateOrConnectWithoutAuthorInput = {
@@ -15868,6 +15920,34 @@ export namespace Prisma {
 
   export type ListingCreateManyAuthorInputEnvelope = {
     data: ListingCreateManyAuthorInput | ListingCreateManyAuthorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ListingApprovalCreateWithoutApprovedByInput = {
+    id?: string
+    approvedByRole: string
+    approvedAt?: Date | string
+    status: string
+    notes?: string | null
+    listing: ListingCreateNestedOneWithoutApprovalsInput
+  }
+
+  export type ListingApprovalUncheckedCreateWithoutApprovedByInput = {
+    id?: string
+    listingId: string
+    approvedByRole: string
+    approvedAt?: Date | string
+    status: string
+    notes?: string | null
+  }
+
+  export type ListingApprovalCreateOrConnectWithoutApprovedByInput = {
+    where: ListingApprovalWhereUniqueInput
+    create: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput>
+  }
+
+  export type ListingApprovalCreateManyApprovedByInputEnvelope = {
+    data: ListingApprovalCreateManyApprovedByInput | ListingApprovalCreateManyApprovedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -15893,60 +15973,35 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type CommentCreateWithoutUserInput = {
-    id?: string
-    content: string
-    createdAt?: Date | string
-    listing: ListingCreateNestedOneWithoutCommentsInput
-    parent?: CommentCreateNestedOneWithoutRepliesInput
-    replies?: CommentCreateNestedManyWithoutParentInput
-  }
-
-  export type CommentUncheckedCreateWithoutUserInput = {
-    id?: string
-    content: string
-    listingId: string
-    parentId?: string | null
-    createdAt?: Date | string
-    replies?: CommentUncheckedCreateNestedManyWithoutParentInput
-  }
-
-  export type CommentCreateOrConnectWithoutUserInput = {
+  export type CommentUpsertWithWhereUniqueWithoutUserInput = {
     where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
     create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
   }
 
-  export type CommentCreateManyUserInputEnvelope = {
-    data: CommentCreateManyUserInput | CommentCreateManyUserInput[]
-    skipDuplicates?: boolean
+  export type CommentUpdateWithWhereUniqueWithoutUserInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
   }
 
-  export type ListingApprovalCreateWithoutApprovedByInput = {
-    id?: string
-    approvedByRole: $Enums.Role
-    approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
-    notes?: string | null
-    listing: ListingCreateNestedOneWithoutApprovalsInput
+  export type CommentUpdateManyWithWhereWithoutUserInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutUserInput>
   }
 
-  export type ListingApprovalUncheckedCreateWithoutApprovedByInput = {
-    id?: string
-    listingId: string
-    approvedByRole: $Enums.Role
-    approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
-    notes?: string | null
-  }
-
-  export type ListingApprovalCreateOrConnectWithoutApprovedByInput = {
-    where: ListingApprovalWhereUniqueInput
-    create: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput>
-  }
-
-  export type ListingApprovalCreateManyApprovedByInputEnvelope = {
-    data: ListingApprovalCreateManyApprovedByInput | ListingApprovalCreateManyApprovedByInput[]
-    skipDuplicates?: boolean
+  export type CommentScalarWhereInput = {
+    AND?: CommentScalarWhereInput | CommentScalarWhereInput[]
+    OR?: CommentScalarWhereInput[]
+    NOT?: CommentScalarWhereInput | CommentScalarWhereInput[]
+    id?: StringFilter<"Comment"> | string
+    content?: StringFilter<"Comment"> | string
+    userId?: StringFilter<"Comment"> | string
+    listingId?: StringFilter<"Comment"> | string
+    parentId?: StringNullableFilter<"Comment"> | string | null
+    createdAt?: DateTimeFilter<"Comment"> | Date | string
+    updatedAt?: DateTimeFilter<"Comment"> | Date | string
+    deletedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
+    isEdited?: BoolFilter<"Comment"> | boolean
   }
 
   export type ListingUpsertWithWhereUniqueWithoutAuthorInput = {
@@ -15979,6 +16034,35 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Listing"> | Date | string
   }
 
+  export type ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput = {
+    where: ListingApprovalWhereUniqueInput
+    update: XOR<ListingApprovalUpdateWithoutApprovedByInput, ListingApprovalUncheckedUpdateWithoutApprovedByInput>
+    create: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput>
+  }
+
+  export type ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput = {
+    where: ListingApprovalWhereUniqueInput
+    data: XOR<ListingApprovalUpdateWithoutApprovedByInput, ListingApprovalUncheckedUpdateWithoutApprovedByInput>
+  }
+
+  export type ListingApprovalUpdateManyWithWhereWithoutApprovedByInput = {
+    where: ListingApprovalScalarWhereInput
+    data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyWithoutApprovedByInput>
+  }
+
+  export type ListingApprovalScalarWhereInput = {
+    AND?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+    OR?: ListingApprovalScalarWhereInput[]
+    NOT?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
+    id?: StringFilter<"ListingApproval"> | string
+    listingId?: StringFilter<"ListingApproval"> | string
+    approvedById?: StringFilter<"ListingApproval"> | string
+    approvedByRole?: StringFilter<"ListingApproval"> | string
+    approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
+    status?: StringFilter<"ListingApproval"> | string
+    notes?: StringNullableFilter<"ListingApproval"> | string | null
+  }
+
   export type VoteUpsertWithWhereUniqueWithoutUserInput = {
     where: VoteWhereUniqueInput
     update: XOR<VoteUpdateWithoutUserInput, VoteUncheckedUpdateWithoutUserInput>
@@ -16005,74 +16089,17 @@ export namespace Prisma {
     listingId?: StringFilter<"Vote"> | string
   }
 
-  export type CommentUpsertWithWhereUniqueWithoutUserInput = {
-    where: CommentWhereUniqueInput
-    update: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
-    create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
-  }
-
-  export type CommentUpdateWithWhereUniqueWithoutUserInput = {
-    where: CommentWhereUniqueInput
-    data: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
-  }
-
-  export type CommentUpdateManyWithWhereWithoutUserInput = {
-    where: CommentScalarWhereInput
-    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutUserInput>
-  }
-
-  export type CommentScalarWhereInput = {
-    AND?: CommentScalarWhereInput | CommentScalarWhereInput[]
-    OR?: CommentScalarWhereInput[]
-    NOT?: CommentScalarWhereInput | CommentScalarWhereInput[]
-    id?: StringFilter<"Comment"> | string
-    content?: StringFilter<"Comment"> | string
-    userId?: StringFilter<"Comment"> | string
-    listingId?: StringFilter<"Comment"> | string
-    parentId?: StringNullableFilter<"Comment"> | string | null
-    createdAt?: DateTimeFilter<"Comment"> | Date | string
-  }
-
-  export type ListingApprovalUpsertWithWhereUniqueWithoutApprovedByInput = {
-    where: ListingApprovalWhereUniqueInput
-    update: XOR<ListingApprovalUpdateWithoutApprovedByInput, ListingApprovalUncheckedUpdateWithoutApprovedByInput>
-    create: XOR<ListingApprovalCreateWithoutApprovedByInput, ListingApprovalUncheckedCreateWithoutApprovedByInput>
-  }
-
-  export type ListingApprovalUpdateWithWhereUniqueWithoutApprovedByInput = {
-    where: ListingApprovalWhereUniqueInput
-    data: XOR<ListingApprovalUpdateWithoutApprovedByInput, ListingApprovalUncheckedUpdateWithoutApprovedByInput>
-  }
-
-  export type ListingApprovalUpdateManyWithWhereWithoutApprovedByInput = {
-    where: ListingApprovalScalarWhereInput
-    data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyWithoutApprovedByInput>
-  }
-
-  export type ListingApprovalScalarWhereInput = {
-    AND?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
-    OR?: ListingApprovalScalarWhereInput[]
-    NOT?: ListingApprovalScalarWhereInput | ListingApprovalScalarWhereInput[]
-    id?: StringFilter<"ListingApproval"> | string
-    listingId?: StringFilter<"ListingApproval"> | string
-    approvedById?: StringFilter<"ListingApproval"> | string
-    approvedByRole?: EnumRoleFilter<"ListingApproval"> | $Enums.Role
-    approvedAt?: DateTimeFilter<"ListingApproval"> | Date | string
-    status?: EnumApprovalStatusFilter<"ListingApproval"> | $Enums.ApprovalStatus
-    notes?: StringNullableFilter<"ListingApproval"> | string | null
-  }
-
   export type ListingCreateWithoutDeviceInput = {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateWithoutDeviceInput = {
@@ -16083,9 +16110,9 @@ export namespace Prisma {
     notes?: string | null
     authorId: string
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
     approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingCreateOrConnectWithoutDeviceInput = {
@@ -16183,13 +16210,13 @@ export namespace Prisma {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateWithoutGameInput = {
@@ -16200,9 +16227,9 @@ export namespace Prisma {
     notes?: string | null
     authorId: string
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
     approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingCreateOrConnectWithoutGameInput = {
@@ -16256,13 +16283,13 @@ export namespace Prisma {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateWithoutEmulatorInput = {
@@ -16273,9 +16300,9 @@ export namespace Prisma {
     notes?: string | null
     authorId: string
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
     approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingCreateOrConnectWithoutEmulatorInput = {
@@ -16308,13 +16335,13 @@ export namespace Prisma {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateWithoutPerformanceInput = {
@@ -16325,9 +16352,9 @@ export namespace Prisma {
     notes?: string | null
     authorId: string
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
     approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingCreateOrConnectWithoutPerformanceInput = {
@@ -16356,21 +16383,100 @@ export namespace Prisma {
     data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutPerformanceInput>
   }
 
-  export type DeviceCreateWithoutListingsInput = {
+  export type CommentCreateWithoutListingInput = {
     id?: string
-    brand: string
-    modelName: string
+    content: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
+    parent?: CommentCreateNestedOneWithoutRepliesInput
+    replies?: CommentCreateNestedManyWithoutParentInput
+    user: UserCreateNestedOneWithoutCommentsInput
   }
 
-  export type DeviceUncheckedCreateWithoutListingsInput = {
+  export type CommentUncheckedCreateWithoutListingInput = {
     id?: string
-    brand: string
-    modelName: string
+    content: string
+    userId: string
+    parentId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
+    replies?: CommentUncheckedCreateNestedManyWithoutParentInput
   }
 
-  export type DeviceCreateOrConnectWithoutListingsInput = {
-    where: DeviceWhereUniqueInput
-    create: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+  export type CommentCreateOrConnectWithoutListingInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput>
+  }
+
+  export type CommentCreateManyListingInputEnvelope = {
+    data: CommentCreateManyListingInput | CommentCreateManyListingInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserCreateWithoutListingsInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    comments?: CommentCreateNestedManyWithoutUserInput
+    approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+    votes?: VoteCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutListingsInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    comments?: CommentUncheckedCreateNestedManyWithoutUserInput
+    approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutListingsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+  }
+
+  export type PerformanceScaleCreateWithoutListingsInput = {
+    label: string
+    rank: number
+  }
+
+  export type PerformanceScaleUncheckedCreateWithoutListingsInput = {
+    id?: number
+    label: string
+    rank: number
+  }
+
+  export type PerformanceScaleCreateOrConnectWithoutListingsInput = {
+    where: PerformanceScaleWhereUniqueInput
+    create: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+  }
+
+  export type EmulatorCreateWithoutListingsInput = {
+    id?: string
+    name: string
+  }
+
+  export type EmulatorUncheckedCreateWithoutListingsInput = {
+    id?: string
+    name: string
+  }
+
+  export type EmulatorCreateOrConnectWithoutListingsInput = {
+    where: EmulatorWhereUniqueInput
+    create: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
   }
 
   export type GameCreateWithoutListingsInput = {
@@ -16392,66 +16498,49 @@ export namespace Prisma {
     create: XOR<GameCreateWithoutListingsInput, GameUncheckedCreateWithoutListingsInput>
   }
 
-  export type EmulatorCreateWithoutListingsInput = {
+  export type DeviceCreateWithoutListingsInput = {
     id?: string
-    name: string
+    brand: string
+    modelName: string
   }
 
-  export type EmulatorUncheckedCreateWithoutListingsInput = {
+  export type DeviceUncheckedCreateWithoutListingsInput = {
     id?: string
-    name: string
+    brand: string
+    modelName: string
   }
 
-  export type EmulatorCreateOrConnectWithoutListingsInput = {
-    where: EmulatorWhereUniqueInput
-    create: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+  export type DeviceCreateOrConnectWithoutListingsInput = {
+    where: DeviceWhereUniqueInput
+    create: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
   }
 
-  export type PerformanceScaleCreateWithoutListingsInput = {
-    label: string
-    rank: number
-  }
-
-  export type PerformanceScaleUncheckedCreateWithoutListingsInput = {
-    id?: number
-    label: string
-    rank: number
-  }
-
-  export type PerformanceScaleCreateOrConnectWithoutListingsInput = {
-    where: PerformanceScaleWhereUniqueInput
-    create: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
-  }
-
-  export type UserCreateWithoutListingsInput = {
+  export type ListingApprovalCreateWithoutListingInput = {
     id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    votes?: VoteCreateNestedManyWithoutUserInput
-    comments?: CommentCreateNestedManyWithoutUserInput
-    approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+    approvedByRole: string
+    approvedAt?: Date | string
+    status: string
+    notes?: string | null
+    approvedBy: UserCreateNestedOneWithoutApprovalsGivenInput
   }
 
-  export type UserUncheckedCreateWithoutListingsInput = {
+  export type ListingApprovalUncheckedCreateWithoutListingInput = {
     id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
-    comments?: CommentUncheckedCreateNestedManyWithoutUserInput
-    approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    approvedById: string
+    approvedByRole: string
+    approvedAt?: Date | string
+    status: string
+    notes?: string | null
   }
 
-  export type UserCreateOrConnectWithoutListingsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+  export type ListingApprovalCreateOrConnectWithoutListingInput = {
+    where: ListingApprovalWhereUniqueInput
+    create: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput>
+  }
+
+  export type ListingApprovalCreateManyListingInputEnvelope = {
+    data: ListingApprovalCreateManyListingInput | ListingApprovalCreateManyListingInput[]
+    skipDuplicates?: boolean
   }
 
   export type VoteCreateWithoutListingInput = {
@@ -16476,83 +16565,100 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type CommentCreateWithoutListingInput = {
-    id?: string
-    content: string
-    createdAt?: Date | string
-    user: UserCreateNestedOneWithoutCommentsInput
-    parent?: CommentCreateNestedOneWithoutRepliesInput
-    replies?: CommentCreateNestedManyWithoutParentInput
-  }
-
-  export type CommentUncheckedCreateWithoutListingInput = {
-    id?: string
-    content: string
-    userId: string
-    parentId?: string | null
-    createdAt?: Date | string
-    replies?: CommentUncheckedCreateNestedManyWithoutParentInput
-  }
-
-  export type CommentCreateOrConnectWithoutListingInput = {
+  export type CommentUpsertWithWhereUniqueWithoutListingInput = {
     where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutListingInput, CommentUncheckedUpdateWithoutListingInput>
     create: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput>
   }
 
-  export type CommentCreateManyListingInputEnvelope = {
-    data: CommentCreateManyListingInput | CommentCreateManyListingInput[]
-    skipDuplicates?: boolean
+  export type CommentUpdateWithWhereUniqueWithoutListingInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutListingInput, CommentUncheckedUpdateWithoutListingInput>
   }
 
-  export type ListingApprovalCreateWithoutListingInput = {
-    id?: string
-    approvedByRole: $Enums.Role
-    approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
-    notes?: string | null
-    approvedBy: UserCreateNestedOneWithoutApprovalsGivenInput
+  export type CommentUpdateManyWithWhereWithoutListingInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutListingInput>
   }
 
-  export type ListingApprovalUncheckedCreateWithoutListingInput = {
-    id?: string
-    approvedById: string
-    approvedByRole: $Enums.Role
-    approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
-    notes?: string | null
+  export type UserUpsertWithoutListingsInput = {
+    update: XOR<UserUpdateWithoutListingsInput, UserUncheckedUpdateWithoutListingsInput>
+    create: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
+    where?: UserWhereInput
   }
 
-  export type ListingApprovalCreateOrConnectWithoutListingInput = {
-    where: ListingApprovalWhereUniqueInput
-    create: XOR<ListingApprovalCreateWithoutListingInput, ListingApprovalUncheckedCreateWithoutListingInput>
+  export type UserUpdateToOneWithWhereWithoutListingsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutListingsInput, UserUncheckedUpdateWithoutListingsInput>
   }
 
-  export type ListingApprovalCreateManyListingInputEnvelope = {
-    data: ListingApprovalCreateManyListingInput | ListingApprovalCreateManyListingInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type DeviceUpsertWithoutListingsInput = {
-    update: XOR<DeviceUpdateWithoutListingsInput, DeviceUncheckedUpdateWithoutListingsInput>
-    create: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
-    where?: DeviceWhereInput
-  }
-
-  export type DeviceUpdateToOneWithWhereWithoutListingsInput = {
-    where?: DeviceWhereInput
-    data: XOR<DeviceUpdateWithoutListingsInput, DeviceUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type DeviceUpdateWithoutListingsInput = {
+  export type UserUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
-    modelName?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    hashedPassword?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUpdateManyWithoutUserNestedInput
+    approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
+    votes?: VoteUpdateManyWithoutUserNestedInput
   }
 
-  export type DeviceUncheckedUpdateWithoutListingsInput = {
+  export type UserUncheckedUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
-    modelName?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    hashedPassword?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
+    approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type PerformanceScaleUpsertWithoutListingsInput = {
+    update: XOR<PerformanceScaleUpdateWithoutListingsInput, PerformanceScaleUncheckedUpdateWithoutListingsInput>
+    create: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
+    where?: PerformanceScaleWhereInput
+  }
+
+  export type PerformanceScaleUpdateToOneWithWhereWithoutListingsInput = {
+    where?: PerformanceScaleWhereInput
+    data: XOR<PerformanceScaleUpdateWithoutListingsInput, PerformanceScaleUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type PerformanceScaleUpdateWithoutListingsInput = {
+    label?: StringFieldUpdateOperationsInput | string
+    rank?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PerformanceScaleUncheckedUpdateWithoutListingsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    label?: StringFieldUpdateOperationsInput | string
+    rank?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type EmulatorUpsertWithoutListingsInput = {
+    update: XOR<EmulatorUpdateWithoutListingsInput, EmulatorUncheckedUpdateWithoutListingsInput>
+    create: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
+    where?: EmulatorWhereInput
+  }
+
+  export type EmulatorUpdateToOneWithWhereWithoutListingsInput = {
+    where?: EmulatorWhereInput
+    data: XOR<EmulatorUpdateWithoutListingsInput, EmulatorUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type EmulatorUpdateWithoutListingsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type EmulatorUncheckedUpdateWithoutListingsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
   }
 
   export type GameUpsertWithoutListingsInput = {
@@ -16580,116 +16686,27 @@ export namespace Prisma {
     imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type EmulatorUpsertWithoutListingsInput = {
-    update: XOR<EmulatorUpdateWithoutListingsInput, EmulatorUncheckedUpdateWithoutListingsInput>
-    create: XOR<EmulatorCreateWithoutListingsInput, EmulatorUncheckedCreateWithoutListingsInput>
-    where?: EmulatorWhereInput
+  export type DeviceUpsertWithoutListingsInput = {
+    update: XOR<DeviceUpdateWithoutListingsInput, DeviceUncheckedUpdateWithoutListingsInput>
+    create: XOR<DeviceCreateWithoutListingsInput, DeviceUncheckedCreateWithoutListingsInput>
+    where?: DeviceWhereInput
   }
 
-  export type EmulatorUpdateToOneWithWhereWithoutListingsInput = {
-    where?: EmulatorWhereInput
-    data: XOR<EmulatorUpdateWithoutListingsInput, EmulatorUncheckedUpdateWithoutListingsInput>
+  export type DeviceUpdateToOneWithWhereWithoutListingsInput = {
+    where?: DeviceWhereInput
+    data: XOR<DeviceUpdateWithoutListingsInput, DeviceUncheckedUpdateWithoutListingsInput>
   }
 
-  export type EmulatorUpdateWithoutListingsInput = {
+  export type DeviceUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    brand?: StringFieldUpdateOperationsInput | string
+    modelName?: StringFieldUpdateOperationsInput | string
   }
 
-  export type EmulatorUncheckedUpdateWithoutListingsInput = {
+  export type DeviceUncheckedUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type PerformanceScaleUpsertWithoutListingsInput = {
-    update: XOR<PerformanceScaleUpdateWithoutListingsInput, PerformanceScaleUncheckedUpdateWithoutListingsInput>
-    create: XOR<PerformanceScaleCreateWithoutListingsInput, PerformanceScaleUncheckedCreateWithoutListingsInput>
-    where?: PerformanceScaleWhereInput
-  }
-
-  export type PerformanceScaleUpdateToOneWithWhereWithoutListingsInput = {
-    where?: PerformanceScaleWhereInput
-    data: XOR<PerformanceScaleUpdateWithoutListingsInput, PerformanceScaleUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type PerformanceScaleUpdateWithoutListingsInput = {
-    label?: StringFieldUpdateOperationsInput | string
-    rank?: IntFieldUpdateOperationsInput | number
-  }
-
-  export type PerformanceScaleUncheckedUpdateWithoutListingsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    label?: StringFieldUpdateOperationsInput | string
-    rank?: IntFieldUpdateOperationsInput | number
-  }
-
-  export type UserUpsertWithoutListingsInput = {
-    update: XOR<UserUpdateWithoutListingsInput, UserUncheckedUpdateWithoutListingsInput>
-    create: XOR<UserCreateWithoutListingsInput, UserUncheckedCreateWithoutListingsInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutListingsInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutListingsInput, UserUncheckedUpdateWithoutListingsInput>
-  }
-
-  export type UserUpdateWithoutListingsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    hashedPassword?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUpdateManyWithoutUserNestedInput
-    comments?: CommentUpdateManyWithoutUserNestedInput
-    approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutListingsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    hashedPassword?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
-    comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
-    approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
-  }
-
-  export type VoteUpsertWithWhereUniqueWithoutListingInput = {
-    where: VoteWhereUniqueInput
-    update: XOR<VoteUpdateWithoutListingInput, VoteUncheckedUpdateWithoutListingInput>
-    create: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput>
-  }
-
-  export type VoteUpdateWithWhereUniqueWithoutListingInput = {
-    where: VoteWhereUniqueInput
-    data: XOR<VoteUpdateWithoutListingInput, VoteUncheckedUpdateWithoutListingInput>
-  }
-
-  export type VoteUpdateManyWithWhereWithoutListingInput = {
-    where: VoteScalarWhereInput
-    data: XOR<VoteUpdateManyMutationInput, VoteUncheckedUpdateManyWithoutListingInput>
-  }
-
-  export type CommentUpsertWithWhereUniqueWithoutListingInput = {
-    where: CommentWhereUniqueInput
-    update: XOR<CommentUpdateWithoutListingInput, CommentUncheckedUpdateWithoutListingInput>
-    create: XOR<CommentCreateWithoutListingInput, CommentUncheckedCreateWithoutListingInput>
-  }
-
-  export type CommentUpdateWithWhereUniqueWithoutListingInput = {
-    where: CommentWhereUniqueInput
-    data: XOR<CommentUpdateWithoutListingInput, CommentUncheckedUpdateWithoutListingInput>
-  }
-
-  export type CommentUpdateManyWithWhereWithoutListingInput = {
-    where: CommentScalarWhereInput
-    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutListingInput>
+    brand?: StringFieldUpdateOperationsInput | string
+    modelName?: StringFieldUpdateOperationsInput | string
   }
 
   export type ListingApprovalUpsertWithWhereUniqueWithoutListingInput = {
@@ -16708,47 +16725,32 @@ export namespace Prisma {
     data: XOR<ListingApprovalUpdateManyMutationInput, ListingApprovalUncheckedUpdateManyWithoutListingInput>
   }
 
-  export type UserCreateWithoutVotesInput = {
-    id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    listings?: ListingCreateNestedManyWithoutAuthorInput
-    comments?: CommentCreateNestedManyWithoutUserInput
-    approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+  export type VoteUpsertWithWhereUniqueWithoutListingInput = {
+    where: VoteWhereUniqueInput
+    update: XOR<VoteUpdateWithoutListingInput, VoteUncheckedUpdateWithoutListingInput>
+    create: XOR<VoteCreateWithoutListingInput, VoteUncheckedCreateWithoutListingInput>
   }
 
-  export type UserUncheckedCreateWithoutVotesInput = {
-    id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
-    comments?: CommentUncheckedCreateNestedManyWithoutUserInput
-    approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+  export type VoteUpdateWithWhereUniqueWithoutListingInput = {
+    where: VoteWhereUniqueInput
+    data: XOR<VoteUpdateWithoutListingInput, VoteUncheckedUpdateWithoutListingInput>
   }
 
-  export type UserCreateOrConnectWithoutVotesInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+  export type VoteUpdateManyWithWhereWithoutListingInput = {
+    where: VoteScalarWhereInput
+    data: XOR<VoteUpdateManyMutationInput, VoteUncheckedUpdateManyWithoutListingInput>
   }
 
   export type ListingCreateWithoutVotesInput = {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
     approvals?: ListingApprovalCreateNestedManyWithoutListingInput
   }
 
@@ -16770,41 +16772,35 @@ export namespace Prisma {
     create: XOR<ListingCreateWithoutVotesInput, ListingUncheckedCreateWithoutVotesInput>
   }
 
-  export type UserUpsertWithoutVotesInput = {
-    update: XOR<UserUpdateWithoutVotesInput, UserUncheckedUpdateWithoutVotesInput>
+  export type UserCreateWithoutVotesInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    comments?: CommentCreateNestedManyWithoutUserInput
+    listings?: ListingCreateNestedManyWithoutAuthorInput
+    approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+  }
+
+  export type UserUncheckedCreateWithoutVotesInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    comments?: CommentUncheckedCreateNestedManyWithoutUserInput
+    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
+    approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+  }
+
+  export type UserCreateOrConnectWithoutVotesInput = {
+    where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutVotesInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutVotesInput, UserUncheckedUpdateWithoutVotesInput>
-  }
-
-  export type UserUpdateWithoutVotesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    hashedPassword?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    listings?: ListingUpdateManyWithoutAuthorNestedInput
-    comments?: CommentUpdateManyWithoutUserNestedInput
-    approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutVotesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    hashedPassword?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
-    comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
-    approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
   }
 
   export type ListingUpsertWithoutVotesInput = {
@@ -16822,12 +16818,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
   }
 
@@ -16844,75 +16840,53 @@ export namespace Prisma {
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
   }
 
-  export type UserCreateWithoutCommentsInput = {
-    id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    listings?: ListingCreateNestedManyWithoutAuthorInput
-    votes?: VoteCreateNestedManyWithoutUserInput
-    approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+  export type UserUpsertWithoutVotesInput = {
+    update: XOR<UserUpdateWithoutVotesInput, UserUncheckedUpdateWithoutVotesInput>
+    create: XOR<UserCreateWithoutVotesInput, UserUncheckedCreateWithoutVotesInput>
+    where?: UserWhereInput
   }
 
-  export type UserUncheckedCreateWithoutCommentsInput = {
-    id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
-    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
-    approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+  export type UserUpdateToOneWithWhereWithoutVotesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutVotesInput, UserUncheckedUpdateWithoutVotesInput>
   }
 
-  export type UserCreateOrConnectWithoutCommentsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+  export type UserUpdateWithoutVotesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    hashedPassword?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUpdateManyWithoutUserNestedInput
+    listings?: ListingUpdateManyWithoutAuthorNestedInput
+    approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
   }
 
-  export type ListingCreateWithoutCommentsInput = {
-    id?: string
-    notes?: string | null
-    createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
-    approvals?: ListingApprovalCreateNestedManyWithoutListingInput
-  }
-
-  export type ListingUncheckedCreateWithoutCommentsInput = {
-    id?: string
-    deviceId: string
-    gameId: string
-    emulatorId: string
-    performanceId: number
-    notes?: string | null
-    authorId: string
-    createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
-    approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
-  }
-
-  export type ListingCreateOrConnectWithoutCommentsInput = {
-    where: ListingWhereUniqueInput
-    create: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+  export type UserUncheckedUpdateWithoutVotesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    hashedPassword?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    profileImage?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
+    listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
+    approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
   }
 
   export type CommentCreateWithoutRepliesInput = {
     id?: string
     content: string
     createdAt?: Date | string
-    user: UserCreateNestedOneWithoutCommentsInput
-    listing: ListingCreateNestedOneWithoutCommentsInput
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
     parent?: CommentCreateNestedOneWithoutRepliesInput
+    listing: ListingCreateNestedOneWithoutCommentsInput
+    user: UserCreateNestedOneWithoutCommentsInput
   }
 
   export type CommentUncheckedCreateWithoutRepliesInput = {
@@ -16922,6 +16896,9 @@ export namespace Prisma {
     listingId: string
     parentId?: string | null
     createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
   }
 
   export type CommentCreateOrConnectWithoutRepliesInput = {
@@ -16933,9 +16910,12 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
-    user: UserCreateNestedOneWithoutCommentsInput
-    listing: ListingCreateNestedOneWithoutCommentsInput
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
     replies?: CommentCreateNestedManyWithoutParentInput
+    listing: ListingCreateNestedOneWithoutCommentsInput
+    user: UserCreateNestedOneWithoutCommentsInput
   }
 
   export type CommentUncheckedCreateWithoutParentInput = {
@@ -16944,6 +16924,9 @@ export namespace Prisma {
     userId: string
     listingId: string
     createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
   }
 
@@ -16955,6 +16938,156 @@ export namespace Prisma {
   export type CommentCreateManyParentInputEnvelope = {
     data: CommentCreateManyParentInput | CommentCreateManyParentInput[]
     skipDuplicates?: boolean
+  }
+
+  export type ListingCreateWithoutCommentsInput = {
+    id?: string
+    notes?: string | null
+    createdAt?: Date | string
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
+    approvals?: ListingApprovalCreateNestedManyWithoutListingInput
+    votes?: VoteCreateNestedManyWithoutListingInput
+  }
+
+  export type ListingUncheckedCreateWithoutCommentsInput = {
+    id?: string
+    deviceId: string
+    gameId: string
+    emulatorId: string
+    performanceId: number
+    notes?: string | null
+    authorId: string
+    createdAt?: Date | string
+    approvals?: ListingApprovalUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
+  }
+
+  export type ListingCreateOrConnectWithoutCommentsInput = {
+    where: ListingWhereUniqueInput
+    create: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+  }
+
+  export type UserCreateWithoutCommentsInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    listings?: ListingCreateNestedManyWithoutAuthorInput
+    approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
+    votes?: VoteCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutCommentsInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
+    approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutCommentsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCommentsInput, UserUncheckedCreateWithoutCommentsInput>
+  }
+
+  export type CommentUpsertWithoutRepliesInput = {
+    update: XOR<CommentUpdateWithoutRepliesInput, CommentUncheckedUpdateWithoutRepliesInput>
+    create: XOR<CommentCreateWithoutRepliesInput, CommentUncheckedCreateWithoutRepliesInput>
+    where?: CommentWhereInput
+  }
+
+  export type CommentUpdateToOneWithWhereWithoutRepliesInput = {
+    where?: CommentWhereInput
+    data: XOR<CommentUpdateWithoutRepliesInput, CommentUncheckedUpdateWithoutRepliesInput>
+  }
+
+  export type CommentUpdateWithoutRepliesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+    parent?: CommentUpdateOneWithoutRepliesNestedInput
+    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
+    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutRepliesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    listingId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+  }
+
+  export type CommentUpsertWithWhereUniqueWithoutParentInput = {
+    where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
+    create: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput>
+  }
+
+  export type CommentUpdateWithWhereUniqueWithoutParentInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
+  }
+
+  export type CommentUpdateManyWithWhereWithoutParentInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutParentInput>
+  }
+
+  export type ListingUpsertWithoutCommentsInput = {
+    update: XOR<ListingUpdateWithoutCommentsInput, ListingUncheckedUpdateWithoutCommentsInput>
+    create: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
+    where?: ListingWhereInput
+  }
+
+  export type ListingUpdateToOneWithWhereWithoutCommentsInput = {
+    where?: ListingWhereInput
+    data: XOR<ListingUpdateWithoutCommentsInput, ListingUncheckedUpdateWithoutCommentsInput>
+  }
+
+  export type ListingUpdateWithoutCommentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
+    approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
+  }
+
+  export type ListingUncheckedUpdateWithoutCommentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    deviceId?: StringFieldUpdateOperationsInput | string
+    gameId?: StringFieldUpdateOperationsInput | string
+    emulatorId?: StringFieldUpdateOperationsInput | string
+    performanceId?: IntFieldUpdateOperationsInput | number
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    authorId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type UserUpsertWithoutCommentsInput = {
@@ -16974,11 +17107,11 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     listings?: ListingUpdateManyWithoutAuthorNestedInput
-    votes?: VoteUpdateManyWithoutUserNestedInput
     approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
+    votes?: VoteUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -16987,106 +17120,55 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
-    votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
     approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
   }
 
-  export type ListingUpsertWithoutCommentsInput = {
-    update: XOR<ListingUpdateWithoutCommentsInput, ListingUncheckedUpdateWithoutCommentsInput>
-    create: XOR<ListingCreateWithoutCommentsInput, ListingUncheckedCreateWithoutCommentsInput>
-    where?: ListingWhereInput
+  export type UserCreateWithoutApprovalsGivenInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    comments?: CommentCreateNestedManyWithoutUserInput
+    listings?: ListingCreateNestedManyWithoutAuthorInput
+    votes?: VoteCreateNestedManyWithoutUserInput
   }
 
-  export type ListingUpdateToOneWithWhereWithoutCommentsInput = {
-    where?: ListingWhereInput
-    data: XOR<ListingUpdateWithoutCommentsInput, ListingUncheckedUpdateWithoutCommentsInput>
+  export type UserUncheckedCreateWithoutApprovalsGivenInput = {
+    id?: string
+    email: string
+    hashedPassword: string
+    name?: string | null
+    profileImage?: string | null
+    role?: string
+    createdAt?: Date | string
+    comments?: CommentUncheckedCreateNestedManyWithoutUserInput
+    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
+    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
   }
 
-  export type ListingUpdateWithoutCommentsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
-    approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
-  }
-
-  export type ListingUncheckedUpdateWithoutCommentsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    deviceId?: StringFieldUpdateOperationsInput | string
-    gameId?: StringFieldUpdateOperationsInput | string
-    emulatorId?: StringFieldUpdateOperationsInput | string
-    performanceId?: IntFieldUpdateOperationsInput | number
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    authorId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
-    approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
-  }
-
-  export type CommentUpsertWithoutRepliesInput = {
-    update: XOR<CommentUpdateWithoutRepliesInput, CommentUncheckedUpdateWithoutRepliesInput>
-    create: XOR<CommentCreateWithoutRepliesInput, CommentUncheckedCreateWithoutRepliesInput>
-    where?: CommentWhereInput
-  }
-
-  export type CommentUpdateToOneWithWhereWithoutRepliesInput = {
-    where?: CommentWhereInput
-    data: XOR<CommentUpdateWithoutRepliesInput, CommentUncheckedUpdateWithoutRepliesInput>
-  }
-
-  export type CommentUpdateWithoutRepliesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
-    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
-    parent?: CommentUpdateOneWithoutRepliesNestedInput
-  }
-
-  export type CommentUncheckedUpdateWithoutRepliesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    listingId?: StringFieldUpdateOperationsInput | string
-    parentId?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type CommentUpsertWithWhereUniqueWithoutParentInput = {
-    where: CommentWhereUniqueInput
-    update: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
-    create: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput>
-  }
-
-  export type CommentUpdateWithWhereUniqueWithoutParentInput = {
-    where: CommentWhereUniqueInput
-    data: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
-  }
-
-  export type CommentUpdateManyWithWhereWithoutParentInput = {
-    where: CommentScalarWhereInput
-    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutParentInput>
+  export type UserCreateOrConnectWithoutApprovalsGivenInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
   }
 
   export type ListingCreateWithoutApprovalsInput = {
     id?: string
     notes?: string | null
     createdAt?: Date | string
-    device: DeviceCreateNestedOneWithoutListingsInput
-    game: GameCreateNestedOneWithoutListingsInput
-    emulator: EmulatorCreateNestedOneWithoutListingsInput
-    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
-    author: UserCreateNestedOneWithoutListingsInput
-    votes?: VoteCreateNestedManyWithoutListingInput
     comments?: CommentCreateNestedManyWithoutListingInput
+    author: UserCreateNestedOneWithoutListingsInput
+    performance: PerformanceScaleCreateNestedOneWithoutListingsInput
+    emulator: EmulatorCreateNestedOneWithoutListingsInput
+    game: GameCreateNestedOneWithoutListingsInput
+    device: DeviceCreateNestedOneWithoutListingsInput
+    votes?: VoteCreateNestedManyWithoutListingInput
   }
 
   export type ListingUncheckedCreateWithoutApprovalsInput = {
@@ -17098,81 +17180,13 @@ export namespace Prisma {
     notes?: string | null
     authorId: string
     createdAt?: Date | string
-    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
     comments?: CommentUncheckedCreateNestedManyWithoutListingInput
+    votes?: VoteUncheckedCreateNestedManyWithoutListingInput
   }
 
   export type ListingCreateOrConnectWithoutApprovalsInput = {
     where: ListingWhereUniqueInput
     create: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
-  }
-
-  export type UserCreateWithoutApprovalsGivenInput = {
-    id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    listings?: ListingCreateNestedManyWithoutAuthorInput
-    votes?: VoteCreateNestedManyWithoutUserInput
-    comments?: CommentCreateNestedManyWithoutUserInput
-  }
-
-  export type UserUncheckedCreateWithoutApprovalsGivenInput = {
-    id?: string
-    email: string
-    hashedPassword: string
-    name?: string | null
-    profileImage?: string | null
-    role?: $Enums.Role
-    createdAt?: Date | string
-    listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
-    votes?: VoteUncheckedCreateNestedManyWithoutUserInput
-    comments?: CommentUncheckedCreateNestedManyWithoutUserInput
-  }
-
-  export type UserCreateOrConnectWithoutApprovalsGivenInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutApprovalsGivenInput, UserUncheckedCreateWithoutApprovalsGivenInput>
-  }
-
-  export type ListingUpsertWithoutApprovalsInput = {
-    update: XOR<ListingUpdateWithoutApprovalsInput, ListingUncheckedUpdateWithoutApprovalsInput>
-    create: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
-    where?: ListingWhereInput
-  }
-
-  export type ListingUpdateToOneWithWhereWithoutApprovalsInput = {
-    where?: ListingWhereInput
-    data: XOR<ListingUpdateWithoutApprovalsInput, ListingUncheckedUpdateWithoutApprovalsInput>
-  }
-
-  export type ListingUpdateWithoutApprovalsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
-    comments?: CommentUpdateManyWithoutListingNestedInput
-  }
-
-  export type ListingUncheckedUpdateWithoutApprovalsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    deviceId?: StringFieldUpdateOperationsInput | string
-    gameId?: StringFieldUpdateOperationsInput | string
-    emulatorId?: StringFieldUpdateOperationsInput | string
-    performanceId?: IntFieldUpdateOperationsInput | number
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    authorId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
-    comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type UserUpsertWithoutApprovalsGivenInput = {
@@ -17192,11 +17206,11 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutAuthorNestedInput
     votes?: VoteUpdateManyWithoutUserNestedInput
-    comments?: CommentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutApprovalsGivenInput = {
@@ -17205,11 +17219,59 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    role?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
     votes?: VoteUncheckedUpdateManyWithoutUserNestedInput
-    comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ListingUpsertWithoutApprovalsInput = {
+    update: XOR<ListingUpdateWithoutApprovalsInput, ListingUncheckedUpdateWithoutApprovalsInput>
+    create: XOR<ListingCreateWithoutApprovalsInput, ListingUncheckedCreateWithoutApprovalsInput>
+    where?: ListingWhereInput
+  }
+
+  export type ListingUpdateToOneWithWhereWithoutApprovalsInput = {
+    where?: ListingWhereInput
+    data: XOR<ListingUpdateWithoutApprovalsInput, ListingUncheckedUpdateWithoutApprovalsInput>
+  }
+
+  export type ListingUpdateWithoutApprovalsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
+  }
+
+  export type ListingUncheckedUpdateWithoutApprovalsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    deviceId?: StringFieldUpdateOperationsInput | string
+    gameId?: StringFieldUpdateOperationsInput | string
+    emulatorId?: StringFieldUpdateOperationsInput | string
+    performanceId?: IntFieldUpdateOperationsInput | number
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    authorId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
+  }
+
+  export type CommentCreateManyUserInput = {
+    id?: string
+    content: string
+    listingId: string
+    parentId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
   }
 
   export type ListingCreateManyAuthorInput = {
@@ -17222,40 +17284,67 @@ export namespace Prisma {
     createdAt?: Date | string
   }
 
+  export type ListingApprovalCreateManyApprovedByInput = {
+    id?: string
+    listingId: string
+    approvedByRole: string
+    approvedAt?: Date | string
+    status: string
+    notes?: string | null
+  }
+
   export type VoteCreateManyUserInput = {
     id?: string
     value: boolean
     listingId: string
   }
 
-  export type CommentCreateManyUserInput = {
-    id?: string
-    content: string
-    listingId: string
-    parentId?: string | null
-    createdAt?: Date | string
+  export type CommentUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+    parent?: CommentUpdateOneWithoutRepliesNestedInput
+    replies?: CommentUpdateManyWithoutParentNestedInput
+    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
   }
 
-  export type ListingApprovalCreateManyApprovedByInput = {
-    id?: string
-    listingId: string
-    approvedByRole: $Enums.Role
-    approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
-    notes?: string | null
+  export type CommentUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    listingId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+    replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+  }
+
+  export type CommentUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    listingId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type ListingUpdateWithoutAuthorInput = {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateWithoutAuthorInput = {
@@ -17266,9 +17355,9 @@ export namespace Prisma {
     performanceId?: IntFieldUpdateOperationsInput | number
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
     comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateManyWithoutAuthorInput = {
@@ -17279,6 +17368,33 @@ export namespace Prisma {
     performanceId?: IntFieldUpdateOperationsInput | number
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ListingApprovalUpdateWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    approvedByRole?: StringFieldUpdateOperationsInput | string
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    listing?: ListingUpdateOneRequiredWithoutApprovalsNestedInput
+  }
+
+  export type ListingApprovalUncheckedUpdateWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    listingId?: StringFieldUpdateOperationsInput | string
+    approvedByRole?: StringFieldUpdateOperationsInput | string
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ListingApprovalUncheckedUpdateManyWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    listingId?: StringFieldUpdateOperationsInput | string
+    approvedByRole?: StringFieldUpdateOperationsInput | string
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type VoteUpdateWithoutUserInput = {
@@ -17299,59 +17415,6 @@ export namespace Prisma {
     listingId?: StringFieldUpdateOperationsInput | string
   }
 
-  export type CommentUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
-    parent?: CommentUpdateOneWithoutRepliesNestedInput
-    replies?: CommentUpdateManyWithoutParentNestedInput
-  }
-
-  export type CommentUncheckedUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    listingId?: StringFieldUpdateOperationsInput | string
-    parentId?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
-  }
-
-  export type CommentUncheckedUpdateManyWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    listingId?: StringFieldUpdateOperationsInput | string
-    parentId?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type ListingApprovalUpdateWithoutApprovedByInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    listing?: ListingUpdateOneRequiredWithoutApprovalsNestedInput
-  }
-
-  export type ListingApprovalUncheckedUpdateWithoutApprovedByInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    listingId?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
-  export type ListingApprovalUncheckedUpdateManyWithoutApprovedByInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    listingId?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
   export type ListingCreateManyDeviceInput = {
     id?: string
     gameId: string
@@ -17366,13 +17429,13 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateWithoutDeviceInput = {
@@ -17383,9 +17446,9 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
     comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateManyWithoutDeviceInput = {
@@ -17438,13 +17501,13 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateWithoutGameInput = {
@@ -17455,9 +17518,9 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
     comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateManyWithoutGameInput = {
@@ -17484,13 +17547,13 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    performance?: PerformanceScaleUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateWithoutEmulatorInput = {
@@ -17501,9 +17564,9 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
     comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateManyWithoutEmulatorInput = {
@@ -17530,13 +17593,13 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
-    game?: GameUpdateOneRequiredWithoutListingsNestedInput
-    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
-    author?: UserUpdateOneRequiredWithoutListingsNestedInput
-    votes?: VoteUpdateManyWithoutListingNestedInput
     comments?: CommentUpdateManyWithoutListingNestedInput
+    author?: UserUpdateOneRequiredWithoutListingsNestedInput
+    emulator?: EmulatorUpdateOneRequiredWithoutListingsNestedInput
+    game?: GameUpdateOneRequiredWithoutListingsNestedInput
+    device?: DeviceUpdateOneRequiredWithoutListingsNestedInput
     approvals?: ListingApprovalUpdateManyWithoutListingNestedInput
+    votes?: VoteUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateWithoutPerformanceInput = {
@@ -17547,9 +17610,9 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
     comments?: CommentUncheckedUpdateManyWithoutListingNestedInput
     approvals?: ListingApprovalUncheckedUpdateManyWithoutListingNestedInput
+    votes?: VoteUncheckedUpdateManyWithoutListingNestedInput
   }
 
   export type ListingUncheckedUpdateManyWithoutPerformanceInput = {
@@ -17562,27 +17625,92 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type VoteCreateManyListingInput = {
-    id?: string
-    value: boolean
-    userId: string
-  }
-
   export type CommentCreateManyListingInput = {
     id?: string
     content: string
     userId: string
     parentId?: string | null
     createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
   }
 
   export type ListingApprovalCreateManyListingInput = {
     id?: string
     approvedById: string
-    approvedByRole: $Enums.Role
+    approvedByRole: string
     approvedAt?: Date | string
-    status: $Enums.ApprovalStatus
+    status: string
     notes?: string | null
+  }
+
+  export type VoteCreateManyListingInput = {
+    id?: string
+    value: boolean
+    userId: string
+  }
+
+  export type CommentUpdateWithoutListingInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+    parent?: CommentUpdateOneWithoutRepliesNestedInput
+    replies?: CommentUpdateManyWithoutParentNestedInput
+    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutListingInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+    replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+  }
+
+  export type CommentUncheckedUpdateManyWithoutListingInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
+  }
+
+  export type ListingApprovalUpdateWithoutListingInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    approvedByRole?: StringFieldUpdateOperationsInput | string
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedBy?: UserUpdateOneRequiredWithoutApprovalsGivenNestedInput
+  }
+
+  export type ListingApprovalUncheckedUpdateWithoutListingInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    approvedById?: StringFieldUpdateOperationsInput | string
+    approvedByRole?: StringFieldUpdateOperationsInput | string
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ListingApprovalUncheckedUpdateManyWithoutListingInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    approvedById?: StringFieldUpdateOperationsInput | string
+    approvedByRole?: StringFieldUpdateOperationsInput | string
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type VoteUpdateWithoutListingInput = {
@@ -17603,74 +17731,27 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
   }
 
-  export type CommentUpdateWithoutListingInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
-    parent?: CommentUpdateOneWithoutRepliesNestedInput
-    replies?: CommentUpdateManyWithoutParentNestedInput
-  }
-
-  export type CommentUncheckedUpdateWithoutListingInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    parentId?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
-  }
-
-  export type CommentUncheckedUpdateManyWithoutListingInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    content?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    parentId?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type ListingApprovalUpdateWithoutListingInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    approvedBy?: UserUpdateOneRequiredWithoutApprovalsGivenNestedInput
-  }
-
-  export type ListingApprovalUncheckedUpdateWithoutListingInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    approvedById?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
-  export type ListingApprovalUncheckedUpdateManyWithoutListingInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    approvedById?: StringFieldUpdateOperationsInput | string
-    approvedByRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    status?: EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
   export type CommentCreateManyParentInput = {
     id?: string
     content: string
     userId: string
     listingId: string
     createdAt?: Date | string
+    updatedAt?: Date | string
+    deletedAt?: Date | string | null
+    isEdited?: boolean
   }
 
   export type CommentUpdateWithoutParentInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
-    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
     replies?: CommentUpdateManyWithoutParentNestedInput
+    listing?: ListingUpdateOneRequiredWithoutCommentsNestedInput
+    user?: UserUpdateOneRequiredWithoutCommentsNestedInput
   }
 
   export type CommentUncheckedUpdateWithoutParentInput = {
@@ -17679,6 +17760,9 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     listingId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
   }
 
@@ -17688,6 +17772,9 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     listingId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isEdited?: BoolFieldUpdateOperationsInput | boolean
   }
 
 

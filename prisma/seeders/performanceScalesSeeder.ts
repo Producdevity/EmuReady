@@ -1,14 +1,16 @@
-import { type PrismaClient, type PerformanceScale } from '@orm'
+import { type PrismaClient } from '../generated/client'
 
-type PerformanceScaleData = Pick<PerformanceScale, 'label' | 'rank'>
+type PerformanceScaleData = {
+  label: string
+  rank: number
+}
 
 const performanceScales: PerformanceScaleData[] = [
-  { label: 'Nothing', rank: 1 },
-  { label: 'Loadable', rank: 2 },
-  { label: 'Intro', rank: 3 },
-  { label: 'Ingame', rank: 4 },
-  { label: 'Playable', rank: 5 },
-  { label: 'Perfect', rank: 6 },
+  { label: 'Perfect', rank: 4 },
+  { label: 'Great', rank: 3 },
+  { label: 'Playable', rank: 2 },
+  { label: 'Poor', rank: 1 },
+  { label: 'Unplayable', rank: 0 },
   // { label: 'Nothing', rank: 1, description: 'Does not work at all.' },
   // { label: 'Loadable', rank: 2, description: 'Loads but does not play.' },
   // { label: 'Intro', rank: 3, description: 'Does not play past intro or menu.' },
@@ -18,17 +20,17 @@ const performanceScales: PerformanceScaleData[] = [
 ]
 
 async function performanceScalesSeeder(prisma: PrismaClient) {
-  await prisma.performanceScale.deleteMany()
-
-  for (const performanceScale of performanceScales) {
+  console.log('🌱 Seeding performance scales...')
+  
+  for (const scale of performanceScales) {
     await prisma.performanceScale.upsert({
-      where: { label: performanceScale.label },
-      update: {},
-      create: performanceScale,
+      where: { label: scale.label },
+      update: { rank: scale.rank },
+      create: scale,
     })
   }
 
-  console.log('PerformanceScales seeded successfully.')
+  console.log('✅ Performance scales seeded successfully')
 }
 
 export default performanceScalesSeeder

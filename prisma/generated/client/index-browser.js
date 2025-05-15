@@ -183,7 +183,10 @@ exports.Prisma.CommentScalarFieldEnum = {
   userId: 'userId',
   listingId: 'listingId',
   parentId: 'parentId',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  isEdited: 'isEdited'
 };
 
 exports.Prisma.ListingApprovalScalarFieldEnum = {
@@ -210,18 +213,7 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
-exports.Role = exports.$Enums.Role = {
-  USER: 'USER',
-  AUTHOR: 'AUTHOR',
-  ADMIN: 'ADMIN',
-  SUPER_ADMIN: 'SUPER_ADMIN'
-};
 
-exports.ApprovalStatus = exports.$Enums.ApprovalStatus = {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED'
-};
 
 exports.Prisma.ModelName = {
   User: 'User',

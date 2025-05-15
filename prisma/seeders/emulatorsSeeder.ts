@@ -1,40 +1,31 @@
-import { type PrismaClient, type Emulator } from '@orm'
+import { type PrismaClient } from '../generated/client'
 
-// take only id and name from System
-type EmulatorData = Pick<Emulator, 'name'>
+type EmulatorData = {
+  name: string
+}
 
 const emulators: EmulatorData[] = [
-  { name: 'RetroArch' },
   { name: 'Dolphin' },
-  { name: 'Cemu' },
-  { name: 'RPCS3' },
-  { name: 'PCSX2' },
-  { name: 'Yuzu' },
-  { name: 'Ryujinx' },
-  { name: 'Eden' },
-  { name: 'Eden' },
+  { name: 'PPSSPP' },
   { name: 'Citra' },
   { name: 'DuckStation' },
+  { name: 'AetherSX2' },
+  { name: 'Yuzu' },
+  { name: 'Ryujinx' },
+  { name: 'RetroArch' },
+  { name: 'DraStic' },
+  { name: 'Cemu' },
+  { name: 'PCSX2' },
+  { name: 'RPCS3' },
   { name: 'Xemu' },
-  { name: 'XQEMU' },
-  { name: 'Redream' },
-  { name: 'Flycast' },
-  { name: 'Winlator Official' },
-  { name: 'Winlator Glibc' },
-  { name: 'Winlator Proot' },
-  { name: 'Winlator Bionic' },
-  { name: 'Winlator Cmod' },
-  { name: 'Winlator Frost' },
-  { name: 'Winlator Afeimod' },
-  { name: 'Winlator Ajay' },
-  { name: 'Winlator Longjunyu' },
-  { name: 'Winlator WinMali' },
+  { name: 'melonDS' },
+  { name: 'mGBA' },
+  { name: 'Snes9x' },
 ]
 
-// Playable Ingame  Intro  Loadable  Nothing
 async function emulatorsSeeder(prisma: PrismaClient) {
-  await prisma.emulator.deleteMany()
-
+  console.log('🌱 Seeding emulators...')
+  
   for (const emulator of emulators) {
     await prisma.emulator.upsert({
       where: { name: emulator.name },
@@ -43,7 +34,7 @@ async function emulatorsSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('Emulators seeded successfully.')
+  console.log('✅ Emulators seeded successfully')
 }
 
 export default emulatorsSeeder

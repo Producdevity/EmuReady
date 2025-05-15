@@ -1,130 +1,121 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "./generated/client"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_URL_NON_POOLING")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id             String            @id @default(uuid())
+  email          String            @unique
   hashedPassword String
-  name          String?
-  profileImage  String?  // URL to the profile image (can be null)
-  role          Role     @default(USER)
-  listings      Listing[]
-  votes         Vote[]
-  comments      Comment[]
-  createdAt     DateTime @default(now())
+  name           String?
+  profileImage   String?
+  role           String            @default("USER")
+  createdAt      DateTime          @default(now())
+  comments       Comment[]
+  listings       Listing[]
   approvalsGiven ListingApproval[] @relation("ApprovalsGiven")
-}
-
-enum Role {
-  USER   // can only vote and comment
-  AUTHOR // can create listings
-  ADMIN  // full access
-  SUPER_ADMIN  // full super access
+  votes          Vote[]
 }
 
 model Device {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   brand     String
   modelName String
   listings  Listing[]
 }
 
 model System {
-  id       String   @id @default(uuid())
-  name     String   @unique
-  games    Game[]
-
+  id    String @id @default(uuid())
+  name  String @unique
+  games Game[]
 }
 
 model Game {
-  id        String   @id @default(uuid())
-  title     String
-  systemId  String
-  system    System  @relation(fields: [systemId], references: [id])
-  imageUrl  String?  // URL to the image (can be null)
-  listings  Listing[]
+  id       String    @id @default(uuid())
+  title    String
+  systemId String
+  imageUrl String?
+  system   System    @relation(fields: [systemId], references: [id])
+  listings Listing[]
+
+  @@unique([title, systemId])
 }
 
 model Emulator {
-  id      String   @id @default(uuid())
-  name    String   @unique
+  id       String    @id @default(uuid())
+  name     String    @unique
   listings Listing[]
 }
 
 model PerformanceScale {
-  id    Int    @id @default(autoincrement())
-  label String @unique   // e.g. Playable, Slow, Unplayable
-  rank  Int               // higher rank is better
+  id       Int       @id @default(autoincrement())
+  label    String    @unique
+  rank     Int
   listings Listing[]
 }
 
 model Listing {
-  id                 String   @id @default(uuid())
-  deviceId           String
-  device             Device   @relation(fields: [deviceId], references: [id])
-  gameId             String
-  game               Game     @relation(fields: [gameId], references: [id])
-  emulatorId         String
-  emulator           Emulator @relation(fields: [emulatorId], references: [id])
-  performanceId      Int
-  performance        PerformanceScale @relation(fields: [performanceId], references: [id])
-  notes              String?
-  authorId           String
-  author             User     @relation(fields: [authorId], references: [id])
-  votes              Vote[]
-  comments           Comment[]
-  createdAt          DateTime @default(now())
-  approvals          ListingApproval[]
+  id            String            @id @default(uuid())
+  deviceId      String
+  gameId        String
+  emulatorId    String
+  performanceId Int
+  notes         String?
+  authorId      String
+  createdAt     DateTime          @default(now())
+  comments      Comment[]
+  author        User              @relation(fields: [authorId], references: [id])
+  performance   PerformanceScale  @relation(fields: [performanceId], references: [id])
+  emulator      Emulator          @relation(fields: [emulatorId], references: [id])
+  game          Game              @relation(fields: [gameId], references: [id])
+  device        Device            @relation(fields: [deviceId], references: [id])
+  approvals     ListingApproval[]
+  votes         Vote[]
+
+  @@unique([gameId, deviceId, emulatorId])
 }
 
 model Vote {
-  id        String   @id @default(uuid())
-  value     Boolean  // true = thumbs up
+  id        String  @id @default(uuid())
+  value     Boolean
   userId    String
   listingId String
-  user      User     @relation(fields: [userId], references: [id])
-  listing   Listing  @relation(fields: [listingId], references: [id])
+  listing   Listing @relation(fields: [listingId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
 
-  @@unique([userId, listingId]) // one vote per user per listing
+  @@unique([userId, listingId])
 }
 
 model Comment {
-  id            String   @id @default(uuid())
-  content       String
-  userId        String
-  listingId     String
-  parentId      String?
-  user          User     @relation(fields: [userId], references: [id])
-  listing       Listing  @relation(fields: [listingId], references: [id])
-  parent        Comment? @relation("Thread", fields: [parentId], references: [id])
-  replies       Comment[] @relation("Thread")
-  createdAt     DateTime @default(now())
+  id        String    @id @default(uuid())
+  content   String
+  userId    String
+  listingId String
+  parentId  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isEdited  Boolean   @default(false)
+  parent    Comment?  @relation("Thread", fields: [parentId], references: [id])
+  replies   Comment[] @relation("Thread")
+  listing   Listing   @relation(fields: [listingId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model ListingApproval {
-  id            String   @id @default(uuid())
-  listingId     String
-  listing       Listing  @relation(fields: [listingId], references: [id])
-  approvedById  String
-  approvedBy    User     @relation("ApprovalsGiven", fields: [approvedById], references: [id])
-  approvedByRole Role
-  approvedAt    DateTime @default(now())
-  status        ApprovalStatus
-  notes         String?
-}
-
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  id             String   @id @default(uuid())
+  listingId      String
+  approvedById   String
+  approvedByRole String
+  approvedAt     DateTime @default(now())
+  status         String
+  notes          String?
+  approvedBy     User     @relation("ApprovalsGiven", fields: [approvedById], references: [id])
+  listing        Listing  @relation(fields: [listingId], references: [id])
 }
