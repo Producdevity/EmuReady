@@ -1,48 +1,43 @@
-import { PrismaClient, Role } from '@orm'
-import bcryptjs from 'bcryptjs'
+import { type PrismaClient } from '../generated/client'
+import * as bcrypt from 'bcryptjs'
 
-const users = [
+type UserData = {
+  email: string
+  hashedPassword: string
+  name: string
+  role: 'USER' | 'AUTHOR' | 'ADMIN' | 'SUPER_ADMIN'
+}
+
+const users: UserData[] = [
   {
     email: 'superadmin@emuready.com',
-    hashedPassword: bcryptjs.hashSync('password', 10),
+    hashedPassword: bcrypt.hashSync('password', 10),
     name: 'Super Admin User',
-    role: Role.SUPER_ADMIN,
+    role: 'SUPER_ADMIN',
   },
   {
     email: 'admin@emuready.com',
-    hashedPassword: bcryptjs.hashSync('password', 10),
+    hashedPassword: bcrypt.hashSync('password', 10),
     name: 'Admin User',
-    role: Role.ADMIN,
+    role: 'ADMIN',
   },
   {
     email: 'author@emuready.com',
-    hashedPassword: bcryptjs.hashSync('password', 10),
+    hashedPassword: bcrypt.hashSync('password', 10),
     name: 'Author User',
-    role: Role.AUTHOR,
+    role: 'AUTHOR',
   },
   {
-    email: 'user1@emuready.com',
-    hashedPassword: bcryptjs.hashSync('password', 10),
-    name: 'Regular User 1',
-    role: Role.USER,
-  },
-  {
-    email: 'user2@emuready.com',
-    hashedPassword: bcryptjs.hashSync('password', 10),
-    name: 'Regular User 2',
-    role: Role.USER,
-  },
-  {
-    email: 'user3@emuready.com',
-    hashedPassword: bcryptjs.hashSync('password', 10),
-    name: 'Regular User 3',
-    role: Role.USER,
+    email: 'user@emuready.com',
+    hashedPassword: bcrypt.hashSync('password', 10),
+    name: 'Regular User',
+    role: 'USER',
   },
 ]
 
 async function usersSeeder(prisma: PrismaClient) {
-  await prisma.user.deleteMany()
-
+  console.log('🌱 Seeding users...')
+  
   for (const user of users) {
     await prisma.user.upsert({
       where: { email: user.email },
@@ -51,7 +46,7 @@ async function usersSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('Users seeded successfully.')
+  console.log('✅ Users seeded successfully')
 }
 
 export default usersSeeder

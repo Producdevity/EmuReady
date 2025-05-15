@@ -542,6 +542,7 @@ export const listingsRouter = createTRPCRouter({
         where: { 
           listingId,
           parentId: null, // Only get top-level comments
+          deletedAt: null, // Don't show soft-deleted comments
         },
         include: {
           user: { 
@@ -552,6 +553,9 @@ export const listingsRouter = createTRPCRouter({
             } 
           },
           replies: {
+            where: {
+              deletedAt: null, // Don't show soft-deleted replies
+            },
             include: { 
               user: { 
                 select: { 
@@ -568,5 +572,121 @@ export const listingsRouter = createTRPCRouter({
       })
 
       return { comments }
+    }),
+
+  // Edit a comment
+  editComment: protectedProcedure
+    .input(
+      z.object({
+        commentId: z.string(),
+        content: z.string().min(1).max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { commentId, content } = input
+      const userId = ctx.session.user.id
+
+      const comment = await ctx.prisma.comment.findUnique({
+        where: { id: commentId },
+        include: {
+          user: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      })
+
+      if (!comment) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Comment not found',
+        })
+      }
+
+      if (comment.deletedAt) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot edit a deleted comment',
+        })
+      }
+
+      const canEdit = comment.user.id === userId || ctx.session.user.role === 'SUPER_ADMIN'
+      if (!canEdit) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to edit this comment',
+        })
+      }
+
+      return ctx.prisma.comment.update({
+        where: { id: commentId },
+        data: {
+          content,
+          isEdited: true,
+          updatedAt: new Date(),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+        },
+      })
+    }),
+
+  // Soft delete a comment
+  deleteComment: protectedProcedure
+    .input(z.object({ commentId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { commentId } = input
+      const userId = ctx.session.user.id
+
+      const comment = await ctx.prisma.comment.findUnique({
+        where: { id: commentId },
+        include: {
+          user: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      })
+
+      if (!comment) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Comment not found',
+        })
+      }
+
+      if (comment.deletedAt) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Comment is already deleted',
+        })
+      }
+
+      const canDelete =
+        comment.user.id === userId ||
+        ctx.session.user.role === 'ADMIN' ||
+        ctx.session.user.role === 'SUPER_ADMIN'
+
+      if (!canDelete) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to delete this comment',
+        })
+      }
+
+      return ctx.prisma.comment.update({
+        where: { id: commentId },
+        data: {
+          deletedAt: new Date(),
+        },
+      })
     }),
 })

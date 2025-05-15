@@ -1,9 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server'
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { type Session } from 'next-auth'
-
-import { type prisma } from '@/server/db'
+import { getServerSession } from 'next-auth'
+import { prisma } from '@/server/db'
+import hasPermission from '@/utils/hasPermission'
 
 /**
  * 1. CONTEXT
@@ -14,9 +15,36 @@ import { type prisma } from '@/server/db'
  * processing a request.
  */
 
-interface CreateContextOptions {
-  session: Session | null
-  prisma: typeof prisma
+type CreateContextOptions = {
+  session: Awaited<ReturnType<typeof getServerSession>> | null
+}
+
+export const createInnerTRPCContext = (opts: CreateContextOptions) => {
+  return {
+    session: opts.session,
+    prisma: prisma.$extends({
+      query: {
+        $allOperations({ args, query }) {
+          // Add connection pooling configuration
+          const config = {
+            ...args,
+            // Force new transaction for each query
+            isolationLevel: 'Serializable' as const,
+          }
+          return query(config)
+        },
+      },
+    }),
+  }
+}
+
+export const createTRPCContext = async (opts: CreateNextContextOptions) => {
+  const { req, res } = opts
+  const session = await getServerSession(req, res)
+
+  return createInnerTRPCContext({
+    session,
+  })
 }
 
 /**
@@ -31,7 +59,7 @@ export type TRPCContext = CreateContextOptions
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<TRPCContext>().create({
+const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -65,73 +93,51 @@ export const publicProcedure = t.procedure
 /**
  * Middleware to check if a user is signed in
  */
-const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.session || !ctx.session.user) {
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
-      prisma: ctx.prisma,
     },
   })
 })
-
-/**
- * Protected (authed) procedure
- */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed)
 
 /**
  * Middleware to check if a user has at least Author role
  */
-const enforceUserIsAuthor = t.middleware(({ ctx, next }) => {
-  if (!ctx.session || !ctx.session.user) {
+export const authorProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
 
-  if (
-    ctx.session.user.role !== 'AUTHOR' &&
-    ctx.session.user.role !== 'ADMIN' &&
-    ctx.session.user.role !== 'SUPER_ADMIN'
-  ) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Author role required' })
+  if (!hasPermission(ctx.session.user.role, 'AUTHOR')) {
+    throw new TRPCError({ code: 'FORBIDDEN' })
   }
 
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
-      prisma: ctx.prisma,
     },
   })
 })
-
-/**
- * Author (at least author role) procedure
- */
-export const authorProcedure = t.procedure.use(enforceUserIsAuthor)
 
 /**
  * Middleware to check if a user has Admin role
  */
-const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
-  if (!ctx.session || !ctx.session.user) {
+export const adminProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
 
-  if (ctx.session.user.role !== 'ADMIN') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin role required' })
+  if (!hasPermission(ctx.session.user.role, 'ADMIN')) {
+    throw new TRPCError({ code: 'FORBIDDEN' })
   }
 
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
-      prisma: ctx.prisma,
     },
   })
 })
-
-/**
- * Admin procedure
- */
-export const adminProcedure = t.procedure.use(enforceUserIsAdmin)

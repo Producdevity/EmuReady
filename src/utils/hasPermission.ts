@@ -19,4 +19,38 @@ function hasPermission(userRole?: Role, requiredRole?: Role): boolean {
   return userRoleIndex >= requiredRoleIndex
 }
 
+/**
+ * Check if a user has permission to edit a comment
+ * @param userRole - The role of the user attempting to edit
+ * @param commentUserId - The ID of the user who created the comment
+ * @param currentUserId - The ID of the user attempting to edit
+ * @returns boolean
+ */
+export function canEditComment(
+  userRole: Role | undefined,
+  commentUserId: string,
+  currentUserId: string,
+): boolean {
+  if (!userRole) return false
+  if (userRole === 'SUPER_ADMIN') return true
+  return commentUserId === currentUserId
+}
+
+/**
+ * Check if a user has permission to delete a comment
+ * @param userRole - The role of the user attempting to delete
+ * @param commentUserId - The ID of the user who created the comment
+ * @param currentUserId - The ID of the user attempting to delete
+ * @returns boolean
+ */
+export function canDeleteComment(
+  userRole: Role | undefined,
+  commentUserId: string,
+  currentUserId: string,
+): boolean {
+  if (!userRole) return false
+  if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') return true
+  return commentUserId === currentUserId
+}
+
 export default hasPermission
