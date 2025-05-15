@@ -3,12 +3,18 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
+import { VoteButtons } from './components/VoteButtons'
+import { CommentForm } from './components/CommentForm'
+import { api } from '@/lib/api'
 
 interface ListingDetailsClientProps {
   listing: unknown
   successRate: number
+  upVotes: number
+  totalVotes: number
+  userVote: boolean | null
 }
 
 function isComment(obj: unknown): obj is {
@@ -27,9 +33,27 @@ function isComment(obj: unknown): obj is {
 }
 
 export default function ListingDetailsClient(props: ListingDetailsClientProps) {
+  const [refreshKey, setRefreshKey] = useState(0)
+  
+  // Use TRPC to refresh comments
+  const { data: commentsData } = api.listings.getComments.useQuery(
+    { listingId: (props.listing as { id: string }).id },
+    { 
+      enabled: !!props.listing,
+      // This key will force a refresh when changed
+      queryKey: ['comments', (props.listing as { id: string }).id, refreshKey]
+    }
+  )
+  
+  // Force a refetch of comments when a new comment is added
+  const refreshComments = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+  
   // Type assertion for listing (from server)
   // TODO: use proper Prisma types
   const l = props.listing as {
+    id: string // Added id property for the listing
     game: { title: string; system?: { name?: string } }
     device?: { brand?: string; modelName?: string }
     emulator?: { name?: string }
@@ -43,6 +67,10 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
     }
     comments?: unknown[]
   }
+  
+  // Use the comments from the server initially, then from the query when refreshed
+  const comments = commentsData?.comments || l.comments || []
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-10 px-4 flex justify-center items-start">
       <motion.div
@@ -78,22 +106,16 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
               </div>
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
-                  Success Rate
+                  Rating
                 </h2>
-                <motion.div
-                  className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.round(props.successRate * 100)}%` }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
-                >
-                  <div
-                    className="h-full bg-green-500"
-                    style={{ width: `${Math.round(props.successRate * 100)}%` }}
-                  />
-                </motion.div>
-                <span className="text-sm text-gray-500 dark:text-gray-400 mt-1 inline-block">
-                  {Math.round(props.successRate * 100)}% success
-                </span>
+                {/* Replace success rate with VoteButtons */}
+                <VoteButtons 
+                  listingId={l.id}
+                  currentVote={props.userVote}
+                  upVoteCount={props.upVotes}
+                  totalVotes={props.totalVotes}
+                  onVoteSuccess={refreshComments}
+                />
               </div>
             </div>
             {/* Author Info */}
@@ -130,15 +152,22 @@ export default function ListingDetailsClient(props: ListingDetailsClientProps) {
             </div>
           </div>
           {/* Comments Section */}
-          <div className="mt-10">
+          <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               Comments
             </h2>
+            
+            {/* Add comment form */}
+            <CommentForm 
+              listingId={l.id} 
+              onCommentSuccess={refreshComments}
+            />
+            
             <div className="space-y-4">
-              {(!l.comments || l.comments.length === 0) && (
-                <div className="text-gray-500">No comments yet.</div>
+              {(!comments || comments.length === 0) && (
+                <div className="text-gray-500">No comments yet. Be the first to comment!</div>
               )}
-              {l.comments?.map((comment, idx) =>
+              {comments.map((comment, idx) =>
                 isComment(comment) ? (
                   <motion.div
                     key={comment.id}
