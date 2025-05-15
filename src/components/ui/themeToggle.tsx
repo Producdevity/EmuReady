@@ -23,7 +23,10 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 
   const toggleTheme = () => {
     // TODO: handle "system" correctly
-    setTheme(toggleThemeMap[theme] || toggleThemeMap.system)
+    const newTheme = theme
+      ? toggleThemeMap[theme as keyof typeof toggleThemeMap]
+      : toggleThemeMap.system
+    setTheme(newTheme)
   }
 
   return (

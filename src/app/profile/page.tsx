@@ -45,21 +45,16 @@ function ProfilePage() {
     },
     onSettled: () => {
       // Always refetch after error or success to ensure data consistency
-      utils.users.getProfile.invalidate()
+      utils.users.getProfile.invalidate().catch(console.error) // TODO: handle error correctly
     },
   })
 
-  // Handler for profile image upload
   const handleProfileImageUpload = (imageUrl: string) => {
     setProfileImage(imageUrl)
 
-    // Update profile image with optimistic updates
-    updateProfile.mutate({
-      profileImage: imageUrl,
-    })
+    updateProfile.mutate({ profileImage: imageUrl })
   }
 
-  // Loading state
   if (status === 'loading' || (isLoading && session))
     return <ProfilePageLoader />
 
