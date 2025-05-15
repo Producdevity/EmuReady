@@ -1,44 +1,37 @@
 'use client'
 
-import React from 'react'
+import { useMemo } from 'react'
 
-interface SuccessRateBarProps {
+interface Props {
   rate: number
   voteCount?: number
-  showVoteCount?: boolean
-  height?: 'sm' | 'md'
+  hideVoteCount?: boolean
 }
 
-export function SuccessRateBar({
-  rate,
-  voteCount = 0,
-  showVoteCount = true,
-  height = 'sm',
-}: SuccessRateBarProps) {
-  // Round to whole number
-  const roundedRate = Math.round(rate)
+// Determine color based on success rate
+function getBarColor(rate: number) {
+  if (rate >= 75) return 'bg-green-500'
+  if (rate >= 50) return 'bg-yellow-500'
+  if (rate >= 25) return 'bg-orange-500'
+  return 'bg-red-500'
+}
 
-  // Determine color based on success rate
-  const getBarColor = () => {
-    if (rate >= 75) return 'bg-green-500'
-    if (rate >= 50) return 'bg-yellow-500'
-    if (rate >= 25) return 'bg-orange-500'
-    return 'bg-red-500'
-  }
-
-  const barHeight = height === 'sm' ? 'h-2' : 'h-3'
+export function SuccessRateBar(props: Props) {
+  const voteCount = props.voteCount ?? 0
+  const roundedRate = useMemo(() => Math.round(props.rate), [props.rate])
+  const barColor = useMemo(() => getBarColor(roundedRate), [roundedRate])
 
   return (
     <div className="flex flex-col gap-1 w-full">
       <div
-        className={`w-full ${barHeight} bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden`}
+        className={`w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden`}
       >
         <div
-          className={`${barHeight} rounded-full ${getBarColor()}`}
+          className={`h-2 rounded-full ${barColor}`}
           style={{ width: `${roundedRate}%`, transition: 'width 0.3s' }}
         />
       </div>
-      {showVoteCount && (
+      {!props.hideVoteCount && (
         <span className="text-xs text-gray-600 dark:text-gray-400">
           {roundedRate}%{' '}
           {voteCount > 0 &&

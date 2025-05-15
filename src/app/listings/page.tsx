@@ -1,4 +1,6 @@
 'use client'
+import hasPermission from '@/utils/hasPermission'
+import { Role } from '@orm'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
@@ -33,7 +35,7 @@ function ListingsPage() {
 
   const { data: session } = useSession()
   const userRole = session?.user?.role
-  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
+  const isAdmin = hasPermission(userRole, Role.ADMIN)
 
   const { data: systems } = api.systems.list.useQuery()
   const { data: devices } = api.devices.list.useQuery()
@@ -60,7 +62,7 @@ function ListingsPage() {
 
   const deleteListing = api.listings.delete.useMutation({
     onSuccess: () => {
-      refetch()
+      refetch().catch(console.error)
       setDeleteConfirmId(null)
     },
   })
@@ -109,11 +111,9 @@ function ListingsPage() {
   }
 
   const confirmDelete = (id: string) => {
-    if (deleteConfirmId === id) {
-      deleteListing.mutate({ id })
-    } else {
-      setDeleteConfirmId(id)
-    }
+    if (deleteConfirmId !== id) return setDeleteConfirmId(id)
+
+    deleteListing.mutate({ id })
   }
 
   if (error)

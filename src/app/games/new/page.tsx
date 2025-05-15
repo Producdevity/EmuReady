@@ -1,5 +1,7 @@
 'use client'
 
+import hasPermission from '@/utils/hasPermission'
+import { Role } from '@orm'
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, type FormEvent } from 'react'
 import { api } from '@/lib/api'
@@ -29,12 +31,7 @@ function AddGamePage() {
   }, [success, error])
 
   if (status === 'loading') return <div>Loading...</div>
-  if (
-    !session ||
-    (session.user.role !== 'AUTHOR' &&
-      session.user.role !== 'ADMIN' &&
-      session.user.role !== 'SUPER_ADMIN')
-  ) {
+  if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
     return (
       <div className="p-8 text-center">
         You do not have permission to add games.
