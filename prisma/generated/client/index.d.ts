@@ -7399,21 +7399,18 @@ export namespace Prisma {
     id: number | null
     label: string | null
     rank: number | null
-    description: string | null
   }
 
   export type PerformanceScaleMaxAggregateOutputType = {
     id: number | null
     label: string | null
     rank: number | null
-    description: string | null
   }
 
   export type PerformanceScaleCountAggregateOutputType = {
     id: number
     label: number
     rank: number
-    description: number
     _all: number
   }
 
@@ -7432,21 +7429,18 @@ export namespace Prisma {
     id?: true
     label?: true
     rank?: true
-    description?: true
   }
 
   export type PerformanceScaleMaxAggregateInputType = {
     id?: true
     label?: true
     rank?: true
-    description?: true
   }
 
   export type PerformanceScaleCountAggregateInputType = {
     id?: true
     label?: true
     rank?: true
-    description?: true
     _all?: true
   }
 
@@ -7540,7 +7534,6 @@ export namespace Prisma {
     id: number
     label: string
     rank: number
-    description: string | null
     _count: PerformanceScaleCountAggregateOutputType | null
     _avg: PerformanceScaleAvgAggregateOutputType | null
     _sum: PerformanceScaleSumAggregateOutputType | null
@@ -7566,7 +7559,6 @@ export namespace Prisma {
     id?: boolean
     label?: boolean
     rank?: boolean
-    description?: boolean
     listings?: boolean | PerformanceScale$listingsArgs<ExtArgs>
     _count?: boolean | PerformanceScaleCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["performanceScale"]>
@@ -7575,24 +7567,21 @@ export namespace Prisma {
     id?: boolean
     label?: boolean
     rank?: boolean
-    description?: boolean
   }, ExtArgs["result"]["performanceScale"]>
 
   export type PerformanceScaleSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     label?: boolean
     rank?: boolean
-    description?: boolean
   }, ExtArgs["result"]["performanceScale"]>
 
   export type PerformanceScaleSelectScalar = {
     id?: boolean
     label?: boolean
     rank?: boolean
-    description?: boolean
   }
 
-  export type PerformanceScaleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "label" | "rank" | "description", ExtArgs["result"]["performanceScale"]>
+  export type PerformanceScaleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "label" | "rank", ExtArgs["result"]["performanceScale"]>
   export type PerformanceScaleInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     listings?: boolean | PerformanceScale$listingsArgs<ExtArgs>
     _count?: boolean | PerformanceScaleCountOutputTypeDefaultArgs<ExtArgs>
@@ -7609,7 +7598,6 @@ export namespace Prisma {
       id: number
       label: string
       rank: number
-      description: string | null
     }, ExtArgs["result"]["performanceScale"]>
     composites: {}
   }
@@ -8037,7 +8025,6 @@ export namespace Prisma {
     readonly id: FieldRef<"PerformanceScale", 'Int'>
     readonly label: FieldRef<"PerformanceScale", 'String'>
     readonly rank: FieldRef<"PerformanceScale", 'Int'>
-    readonly description: FieldRef<"PerformanceScale", 'String'>
   }
     
 
@@ -13063,8 +13050,7 @@ export namespace Prisma {
   export const PerformanceScaleScalarFieldEnum: {
     id: 'id',
     label: 'label',
-    rank: 'rank',
-    description: 'description'
+    rank: 'rank'
   };
 
   export type PerformanceScaleScalarFieldEnum = (typeof PerformanceScaleScalarFieldEnum)[keyof typeof PerformanceScaleScalarFieldEnum]
@@ -13502,7 +13488,6 @@ export namespace Prisma {
     id?: IntFilter<"PerformanceScale"> | number
     label?: StringFilter<"PerformanceScale"> | string
     rank?: IntFilter<"PerformanceScale"> | number
-    description?: StringNullableFilter<"PerformanceScale"> | string | null
     listings?: ListingListRelationFilter
   }
 
@@ -13510,7 +13495,6 @@ export namespace Prisma {
     id?: SortOrder
     label?: SortOrder
     rank?: SortOrder
-    description?: SortOrderInput | SortOrder
     listings?: ListingOrderByRelationAggregateInput
   }
 
@@ -13521,7 +13505,6 @@ export namespace Prisma {
     OR?: PerformanceScaleWhereInput[]
     NOT?: PerformanceScaleWhereInput | PerformanceScaleWhereInput[]
     rank?: IntFilter<"PerformanceScale"> | number
-    description?: StringNullableFilter<"PerformanceScale"> | string | null
     listings?: ListingListRelationFilter
   }, "id" | "label">
 
@@ -13529,7 +13512,6 @@ export namespace Prisma {
     id?: SortOrder
     label?: SortOrder
     rank?: SortOrder
-    description?: SortOrderInput | SortOrder
     _count?: PerformanceScaleCountOrderByAggregateInput
     _avg?: PerformanceScaleAvgOrderByAggregateInput
     _max?: PerformanceScaleMaxOrderByAggregateInput
@@ -13544,7 +13526,6 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"PerformanceScale"> | number
     label?: StringWithAggregatesFilter<"PerformanceScale"> | string
     rank?: IntWithAggregatesFilter<"PerformanceScale"> | number
-    description?: StringNullableWithAggregatesFilter<"PerformanceScale"> | string | null
   }
 
   export type ListingWhereInput = {
@@ -14096,7 +14077,6 @@ export namespace Prisma {
   export type PerformanceScaleCreateInput = {
     label: string
     rank: number
-    description?: string | null
     listings?: ListingCreateNestedManyWithoutPerformanceInput
   }
 
@@ -14104,14 +14084,12 @@ export namespace Prisma {
     id?: number
     label: string
     rank: number
-    description?: string | null
     listings?: ListingUncheckedCreateNestedManyWithoutPerformanceInput
   }
 
   export type PerformanceScaleUpdateInput = {
     label?: StringFieldUpdateOperationsInput | string
     rank?: IntFieldUpdateOperationsInput | number
-    description?: NullableStringFieldUpdateOperationsInput | string | null
     listings?: ListingUpdateManyWithoutPerformanceNestedInput
   }
 
@@ -14119,7 +14097,6 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     rank?: IntFieldUpdateOperationsInput | number
-    description?: NullableStringFieldUpdateOperationsInput | string | null
     listings?: ListingUncheckedUpdateManyWithoutPerformanceNestedInput
   }
 
@@ -14127,20 +14104,17 @@ export namespace Prisma {
     id?: number
     label: string
     rank: number
-    description?: string | null
   }
 
   export type PerformanceScaleUpdateManyMutationInput = {
     label?: StringFieldUpdateOperationsInput | string
     rank?: IntFieldUpdateOperationsInput | number
-    description?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PerformanceScaleUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     rank?: IntFieldUpdateOperationsInput | number
-    description?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ListingCreateInput = {
@@ -14693,7 +14667,6 @@ export namespace Prisma {
     id?: SortOrder
     label?: SortOrder
     rank?: SortOrder
-    description?: SortOrder
   }
 
   export type PerformanceScaleAvgOrderByAggregateInput = {
@@ -14705,14 +14678,12 @@ export namespace Prisma {
     id?: SortOrder
     label?: SortOrder
     rank?: SortOrder
-    description?: SortOrder
   }
 
   export type PerformanceScaleMinOrderByAggregateInput = {
     id?: SortOrder
     label?: SortOrder
     rank?: SortOrder
-    description?: SortOrder
   }
 
   export type PerformanceScaleSumOrderByAggregateInput = {
@@ -16445,14 +16416,12 @@ export namespace Prisma {
   export type PerformanceScaleCreateWithoutListingsInput = {
     label: string
     rank: number
-    description?: string | null
   }
 
   export type PerformanceScaleUncheckedCreateWithoutListingsInput = {
     id?: number
     label: string
     rank: number
-    description?: string | null
   }
 
   export type PerformanceScaleCreateOrConnectWithoutListingsInput = {
@@ -16652,14 +16621,12 @@ export namespace Prisma {
   export type PerformanceScaleUpdateWithoutListingsInput = {
     label?: StringFieldUpdateOperationsInput | string
     rank?: IntFieldUpdateOperationsInput | number
-    description?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PerformanceScaleUncheckedUpdateWithoutListingsInput = {
     id?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     rank?: IntFieldUpdateOperationsInput | number
-    description?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UserUpsertWithoutListingsInput = {

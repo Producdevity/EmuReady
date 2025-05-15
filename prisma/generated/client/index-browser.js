@@ -156,8 +156,7 @@ exports.Prisma.EmulatorScalarFieldEnum = {
 exports.Prisma.PerformanceScaleScalarFieldEnum = {
   id: 'id',
   label: 'label',
-  rank: 'rank',
-  description: 'description'
+  rank: 'rank'
 };
 
 exports.Prisma.ListingScalarFieldEnum = {
