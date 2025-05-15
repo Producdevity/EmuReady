@@ -13321,14 +13321,13 @@ export namespace Prisma {
 
   export type DeviceWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    brand_modelName?: DeviceBrandModelNameCompoundUniqueInput
     AND?: DeviceWhereInput | DeviceWhereInput[]
     OR?: DeviceWhereInput[]
     NOT?: DeviceWhereInput | DeviceWhereInput[]
     brand?: StringFilter<"Device"> | string
     modelName?: StringFilter<"Device"> | string
     listings?: ListingListRelationFilter
-  }, "id" | "brand_modelName">
+  }, "id">
 
   export type DeviceOrderByWithAggregationInput = {
     id?: SortOrder
@@ -14561,11 +14560,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type DeviceBrandModelNameCompoundUniqueInput = {
-    brand: string
-    modelName: string
   }
 
   export type DeviceCountOrderByAggregateInput = {
