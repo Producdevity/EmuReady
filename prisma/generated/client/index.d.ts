@@ -65,6 +65,25 @@ export type Comment = $Result.DefaultSelection<Prisma.$CommentPayload>
 export type ListingApproval = $Result.DefaultSelection<Prisma.$ListingApprovalPayload>
 
 /**
+ * Enums
+ */
+export namespace $Enums {
+  export const Role: {
+  USER: 'USER',
+  AUTHOR: 'AUTHOR',
+  ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN'
+};
+
+export type Role = (typeof Role)[keyof typeof Role]
+
+}
+
+export type Role = $Enums.Role
+
+export const Role: typeof $Enums.Role
+
+/**
  * ##  Prisma Client ʲˢ
  *
  * Type-safe database client for TypeScript & Node.js
@@ -1996,7 +2015,7 @@ export namespace Prisma {
     hashedPassword: string | null
     name: string | null
     profileImage: string | null
-    role: string | null
+    role: $Enums.Role | null
     createdAt: Date | null
   }
 
@@ -2006,7 +2025,7 @@ export namespace Prisma {
     hashedPassword: string | null
     name: string | null
     profileImage: string | null
-    role: string | null
+    role: $Enums.Role | null
     createdAt: Date | null
   }
 
@@ -2131,7 +2150,7 @@ export namespace Prisma {
     hashedPassword: string
     name: string | null
     profileImage: string | null
-    role: string
+    role: $Enums.Role
     createdAt: Date
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
@@ -2222,7 +2241,7 @@ export namespace Prisma {
       hashedPassword: string
       name: string | null
       profileImage: string | null
-      role: string
+      role: $Enums.Role
       createdAt: Date
     }, ExtArgs["result"]["user"]>
     composites: {}
@@ -2656,7 +2675,7 @@ export namespace Prisma {
     readonly hashedPassword: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
     readonly profileImage: FieldRef<"User", 'String'>
-    readonly role: FieldRef<"User", 'String'>
+    readonly role: FieldRef<"User", 'Role'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
   }
     
@@ -13159,6 +13178,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Role'
+   */
+  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
+    
+
+
+  /**
+   * Reference to a field of type 'Role[]'
+   */
+  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
+    
+
+
+  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -13219,7 +13252,7 @@ export namespace Prisma {
     hashedPassword?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
     profileImage?: StringNullableFilter<"User"> | string | null
-    role?: StringFilter<"User"> | string
+    role?: EnumRoleFilter<"User"> | $Enums.Role
     createdAt?: DateTimeFilter<"User"> | Date | string
     comments?: CommentListRelationFilter
     listings?: ListingListRelationFilter
@@ -13250,7 +13283,7 @@ export namespace Prisma {
     hashedPassword?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
     profileImage?: StringNullableFilter<"User"> | string | null
-    role?: StringFilter<"User"> | string
+    role?: EnumRoleFilter<"User"> | $Enums.Role
     createdAt?: DateTimeFilter<"User"> | Date | string
     comments?: CommentListRelationFilter
     listings?: ListingListRelationFilter
@@ -13280,7 +13313,7 @@ export namespace Prisma {
     hashedPassword?: StringWithAggregatesFilter<"User"> | string
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
     profileImage?: StringNullableWithAggregatesFilter<"User"> | string | null
-    role?: StringWithAggregatesFilter<"User"> | string
+    role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
 
@@ -13816,7 +13849,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutAuthorInput
@@ -13830,7 +13863,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
@@ -13844,7 +13877,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutAuthorNestedInput
@@ -13858,7 +13891,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
@@ -13872,7 +13905,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
   }
 
@@ -13882,7 +13915,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -13892,7 +13925,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -14429,6 +14462,13 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type EnumRoleFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -14549,6 +14589,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type EnumRoleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRoleFilter<$PrismaModel>
+    _max?: NestedEnumRoleFilter<$PrismaModel>
   }
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -14983,6 +15033,10 @@ export namespace Prisma {
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
+  }
+
+  export type EnumRoleFieldUpdateOperationsInput = {
+    set?: $Enums.Role
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -15707,6 +15761,13 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type NestedEnumRoleFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  }
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -15772,6 +15833,16 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedEnumRoleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRoleFilter<$PrismaModel>
+    _max?: NestedEnumRoleFilter<$PrismaModel>
   }
 
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -16423,7 +16494,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentCreateNestedManyWithoutUserInput
     approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
@@ -16436,7 +16507,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutUserInput
     approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
@@ -16598,7 +16669,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUpdateManyWithoutUserNestedInput
     approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
@@ -16611,7 +16682,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
     approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
@@ -16778,7 +16849,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutAuthorInput
@@ -16791,7 +16862,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
@@ -16857,7 +16928,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutAuthorNestedInput
@@ -16870,7 +16941,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
@@ -16977,7 +17048,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     listings?: ListingCreateNestedManyWithoutAuthorInput
     approvalsGiven?: ListingApprovalCreateNestedManyWithoutApprovedByInput
@@ -16990,7 +17061,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
     approvalsGiven?: ListingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
@@ -17107,7 +17178,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     listings?: ListingUpdateManyWithoutAuthorNestedInput
     approvalsGiven?: ListingApprovalUpdateManyWithoutApprovedByNestedInput
@@ -17120,7 +17191,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput
     approvalsGiven?: ListingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
@@ -17133,7 +17204,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutAuthorInput
@@ -17146,7 +17217,7 @@ export namespace Prisma {
     hashedPassword: string
     name?: string | null
     profileImage?: string | null
-    role?: string
+    role?: $Enums.Role
     createdAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutAuthorInput
@@ -17206,7 +17277,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutAuthorNestedInput
@@ -17219,7 +17290,7 @@ export namespace Prisma {
     hashedPassword?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     profileImage?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutAuthorNestedInput

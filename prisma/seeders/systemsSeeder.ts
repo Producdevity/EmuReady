@@ -1,4 +1,4 @@
-import { type PrismaClient } from '../generated/client'
+import { type PrismaClient } from '@orm'
 
 type SystemData = {
   name: string
@@ -39,7 +39,7 @@ const systems: SystemData[] = [
 
 async function systemsSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding systems...')
-  
+
   for (const system of systems) {
     await prisma.system.upsert({
       where: { name: system.name },

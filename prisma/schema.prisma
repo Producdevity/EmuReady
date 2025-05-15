@@ -9,13 +9,20 @@ datasource db {
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
+enum Role {
+  USER
+  AUTHOR
+  ADMIN
+  SUPER_ADMIN
+}
+
 model User {
   id             String            @id @default(uuid())
   email          String            @unique
   hashedPassword String
   name           String?
   profileImage   String?
-  role           String            @default("USER")
+  role           Role              @default(USER)
   createdAt      DateTime          @default(now())
   comments       Comment[]
   listings       Listing[]
