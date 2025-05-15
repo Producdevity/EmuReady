@@ -531,4 +531,42 @@ export const listingsRouter = createTRPCRouter({
       orderBy: { rank: 'asc' },
     })
   }),
+
+  // Add a procedure to get comments for a listing
+  getComments: publicProcedure
+    .input(z.object({ listingId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { listingId } = input
+
+      const comments = await ctx.prisma.comment.findMany({
+        where: { 
+          listingId,
+          parentId: null, // Only get top-level comments
+        },
+        include: {
+          user: { 
+            select: { 
+              id: true, 
+              name: true,
+              profileImage: true,
+            } 
+          },
+          replies: {
+            include: { 
+              user: { 
+                select: { 
+                  id: true, 
+                  name: true,
+                  profileImage: true,
+                } 
+              } 
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      return { comments }
+    }),
 })
