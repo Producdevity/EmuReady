@@ -8,7 +8,7 @@ export async function getListingById(id: string) {
       device: true,
       emulator: true,
       performance: true,
-      author: { select: { id: true, name: true, email: true } },
+      author: { select: { id: true, name: true, email: true, profileImage: true } },
       comments: {
         where: { parentId: null },
         include: {
@@ -28,4 +28,17 @@ export async function getListingById(id: string) {
 
 export async function getListingUpVotes(listingId: string) {
   return prisma.vote.count({ where: { listingId, value: true } })
+}
+
+export async function getListingVotes(listingId: string, userId: string) {
+  return prisma.vote.findMany({
+    where: {
+      listingId,
+      userId,
+    },
+    select: {
+      id: true,
+      value: true,
+    },
+  })
 }
