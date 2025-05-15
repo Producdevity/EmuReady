@@ -1,8 +1,6 @@
 import { PrismaClient, Role } from '@orm'
 import bcryptjs from 'bcryptjs'
 
-const prisma = new PrismaClient()
-
 const users = [
   {
     email: 'superadmin@emuready.com',
@@ -42,8 +40,7 @@ const users = [
   },
 ]
 
-async function main() {
-  // Delete all existing users
+async function usersSeeder(prisma: PrismaClient) {
   await prisma.user.deleteMany()
 
   for (const user of users) {
@@ -57,12 +54,4 @@ async function main() {
   console.log('Users seeded successfully.')
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+export default usersSeeder
