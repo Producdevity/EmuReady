@@ -2,6 +2,7 @@ import './globals.css'
 import { type PropsWithChildren } from 'react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Inter } from 'next/font/google'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import Providers from '@/components/Providers'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -30,6 +31,7 @@ export default function RootLayout(props: PropsWithChildren) {
           </ErrorBoundary>
         </Providers>
       </body>
+      <SpeedInsights />
       {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
     </html>
   )
