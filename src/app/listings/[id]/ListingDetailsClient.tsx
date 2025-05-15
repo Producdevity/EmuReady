@@ -13,7 +13,7 @@ import { useSession } from 'next-auth/react'
 import { canEditComment, canDeleteComment } from '@/utils/hasPermission'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
-interface ListingDetailsClientProps {
+interface Props {
   listing: unknown
   successRate: number
   upVotes: number
@@ -27,10 +27,10 @@ function isComment(obj: unknown): obj is {
   createdAt: string | Date
   deletedAt?: string | Date | null
   isEdited?: boolean
-  user?: { 
+  user?: {
     id?: string
     name?: string | null
-    profileImage?: string | null 
+    profileImage?: string | null
   }
 } {
   return (
@@ -42,7 +42,7 @@ function isComment(obj: unknown): obj is {
   )
 }
 
-export default function ListingDetailsClient(props: ListingDetailsClientProps) {
+export default function ListingDetailsClient(props: Props) {
   const { data: session } = useSession()
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const listingId = (props.listing as { id: string }).id
