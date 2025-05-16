@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
 import { prisma } from '@/server/db'
+import { isValidEmail, sanitizeString } from '@/utils/validation'
 
 const UserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -24,6 +25,23 @@ export async function POST(request: Request) {
 
     const { name, email, password } = result.data
 
+    // Additional manual validation as an extra security layer
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { message: 'Invalid email format' },
+        { status: 400 },
+      )
+    }
+
+    // Sanitize name input
+    const sanitizedName = sanitizeString(name)
+    if (!sanitizedName.trim()) {
+      return NextResponse.json(
+        { message: 'Name cannot be empty' },
+        { status: 400 },
+      )
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -42,7 +60,7 @@ export async function POST(request: Request) {
     // Create new user
     const user = await prisma.user.create({
       data: {
-        name,
+        name: sanitizedName,
         email,
         hashedPassword,
         role: 'USER', // Default role

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
+import { sanitizeString } from '@/utils/validation'
 
 interface CommentFormProps {
   listingId: string
@@ -47,11 +48,23 @@ export function CommentForm({
     e.preventDefault()
     if (!content.trim()) return
 
-    if (isEditing && commentId) {
-      editComment.mutate({ commentId, content })
-    } else {
-      addComment.mutate({ listingId, content, parentId })
+    // Sanitize the content before sending to the server
+    const sanitizedContent = sanitizeString(content)
+    
+    if (sanitizedContent.trim().length === 0) {
+      // Don't submit if sanitization removed all content
+      return
     }
+
+    if (isEditing && commentId) {
+      editComment.mutate({ commentId, content: sanitizedContent })
+    } else {
+      addComment.mutate({ listingId, content: sanitizedContent, parentId })
+    }
+  }
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value)
   }
 
   if (!session) {
@@ -77,10 +90,11 @@ export function CommentForm({
       <div className="mb-4">
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
           className={textareaClasses}
           rows={rows}
           placeholder={isReply ? "Write your reply..." : "Write your comment..."}
+          maxLength={1000}
         />
       </div>
       <div className="flex justify-end gap-2">

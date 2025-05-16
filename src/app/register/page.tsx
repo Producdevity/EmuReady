@@ -4,6 +4,7 @@ import { registerUser } from '@/rest/user'
 import { type FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { sanitizeString, isValidEmail } from '@/utils/validation'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -18,7 +19,17 @@ export default function RegisterPage() {
     setIsLoading(true)
     setErrorMessage('')
 
-    registerUser({ name, email, password })
+    // Validate email format
+    if (!isValidEmail(email)) {
+      setErrorMessage('Please enter a valid email address')
+      setIsLoading(false)
+      return
+    }
+
+    // Sanitize the name input
+    const sanitizedName = sanitizeString(name)
+    
+    registerUser({ name: sanitizedName, email, password })
       .then(() => router.push('/login?registered=true'))
       .catch((error: Error) =>
         setErrorMessage(error.message || 'Registration failed'),
@@ -29,6 +40,14 @@ export default function RegisterPage() {
         setEmail('')
         setPassword('')
       })
+  }
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(sanitizeString(e.target.value))
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value.trim())
   }
 
   return (
@@ -63,7 +82,8 @@ export default function RegisterPage() {
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Full name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleNameChange}
+                maxLength={100}
               />
             </div>
             <div>
@@ -79,7 +99,8 @@ export default function RegisterPage() {
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                maxLength={100}
               />
             </div>
             <div>
@@ -96,6 +117,8 @@ export default function RegisterPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                maxLength={100}
               />
             </div>
           </div>
