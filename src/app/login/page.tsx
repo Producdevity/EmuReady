@@ -5,6 +5,11 @@ import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+// Basic sanitization function to remove potentially dangerous characters
+function sanitizeInput(input: string): string {
+  return input.trim().replace(/[<>]/g, '')
+}
+
 function LoginForm() {
   const router = useRouter()
   const urlParams = useSearchParams()
@@ -21,9 +26,13 @@ function LoginForm() {
     setError('')
 
     try {
+      // Sanitize inputs before sending to server
+      const sanitizedEmail = sanitizeInput(email)
+      
+      // Don't sanitize password as it might contain special characters
       const result = await signIn('credentials', {
         redirect: false,
-        email,
+        email: sanitizedEmail,
         password,
       })
 
@@ -39,6 +48,10 @@ function LoginForm() {
       setError('An unexpected error occurred')
       setIsLoading(false)
     }
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(sanitizeInput(e.target.value))
   }
 
   return (
@@ -79,7 +92,8 @@ function LoginForm() {
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                maxLength={100}
               />
             </div>
             <div>
@@ -96,6 +110,7 @@ function LoginForm() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                maxLength={100}
               />
             </div>
           </div>

@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui'
 import { PencilIcon } from '@heroicons/react/24/outline'
+import { sanitizeString } from '@/utils/validation'
 
 interface Props {
   gameData: {
@@ -44,12 +45,37 @@ export default function GameEditForm({ gameData }: Props) {
     setIsLoading(true)
     setError('')
 
+    // Sanitize inputs before submitting
+    const sanitizedTitle = sanitizeString(title)
+    const sanitizedImageUrl = imageUrl.trim()
+    
+    // Add basic URL validation for image
+    if (sanitizedImageUrl && !sanitizedImageUrl.match(/^https?:\/\/.+/i)) {
+      setError('Image URL must start with http:// or https://')
+      setIsLoading(false)
+      return
+    }
+
+    if (!sanitizedTitle) {
+      setError('Title cannot be empty')
+      setIsLoading(false)
+      return
+    }
+
     updateGame.mutate({
       id: gameData.id,
-      title,
+      title: sanitizedTitle,
       systemId: gameData.systemId,
-      imageUrl: imageUrl || undefined,
+      imageUrl: sanitizedImageUrl || undefined,
     })
+  }
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value)
+  }
+
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUrl(e.target.value)
   }
 
   return (
@@ -82,9 +108,10 @@ export default function GameEditForm({ gameData }: Props) {
                 <Input
                   id="title"
                   value={title}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+                  onChange={handleTitleChange}
                   placeholder="Game title"
                   required
+                  maxLength={100}
                 />
               </div>
 
@@ -95,8 +122,9 @@ export default function GameEditForm({ gameData }: Props) {
                 <Input
                   id="imageUrl"
                   value={imageUrl}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setImageUrl(e.target.value)}
+                  onChange={handleImageUrlChange}
                   placeholder="https://example.com/image.jpg"
+                  maxLength={500}
                 />
               </div>
 

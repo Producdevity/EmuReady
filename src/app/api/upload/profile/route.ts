@@ -12,9 +12,20 @@ export const dynamic = 'force-dynamic'
 // File size limit in bytes (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
+// Allowed image types and extensions
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+
 // Helper function to check if file is an image
 function isImage(file: File) {
-  return file.type.startsWith('image/')
+  // Check MIME type first
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return false
+  }
+  
+  // Then verify extension
+  const fileExtension = file.name.split('.').pop()?.toLowerCase() ?? ''
+  return ALLOWED_EXTENSIONS.includes(fileExtension)
 }
 
 // Main API route handler
@@ -40,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     if (!isImage(file)) {
       return NextResponse.json(
-        { error: 'Uploaded file is not an image' },
+        { error: 'Uploaded file must be a valid image (JPG, PNG, GIF, or WebP)' },
         { status: 400 },
       )
     }
@@ -52,11 +63,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create unique filename
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    // Extract and validate file extension from original name
+    const originalExtension = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const fileExtension = ALLOWED_EXTENSIONS.includes(originalExtension) 
+      ? originalExtension 
+      : 'jpg' // Fallback to jpg if extension is invalid
+
+    // Create unique filename with timestamp and random string for additional security
     const userId = session.user.id
     const timestamp = Date.now()
-    const fileName = `profile-${userId}-${timestamp}.${fileExtension}`
+    const randomString = Math.random().toString(36).substring(2, 10)
+    const fileName = `profile-${userId}-${timestamp}-${randomString}.${fileExtension}`
 
     // Create directory if it doesn't exist
     const publicDir = join(process.cwd(), 'public')
