@@ -11,6 +11,14 @@ interface Props {
   }
 }
 
+function getSafePlaceholderUrl(title?: string | null): string {
+  // Ensure string, remove non-printable ASCII, remove percent signs
+  const safeTitle = String(title ?? '')
+    .replace(/[^ -~]/g, '') // remove non-printable ASCII
+    .replace(/%/g, '') // remove percent signs
+  return `https://placehold.co/400x300/9ca3af/1e293b?text=${encodeURIComponent(safeTitle.substring(0, 15))}`
+}
+
 function GameCard(props: Props) {
   return (
     <Link
@@ -20,10 +28,7 @@ function GameCard(props: Props) {
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
         <Image
-          src={
-            props.game.imageUrl ??
-            `https://placehold.co/400x300/9ca3af/1e293b?text=${encodeURIComponent(props.game.title.substring(0, 15))}`
-          }
+          src={props.game.imageUrl ?? getSafePlaceholderUrl(props.game.title)}
           alt={props.game.title}
           fill
           className="object-cover"
