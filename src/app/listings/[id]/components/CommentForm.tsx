@@ -51,7 +51,7 @@ export function CommentForm({
 
   if (!session) {
     return (
-      <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+      <div className="my-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <p className="text-gray-600 dark:text-gray-400">
           Please sign in to leave a comment.
         </p>
