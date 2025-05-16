@@ -1,6 +1,11 @@
 import Link from 'next/link'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/server/auth'
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const session = await getServerSession(authOptions)
+  const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
+  
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
@@ -64,6 +69,20 @@ export default function AdminDashboardPage() {
             Approve, reject, or edit new listings.
           </p>
         </Link>
+        
+        {isSuperAdmin && (
+          <Link
+            href="/admin/users"
+            className="block bg-gradient-to-r from-purple-50 to-white dark:from-purple-900 dark:to-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition border border-purple-200 dark:border-purple-800"
+          >
+            <h2 className="text-xl font-semibold mb-2 text-purple-600 dark:text-purple-400">
+              Users Management
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Manage users, roles, and permissions.
+            </p>
+          </Link>
+        )}
       </div>
     </div>
   )
