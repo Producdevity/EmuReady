@@ -1,17 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { VoteButtons } from './components/VoteButtons'
-import { CommentForm } from './components/CommentForm'
+import { CommentThread } from './components/CommentThread'
 import { api } from '@/lib/api'
-import { useSession } from 'next-auth/react'
-import { canEditComment, canDeleteComment } from '@/utils/hasPermission'
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 interface Props {
   listing: unknown
@@ -21,48 +17,13 @@ interface Props {
   userVote: boolean | null
 }
 
-function isComment(obj: unknown): obj is {
-  id: string
-  content: string
-  createdAt: string | Date
-  deletedAt?: string | Date | null
-  isEdited?: boolean
-  user?: {
-    id?: string
-    name?: string | null
-    profileImage?: string | null
-  }
-} {
-  return (
-    !!obj &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    'content' in obj &&
-    'createdAt' in obj
-  )
-}
-
 export default function ListingDetailsClient(props: Props) {
-  const { data: session } = useSession()
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const listingId = (props.listing as { id: string }).id
   const utils = api.useUtils()
 
-  // Use TRPC to get comments
-  const { data: commentsData } = api.listings.getComments.useQuery(
-    { listingId },
-    { enabled: !!listingId }
-  )
-
-  const deleteComment = api.listings.deleteComment.useMutation({
-    onSuccess: () => {
-      refreshData()
-    },
-  })
-
-  // Function to refresh comments and votes
+  // Function to refresh votes
   const refreshData = () => {
-    utils.listings.getComments.invalidate({ listingId }).catch(console.error)
+    utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
   }
 
   // Type assertion for listing (from server)
@@ -79,104 +40,6 @@ export default function ListingDetailsClient(props: Props) {
       id?: string
       profileImage?: string | null
     }
-    comments?: unknown[]
-  }
-
-  // Use the comments from the query if available, otherwise use the server-provided ones
-  const comments = commentsData?.comments ?? l.comments ?? []
-
-  const handleDeleteComment = async (commentId: string) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      deleteComment.mutate({ commentId })
-    }
-  }
-
-  const renderComment = (comment: unknown, idx: number) => {
-    if (!isComment(comment)) return null
-
-    const isEditing = editingCommentId === comment.id
-    const isDeleted = !!comment.deletedAt
-
-    const canEdit = session && comment.user?.id && canEditComment(
-      session.user.role,
-      comment.user.id,
-      session.user.id
-    )
-
-    const canDelete = session && comment.user?.id && canDeleteComment(
-      session.user.role,
-      comment.user.id,
-      session.user.id
-    )
-
-    return (
-      <motion.div
-        key={comment.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 * Math.min(idx, 5) }}
-        className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg"
-      >
-        {isEditing ? (
-          <CommentForm
-            listingId={listingId}
-            commentId={comment.id}
-            initialContent={comment.content}
-            onCommentSuccess={refreshData}
-            onCancelEdit={() => setEditingCommentId(null)}
-            isEditing
-          />
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-indigo-300 dark:bg-indigo-700 flex items-center justify-center text-lg font-bold text-white">
-                  {comment.user?.name?.[0] ?? '?'}
-                </div>
-                <span className="font-semibold text-gray-700 dark:text-gray-200">
-                  {comment.user?.name ?? 'Anonymous'}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {new Date(comment.createdAt).toLocaleString()}
-                </span>
-                {comment.isEdited && (
-                  <span className="text-xs text-gray-400 italic">(edited)</span>
-                )}
-              </div>
-              {!isDeleted && (
-                <div className="flex gap-2">
-                  {canEdit && (
-                    <button
-                      onClick={() => setEditingCommentId(comment.id)}
-                      className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="text-gray-700 dark:text-gray-300">
-              {isDeleted ? (
-                <em className="text-gray-500 dark:text-gray-400">
-                  This comment has been deleted.
-                </em>
-              ) : (
-                comment.content
-              )}
-            </div>
-          </>
-        )}
-      </motion.div>
-    )
   }
 
   return (
@@ -258,24 +121,13 @@ export default function ListingDetailsClient(props: Props) {
               </Link>
             </div>
           </div>
-          {/* Comments Section */}
+          
+          {/* Comments Section - Now using our new CommentThread component */}
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-              Comments
-            </h2>
-
-            {/* Add comment form */}
-            <CommentForm
-              listingId={l.id}
-              onCommentSuccess={refreshData}
+            <CommentThread 
+              listingId={l.id} 
+              initialSortBy="newest" 
             />
-
-            <div className="space-y-4">
-              {(!comments || comments.length === 0) && (
-                <div className="text-gray-500">No comments yet. Be the first to comment!</div>
-              )}
-              {comments.map((comment, idx) => renderComment(comment, idx))}
-            </div>
           </div>
         </Card>
       </motion.div>

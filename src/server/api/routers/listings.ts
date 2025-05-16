@@ -719,4 +719,215 @@ export const listingsRouter = createTRPCRouter({
         },
       })
     }),
+
+  // Get comments for a listing with sorting options
+  getSortedComments: publicProcedure
+    .input(z.object({
+      listingId: z.string(),
+      sortBy: z.enum(['newest', 'oldest', 'popular']).default('newest'),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { listingId, sortBy } = input;
+
+      // Build appropriate order by clause based on sort selection
+      let orderBy: Prisma.CommentOrderByWithRelationInput;
+      
+      switch (sortBy) {
+        case 'newest':
+          orderBy = { createdAt: 'desc' };
+          break;
+        case 'oldest':
+          orderBy = { createdAt: 'asc' };
+          break;
+        case 'popular':
+          orderBy = { score: 'desc' };
+          break;
+        default:
+          orderBy = { createdAt: 'desc' };
+      }
+
+      // Get all top-level comments
+      const comments = await ctx.prisma.comment.findMany({
+        where: { 
+          listingId,
+          parentId: null, // Only get top-level comments
+        },
+        include: {
+          user: { 
+            select: { 
+              id: true, 
+              name: true,
+              profileImage: true,
+            } 
+          },
+          replies: {
+            include: { 
+              user: { 
+                select: { 
+                  id: true, 
+                  name: true,
+                  profileImage: true,
+                } 
+              },
+              _count: {
+                select: {
+                  replies: true,
+                }
+              }
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+          _count: {
+            select: {
+              replies: true,
+            }
+          }
+        },
+        orderBy,
+      });
+
+      // Get all comment votes for the user if logged in
+      let userCommentVotes: Record<string, boolean> = {};
+      
+      if (ctx.session?.user) {
+        const votes = await ctx.prisma.commentVote.findMany({
+          where: {
+            userId: ctx.session.user.id,
+            comment: {
+              listingId,
+            }
+          },
+          select: {
+            commentId: true,
+            value: true,
+          }
+        });
+        
+        // Create a lookup map of commentId -> vote value
+        userCommentVotes = votes.reduce((acc, vote) => {
+          acc[vote.commentId] = vote.value;
+          return acc;
+        }, {} as Record<string, boolean>);
+      }
+
+      // Transform the comments to include vote data
+      const transformedComments = comments.map(comment => {
+        // Process replies
+        const transformedReplies = comment.replies.map(reply => {
+          return {
+            ...reply,
+            userVote: userCommentVotes[reply.id] ?? null,
+            replyCount: reply._count.replies,
+          };
+        });
+
+        return {
+          ...comment,
+          userVote: userCommentVotes[comment.id] ?? null,
+          replyCount: comment._count.replies,
+          replies: transformedReplies,
+        };
+      });
+
+      return { comments: transformedComments };
+    }),
+
+  // Vote on a comment
+  voteComment: protectedProcedure
+    .input(
+      z.object({
+        commentId: z.string(),
+        value: z.boolean(), // true = upvote, false = downvote
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { commentId, value } = input;
+      const userId = ctx.session.user.id;
+
+      // Check if comment exists
+      const comment = await ctx.prisma.comment.findUnique({
+        where: { id: commentId },
+      });
+
+      if (!comment) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Comment not found',
+        });
+      }
+
+      // Check if user already voted on this comment
+      const existingVote = await ctx.prisma.commentVote.findUnique({
+        where: {
+          userId_commentId: {
+            userId,
+            commentId,
+          },
+        },
+      });
+
+      // Start a transaction to handle both the vote and score update
+      return ctx.prisma.$transaction(async (tx) => {
+        let voteResult;
+        let scoreChange = 0;
+
+        if (existingVote) {
+          // If vote is the same, remove the vote (toggle)
+          if (existingVote.value === value) {
+            await tx.commentVote.delete({
+              where: {
+                userId_commentId: {
+                  userId,
+                  commentId,
+                },
+              },
+            });
+            
+            // Update score: if removing upvote, decrement score, if removing downvote, increment score
+            scoreChange = existingVote.value ? -1 : 1;
+            voteResult = { message: 'Vote removed' };
+          } else {
+            // Update the vote value
+            voteResult = await tx.commentVote.update({
+              where: {
+                userId_commentId: {
+                  userId,
+                  commentId,
+                },
+              },
+              data: {
+                value,
+              },
+            });
+            
+            // Update score: changing from downvote to upvote = +2, from upvote to downvote = -2
+            scoreChange = value ? 2 : -2;
+          }
+        } else {
+          // Create new vote
+          voteResult = await tx.commentVote.create({
+            data: {
+              userId,
+              commentId,
+              value,
+            },
+          });
+          
+          // Update score: +1 for upvote, -1 for downvote
+          scoreChange = value ? 1 : -1;
+        }
+
+        // Update the comment score
+        await tx.comment.update({
+          where: { id: commentId },
+          data: {
+            score: {
+              increment: scoreChange,
+            },
+          },
+        });
+
+        return voteResult;
+      });
+    }),
 })

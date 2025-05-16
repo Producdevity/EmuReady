@@ -186,7 +186,16 @@ exports.Prisma.CommentScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
-  isEdited: 'isEdited'
+  isEdited: 'isEdited',
+  score: 'score'
+};
+
+exports.Prisma.CommentVoteScalarFieldEnum = {
+  id: 'id',
+  value: 'value',
+  userId: 'userId',
+  commentId: 'commentId',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.ListingApprovalScalarFieldEnum = {
@@ -230,6 +239,7 @@ exports.Prisma.ModelName = {
   Listing: 'Listing',
   Vote: 'Vote',
   Comment: 'Comment',
+  CommentVote: 'CommentVote',
   ListingApproval: 'ListingApproval'
 };
 

@@ -28,6 +28,7 @@ model User {
   listings       Listing[]
   approvalsGiven ListingApproval[] @relation("ApprovalsGiven")
   votes          Vote[]
+  commentVotes   CommentVote[]
 }
 
 model Device {
@@ -100,19 +101,33 @@ model Vote {
 }
 
 model Comment {
-  id        String    @id @default(uuid())
+  id        String        @id @default(uuid())
   content   String
   userId    String
   listingId String
   parentId  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   deletedAt DateTime?
-  isEdited  Boolean   @default(false)
-  parent    Comment?  @relation("Thread", fields: [parentId], references: [id])
-  replies   Comment[] @relation("Thread")
-  listing   Listing   @relation(fields: [listingId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  isEdited  Boolean       @default(false)
+  parent    Comment?      @relation("Thread", fields: [parentId], references: [id])
+  replies   Comment[]     @relation("Thread")
+  listing   Listing       @relation(fields: [listingId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  votes     CommentVote[]
+  score     Int           @default(0)
+}
+
+model CommentVote {
+  id        String   @id @default(uuid())
+  value     Boolean // true = upvote, false = downvote
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  comment   Comment  @relation(fields: [commentId], references: [id])
+
+  @@unique([userId, commentId])
 }
 
 model ListingApproval {
