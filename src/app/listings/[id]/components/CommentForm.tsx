@@ -10,8 +10,10 @@ interface CommentFormProps {
   onCommentSuccess: () => void
   initialContent?: string
   commentId?: string
+  parentId?: string
   onCancelEdit?: () => void
   isEditing?: boolean
+  isReply?: boolean
 }
 
 export function CommentForm({
@@ -19,8 +21,10 @@ export function CommentForm({
   onCommentSuccess,
   initialContent = '',
   commentId,
+  parentId,
   onCancelEdit,
   isEditing = false,
+  isReply = false,
 }: CommentFormProps) {
   const [content, setContent] = useState(initialContent)
   const { data: session } = useSession()
@@ -46,7 +50,7 @@ export function CommentForm({
     if (isEditing && commentId) {
       editComment.mutate({ commentId, content })
     } else {
-      addComment.mutate({ listingId, content })
+      addComment.mutate({ listingId, content, parentId })
     }
   }
 
@@ -60,23 +64,31 @@ export function CommentForm({
     )
   }
 
+  const formClasses = isReply ? "mb-2" : "mb-6"
+  
+  const textareaClasses = isReply
+    ? "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+    : "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+  
+  const rows = isReply ? 2 : 3
+
   return (
-    <form onSubmit={handleSubmit} className="mb-6">
+    <form onSubmit={handleSubmit} className={formClasses}>
       <div className="mb-4">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          rows={3}
-          placeholder="Write your comment..."
+          className={textareaClasses}
+          rows={rows}
+          placeholder={isReply ? "Write your reply..." : "Write your comment..."}
         />
       </div>
       <div className="flex justify-end gap-2">
-        {isEditing && onCancelEdit && (
+        {(isEditing || isReply) && onCancelEdit && (
           <button
             type="button"
             onClick={onCancelEdit}
-            className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+            className="px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white text-sm"
           >
             Cancel
           </button>
@@ -84,9 +96,9 @@ export function CommentForm({
         <button
           type="submit"
           disabled={!content.trim()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
-          {isEditing ? 'Save Changes' : 'Post Comment'}
+          {isEditing ? 'Save Changes' : isReply ? 'Reply' : 'Post Comment'}
         </button>
       </div>
     </form>
