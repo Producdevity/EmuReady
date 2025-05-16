@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import Image from 'next/image'
 import { api } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,12 +15,14 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 import UserRoleModal from './components/UserRoleModal'
+import type { BadgeVariant } from '@/components/ui/badge'
+import type { Role } from '@orm'
 
 interface User {
   id: string
   name: string | null
   email: string
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'AUTHOR' | 'USER'
+  role: Role
   createdAt: string
   _count: {
     listings: number
@@ -27,6 +30,31 @@ interface User {
     votes: number
   }
   profileImage?: string | null
+}
+
+// API response user type
+interface ApiUser {
+  id: string
+  name: string | null
+  email: string
+  role: Role
+  createdAt: Date | string
+  _count: {
+    listings: number
+    comments: number
+    votes: number
+  }
+  profileImage?: string | null
+}
+
+// Map API response user to our UI model
+const mapApiUserToUser = (apiUser: ApiUser): User => {
+  return {
+    ...apiUser,
+    createdAt: apiUser.createdAt instanceof Date 
+      ? apiUser.createdAt.toISOString() 
+      : apiUser.createdAt,
+  }
 }
 
 export default function UsersManagementPage() {
@@ -46,7 +74,8 @@ export default function UsersManagementPage() {
   }
 
   // Get users data
-  const { data: users, isLoading } = api.users.getAll.useQuery()
+  const { data: apiUsers, isLoading } = api.users.getAll.useQuery()
+  const users = apiUsers?.map(mapApiUserToUser)
 
   // Delete user handler
   const deleteUserMutation = api.users.delete.useMutation({
@@ -78,16 +107,16 @@ export default function UsersManagementPage() {
   }
 
   // Role badge color
-  const getRoleBadgeColor = (role: string) => {
+  const getRoleBadgeColor = (role: string): BadgeVariant => {
     switch (role) {
       case 'SUPER_ADMIN':
-        return 'purple'
+        return 'primary'
       case 'ADMIN':
-        return 'blue'
+        return 'primary'
       case 'AUTHOR':
-        return 'green'
+        return 'success'
       default:
-        return 'gray'
+        return 'default'
     }
   }
 
@@ -154,10 +183,13 @@ export default function UsersManagementPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {user.profileImage ? (
-                            <img
+                            <Image
                               className="h-10 w-10 rounded-full"
                               src={user.profileImage}
                               alt={user.name ?? 'User'}
+                              width={40}
+                              height={40}
+                              unoptimized
                             />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -182,12 +214,7 @@ export default function UsersManagementPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge
-                        variant={
-                          getRoleBadgeColor(user.role) as
-                            | 'default'
-                            | 'secondary'
-                            | 'destructive'
-                        }
+                        variant={getRoleBadgeColor(user.role)}
                         className="inline-flex items-center gap-1"
                       >
                         <ShieldCheckIcon className="h-3 w-3" />
@@ -227,7 +254,7 @@ export default function UsersManagementPage() {
                             Edit Role
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="danger" 
                             size="sm"
                             onClick={() =>
                               handleDeleteUser(user.id, user.name ?? 'this user')
