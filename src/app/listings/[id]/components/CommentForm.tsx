@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
+import Link from 'next/link'
 
 interface CommentFormProps {
   listingId: string
@@ -51,9 +52,9 @@ export function CommentForm({
 
   if (!session) {
     return (
-      <div className="my-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+      <div className="mb-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <p className="text-gray-600 dark:text-gray-400">
-          Please sign in to leave a comment.
+          Please <Link href="/login" className="text-blue-600 hover:text-blue-700">sign in</Link> to leave a comment.
         </p>
       </div>
     )
@@ -90,4 +91,4 @@ export function CommentForm({
       </div>
     </form>
   )
-} 
+}
