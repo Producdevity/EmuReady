@@ -4,6 +4,10 @@ import Image from 'next/image'
 import { getGameById } from '../data'
 import { Badge } from '@/components/ui/badge'
 import { OptimizedImage } from '@/components/ui'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/server/auth'
+import GameEditForm from './components/GameEditForm'
+import hasPermission from '@/utils/hasPermission'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -12,6 +16,10 @@ interface Props {
 export default async function GameDetailsPage(props: Props) {
   const { id } = await props.params
   const game = await getGameById(id)
+  const session = await getServerSession(authOptions)
+
+  // Check if user is admin or super admin
+  const canEdit = session?.user.role && hasPermission(session.user.role, 'ADMIN')
 
   if (!game) notFound()
 
@@ -76,12 +84,17 @@ export default async function GameDetailsPage(props: Props) {
                     <Badge variant="default">System: {game.system?.name}</Badge>
                   </div>
                 </div>
-                <Link
-                  href={`/listings/new?gameId=${game.id}`}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
-                >
-                  Add Listing for this Game
-                </Link>
+                <div className="flex gap-3">
+                  {canEdit && (
+                    <GameEditForm gameData={game} />
+                  )}
+                  <Link
+                    href={`/listings/new?gameId=${game.id}`}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
+                  >
+                    Add Listing for this Game
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
