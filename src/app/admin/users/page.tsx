@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import Image from 'next/image'
 import { api } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,49 +17,18 @@ import UserRoleModal from './components/UserRoleModal'
 import type { BadgeVariant } from '@/components/ui/badge'
 import type { Role } from '@orm'
 
-interface User {
+// Only use required properties for the user modal
+interface UserForModal {
   id: string
   name: string | null
   email: string
   role: Role
-  createdAt: string
-  _count: {
-    listings: number
-    comments: number
-    votes: number
-  }
-  profileImage?: string | null
-}
-
-// API response user type
-interface ApiUser {
-  id: string
-  name: string | null
-  email: string
-  role: Role
-  createdAt: Date | string
-  _count: {
-    listings: number
-    comments: number
-    votes: number
-  }
-  profileImage?: string | null
-}
-
-// Map API response user to our UI model
-const mapApiUserToUser = (apiUser: ApiUser): User => {
-  return {
-    ...apiUser,
-    createdAt: apiUser.createdAt instanceof Date 
-      ? apiUser.createdAt.toISOString() 
-      : apiUser.createdAt,
-  }
 }
 
 export default function UsersManagementPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [userToEdit, setUserToEdit] = useState<User | null>(null)
+  const [userToEdit, setUserToEdit] = useState<UserForModal | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Check if user is super admin
@@ -74,8 +42,7 @@ export default function UsersManagementPage() {
   }
 
   // Get users data
-  const { data: apiUsers, isLoading } = api.users.getAll.useQuery()
-  const users = apiUsers?.map(mapApiUserToUser)
+  const { data: users, isLoading } = api.users.getAll.useQuery()
 
   // Delete user handler
   const deleteUserMutation = api.users.delete.useMutation({
@@ -92,13 +59,13 @@ export default function UsersManagementPage() {
   }
 
   // Open role edit modal
-  const openRoleModal = (user: User) => {
+  const openRoleModal = (user: UserForModal) => {
     setUserToEdit(user)
     setIsModalOpen(true)
   }
 
   // Format date nicely
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: Date | string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -182,20 +149,10 @@ export default function UsersManagementPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          {user.profileImage ? (
-                            <Image
-                              className="h-10 w-10 rounded-full"
-                              src={user.profileImage}
-                              alt={user.name ?? 'User'}
-                              width={40}
-                              height={40}
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <UserCircleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                            </div>
-                          )}
+                          {/* User image is not available from the API, so just show the placeholder */}
+                          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <UserCircleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                          </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">

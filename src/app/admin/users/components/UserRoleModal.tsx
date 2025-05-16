@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { ShieldCheckIcon } from '@heroicons/react/24/outline'
+import type { Role } from '@orm'
 
 interface User {
   id: string
   name?: string | null
   email: string
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'AUTHOR' | 'USER'
+  role: Role
 }
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
 }
 
 export default function UserRoleModal({ user, isOpen, onClose }: Props) {
-  const [role, setRole] = useState<'USER' | 'AUTHOR' | 'ADMIN'>(
+  const [role, setRole] = useState<Exclude<Role, 'SUPER_ADMIN'>>(
     user.role === 'SUPER_ADMIN' ? 'ADMIN' : user.role,
   )
   const [isLoading, setIsLoading] = useState(false)
@@ -111,7 +112,7 @@ export default function UserRoleModal({ user, isOpen, onClose }: Props) {
 }
 
 interface RoleButtonProps {
-  role: 'USER' | 'AUTHOR' | 'ADMIN'
+  role: Exclude<Role, 'SUPER_ADMIN'>
   currentRole: string
   onClick: () => void
 }
