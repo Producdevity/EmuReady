@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import hasPermission from '@/utils/hasPermission'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -13,8 +14,17 @@ function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  const isActive = (path: string) => pathname === path
-  const userRole = session?.user?.role ?? 'USER'
+  const getNavItemClass = useCallback(
+    (path: string) => {
+      const dynamicClassNames =
+        pathname === path
+          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+
+      return `${dynamicClassNames} block px-3 py-2 rounded-md text-base font-medium`
+    },
+    [pathname],
+  )
 
   return (
     <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg sticky top-0 z-50 transition-all">
@@ -45,37 +55,13 @@ function Navbar() {
             </p>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                <Link
-                  href="/"
-                  className={`${
-                    isActive('/')
-                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  } 
-                    px-3 py-2 rounded-md text-sm font-medium`}
-                >
+                <Link href="/" className={getNavItemClass('/')}>
                   Home
                 </Link>
-                <Link
-                  href="/listings"
-                  className={`${
-                    isActive('/listings')
-                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  } 
-                    px-3 py-2 rounded-md text-sm font-medium`}
-                >
+                <Link href="/listings" className={getNavItemClass('/listings')}>
                   Listings
                 </Link>
-                <Link
-                  href="/games"
-                  className={`${
-                    isActive('/games')
-                      ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  } 
-                    px-3 py-2 rounded-md text-sm font-medium`}
-                >
+                <Link href="/games" className={getNavItemClass('/games')}>
                   Games
                 </Link>
               </div>
@@ -87,46 +73,22 @@ function Navbar() {
 
               {session ? (
                 <div className="flex items-center space-x-3">
-                  <Link
-                    href="/profile"
-                    className={`${
-                      isActive('/profile')
-                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    } 
-                      px-3 py-2 rounded-md text-sm font-medium`}
-                  >
+                  <Link href="/profile" className={getNavItemClass('/profile')}>
                     Profile
                   </Link>
-                  {(userRole === 'AUTHOR' ||
-                    userRole === 'ADMIN' ||
-                    userRole === 'SUPER_ADMIN') && (
+                  {hasPermission(session?.user?.role, Role.AUTHOR) && (
                     <Link
                       href="/listings/new"
-                      className={`${
-                        isActive('/listings/new')
-                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      } 
-                        px-3 py-2 rounded-md text-sm font-medium`}
+                      className={getNavItemClass('/listings/new')}
                     >
                       Create Listing
                     </Link>
                   )}
-                  {userRole === 'ADMIN' ||
-                    (userRole === 'SUPER_ADMIN' && (
-                      <Link
-                        href="/admin"
-                        className={`${
-                          isActive('/admin')
-                            ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        } 
-                        px-3 py-2 rounded-md text-sm font-medium`}
-                      >
-                        Admin
-                      </Link>
-                    ))}
+                  {hasPermission(session?.user?.role, Role.ADMIN) && (
+                    <Link href="/admin" className={getNavItemClass('/admin')}>
+                      Admin
+                    </Link>
+                  )}
                   <button
                     onClick={() => signOut()}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium"
@@ -175,36 +137,21 @@ function Navbar() {
           <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
             <Link
               href="/"
-              className={`${
-                isActive('/')
-                  ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-              } 
-                block px-3 py-2 rounded-md text-base font-medium`}
+              className={getNavItemClass('/')}
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
             </Link>
             <Link
               href="/listings"
-              className={`${
-                isActive('/listings')
-                  ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-              } 
-                block px-3 py-2 rounded-md text-base font-medium`}
+              className={getNavItemClass('/listings')}
               onClick={() => setMobileMenuOpen(false)}
             >
               Listings
             </Link>
             <Link
               href="/games"
-              className={`${
-                isActive('/games')
-                  ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-              } 
-                block px-3 py-2 rounded-md text-base font-medium`}
+              className={getNavItemClass('/games')}
               onClick={() => setMobileMenuOpen(false)}
             >
               Games
@@ -219,50 +166,33 @@ function Navbar() {
                 <>
                   <Link
                     href="/profile"
-                    className={`${
-                      isActive('/profile')
-                        ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    } 
-                      block px-3 py-2 rounded-md text-base font-medium`}
+                    className={getNavItemClass('/profile')}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
                   </Link>
-                  {(userRole === 'AUTHOR' ||
-                    userRole === 'ADMIN' ||
-                    userRole === 'SUPER_ADMIN') && (
+                  {hasPermission(session?.user?.role, Role.AUTHOR) && (
                     <Link
                       href="/listings/new"
-                      className={`${
-                        isActive('/listings/new')
-                          ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      } 
-                        block px-3 py-2 rounded-md text-base font-medium`}
+                      className={getNavItemClass('/listings/new')}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Create Listing
                     </Link>
                   )}
-                  {userRole === 'ADMIN' ||
-                    (userRole === 'SUPER_ADMIN' && (
-                      <Link
-                        href="/admin"
-                        className={`${
-                          isActive('/admin')
-                            ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        } 
-                        block px-3 py-2 rounded-md text-base font-medium`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Admin
-                      </Link>
-                    ))}
+                  {hasPermission(session?.user?.role, Role.ADMIN) && (
+                    <Link
+                      href="/admin"
+                      className={getNavItemClass('admin')}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Admin
+                    </Link>
+                  )}
                   <button
                     onClick={() => {
-                      signOut()
+                      // TODO: handle errors
+                      signOut().catch(console.error)
                       setMobileMenuOpen(false)
                     }}
                     className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
