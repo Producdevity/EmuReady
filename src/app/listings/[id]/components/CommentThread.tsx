@@ -47,45 +47,36 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
 
-  // Get comments with sorting
   const { data: commentsData, isLoading } = api.listings.getSortedComments.useQuery(
     { listingId, sortBy },
     { enabled: !!listingId }
   )
 
-  // Mutation for voting on a comment
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
-      // Invalidate to refresh comments after voting
       utils.listings.getSortedComments.invalidate({ listingId, sortBy })
     }
   })
 
-  // Mutation for deleting a comment
   const deleteComment = api.listings.deleteComment.useMutation({
     onSuccess: () => {
       refreshData()
     },
   })
 
-  // Get TRPC utils for invalidating queries
   const utils = api.useUtils()
 
-  // Function to refresh comments
   const refreshData = () => {
     utils.listings.getSortedComments.invalidate({ listingId, sortBy })
-    // Close any reply forms
     setReplyingTo(null)
     setEditingCommentId(null)
   }
 
-  // Function to toggle upvote/downvote on a comment
   const handleVote = (commentId: string, isUpvote: boolean) => {
-    if (!session) return // Must be logged in to vote
+    if (!session) return
     voteComment.mutate({ commentId, value: isUpvote })
   }
 
-  // Function to toggle comment thread collapse state
   const toggleCommentExpanded = (commentId: string) => {
     setExpandedComments(prev => ({
       ...prev,
@@ -93,31 +84,25 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
     }))
   }
 
-  // Function to handle comment deletion
   const handleDeleteComment = async (commentId: string) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
       deleteComment.mutate({ commentId })
     }
   }
 
-  // Format date as relative time (e.g. "3 hours ago")
   const formatRelativeTime = (date: Date | string) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true })
   }
 
-  // Determine if a comment should be expanded by default
   const isCommentExpanded = (commentId: string) => {
-    // If this comment hasn't been explicitly collapsed/expanded,
-    // expand it by default if it has 3 or fewer replies
     if (expandedComments[commentId] === undefined) {
       const comment = commentsData?.comments.find(c => c.id === commentId)
       return !comment || (comment.replies?.length ?? 0) <= 3
     }
-    
+
     return expandedComments[commentId]
   }
 
-  // Render a single comment with its replies
   const renderComment = (comment: CommentType, level = 0) => {
     if (!comment) return null
 
@@ -140,9 +125,9 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
 
     // Determine appropriate left margin for nesting
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''
-    
+
     // Add border for nested comments
-    const borderStyle = level > 0 
+    const borderStyle = level > 0
       ? 'border-l-2 border-gray-200 dark:border-gray-700 pl-4'
       : ''
 
@@ -183,7 +168,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                   )}
                 </div>
               </div>
-              
+
               {!isDeleted && (
                 <div className="flex gap-2">
                   {canEdit && (
@@ -205,7 +190,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                 </div>
               )}
             </div>
-            
+
             {/* Comment content */}
             <div className="text-gray-700 dark:text-gray-300 mb-3">
               {isDeleted ? (
@@ -216,13 +201,13 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                 comment.content
               )}
             </div>
-            
+
             {/* Comment actions (vote, reply) */}
             {!isDeleted && (
               <div className="flex items-center justify-between text-sm">
                 {/* Vote controls */}
                 <div className="flex items-center space-x-1">
-                  <button 
+                  <button
                     onClick={() => handleVote(comment.id, true)}
                     className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
                       comment.userVote === true ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400'
@@ -230,7 +215,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                   >
                     <ChevronUpIcon className="h-4 w-4" />
                   </button>
-                  
+
                   <span className={`font-medium ${
                     (comment.score ?? 0) > 0 
                       ? 'text-blue-500' 
@@ -240,8 +225,8 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                   }`}>
                     {comment.score ?? 0}
                   </span>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleVote(comment.id, false)}
                     className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
                       comment.userVote === false ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
@@ -250,18 +235,18 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                     <ChevronDownIcon className="h-4 w-4" />
                   </button>
                 </div>
-                
+
                 {/* Reply button */}
                 <div className="flex items-center space-x-2">
                   {/* Reply toggle button */}
-                  <button 
+                  <button
                     onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                     className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center"
                   >
                     <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
                     <span>Reply</span>
                   </button>
-                  
+
                   {/* Show collapse/expand button if comment has replies */}
                   {(comment.replies && comment.replies.length > 0) && (
                     <button
@@ -283,7 +268,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
             )}
           </div>
         )}
-        
+
         {/* Reply form */}
         <AnimatePresence>
           {isReplying && (
@@ -304,7 +289,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Replies */}
         {!isDeleted && comment.replies && comment.replies.length > 0 && (
           <AnimatePresence>
@@ -389,7 +374,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
             {(!commentsData?.comments || commentsData.comments.length === 0) && (
               <div className="text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</div>
             )}
-            
+
             {commentsData?.comments?.map(comment => renderComment(comment))}
           </>
         )}
