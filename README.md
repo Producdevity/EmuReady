@@ -2,6 +2,8 @@
 
 A community-driven platform for tracking emulation compatibility across different devices and emulators.
 
+Visit our website: [https://emuready.com](https://emuready.com)
+
 ## Overview
 
 EmuReady helps users share and discover emulation compatibility information across different hardware and software configurations. Users can contribute compatibility reports, vote on listings, and discuss specific game/device/emulator combinations.
