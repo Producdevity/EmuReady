@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui'
+import { Button, Input } from '@/components/ui'
 import { PencilIcon } from '@heroicons/react/24/outline'
 import { sanitizeString } from '@/utils/validation'
 
