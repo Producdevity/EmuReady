@@ -14,10 +14,8 @@ function GamesPage() {
   const [systemId, setSystemId] = useState('')
   const limit = 12
 
-  // Fetch systems for filter dropdown
   const { data: systems } = api.systems.list.useQuery()
 
-  // Fetch games with pagination and search
   const { data, isLoading } = api.games.list.useQuery({
     search: search || undefined,
     systemId: systemId || undefined,
@@ -28,19 +26,16 @@ function GamesPage() {
   const games = data?.games ?? []
   const pagination = data?.pagination
 
-  // Handle search changes
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value)
     setPage(1)
   }
 
-  // Handle system filter changes
   const handleSystemChange = (e: SyntheticEvent) => {
     setSystemId((e as unknown as ChangeEvent<HTMLSelectElement>).target.value)
     setPage(1)
   }
 
-  // Handle page changes
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
   }
