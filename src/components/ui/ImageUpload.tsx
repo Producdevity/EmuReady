@@ -6,20 +6,15 @@ import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { LoadingSpinner } from '@/components/ui'
 import http from '@/rest/http'
 
-interface ImageUploadProps {
+interface Props {
   onImageUploaded: (imageUrl: string) => void
   className?: string
   initialImage?: string
   label?: string
 }
 
-function ImageUpload({
-  onImageUploaded,
-  className = '',
-  initialImage = '',
-  label = 'Upload Image',
-}: ImageUploadProps) {
-  const [image, setImage] = useState<string>(initialImage)
+function ImageUpload(props: Props) {
+  const [image, setImage] = useState<string>(props.initialImage ?? '')
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -52,7 +47,7 @@ function ImageUpload({
       })
 
       setImage(res.data.imageUrl)
-      onImageUploaded(res.data.imageUrl)
+      props.onImageUploaded(res.data.imageUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       console.error('Upload error:', err)
@@ -63,14 +58,16 @@ function ImageUpload({
 
   const handleRemoveImage = () => {
     setImage('')
-    onImageUploaded('')
+    props.onImageUploaded('')
     if (!fileInputRef.current) return
     fileInputRef.current.value = ''
   }
 
   return (
-    <div className={`${className}`}>
-      {label && <label className="block mb-1 font-medium">{label}</label>}
+    <div className={`${props.className ?? ''}`}>
+      {props.label && (
+        <label className="block mb-1 font-medium">{props.label}</label>
+      )}
 
       <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4">
         <input
