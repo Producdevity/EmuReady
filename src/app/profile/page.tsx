@@ -18,7 +18,7 @@ function ProfilePage() {
   const utils = api.useUtils()
   const { data: profile, isLoading } = api.users.getProfile.useQuery(
     undefined,
-    { enabled: !!session }, // Only fetch if session exists
+    { enabled: !!session },
   )
 
   const updateProfile = api.users.update.useMutation({
@@ -26,25 +26,20 @@ function ProfilePage() {
       // Cancel any outgoing refetches to avoid overwriting optimistic update
       await utils.users.getProfile.cancel()
 
-      // Snapshot the previous value
       const previousProfile = utils.users.getProfile.getData()
 
-      // Optimistically update to the new value
       utils.users.getProfile.setData(undefined, (old) => {
         if (!old) return old
         return { ...old, ...newData }
       })
 
-      // Return a context object with the snapshotted value
       return { previousProfile }
     },
     onError: (err, _newData, context) => {
-      // If the mutation fails, use the context returned from onMutate to rollback
       utils.users.getProfile.setData(undefined, context?.previousProfile)
       console.error('Error updating profile:', err)
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure data consistency
       utils.users.getProfile.invalidate().catch(console.error) // TODO: handle error correctly
     },
   })
