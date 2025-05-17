@@ -62,7 +62,6 @@ export default function AddListingPage() {
     }
   }, [success, error])
 
-  // Simplified search handler for the Autocomplete component
   const handleGameSearch = async (query: string) => {
     setSearchTerm(query)
     setIsSearching(true)
@@ -70,7 +69,6 @@ export default function AddListingPage() {
     try {
       await refetchGames()
 
-      // Simple debugging for search results
       console.log(
         `Search "${query}" found ${games?.games?.length ?? 0} results`,
       )
