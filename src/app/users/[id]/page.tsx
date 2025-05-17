@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import type { RouterOutputs } from '@/server/api/root'
 
-// Define types for the components
 type UserProfile = RouterOutputs['users']['getUserById']
 type UserListing = UserProfile['listings'][0]
 type UserVote = UserProfile['votes'][0]
@@ -20,7 +19,6 @@ export default function UserProfilePage() {
         ? params.id[0]
         : ''
 
-  // Fetch user profile by ID
   const {
     data: profile,
     isLoading,
