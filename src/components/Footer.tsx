@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export default function Footer() {
+function Footer() {
   return (
     <footer className="bg-gradient-to-t from-gray-900 via-gray-800 to-gray-900 border-t border-gray-800 py-12 mt-16 text-gray-300">
       <div className="container mx-auto px-4">
@@ -81,3 +81,5 @@ export default function Footer() {
     </footer>
   )
 }
+
+export default Footer
