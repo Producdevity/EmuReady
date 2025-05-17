@@ -27,7 +27,6 @@ export default function UserRoleModal({ user, isOpen, onClose }: Props) {
 
   const updateRoleMutation = api.users.updateRole.useMutation({
     onSuccess: () => {
-      // Refresh users list
       api.useUtils().users.getAll.invalidate()
       onClose()
     },
@@ -121,7 +120,7 @@ function RoleButton({ role, currentRole, onClick }: RoleButtonProps) {
   const isActive = role === currentRole
   const getColorClasses = () => {
     if (!isActive) return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-    
+
     switch (role) {
       case 'ADMIN':
         return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
@@ -143,4 +142,4 @@ function RoleButton({ role, currentRole, onClick }: RoleButtonProps) {
       {role}
     </button>
   )
-} 
+}
