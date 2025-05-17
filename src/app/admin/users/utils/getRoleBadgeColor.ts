@@ -1,4 +1,4 @@
-import type { BadgeVariant } from '@/components/ui/badge'
+import type { BadgeVariant } from '@/components/ui/Badge'
 import { Role } from '@orm'
 
 const roleBadgeColorsMap: Record<Role, BadgeVariant> = {

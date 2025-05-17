@@ -1,7 +1,6 @@
 'use client'
 
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, Badge } from '@/components/ui'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
