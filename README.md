@@ -21,16 +21,6 @@ EmuReady helps users share and discover emulation compatibility information acro
 - **Admin Dashboard**: Manage users, listings, and content moderation
 - **Responsive Design**: Works on mobile, tablet, and desktop
 
-## Security Features
-
-- Data validation and sanitization at multiple levels (client, server, database)
-- Content Security Policy implementation
-- Protection against XSS and CSRF attacks
-- Secure authentication with NextAuth.js
-- File upload validation and security measures
-- Input length restrictions and proper sanitization
-- UUID validation to prevent parameter tampering
-
 ## Recent Improvements
 
 The codebase has been significantly improved with the following enhancements:
@@ -57,6 +47,16 @@ The codebase has been significantly improved with the following enhancements:
 - Improved focus management
 - Better color contrast in UI components
 
+### Security
+
+- Data validation and sanitization at multiple levels (client, server, database)
+- Content Security Policy implementation
+- Protection against XSS and CSRF attacks
+- Secure authentication with NextAuth.js
+- File upload validation and security measures
+- Input length restrictions and proper sanitization
+- UUID validation to prevent parameter tampering
+
 ### Developer Experience
 
 - Added additional npm scripts for development workflow
@@ -75,8 +75,8 @@ The codebase has been significantly improved with the following enhancements:
 ### Prerequisites
 
 - Node.js 20+
-- npm/yarn
-- PostgreSQL (for development)
+- `npm`
+- PostgreSQL (or SQLite for development)
 
 ### Installation
 
@@ -122,6 +122,7 @@ The codebase has been significantly improved with the following enhancements:
 - `npm run dev:strict` - Start with React strict mode
 - `npm run build` - Build for production
 - `npm run start` - Start the production server
+- `npm run test` - Run tests
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix linting issues
 - `npm run format` - Format code with Prettier
@@ -143,7 +144,7 @@ The codebase has been significantly improved with the following enhancements:
 - **State Management**: React Query
 - **Type Checking**: TypeScript
 - **Animation**: Framer Motion
-- **Security**: Content Security Policy, Input Validation
+- **Validation**: Zod, Content Security Policy, Input Validation
 
 ## Contributing
 
@@ -165,18 +166,3 @@ If you discover a security vulnerability, please follow our [Security Policy](SE
 
 - All our [Contributors](https://github.com/Producdevity/emuready/graphs/contributors)
 - The emulation community for inspiration and support
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
