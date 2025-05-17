@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui'
 import { ShieldCheckIcon } from '@heroicons/react/24/outline'
-import type { Role } from '@orm'
+import { Role } from '@orm'
+import UserRoleButton from './UserRoleButton'
 
 interface User {
   id: string
@@ -19,31 +20,32 @@ interface Props {
   onClose: () => void
 }
 
-export default function UserRoleModal({ user, isOpen, onClose }: Props) {
+function UserRoleModal({ user, isOpen, onClose }: Props) {
   const [role, setRole] = useState<Exclude<Role, 'SUPER_ADMIN'>>(
-    user.role === 'SUPER_ADMIN' ? 'ADMIN' : user.role,
+    user.role === Role.SUPER_ADMIN ? Role.ADMIN : user.role,
   )
   const [isLoading, setIsLoading] = useState(false)
 
   const updateRoleMutation = api.users.updateRole.useMutation({
     onSuccess: () => {
-      api.useUtils().users.getAll.invalidate()
+      // TODO: show success message maybe?
+      // TODO: handle errors
+      api.useUtils().users.getAll.invalidate().catch(console.error)
       onClose()
     },
     onError: (error) => {
+      // TODO: handle errors
       console.error('Error updating role:', error)
       setIsLoading(false)
+      // TODO: show error toast or message
       alert(`Error: ${error.message}`)
     },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (ev: FormEvent) => {
+    ev.preventDefault()
     setIsLoading(true)
-    updateRoleMutation.mutate({
-      userId: user.id,
-      role,
-    })
+    updateRoleMutation.mutate({ userId: user.id, role })
   }
 
   if (!isOpen) return null
@@ -68,23 +70,23 @@ export default function UserRoleModal({ user, isOpen, onClose }: Props) {
               User Role
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <RoleButton
-                role="USER"
+              <UserRoleButton
+                role={Role.USER}
                 currentRole={role}
-                onClick={() => setRole('USER')}
+                onClick={() => setRole(Role.USER)}
               />
-              <RoleButton
-                role="AUTHOR"
+              <UserRoleButton
+                role={Role.AUTHOR}
                 currentRole={role}
-                onClick={() => setRole('AUTHOR')}
+                onClick={() => setRole(Role.AUTHOR)}
               />
-              <RoleButton
-                role="ADMIN"
+              <UserRoleButton
+                role={Role.ADMIN}
                 currentRole={role}
-                onClick={() => setRole('ADMIN')}
+                onClick={() => setRole(Role.ADMIN)}
               />
             </div>
-            {user.role === 'SUPER_ADMIN' && (
+            {user.role === Role.SUPER_ADMIN && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                 Note: Super Admin role can only be assigned in the database
                 directly
@@ -111,39 +113,4 @@ export default function UserRoleModal({ user, isOpen, onClose }: Props) {
   )
 }
 
-interface RoleButtonProps {
-  role: Exclude<Role, 'SUPER_ADMIN'>
-  currentRole: string
-  onClick: () => void
-}
-
-function RoleButton({ role, currentRole, onClick }: RoleButtonProps) {
-  const isActive = role === currentRole
-  const getColorClasses = () => {
-    if (!isActive)
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-      case 'AUTHOR':
-        return 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-      default:
-        return 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      className={`py-2 px-3 rounded-md font-medium text-sm ${getColorClasses()} ${
-        isActive
-          ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800'
-          : ''
-      }`}
-      onClick={onClick}
-    >
-      {role}
-    </button>
-  )
-}
+export default UserRoleModal
