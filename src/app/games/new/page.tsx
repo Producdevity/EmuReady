@@ -1,11 +1,11 @@
 'use client'
 
-import hasPermission from '@/utils/hasPermission'
 import { Role } from '@orm'
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, type FormEvent } from 'react'
 import { api } from '@/lib/api'
-import { ImageUpload } from '@/components/ui'
+import { ImageUpload, LoadingSpinner } from '@/components/ui'
+import hasPermission from '@/utils/hasPermission'
 
 function AddGamePage() {
   const { data: session, status } = useSession()
@@ -21,16 +21,16 @@ function AddGamePage() {
   const createGame = api.games.create.useMutation()
 
   useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess('')
-        setError('')
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
+    if (!success && !error) return
+    const timer = setTimeout(() => {
+      setSuccess('')
+      setError('')
+    }, 3000)
+    return () => clearTimeout(timer)
   }, [success, error])
 
-  if (status === 'loading') return <div>Loading...</div>
+  if (status === 'loading') return <LoadingSpinner />
+
   if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
     return (
       <div className="p-8 text-center">
@@ -39,14 +39,14 @@ function AddGamePage() {
     )
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     setError('')
     setSuccess('')
     if (!title || !systemId) {
-      setError('Please fill in all required fields.')
-      return
+      return setError('Please fill in all required fields.')
     }
+
     try {
       await createGame.mutateAsync({
         title,
@@ -60,6 +60,7 @@ function AddGamePage() {
       // Optionally redirect or refetch listings
       // router.push("/listings");
     } catch (err) {
+      console.error(err)
       setError(err instanceof Error ? err?.message : 'Failed to add game.')
     }
   }
@@ -75,7 +76,7 @@ function AddGamePage() {
           <input
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(ev) => setTitle(ev.target.value)}
             placeholder="Enter game title"
             required
           />
@@ -86,7 +87,7 @@ function AddGamePage() {
           <select
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             value={systemId}
-            onChange={(e) => setSystemId(e.target.value)}
+            onChange={(ev) => setSystemId(ev.target.value)}
             required
             disabled={systemsLoading}
           >
