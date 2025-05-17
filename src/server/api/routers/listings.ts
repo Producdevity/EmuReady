@@ -135,7 +135,6 @@ export const listingsRouter = createTRPCRouter({
         orderBy.push({ createdAt: 'desc' })
       }
 
-      // Get paginated listings
       const listings = await ctx.prisma.listing.findMany({
         where: filters,
         include: {
@@ -187,13 +186,9 @@ export const listingsRouter = createTRPCRouter({
             },
           })
 
-          // Count all votes
           const totalVotes = listing._count.votes
-
-          // Calculate success rate
           const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
-          // Get user's vote if logged in
           const userVote =
             ctx.session && listing.votes.length > 0
               ? listing.votes[0].value
@@ -311,11 +306,9 @@ export const listingsRouter = createTRPCRouter({
         },
       })
 
-      // Calculate success rate
       const successRate =
         listing._count.votes > 0 ? upVotes / listing._count.votes : 0
 
-      // Get user's vote if logged in
       const userVote =
         ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
 
@@ -341,7 +334,6 @@ export const listingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { gameId, deviceId, emulatorId, performanceId, notes } = input
 
-      // Check if listing already exists
       const existingListing = await ctx.prisma.listing.findFirst({
         where: {
           gameId,
@@ -358,7 +350,6 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      // Create new listing
       return ctx.prisma.listing.create({
         data: {
           gameId,
@@ -380,11 +371,9 @@ export const listingsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { listingId, value } = input
-      
-      // Get user ID from session
+
       const userId = ctx.session.user.id
 
-      // Check if listing exists
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
       })
@@ -395,13 +384,13 @@ export const listingsRouter = createTRPCRouter({
           message: 'Listing not found',
         })
       }
-      
+
       // Verify user exists in database
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true },
       })
-      
+
       if (!userExists) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -468,7 +457,7 @@ export const listingsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { listingId, content, parentId } = input
-      
+
       // Get user ID from session
       const userId = ctx.session.user.id
 
@@ -497,13 +486,13 @@ export const listingsRouter = createTRPCRouter({
           })
         }
       }
-      
+
       // Verify user exists in database
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true },
       })
-      
+
       if (!userExists) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -569,31 +558,31 @@ export const listingsRouter = createTRPCRouter({
       const { listingId } = input
 
       const comments = await ctx.prisma.comment.findMany({
-        where: { 
+        where: {
           listingId,
           parentId: null, // Only get top-level comments
           deletedAt: null, // Don't show soft-deleted comments
         },
         include: {
-          user: { 
-            select: { 
-              id: true, 
+          user: {
+            select: {
+              id: true,
               name: true,
               profileImage: true,
-            } 
+            }
           },
           replies: {
             where: {
               deletedAt: null, // Don't show soft-deleted replies
             },
-            include: { 
-              user: { 
-                select: { 
-                  id: true, 
+            include: {
+              user: {
+                select: {
+                  id: true,
                   name: true,
                   profileImage: true,
-                } 
-              } 
+                }
+              }
             },
             orderBy: { createdAt: 'asc' },
           },
@@ -731,7 +720,7 @@ export const listingsRouter = createTRPCRouter({
 
       // Build appropriate order by clause based on sort selection
       let orderBy: Prisma.CommentOrderByWithRelationInput;
-      
+
       switch (sortBy) {
         case 'newest':
           orderBy = { createdAt: 'desc' };
@@ -748,26 +737,26 @@ export const listingsRouter = createTRPCRouter({
 
       // Get all top-level comments
       const comments = await ctx.prisma.comment.findMany({
-        where: { 
+        where: {
           listingId,
           parentId: null, // Only get top-level comments
         },
         include: {
-          user: { 
-            select: { 
-              id: true, 
+          user: {
+            select: {
+              id: true,
               name: true,
               profileImage: true,
-            } 
+            }
           },
           replies: {
-            include: { 
-              user: { 
-                select: { 
-                  id: true, 
+            include: {
+              user: {
+                select: {
+                  id: true,
                   name: true,
                   profileImage: true,
-                } 
+                }
               },
               _count: {
                 select: {
@@ -788,7 +777,7 @@ export const listingsRouter = createTRPCRouter({
 
       // Get all comment votes for the user if logged in
       let userCommentVotes: Record<string, boolean> = {};
-      
+
       if (ctx.session?.user) {
         const votes = await ctx.prisma.commentVote.findMany({
           where: {
@@ -802,7 +791,7 @@ export const listingsRouter = createTRPCRouter({
             value: true,
           }
         });
-        
+
         // Create a lookup map of commentId -> vote value
         userCommentVotes = votes.reduce((acc, vote) => {
           acc[vote.commentId] = vote.value;
@@ -882,7 +871,7 @@ export const listingsRouter = createTRPCRouter({
                 },
               },
             });
-            
+
             // Update score: if removing upvote, decrement score, if removing downvote, increment score
             scoreChange = existingVote.value ? -1 : 1;
             voteResult = { message: 'Vote removed' };
@@ -899,7 +888,7 @@ export const listingsRouter = createTRPCRouter({
                 value,
               },
             });
-            
+
             // Update score: changing from downvote to upvote = +2, from upvote to downvote = -2
             scoreChange = value ? 2 : -2;
           }
@@ -912,7 +901,7 @@ export const listingsRouter = createTRPCRouter({
               value,
             },
           });
-          
+
           // Update score: +1 for upvote, -1 for downvote
           scoreChange = value ? 1 : -1;
         }
