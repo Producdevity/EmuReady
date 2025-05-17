@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { signOut, useSession } from 'next-auth/react'
 import { ThemeToggle } from '@/components/ui'
+import { Role } from '@orm'
 
 function Navbar() {
   const { data: session } = useSession()
