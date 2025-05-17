@@ -1,26 +1,14 @@
-import { Badge } from '@/components/ui'
-import type { Game } from '@orm'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import { Badge } from '@/components/ui'
+import type { Game } from '@orm'
+import getSafePlaceholderImageUrl from '../utils/getSafePlaceholderImageUrl'
 
 interface Props {
   game: Game & {
     system?: { name: string } | null
     _count: { listings: number }
   }
-}
-
-function getSafePlaceholderUrl(title?: string | null): string {
-  // Ensure string, remove non-printable ASCII, remove percent signs and other potentially harmful characters
-  const safeTitle = String(title ?? '')
-    .replace(/[^ -~]/g, '') // remove non-printable ASCII
-    .replace(/[%<>(){}[\]\\\/\=+]/g, '') // remove potentially dangerous characters
-    .trim()
-    .substring(0, 15) // limit length
-
-  // Directly encode the string to prevent any potential XSS in URL
-  return `https://placehold.co/400x300/9ca3af/1e293b?text=${encodeURIComponent(safeTitle)}`
 }
 
 function GameCard(props: Props) {
@@ -32,7 +20,9 @@ function GameCard(props: Props) {
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
         <Image
-          src={props.game.imageUrl ?? getSafePlaceholderUrl(props.game.title)}
+          src={
+            props.game.imageUrl ?? getSafePlaceholderImageUrl(props.game.title)
+          }
           alt={props.game.title}
           fill
           className="object-cover"
