@@ -5,7 +5,6 @@ import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-// Basic sanitization function to remove potentially dangerous characters
 function sanitizeInput(input: string): string {
   return input.trim().replace(/[<>]/g, '')
 }
@@ -26,9 +25,8 @@ function LoginForm() {
     setError('')
 
     try {
-      // Sanitize inputs before sending to server
       const sanitizedEmail = sanitizeInput(email)
-      
+
       // Don't sanitize password as it might contain special characters
       const result = await signIn('credentials', {
         redirect: false,
@@ -162,7 +160,6 @@ function LoginForm() {
   )
 }
 
-// Loading component to show while the form is being loaded
 function LoginLoader() {
   return (
     <div className="min-h-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
