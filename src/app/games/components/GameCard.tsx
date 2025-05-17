@@ -1,8 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui'
+import getImageUrl from '@/app/games/utils/getImageUrl'
 import type { Game } from '@orm'
-import getSafePlaceholderImageUrl from '../utils/getSafePlaceholderImageUrl'
 
 interface Props {
   game: Game & {
@@ -20,9 +20,7 @@ function GameCard(props: Props) {
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
         <Image
-          src={
-            props.game.imageUrl ?? getSafePlaceholderImageUrl(props.game.title)
-          }
+          src={getImageUrl(props.game.imageUrl, props.game.title)}
           alt={props.game.title}
           fill
           className="object-cover"
