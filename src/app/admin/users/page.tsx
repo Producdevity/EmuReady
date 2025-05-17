@@ -14,8 +14,9 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 import UserRoleModal from './components/UserRoleModal'
-import type { BadgeVariant } from '@/components/ui/badge'
 import type { Role } from '@orm'
+import formatDate from '@/utils/formatDate'
+import getRoleBadgeColor from './utils/getRoleBadgeColor'
 
 interface UserForModal {
   id: string
@@ -24,15 +25,13 @@ interface UserForModal {
   role: Role
 }
 
-export default function UsersManagementPage() {
+function AdminUsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [userToEdit, setUserToEdit] = useState<UserForModal | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  if (status === 'loading') {
-    return <LoadingSpinner text="Loading..." />
-  }
+  if (status === 'loading') return <LoadingSpinner text="Loading..." />
 
   if (!session || session.user.role !== 'SUPER_ADMIN') {
     router.push('/admin')
@@ -43,40 +42,24 @@ export default function UsersManagementPage() {
 
   const deleteUserMutation = api.users.delete.useMutation({
     onSuccess: () => {
-      api.useUtils().users.getAll.invalidate()
+      // TODO: Show success toast
+      // TODO: Show error toast if delete fails
+      // TODO: handle error
+      api.useUtils().users.getAll.invalidate().catch(console.error)
     },
   })
 
   const handleDeleteUser = (userId: string, userName: string) => {
-    if (window.confirm(`Are you sure you want to delete user ${userName}?`)) {
-      deleteUserMutation.mutate({ userId })
+    // TODO: Show nice confirmation modal
+    if (!window.confirm(`Are you sure you want to delete user ${userName}?`)) {
+      return
     }
+    deleteUserMutation.mutate({ userId })
   }
 
   const openRoleModal = (user: UserForModal) => {
     setUserToEdit(user)
     setIsModalOpen(true)
-  }
-
-  const formatDate = (dateString: Date | string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
-  const getRoleBadgeColor = (role: string): BadgeVariant => {
-    switch (role) {
-      case 'SUPER_ADMIN':
-        return 'primary'
-      case 'ADMIN':
-        return 'primary'
-      case 'AUTHOR':
-        return 'success'
-      default:
-        return 'default'
-    }
   }
 
   return (
@@ -245,3 +228,5 @@ export default function UsersManagementPage() {
     </div>
   )
 }
+
+export default AdminUsersPage
