@@ -1,5 +1,6 @@
 'use client'
 
+import hasPermission from '@/utils/hasPermission'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -12,7 +13,7 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 import UserRoleModal from './components/UserRoleModal'
-import type { Role } from '@orm'
+import { Role } from '@orm'
 import formatDate from '@/utils/formatDate'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
 
@@ -31,7 +32,7 @@ function AdminUsersPage() {
 
   if (status === 'loading') return <LoadingSpinner text="Loading..." />
 
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !hasPermission(session.user.role, Role.SUPER_ADMIN)) {
     router.push('/admin')
     return null
   }
