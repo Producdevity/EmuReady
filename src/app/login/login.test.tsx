@@ -5,6 +5,14 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import LoginPage from './page'
 
+type MockedRouter = {
+  push: ReturnType<typeof vi.fn>
+}
+
+type MockedSearchParams = {
+  get: ReturnType<typeof vi.fn>
+}
+
 vi.mock('next-auth/react', () => ({
   signIn: vi.fn(),
 }))
@@ -15,20 +23,14 @@ vi.mock('next/navigation', () => ({
 }))
 
 describe('LoginPage', () => {
-  const mockRouter = {
-    push: vi.fn(),
-  }
-
-  const mockSearchParams = {
-    get: vi.fn(),
-  }
+  const mockRouter: MockedRouter = { push: vi.fn() }
+  const mockSearchParams: MockedSearchParams = { get: vi.fn() }
 
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Setup mocks
-    useRouter.mockReturnValue(mockRouter)
-    useSearchParams.mockReturnValue(mockSearchParams)
+    vi.mocked(useRouter).mockImplementation(() => mockRouter as any)
+    vi.mocked(useSearchParams).mockImplementation(() => mockSearchParams as any)
     mockSearchParams.get.mockReturnValue(null) // Default: not registered
 
     // Mock successful login by default
@@ -62,7 +64,6 @@ describe('LoginPage', () => {
   it('submits form and redirects on successful login', async () => {
     render(<LoginPage />)
 
-    // Fill the form
     fireEvent.change(screen.getByPlaceholderText('Email address'), {
       target: { value: 'test@example.com' },
     })
@@ -71,10 +72,8 @@ describe('LoginPage', () => {
       target: { value: 'password123' },
     })
 
-    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
-    // Verify signIn was called with correct values
     await waitFor(() => {
       expect(signIn).toHaveBeenCalledWith('credentials', {
         redirect: false,
@@ -90,7 +89,6 @@ describe('LoginPage', () => {
   })
 
   it('displays error message on failed login', async () => {
-    // Mock a failed login
     vi.mocked(signIn).mockResolvedValueOnce({
       error: 'Invalid credentials',
       ok: false,
@@ -100,7 +98,6 @@ describe('LoginPage', () => {
 
     render(<LoginPage />)
 
-    // Fill the form
     fireEvent.change(screen.getByPlaceholderText('Email address'), {
       target: { value: 'wrong@example.com' },
     })
@@ -109,10 +106,8 @@ describe('LoginPage', () => {
       target: { value: 'wrongpassword' },
     })
 
-    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
-    // Verify error is displayed
     await waitFor(() => {
       expect(screen.getByText('Invalid email or password')).toBeInTheDocument()
     })
@@ -124,7 +119,6 @@ describe('LoginPage', () => {
   it('sanitizes email input', async () => {
     render(<LoginPage />)
 
-    // Fill the form with unsanitized email
     fireEvent.change(screen.getByPlaceholderText('Email address'), {
       target: { value: '  test@example.com  ' },
     })
@@ -133,7 +127,6 @@ describe('LoginPage', () => {
       target: { value: 'password123' },
     })
 
-    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     // Verify signIn was called with sanitized email
