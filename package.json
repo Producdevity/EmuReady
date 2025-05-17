@@ -18,7 +18,8 @@
     "analyze": "ANALYZE=true next build",
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "test": "echo \"No tests specified\" && exit 0",
-    "prepare-deploy": "npm run lint && npm run typecheck && npm run build"
+    "prepare-deploy": "npm run lint && npm run typecheck && npm run build",
+    "prepare": "husky"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -60,6 +61,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "eslint-config-prettier": "^10.1.5",
+    "husky": "^9.1.7",
     "lint-staged": "^16.0.0",
     "prettier": "^3.5.3",
     "tailwindcss": "^4",
