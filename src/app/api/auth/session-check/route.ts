@@ -5,22 +5,20 @@ import { prisma } from "@/server/db"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
-  
-  // If no session exists, return unauthorized status
+
   if (!session) {
-    return NextResponse.json({ 
+    return NextResponse.json({
       authenticated: false,
-      message: "Not authenticated" 
+      message: "Not authenticated"
     }, { status: 401 })
   }
-  
-  // Check if the user exists in the database
+
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true, email: true, role: true }
     })
-    
+
     if (!user) {
       return NextResponse.json({
         authenticated: false,
@@ -30,7 +28,7 @@ export async function GET() {
         message: "User ID in session doesn't exist in database"
       }, { status: 404 })
     }
-    
+
     return NextResponse.json({
       authenticated: true,
       user: {
@@ -42,10 +40,10 @@ export async function GET() {
     })
   } catch (error) {
     console.error("Error checking user:", error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       authenticated: false,
       error: String(error),
-      message: "Error checking session" 
+      message: "Error checking session"
     }, { status: 500 })
   }
-} 
+}

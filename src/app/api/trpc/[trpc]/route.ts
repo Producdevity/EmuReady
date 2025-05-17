@@ -6,9 +6,8 @@ import { authOptions } from '@/server/auth'
 import { createInnerTRPCContext } from '@/server/api/trpc'
 
 const handler = async (req: NextRequest) => {
-  // Get the session with proper authOptions
   const session = await getServerSession(authOptions)
-  
+
   // Create context using createInnerTRPCContext which handles types correctly
   const ctx = createInnerTRPCContext({ session });
 

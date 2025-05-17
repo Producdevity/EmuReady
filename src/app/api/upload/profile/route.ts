@@ -6,32 +6,25 @@ import { writeFile, mkdir } from 'fs/promises'
 import { authOptions } from '@/server/auth'
 import { prisma } from '@/server/db'
 
-// Set route to be dynamic to prevent caching
 export const dynamic = 'force-dynamic'
 
 // File size limit in bytes (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
-// Allowed image types and extensions
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 
-// Helper function to check if file is an image
 function isImage(file: File) {
-  // Check MIME type first
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     return false
   }
-  
-  // Then verify extension
+
   const fileExtension = file.name.split('.').pop()?.toLowerCase() ?? ''
   return ALLOWED_EXTENSIONS.includes(fileExtension)
 }
 
-// Main API route handler
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication - all users can upload profile images
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
@@ -40,11 +33,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
 
-    // Validate
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
@@ -63,10 +54,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Extract and validate file extension from original name
     const originalExtension = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-    const fileExtension = ALLOWED_EXTENSIONS.includes(originalExtension) 
-      ? originalExtension 
+    const fileExtension = ALLOWED_EXTENSIONS.includes(originalExtension)
+      ? originalExtension
       : 'jpg' // Fallback to jpg if extension is invalid
 
     // Create unique filename with timestamp and random string for additional security
@@ -85,16 +75,13 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     await writeFile(filePath, buffer)
 
-    // Generate public URL
     const imageUrl = `/uploads/profiles/${fileName}`
 
-    // Update user profile in the database
     await prisma.user.update({
       where: { id: userId },
       data: { profileImage: imageUrl },
     })
 
-    // Return success response with cache headers
     const response = NextResponse.json({
       success: true,
       imageUrl,
