@@ -123,7 +123,7 @@ function AdminUsersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          {/* User image is not available from the API, so just show the placeholder */}
+                          {/* User image is not available from the API for now, so just show the placeholder */}
                           <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                             <UserCircleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                           </div>
