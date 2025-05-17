@@ -10,7 +10,11 @@ import {
 
 const toggleThemeMap = { light: 'dark', dark: 'light', system: 'dark' }
 
-export function ThemeToggle({ className = '' }: { className?: string }) {
+interface Props {
+  className?: string
+}
+
+function ThemeToggle(props: Props) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -32,7 +36,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   return (
     <button
       onClick={toggleTheme}
-      className={`p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+      className={`p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${props.className ?? ''}`}
       aria-label={`Current theme: ${theme}. Click to toggle theme.`}
     >
       {theme === 'light' ? (
@@ -99,3 +103,5 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
     </div>
   )
 }
+
+export default ThemeToggle
