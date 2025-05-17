@@ -23,6 +23,12 @@
       "@orm": ["./prisma/generated/client"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "vitest.config.mts"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "vitest.config.mts"
+  ],
+  "exclude": ["node_modules"]
 }
