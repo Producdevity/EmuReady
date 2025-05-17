@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import { type PropsWithChildren } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -12,16 +12,9 @@ const adminNav = [
   { href: '/admin/listings', label: 'Listing Approvals' },
 ]
 
-// Super admin only nav items
-const superAdminNav = [
-  { href: '/admin/users', label: 'Users Management' },
-]
+const superAdminNav = [{ href: '/admin/users', label: 'Users Management' }]
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
@@ -77,7 +70,7 @@ export default function AdminLayout({
         </div>
       </aside>
       <main className="flex-1 p-6 md:p-10 max-w-6xl mx-auto w-full">
-        {children}
+        {props.children}
       </main>
     </div>
   )
