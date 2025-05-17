@@ -8,10 +8,10 @@ Visit our website: [https://emuready.com](https://emuready.com)
 
 EmuReady helps users share and discover emulation compatibility information across different hardware and software configurations. Users can contribute compatibility reports, vote on listings, and discuss specific game/device/emulator combinations.
 
-![License](https://img.shields.io/github/license/Producdevity/emuready)
-![Stars](https://img.shields.io/github/stars/Producdevity/emuready)
-![Forks](https://img.shields.io/github/forks/Producdevity/emuready)
-![Issues](https://img.shields.io/github/issues/Producdevity/emuready)
+![License](https://img.shields.io/github/license/Producdevity/emuready?cacheSeconds=1)
+![Stars](https://img.shields.io/github/stars/Producdevity/emuready?cacheSeconds=1)
+![Forks](https://img.shields.io/github/forks/Producdevity/emuready?cacheSeconds=1)
+![Issues](https://img.shields.io/github/issues/Producdevity/emuready?cacheSeconds=1)
 
 ## Features
 
