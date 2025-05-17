@@ -1,7 +1,8 @@
 'use client'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/ui'
 
-export default function AdminPerformancePage() {
+function AdminPerformancePage() {
   const { data: scales, isLoading } = api.listings.performanceScales.useQuery()
 
   return (
@@ -25,7 +26,7 @@ export default function AdminPerformancePage() {
             {isLoading && (
               <tr>
                 <td colSpan={2} className="text-center py-8">
-                  Loading...
+                  <LoadingSpinner />
                 </td>
               </tr>
             )}
@@ -46,3 +47,5 @@ export default function AdminPerformancePage() {
     </div>
   )
 }
+
+export default AdminPerformancePage
