@@ -11,6 +11,7 @@ export { default as Pagination } from './Pagination'
 export { default as ProfileUpload } from './ProfileUpload'
 export { default as SelectInput } from './SelectInput'
 export { default as SortableHeader } from './SortableHeader'
+export { default as SuccessRateBar } from './SuccessRateBar'
 export { default as ThemeToggle } from './ThemeToggle'
 export { default as Toggle } from './Toggle'
 
