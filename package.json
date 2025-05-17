@@ -55,6 +55,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.6",
     "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
