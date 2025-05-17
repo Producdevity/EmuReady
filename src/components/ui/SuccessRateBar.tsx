@@ -16,7 +16,7 @@ function getBarColor(rate: number) {
   return 'bg-red-500'
 }
 
-export function SuccessRateBar(props: Props) {
+function SuccessRateBar(props: Props) {
   const voteCount = props.voteCount ?? 0
   const roundedRate = useMemo(() => Math.round(props.rate), [props.rate])
   const barColor = useMemo(() => getBarColor(roundedRate), [roundedRate])
@@ -41,3 +41,5 @@ export function SuccessRateBar(props: Props) {
     </div>
   )
 }
+
+export default SuccessRateBar
