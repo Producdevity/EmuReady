@@ -3,11 +3,13 @@
 import { Role } from '@orm'
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { ImageUpload, LoadingSpinner } from '@/components/ui'
 import hasPermission from '@/utils/hasPermission'
 
 function AddGamePage() {
+  const router = useRouter()
   const { data: session, status } = useSession()
   const [title, setTitle] = useState('')
   const [systemId, setSystemId] = useState('')
@@ -48,17 +50,13 @@ function AddGamePage() {
     }
 
     try {
-      await createGame.mutateAsync({
+      const result = await createGame.mutateAsync({
         title,
         systemId,
         imageUrl: imageUrl || undefined,
       })
-      setSuccess('Game added!')
-      setTitle('')
-      setSystemId('')
-      setImageUrl('')
-      // Optionally redirect or refetch listings
-      // router.push("/listings");
+
+      router.push(`/games/${result.id}`)
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err?.message : 'Failed to add game.')
@@ -103,6 +101,7 @@ function AddGamePage() {
         <ImageUpload
           onImageUploaded={setImageUrl}
           label="Game Cover Image (optional)"
+          uploadPath="/api/upload/games"
         />
 
         {error && (
