@@ -32,6 +32,12 @@ const eslintConfig = [
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
     },
   }),
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ]
 
 export default eslintConfig
