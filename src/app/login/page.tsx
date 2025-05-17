@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, type FormEvent, Suspense } from 'react'
+import { useState, Suspense, type FormEvent, type ChangeEvent } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-
-function sanitizeInput(input: string): string {
-  return input.trim().replace(/[<>]/g, '')
-}
+import LoginLoader from './components/LoginLoader'
+import sanitizeInput from './utils/sanitizeInput'
 
 function LoginForm() {
   const router = useRouter()
@@ -48,8 +46,8 @@ function LoginForm() {
     }
   }
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(sanitizeInput(e.target.value))
+  const handleEmailChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setEmail(sanitizeInput(ev.target.value))
   }
 
   return (
@@ -155,22 +153,6 @@ function LoginForm() {
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  )
-}
-
-function LoginLoader() {
-  return (
-    <div className="min-h-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 text-center">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded my-4 mx-auto w-3/4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded my-2 mx-auto w-2/4"></div>
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-md my-6"></div>
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-md my-6"></div>
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-md my-6"></div>
-        </div>
       </div>
     </div>
   )
