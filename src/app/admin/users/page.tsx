@@ -48,12 +48,14 @@ function AdminUsersPage() {
     },
   })
 
-  const handleDeleteUser = (userId: string, userName: string) => {
+  const handleDeleteUser = (user: UserForModal) => {
+    const userName = user.name ?? 'this user'
+
     // TODO: Show nice confirmation modal
     if (!window.confirm(`Are you sure you want to delete user ${userName}?`)) {
       return
     }
-    deleteUserMutation.mutate({ userId })
+    deleteUserMutation.mutate({ userId: user.id })
   }
 
   const openRoleModal = (user: UserForModal) => {
@@ -173,7 +175,11 @@ function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {user.id !== session.user.id && (
+                      {user.id === session.user.id ? (
+                        <span className="text-gray-500 dark:text-gray-400 italic">
+                          (Current user)
+                        </span>
+                      ) : (
                         <>
                           <Button
                             variant="outline"
@@ -187,23 +193,13 @@ function AdminUsersPage() {
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() =>
-                              handleDeleteUser(
-                                user.id,
-                                user.name ?? 'this user',
-                              )
-                            }
+                            onClick={() => handleDeleteUser(user)}
                             className="inline-flex items-center gap-1"
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
                             Delete
                           </Button>
                         </>
-                      )}
-                      {user.id === session.user.id && (
-                        <span className="text-gray-500 dark:text-gray-400 italic">
-                          (Current user)
-                        </span>
                       )}
                     </td>
                   </tr>
