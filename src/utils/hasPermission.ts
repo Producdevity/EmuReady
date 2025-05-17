@@ -1,4 +1,4 @@
-import { type Role } from '@orm'
+import { Role } from '@orm'
 
 /**
  * Check if the user has permission to perform an action based on their role.
@@ -32,7 +32,7 @@ export function canEditComment(
   currentUserId: string,
 ): boolean {
   if (!userRole) return false
-  if (userRole === 'SUPER_ADMIN') return true
+  if (userRole === Role.SUPER_ADMIN) return true
   return commentUserId === currentUserId
 }
 
@@ -49,7 +49,7 @@ export function canDeleteComment(
   currentUserId: string,
 ): boolean {
   if (!userRole) return false
-  if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') return true
+  if (userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) return true
   return commentUserId === currentUserId
 }
 
