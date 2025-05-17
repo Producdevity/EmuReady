@@ -5,15 +5,12 @@ import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
 import { authOptions } from '@/server/auth'
 
-// Helper function to check if file is an image
 function isImage(file: File) {
   return file.type.startsWith('image/')
 }
 
-// Main API route handler
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions)
     if (
       !session ||
@@ -25,11 +22,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
 
-    // Validate
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
@@ -56,7 +51,6 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     await writeFile(filePath, buffer)
 
-    // Generate public URL
     const imageUrl = `/uploads/games/${fileName}`
 
     return NextResponse.json({

@@ -14,7 +14,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    // Validate request body
     const result = UserSchema.safeParse(body)
     if (!result.success) {
       return NextResponse.json(
@@ -25,7 +24,6 @@ export async function POST(request: Request) {
 
     const { name, email, password } = result.data
 
-    // Additional manual validation as an extra security layer
     if (!isValidEmail(email)) {
       return NextResponse.json(
         { message: 'Invalid email format' },
@@ -33,7 +31,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Sanitize name input
     const sanitizedName = sanitizeString(name)
     if (!sanitizedName.trim()) {
       return NextResponse.json(
@@ -42,7 +39,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     })
@@ -54,10 +50,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Hash password
     const hashedPassword = await bcryptjs.hash(password, 10)
 
-    // Create new user
     const user = await prisma.user.create({
       data: {
         name: sanitizedName,
