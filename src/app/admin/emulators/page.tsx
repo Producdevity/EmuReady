@@ -28,8 +28,8 @@ export default function AdminEmulatorsPage() {
     setName('')
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     setError('')
     setSuccess('')
     try {
