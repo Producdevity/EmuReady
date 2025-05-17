@@ -12,7 +12,7 @@ function hasPermission(userRole?: Role, requiredRole?: Role): boolean {
   if (!userRole) return false
   if (!requiredRole) return true
 
-  const roles: Role[] = ['USER', 'AUTHOR', 'ADMIN', 'SUPER_ADMIN']
+  const roles: Role[] = [Role.USER, Role.AUTHOR, Role.ADMIN, Role.SUPER_ADMIN]
   const userRoleIndex = roles.indexOf(userRole)
   const requiredRoleIndex = roles.indexOf(requiredRole)
 
