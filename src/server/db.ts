@@ -15,9 +15,9 @@ if (process.env.NODE_ENV === 'production') {
     log: ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL
-      }
-    }
+        url: process.env.DATABASE_URL,
+      },
+    },
   })
 } else {
   // In development, reuse the client across hot reloads
@@ -25,9 +25,9 @@ if (process.env.NODE_ENV === 'production') {
     log: ['query', 'error', 'warn'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL
-      }
-    }
+        url: process.env.DATABASE_URL,
+      },
+    },
   })
   prisma = globalForPrisma.prisma
 }

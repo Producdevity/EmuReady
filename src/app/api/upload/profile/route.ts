@@ -11,7 +11,12 @@ export const dynamic = 'force-dynamic'
 // File size limit in bytes (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+]
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 
 function isImage(file: File) {
@@ -42,7 +47,9 @@ export async function POST(request: NextRequest) {
 
     if (!isImage(file)) {
       return NextResponse.json(
-        { error: 'Uploaded file must be a valid image (JPG, PNG, GIF, or WebP)' },
+        {
+          error: 'Uploaded file must be a valid image (JPG, PNG, GIF, or WebP)',
+        },
         { status: 400 },
       )
     }

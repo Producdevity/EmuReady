@@ -86,7 +86,8 @@ export default function UserRoleModal({ user, isOpen, onClose }: Props) {
             </div>
             {user.role === 'SUPER_ADMIN' && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                Note: Super Admin role can only be assigned in the database directly
+                Note: Super Admin role can only be assigned in the database
+                directly
               </p>
             )}
           </div>
@@ -119,7 +120,8 @@ interface RoleButtonProps {
 function RoleButton({ role, currentRole, onClick }: RoleButtonProps) {
   const isActive = role === currentRole
   const getColorClasses = () => {
-    if (!isActive) return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+    if (!isActive)
+      return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 
     switch (role) {
       case 'ADMIN':
@@ -135,7 +137,9 @@ function RoleButton({ role, currentRole, onClick }: RoleButtonProps) {
     <button
       type="button"
       className={`py-2 px-3 rounded-md font-medium text-sm ${getColorClasses()} ${
-        isActive ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800' : ''
+        isActive
+          ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800'
+          : ''
       }`}
       onClick={onClick}
     >

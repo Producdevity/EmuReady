@@ -206,7 +206,10 @@ export default function UsersManagementPage() {
                             variant="danger"
                             size="sm"
                             onClick={() =>
-                              handleDeleteUser(user.id, user.name ?? 'this user')
+                              handleDeleteUser(
+                                user.id,
+                                user.name ?? 'this user',
+                              )
                             }
                             className="inline-flex items-center gap-1"
                           >

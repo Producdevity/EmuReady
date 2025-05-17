@@ -8,7 +8,9 @@ export async function getListingById(id: string) {
       device: true,
       emulator: true,
       performance: true,
-      author: { select: { id: true, name: true, email: true, profileImage: true } },
+      author: {
+        select: { id: true, name: true, email: true, profileImage: true },
+      },
       comments: {
         where: { parentId: null },
         include: {

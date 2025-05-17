@@ -25,7 +25,9 @@ export function VoteButtons({
   const { status } = useSession()
   const isAuthenticated = status === 'authenticated'
 
-  const [optimisticVote, setOptimisticVote] = useState<boolean | null>(currentVote)
+  const [optimisticVote, setOptimisticVote] = useState<boolean | null>(
+    currentVote,
+  )
   const [optimisticUpVotes, setOptimisticUpVotes] = useState(upVoteCount)
   const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(totalVotes)
 
@@ -34,7 +36,7 @@ export function VoteButtons({
       if (onVoteSuccess) {
         onVoteSuccess()
       }
-    }
+    },
   })
 
   const handleVote = (value: boolean) => {
@@ -86,9 +88,10 @@ export function VoteButtons({
     })
   }
 
-  const successRate = optimisticTotalVotes > 0
-    ? Math.round((optimisticUpVotes / optimisticTotalVotes) * 100)
-    : 0
+  const successRate =
+    optimisticTotalVotes > 0
+      ? Math.round((optimisticUpVotes / optimisticTotalVotes) * 100)
+      : 0
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -101,7 +104,7 @@ export function VoteButtons({
               ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400'
           }`}
-          title={isAuthenticated ? "Vote Up" : "Login to vote"}
+          title={isAuthenticated ? 'Vote Up' : 'Login to vote'}
         >
           <HandThumbUpIcon className="w-6 h-6" />
         </button>
@@ -123,7 +126,7 @@ export function VoteButtons({
               ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400'
           }`}
-          title={isAuthenticated ? "Vote Down" : "Login to vote"}
+          title={isAuthenticated ? 'Vote Down' : 'Login to vote'}
         >
           <HandThumbDownIcon className="w-6 h-6" />
         </button>
@@ -141,7 +144,10 @@ export function VoteButtons({
 
       {!isAuthenticated && (
         <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-          <Link href="/login" className="text-blue-500 hover:underline">Sign in</Link> to vote
+          <Link href="/login" className="text-blue-500 hover:underline">
+            Sign in
+          </Link>{' '}
+          to vote
         </div>
       )}
     </div>

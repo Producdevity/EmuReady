@@ -1,5 +1,5 @@
 import { type PrismaClient, Role } from '@orm'
-import * as bcrypt                 from 'bcryptjs'
+import * as bcrypt from 'bcryptjs'
 
 type UserData = {
   email: string

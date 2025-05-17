@@ -15,7 +15,7 @@ EmuReady helps users share and discover emulation compatibility information acro
 
 - **Comprehensive Compatibility Database**: Track how games perform on different emulators and devices
 - **User Contributions**: Community-driven reports and voting system
-- **Discussion System**: Comment threads with upvoting/downvoting functionality 
+- **Discussion System**: Comment threads with upvoting/downvoting functionality
 - **Admin Dashboard**: Manage users, listings, and content moderation
 - **Responsive Design**: Works on mobile, tablet, and desktop
 
@@ -79,29 +79,35 @@ The codebase has been significantly improved with the following enhancements:
 ### Installation
 
 1. Clone the repository
+
    ```bash
    git clone https://github.com/Producdevity/emuready.git
    cd emuready
    ```
 
 2. Install dependencies
+
    ```bash
    npm install
    ```
 
 3. Set up environment variables
+
    ```bash
    cp .env.example .env
    ```
+
    Then edit the `.env` file with your database credentials and other configuration.
 
 4. Setup the database
+
    ```bash
    npm run db:generate
    npm run db:push
    ```
 
 5. Run the development server
+
    ```bash
    npm run dev
    ```
