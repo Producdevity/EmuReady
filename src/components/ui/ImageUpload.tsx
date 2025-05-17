@@ -6,11 +6,23 @@ import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { LoadingSpinner } from '@/components/ui'
 import http from '@/rest/http'
 
+interface UploadResponseSuccess {
+  success: true
+  imageUrl: string
+}
+
+interface UploadResponseError {
+  error: string
+}
+
+type UploadResponse = UploadResponseSuccess | UploadResponseError
+
 interface Props {
   onImageUploaded: (imageUrl: string) => void
   className?: string
   initialImage?: string
   label?: string
+  uploadPath?: string // Optional path to specify different upload endpoints
 }
 
 function ImageUpload(props: Props) {
@@ -18,6 +30,8 @@ function ImageUpload(props: Props) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Default to profile upload path if none specified
+  const uploadPath = props.uploadPath ?? '/upload/profile'
 
   const handleFileChange = async (ev: ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0]
@@ -42,14 +56,22 @@ function ImageUpload(props: Props) {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await http.post('/api/upload', formData, {
+      const response = await http.post<UploadResponse>(uploadPath, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
-      setImage(res.data.imageUrl)
-      props.onImageUploaded(res.data.imageUrl)
+      const data = response.data
+
+      if ('error' in data) {
+        throw new Error(data.error)
+      }
+
+      setImage(data.imageUrl)
+      props.onImageUploaded(data.imageUrl)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(
+        err instanceof Error ? err.message : 'An error occurred during upload',
+      )
       console.error('Upload error:', err)
     } finally {
       setIsUploading(false)
@@ -90,8 +112,9 @@ function ImageUpload(props: Props) {
               src={image}
               alt="Uploaded preview"
               className="mx-auto max-h-60 max-w-full rounded-lg object-contain"
-              width={0}
-              height={0}
+              width={240}
+              height={180}
+              style={{ objectFit: 'contain' }}
             />
             <button
               type="button"
