@@ -108,9 +108,6 @@ export default function ListingDetailsClient(props: Props) {
                 <div className="font-semibold text-gray-900 dark:text-white">
                   {l.author?.name ?? 'Unknown'}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {l.author?.email ?? ''}
-                </div>
               </div>
               <Link
                 href={`/users/${l.author?.id ?? ''}`}
@@ -121,7 +118,6 @@ export default function ListingDetailsClient(props: Props) {
             </div>
           </div>
 
-          {/* Comments Section - Now using our new CommentThread component */}
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
             <CommentThread listingId={l.id} initialSortBy="newest" />
           </div>
