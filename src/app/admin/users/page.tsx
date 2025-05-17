@@ -17,7 +17,6 @@ import UserRoleModal from './components/UserRoleModal'
 import type { BadgeVariant } from '@/components/ui/badge'
 import type { Role } from '@orm'
 
-// Only use required properties for the user modal
 interface UserForModal {
   id: string
   name: string | null
@@ -31,7 +30,6 @@ export default function UsersManagementPage() {
   const [userToEdit, setUserToEdit] = useState<UserForModal | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Check if user is super admin
   if (status === 'loading') {
     return <LoadingSpinner text="Loading..." />
   }
@@ -41,13 +39,10 @@ export default function UsersManagementPage() {
     return null
   }
 
-  // Get users data
   const { data: users, isLoading } = api.users.getAll.useQuery()
 
-  // Delete user handler
   const deleteUserMutation = api.users.delete.useMutation({
     onSuccess: () => {
-      // Refresh users list
       api.useUtils().users.getAll.invalidate()
     },
   })
@@ -58,13 +53,11 @@ export default function UsersManagementPage() {
     }
   }
 
-  // Open role edit modal
   const openRoleModal = (user: UserForModal) => {
     setUserToEdit(user)
     setIsModalOpen(true)
   }
 
-  // Format date nicely
   const formatDate = (dateString: Date | string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -73,7 +66,6 @@ export default function UsersManagementPage() {
     })
   }
 
-  // Role badge color
   const getRoleBadgeColor = (role: string): BadgeVariant => {
     switch (role) {
       case 'SUPER_ADMIN':
@@ -211,7 +203,7 @@ export default function UsersManagementPage() {
                             Edit Role
                           </Button>
                           <Button
-                            variant="danger" 
+                            variant="danger"
                             size="sm"
                             onClick={() =>
                               handleDeleteUser(user.id, user.name ?? 'this user')
@@ -249,4 +241,4 @@ export default function UsersManagementPage() {
       )}
     </div>
   )
-} 
+}
