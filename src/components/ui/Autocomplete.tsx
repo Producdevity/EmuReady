@@ -33,7 +33,7 @@ interface Props {
   searchDebounce?: number
 }
 
-export function Autocomplete(props: Props) {
+function Autocomplete(props: Props) {
   const placeholder = props.placeholder ?? 'Type to search...'
   const loading = props.loading ?? false
   const disabled = props.disabled ?? false
@@ -249,3 +249,5 @@ export function Autocomplete(props: Props) {
     </div>
   )
 }
+
+export default Autocomplete
