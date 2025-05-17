@@ -4,10 +4,8 @@ const nextConfig: NextConfig = {
   images: {
     dangerouslyAllowSVG: true,
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-      },
+      new URL('https://placehold.co'),
+      new URL('https://shared.cloudflare.steamstatic.com'),
     ],
   },
 
@@ -49,10 +47,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
           },
         ],
       },
