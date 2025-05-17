@@ -11,16 +11,16 @@ const prisma = new PrismaClient()
 
 async function main() {
   // Clear all data in the correct order (children before parents)
-  await prisma.listingApproval.deleteMany();
-  await prisma.vote.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.listing.deleteMany();
-  await prisma.performanceScale.deleteMany();
-  await prisma.device.deleteMany();
-  await prisma.emulator.deleteMany();
-  await prisma.game.deleteMany();
-  await prisma.system.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.listingApproval.deleteMany()
+  await prisma.vote.deleteMany()
+  await prisma.comment.deleteMany()
+  await prisma.listing.deleteMany()
+  await prisma.performanceScale.deleteMany()
+  await prisma.device.deleteMany()
+  await prisma.emulator.deleteMany()
+  await prisma.game.deleteMany()
+  await prisma.system.deleteMany()
+  await prisma.user.deleteMany()
 
   console.log('🌱 Starting database seed...')
 

@@ -40,22 +40,30 @@ interface CommentThreadProps {
   initialSortBy?: 'newest' | 'oldest' | 'popular'
 }
 
-export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentThreadProps) {
+export function CommentThread({
+  listingId,
+  initialSortBy = 'newest',
+}: CommentThreadProps) {
   const { data: session } = useSession()
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>(initialSortBy)
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>(
+    initialSortBy,
+  )
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
-  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
+  const [expandedComments, setExpandedComments] = useState<
+    Record<string, boolean>
+  >({})
 
-  const { data: commentsData, isLoading } = api.listings.getSortedComments.useQuery(
-    { listingId, sortBy },
-    { enabled: !!listingId }
-  )
+  const { data: commentsData, isLoading } =
+    api.listings.getSortedComments.useQuery(
+      { listingId, sortBy },
+      { enabled: !!listingId },
+    )
 
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
       utils.listings.getSortedComments.invalidate({ listingId, sortBy })
-    }
+    },
   })
 
   const deleteComment = api.listings.deleteComment.useMutation({
@@ -78,9 +86,9 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
   }
 
   const toggleCommentExpanded = (commentId: string) => {
-    setExpandedComments(prev => ({
+    setExpandedComments((prev) => ({
       ...prev,
-      [commentId]: !prev[commentId]
+      [commentId]: !prev[commentId],
     }))
   }
 
@@ -96,7 +104,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
 
   const isCommentExpanded = (commentId: string) => {
     if (expandedComments[commentId] === undefined) {
-      const comment = commentsData?.comments.find(c => c.id === commentId)
+      const comment = commentsData?.comments.find((c) => c.id === commentId)
       return !comment || (comment.replies?.length ?? 0) <= 3
     }
 
@@ -111,25 +119,22 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
     const isReplying = replyingTo === comment.id
     const expanded = isCommentExpanded(comment.id)
 
-    const canEdit = session && comment.user?.id && canEditComment(
-      session.user.role,
-      comment.user.id,
-      session.user.id
-    )
+    const canEdit =
+      session &&
+      comment.user?.id &&
+      canEditComment(session.user.role, comment.user.id, session.user.id)
 
-    const canDelete = session && comment.user?.id && canDeleteComment(
-      session.user.role,
-      comment.user.id,
-      session.user.id
-    )
+    const canDelete =
+      session &&
+      comment.user?.id &&
+      canDeleteComment(session.user.role, comment.user.id, session.user.id)
 
     // Determine appropriate left margin for nesting
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''
 
     // Add border for nested comments
-    const borderStyle = level > 0
-      ? 'border-l-2 border-gray-200 dark:border-gray-700 pl-4'
-      : ''
+    const borderStyle =
+      level > 0 ? 'border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''
 
     return (
       <motion.div
@@ -164,7 +169,9 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                     {formatRelativeTime(comment.createdAt)}
                   </span>
                   {comment.isEdited && (
-                    <span className="text-xs text-gray-400 italic ml-1">(edited)</span>
+                    <span className="text-xs text-gray-400 italic ml-1">
+                      (edited)
+                    </span>
                   )}
                 </div>
               </div>
@@ -210,26 +217,32 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                   <button
                     onClick={() => handleVote(comment.id, true)}
                     className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      comment.userVote === true ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400'
+                      comment.userVote === true
+                        ? 'text-blue-500'
+                        : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     <ChevronUpIcon className="h-4 w-4" />
                   </button>
 
-                  <span className={`font-medium ${
-                    (comment.score ?? 0) > 0 
-                      ? 'text-blue-500' 
-                      : (comment.score ?? 0) < 0 
-                        ? 'text-red-500' 
-                        : 'text-gray-500 dark:text-gray-400'
-                  }`}>
+                  <span
+                    className={`font-medium ${
+                      (comment.score ?? 0) > 0
+                        ? 'text-blue-500'
+                        : (comment.score ?? 0) < 0
+                          ? 'text-red-500'
+                          : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
                     {comment.score ?? 0}
                   </span>
 
                   <button
                     onClick={() => handleVote(comment.id, false)}
                     className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      comment.userVote === false ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
+                      comment.userVote === false
+                        ? 'text-red-500'
+                        : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     <ChevronDownIcon className="h-4 w-4" />
@@ -240,7 +253,11 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                 <div className="flex items-center space-x-2">
                   {/* Reply toggle button */}
                   <button
-                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                    onClick={() =>
+                      setReplyingTo(
+                        replyingTo === comment.id ? null : comment.id,
+                      )
+                    }
                     className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center"
                   >
                     <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
@@ -248,7 +265,7 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                   </button>
 
                   {/* Show collapse/expand button if comment has replies */}
-                  {(comment.replies && comment.replies.length > 0) && (
+                  {comment.replies && comment.replies.length > 0 && (
                     <button
                       onClick={() => toggleCommentExpanded(comment.id)}
                       className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center ml-2"
@@ -259,7 +276,8 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                         <ChevronRightIcon className="h-4 w-4 mr-1" />
                       )}
                       <span>
-                        {expanded ? 'Hide' : 'Show'} {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                        {expanded ? 'Hide' : 'Show'} {comment.replies.length}{' '}
+                        {comment.replies.length === 1 ? 'reply' : 'replies'}
                       </span>
                     </button>
                   )}
@@ -301,7 +319,9 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
                 transition={{ duration: 0.3 }}
                 className="mt-2"
               >
-                {comment.replies.map(reply => renderComment(reply, level + 1))}
+                {comment.replies.map((reply) =>
+                  renderComment(reply, level + 1),
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -355,27 +375,29 @@ export function CommentThread({ listingId, initialSortBy = 'newest' }: CommentTh
       </h2>
 
       {/* Comment form */}
-      <CommentForm
-        listingId={listingId}
-        onCommentSuccess={refreshData}
-      />
+      <CommentForm listingId={listingId} onCommentSuccess={refreshData} />
 
       {/* Sort controls */}
-      {(commentsData?.comments && commentsData.comments.length > 0) && (
+      {commentsData?.comments && commentsData.comments.length > 0 && (
         <SortControls />
       )}
 
       {/* Comments list */}
       <div className="space-y-2">
         {isLoading ? (
-          <div className="text-gray-500 dark:text-gray-400 animate-pulse">Loading comments...</div>
+          <div className="text-gray-500 dark:text-gray-400 animate-pulse">
+            Loading comments...
+          </div>
         ) : (
           <>
-            {(!commentsData?.comments || commentsData.comments.length === 0) && (
-              <div className="text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</div>
+            {(!commentsData?.comments ||
+              commentsData.comments.length === 0) && (
+              <div className="text-gray-500 dark:text-gray-400">
+                No comments yet. Be the first to comment!
+              </div>
             )}
 
-            {commentsData?.comments?.map(comment => renderComment(comment))}
+            {commentsData?.comments?.map((comment) => renderComment(comment))}
           </>
         )}
       </div>

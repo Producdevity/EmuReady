@@ -5,7 +5,7 @@ import { authOptions } from '@/server/auth'
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions)
   const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
-  
+
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
@@ -69,7 +69,7 @@ export default async function AdminDashboardPage() {
             Approve, reject, or edit new listings.
           </p>
         </Link>
-        
+
         {isSuperAdmin && (
           <Link
             href="/admin/users"

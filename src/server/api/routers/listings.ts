@@ -569,7 +569,7 @@ export const listingsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
-            }
+            },
           },
           replies: {
             where: {
@@ -581,8 +581,8 @@ export const listingsRouter = createTRPCRouter({
                   id: true,
                   name: true,
                   profileImage: true,
-                }
-              }
+                },
+              },
             },
             orderBy: { createdAt: 'asc' },
           },
@@ -630,7 +630,8 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      const canEdit = comment.user.id === userId || ctx.session.user.role === 'SUPER_ADMIN'
+      const canEdit =
+        comment.user.id === userId || ctx.session.user.role === 'SUPER_ADMIN'
       if (!canEdit) {
         throw new TRPCError({
           code: 'FORBIDDEN',
@@ -711,28 +712,30 @@ export const listingsRouter = createTRPCRouter({
 
   // Get comments for a listing with sorting options
   getSortedComments: publicProcedure
-    .input(z.object({
-      listingId: z.string(),
-      sortBy: z.enum(['newest', 'oldest', 'popular']).default('newest'),
-    }))
+    .input(
+      z.object({
+        listingId: z.string(),
+        sortBy: z.enum(['newest', 'oldest', 'popular']).default('newest'),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const { listingId, sortBy } = input;
+      const { listingId, sortBy } = input
 
       // Build appropriate order by clause based on sort selection
-      let orderBy: Prisma.CommentOrderByWithRelationInput;
+      let orderBy: Prisma.CommentOrderByWithRelationInput
 
       switch (sortBy) {
         case 'newest':
-          orderBy = { createdAt: 'desc' };
-          break;
+          orderBy = { createdAt: 'desc' }
+          break
         case 'oldest':
-          orderBy = { createdAt: 'asc' };
-          break;
+          orderBy = { createdAt: 'asc' }
+          break
         case 'popular':
-          orderBy = { score: 'desc' };
-          break;
+          orderBy = { score: 'desc' }
+          break
         default:
-          orderBy = { createdAt: 'desc' };
+          orderBy = { createdAt: 'desc' }
       }
 
       // Get all top-level comments
@@ -747,7 +750,7 @@ export const listingsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
-            }
+            },
           },
           replies: {
             include: {
@@ -756,27 +759,27 @@ export const listingsRouter = createTRPCRouter({
                   id: true,
                   name: true,
                   profileImage: true,
-                }
+                },
               },
               _count: {
                 select: {
                   replies: true,
-                }
-              }
+                },
+              },
             },
             orderBy: { createdAt: 'asc' },
           },
           _count: {
             select: {
               replies: true,
-            }
-          }
+            },
+          },
         },
         orderBy,
-      });
+      })
 
       // Get all comment votes for the user if logged in
-      let userCommentVotes: Record<string, boolean> = {};
+      let userCommentVotes: Record<string, boolean> = {}
 
       if (ctx.session?.user) {
         const votes = await ctx.prisma.commentVote.findMany({
@@ -784,41 +787,44 @@ export const listingsRouter = createTRPCRouter({
             userId: ctx.session.user.id,
             comment: {
               listingId,
-            }
+            },
           },
           select: {
             commentId: true,
             value: true,
-          }
-        });
+          },
+        })
 
         // Create a lookup map of commentId -> vote value
-        userCommentVotes = votes.reduce((acc, vote) => {
-          acc[vote.commentId] = vote.value;
-          return acc;
-        }, {} as Record<string, boolean>);
+        userCommentVotes = votes.reduce(
+          (acc, vote) => {
+            acc[vote.commentId] = vote.value
+            return acc
+          },
+          {} as Record<string, boolean>,
+        )
       }
 
       // Transform the comments to include vote data
-      const transformedComments = comments.map(comment => {
+      const transformedComments = comments.map((comment) => {
         // Process replies
-        const transformedReplies = comment.replies.map(reply => {
+        const transformedReplies = comment.replies.map((reply) => {
           return {
             ...reply,
             userVote: userCommentVotes[reply.id] ?? null,
             replyCount: reply._count.replies,
-          };
-        });
+          }
+        })
 
         return {
           ...comment,
           userVote: userCommentVotes[comment.id] ?? null,
           replyCount: comment._count.replies,
           replies: transformedReplies,
-        };
-      });
+        }
+      })
 
-      return { comments: transformedComments };
+      return { comments: transformedComments }
     }),
 
   // Vote on a comment
@@ -830,19 +836,19 @@ export const listingsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { commentId, value } = input;
-      const userId = ctx.session.user.id;
+      const { commentId, value } = input
+      const userId = ctx.session.user.id
 
       // Check if comment exists
       const comment = await ctx.prisma.comment.findUnique({
         where: { id: commentId },
-      });
+      })
 
       if (!comment) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Comment not found',
-        });
+        })
       }
 
       // Check if user already voted on this comment
@@ -853,12 +859,12 @@ export const listingsRouter = createTRPCRouter({
             commentId,
           },
         },
-      });
+      })
 
       // Start a transaction to handle both the vote and score update
       return ctx.prisma.$transaction(async (tx) => {
-        let voteResult;
-        let scoreChange = 0;
+        let voteResult
+        let scoreChange = 0
 
         if (existingVote) {
           // If vote is the same, remove the vote (toggle)
@@ -870,11 +876,11 @@ export const listingsRouter = createTRPCRouter({
                   commentId,
                 },
               },
-            });
+            })
 
             // Update score: if removing upvote, decrement score, if removing downvote, increment score
-            scoreChange = existingVote.value ? -1 : 1;
-            voteResult = { message: 'Vote removed' };
+            scoreChange = existingVote.value ? -1 : 1
+            voteResult = { message: 'Vote removed' }
           } else {
             // Update the vote value
             voteResult = await tx.commentVote.update({
@@ -887,10 +893,10 @@ export const listingsRouter = createTRPCRouter({
               data: {
                 value,
               },
-            });
+            })
 
             // Update score: changing from downvote to upvote = +2, from upvote to downvote = -2
-            scoreChange = value ? 2 : -2;
+            scoreChange = value ? 2 : -2
           }
         } else {
           // Create new vote
@@ -900,10 +906,10 @@ export const listingsRouter = createTRPCRouter({
               commentId,
               value,
             },
-          });
+          })
 
           // Update score: +1 for upvote, -1 for downvote
-          scoreChange = value ? 1 : -1;
+          scoreChange = value ? 1 : -1
         }
 
         // Update the comment score
@@ -914,9 +920,9 @@ export const listingsRouter = createTRPCRouter({
               increment: scoreChange,
             },
           },
-        });
+        })
 
-        return voteResult;
-      });
+        return voteResult
+      })
     }),
 })

@@ -19,7 +19,8 @@ export default async function GameDetailsPage(props: Props) {
   const session = await getServerSession(authOptions)
 
   // Check if user is admin or super admin
-  const canEdit = session?.user.role && hasPermission(session.user.role, 'ADMIN')
+  const canEdit =
+    session?.user.role && hasPermission(session.user.role, 'ADMIN')
 
   if (!game) notFound()
 
@@ -85,9 +86,7 @@ export default async function GameDetailsPage(props: Props) {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  {canEdit && (
-                    <GameEditForm gameData={game} />
-                  )}
+                  {canEdit && <GameEditForm gameData={game} />}
                   <Link
                     href={`/listings/new?gameId=${game.id}`}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"

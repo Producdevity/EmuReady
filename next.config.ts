@@ -30,8 +30,8 @@ const nextConfig: NextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "block-all-mixed-content",
-              "upgrade-insecure-requests",
+              'block-all-mixed-content',
+              'upgrade-insecure-requests',
             ].join('; '),
           },
           {
@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-    ];
+    ]
   },
 }
 

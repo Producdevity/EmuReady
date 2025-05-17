@@ -48,7 +48,7 @@ export default function GameEditForm({ gameData }: Props) {
     // Sanitize inputs before submitting
     const sanitizedTitle = sanitizeString(title)
     const sanitizedImageUrl = imageUrl.trim()
-    
+
     // Add basic URL validation for image
     if (sanitizedImageUrl && !sanitizedImageUrl.match(/^https?:\/\/.+/i)) {
       setError('Image URL must start with http:// or https://')
@@ -90,9 +90,9 @@ export default function GameEditForm({ gameData }: Props) {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Game</h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setOpen(false)}
                 className="h-8 w-8 p-0"
               >
@@ -162,4 +162,4 @@ export default function GameEditForm({ gameData }: Props) {
       )}
     </div>
   )
-} 
+}

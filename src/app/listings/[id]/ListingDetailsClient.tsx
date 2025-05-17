@@ -121,13 +121,10 @@ export default function ListingDetailsClient(props: Props) {
               </Link>
             </div>
           </div>
-          
+
           {/* Comments Section - Now using our new CommentThread component */}
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
-            <CommentThread 
-              listingId={l.id} 
-              initialSortBy="newest" 
-            />
+            <CommentThread listingId={l.id} initialSortBy="newest" />
           </div>
         </Card>
       </motion.div>

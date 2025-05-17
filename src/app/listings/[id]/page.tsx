@@ -21,7 +21,7 @@ export default async function ListingDetailsPage(props: Props) {
   const upVotes = await getListingUpVotes(listing.id)
   const totalVotes = listing._count.votes
   const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-  
+
   // Get user's vote if logged in
   let userVote = null
   if (session?.user?.id) {

@@ -9,7 +9,7 @@ const handler = async (req: NextRequest) => {
   const session = await getServerSession(authOptions)
 
   // Create context using createInnerTRPCContext which handles types correctly
-  const ctx = createInnerTRPCContext({ session });
+  const ctx = createInnerTRPCContext({ session })
 
   return fetchRequestHandler({
     endpoint: '/api/trpc',
