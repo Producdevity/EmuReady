@@ -2,9 +2,10 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getGameById } from '../data'
-import { Badge, OptimizedImage } from '@/components/ui'
 import { getServerSession } from 'next-auth'
+import { Role } from '@orm'
 import { authOptions } from '@/server/auth'
+import { Badge, OptimizedImage } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
 import hasPermission from '@/utils/hasPermission'
 
@@ -12,19 +13,13 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-export default async function GameDetailsPage(props: Props) {
+async function GameDetailsPage(props: Props) {
   const { id } = await props.params
   const game = await getGameById(id)
   const session = await getServerSession(authOptions)
-
-  // Check if user is admin or super admin
-  const canEdit =
-    session?.user.role && hasPermission(session.user.role, 'ADMIN')
+  const canEdit = hasPermission(session?.user.role, Role.ADMIN)
 
   if (!game) notFound()
-
-  // Safely access the imageUrl property
-  const imageUrl = 'imageUrl' in game ? (game.imageUrl as string) : null
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
@@ -53,9 +48,9 @@ export default async function GameDetailsPage(props: Props) {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/4 flex-shrink-0">
-              {imageUrl ? (
+              {game.imageUrl ? (
                 <OptimizedImage
-                  src={imageUrl}
+                  src={game.imageUrl}
                   alt={game.title}
                   width={300}
                   height={400}
@@ -194,3 +189,5 @@ export default async function GameDetailsPage(props: Props) {
     </main>
   )
 }
+
+export default GameDetailsPage
