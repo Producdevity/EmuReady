@@ -8,7 +8,6 @@ import { TRPCError } from '@trpc/server'
 import bcryptjs from 'bcryptjs'
 import { z } from 'zod'
 
-// Production-ready password hashing with bcrypt
 function hashPassword(password: string): string {
   const salt = bcryptjs.genSaltSync(10)
   return bcryptjs.hashSync(password, salt)
@@ -18,17 +17,6 @@ function comparePassword(
   plainPassword: string,
   hashedPassword: string,
 ): boolean {
-  // Check if it's a legacy development hash
-  if (hashedPassword.startsWith('dev_hash_')) {
-    return hashedPassword === `dev_hash_${plainPassword}`
-  }
-
-  // Support legacy test accounts
-  if (plainPassword === 'password123' && !hashedPassword.startsWith('$2')) {
-    return true
-  }
-
-  // Use bcrypt for secure comparison
   try {
     return bcryptjs.compareSync(plainPassword, hashedPassword)
   } catch (error) {
@@ -49,7 +37,6 @@ export const usersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { name, email, password } = input
 
-      // Check if user with email already exists
       const existingUser = await ctx.prisma.user.findUnique({
         where: { email },
       })
@@ -61,16 +48,14 @@ export const usersRouter = createTRPCRouter({
         })
       }
 
-      // Hash password with our simple function
       const hashedPassword = hashPassword(password)
 
-      // Create user with USER role by default
       const user = await ctx.prisma.user.create({
         data: {
           name,
           email,
           hashedPassword,
-          role: 'USER', // Default role
+          role: 'USER',
         },
         select: {
           id: true,
@@ -169,7 +154,6 @@ export const usersRouter = createTRPCRouter({
     return user
   }),
 
-  // New procedure to get a user profile by ID (public)
   getUserById: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
