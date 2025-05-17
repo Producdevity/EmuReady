@@ -1,44 +1,43 @@
 'use client'
 
-import { Card, Badge } from '@/components/ui'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { Card, Badge } from '@/components/ui'
 import { VoteButtons } from './components/VoteButtons'
 import { CommentThread } from './components/CommentThread'
 import { api } from '@/lib/api'
 
+interface Listing {
+  id: string
+  game: { title: string; system?: { name?: string } }
+  device?: { brand?: string; modelName?: string }
+  emulator?: { name?: string }
+  performance?: { label?: string }
+  notes?: string
+  author?: {
+    name?: string
+    email?: string
+    id?: string
+    profileImage?: string | null
+  }
+}
+
 interface Props {
-  listing: unknown
+  listing: Listing
   successRate: number
   upVotes: number
   totalVotes: number
   userVote: boolean | null
 }
 
-export default function ListingDetailsClient(props: Props) {
-  const listingId = (props.listing as { id: string }).id
+function ListingDetailsClient(props: Props) {
+  const listingId = props.listing.id
   const utils = api.useUtils()
 
-  // Function to refresh votes
   const refreshData = () => {
+    // TODO: handle errors
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
-  }
-
-  // Type assertion for listing (from server)
-  const l = props.listing as {
-    id: string
-    game: { title: string; system?: { name?: string } }
-    device?: { brand?: string; modelName?: string }
-    emulator?: { name?: string }
-    performance?: { label?: string }
-    notes?: string
-    author?: {
-      name?: string
-      email?: string
-      id?: string
-      profileImage?: string | null
-    }
   }
 
   return (
@@ -54,16 +53,21 @@ export default function ListingDetailsClient(props: Props) {
             {/* Game Info */}
             <div className="flex-1">
               <h1 className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-300 mb-2">
-                {l.game.title}
+                {props.listing?.game.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="default">System: {l.game.system?.name}</Badge>
                 <Badge variant="default">
-                  Device: {l.device?.brand} {l.device?.modelName}
+                  System: {props.listing?.game.system?.name}
                 </Badge>
-                <Badge variant="default">Emulator: {l.emulator?.name}</Badge>
                 <Badge variant="default">
-                  Performance: {l.performance?.label}
+                  Device: {props.listing?.device?.brand}{' '}
+                  {props.listing?.device?.modelName}
+                </Badge>
+                <Badge variant="default">
+                  Emulator: {props.listing?.emulator?.name}
+                </Badge>
+                <Badge variant="default">
+                  Performance: {props.listing?.performance?.label}
                 </Badge>
               </div>
               <div className="mb-6">
@@ -71,7 +75,7 @@ export default function ListingDetailsClient(props: Props) {
                   Notes
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-                  {l.notes ?? 'No notes provided.'}
+                  {props.listing?.notes ?? 'No notes provided.'}
                 </p>
               </div>
               <div className="mb-6">
@@ -79,7 +83,7 @@ export default function ListingDetailsClient(props: Props) {
                   Rating
                 </h2>
                 <VoteButtons
-                  listingId={l.id}
+                  listingId={props.listing?.id}
                   currentVote={props.userVote}
                   upVoteCount={props.upVotes}
                   totalVotes={props.totalVotes}
@@ -90,27 +94,27 @@ export default function ListingDetailsClient(props: Props) {
             {/* Author Info */}
             <div className="flex flex-col items-center gap-2 min-w-[140px]">
               <div className="relative w-16 h-16 rounded-full overflow-hidden bg-indigo-200 dark:bg-indigo-800">
-                {l.author?.profileImage ? (
+                {props.listing?.author?.profileImage ? (
                   <Image
-                    src={l.author.profileImage}
-                    alt={`${l.author?.name ?? 'Author'}'s profile`}
+                    src={props.listing?.author.profileImage}
+                    alt={`${props.listing?.author?.name ?? 'Author'}'s profile`}
                     fill
                     sizes="64px"
                     className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-indigo-700 dark:text-indigo-200">
-                    {l.author?.name?.[0] ?? '?'}
+                    {props.listing?.author?.name?.[0] ?? '?'}
                   </div>
                 )}
               </div>
               <div className="text-center">
                 <div className="font-semibold text-gray-900 dark:text-white">
-                  {l.author?.name ?? 'Unknown'}
+                  {props.listing?.author?.name ?? 'Unknown'}
                 </div>
               </div>
               <Link
-                href={`/users/${l.author?.id ?? ''}`}
+                href={`/users/${props.listing?.author?.id ?? ''}`}
                 className="mt-2 text-indigo-600 hover:underline text-xs"
               >
                 View Profile
@@ -119,10 +123,15 @@ export default function ListingDetailsClient(props: Props) {
           </div>
 
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
-            <CommentThread listingId={l.id} initialSortBy="newest" />
+            <CommentThread
+              listingId={props.listing?.id}
+              initialSortBy="newest"
+            />
           </div>
         </Card>
       </motion.div>
     </div>
   )
 }
+
+export default ListingDetailsClient
