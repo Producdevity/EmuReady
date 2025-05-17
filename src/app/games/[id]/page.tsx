@@ -7,6 +7,7 @@ import { Role } from '@orm'
 import { authOptions } from '@/server/auth'
 import { Badge, OptimizedImage } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
+import getImageUrl from '@/app/games/utils/getImageUrl'
 import hasPermission from '@/utils/hasPermission'
 
 interface Props {
@@ -50,7 +51,7 @@ async function GameDetailsPage(props: Props) {
             <div className="w-full md:w-1/4 flex-shrink-0">
               {game.imageUrl ? (
                 <OptimizedImage
-                  src={game.imageUrl}
+                  src={getImageUrl(game.imageUrl, game.title)}
                   alt={game.title}
                   width={300}
                   height={400}
