@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, type ChangeEvent } from 'react'
+import Image from 'next/image'
 import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { LoadingSpinner } from '@/components/ui'
-import Image from 'next/image'
+import http from '@/rest/http'
 
 interface ImageUploadProps {
   onImageUploaded: (imageUrl: string) => void
@@ -46,19 +47,12 @@ function ImageUpload({
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+      const res = await http.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to upload image')
-      }
-
-      setImage(data.imageUrl)
-      onImageUploaded(data.imageUrl)
+      setImage(res.data.imageUrl)
+      onImageUploaded(res.data.imageUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       console.error('Upload error:', err)
@@ -70,13 +64,8 @@ function ImageUpload({
   const handleRemoveImage = () => {
     setImage('')
     onImageUploaded('')
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  const handleBrowseClick = () => {
-    fileInputRef.current?.click()
+    if (!fileInputRef.current) return
+    fileInputRef.current.value = ''
   }
 
   return (
@@ -119,7 +108,7 @@ function ImageUpload({
         ) : (
           <div
             className="flex flex-col items-center justify-center h-40 cursor-pointer"
-            onClick={handleBrowseClick}
+            onClick={() => fileInputRef.current?.click()}
           >
             <PhotoIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center">
