@@ -4,9 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { LoadingSpinner } from '@/components/ui'
+import { Badge, Button, LoadingSpinner } from '@/components/ui'
 import {
   UserCircleIcon,
   PencilIcon,
