@@ -19,16 +19,14 @@ export default function RegisterPage() {
     setIsLoading(true)
     setErrorMessage('')
 
-    // Validate email format
     if (!isValidEmail(email)) {
       setErrorMessage('Please enter a valid email address')
       setIsLoading(false)
       return
     }
 
-    // Sanitize the name input
     const sanitizedName = sanitizeString(name)
-    
+
     registerUser({ name: sanitizedName, email, password })
       .then(() => router.push('/login?registered=true'))
       .catch((error: Error) =>
