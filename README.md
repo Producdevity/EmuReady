@@ -2,6 +2,33 @@
 
 A community-driven platform for tracking emulation compatibility across different devices and emulators.
 
+## Overview
+
+EmuReady helps users share and discover emulation compatibility information across different hardware and software configurations. Users can contribute compatibility reports, vote on listings, and discuss specific game/device/emulator combinations.
+
+![License](https://img.shields.io/github/license/Producdevity/emuready)
+![Stars](https://img.shields.io/github/stars/Producdevity/emuready)
+![Forks](https://img.shields.io/github/forks/Producdevity/emuready)
+![Issues](https://img.shields.io/github/issues/Producdevity/emuready)
+
+## Features
+
+- **Comprehensive Compatibility Database**: Track how games perform on different emulators and devices
+- **User Contributions**: Community-driven reports and voting system
+- **Discussion System**: Comment threads with upvoting/downvoting functionality 
+- **Admin Dashboard**: Manage users, listings, and content moderation
+- **Responsive Design**: Works on mobile, tablet, and desktop
+
+## Security Features
+
+- Data validation and sanitization at multiple levels (client, server, database)
+- Content Security Policy implementation
+- Protection against XSS and CSRF attacks
+- Secure authentication with NextAuth.js
+- File upload validation and security measures
+- Input length restrictions and proper sanitization
+- UUID validation to prevent parameter tampering
+
 ## Recent Improvements
 
 The codebase has been significantly improved with the following enhancements:
@@ -47,27 +74,39 @@ The codebase has been significantly improved with the following enhancements:
 
 - Node.js 20+
 - npm/yarn
+- PostgreSQL (for development)
 
 ### Installation
 
 1. Clone the repository
-2. Install dependencies
+   ```bash
+   git clone https://github.com/Producdevity/emuready.git
+   cd emuready
+   ```
 
-```bash
-npm install
-```
+2. Install dependencies
+   ```bash
+   npm install
+   ```
 
 3. Set up environment variables
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit the `.env` file with your database credentials and other configuration.
 
-```bash
-cp .env.example .env
-```
+4. Setup the database
+   ```bash
+   npm run db:generate
+   npm run db:push
+   ```
 
-4. Run the development server
+5. Run the development server
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run dev
-```
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Available Scripts
 
@@ -84,7 +123,7 @@ npm run dev
 - `npm run db:studio` - Open Prisma Studio
 - `npm run analyze` - Analyze bundle size
 - `npm run clean` - Clean build cache
-- `npm run prepare-deploy` - Prepare for deployment
+- `npm run prepare-deploy` - Prepare for deployment (lint, typecheck, build)
 
 ## Tech Stack
 
@@ -96,8 +135,28 @@ npm run dev
 - **State Management**: React Query
 - **Type Checking**: TypeScript
 - **Animation**: Framer Motion
+- **Security**: Content Security Policy, Input Validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for more details.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Code of Conduct (TODO)
+
+Please note that this project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project, you agree to abide by its terms.
+
+## Security (TODO)
+
+If you discover a security vulnerability, please follow our [Security Policy](SECURITY.md) for reporting.
+
+## Acknowledgements
+
+- All our [Contributors](https://github.com/Producdevity/emuready/graphs/contributors)
+- The emulation community for inspiration and support
 
 ## Learn More
 
