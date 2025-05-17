@@ -73,7 +73,6 @@ export const systemsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if system already exists
       const existing = await ctx.prisma.system.findUnique({
         where: { name: input.name },
       })
@@ -100,7 +99,6 @@ export const systemsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
 
-      // Check if system exists
       const system = await ctx.prisma.system.findUnique({
         where: { id },
       })
@@ -112,7 +110,6 @@ export const systemsRouter = createTRPCRouter({
         })
       }
 
-      // Check if name is already taken by another system
       if (name !== system.name) {
         const existing = await ctx.prisma.system.findUnique({
           where: { name },
