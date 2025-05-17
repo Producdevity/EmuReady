@@ -24,7 +24,7 @@ export function VoteButtons({
 }: VoteButtonsProps) {
   const { status } = useSession()
   const isAuthenticated = status === 'authenticated'
-  
+
   const [optimisticVote, setOptimisticVote] = useState<boolean | null>(currentVote)
   const [optimisticUpVotes, setOptimisticUpVotes] = useState(upVoteCount)
   const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(totalVotes)
@@ -80,16 +80,14 @@ export function VoteButtons({
     setOptimisticUpVotes(newUpVotes)
     setOptimisticTotalVotes(newTotalVotes)
 
-    // Call the actual API
     voteMutation.mutate({
       listingId,
       value,
     })
   }
 
-  // Calculate success rate
-  const successRate = optimisticTotalVotes > 0 
-    ? Math.round((optimisticUpVotes / optimisticTotalVotes) * 100) 
+  const successRate = optimisticTotalVotes > 0
+    ? Math.round((optimisticUpVotes / optimisticTotalVotes) * 100)
     : 0
 
   return (
@@ -107,7 +105,7 @@ export function VoteButtons({
         >
           <HandThumbUpIcon className="w-6 h-6" />
         </button>
-        
+
         <div className="text-center">
           <div className="text-2xl font-bold text-gray-700 dark:text-gray-200">
             {successRate}%
@@ -116,7 +114,7 @@ export function VoteButtons({
             {optimisticTotalVotes} votes
           </div>
         </div>
-        
+
         <button
           onClick={() => handleVote(false)}
           disabled={!isAuthenticated || voteMutation.isPending}
@@ -130,7 +128,7 @@ export function VoteButtons({
           <HandThumbDownIcon className="w-6 h-6" />
         </button>
       </div>
-      
+
       {/* Progress bar showing success rate */}
       <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <motion.div
@@ -140,7 +138,7 @@ export function VoteButtons({
           transition={{ duration: 0.5 }}
         />
       </div>
-      
+
       {!isAuthenticated && (
         <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
           <Link href="/login" className="text-blue-500 hover:underline">Sign in</Link> to vote
@@ -148,4 +146,4 @@ export function VoteButtons({
       )}
     </div>
   )
-} 
+}
