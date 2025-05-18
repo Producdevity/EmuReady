@@ -1,11 +1,17 @@
 'use client'
+
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, LoadingSpinner } from '@/components/ui'
 
 function AdminDevicesPage() {
-  const { data: devices, refetch } = api.devices.list.useQuery()
-  const { data: brands } = api.deviceBrands.list.useQuery()
+  const {
+    data: devices,
+    isLoading: devicesLoading,
+    refetch,
+  } = api.devices.list.useQuery()
+  const { data: brands, isLoading: brandsLoading } =
+    api.deviceBrands.list.useQuery()
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deleteDevice = api.devices.delete.useMutation()
@@ -65,7 +71,9 @@ function AdminDevicesPage() {
     }
   }
 
+  // TODO: fix this
   const areBrandsAvailable = brands && brands.length > 0
+  const isLoading = devicesLoading || brandsLoading
 
   return (
     <div>
@@ -76,7 +84,7 @@ function AdminDevicesPage() {
         </Button>
       </div>
 
-      {!areBrandsAvailable && (
+      {!isLoading && !areBrandsAvailable && (
         <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg">
           <p>
             You need to create at least one device brand before adding devices.{' '}
@@ -104,6 +112,13 @@ function AdminDevicesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {isLoading && (
+              <tr>
+                <td colSpan={3} className="text-center py-8">
+                  <LoadingSpinner size="lg" text="Loading..." />
+                </td>
+              </tr>
+            )}
             {devices?.map((dev) => (
               <tr
                 key={dev.id}
