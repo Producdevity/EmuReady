@@ -1,4 +1,3 @@
-import React from 'react'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import LoadingSpinner from './LoadingSpinner'
@@ -10,7 +9,7 @@ describe('LoadingSpinner', () => {
     const svgElement = document.querySelector('svg')
     expect(svgElement).toBeInTheDocument()
     expect(svgElement).toHaveClass('h-8', 'w-8') // md size by default
-    expect(svgElement).toHaveClass('text-blue-500') // default color
+    expect(svgElement).toHaveClass('animate-spin') // default animation
   })
 
   it('renders with small size', () => {
@@ -25,14 +24,6 @@ describe('LoadingSpinner', () => {
 
     const svgElement = document.querySelector('svg')
     expect(svgElement).toHaveClass('h-12', 'w-12')
-  })
-
-  it('renders with custom color', () => {
-    render(<LoadingSpinner color="text-red-500" />)
-
-    const svgElement = document.querySelector('svg')
-    expect(svgElement).toHaveClass('text-red-500')
-    expect(svgElement).not.toHaveClass('text-blue-500')
   })
 
   it('renders with text', () => {
@@ -52,15 +43,27 @@ describe('LoadingSpinner', () => {
   it('renders correct SVG structure', () => {
     render(<LoadingSpinner />)
 
-    const svgElement = document.querySelector('svg')
+    const svgElement = document.querySelector('svg')!
     expect(svgElement).toHaveAttribute('viewBox', '0 0 24 24')
 
-    const circleElement = document.querySelector('circle')
-    expect(circleElement).toBeInTheDocument()
-    expect(circleElement).toHaveClass('opacity-25')
+    // should be exactly two circles
+    const circles = document.querySelectorAll('circle')
+    expect(circles).toHaveLength(2)
 
-    const pathElement = document.querySelector('path')
-    expect(pathElement).toBeInTheDocument()
-    expect(pathElement).toHaveClass('opacity-75')
+    const [bgCircle, arcCircle] = circles
+
+    // background ring
+    expect(bgCircle).toHaveClass('opacity-25')
+    expect(bgCircle).toHaveAttribute('stroke', 'url(#spinnerGradient)')
+    expect(bgCircle).toHaveAttribute('stroke-width', '4')
+    expect(bgCircle).toHaveAttribute('fill', 'none')
+
+    // rotating arc
+    expect(arcCircle).toHaveClass('opacity-75')
+    expect(arcCircle).toHaveAttribute('stroke', 'url(#spinnerGradient)')
+    expect(arcCircle).toHaveAttribute('stroke-width', '4')
+    expect(arcCircle).toHaveAttribute('fill', 'none')
+    expect(arcCircle).toHaveAttribute('stroke-dasharray', '15.7 62.8')
+    expect(arcCircle).toHaveAttribute('stroke-linecap', 'round')
   })
 })
