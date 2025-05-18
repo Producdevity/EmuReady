@@ -135,8 +135,8 @@ cp .env.example .env
 5. Setup database
 
 ```bash
-npm run db:generate
-npm run db:push
+npx prisma generate
+npx prisma db push
 ```
 
 It is recommended to use a local database for development. You can use SQLite or PostgreSQL. If you want to use PostgreSQL, make sure to set up the connection string in the `.env` file.

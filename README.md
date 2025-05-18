@@ -4,7 +4,7 @@ A community-driven platform for tracking emulation compatibility across differen
 
 Visit our website: [https://emuready.com](https://emuready.com)
 
---- 
+---
 
 **Compatibility Listings Page Screenshot**
 
@@ -96,37 +96,37 @@ The codebase has been significantly improved with the following enhancements:
 
 1. Clone the repository
 
-   ```bash
-   git clone https://github.com/Producdevity/emuready.git
-   cd emuready
-   ```
+```bash
+git clone https://github.com/Producdevity/emuready.git
+cd emuready
+```
 
 2. Install dependencies
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 3. Set up environment variables
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+cp .env.example .env
+```
 
-   Then edit the `.env` file with your database credentials and other configuration.
+Then edit the `.env` file with your database credentials and other configuration.
 
 4. Setup the database
 
-   ```bash
-   npm run db:generate
-   npm run db:push
-   ```
+```bash
+npx prisma generate
+npx prisma db push
+```
 
 5. Run the development server
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
@@ -141,12 +141,18 @@ The codebase has been significantly improved with the following enhancements:
 - `npm run lint:fix` - Fix linting issues
 - `npm run format` - Format code with Prettier
 - `npm run typecheck` - Check TypeScript types
-- `npm run db:generate` - Generate Prisma client
-- `npm run db:push` - Push schema to database
-- `npm run db:studio` - Open Prisma Studio
 - `npm run analyze` - Analyze bundle size
 - `npm run clean` - Clean build cache
-- `npm run prepare-deploy` - Prepare for deployment (lint, typecheck, build)
+- `npm run prepare-deploy` - Prepare for deployment (lint, typecheck, test, build)
+
+### Prisma Command
+
+- `npx prisma db seed` - Seed the database
+- `npx prisma studio` - Open Prisma Studio
+- `npx prisma db pull` - Pull the database schema
+- `npx prisma db push` - Pull the database schema
+
+See [Prisma Cli Reference](https://www.prisma.io/docs/orm/reference/prisma-cli-reference) for more details.
 
 ## Tech Stack
 
