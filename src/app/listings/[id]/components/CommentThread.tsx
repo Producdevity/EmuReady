@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CommentForm } from './CommentForm'
+import CommentForm from './CommentForm'
 import { api } from '@/lib/api'
 import { formatDistanceToNow } from 'date-fns'
 import {
