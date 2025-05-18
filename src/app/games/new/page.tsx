@@ -17,7 +17,6 @@ function AddGamePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Fetch systems for dropdown
   const { data: systems, isLoading: systemsLoading } =
     api.systems.list.useQuery()
   const createGame = api.games.create.useMutation()
