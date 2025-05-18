@@ -11,7 +11,8 @@ const prisma = new PrismaClient()
 
 async function main() {
   if (process.env.CLEAR_DB === 'true') {
-    console.log('🗑️ Clearing database...')
+    console.warn('🗑️ Clearing database...')
+    console.warn('I hope you know what you are doing 😅')
 
     // Clear all data in the correct order (children before parents)
     await prisma.listingApproval.deleteMany()
@@ -23,6 +24,7 @@ async function main() {
     await prisma.emulator.deleteMany()
     await prisma.game.deleteMany()
     await prisma.system.deleteMany()
+
     console.log('✅ Database cleared!')
   }
 
