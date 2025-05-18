@@ -1,8 +1,43 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import Badge from '../components/ui/Badge'
+import getImageUrl from './games/utils/getImageUrl'
+import { prisma } from '@/server/db'
+import { SuccessRateBar } from '@/components/ui'
+import {
+  HandThumbUpIcon,
+  ChatBubbleLeftIcon,
+} from '@heroicons/react/24/outline'
 
-export default function Home() {
+export default async function Home() {
+  const latestListings = await prisma.listing.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 3,
+    include: {
+      game: { include: { system: true } },
+      device: { include: { brand: true } },
+      emulator: true,
+      performance: true,
+      author: { select: { id: true, name: true } },
+      _count: {
+        select: {
+          votes: true,
+          comments: true,
+        },
+      },
+    },
+  })
+
+  const listingsWithSuccessRate = await Promise.all(
+    latestListings.map(async (listing) => {
+      const upVotes = await prisma.vote.count({
+        where: { listingId: listing.id, value: true },
+      })
+      const totalVotes = listing._count.votes
+      const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
+      return { ...listing, successRate }
+    }),
+  )
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 py-8">
@@ -68,120 +103,87 @@ export default function Home() {
         {/* Featured Content */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Featured Compatible Games
+            Latest Compatibility Listings
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-              <Image
-                src="https://placehold.co/400x200"
-                alt="The Legend of Zelda: Breath of the Wild"
-                width={400}
-                height={200}
-                className="w-full h-40 object-cover"
-                unoptimized
-              />
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    The Legend of Zelda: BotW
-                  </h3>
-                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
-                    Perfect
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  <span>Nintendo Switch</span>
-                  <span>Yuzu Emulator</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className="bg-green-600 h-2.5 rounded-full"
-                      style={{ width: '95%' }}
-                    ></div>
+            {listingsWithSuccessRate.map((listing) => (
+              <div
+                key={listing.id}
+                className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm"
+              >
+                <Image
+                  src={getImageUrl(listing.game.imageUrl, listing.game.title)}
+                  alt={listing.game.title}
+                  width={400}
+                  height={200}
+                  className="w-full h-40 object-cover"
+                  unoptimized
+                />
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3 min-h-[3.5rem]">
+                    <h3 className="font-semibold text-gray-900 dark:text-white break-words leading-tight min-h-[2.5rem] flex items-center">
+                      <Link href={`/listings/${listing.id}`}>
+                        {listing.game.title}
+                      </Link>
+                    </h3>
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        listing.performance?.label === 'Perfect'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300'
+                          : listing.performance?.label === 'Great'
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300'
+                            : listing.performance?.label === 'Playable'
+                              ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300'
+                              : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300'
+                      }`}
+                    >
+                      {listing.performance?.label ?? 'N/A'}
+                    </span>
                   </div>
-                  <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                    95%
-                  </span>
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <span>{listing.game.system?.name ?? 'Unknown System'}</span>
+                    <span>{listing.emulator?.name ?? 'Unknown Emulator'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <span>
+                      {listing.device
+                        ? `${listing.device.brand.name} ${listing.device.modelName}`
+                        : 'Unknown Device'}
+                    </span>
+                    <span>
+                      by{' '}
+                      <Link
+                        href={`/users/${listing.author?.id}`}
+                        className="text-blue-600 dark:text-indigo-400 hover:underline"
+                      >
+                        {listing.author?.name ?? 'Anonymous'}
+                      </Link>
+                    </span>
+                  </div>
+                  {/* Success Rate Bar and Stats */}
+                  <div className="flex flex-col gap-1 mt-4">
+                    <SuccessRateBar
+                      rate={listing.successRate * 100}
+                      voteCount={listing._count.votes}
+                      hideVoteCount={false}
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 mt-4 text-xs text-gray-500 dark:text-gray-400">
+                    <span title="Votes" className="flex items-center gap-1">
+                      <HandThumbUpIcon className="inline w-4 h-4 text-blue-400" />
+                      {listing._count?.votes ?? 0} votes
+                    </span>
+                    <span title="Comments" className="flex items-center gap-1">
+                      <ChatBubbleLeftIcon className="inline w-4 h-4 text-indigo-400" />
+                      {listing._count?.comments ?? 0} comments
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-              <Image
-                src="https://placehold.co/400x200"
-                alt="Animal Crossing: New Horizons"
-                width={400}
-                height={200}
-                className="w-full h-40 object-cover"
-                unoptimized
-              />
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    Animal Crossing: New Horizons
-                  </h3>
-                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
-                    Perfect
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  <span>Nintendo Switch</span>
-                  <Badge pill>Citron</Badge>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className="bg-green-600 h-2.5 rounded-full"
-                      style={{ width: '100%' }}
-                    ></div>
-                  </div>
-                  <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                    100%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-              <Image
-                src="https://placehold.co/400x200"
-                alt="God of War: Ragnarök"
-                width={400}
-                height={200}
-                className="w-full h-40 object-cover"
-                unoptimized
-              />
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    God of War: Ragnarök
-                  </h3>
-                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300">
-                    Playable
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  <span>PlayStation 5</span>
-                  <span>Sudachi Emulator</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className="bg-yellow-500 h-2.5 rounded-full"
-                      style={{ width: '68%' }}
-                    ></div>
-                  </div>
-                  <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                    68%
-                  </span>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
-        {/* CTA Section */}
         <section className="bg-blue-600 text-white rounded-lg p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Help Build the Community</h2>
           <p className="mb-6 max-w-2xl mx-auto">
