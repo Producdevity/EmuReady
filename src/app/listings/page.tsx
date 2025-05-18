@@ -48,8 +48,7 @@ function ListingsPage() {
   )
 
   const { data: session } = useSession()
-  const userRole = session?.user?.role
-  const isAdmin = hasPermission(userRole, Role.ADMIN)
+  const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
   const { data: systems } = api.systems.list.useQuery()
   const { data: devices } = api.devices.list.useQuery()
@@ -86,10 +85,9 @@ function ListingsPage() {
     const newParams = new URLSearchParams(searchParams.toString())
     Object.entries(params).forEach(([key, value]) => {
       if (value === null || value === '' || value === undefined) {
-        newParams.delete(key)
-      } else {
-        newParams.set(key, String(value))
+        return newParams.delete(key)
       }
+      newParams.set(key, String(value))
     })
     router.replace(`?${newParams.toString()}`)
   }
