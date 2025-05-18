@@ -3,13 +3,12 @@ import { type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/server/auth'
-import { createInnerTRPCContext } from '@/server/api/trpc'
+import { createInnerTRPCContext, type TRPCContext } from '@/server/api/trpc'
 
 const handler = async (req: NextRequest) => {
   const session = await getServerSession(authOptions)
 
-  // Create context using createInnerTRPCContext which handles types correctly
-  const ctx = createInnerTRPCContext({ session })
+  const ctx: TRPCContext = createInnerTRPCContext({ session })
 
   return fetchRequestHandler({
     endpoint: '/api/trpc',
