@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { sanitizeString } from '@/utils/validation'
 
-interface CommentFormProps {
+interface Props {
   listingId: string
   onCommentSuccess: () => void
   initialContent?: string
@@ -17,35 +17,26 @@ interface CommentFormProps {
   isReply?: boolean
 }
 
-export function CommentForm({
-  listingId,
-  onCommentSuccess,
-  initialContent = '',
-  commentId,
-  parentId,
-  onCancelEdit,
-  isEditing = false,
-  isReply = false,
-}: CommentFormProps) {
-  const [content, setContent] = useState(initialContent)
+function CommentForm(props: Props) {
+  const [content, setContent] = useState(props.initialContent ?? '')
   const { data: session } = useSession()
 
   const addComment = api.listings.comment.useMutation({
     onSuccess: () => {
       setContent('')
-      onCommentSuccess()
+      props.onCommentSuccess()
     },
   })
 
   const editComment = api.listings.editComment.useMutation({
     onSuccess: () => {
-      onCommentSuccess()
-      if (onCancelEdit) onCancelEdit()
+      props.onCommentSuccess()
+      if (props.onCancelEdit) props.onCancelEdit()
     },
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     if (!content.trim()) return
 
     const sanitizedContent = sanitizeString(content)
@@ -55,15 +46,18 @@ export function CommentForm({
       return
     }
 
-    if (isEditing && commentId) {
-      editComment.mutate({ commentId, content: sanitizedContent })
+    if (props.isEditing && props.commentId) {
+      editComment.mutate({
+        commentId: props.commentId,
+        content: sanitizedContent,
+      })
     } else {
-      addComment.mutate({ listingId, content: sanitizedContent, parentId })
+      addComment.mutate({
+        listingId: props.listingId,
+        content: sanitizedContent,
+        parentId: props.parentId,
+      })
     }
-  }
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value)
   }
 
   if (!session) {
@@ -80,33 +74,33 @@ export function CommentForm({
     )
   }
 
-  const formClasses = isReply ? 'mb-2' : 'mb-6'
+  const formClasses = props.isReply ? 'mb-2' : 'mb-6'
 
-  const textareaClasses = isReply
+  const textareaClasses = props.isReply
     ? 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm'
     : 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
 
-  const rows = isReply ? 2 : 3
+  const rows = props.isReply ? 2 : 3
 
   return (
     <form onSubmit={handleSubmit} className={formClasses}>
       <div className="mb-4">
         <textarea
           value={content}
-          onChange={handleContentChange}
+          onChange={(ev) => setContent(ev.target.value)}
           className={textareaClasses}
           rows={rows}
           placeholder={
-            isReply ? 'Write your reply...' : 'Write your comment...'
+            props.isReply ? 'Write your reply...' : 'Write your comment...'
           }
           maxLength={1000}
         />
       </div>
       <div className="flex justify-end gap-2">
-        {(isEditing || isReply) && onCancelEdit && (
+        {(!!props.isEditing || !!props.isReply) && props.onCancelEdit && (
           <button
             type="button"
-            onClick={onCancelEdit}
+            onClick={props.onCancelEdit}
             className="px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white text-sm"
           >
             Cancel
@@ -117,9 +111,15 @@ export function CommentForm({
           disabled={!content.trim()}
           className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
-          {isEditing ? 'Save Changes' : isReply ? 'Reply' : 'Post Comment'}
+          {props.isEditing
+            ? 'Save Changes'
+            : props.isReply
+              ? 'Reply'
+              : 'Post Comment'}
         </button>
       </div>
     </form>
   )
 }
+
+export default CommentForm
