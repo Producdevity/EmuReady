@@ -1,14 +1,13 @@
 'use client'
-
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
-function AdminEmulatorsPage() {
-  const { data: emulators, refetch } = api.emulators.list.useQuery()
-  const createEmulator = api.emulators.create.useMutation()
-  const updateEmulator = api.emulators.update.useMutation()
-  const deleteEmulator = api.emulators.delete.useMutation()
+function AdminBrandsPage() {
+  const { data: brands, refetch } = api.deviceBrands.list.useQuery()
+  const createBrand = api.deviceBrands.create.useMutation()
+  const updateBrand = api.deviceBrands.update.useMutation()
+  const deleteBrand = api.deviceBrands.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -16,13 +15,14 @@ function AdminEmulatorsPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const openModal = (emulator?: { id: string; name: string }) => {
-    setEditId(emulator?.id ?? null)
-    setName(emulator?.name ?? '')
+  const openModal = (brand?: { id: string; name: string }) => {
+    setEditId(brand?.id ?? null)
+    setName(brand?.name ?? '')
     setModalOpen(true)
     setError('')
     setSuccess('')
   }
+
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
@@ -35,57 +35,60 @@ function AdminEmulatorsPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateEmulator.mutateAsync({ id: editId, name })
-        setSuccess('Emulator updated!')
+        await updateBrand.mutateAsync({ id: editId, name })
+        setSuccess('Brand updated!')
       } else {
-        await createEmulator.mutateAsync({ name })
-        setSuccess('Emulator created!')
+        await createBrand.mutateAsync({ name })
+        setSuccess('Brand created!')
       }
       refetch()
       closeModal()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save emulator.')
+      setError(err instanceof Error ? err.message : 'Failed to save brand.')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this emulator?')) return
+    if (!confirm('Delete this brand?')) return
     try {
-      await deleteEmulator.mutateAsync({ id })
+      await deleteBrand.mutateAsync({ id })
       refetch()
-    } catch {
-      alert('Failed to delete emulator.')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete brand.')
     }
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Emulators</h1>
-        <Button onClick={() => openModal()}>Add Emulator</Button>
+        <h1 className="text-2xl font-bold">Manage Device Brands</h1>
+        <Button onClick={() => openModal()}>Add Brand</Button>
       </div>
       <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
             <tr>
               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                Name
+                Brand Name
               </th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {emulators?.map((emu: { id: string; name: string }) => (
+            {brands?.map((brand: { id: string; name: string }) => (
               <tr
-                key={emu.id}
+                key={brand.id}
                 className="hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td className="px-4 py-2">{emu.name}</td>
+                <td className="px-4 py-2">{brand.name}</td>
                 <td className="px-4 py-2 flex gap-2 justify-end">
-                  <Button variant="secondary" onClick={() => openModal(emu)}>
+                  <Button variant="secondary" onClick={() => openModal(brand)}>
                     Edit
                   </Button>
-                  <Button variant="danger" onClick={() => handleDelete(emu.id)}>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleDelete(brand.id)}
+                  >
                     Delete
                   </Button>
                 </td>
@@ -101,9 +104,9 @@ function AdminEmulatorsPage() {
             onSubmit={handleSubmit}
           >
             <h2 className="text-2xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
-              {editId ? 'Edit Emulator' : 'Add Emulator'}
+              {editId ? 'Edit Brand' : 'Add Brand'}
             </h2>
-            <label className="block mb-2 font-medium">Name</label>
+            <label className="block mb-2 font-medium">Brand Name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -118,7 +121,7 @@ function AdminEmulatorsPage() {
               </Button>
               <Button
                 type="submit"
-                isLoading={createEmulator.isPending || updateEmulator.isPending}
+                isLoading={createBrand.isPending || updateBrand.isPending}
                 className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
               >
                 {editId ? 'Save' : 'Create'}
@@ -130,5 +133,4 @@ function AdminEmulatorsPage() {
     </div>
   )
 }
-
-export default AdminEmulatorsPage
+export default AdminBrandsPage

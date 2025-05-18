@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import Badge from '../components/ui/Badge'
 
 export default function Home() {
   return (
@@ -126,7 +127,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                   <span>Nintendo Switch</span>
-                  <span>Yuzu Emulator</span>
+                  <Badge pill>Citron</Badge>
                 </div>
                 <div className="flex items-center">
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">

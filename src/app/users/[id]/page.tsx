@@ -118,7 +118,8 @@ export default function UserProfilePage() {
                         <div key={listing.id} className="flex flex-row gap-4">
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             <Link href={`/listings/${listing.id}`}>
-                              {listing.game?.title} on {listing.device?.brand}{' '}
+                              {listing.game?.title} on{' '}
+                              {listing.device?.brand.name}{' '}
                               {listing.device?.modelName}
                             </Link>
                           </h3>
@@ -163,7 +164,7 @@ export default function UserProfilePage() {
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             <Link href={`/listings/${vote.listing.id}`}>
                               {vote.listing.game?.title} on{' '}
-                              {vote.listing.device?.brand}{' '}
+                              {vote.listing.device?.brand.name}{' '}
                               {vote.listing.device?.modelName}
                             </Link>
                           </h3>

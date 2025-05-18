@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 
 const adminNav = [
   { href: '/admin/systems', label: 'Systems' },
+  { href: '/admin/brands', label: 'Brands' },
   { href: '/admin/devices', label: 'Devices' },
   { href: '/admin/emulators', label: 'Emulators' },
   { href: '/admin/performance', label: 'Performance Scales' },

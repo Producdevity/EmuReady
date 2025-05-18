@@ -10,6 +10,7 @@ import listingsSeeder from './seeders/listingsSeeder'
 const prisma = new PrismaClient()
 
 async function main() {
+  console.log('🗑️ Clearing database...')
   // Clear all data in the correct order (children before parents)
   await prisma.listingApproval.deleteMany()
   await prisma.vote.deleteMany()
@@ -20,7 +21,7 @@ async function main() {
   await prisma.emulator.deleteMany()
   await prisma.game.deleteMany()
   await prisma.system.deleteMany()
-  await prisma.user.deleteMany()
+  console.log('✅ Database cleared!')
 
   console.log('🌱 Starting database seed...')
 

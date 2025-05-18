@@ -236,7 +236,7 @@ function ListingsPage() {
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
                       {listing.device
-                        ? `${listing.device.brand} ${listing.device.modelName}`
+                        ? `${listing.device.brand.name} ${listing.device.modelName}`
                         : 'N/A'}
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">

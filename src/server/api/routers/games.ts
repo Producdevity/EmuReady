@@ -134,7 +134,11 @@ export const gamesRouter = createTRPCRouter({
           system: true,
           listings: {
             include: {
-              device: true,
+              device: {
+                include: {
+                  brand: true,
+                },
+              },
               emulator: true,
               performance: true,
               author: {

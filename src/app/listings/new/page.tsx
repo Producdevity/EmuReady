@@ -205,13 +205,11 @@ export default function AddListingPage() {
             disabled={devicesLoading}
           >
             <option value="">Select device...</option>
-            {devices?.map(
-              (dev: { id: string; brand: string; modelName: string }) => (
-                <option key={dev.id} value={dev.id}>
-                  {dev.brand} {dev.modelName}
-                </option>
-              ),
-            )}
+            {devices?.map((dev) => (
+              <option key={dev.id} value={dev.id}>
+                {dev.brand.name} {dev.modelName}
+              </option>
+            ))}
           </Input>
         </div>
         <div>

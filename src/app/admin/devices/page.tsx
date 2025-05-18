@@ -3,26 +3,27 @@ import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
-export default function AdminDevicesPage() {
+function AdminDevicesPage() {
   const { data: devices, refetch } = api.devices.list.useQuery()
+  const { data: brands } = api.deviceBrands.list.useQuery()
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deleteDevice = api.devices.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [brand, setBrand] = useState('')
+  const [brandId, setBrandId] = useState('')
   const [modelName, setModelName] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
   const openModal = (device?: {
     id: string
-    brand: string
+    brand: { id: string; name: string }
     modelName: string
   }) => {
     setEditId(device?.id ?? null)
-    setBrand(device?.brand ?? '')
+    setBrandId(device?.brand.id ?? '')
     setModelName(device?.modelName ?? '')
     setModalOpen(true)
     setError('')
@@ -31,7 +32,7 @@ export default function AdminDevicesPage() {
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
-    setBrand('')
+    setBrandId('')
     setModelName('')
   }
 
@@ -41,10 +42,10 @@ export default function AdminDevicesPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateDevice.mutateAsync({ id: editId, brand, modelName })
+        await updateDevice.mutateAsync({ id: editId, brandId, modelName })
         setSuccess('Device updated!')
       } else {
-        await createDevice.mutateAsync({ brand, modelName })
+        await createDevice.mutateAsync({ brandId, modelName })
         setSuccess('Device created!')
       }
       refetch()
@@ -59,17 +60,36 @@ export default function AdminDevicesPage() {
     try {
       await deleteDevice.mutateAsync({ id })
       refetch()
-    } catch {
-      alert('Failed to delete device.')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete device.')
     }
   }
+
+  const areBrandsAvailable = brands && brands.length > 0
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Devices</h1>
-        <Button onClick={() => openModal()}>Add Device</Button>
+        <Button onClick={() => openModal()} disabled={!areBrandsAvailable}>
+          Add Device
+        </Button>
       </div>
+
+      {!areBrandsAvailable && (
+        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg">
+          <p>
+            You need to create at least one device brand before adding devices.{' '}
+            <a
+              href="/admin/brands"
+              className="underline hover:text-yellow-800 dark:hover:text-yellow-200"
+            >
+              Go to Device Brand Management
+            </a>
+          </p>
+        </div>
+      )}
+
       <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
@@ -84,27 +104,29 @@ export default function AdminDevicesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {devices?.map(
-              (dev: { id: string; brand: string; modelName: string }) => (
-                <tr
-                  key={dev.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <td className="px-4 py-2">{dev.brand}</td>
-                  <td className="px-4 py-2">{dev.modelName}</td>
-                  <td className="px-4 py-2 flex gap-2 justify-end">
-                    <Button variant="secondary" onClick={() => openModal(dev)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(dev.id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ),
+            {devices?.map((dev) => (
+              <tr
+                key={dev.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <td className="px-4 py-2">{dev.brand.name}</td>
+                <td className="px-4 py-2">{dev.modelName}</td>
+                <td className="px-4 py-2 flex gap-2 justify-end">
+                  <Button variant="secondary" onClick={() => openModal(dev)}>
+                    Edit
+                  </Button>
+                  <Button variant="danger" onClick={() => handleDelete(dev.id)}>
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {devices?.length === 0 && (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
+                  No devices found. Add your first device.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -120,11 +142,19 @@ export default function AdminDevicesPage() {
             </h2>
             <label className="block mb-2 font-medium">Brand</label>
             <Input
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
+              as="select"
+              value={brandId}
+              onChange={(e) => setBrandId(e.target.value)}
               required
               className="mb-4 w-full"
-            />
+            >
+              <option value="">Select a brand...</option>
+              {brands?.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </Input>
             <label className="block mb-2 font-medium">Model Name</label>
             <Input
               value={modelName}
@@ -152,3 +182,5 @@ export default function AdminDevicesPage() {
     </div>
   )
 }
+
+export default AdminDevicesPage

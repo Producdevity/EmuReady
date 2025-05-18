@@ -11,13 +11,6 @@ export type BadgeVariant =
   | 'info'
   | 'primary'
 
-interface BadgeProps extends PropsWithChildren {
-  variant?: BadgeVariant
-  size?: BadgeSize
-  className?: string
-  pill?: boolean
-}
-
 const variantClasses: Record<BadgeVariant, string> = {
   default: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   primary: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -34,7 +27,14 @@ const sizeClasses: Record<BadgeSize, string> = {
   lg: 'text-sm px-2.5 py-1.5',
 }
 
-function Badge(props: BadgeProps) {
+interface Props extends PropsWithChildren {
+  variant?: BadgeVariant
+  size?: BadgeSize
+  className?: string
+  pill?: boolean
+}
+
+function Badge(props: Props) {
   const variant = props.variant ?? 'default'
   const size = props.size ?? 'md'
 

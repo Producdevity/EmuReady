@@ -13,24 +13,33 @@ export const devicesRouter = createTRPCRouter({
       z
         .object({
           search: z.string().optional(),
+          brandId: z.string().optional(),
           limit: z.number().default(50),
         })
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const { search, limit } = input ?? {}
+      const { search, brandId, limit } = input ?? {}
 
       return ctx.prisma.device.findMany({
-        where: search
-          ? {
-              OR: [
-                { brand: { contains: search } },
-                { modelName: { contains: search } },
-              ],
-            }
-          : undefined,
+        where: {
+          ...(brandId ? { brandId } : {}),
+          ...(search
+            ? {
+                OR: [
+                  { modelName: { contains: search, mode: 'insensitive' } },
+                  {
+                    brand: { name: { contains: search, mode: 'insensitive' } },
+                  },
+                ],
+              }
+            : {}),
+        },
+        include: {
+          brand: true,
+        },
         take: limit,
-        orderBy: [{ brand: 'asc' }, { modelName: 'asc' }],
+        orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
       })
     }),
 
@@ -39,6 +48,9 @@ export const devicesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const device = await ctx.prisma.device.findUnique({
         where: { id: input.id },
+        include: {
+          brand: true,
+        },
       })
 
       if (!device) {
@@ -54,13 +66,46 @@ export const devicesRouter = createTRPCRouter({
   create: adminProcedure
     .input(
       z.object({
-        brand: z.string().min(1),
+        brandId: z.string(),
         modelName: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Check if the brand exists
+      const brand = await ctx.prisma.deviceBrand.findUnique({
+        where: { id: input.brandId },
+      })
+
+      if (!brand) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Device brand not found',
+        })
+      }
+
+      // Check if a device with the same brand and model already exists
+      const existingDevice = await ctx.prisma.device.findFirst({
+        where: {
+          brandId: input.brandId,
+          modelName: {
+            equals: input.modelName,
+            mode: 'insensitive',
+          },
+        },
+      })
+
+      if (existingDevice) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `A device with model name "${input.modelName}" already exists for this brand`,
+        })
+      }
+
       return ctx.prisma.device.create({
         data: input,
+        include: {
+          brand: true,
+        },
       })
     }),
 
@@ -68,7 +113,7 @@ export const devicesRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        brand: z.string().min(1),
+        brandId: z.string(),
         modelName: z.string().min(1),
       }),
     )
@@ -86,9 +131,43 @@ export const devicesRouter = createTRPCRouter({
         })
       }
 
+      // Check if the brand exists
+      const brand = await ctx.prisma.deviceBrand.findUnique({
+        where: { id: input.brandId },
+      })
+
+      if (!brand) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Device brand not found',
+        })
+      }
+
+      // Check if another device with the same brand and model already exists
+      const existingDevice = await ctx.prisma.device.findFirst({
+        where: {
+          brandId: input.brandId,
+          modelName: {
+            equals: input.modelName,
+            mode: 'insensitive',
+          },
+          id: { not: id },
+        },
+      })
+
+      if (existingDevice) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `A device with model name "${input.modelName}" already exists for this brand`,
+        })
+      }
+
       return ctx.prisma.device.update({
         where: { id },
         data,
+        include: {
+          brand: true,
+        },
       })
     }),
 
