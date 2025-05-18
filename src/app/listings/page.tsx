@@ -1,4 +1,5 @@
 'use client'
+
 import hasPermission from '@/utils/hasPermission'
 import { Role } from '@orm'
 import { useState } from 'react'
@@ -27,7 +28,6 @@ function ListingsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Initialize state from URL query params
   const [systemId, setSystemId] = useState(searchParams.get('systemId') ?? '')
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const pageParam = Number(searchParams.get('page'))
@@ -94,32 +94,36 @@ function ListingsPage() {
     router.replace(`?${newParams.toString()}`)
   }
 
-  // Update state and URL on filter change
   const handleFilterChange = (ev: SelectInputEvent) => {
     setSystemId(ev.target.value)
     setPage(1)
     updateQuery({ systemId: ev.target.value, page: 1 })
   }
+
   const handleDeviceChange = (ev: SelectInputEvent) => {
     setDeviceId(ev.target.value)
     setPage(1)
     updateQuery({ deviceId: ev.target.value, page: 1 })
   }
+
   const handleEmulatorChange = (ev: SelectInputEvent) => {
     setEmulatorId(ev.target.value)
     setPage(1)
     updateQuery({ emulatorId: ev.target.value, page: 1 })
   }
+
   const handlePerformanceChange = (ev: SelectInputEvent) => {
     setPerformanceId(ev.target.value)
     setPage(1)
     updateQuery({ performanceId: ev.target.value, page: 1 })
   }
+
   const handleSearchChange = (ev: SelectInputEvent) => {
     setSearch(ev.target.value)
     setPage(1)
     updateQuery({ search: ev.target.value, page: 1 })
   }
+
   const handleSort = (field: string) => {
     let newSortField: SortField | null = sortField
     let newSortDirection: SortDirection
@@ -343,7 +347,6 @@ function ListingsPage() {
           )}
         </div>
 
-        {/* Pagination */}
         {pagination && pagination.pages > 1 && (
           <Pagination
             currentPage={page}
