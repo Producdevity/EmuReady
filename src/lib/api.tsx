@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import { useState, type PropsWithChildren } from 'react'
 import { createTRPCReact } from '@trpc/react-query'
 import { httpBatchLink } from '@trpc/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -9,8 +9,8 @@ import superjson from 'superjson'
 
 export const api = createTRPCReact<AppRouter>()
 
-export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(
+export function TRPCProvider(props: PropsWithChildren) {
+  const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
@@ -31,14 +31,14 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       }),
   )
 
-  const [trpcClient] = React.useState(() =>
+  const [trpcClient] = useState(() =>
     api.createClient({
       links: [
         httpBatchLink({
           url: '/api/trpc',
           transformer: superjson,
           headers: () => {
-            // Add authorization if needed
+            // TODO: Add authorization (if needed)
             return {}
           },
           // Reduce batch size to minimize connection issues
@@ -50,7 +50,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {props.children}
+      </QueryClientProvider>
     </api.Provider>
   )
 }
