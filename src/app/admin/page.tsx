@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
+import { Role } from '@orm'
+import hasPermission from '@/utils/hasPermission'
 
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions)
-  const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
+  const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
 
   return (
     <div className="space-y-8">
@@ -63,7 +65,7 @@ export default async function AdminDashboardPage() {
           className="block bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition border border-gray-200 dark:border-gray-700"
         >
           <h2 className="text-xl font-semibold mb-2 text-indigo-600 dark:text-indigo-400">
-            Listing Approvals
+            Listing Approvals (TODO)
           </h2>
           <p className="text-gray-600 dark:text-gray-300">
             Approve, reject, or edit new listings.

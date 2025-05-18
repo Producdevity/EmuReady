@@ -1,8 +1,11 @@
 'use client'
+
 import { type PropsWithChildren } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { redirect, usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { Role } from '@orm'
+import hasPermission from '@/utils/hasPermission'
 
 const adminNav = [
   { href: '/admin/systems', label: 'Systems' },
@@ -18,7 +21,10 @@ const superAdminNav = [{ href: '/admin/users', label: 'Users Management' }]
 export default function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
+  const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
+  const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
+
+  if (!isAdmin) return redirect('/login')
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
