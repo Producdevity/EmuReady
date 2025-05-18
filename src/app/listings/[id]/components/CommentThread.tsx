@@ -35,19 +35,17 @@ interface CommentType {
   replies?: CommentType[]
 }
 
-interface CommentThreadProps {
+type SortBy = 'newest' | 'oldest' | 'popular'
+
+interface Props {
   listingId: string
-  initialSortBy?: 'newest' | 'oldest' | 'popular'
+  initialSortBy?: SortBy
 }
 
-export function CommentThread({
-  listingId,
-  initialSortBy = 'newest',
-}: CommentThreadProps) {
+export function CommentThread(props: Props) {
+  const initialSortBy = props.initialSortBy ?? 'newest'
   const { data: session } = useSession()
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>(
-    initialSortBy,
-  )
+  const [sortBy, setSortBy] = useState<SortBy>(initialSortBy)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [expandedComments, setExpandedComments] = useState<
@@ -56,13 +54,16 @@ export function CommentThread({
 
   const { data: commentsData, isLoading } =
     api.listings.getSortedComments.useQuery(
-      { listingId, sortBy },
-      { enabled: !!listingId },
+      { listingId: props.listingId, sortBy },
+      { enabled: !!props.listingId },
     )
 
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
-      utils.listings.getSortedComments.invalidate({ listingId, sortBy })
+      utils.listings.getSortedComments.invalidate({
+        listingId: props.listingId,
+        sortBy,
+      })
     },
   })
 
@@ -75,7 +76,10 @@ export function CommentThread({
   const utils = api.useUtils()
 
   const refreshData = () => {
-    utils.listings.getSortedComments.invalidate({ listingId, sortBy })
+    utils.listings.getSortedComments.invalidate({
+      listingId: props.listingId,
+      sortBy,
+    })
     setReplyingTo(null)
     setEditingCommentId(null)
   }
@@ -146,7 +150,7 @@ export function CommentThread({
       >
         {isEditing ? (
           <CommentForm
-            listingId={listingId}
+            listingId={props.listingId}
             commentId={comment.id}
             initialContent={comment.content}
             onCommentSuccess={refreshData}
@@ -298,7 +302,7 @@ export function CommentThread({
               className="mt-2 ml-8"
             >
               <CommentForm
-                listingId={listingId}
+                listingId={props.listingId}
                 parentId={comment.id}
                 onCommentSuccess={refreshData}
                 onCancelEdit={() => setReplyingTo(null)}
@@ -375,7 +379,7 @@ export function CommentThread({
       </h2>
 
       {/* Comment form */}
-      <CommentForm listingId={listingId} onCommentSuccess={refreshData} />
+      <CommentForm listingId={props.listingId} onCommentSuccess={refreshData} />
 
       {/* Sort controls */}
       {commentsData?.comments && commentsData.comments.length > 0 && (
