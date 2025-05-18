@@ -26,18 +26,14 @@ function GamesPage() {
   const games = data?.games ?? []
   const pagination = data?.pagination
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value)
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setSearch(ev.target.value)
     setPage(1)
   }
 
-  const handleSystemChange = (e: SyntheticEvent) => {
-    setSystemId((e as unknown as ChangeEvent<HTMLSelectElement>).target.value)
+  const handleSystemChange = (ev: SyntheticEvent) => {
+    setSystemId((ev as unknown as ChangeEvent<HTMLSelectElement>).target.value)
     setPage(1)
-  }
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage)
   }
 
   return (
@@ -80,7 +76,7 @@ function GamesPage() {
           <Pagination
             currentPage={page}
             totalPages={pagination.pages}
-            onPageChange={handlePageChange}
+            onPageChange={(newPage) => setPage(newPage)}
           />
         )}
 
