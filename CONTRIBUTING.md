@@ -7,9 +7,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 > And if you like the project, but just don't have time to contribute, that's fine. There are other easy ways to support the project and show your appreciation, which we would also be very happy about:
 >
 > - Star the project
-> - Tweet about it
-> - Refer this project in your project's readme
-> - Mention the project at local meetups and tell your friends/colleagues
+> - Just use it
 
 ## Table of Contents
 
@@ -30,7 +28,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the
-[EmuReady Code of Conduct](CODE_OF_CONDUCT.md).
+[EmuReady Code of Conduct (TODO)](CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
 to the project maintainers.
 
@@ -60,7 +58,7 @@ A good bug report shouldn't leave others needing to chase you up for more inform
 - Determine if your bug is really a bug and not an error on your side e.g. using incompatible environment components/versions.
 - To see if other users have experienced (and potentially already solved) the same issue you are having, check if there is not already a bug report existing for your bug or error in the [bug tracker](https://github.com/Producdevity/emuready/issues?q=label%3Abug).
 - Collect information about the bug:
-  - Stack trace (Traceback)
+  - Stack trace (Browser Console, Terminal, etc.)
   - OS, Platform and Version (Windows, Linux, macOS)
   - Browser and Version (Chrome, Firefox, Safari, etc.)
   - Possibly your input and the output
@@ -87,7 +85,7 @@ This section guides you through submitting an enhancement suggestion for EmuRead
 
 #### Before Submitting an Enhancement
 
-- Make sure that you are using the latest version.
+- Make sure that you are using the latest version. (The website will always be up to date, but if you are running a local version, make sure to update it with last changes on `master`.)
 - Read the [documentation](README.md) carefully and find out if the functionality is already covered, maybe by an individual configuration.
 - Perform a [search](https://github.com/Producdevity/emuready/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
 - Find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature.
