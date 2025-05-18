@@ -12,7 +12,6 @@ import {
   PencilIcon,
   TrashIcon,
   ChevronRightIcon,
-  ChevronDownIcon as ChevronDownExpandIcon,
   ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline'
 import { canEditComment, canDeleteComment } from '@/utils/hasPermission'
@@ -276,7 +275,7 @@ export function CommentThread(props: Props) {
                       className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center ml-2"
                     >
                       {expanded ? (
-                        <ChevronDownExpandIcon className="h-4 w-4 mr-1" />
+                        <ChevronDownIcon className="h-4 w-4 mr-1" />
                       ) : (
                         <ChevronRightIcon className="h-4 w-4 mr-1" />
                       )}
