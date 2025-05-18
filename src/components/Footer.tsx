@@ -12,18 +12,18 @@ function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/about"
+                  href="https://github.com/Producdevity/EmuReady/blob/master/README.md"
                   className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                 >
-                  About Us
+                  About
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/contact"
+                  href="https://github.com/Producdevity/EmuReady/issues/new?template=question.md"
                   className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                 >
-                  Contact
+                  Support
                 </Link>
               </li>
             </ul>
@@ -35,7 +35,7 @@ function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/contribute"
+                  href="https://github.com/Producdevity/EmuReady/blob/master/CONTRIBUTING.md"
                   className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                 >
                   Contribute
@@ -43,10 +43,10 @@ function Footer() {
               </li>
               <li>
                 <Link
-                  href="/forum"
+                  href="https://github.com/Producdevity/EmuReady"
                   className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                 >
-                  Forum
+                  GitHub
                 </Link>
               </li>
             </ul>
@@ -54,17 +54,7 @@ function Footer() {
         </div>
         <div className="flex justify-center space-x-6 mb-8">
           <a
-            href="https://twitter.com"
-            target="_blank"
-            rel="noopener"
-            className="hover:text-blue-400 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M22.46 6c-.77.35-1.6.58-2.47.69a4.3 4.3 0 0 0 1.88-2.37 8.59 8.59 0 0 1-2.72 1.04A4.28 4.28 0 0 0 16.11 4c-2.37 0-4.29 1.92-4.29 4.29 0 .34.04.67.11.99C7.69 9.13 4.07 7.38 1.64 4.7c-.37.64-.58 1.39-.58 2.19 0 1.51.77 2.84 1.94 3.62-.72-.02-1.39-.22-1.98-.55v.06c0 2.11 1.5 3.87 3.5 4.27-.36.1-.74.16-1.13.16-.28 0-.54-.03-.8-.08.54 1.68 2.12 2.9 3.99 2.93A8.6 8.6 0 0 1 2 19.54c-.29 0-.57-.02-.85-.05A12.13 12.13 0 0 0 8.29 21.5c7.55 0 11.68-6.26 11.68-11.68 0-.18-.01-.36-.02-.54A8.18 8.18 0 0 0 22.46 6z" />
-            </svg>
-          </a>
-          <a
-            href="https://github.com"
+            href="https://github.com/Producdevity/EmuReady"
             target="_blank"
             rel="noopener"
             className="hover:text-gray-100 transition-colors"
