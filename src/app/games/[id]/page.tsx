@@ -131,9 +131,13 @@ async function GameDetailsPage(props: Props) {
                       className="hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {listing.device
-                          ? `${listing.device.brand} ${listing.device.modelName}`
-                          : 'N/A'}
+                        <div className="flex gap-2 items-center text-sm text-gray-600 dark:text-gray-400">
+                          <span className="inline-block">
+                            {listing.device && listing.device.brand
+                              ? `${listing.device.brand.name} ${listing.device.modelName}`
+                              : 'Unknown device'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {listing.emulator?.name || 'N/A'}

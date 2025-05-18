@@ -22,6 +22,7 @@ const systems: SystemData[] = [
   { name: 'Sony PlayStation 3' },
   { name: 'Sony PlayStation Portable' },
   { name: 'Sony PlayStation Vita' },
+  { name: 'Microsoft Windows' },
   { name: 'Microsoft Xbox' },
   { name: 'Microsoft Xbox 360' },
   { name: 'Sega Genesis/Mega Drive' },
@@ -29,12 +30,6 @@ const systems: SystemData[] = [
   { name: 'Sega Dreamcast' },
   { name: 'Sega Game Gear' },
   { name: 'Sega Master System' },
-  { name: 'Neo Geo Pocket Color' },
-  { name: 'Neo Geo' },
-  { name: 'Atari 2600' },
-  { name: 'Atari 5200' },
-  { name: 'Atari 7800' },
-  { name: 'Atari Lynx' },
 ]
 
 async function systemsSeeder(prisma: PrismaClient) {

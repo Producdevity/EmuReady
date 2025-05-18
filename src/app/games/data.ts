@@ -31,7 +31,11 @@ export async function getGameById(id: string) {
         system: true,
         listings: {
           include: {
-            device: true,
+            device: {
+              include: {
+                brand: true,
+              },
+            },
             emulator: true,
             performance: true,
             author: {

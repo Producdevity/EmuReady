@@ -5,12 +5,29 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import LoginPage from './page'
 
+// Define proper types for the mocks
 type MockedRouter = {
   push: ReturnType<typeof vi.fn>
+  back: ReturnType<typeof vi.fn>
+  forward: ReturnType<typeof vi.fn>
+  refresh: ReturnType<typeof vi.fn>
+  prefetch: ReturnType<typeof vi.fn>
+  replace: ReturnType<typeof vi.fn>
 }
 
 type MockedSearchParams = {
   get: ReturnType<typeof vi.fn>
+  getAll: ReturnType<typeof vi.fn>
+  has: ReturnType<typeof vi.fn>
+  forEach: ReturnType<typeof vi.fn>
+  entries: ReturnType<typeof vi.fn>
+  keys: ReturnType<typeof vi.fn>
+  values: ReturnType<typeof vi.fn>
+  toString: ReturnType<typeof vi.fn>
+  append: ReturnType<typeof vi.fn>
+  delete: ReturnType<typeof vi.fn>
+  set: ReturnType<typeof vi.fn>
+  sort: ReturnType<typeof vi.fn>
 }
 
 vi.mock('next-auth/react', () => ({
@@ -23,8 +40,29 @@ vi.mock('next/navigation', () => ({
 }))
 
 describe('LoginPage', () => {
-  const mockRouter: MockedRouter = { push: vi.fn() }
-  const mockSearchParams: MockedSearchParams = { get: vi.fn() }
+  const mockRouter: Partial<MockedRouter> = {
+    push: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+    replace: vi.fn(),
+  }
+
+  const mockSearchParams: MockedSearchParams = {
+    get: vi.fn(),
+    has: vi.fn(),
+    getAll: vi.fn(),
+    forEach: vi.fn(),
+    entries: vi.fn(),
+    keys: vi.fn(),
+    values: vi.fn(),
+    toString: vi.fn(),
+    append: vi.fn(),
+    delete: vi.fn(),
+    set: vi.fn(),
+    sort: vi.fn(),
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()

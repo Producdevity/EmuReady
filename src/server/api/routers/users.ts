@@ -88,7 +88,12 @@ export const usersRouter = createTRPCRouter({
             createdAt: true,
             device: {
               select: {
-                brand: true,
+                brand: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
                 modelName: true,
               },
             },
@@ -118,7 +123,12 @@ export const usersRouter = createTRPCRouter({
                 id: true,
                 device: {
                   select: {
-                    brand: true,
+                    brand: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
                     modelName: true,
                   },
                 },
@@ -173,7 +183,12 @@ export const usersRouter = createTRPCRouter({
               createdAt: true,
               device: {
                 select: {
-                  brand: true,
+                  brand: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
                   modelName: true,
                 },
               },
@@ -203,7 +218,12 @@ export const usersRouter = createTRPCRouter({
                   id: true,
                   device: {
                     select: {
-                      brand: true,
+                      brand: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
                       modelName: true,
                     },
                   },

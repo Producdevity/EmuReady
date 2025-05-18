@@ -130,9 +130,15 @@ exports.Prisma.UserScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.DeviceBrandScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.DeviceScalarFieldEnum = {
   id: 'id',
-  brand: 'brand',
+  brandId: 'brandId',
   modelName: 'modelName'
 };
 
@@ -231,6 +237,7 @@ exports.Role = exports.$Enums.Role = {
 
 exports.Prisma.ModelName = {
   User: 'User',
+  DeviceBrand: 'DeviceBrand',
   Device: 'Device',
   System: 'System',
   Game: 'Game',

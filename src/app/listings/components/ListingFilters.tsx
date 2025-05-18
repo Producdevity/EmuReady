@@ -18,7 +18,12 @@ interface FiltersProps {
   performanceId: string
   searchTerm: string
   systems: Array<{ id: string; name: string }>
-  devices: Array<{ id: string; brand: string; modelName: string }>
+  devices: Array<{
+    id: string
+    brandId: string
+    modelName: string
+    brand: { id: string; name: string; createdAt: Date }
+  }>
   emulators: Array<{ id: string; name: string }>
   performanceScales: Array<{ id: number; label: string }>
   onSystemChange: ChangeEventHandler<HTMLInputElement>
@@ -78,7 +83,7 @@ function ListingFilters(props: FiltersProps) {
           onChange={handleDeviceChange}
           options={props.devices.map((device) => ({
             id: device.id,
-            name: `${device.brand} ${device.modelName}`,
+            name: `${device.brand.name} ${device.modelName}`,
           }))}
         />
 

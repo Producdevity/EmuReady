@@ -111,7 +111,7 @@ export const listingsRouter = createTRPCRouter({
             orderBy.push({ game: { system: { name: sortDirection } } })
             break
           case 'device':
-            orderBy.push({ device: { brand: sortDirection } })
+            orderBy.push({ device: { brand: { name: sortDirection } } })
             orderBy.push({ device: { modelName: sortDirection } })
             break
           case 'emulator.name':
@@ -143,7 +143,11 @@ export const listingsRouter = createTRPCRouter({
               system: true,
             },
           },
-          device: true,
+          device: {
+            include: {
+              brand: true,
+            },
+          },
           emulator: true,
           performance: true,
           author: {
@@ -237,7 +241,11 @@ export const listingsRouter = createTRPCRouter({
               system: true,
             },
           },
-          device: true,
+          device: {
+            include: {
+              brand: true,
+            },
+          },
           emulator: true,
           performance: true,
           author: {

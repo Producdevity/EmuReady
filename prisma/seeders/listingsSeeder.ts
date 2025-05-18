@@ -91,10 +91,12 @@ async function listingsSeeder(prisma: PrismaClient) {
     gameMap.set(`${game.title}-${game.system.name}`, game.id)
   })
 
-  const devices = await prisma.device.findMany()
+  const devices = await prisma.device.findMany({
+    include: { brand: true },
+  })
   const deviceMap = new Map()
   devices.forEach((device) => {
-    deviceMap.set(`${device.brand}-${device.modelName}`, device.id)
+    deviceMap.set(`${device.brand.name}-${device.modelName}`, device.id)
   })
 
   const emulators = await prisma.emulator.findMany()

@@ -19,6 +19,11 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model DeviceBrand
+ * 
+ */
+export type DeviceBrand = $Result.DefaultSelection<Prisma.$DeviceBrandPayload>
+/**
  * Model Device
  * 
  */
@@ -222,6 +227,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.deviceBrand`: Exposes CRUD operations for the **DeviceBrand** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DeviceBrands
+    * const deviceBrands = await prisma.deviceBrand.findMany()
+    * ```
+    */
+  get deviceBrand(): Prisma.DeviceBrandDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.device`: Exposes CRUD operations for the **Device** model.
@@ -763,6 +778,7 @@ export namespace Prisma {
 
   export const ModelName: {
     User: 'User',
+    DeviceBrand: 'DeviceBrand',
     Device: 'Device',
     System: 'System',
     Game: 'Game',
@@ -791,7 +807,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "device" | "system" | "game" | "emulator" | "performanceScale" | "listing" | "vote" | "comment" | "commentVote" | "listingApproval"
+      modelProps: "user" | "deviceBrand" | "device" | "system" | "game" | "emulator" | "performanceScale" | "listing" | "vote" | "comment" | "commentVote" | "listingApproval"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -866,6 +882,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      DeviceBrand: {
+        payload: Prisma.$DeviceBrandPayload<ExtArgs>
+        fields: Prisma.DeviceBrandFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DeviceBrandFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DeviceBrandFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>
+          }
+          findFirst: {
+            args: Prisma.DeviceBrandFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DeviceBrandFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>
+          }
+          findMany: {
+            args: Prisma.DeviceBrandFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>[]
+          }
+          create: {
+            args: Prisma.DeviceBrandCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>
+          }
+          createMany: {
+            args: Prisma.DeviceBrandCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DeviceBrandCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>[]
+          }
+          delete: {
+            args: Prisma.DeviceBrandDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>
+          }
+          update: {
+            args: Prisma.DeviceBrandUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>
+          }
+          deleteMany: {
+            args: Prisma.DeviceBrandDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DeviceBrandUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DeviceBrandUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>[]
+          }
+          upsert: {
+            args: Prisma.DeviceBrandUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeviceBrandPayload>
+          }
+          aggregate: {
+            args: Prisma.DeviceBrandAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDeviceBrand>
+          }
+          groupBy: {
+            args: Prisma.DeviceBrandGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DeviceBrandGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DeviceBrandCountArgs<ExtArgs>
+            result: $Utils.Optional<DeviceBrandCountAggregateOutputType> | number
           }
         }
       }
@@ -1694,6 +1784,7 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     user?: UserOmit
+    deviceBrand?: DeviceBrandOmit
     device?: DeviceOmit
     system?: SystemOmit
     game?: GameOmit
@@ -1857,6 +1948,37 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountCommentVotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CommentVoteWhereInput
+  }
+
+
+  /**
+   * Count Type DeviceBrandCountOutputType
+   */
+
+  export type DeviceBrandCountOutputType = {
+    devices: number
+  }
+
+  export type DeviceBrandCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    devices?: boolean | DeviceBrandCountOutputTypeCountDevicesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * DeviceBrandCountOutputType without action
+   */
+  export type DeviceBrandCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrandCountOutputType
+     */
+    select?: DeviceBrandCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * DeviceBrandCountOutputType without action
+   */
+  export type DeviceBrandCountOutputTypeCountDevicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DeviceWhereInput
   }
 
 
@@ -3317,6 +3439,1050 @@ export namespace Prisma {
 
 
   /**
+   * Model DeviceBrand
+   */
+
+  export type AggregateDeviceBrand = {
+    _count: DeviceBrandCountAggregateOutputType | null
+    _min: DeviceBrandMinAggregateOutputType | null
+    _max: DeviceBrandMaxAggregateOutputType | null
+  }
+
+  export type DeviceBrandMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    createdAt: Date | null
+  }
+
+  export type DeviceBrandMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    createdAt: Date | null
+  }
+
+  export type DeviceBrandCountAggregateOutputType = {
+    id: number
+    name: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type DeviceBrandMinAggregateInputType = {
+    id?: true
+    name?: true
+    createdAt?: true
+  }
+
+  export type DeviceBrandMaxAggregateInputType = {
+    id?: true
+    name?: true
+    createdAt?: true
+  }
+
+  export type DeviceBrandCountAggregateInputType = {
+    id?: true
+    name?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type DeviceBrandAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DeviceBrand to aggregate.
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeviceBrands to fetch.
+     */
+    orderBy?: DeviceBrandOrderByWithRelationInput | DeviceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DeviceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeviceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeviceBrands.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DeviceBrands
+    **/
+    _count?: true | DeviceBrandCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DeviceBrandMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DeviceBrandMaxAggregateInputType
+  }
+
+  export type GetDeviceBrandAggregateType<T extends DeviceBrandAggregateArgs> = {
+        [P in keyof T & keyof AggregateDeviceBrand]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDeviceBrand[P]>
+      : GetScalarType<T[P], AggregateDeviceBrand[P]>
+  }
+
+
+
+
+  export type DeviceBrandGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DeviceBrandWhereInput
+    orderBy?: DeviceBrandOrderByWithAggregationInput | DeviceBrandOrderByWithAggregationInput[]
+    by: DeviceBrandScalarFieldEnum[] | DeviceBrandScalarFieldEnum
+    having?: DeviceBrandScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DeviceBrandCountAggregateInputType | true
+    _min?: DeviceBrandMinAggregateInputType
+    _max?: DeviceBrandMaxAggregateInputType
+  }
+
+  export type DeviceBrandGroupByOutputType = {
+    id: string
+    name: string
+    createdAt: Date
+    _count: DeviceBrandCountAggregateOutputType | null
+    _min: DeviceBrandMinAggregateOutputType | null
+    _max: DeviceBrandMaxAggregateOutputType | null
+  }
+
+  type GetDeviceBrandGroupByPayload<T extends DeviceBrandGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DeviceBrandGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DeviceBrandGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DeviceBrandGroupByOutputType[P]>
+            : GetScalarType<T[P], DeviceBrandGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DeviceBrandSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    createdAt?: boolean
+    devices?: boolean | DeviceBrand$devicesArgs<ExtArgs>
+    _count?: boolean | DeviceBrandCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["deviceBrand"]>
+
+  export type DeviceBrandSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["deviceBrand"]>
+
+  export type DeviceBrandSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["deviceBrand"]>
+
+  export type DeviceBrandSelectScalar = {
+    id?: boolean
+    name?: boolean
+    createdAt?: boolean
+  }
+
+  export type DeviceBrandOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "createdAt", ExtArgs["result"]["deviceBrand"]>
+  export type DeviceBrandInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    devices?: boolean | DeviceBrand$devicesArgs<ExtArgs>
+    _count?: boolean | DeviceBrandCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type DeviceBrandIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type DeviceBrandIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $DeviceBrandPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DeviceBrand"
+    objects: {
+      devices: Prisma.$DevicePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      createdAt: Date
+    }, ExtArgs["result"]["deviceBrand"]>
+    composites: {}
+  }
+
+  type DeviceBrandGetPayload<S extends boolean | null | undefined | DeviceBrandDefaultArgs> = $Result.GetResult<Prisma.$DeviceBrandPayload, S>
+
+  type DeviceBrandCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DeviceBrandFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DeviceBrandCountAggregateInputType | true
+    }
+
+  export interface DeviceBrandDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DeviceBrand'], meta: { name: 'DeviceBrand' } }
+    /**
+     * Find zero or one DeviceBrand that matches the filter.
+     * @param {DeviceBrandFindUniqueArgs} args - Arguments to find a DeviceBrand
+     * @example
+     * // Get one DeviceBrand
+     * const deviceBrand = await prisma.deviceBrand.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DeviceBrandFindUniqueArgs>(args: SelectSubset<T, DeviceBrandFindUniqueArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DeviceBrand that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DeviceBrandFindUniqueOrThrowArgs} args - Arguments to find a DeviceBrand
+     * @example
+     * // Get one DeviceBrand
+     * const deviceBrand = await prisma.deviceBrand.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DeviceBrandFindUniqueOrThrowArgs>(args: SelectSubset<T, DeviceBrandFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DeviceBrand that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandFindFirstArgs} args - Arguments to find a DeviceBrand
+     * @example
+     * // Get one DeviceBrand
+     * const deviceBrand = await prisma.deviceBrand.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DeviceBrandFindFirstArgs>(args?: SelectSubset<T, DeviceBrandFindFirstArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DeviceBrand that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandFindFirstOrThrowArgs} args - Arguments to find a DeviceBrand
+     * @example
+     * // Get one DeviceBrand
+     * const deviceBrand = await prisma.deviceBrand.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DeviceBrandFindFirstOrThrowArgs>(args?: SelectSubset<T, DeviceBrandFindFirstOrThrowArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DeviceBrands that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DeviceBrands
+     * const deviceBrands = await prisma.deviceBrand.findMany()
+     * 
+     * // Get first 10 DeviceBrands
+     * const deviceBrands = await prisma.deviceBrand.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const deviceBrandWithIdOnly = await prisma.deviceBrand.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DeviceBrandFindManyArgs>(args?: SelectSubset<T, DeviceBrandFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DeviceBrand.
+     * @param {DeviceBrandCreateArgs} args - Arguments to create a DeviceBrand.
+     * @example
+     * // Create one DeviceBrand
+     * const DeviceBrand = await prisma.deviceBrand.create({
+     *   data: {
+     *     // ... data to create a DeviceBrand
+     *   }
+     * })
+     * 
+     */
+    create<T extends DeviceBrandCreateArgs>(args: SelectSubset<T, DeviceBrandCreateArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DeviceBrands.
+     * @param {DeviceBrandCreateManyArgs} args - Arguments to create many DeviceBrands.
+     * @example
+     * // Create many DeviceBrands
+     * const deviceBrand = await prisma.deviceBrand.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DeviceBrandCreateManyArgs>(args?: SelectSubset<T, DeviceBrandCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DeviceBrands and returns the data saved in the database.
+     * @param {DeviceBrandCreateManyAndReturnArgs} args - Arguments to create many DeviceBrands.
+     * @example
+     * // Create many DeviceBrands
+     * const deviceBrand = await prisma.deviceBrand.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DeviceBrands and only return the `id`
+     * const deviceBrandWithIdOnly = await prisma.deviceBrand.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DeviceBrandCreateManyAndReturnArgs>(args?: SelectSubset<T, DeviceBrandCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DeviceBrand.
+     * @param {DeviceBrandDeleteArgs} args - Arguments to delete one DeviceBrand.
+     * @example
+     * // Delete one DeviceBrand
+     * const DeviceBrand = await prisma.deviceBrand.delete({
+     *   where: {
+     *     // ... filter to delete one DeviceBrand
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DeviceBrandDeleteArgs>(args: SelectSubset<T, DeviceBrandDeleteArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DeviceBrand.
+     * @param {DeviceBrandUpdateArgs} args - Arguments to update one DeviceBrand.
+     * @example
+     * // Update one DeviceBrand
+     * const deviceBrand = await prisma.deviceBrand.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DeviceBrandUpdateArgs>(args: SelectSubset<T, DeviceBrandUpdateArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DeviceBrands.
+     * @param {DeviceBrandDeleteManyArgs} args - Arguments to filter DeviceBrands to delete.
+     * @example
+     * // Delete a few DeviceBrands
+     * const { count } = await prisma.deviceBrand.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DeviceBrandDeleteManyArgs>(args?: SelectSubset<T, DeviceBrandDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DeviceBrands.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DeviceBrands
+     * const deviceBrand = await prisma.deviceBrand.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DeviceBrandUpdateManyArgs>(args: SelectSubset<T, DeviceBrandUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DeviceBrands and returns the data updated in the database.
+     * @param {DeviceBrandUpdateManyAndReturnArgs} args - Arguments to update many DeviceBrands.
+     * @example
+     * // Update many DeviceBrands
+     * const deviceBrand = await prisma.deviceBrand.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DeviceBrands and only return the `id`
+     * const deviceBrandWithIdOnly = await prisma.deviceBrand.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DeviceBrandUpdateManyAndReturnArgs>(args: SelectSubset<T, DeviceBrandUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DeviceBrand.
+     * @param {DeviceBrandUpsertArgs} args - Arguments to update or create a DeviceBrand.
+     * @example
+     * // Update or create a DeviceBrand
+     * const deviceBrand = await prisma.deviceBrand.upsert({
+     *   create: {
+     *     // ... data to create a DeviceBrand
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DeviceBrand we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DeviceBrandUpsertArgs>(args: SelectSubset<T, DeviceBrandUpsertArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DeviceBrands.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandCountArgs} args - Arguments to filter DeviceBrands to count.
+     * @example
+     * // Count the number of DeviceBrands
+     * const count = await prisma.deviceBrand.count({
+     *   where: {
+     *     // ... the filter for the DeviceBrands we want to count
+     *   }
+     * })
+    **/
+    count<T extends DeviceBrandCountArgs>(
+      args?: Subset<T, DeviceBrandCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DeviceBrandCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DeviceBrand.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DeviceBrandAggregateArgs>(args: Subset<T, DeviceBrandAggregateArgs>): Prisma.PrismaPromise<GetDeviceBrandAggregateType<T>>
+
+    /**
+     * Group by DeviceBrand.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeviceBrandGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DeviceBrandGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DeviceBrandGroupByArgs['orderBy'] }
+        : { orderBy?: DeviceBrandGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DeviceBrandGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDeviceBrandGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DeviceBrand model
+   */
+  readonly fields: DeviceBrandFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DeviceBrand.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DeviceBrandClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    devices<T extends DeviceBrand$devicesArgs<ExtArgs> = {}>(args?: Subset<T, DeviceBrand$devicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DeviceBrand model
+   */
+  interface DeviceBrandFieldRefs {
+    readonly id: FieldRef<"DeviceBrand", 'String'>
+    readonly name: FieldRef<"DeviceBrand", 'String'>
+    readonly createdAt: FieldRef<"DeviceBrand", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DeviceBrand findUnique
+   */
+  export type DeviceBrandFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which DeviceBrand to fetch.
+     */
+    where: DeviceBrandWhereUniqueInput
+  }
+
+  /**
+   * DeviceBrand findUniqueOrThrow
+   */
+  export type DeviceBrandFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which DeviceBrand to fetch.
+     */
+    where: DeviceBrandWhereUniqueInput
+  }
+
+  /**
+   * DeviceBrand findFirst
+   */
+  export type DeviceBrandFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which DeviceBrand to fetch.
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeviceBrands to fetch.
+     */
+    orderBy?: DeviceBrandOrderByWithRelationInput | DeviceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DeviceBrands.
+     */
+    cursor?: DeviceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeviceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeviceBrands.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DeviceBrands.
+     */
+    distinct?: DeviceBrandScalarFieldEnum | DeviceBrandScalarFieldEnum[]
+  }
+
+  /**
+   * DeviceBrand findFirstOrThrow
+   */
+  export type DeviceBrandFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which DeviceBrand to fetch.
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeviceBrands to fetch.
+     */
+    orderBy?: DeviceBrandOrderByWithRelationInput | DeviceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DeviceBrands.
+     */
+    cursor?: DeviceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeviceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeviceBrands.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DeviceBrands.
+     */
+    distinct?: DeviceBrandScalarFieldEnum | DeviceBrandScalarFieldEnum[]
+  }
+
+  /**
+   * DeviceBrand findMany
+   */
+  export type DeviceBrandFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * Filter, which DeviceBrands to fetch.
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeviceBrands to fetch.
+     */
+    orderBy?: DeviceBrandOrderByWithRelationInput | DeviceBrandOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DeviceBrands.
+     */
+    cursor?: DeviceBrandWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeviceBrands from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeviceBrands.
+     */
+    skip?: number
+    distinct?: DeviceBrandScalarFieldEnum | DeviceBrandScalarFieldEnum[]
+  }
+
+  /**
+   * DeviceBrand create
+   */
+  export type DeviceBrandCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DeviceBrand.
+     */
+    data: XOR<DeviceBrandCreateInput, DeviceBrandUncheckedCreateInput>
+  }
+
+  /**
+   * DeviceBrand createMany
+   */
+  export type DeviceBrandCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DeviceBrands.
+     */
+    data: DeviceBrandCreateManyInput | DeviceBrandCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DeviceBrand createManyAndReturn
+   */
+  export type DeviceBrandCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * The data used to create many DeviceBrands.
+     */
+    data: DeviceBrandCreateManyInput | DeviceBrandCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DeviceBrand update
+   */
+  export type DeviceBrandUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DeviceBrand.
+     */
+    data: XOR<DeviceBrandUpdateInput, DeviceBrandUncheckedUpdateInput>
+    /**
+     * Choose, which DeviceBrand to update.
+     */
+    where: DeviceBrandWhereUniqueInput
+  }
+
+  /**
+   * DeviceBrand updateMany
+   */
+  export type DeviceBrandUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DeviceBrands.
+     */
+    data: XOR<DeviceBrandUpdateManyMutationInput, DeviceBrandUncheckedUpdateManyInput>
+    /**
+     * Filter which DeviceBrands to update
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * Limit how many DeviceBrands to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DeviceBrand updateManyAndReturn
+   */
+  export type DeviceBrandUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * The data used to update DeviceBrands.
+     */
+    data: XOR<DeviceBrandUpdateManyMutationInput, DeviceBrandUncheckedUpdateManyInput>
+    /**
+     * Filter which DeviceBrands to update
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * Limit how many DeviceBrands to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DeviceBrand upsert
+   */
+  export type DeviceBrandUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DeviceBrand to update in case it exists.
+     */
+    where: DeviceBrandWhereUniqueInput
+    /**
+     * In case the DeviceBrand found by the `where` argument doesn't exist, create a new DeviceBrand with this data.
+     */
+    create: XOR<DeviceBrandCreateInput, DeviceBrandUncheckedCreateInput>
+    /**
+     * In case the DeviceBrand was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DeviceBrandUpdateInput, DeviceBrandUncheckedUpdateInput>
+  }
+
+  /**
+   * DeviceBrand delete
+   */
+  export type DeviceBrandDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+    /**
+     * Filter which DeviceBrand to delete.
+     */
+    where: DeviceBrandWhereUniqueInput
+  }
+
+  /**
+   * DeviceBrand deleteMany
+   */
+  export type DeviceBrandDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DeviceBrands to delete
+     */
+    where?: DeviceBrandWhereInput
+    /**
+     * Limit how many DeviceBrands to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DeviceBrand.devices
+   */
+  export type DeviceBrand$devicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Device
+     */
+    select?: DeviceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Device
+     */
+    omit?: DeviceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceInclude<ExtArgs> | null
+    where?: DeviceWhereInput
+    orderBy?: DeviceOrderByWithRelationInput | DeviceOrderByWithRelationInput[]
+    cursor?: DeviceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DeviceScalarFieldEnum | DeviceScalarFieldEnum[]
+  }
+
+  /**
+   * DeviceBrand without action
+   */
+  export type DeviceBrandDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeviceBrand
+     */
+    select?: DeviceBrandSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DeviceBrand
+     */
+    omit?: DeviceBrandOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceBrandInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model Device
    */
 
@@ -3328,19 +4494,19 @@ export namespace Prisma {
 
   export type DeviceMinAggregateOutputType = {
     id: string | null
-    brand: string | null
+    brandId: string | null
     modelName: string | null
   }
 
   export type DeviceMaxAggregateOutputType = {
     id: string | null
-    brand: string | null
+    brandId: string | null
     modelName: string | null
   }
 
   export type DeviceCountAggregateOutputType = {
     id: number
-    brand: number
+    brandId: number
     modelName: number
     _all: number
   }
@@ -3348,19 +4514,19 @@ export namespace Prisma {
 
   export type DeviceMinAggregateInputType = {
     id?: true
-    brand?: true
+    brandId?: true
     modelName?: true
   }
 
   export type DeviceMaxAggregateInputType = {
     id?: true
-    brand?: true
+    brandId?: true
     modelName?: true
   }
 
   export type DeviceCountAggregateInputType = {
     id?: true
-    brand?: true
+    brandId?: true
     modelName?: true
     _all?: true
   }
@@ -3439,7 +4605,7 @@ export namespace Prisma {
 
   export type DeviceGroupByOutputType = {
     id: string
-    brand: string
+    brandId: string
     modelName: string
     _count: DeviceCountAggregateOutputType | null
     _min: DeviceMinAggregateOutputType | null
@@ -3462,46 +4628,55 @@ export namespace Prisma {
 
   export type DeviceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    brand?: boolean
+    brandId?: boolean
     modelName?: boolean
+    brand?: boolean | DeviceBrandDefaultArgs<ExtArgs>
     listings?: boolean | Device$listingsArgs<ExtArgs>
     _count?: boolean | DeviceCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["device"]>
 
   export type DeviceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    brand?: boolean
+    brandId?: boolean
     modelName?: boolean
+    brand?: boolean | DeviceBrandDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["device"]>
 
   export type DeviceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    brand?: boolean
+    brandId?: boolean
     modelName?: boolean
+    brand?: boolean | DeviceBrandDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["device"]>
 
   export type DeviceSelectScalar = {
     id?: boolean
-    brand?: boolean
+    brandId?: boolean
     modelName?: boolean
   }
 
-  export type DeviceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brand" | "modelName", ExtArgs["result"]["device"]>
+  export type DeviceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandId" | "modelName", ExtArgs["result"]["device"]>
   export type DeviceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    brand?: boolean | DeviceBrandDefaultArgs<ExtArgs>
     listings?: boolean | Device$listingsArgs<ExtArgs>
     _count?: boolean | DeviceCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type DeviceIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type DeviceIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type DeviceIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    brand?: boolean | DeviceBrandDefaultArgs<ExtArgs>
+  }
+  export type DeviceIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    brand?: boolean | DeviceBrandDefaultArgs<ExtArgs>
+  }
 
   export type $DevicePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Device"
     objects: {
+      brand: Prisma.$DeviceBrandPayload<ExtArgs>
       listings: Prisma.$ListingPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      brand: string
+      brandId: string
       modelName: string
     }, ExtArgs["result"]["device"]>
     composites: {}
@@ -3897,6 +5072,7 @@ export namespace Prisma {
    */
   export interface Prisma__DeviceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    brand<T extends DeviceBrandDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeviceBrandDefaultArgs<ExtArgs>>): Prisma__DeviceBrandClient<$Result.GetResult<Prisma.$DeviceBrandPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     listings<T extends Device$listingsArgs<ExtArgs> = {}>(args?: Subset<T, Device$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -3928,7 +5104,7 @@ export namespace Prisma {
    */
   interface DeviceFieldRefs {
     readonly id: FieldRef<"Device", 'String'>
-    readonly brand: FieldRef<"Device", 'String'>
+    readonly brandId: FieldRef<"Device", 'String'>
     readonly modelName: FieldRef<"Device", 'String'>
   }
     
@@ -4179,6 +5355,10 @@ export namespace Prisma {
      */
     data: DeviceCreateManyInput | DeviceCreateManyInput[]
     skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -4249,6 +5429,10 @@ export namespace Prisma {
      * Limit how many Devices to update.
      */
     limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeviceIncludeUpdateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -14316,9 +15500,18 @@ export namespace Prisma {
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+  export const DeviceBrandScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    createdAt: 'createdAt'
+  };
+
+  export type DeviceBrandScalarFieldEnum = (typeof DeviceBrandScalarFieldEnum)[keyof typeof DeviceBrandScalarFieldEnum]
+
+
   export const DeviceScalarFieldEnum: {
     id: 'id',
-    brand: 'brand',
+    brandId: 'brandId',
     modelName: 'modelName'
   };
 
@@ -14610,36 +15803,85 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
 
+  export type DeviceBrandWhereInput = {
+    AND?: DeviceBrandWhereInput | DeviceBrandWhereInput[]
+    OR?: DeviceBrandWhereInput[]
+    NOT?: DeviceBrandWhereInput | DeviceBrandWhereInput[]
+    id?: StringFilter<"DeviceBrand"> | string
+    name?: StringFilter<"DeviceBrand"> | string
+    createdAt?: DateTimeFilter<"DeviceBrand"> | Date | string
+    devices?: DeviceListRelationFilter
+  }
+
+  export type DeviceBrandOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    devices?: DeviceOrderByRelationAggregateInput
+  }
+
+  export type DeviceBrandWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    name?: string
+    AND?: DeviceBrandWhereInput | DeviceBrandWhereInput[]
+    OR?: DeviceBrandWhereInput[]
+    NOT?: DeviceBrandWhereInput | DeviceBrandWhereInput[]
+    createdAt?: DateTimeFilter<"DeviceBrand"> | Date | string
+    devices?: DeviceListRelationFilter
+  }, "id" | "name">
+
+  export type DeviceBrandOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    _count?: DeviceBrandCountOrderByAggregateInput
+    _max?: DeviceBrandMaxOrderByAggregateInput
+    _min?: DeviceBrandMinOrderByAggregateInput
+  }
+
+  export type DeviceBrandScalarWhereWithAggregatesInput = {
+    AND?: DeviceBrandScalarWhereWithAggregatesInput | DeviceBrandScalarWhereWithAggregatesInput[]
+    OR?: DeviceBrandScalarWhereWithAggregatesInput[]
+    NOT?: DeviceBrandScalarWhereWithAggregatesInput | DeviceBrandScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DeviceBrand"> | string
+    name?: StringWithAggregatesFilter<"DeviceBrand"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"DeviceBrand"> | Date | string
+  }
+
   export type DeviceWhereInput = {
     AND?: DeviceWhereInput | DeviceWhereInput[]
     OR?: DeviceWhereInput[]
     NOT?: DeviceWhereInput | DeviceWhereInput[]
     id?: StringFilter<"Device"> | string
-    brand?: StringFilter<"Device"> | string
+    brandId?: StringFilter<"Device"> | string
     modelName?: StringFilter<"Device"> | string
+    brand?: XOR<DeviceBrandScalarRelationFilter, DeviceBrandWhereInput>
     listings?: ListingListRelationFilter
   }
 
   export type DeviceOrderByWithRelationInput = {
     id?: SortOrder
-    brand?: SortOrder
+    brandId?: SortOrder
     modelName?: SortOrder
+    brand?: DeviceBrandOrderByWithRelationInput
     listings?: ListingOrderByRelationAggregateInput
   }
 
   export type DeviceWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    brandId_modelName?: DeviceBrandIdModelNameCompoundUniqueInput
     AND?: DeviceWhereInput | DeviceWhereInput[]
     OR?: DeviceWhereInput[]
     NOT?: DeviceWhereInput | DeviceWhereInput[]
-    brand?: StringFilter<"Device"> | string
+    brandId?: StringFilter<"Device"> | string
     modelName?: StringFilter<"Device"> | string
+    brand?: XOR<DeviceBrandScalarRelationFilter, DeviceBrandWhereInput>
     listings?: ListingListRelationFilter
-  }, "id">
+  }, "id" | "brandId_modelName">
 
   export type DeviceOrderByWithAggregationInput = {
     id?: SortOrder
-    brand?: SortOrder
+    brandId?: SortOrder
     modelName?: SortOrder
     _count?: DeviceCountOrderByAggregateInput
     _max?: DeviceMaxOrderByAggregateInput
@@ -14651,7 +15893,7 @@ export namespace Prisma {
     OR?: DeviceScalarWhereWithAggregatesInput[]
     NOT?: DeviceScalarWhereWithAggregatesInput | DeviceScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Device"> | string
-    brand?: StringWithAggregatesFilter<"Device"> | string
+    brandId?: StringWithAggregatesFilter<"Device"> | string
     modelName?: StringWithAggregatesFilter<"Device"> | string
   }
 
@@ -15295,49 +16537,94 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type DeviceBrandCreateInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    devices?: DeviceCreateNestedManyWithoutBrandInput
+  }
+
+  export type DeviceBrandUncheckedCreateInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    devices?: DeviceUncheckedCreateNestedManyWithoutBrandInput
+  }
+
+  export type DeviceBrandUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devices?: DeviceUpdateManyWithoutBrandNestedInput
+  }
+
+  export type DeviceBrandUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devices?: DeviceUncheckedUpdateManyWithoutBrandNestedInput
+  }
+
+  export type DeviceBrandCreateManyInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+  }
+
+  export type DeviceBrandUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DeviceBrandUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type DeviceCreateInput = {
     id?: string
-    brand: string
     modelName: string
+    brand: DeviceBrandCreateNestedOneWithoutDevicesInput
     listings?: ListingCreateNestedManyWithoutDeviceInput
   }
 
   export type DeviceUncheckedCreateInput = {
     id?: string
-    brand: string
+    brandId: string
     modelName: string
     listings?: ListingUncheckedCreateNestedManyWithoutDeviceInput
   }
 
   export type DeviceUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
     modelName?: StringFieldUpdateOperationsInput | string
+    brand?: DeviceBrandUpdateOneRequiredWithoutDevicesNestedInput
     listings?: ListingUpdateManyWithoutDeviceNestedInput
   }
 
   export type DeviceUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
+    brandId?: StringFieldUpdateOperationsInput | string
     modelName?: StringFieldUpdateOperationsInput | string
     listings?: ListingUncheckedUpdateManyWithoutDeviceNestedInput
   }
 
   export type DeviceCreateManyInput = {
     id?: string
-    brand: string
+    brandId: string
     modelName: string
   }
 
   export type DeviceUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
     modelName?: StringFieldUpdateOperationsInput | string
   }
 
   export type DeviceUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
+    brandId?: StringFieldUpdateOperationsInput | string
     modelName?: StringFieldUpdateOperationsInput | string
   }
 
@@ -16056,21 +17343,59 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type DeviceListRelationFilter = {
+    every?: DeviceWhereInput
+    some?: DeviceWhereInput
+    none?: DeviceWhereInput
+  }
+
+  export type DeviceOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DeviceBrandCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DeviceBrandMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DeviceBrandMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DeviceBrandScalarRelationFilter = {
+    is?: DeviceBrandWhereInput
+    isNot?: DeviceBrandWhereInput
+  }
+
+  export type DeviceBrandIdModelNameCompoundUniqueInput = {
+    brandId: string
+    modelName: string
+  }
+
   export type DeviceCountOrderByAggregateInput = {
     id?: SortOrder
-    brand?: SortOrder
+    brandId?: SortOrder
     modelName?: SortOrder
   }
 
   export type DeviceMaxOrderByAggregateInput = {
     id?: SortOrder
-    brand?: SortOrder
+    brandId?: SortOrder
     modelName?: SortOrder
   }
 
   export type DeviceMinOrderByAggregateInput = {
     id?: SortOrder
-    brand?: SortOrder
+    brandId?: SortOrder
     modelName?: SortOrder
   }
 
@@ -16683,6 +18008,54 @@ export namespace Prisma {
     deleteMany?: CommentVoteScalarWhereInput | CommentVoteScalarWhereInput[]
   }
 
+  export type DeviceCreateNestedManyWithoutBrandInput = {
+    create?: XOR<DeviceCreateWithoutBrandInput, DeviceUncheckedCreateWithoutBrandInput> | DeviceCreateWithoutBrandInput[] | DeviceUncheckedCreateWithoutBrandInput[]
+    connectOrCreate?: DeviceCreateOrConnectWithoutBrandInput | DeviceCreateOrConnectWithoutBrandInput[]
+    createMany?: DeviceCreateManyBrandInputEnvelope
+    connect?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+  }
+
+  export type DeviceUncheckedCreateNestedManyWithoutBrandInput = {
+    create?: XOR<DeviceCreateWithoutBrandInput, DeviceUncheckedCreateWithoutBrandInput> | DeviceCreateWithoutBrandInput[] | DeviceUncheckedCreateWithoutBrandInput[]
+    connectOrCreate?: DeviceCreateOrConnectWithoutBrandInput | DeviceCreateOrConnectWithoutBrandInput[]
+    createMany?: DeviceCreateManyBrandInputEnvelope
+    connect?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+  }
+
+  export type DeviceUpdateManyWithoutBrandNestedInput = {
+    create?: XOR<DeviceCreateWithoutBrandInput, DeviceUncheckedCreateWithoutBrandInput> | DeviceCreateWithoutBrandInput[] | DeviceUncheckedCreateWithoutBrandInput[]
+    connectOrCreate?: DeviceCreateOrConnectWithoutBrandInput | DeviceCreateOrConnectWithoutBrandInput[]
+    upsert?: DeviceUpsertWithWhereUniqueWithoutBrandInput | DeviceUpsertWithWhereUniqueWithoutBrandInput[]
+    createMany?: DeviceCreateManyBrandInputEnvelope
+    set?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    disconnect?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    delete?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    connect?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    update?: DeviceUpdateWithWhereUniqueWithoutBrandInput | DeviceUpdateWithWhereUniqueWithoutBrandInput[]
+    updateMany?: DeviceUpdateManyWithWhereWithoutBrandInput | DeviceUpdateManyWithWhereWithoutBrandInput[]
+    deleteMany?: DeviceScalarWhereInput | DeviceScalarWhereInput[]
+  }
+
+  export type DeviceUncheckedUpdateManyWithoutBrandNestedInput = {
+    create?: XOR<DeviceCreateWithoutBrandInput, DeviceUncheckedCreateWithoutBrandInput> | DeviceCreateWithoutBrandInput[] | DeviceUncheckedCreateWithoutBrandInput[]
+    connectOrCreate?: DeviceCreateOrConnectWithoutBrandInput | DeviceCreateOrConnectWithoutBrandInput[]
+    upsert?: DeviceUpsertWithWhereUniqueWithoutBrandInput | DeviceUpsertWithWhereUniqueWithoutBrandInput[]
+    createMany?: DeviceCreateManyBrandInputEnvelope
+    set?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    disconnect?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    delete?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    connect?: DeviceWhereUniqueInput | DeviceWhereUniqueInput[]
+    update?: DeviceUpdateWithWhereUniqueWithoutBrandInput | DeviceUpdateWithWhereUniqueWithoutBrandInput[]
+    updateMany?: DeviceUpdateManyWithWhereWithoutBrandInput | DeviceUpdateManyWithWhereWithoutBrandInput[]
+    deleteMany?: DeviceScalarWhereInput | DeviceScalarWhereInput[]
+  }
+
+  export type DeviceBrandCreateNestedOneWithoutDevicesInput = {
+    create?: XOR<DeviceBrandCreateWithoutDevicesInput, DeviceBrandUncheckedCreateWithoutDevicesInput>
+    connectOrCreate?: DeviceBrandCreateOrConnectWithoutDevicesInput
+    connect?: DeviceBrandWhereUniqueInput
+  }
+
   export type ListingCreateNestedManyWithoutDeviceInput = {
     create?: XOR<ListingCreateWithoutDeviceInput, ListingUncheckedCreateWithoutDeviceInput> | ListingCreateWithoutDeviceInput[] | ListingUncheckedCreateWithoutDeviceInput[]
     connectOrCreate?: ListingCreateOrConnectWithoutDeviceInput | ListingCreateOrConnectWithoutDeviceInput[]
@@ -16695,6 +18068,14 @@ export namespace Prisma {
     connectOrCreate?: ListingCreateOrConnectWithoutDeviceInput | ListingCreateOrConnectWithoutDeviceInput[]
     createMany?: ListingCreateManyDeviceInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+  }
+
+  export type DeviceBrandUpdateOneRequiredWithoutDevicesNestedInput = {
+    create?: XOR<DeviceBrandCreateWithoutDevicesInput, DeviceBrandUncheckedCreateWithoutDevicesInput>
+    connectOrCreate?: DeviceBrandCreateOrConnectWithoutDevicesInput
+    upsert?: DeviceBrandUpsertWithoutDevicesInput
+    connect?: DeviceBrandWhereUniqueInput
+    update?: XOR<XOR<DeviceBrandUpdateToOneWithWhereWithoutDevicesInput, DeviceBrandUpdateWithoutDevicesInput>, DeviceBrandUncheckedUpdateWithoutDevicesInput>
   }
 
   export type ListingUpdateManyWithoutDeviceNestedInput = {
@@ -17814,6 +19195,70 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"CommentVote"> | Date | string
   }
 
+  export type DeviceCreateWithoutBrandInput = {
+    id?: string
+    modelName: string
+    listings?: ListingCreateNestedManyWithoutDeviceInput
+  }
+
+  export type DeviceUncheckedCreateWithoutBrandInput = {
+    id?: string
+    modelName: string
+    listings?: ListingUncheckedCreateNestedManyWithoutDeviceInput
+  }
+
+  export type DeviceCreateOrConnectWithoutBrandInput = {
+    where: DeviceWhereUniqueInput
+    create: XOR<DeviceCreateWithoutBrandInput, DeviceUncheckedCreateWithoutBrandInput>
+  }
+
+  export type DeviceCreateManyBrandInputEnvelope = {
+    data: DeviceCreateManyBrandInput | DeviceCreateManyBrandInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DeviceUpsertWithWhereUniqueWithoutBrandInput = {
+    where: DeviceWhereUniqueInput
+    update: XOR<DeviceUpdateWithoutBrandInput, DeviceUncheckedUpdateWithoutBrandInput>
+    create: XOR<DeviceCreateWithoutBrandInput, DeviceUncheckedCreateWithoutBrandInput>
+  }
+
+  export type DeviceUpdateWithWhereUniqueWithoutBrandInput = {
+    where: DeviceWhereUniqueInput
+    data: XOR<DeviceUpdateWithoutBrandInput, DeviceUncheckedUpdateWithoutBrandInput>
+  }
+
+  export type DeviceUpdateManyWithWhereWithoutBrandInput = {
+    where: DeviceScalarWhereInput
+    data: XOR<DeviceUpdateManyMutationInput, DeviceUncheckedUpdateManyWithoutBrandInput>
+  }
+
+  export type DeviceScalarWhereInput = {
+    AND?: DeviceScalarWhereInput | DeviceScalarWhereInput[]
+    OR?: DeviceScalarWhereInput[]
+    NOT?: DeviceScalarWhereInput | DeviceScalarWhereInput[]
+    id?: StringFilter<"Device"> | string
+    brandId?: StringFilter<"Device"> | string
+    modelName?: StringFilter<"Device"> | string
+  }
+
+  export type DeviceBrandCreateWithoutDevicesInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+  }
+
+  export type DeviceBrandUncheckedCreateWithoutDevicesInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+  }
+
+  export type DeviceBrandCreateOrConnectWithoutDevicesInput = {
+    where: DeviceBrandWhereUniqueInput
+    create: XOR<DeviceBrandCreateWithoutDevicesInput, DeviceBrandUncheckedCreateWithoutDevicesInput>
+  }
+
   export type ListingCreateWithoutDeviceInput = {
     id?: string
     notes?: string | null
@@ -17848,6 +19293,29 @@ export namespace Prisma {
   export type ListingCreateManyDeviceInputEnvelope = {
     data: ListingCreateManyDeviceInput | ListingCreateManyDeviceInput[]
     skipDuplicates?: boolean
+  }
+
+  export type DeviceBrandUpsertWithoutDevicesInput = {
+    update: XOR<DeviceBrandUpdateWithoutDevicesInput, DeviceBrandUncheckedUpdateWithoutDevicesInput>
+    create: XOR<DeviceBrandCreateWithoutDevicesInput, DeviceBrandUncheckedCreateWithoutDevicesInput>
+    where?: DeviceBrandWhereInput
+  }
+
+  export type DeviceBrandUpdateToOneWithWhereWithoutDevicesInput = {
+    where?: DeviceBrandWhereInput
+    data: XOR<DeviceBrandUpdateWithoutDevicesInput, DeviceBrandUncheckedUpdateWithoutDevicesInput>
+  }
+
+  export type DeviceBrandUpdateWithoutDevicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DeviceBrandUncheckedUpdateWithoutDevicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ListingUpsertWithWhereUniqueWithoutDeviceInput = {
@@ -18231,13 +19699,13 @@ export namespace Prisma {
 
   export type DeviceCreateWithoutListingsInput = {
     id?: string
-    brand: string
     modelName: string
+    brand: DeviceBrandCreateNestedOneWithoutDevicesInput
   }
 
   export type DeviceUncheckedCreateWithoutListingsInput = {
     id?: string
-    brand: string
+    brandId: string
     modelName: string
   }
 
@@ -18432,13 +19900,13 @@ export namespace Prisma {
 
   export type DeviceUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
     modelName?: StringFieldUpdateOperationsInput | string
+    brand?: DeviceBrandUpdateOneRequiredWithoutDevicesNestedInput
   }
 
   export type DeviceUncheckedUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    brand?: StringFieldUpdateOperationsInput | string
+    brandId?: StringFieldUpdateOperationsInput | string
     modelName?: StringFieldUpdateOperationsInput | string
   }
 
@@ -19388,6 +20856,28 @@ export namespace Prisma {
     value?: BoolFieldUpdateOperationsInput | boolean
     commentId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DeviceCreateManyBrandInput = {
+    id?: string
+    modelName: string
+  }
+
+  export type DeviceUpdateWithoutBrandInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    modelName?: StringFieldUpdateOperationsInput | string
+    listings?: ListingUpdateManyWithoutDeviceNestedInput
+  }
+
+  export type DeviceUncheckedUpdateWithoutBrandInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    modelName?: StringFieldUpdateOperationsInput | string
+    listings?: ListingUncheckedUpdateManyWithoutDeviceNestedInput
+  }
+
+  export type DeviceUncheckedUpdateManyWithoutBrandInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    modelName?: StringFieldUpdateOperationsInput | string
   }
 
   export type ListingCreateManyDeviceInput = {

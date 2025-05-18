@@ -31,11 +31,21 @@ model User {
   commentVotes   CommentVote[]
 }
 
+model DeviceBrand {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  devices   Device[]
+}
+
 model Device {
-  id        String    @id @default(uuid())
-  brand     String
+  id        String      @id @default(uuid())
+  brandId   String
   modelName String
+  brand     DeviceBrand @relation(fields: [brandId], references: [id])
   listings  Listing[]
+
+  @@unique([brandId, modelName])
 }
 
 model System {
@@ -101,26 +111,26 @@ model Vote {
 }
 
 model Comment {
-  id         String       @id @default(uuid())
-  content    String
-  userId     String
-  listingId  String
-  parentId   String?
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  deletedAt  DateTime?
-  isEdited   Boolean      @default(false)
-  parent     Comment?     @relation("Thread", fields: [parentId], references: [id])
-  replies    Comment[]    @relation("Thread")
-  listing    Listing      @relation(fields: [listingId], references: [id])
-  user       User         @relation(fields: [userId], references: [id])
-  votes      CommentVote[]
-  score      Int          @default(0)
+  id        String        @id @default(uuid())
+  content   String
+  userId    String
+  listingId String
+  parentId  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+  isEdited  Boolean       @default(false)
+  parent    Comment?      @relation("Thread", fields: [parentId], references: [id])
+  replies   Comment[]     @relation("Thread")
+  listing   Listing       @relation(fields: [listingId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  votes     CommentVote[]
+  score     Int           @default(0)
 }
 
 model CommentVote {
   id        String   @id @default(uuid())
-  value     Boolean  // true = upvote, false = downvote
+  value     Boolean // true = upvote, false = downvote
   userId    String
   commentId String
   createdAt DateTime @default(now())

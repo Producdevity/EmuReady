@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
-export default function AdminSystemsPage() {
+function AdminSystemsPage() {
   const { data: systems, refetch } = api.systems.list.useQuery()
   const createSystem = api.systems.create.useMutation()
   const updateSystem = api.systems.update.useMutation()
@@ -129,3 +129,5 @@ export default function AdminSystemsPage() {
     </div>
   )
 }
+
+export default AdminSystemsPage
