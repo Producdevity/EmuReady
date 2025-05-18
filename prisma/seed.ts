@@ -10,18 +10,21 @@ import listingsSeeder from './seeders/listingsSeeder'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🗑️ Clearing database...')
-  // Clear all data in the correct order (children before parents)
-  await prisma.listingApproval.deleteMany()
-  await prisma.vote.deleteMany()
-  await prisma.comment.deleteMany()
-  await prisma.listing.deleteMany()
-  await prisma.performanceScale.deleteMany()
-  await prisma.device.deleteMany()
-  await prisma.emulator.deleteMany()
-  await prisma.game.deleteMany()
-  await prisma.system.deleteMany()
-  console.log('✅ Database cleared!')
+  if (process.env.CLEAR_DB === 'true') {
+    console.log('🗑️ Clearing database...')
+
+    // Clear all data in the correct order (children before parents)
+    await prisma.listingApproval.deleteMany()
+    await prisma.vote.deleteMany()
+    await prisma.comment.deleteMany()
+    await prisma.listing.deleteMany()
+    await prisma.performanceScale.deleteMany()
+    await prisma.device.deleteMany()
+    await prisma.emulator.deleteMany()
+    await prisma.game.deleteMany()
+    await prisma.system.deleteMany()
+    console.log('✅ Database cleared!')
+  }
 
   console.log('🌱 Starting database seed...')
 
