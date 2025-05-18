@@ -7,7 +7,7 @@ import Link from 'next/link'
 import LoginLoader from './components/LoginLoader'
 import sanitizeInput from './utils/sanitizeInput'
 
-function LoginForm() {
+function LoginPage() {
   const router = useRouter()
   const urlParams = useSearchParams()
   const registered = urlParams.get('registered')
@@ -158,10 +158,10 @@ function LoginForm() {
   )
 }
 
-export default function LoginPage() {
+export default function Page() {
   return (
     <Suspense fallback={<LoginLoader />}>
-      <LoginForm />
+      <LoginPage />
     </Suspense>
   )
 }
