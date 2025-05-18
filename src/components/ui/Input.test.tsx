@@ -1,4 +1,4 @@
-import React from 'react'
+import { createRef } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import Input from './Input'
@@ -68,7 +68,7 @@ describe('Input', () => {
   })
 
   it('forwards ref to the input element', () => {
-    const ref = React.createRef<HTMLInputElement>()
+    const ref = createRef<HTMLInputElement>()
     render(<Input ref={ref} placeholder="Test ref" />)
 
     expect(ref.current).not.toBeNull()
