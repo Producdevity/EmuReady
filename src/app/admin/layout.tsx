@@ -1,11 +1,12 @@
 'use client'
 
-import { type PropsWithChildren } from 'react'
+import { useEffect, type PropsWithChildren } from 'react'
 import Link from 'next/link'
-import { redirect, usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Role } from '@orm'
 import hasPermission from '@/utils/hasPermission'
+import { LoadingSpinner } from '@/components/ui'
 
 const adminNav = [
   { href: '/admin/systems', label: 'Systems' },
@@ -18,13 +19,20 @@ const adminNav = [
 
 const superAdminNav = [{ href: '/admin/users', label: 'Users Management' }]
 
-export default function AdminLayout(props: PropsWithChildren) {
+function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
   const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
-  if (!isAdmin) return redirect('/login')
+  useEffect(() => {
+    if (status === 'loading' || (status === 'authenticated' && isAdmin)) return
+
+    router.replace('/login')
+  }, [status, isAdmin, router])
+
+  if (status === 'loading') return <LoadingSpinner size="lg" />
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
@@ -82,3 +90,5 @@ export default function AdminLayout(props: PropsWithChildren) {
     </div>
   )
 }
+
+export default AdminLayout
