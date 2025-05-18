@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { canEditComment, canDeleteComment } from '@/utils/hasPermission'
 
+// TODO: use type from api
 interface CommentType {
   id: string
   content: string
