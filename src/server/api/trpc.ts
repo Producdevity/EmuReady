@@ -1,21 +1,12 @@
-import { initTRPC, TRPCError } from '@trpc/server'
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { getServerSession } from 'next-auth'
-import { prisma } from '@/server/db'
+import { getServerSession, type Session } from 'next-auth'
+import { initTRPC, TRPCError } from '@trpc/server'
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import hasPermission from '@/utils/hasPermission'
+import { prisma } from '@/server/db'
 import { authOptions } from '@/server/auth'
-import type { Session } from 'next-auth'
-
-/**
- * 1. CONTEXT
- *
- * This section defines the "contexts" that are available in the backend API.
- *
- * These allow you to access things like the database, the session, etc., when
- * processing a request.
- */
+import { Role } from '@orm'
 
 type CreateContextOptions = {
   session: Session | null
@@ -37,42 +28,24 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   })
 }
 
-/**
- * This is the actual context you'll use in your router. It will be used to
- * process every request that goes through your tRPC endpoint.
- */
 export type TRPCContext = ReturnType<typeof createInnerTRPCContext>
 
-/**
- * 2. INITIALIZATION
- *
- * This is where the trpc api is initialized, connecting the context and
- * transformer
- */
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
+  errorFormatter(ctx) {
     return {
-      ...shape,
+      ...ctx.shape,
       data: {
-        ...shape.data,
+        ...ctx.shape.data,
         zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
+          ctx.error.cause instanceof ZodError
+            ? ctx.error.cause.flatten()
+            : null,
       },
     }
   },
 })
 
-/**
- * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
- *
- * These are the pieces you use to build your tRPC API. You should import these
- * a lot in the /api/routers folder
- */
-
-/**
- * This is how you create new routers and subrouters in your tRPC API
- */
 export const createTRPCRouter = t.router
 
 /**
@@ -102,7 +75,7 @@ export const authorProcedure = t.procedure.use(({ ctx, next }) => {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
 
-  if (!hasPermission(ctx.session.user.role, 'AUTHOR')) {
+  if (!hasPermission(ctx.session.user.role, Role.AUTHOR)) {
     throw new TRPCError({ code: 'FORBIDDEN' })
   }
 
@@ -121,7 +94,7 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
 
-  if (!hasPermission(ctx.session.user.role, 'ADMIN')) {
+  if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
     throw new TRPCError({ code: 'FORBIDDEN' })
   }
 
