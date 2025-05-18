@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, type SyntheticEvent } from 'react'
+import { useState, type SyntheticEvent, type ChangeEvent } from 'react'
 import Link from 'next/link'
 import { Pagination, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
-import type { ChangeEvent } from 'react'
 import GameFilters from './components/GameFilters'
 import GameCard from './components/GameCard'
 
