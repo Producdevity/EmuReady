@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { Prisma } from '@orm'
-
 import {
   createTRPCRouter,
   publicProcedure,
@@ -50,7 +49,6 @@ export const listingsRouter = createTRPCRouter({
       } = input
       const skip = (page - 1) * limit
 
-      // Build filters
       const gameFilter: Prisma.GameWhereInput = {}
       if (systemId) {
         gameFilter.systemId = systemId
@@ -94,10 +92,7 @@ export const listingsRouter = createTRPCRouter({
         filters.game = { is: gameFilter }
       }
 
-      // Count total matching records
-      const total = await ctx.prisma.listing.count({
-        where: filters,
-      })
+      const total = await ctx.prisma.listing.count({ where: filters })
 
       // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
@@ -495,7 +490,6 @@ export const listingsRouter = createTRPCRouter({
         }
       }
 
-      // Verify user exists in database
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true },
@@ -508,7 +502,6 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      // Create comment
       return ctx.prisma.comment.create({
         data: {
           content,
@@ -527,16 +520,12 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // Delete a listing (admin only)
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { id } = input
 
-      // Check if listing exists
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id },
-      })
+      const listing = await ctx.prisma.listing.findUnique({ where: { id } })
 
       if (!listing) {
         throw new TRPCError({
@@ -545,10 +534,7 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      // Delete listing
-      await ctx.prisma.listing.delete({
-        where: { id },
-      })
+      await ctx.prisma.listing.delete({ where: { id } })
 
       return { success: true }
     }),
@@ -872,7 +858,7 @@ export const listingsRouter = createTRPCRouter({
       // Start a transaction to handle both the vote and score update
       return ctx.prisma.$transaction(async (tx) => {
         let voteResult
-        let scoreChange = 0
+        let scoreChange: number
 
         if (existingVote) {
           // If vote is the same, remove the vote (toggle)
@@ -890,7 +876,6 @@ export const listingsRouter = createTRPCRouter({
             scoreChange = existingVote.value ? -1 : 1
             voteResult = { message: 'Vote removed' }
           } else {
-            // Update the vote value
             voteResult = await tx.commentVote.update({
               where: {
                 userId_commentId: {
@@ -898,16 +883,13 @@ export const listingsRouter = createTRPCRouter({
                   commentId,
                 },
               },
-              data: {
-                value,
-              },
+              data: { value },
             })
 
             // Update score: changing from downvote to upvote = +2, from upvote to downvote = -2
             scoreChange = value ? 2 : -2
           }
         } else {
-          // Create new vote
           voteResult = await tx.commentVote.create({
             data: {
               userId,
