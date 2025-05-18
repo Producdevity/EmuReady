@@ -15,6 +15,7 @@
     "analyze": "ANALYZE=true next build",
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "test": "vitest",
+    "test:e2e": "playwright test",
     "prepare-deploy": "npm run lint && npm run typecheck && npm run test && npm run build",
     "prepare": "husky"
   },
