@@ -76,8 +76,8 @@ export const gamesRouter = createTRPCRouter({
       const effectiveLimit =
         !search && offset === 0 ? Math.min(limit, 50) : limit
 
-      // Only count total results when needed for pagination or when explicitly searching
-      const shouldCount = offset > 0 || !!search
+      // Always run count query for consistent pagination
+      const total = await ctx.prisma.game.count({ where })
 
       // Get games with optimized query - only include essential fields for performance
       const gamesQuery = ctx.prisma.game.findMany({
@@ -106,19 +106,13 @@ export const gamesRouter = createTRPCRouter({
         take: effectiveLimit,
       })
 
-      // Conditionally run count query only when needed
-      let total = 0
-      if (shouldCount) {
-        total = await ctx.prisma.game.count({ where })
-      }
-
       const games = await gamesQuery
 
       return {
         games,
         pagination: {
-          total: shouldCount ? total : null,
-          pages: shouldCount ? Math.ceil(total / limit) : null,
+          total,
+          pages: Math.ceil(total / limit),
           offset,
           limit: effectiveLimit,
         },
