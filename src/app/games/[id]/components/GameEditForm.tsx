@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
@@ -39,8 +39,8 @@ export default function GameEditForm({ gameData }: Props) {
     },
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     setIsLoading(true)
     setError('')
 
@@ -67,14 +67,6 @@ export default function GameEditForm({ gameData }: Props) {
       systemId: gameData.systemId,
       imageUrl: sanitizedImageUrl || undefined,
     })
-  }
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value)
-  }
-
-  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setImageUrl(e.target.value)
   }
 
   return (
@@ -107,7 +99,7 @@ export default function GameEditForm({ gameData }: Props) {
                 <Input
                   id="title"
                   value={title}
-                  onChange={handleTitleChange}
+                  onChange={(ev) => setTitle(ev.target.value)}
                   placeholder="Game title"
                   required
                   maxLength={100}
@@ -121,7 +113,7 @@ export default function GameEditForm({ gameData }: Props) {
                 <Input
                   id="imageUrl"
                   value={imageUrl}
-                  onChange={handleImageUrlChange}
+                  onChange={(ev) => setImageUrl(ev.target.value)}
                   placeholder="https://example.com/image.jpg"
                   maxLength={500}
                 />
