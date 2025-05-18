@@ -141,15 +141,58 @@ export default async function Home() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span>{listing.game.system?.name ?? 'Unknown System'}</span>
-                    <span>{listing.emulator?.name ?? 'Unknown Emulator'}</span>
+                    <span>
+                      {listing.game.system?.id ? (
+                        <Link
+                          href={`/listings?systemId=${listing.game.system.id}`}
+                          className="text-blue-600 dark:text-indigo-400 hover:underline"
+                        >
+                          {listing.game.system.name}
+                        </Link>
+                      ) : (
+                        'Unknown System'
+                      )}
+                    </span>
+                    <span>
+                      {listing.emulator?.id ? (
+                        <Link
+                          href={`/listings?emulatorId=${listing.emulator.id}`}
+                          className="text-blue-600 dark:text-indigo-400 hover:underline"
+                        >
+                          {listing.emulator.name}
+                        </Link>
+                      ) : (
+                        'Unknown Emulator'
+                      )}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                     <span>
-                      {listing.device
-                        ? `${listing.device.brand.name} ${listing.device.modelName}`
-                        : 'Unknown Device'}
+                      {listing.device?.id ? (
+                        <Link
+                          href={`/listings?deviceId=${listing.device.id}`}
+                          className="text-blue-600 dark:text-indigo-400 hover:underline"
+                        >
+                          {listing.device.brand.name} {listing.device.modelName}
+                        </Link>
+                      ) : (
+                        'Unknown Device'
+                      )}
                     </span>
+                    <span>
+                      {listing.performance?.id ? (
+                        <Link
+                          href={`/listings?performanceId=${listing.performance.id}`}
+                          className="text-blue-600 dark:text-indigo-400 hover:underline"
+                        >
+                          {listing.performance.label}
+                        </Link>
+                      ) : (
+                        'N/A'
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                     <span>
                       by{' '}
                       <Link

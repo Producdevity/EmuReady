@@ -21,17 +21,31 @@ import {
   type SortDirection,
   type SortField,
 } from './types'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 function ListingsPage() {
-  const [systemId, setSystemId] = useState('')
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [deviceId, setDeviceId] = useState('')
-  const [emulatorId, setEmulatorId] = useState('')
-  const [performanceId, setPerformanceId] = useState('')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Initialize state from URL query params
+  const [systemId, setSystemId] = useState(searchParams.get('systemId') ?? '')
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const pageParam = Number(searchParams.get('page'))
+  const [page, setPage] = useState(pageParam > 0 ? pageParam : 1)
+  const [deviceId, setDeviceId] = useState(searchParams.get('deviceId') ?? '')
+  const [emulatorId, setEmulatorId] = useState(
+    searchParams.get('emulatorId') ?? '',
+  )
+  const [performanceId, setPerformanceId] = useState(
+    searchParams.get('performanceId') ?? '',
+  )
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [sortField, setSortField] = useState<SortField | null>(null)
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  const [sortField, setSortField] = useState<SortField | null>(
+    (searchParams.get('sortField') as SortField) ?? null,
+  )
+  const [sortDirection, setSortDirection] = useState<SortDirection>(
+    (searchParams.get('sortDirection') as SortDirection) ?? null,
+  )
 
   const { data: session } = useSession()
   const userRole = session?.user?.role
@@ -67,47 +81,69 @@ function ListingsPage() {
     },
   })
 
+  // Helper to update URL and state
+  const updateQuery = (params: Record<string, string | number | null>) => {
+    const newParams = new URLSearchParams(searchParams.toString())
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === null || value === '' || value === undefined) {
+        newParams.delete(key)
+      } else {
+        newParams.set(key, String(value))
+      }
+    })
+    router.replace(`?${newParams.toString()}`)
+  }
+
+  // Update state and URL on filter change
   const handleFilterChange = (ev: SelectInputEvent) => {
     setSystemId(ev.target.value)
     setPage(1)
+    updateQuery({ systemId: ev.target.value, page: 1 })
   }
-
   const handleDeviceChange = (ev: SelectInputEvent) => {
     setDeviceId(ev.target.value)
     setPage(1)
+    updateQuery({ deviceId: ev.target.value, page: 1 })
   }
-
   const handleEmulatorChange = (ev: SelectInputEvent) => {
     setEmulatorId(ev.target.value)
     setPage(1)
+    updateQuery({ emulatorId: ev.target.value, page: 1 })
   }
-
   const handlePerformanceChange = (ev: SelectInputEvent) => {
     setPerformanceId(ev.target.value)
     setPage(1)
+    updateQuery({ performanceId: ev.target.value, page: 1 })
   }
-
   const handleSearchChange = (ev: SelectInputEvent) => {
     setSearch(ev.target.value)
     setPage(1)
+    updateQuery({ search: ev.target.value, page: 1 })
   }
-
   const handleSort = (field: string) => {
+    let newSortField: SortField | null = sortField
+    let newSortDirection: SortDirection
     if (sortField === field) {
-      // Cycle through: asc -> desc -> null
       if (sortDirection === 'asc') {
-        setSortDirection('desc')
+        newSortDirection = 'desc'
       } else if (sortDirection === 'desc') {
-        setSortField(null)
-        setSortDirection(null)
+        newSortField = null
+        newSortDirection = null
       } else {
-        setSortDirection('asc')
+        newSortDirection = 'asc'
       }
     } else {
-      setSortField(field as SortField)
-      setSortDirection('asc')
+      newSortField = field as SortField
+      newSortDirection = 'asc'
     }
+    setSortField(newSortField)
+    setSortDirection(newSortDirection)
     setPage(1)
+    updateQuery({
+      sortField: newSortField,
+      sortDirection: newSortDirection,
+      page: 1,
+    })
   }
 
   const confirmDelete = (id: string) => {
@@ -232,7 +268,7 @@ function ListingsPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.game.system?.name || 'Unknown'}
+                      {listing.game.system?.name ?? 'Unknown'}
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
                       {listing.device
@@ -240,7 +276,7 @@ function ListingsPage() {
                         : 'N/A'}
                     </td>
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.emulator?.name || 'N/A'}
+                      {listing.emulator?.name ?? 'N/A'}
                     </td>
                     <td className="px-4 py-2">
                       <Badge
@@ -254,7 +290,7 @@ function ListingsPage() {
                                 : 'danger'
                         }
                       >
-                        {listing.performance?.label || 'N/A'}
+                        {listing.performance?.label ?? 'N/A'}
                       </Badge>
                     </td>
                     <td className="px-4 py-2">
@@ -312,7 +348,10 @@ function ListingsPage() {
           <Pagination
             currentPage={page}
             totalPages={pagination.pages}
-            onPageChange={setPage}
+            onPageChange={(newPage) => {
+              setPage(newPage)
+              updateQuery({ page: newPage })
+            }}
           />
         )}
       </section>
