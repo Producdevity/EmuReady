@@ -71,7 +71,6 @@ function AdminDevicesPage() {
     }
   }
 
-  // TODO: fix this
   const areBrandsAvailable = brands && brands.length > 0
   const isLoading = devicesLoading || brandsLoading
 
