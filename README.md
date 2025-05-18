@@ -4,9 +4,19 @@ A community-driven platform for tracking emulation compatibility across differen
 
 Visit our website: [https://emuready.com](https://emuready.com)
 
+--- 
+
+**Compatibility Listings Page Screenshot**
+
 <img width="1666" alt="screenshot compatibility listings page EmuReady.com" src="https://github.com/user-attachments/assets/2b1b3d17-3070-4f1c-bc3f-5fbfb41f9608" />
 
+---
+
+**Games Page Screenshot**
+
 <img width="1663" alt="screenshot games page EmuReady.com" src="https://github.com/user-attachments/assets/5dfe8c9b-d977-464f-b853-8d23066c3410" />
+
+---
 
 ## Overview
 
