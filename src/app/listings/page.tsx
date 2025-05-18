@@ -2,7 +2,7 @@
 
 import hasPermission from '@/utils/hasPermission'
 import { Role } from '@orm'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Badge,
@@ -186,9 +186,10 @@ function ListingsPage() {
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Game Listings
           </h1>
+          {/*TODO: create "Add New Item" component*/}
           <Link
             href="/listings/new"
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+            className="px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
           >
             Add New Listing
           </Link>
@@ -360,4 +361,10 @@ function ListingsPage() {
   )
 }
 
-export default ListingsPage
+export default function Page() {
+  return (
+    <Suspense fallback={<LoadingSpinner size="lg" />}>
+      <ListingsPage />
+    </Suspense>
+  )
+}
