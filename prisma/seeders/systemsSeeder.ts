@@ -20,6 +20,7 @@ const systems: SystemData[] = [
   { name: 'Sony PlayStation' },
   { name: 'Sony PlayStation 2' },
   { name: 'Sony PlayStation 3' },
+  { name: 'Sony PlayStation 4' },
   { name: 'Sony PlayStation Portable' },
   { name: 'Sony PlayStation Vita' },
   { name: 'Microsoft Windows' },
