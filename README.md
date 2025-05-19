@@ -150,7 +150,7 @@ npm run dev
 - `npx prisma db seed` - Seed the database
 - `npx prisma studio` - Open Prisma Studio
 - `npx prisma db pull` - Pull the database schema
-- `npx prisma db push` - Pull the database schema
+- `npx prisma db push` - Push the database schema
 
 See [Prisma Cli Reference](https://www.prisma.io/docs/orm/reference/prisma-cli-reference) for more details.
 
