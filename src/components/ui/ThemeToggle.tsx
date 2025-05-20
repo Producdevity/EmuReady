@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { useTheme } from 'next-themes'
 import {
   MoonIcon,
@@ -8,44 +8,67 @@ import {
   ComputerDesktopIcon,
 } from '@heroicons/react/24/outline'
 
-const toggleThemeMap = { light: 'dark', dark: 'light', system: 'dark' }
+type ThemeValue = 'system' | 'light' | 'dark'
 
-interface Props {
-  className?: string
+type ThemeOption = {
+  value: ThemeValue
+  icon: ComponentType<{ className?: string }>
+  label: string
+  colorClass: string
 }
 
-function ThemeToggle(props: Props) {
+const themes: ThemeOption[] = [
+  {
+    value: 'system',
+    icon: ComputerDesktopIcon,
+    label: 'System',
+    colorClass: 'text-gray-500 dark:text-gray-400',
+  },
+  {
+    value: 'light',
+    icon: SunIcon,
+    label: 'Light',
+    colorClass: 'text-yellow-500',
+  },
+  {
+    value: 'dark',
+    icon: MoonIcon,
+    label: 'Dark',
+    colorClass: 'text-blue-400',
+  },
+]
+
+const getNextTheme = (current: ThemeValue): ThemeOption => {
+  const index = themes.findIndex((t) => t.value === current)
+  return themes[(index + 1) % themes.length]
+}
+
+export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  // Wait for component to be mounted to avoid hydration mismatch
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
+  if (!mounted || !theme) return null
 
-  const toggleTheme = () => {
-    // TODO: handle "system" correctly
-    const newTheme = theme
-      ? toggleThemeMap[theme as keyof typeof toggleThemeMap]
-      : toggleThemeMap.system
-    setTheme(newTheme)
+  const current = themes.find(({ value }) => value === theme) ?? themes[0]
+  const Icon = current.icon
+
+  const handleToggle = () => {
+    const next = getNextTheme(current.value)
+    setTheme(next.value)
   }
 
   return (
     <button
-      onClick={toggleTheme}
-      className={`p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${props.className ?? ''}`}
-      aria-label={`Current theme: ${theme}. Click to toggle theme.`}
+      onClick={handleToggle}
+      className={`p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+      title={`Current theme: ${current.label}. Click to change.`}
+      aria-label={`Current theme: ${current.label}`}
     >
-      {theme === 'light' ? (
-        <SunIcon className="w-5 h-5 text-yellow-500" />
-      ) : theme === 'dark' ? (
-        <MoonIcon className="w-5 h-5 text-blue-400" />
-      ) : (
-        <ComputerDesktopIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-      )}
+      <Icon className={`w-5 h-5 ${current.colorClass}`} />
     </button>
   )
 }
@@ -58,7 +81,7 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
+  if (!mounted || !theme) return null
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
@@ -66,39 +89,25 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
         Theme:
       </span>
       <div className="flex border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
-        <button
-          onClick={() => setTheme('light')}
-          className={`p-1.5 ${
-            theme === 'light'
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-          }`}
-          aria-label="Use light theme"
-        >
-          <SunIcon className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setTheme('dark')}
-          className={`p-1.5 ${
-            theme === 'dark'
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-          }`}
-          aria-label="Use dark theme"
-        >
-          <MoonIcon className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setTheme('system')}
-          className={`p-1.5 ${
-            theme === 'system'
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-          }`}
-          aria-label="Use system theme"
-        >
-          <ComputerDesktopIcon className="w-4 h-4" />
-        </button>
+        {themes.map((option) => {
+          const Icon = option.icon
+          const isActive = theme === option.value
+          return (
+            <button
+              key={option.value}
+              onClick={() => setTheme(option.value)}
+              className={`p-1.5 transition-colors ${
+                isActive
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title={`Use ${option.label} theme`}
+              aria-label={`Use ${option.label} theme`}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          )
+        })}
       </div>
     </div>
   )
