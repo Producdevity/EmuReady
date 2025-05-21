@@ -4,6 +4,7 @@ import bcryptjs from 'bcryptjs'
 import { prisma } from '@/server/db'
 import { isValidEmail, sanitizeString } from '@/utils/validation'
 
+// TODO: look into Zod generator https://www.prisma.io/docs/orm/prisma-schema/overview/generators
 const UserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
