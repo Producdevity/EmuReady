@@ -74,21 +74,18 @@ function CommentForm(props: Props) {
     )
   }
 
-  const formClasses = props.isReply ? 'mb-2' : 'mb-6'
-
-  const textareaClasses = props.isReply
-    ? 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm'
-    : 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
-
   const rows = props.isReply ? 2 : 3
 
   return (
-    <form onSubmit={handleSubmit} className={formClasses}>
+    <form onSubmit={handleSubmit} className={props.isReply ? 'mb-2' : 'mb-6'}>
       <div className="mb-4">
         <textarea
           value={content}
           onChange={(ev) => setContent(ev.target.value)}
-          className={textareaClasses}
+          className={twMerge(
+            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white',
+            props.isReply ? 'text-sm' : '',
+          )}
           rows={rows}
           placeholder={
             props.isReply ? 'Write your reply...' : 'Write your comment...'

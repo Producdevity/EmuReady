@@ -42,7 +42,7 @@ interface Props {
   initialSortBy?: SortBy
 }
 
-export function CommentThread(props: Props) {
+function CommentThread(props: Props) {
   const initialSortBy = props.initialSortBy ?? 'newest'
   const { data: session } = useSession()
   const [sortBy, setSortBy] = useState<SortBy>(initialSortBy)
@@ -60,10 +60,13 @@ export function CommentThread(props: Props) {
 
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
-      utils.listings.getSortedComments.invalidate({
-        listingId: props.listingId,
-        sortBy,
-      })
+      // TODO: handle errors
+      utils.listings.getSortedComments
+        .invalidate({
+          listingId: props.listingId,
+          sortBy,
+        })
+        .catch(console.error)
     },
   })
 
@@ -76,10 +79,13 @@ export function CommentThread(props: Props) {
   const utils = api.useUtils()
 
   const refreshData = () => {
-    utils.listings.getSortedComments.invalidate({
-      listingId: props.listingId,
-      sortBy,
-    })
+    // TODO: handle errors
+    utils.listings.getSortedComments
+      .invalidate({
+        listingId: props.listingId,
+        sortBy,
+      })
+      .catch(console.error)
     setReplyingTo(null)
     setEditingCommentId(null)
   }
@@ -408,3 +414,5 @@ export function CommentThread(props: Props) {
     </div>
   )
 }
+
+export default CommentThread

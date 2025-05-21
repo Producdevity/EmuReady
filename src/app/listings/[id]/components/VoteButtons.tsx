@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 
-interface VoteButtonsProps {
+interface Props {
   listingId: string
   currentVote: boolean | null
   upVoteCount: number
@@ -15,33 +15,27 @@ interface VoteButtonsProps {
   onVoteSuccess?: () => void
 }
 
-export function VoteButtons({
-  listingId,
-  currentVote,
-  upVoteCount,
-  totalVotes,
-  onVoteSuccess,
-}: VoteButtonsProps) {
+function VoteButtons(props: Props) {
   const { status } = useSession()
   const isAuthenticated = status === 'authenticated'
 
   const [optimisticVote, setOptimisticVote] = useState<boolean | null>(
-    currentVote,
+    props.currentVote,
   )
-  const [optimisticUpVotes, setOptimisticUpVotes] = useState(upVoteCount)
-  const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(totalVotes)
+  const [optimisticUpVotes, setOptimisticUpVotes] = useState(props.upVoteCount)
+  const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(
+    props.totalVotes,
+  )
 
   const voteMutation = api.listings.vote.useMutation({
     onSuccess: () => {
-      if (onVoteSuccess) {
-        onVoteSuccess()
-      }
+      props.onVoteSuccess?.()
     },
   })
 
   const handleVote = (value: boolean) => {
     if (!isAuthenticated) {
-      // Redirect to login or show a login prompt
+      // TODO: Redirect to login or show a login prompt
       return
     }
 
@@ -83,7 +77,7 @@ export function VoteButtons({
     setOptimisticTotalVotes(newTotalVotes)
 
     voteMutation.mutate({
-      listingId,
+      listingId: props.listingId,
       value,
     })
   }
@@ -153,3 +147,5 @@ export function VoteButtons({
     </div>
   )
 }
+
+export default VoteButtons

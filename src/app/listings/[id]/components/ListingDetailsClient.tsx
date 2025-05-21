@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Card, Badge } from '@/components/ui'
-import { VoteButtons } from './components/VoteButtons'
-import { CommentThread } from './components/CommentThread'
+import VoteButtons from './VoteButtons'
+import CommentThread from './CommentThread'
 import { api } from '@/lib/api'
 
 interface Listing {
