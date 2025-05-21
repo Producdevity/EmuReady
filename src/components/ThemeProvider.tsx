@@ -1,26 +1,16 @@
 'use client'
 
 import { ThemeProvider as NextThemeProvider } from 'next-themes'
-import { type ReactNode, useEffect, useState } from 'react'
+import { type PropsWithChildren } from 'react'
 
-export default function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false)
-
-  // When mounted on client, now we can show the UI
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
+function ThemeProvider(props: PropsWithChildren) {
   return (
     <NextThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      {mounted && (
-        <div className="transition-colors duration-500 ease-in-out">
-          <div className="dark:bg-gray-900 bg-white">{children}</div>
-        </div>
-      )}
-      {/* Fallback for SSR */}
-      {!mounted && <div className="dark:bg-gray-900 bg-white">{children}</div>}
-      {/* {children} */}
+      <div className="transition-colors duration-500 ease-in-out">
+        {props.children}
+      </div>
     </NextThemeProvider>
   )
 }
+
+export default ThemeProvider
