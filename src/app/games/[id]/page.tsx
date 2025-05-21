@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,6 +10,11 @@ import { Badge, OptimizedImage } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
 import getImageUrl from '@/app/games/utils/getImageUrl'
 import hasPermission from '@/utils/hasPermission'
+
+export const metadata: Metadata = {
+  title: 'Game Details',
+  description: 'View game details and compatibility listings',
+}
 
 interface Props {
   params: Promise<{ id: string }>
