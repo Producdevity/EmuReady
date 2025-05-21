@@ -42,10 +42,10 @@ function Navbar() {
               />
             </Link>
             <Link href="/" className="flex-shrink-0">
-              <span className="text-2xl font-extrabold bg-gradient-to-r from-green-300 via-green-200 to-purple-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
+              <span className="text-2xl font-extrabold bg-gradient-to-r from-green-600 via-green-400 to-purple-600 dark:from-green-300 dark:via-green-200 dark:to-purple-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
                 EmuReady
               </span>
-              <p className="hidden sm:block text-sm text-blue-100 font-medium">
+              <p className="hidden sm:block font-medium text-sm text-gray-600 dark:text-blue-100  ">
                 Know before you load
               </p>
             </Link>
