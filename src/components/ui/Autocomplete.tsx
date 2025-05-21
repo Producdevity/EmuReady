@@ -50,7 +50,7 @@ function Autocomplete(props: Props) {
 
   // Keep inputValue in sync with value prop
   useEffect(() => {
-    if (!props.value) return setInputValue('')
+    if (!props.value) return
 
     const selected = props.options.find((o) => o.value === props.value)
     setInputValue(selected ? selected.label : '')
@@ -171,7 +171,7 @@ function Autocomplete(props: Props) {
         <input
           ref={inputRef}
           type="text"
-          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${props.leftIcon ? 'pl-10' : ''} ${props.rightIcon || loading ? 'pr-10' : ''}`}
+          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 pr-10 ${props.leftIcon ? 'pl-10' : ''}`}
           placeholder={placeholder}
           value={inputValue}
           onChange={handleChange}
