@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 interface DropdownOption {
   value: string
   label: string
 }
 
-interface DropdownProps {
+interface Props {
   options: DropdownOption[]
   value?: string
   onChange: (value: string) => void
@@ -16,18 +17,13 @@ interface DropdownProps {
   className?: string
 }
 
-function Dropdown({
-  options,
-  value,
-  onChange,
-  placeholder = 'Select an option',
-  label,
-  className = '',
-}: DropdownProps) {
+function Dropdown(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const selectedOption = options.find((option) => option.value === value)
+  const selectedOption = props.options.find(
+    (option) => option.value === props.value,
+  )
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -46,14 +42,14 @@ function Dropdown({
   }, [])
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
-      {label && (
+    <div className={twMerge('relative', props.className)} ref={dropdownRef}>
+      {props.label && (
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {label}
+          {props.label}
         </label>
       )}
       <button
-        className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
+        className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
           rounded-md py-2 px-3 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
         onClick={() => setIsOpen(!isOpen)}
         type="button"
@@ -61,7 +57,9 @@ function Dropdown({
         <span
           className={`block truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-900 dark:text-white'}`}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption
+            ? selectedOption.label
+            : (props.placeholder ?? 'Select an option')}
         </span>
         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg
@@ -81,13 +79,13 @@ function Dropdown({
 
       {isOpen && (
         <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto max-h-60">
-          {options.map((option) => (
+          {props.options.map((option) => (
             <div
               key={option.value}
               className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700
-                ${option.value === value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200' : 'text-gray-900 dark:text-white'}`}
+                ${option.value === props.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200' : 'text-gray-900 dark:text-white'}`}
               onClick={() => {
-                onChange(option.value)
+                props.onChange(option.value)
                 setIsOpen(false)
               }}
             >
