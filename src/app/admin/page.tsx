@@ -1,10 +1,15 @@
+import { type Metadata } from 'next'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { Role } from '@orm'
 import hasPermission from '@/utils/hasPermission'
 
-export default async function AdminDashboardPage() {
+export const metadata: Metadata = {
+  title: 'Admin Dashboard',
+}
+
+async function AdminDashboardPage() {
   const session = await getServerSession(authOptions)
   const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
 
@@ -89,3 +94,5 @@ export default async function AdminDashboardPage() {
     </div>
   )
 }
+
+export default AdminDashboardPage
