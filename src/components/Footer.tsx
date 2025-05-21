@@ -1,8 +1,9 @@
 import Link from 'next/link'
+import { ThemeSelect } from '@/components/ui'
 
 function Footer() {
   return (
-    <footer className="bg-gradient-to-t from-gray-900 via-gray-800 to-gray-900 border-t border-gray-800 py-12 mt-16 text-gray-300">
+    <footer className=" bg-gradient-to-t from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-t border-gray-200 dark:border-gray-800 py-12 mt-16 text-gray-700 dark:text-gray-300">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           <div>
@@ -52,7 +53,7 @@ function Footer() {
             </ul>
           </div>
         </div>
-        <div className="flex justify-center space-x-6 mb-8">
+        <div className="flex justify-center space-x-6 mb-2">
           <a
             href="https://github.com/Producdevity/EmuReady"
             target="_blank"
@@ -64,6 +65,10 @@ function Footer() {
             </svg>
           </a>
         </div>
+        <div className="flex justify-center items-center my-4">
+          <ThemeSelect />
+        </div>
+
         <div className="border-t border-gray-700 pt-8 text-center text-sm text-gray-400">
           &copy; {new Date().getFullYear()} EmuReady. All rights reserved.
         </div>
