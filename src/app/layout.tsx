@@ -22,7 +22,7 @@ export default function RootLayout(props: PropsWithChildren) {
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
-          <div className="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors">
+          <div className="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
             <Navbar />
             <Main>{props.children}</Main>
             <Footer />
