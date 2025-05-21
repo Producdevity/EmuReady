@@ -1,4 +1,5 @@
 import './globals.css'
+import { type Metadata } from 'next'
 import { type PropsWithChildren } from 'react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Inter } from 'next/font/google'
@@ -10,8 +11,12 @@ import Main from './Main'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
-  title: 'EmuReady - Know before you load',
+export const metadata: Metadata = {
+  applicationName: 'EmuReady',
+  title: {
+    template: '%s | EmuReady',
+    default: 'EmuReady - Know before you load',
+  },
   description: 'Community-driven Android emulation compatibility hub',
 }
 
@@ -30,6 +35,7 @@ export default function RootLayout(props: PropsWithChildren) {
         </Providers>
       </body>
       <SpeedInsights />
+      {/* TODO: show annoying cookie banner? */}
       {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
     </html>
   )
