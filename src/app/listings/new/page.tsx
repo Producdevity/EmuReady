@@ -1,294 +1,352 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { api } from '@/lib/api'
-import { Button, Input, Autocomplete } from '@/components/ui'
-import {
-  DevicePhoneMobileIcon,
-  CpuChipIcon,
-  RocketLaunchIcon,
-  DocumentTextIcon,
-  PuzzlePieceIcon,
-  PlusIcon,
-} from '@heroicons/react/24/outline'
-import Link from 'next/link'
+import { CustomFieldType, type CustomFieldDefinition as PrismaCustomFieldDefinition } from '@orm'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import SelectInput from '@/components/ui/SelectInput'
+
+// Zod schema for the main listing form
+const listingFormSchema = z.object({
+  gameId: z.string().min(1, 'Game is required'),
+  deviceId: z.string().min(1, 'Device is required'),
+  emulatorId: z.string().min(1, 'Emulator is required'),
+  performanceId: z.coerce.number().min(1, 'Performance rating is required'),
+  notes: z.string().optional(),
+  // Placeholder for custom field values - will be dynamically built
+  customFieldValues: z.array(z.object({
+    customFieldDefinitionId: z.string(),
+    value: z.any(), // Will be refined based on field type
+  })).optional(),
+})
+
+type ListingFormValues = z.infer<typeof listingFormSchema>
+
+// Interface for CustomFieldDefinition with options parsed if they are JSON
+interface CustomFieldOptionUI {
+  value: string;
+  label: string;
+}
+
+interface CustomFieldDefinitionWithOptions extends PrismaCustomFieldDefinition {
+  parsedOptions?: CustomFieldOptionUI[];
+}
 
 function AddListingPage() {
-  const { data: session, status } = useSession()
-  const [gameId, setGameId] = useState('')
-  const [deviceId, setDeviceId] = useState('')
-  const [emulatorId, setEmulatorId] = useState('')
-  const [performanceId, setPerformanceId] = useState('')
-  const [notes, setNotes] = useState('')
-  const [listingId, setListingId] = useState<string | null>(null)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
+  const router = useRouter()
+  const utils = api.useUtils()
 
-  // Use a small initial limit for performance and enable lazy loading
-  // This isn't really working all that great
+  // --- Form State --- 
   const {
-    data: games,
-    isLoading: gamesLoading,
-    refetch: refetchGames,
-  } = api.games.list.useQuery(
-    {
-      limit: 100,
-      search: searchTerm || undefined,
+    control,
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+    reset, // Added reset
+  } = useForm<ListingFormValues>({
+    resolver: zodResolver(listingFormSchema),
+    defaultValues: {
+      notes: '',
+      customFieldValues: [],
     },
-    {
-      refetchOnWindowFocus: false,
-      enabled: searchTerm.length >= 2 || searchTerm === '',
-    },
+  })
+
+  const selectedEmulatorId = watch('emulatorId')
+
+  // --- Data Fetching --- 
+  const { data: gamesData } = api.games.list.useQuery({ limit: 1000, search: '' })
+  const { data: devicesData } = api.devices.list.useQuery({ limit: 1000 })
+  const { data: emulatorsData } = api.emulators.list.useQuery({})
+  const { data: performanceScalesData } = api.listings.performanceScales.useQuery()
+
+  const {
+    data: customFieldDefinitionsData,
+    isLoading: isLoadingCustomFields,
+  } = api.customFieldDefinitions.listByEmulator.useQuery(
+    { emulatorId: selectedEmulatorId! }, 
+    { enabled: !!selectedEmulatorId }
   )
 
-  const { data: devices, isLoading: devicesLoading } =
-    api.devices.list.useQuery()
-  const { data: emulators, isLoading: emulatorsLoading } =
-    api.emulators.list.useQuery()
-  const { data: performanceScales, isLoading: perfLoading } =
-    api.listings.performanceScales.useQuery()
-  const createListing = api.listings.create.useMutation()
+  const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>([])
 
   useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess('')
-        setError('')
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [success, error])
+    if (customFieldDefinitionsData) {
+      const parsed = customFieldDefinitionsData.map((field): CustomFieldDefinitionWithOptions => {
+        let parsedOptions: CustomFieldOptionUI[] | undefined = undefined;
+        if (field.type === CustomFieldType.SELECT && Array.isArray(field.options)) {
+          parsedOptions = field.options.reduce((acc: CustomFieldOptionUI[], opt: unknown) => {
+            if (typeof opt === 'object' && opt !== null && 'value' in opt && 'label' in opt) {
+              const knownOpt = opt as { value: unknown; label: unknown };
+              acc.push({ value: String(knownOpt.value), label: String(knownOpt.label) });
+            }
+            return acc;
+          }, []);
+        }
+        return { ...field, parsedOptions };
+      });
+      setParsedCustomFields(parsed);
 
-  const handleGameSearch = async (query: string) => {
-    setSearchTerm(query)
-    setIsSearching(true)
-
-    try {
-      await refetchGames()
-
-      console.log(
-        `Search "${query}" found ${games?.games?.length ?? 0} results`,
-      )
-      if (games?.games?.length === 0 && query.length > 2) {
-        console.log('No results found. Try refining your search.')
-      }
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  if (status === 'loading') return <div>Loading...</div>
-
-  const userRole = session?.user?.role ?? 'USER'
-
-  if (
-    !session ||
-    (userRole !== 'SUPER_ADMIN' &&
-      userRole !== 'ADMIN' &&
-      userRole !== 'AUTHOR')
-  ) {
-    return (
-      <div className="p-8 text-center">
-        You do not have permission to add listings.
-        <br />
-        {!session?.user && (
-          <span>
-            Please{' '}
-            <Link href="/login" className="text-blue-500">
-              sign in
-            </Link>{' '}
-            to add listings.
-          </span>
-        )}
-      </div>
-    )
-  }
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    if (!gameId || !deviceId || !emulatorId || !performanceId) {
-      setError('Please fill in all fields.')
-      return
-    }
-    try {
-      const listing = await createListing.mutateAsync({
-        gameId,
-        deviceId,
-        emulatorId,
-        performanceId: Number(performanceId),
-        notes: notes || undefined,
+      // Dynamically update form values for custom fields when they load
+      const currentCustomValues = watch('customFieldValues') ?? []
+      const newCustomValues = parsed.map(field => {
+        const existingValueObj = currentCustomValues.find(cv => cv.customFieldDefinitionId === field.id)
+        if (existingValueObj) return existingValueObj
+        // Set default based on type
+        let defaultValue: string | boolean | number | null
+        switch (field.type) {
+          case CustomFieldType.BOOLEAN:
+            defaultValue = false
+            break
+          case CustomFieldType.TEXT:
+          case CustomFieldType.TEXTAREA:
+          case CustomFieldType.URL:
+            defaultValue = ''
+            break
+          case CustomFieldType.SELECT:
+            defaultValue = field.parsedOptions?.[0]?.value ?? '' // Default to first option or empty
+            break
+          default:
+            defaultValue = null
+        }
+        return { customFieldDefinitionId: field.id, value: defaultValue }
       })
-      setListingId(listing.id)
-      setSuccess('Listing added!')
-      setGameId('')
-      setDeviceId('')
-      setEmulatorId('')
-      setPerformanceId('')
-      setNotes('')
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('Failed to add listing.')
+      setValue('customFieldValues', newCustomValues)
+    }
+  }, [customFieldDefinitionsData, setValue, watch, reset])
+
+  // --- Mutation --- 
+  const createListingMutation = api.listings.create.useMutation({
+    onSuccess: (data) => {
+      utils.listings.list.invalidate() // Invalidate list cache
+      router.push(`/listings/${data.id}`) // Navigate to the new listing's page
+      // TODO: Add success toast/notification
+    },
+    onError: (error) => {
+      console.error("Failed to create listing:", error)
+      alert(`Error: ${error.message}`)
+      // TODO: Add error toast/notification
+    },
+  })
+
+  // --- Form Submission --- 
+  const onSubmit = (data: ListingFormValues) => {
+    // Ensure customFieldValues are correctly formatted, especially for boolean and numbers if stored as strings by form
+    const finalCustomFieldValues = data.customFieldValues?.map(cfv => {
+      const definition = parsedCustomFields.find(d => d.id === cfv.customFieldDefinitionId)
+      let finalValue = cfv.value
+      if (definition) {
+        if (definition.type === CustomFieldType.BOOLEAN) {
+          finalValue = Boolean(cfv.value)
+        }
+        // Add coercion for numbers if text inputs are used for number types in custom fields (not currently a type)
       }
+      return { customFieldDefinitionId: cfv.customFieldDefinitionId, value: finalValue }
+    })
+
+    createListingMutation.mutate({ 
+      ...data, 
+      customFieldValues: finalCustomFieldValues 
+    })
+  }
+  
+  // --- Dynamic Custom Field Rendering --- (Helper function)
+  const renderCustomField = (fieldDef: CustomFieldDefinitionWithOptions, index: number) => {
+    const fieldName = `customFieldValues.${index}.value` as const
+    const errorForField = errors.customFieldValues?.[index]?.value
+    // For error messages, ensure they are strings
+    const errorMessage = typeof errorForField?.message === 'string' ? errorForField.message : undefined
+
+    switch (fieldDef.type) {
+      case CustomFieldType.TEXT:
+        return (
+          <div key={fieldDef.id} className="mb-4">
+            <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{fieldDef.label} {fieldDef.isRequired && '*'}</label>
+            <Controller
+              name={fieldName}
+              control={control}
+              defaultValue=''
+              render={({ field }) => <Input id={fieldName} {...field} className="mt-1 w-full" />}
+            />
+            {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+          </div>
+        )
+      case CustomFieldType.TEXTAREA:
+        return (
+          <div key={fieldDef.id} className="mb-4">
+            <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{fieldDef.label} {fieldDef.isRequired && '*'}</label>
+            <Controller
+              name={fieldName}
+              control={control}
+              defaultValue=''
+              render={({ field }) => <textarea id={fieldName} {...field} rows={3} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />}
+            />
+            {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+          </div>
+        )
+      case CustomFieldType.URL:
+        return (
+          <div key={fieldDef.id} className="mb-4">
+            <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{fieldDef.label} {fieldDef.isRequired && '*'}</label>
+            <Controller
+              name={fieldName}
+              control={control}
+              defaultValue=''
+              render={({ field }) => <Input id={fieldName} type="url" {...field} className="mt-1 w-full" />}
+            />
+            {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+          </div>
+        )
+      case CustomFieldType.BOOLEAN:
+        return (
+          <div key={fieldDef.id} className="mb-4 flex items-center">
+            <Controller
+              name={fieldName}
+              control={control}
+              defaultValue={false}
+              render={({ field }) => <input id={fieldName} type="checkbox" checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />}
+            />
+            <label htmlFor={fieldName} className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{fieldDef.label} {fieldDef.isRequired && '*'}</label>
+            {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+          </div>
+        )
+      case CustomFieldType.SELECT:
+        return (
+          <div key={fieldDef.id} className="mb-4">
+            <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{fieldDef.label} {fieldDef.isRequired && '*'}</label>
+            <Controller
+              name={fieldName}
+              control={control}
+              defaultValue={fieldDef.parsedOptions?.[0]?.value ?? ''}
+              render={({ field }) => (
+                <SelectInput 
+                  label={fieldDef.label} // This label prop might be for internal use by SelectInput if it has one
+                  options={fieldDef.parsedOptions?.map(opt => ({ id: opt.value, name: opt.label })) ?? []}
+                  value={field.value as string}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+              )}
+            />
+            {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+          </div>
+        )
+      default:
+        return null
     }
   }
 
+  // --- Main Render --- 
   return (
-    <div className="max-w-xl mx-auto mt-16 p-10 bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800">
-      <h1 className="text-3xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
-        Add New Game Listing
-      </h1>
-      {success && listingId && (
-        <div>
-          <p className="mt-2 text-center text-sm text-green-600 dark:text-green-400">
-            {success}
-          </p>
-          <p className="mt-2 text-center text-sm text-blue-600 dark:text-blue-400">
-            <Link href={`/listings/${listingId}`}>View Listing</Link>
-          </p>
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block mb-1 font-medium">Game</label>
-          <div className="flex gap-2 items-center">
-            <div className="flex-1">
-              <Autocomplete
-                options={(games?.games ?? []).map(
-                  (game: { id: string; title: string }) => ({
-                    value: game.id,
-                    label: game.title,
-                  }),
-                )}
-                value={gameId}
-                onChange={setGameId}
-                onSearch={handleGameSearch}
-                placeholder="Search for a game..."
-                leftIcon={<PuzzlePieceIcon className="w-5 h-5" />}
-                loading={gamesLoading || isSearching}
-                disabled={gamesLoading}
-                minCharsToSearch={2}
-                searchDebounce={400}
-              />
+    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">Create New Listing</h1>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+          {/* Standard Fields */}
+          <div>
+            <label htmlFor="gameId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Game</label>
+            <Controller
+              name="gameId"
+              control={control}
+              render={({ field }) => (
+                <SelectInput 
+                  label="Game"
+                  options={gamesData?.games.map(g => ({ id: g.id, name: g.title })) ?? []} 
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+              )}
+            />
+            {errors.gameId && <p className="text-red-500 text-xs mt-1">{String(errors.gameId.message ?? '')}</p>}
+          </div>
+          
+          <div>
+            <label htmlFor="deviceId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Device</label>
+            <Controller
+              name="deviceId"
+              control={control}
+              render={({ field }) => (
+                <SelectInput 
+                  label="Device"
+                  options={devicesData?.map(d => ({ id: d.id, name: `${d.brand.name} ${d.modelName}` })) ?? []} 
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+              )}
+            />
+            {errors.deviceId && <p className="text-red-500 text-xs mt-1">{String(errors.deviceId.message ?? '')}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="emulatorId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Emulator</label>
+            <Controller
+              name="emulatorId"
+              control={control}
+              render={({ field }) => (
+                <SelectInput 
+                  label="Emulator"
+                  options={emulatorsData?.map(e => ({ id: e.id, name: e.name })) ?? []} 
+                  value={field.value ?? ''}
+                  onChange={(e) => {
+                    field.onChange(e.target.value)
+                    // Reset custom fields when emulator changes, they will be repopulated by useEffect
+                    setValue('customFieldValues', []) 
+                  }}
+                />
+              )}
+            />
+            {errors.emulatorId && <p className="text-red-500 text-xs mt-1">{String(errors.emulatorId.message ?? '')}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="performanceId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Performance</label>
+            <Controller
+              name="performanceId"
+              control={control}
+              render={({ field }) => (
+                <SelectInput 
+                  label="Performance"
+                  options={performanceScalesData?.map(p => ({ id: String(p.id), name: p.label })) ?? []} 
+                  value={String(field.value ?? '')} // Ensure value is string for SelectInput
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              )}
+            />
+            {errors.performanceId && <p className="text-red-500 text-xs mt-1">{String(errors.performanceId.message ?? '')}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+            <textarea 
+              id="notes" 
+              {...register('notes')} 
+              rows={4} 
+              className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {errors.notes && <p className="text-red-500 text-xs mt-1">{errors.notes.message as string}</p>}
+          </div>
+
+          {/* Dynamic Custom Fields Section */}
+          {selectedEmulatorId && isLoadingCustomFields && <p>Loading custom fields...</p>}
+          {selectedEmulatorId && !isLoadingCustomFields && parsedCustomFields.length > 0 && (
+            <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Additional Details (Emulator Specific)</h2>
+              {parsedCustomFields.map((fieldDef, index) => renderCustomField(fieldDef, index))}
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="ml-2 flex-shrink-0 flex items-center gap-1 px-3 py-2"
-              onClick={() => (window.location.href = '/games/new')}
-              title="Add new game"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Add Game
+          )}
+          
+          <div className="flex justify-end pt-6">
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
+              Create Listing
             </Button>
           </div>
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Device</label>
-          <Input
-            as="select"
-            leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
-            value={deviceId}
-            onChange={(e) =>
-              setDeviceId(
-                (e as unknown as ChangeEvent<HTMLSelectElement>).target.value,
-              )
-            }
-            required
-            disabled={devicesLoading}
-          >
-            <option value="">Select device...</option>
-            {devices?.map((dev) => (
-              <option key={dev.id} value={dev.id}>
-                {dev.brand.name} {dev.modelName}
-              </option>
-            ))}
-          </Input>
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Emulator</label>
-          <Input
-            as="select"
-            leftIcon={<CpuChipIcon className="w-5 h-5" />}
-            value={emulatorId}
-            onChange={(e) =>
-              setEmulatorId(
-                (e as unknown as ChangeEvent<HTMLSelectElement>).target.value,
-              )
-            }
-            required
-            disabled={emulatorsLoading}
-          >
-            <option value="">Select emulator...</option>
-            {emulators?.map((emu: { id: string; name: string }) => (
-              <option key={emu.id} value={emu.id}>
-                {emu.name}
-              </option>
-            ))}
-          </Input>
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Performance</label>
-          <Input
-            as="select"
-            leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
-            value={performanceId}
-            onChange={(e) =>
-              setPerformanceId(
-                (e as unknown as ChangeEvent<HTMLSelectElement>).target.value,
-              )
-            }
-            required
-            disabled={perfLoading}
-          >
-            <option value="">Select performance...</option>
-            {performanceScales?.map((perf: { id: number; label: string }) => (
-              <option key={perf.id} value={perf.id}>
-                {perf.label}
-              </option>
-            ))}
-          </Input>
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Notes (optional)</label>
-          <Input
-            as="textarea"
-            leftIcon={<DocumentTextIcon className="w-5 h-5" />}
-            value={notes}
-            onChange={(e) =>
-              setNotes(
-                (e as unknown as ChangeEvent<HTMLTextAreaElement>).target.value,
-              )
-            }
-            rows={2}
-          />
-        </div>
-        {error && (
-          <div className="text-red-500 fixed top-4 right-4 bg-white dark:bg-gray-800 border border-red-400 px-4 py-2 rounded shadow z-50">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600 fixed top-4 right-4 bg-white dark:bg-gray-800 border border-green-400 px-4 py-2 rounded shadow z-50">
-            {success}
-          </div>
-        )}
-        <Button
-          type="submit"
-          isLoading={createListing.isPending}
-          isFullWidth
-          className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold text-lg py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-        >
-          {createListing.isPending ? 'Adding...' : 'Add Listing'}
-        </Button>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

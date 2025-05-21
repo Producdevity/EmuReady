@@ -1,8 +1,13 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
+import { Settings } from 'lucide-react'
+
+const customFieldsButtonClasses =
+  'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
 
 function AdminEmulatorsPage() {
   const { data: emulators, refetch } = api.emulators.list.useQuery()
@@ -81,11 +86,14 @@ function AdminEmulatorsPage() {
                 className="hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <td className="px-4 py-2">{emu.name}</td>
-                <td className="px-4 py-2 flex gap-2 justify-end">
-                  <Button variant="secondary" onClick={() => openModal(emu)}>
+                <td className="px-4 py-2 flex gap-2 justify-end items-center">
+                  <Link href={`/admin/emulators/${emu.id}/custom-fields`} className={customFieldsButtonClasses}>
+                    <Settings className="mr-2 h-4 w-4" /> Custom Fields
+                  </Link>
+                  <Button variant="secondary" size="sm" onClick={() => openModal(emu)}>
                     Edit
                   </Button>
-                  <Button variant="danger" onClick={() => handleDelete(emu.id)}>
+                  <Button variant="danger" size="sm" onClick={() => handleDelete(emu.id)}>
                     Delete
                   </Button>
                 </td>
