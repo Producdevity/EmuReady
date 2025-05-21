@@ -28,6 +28,7 @@ function AddListingPage() {
   const [isSearching, setIsSearching] = useState(false)
 
   // Use a small initial limit for performance and enable lazy loading
+  // This isn't really working all that great
   const {
     data: games,
     isLoading: gamesLoading,
@@ -38,9 +39,7 @@ function AddListingPage() {
       search: searchTerm || undefined,
     },
     {
-      // Don't refetch automatically when window gets focus
       refetchOnWindowFocus: false,
-      // Only fetch when we have a search term of sufficient length
       enabled: searchTerm.length >= 2 || searchTerm === '',
     },
   )

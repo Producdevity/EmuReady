@@ -8,15 +8,15 @@ import VoteButtons from './VoteButtons'
 import CommentThread from './CommentThread'
 import { api } from '@/lib/api'
 
-interface Listing {
+export interface Listing {
   id: string
   game: { title: string; system?: { name?: string } }
   device?: { brand?: string; modelName?: string }
   emulator?: { name?: string }
   performance?: { label?: string }
-  notes?: string
+  notes?: string | null
   author?: {
-    name?: string
+    name?: string | null
     email?: string
     id?: string
     profileImage?: string | null
