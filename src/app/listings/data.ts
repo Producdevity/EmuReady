@@ -1,6 +1,7 @@
 import { prisma } from '@/server/db'
 import type { Prisma } from '@orm'
 
+// TODO: maybe start using this?
 export async function getAllListings(params: {
   search?: string
   systemId?: string
@@ -46,7 +47,6 @@ export async function getAllListings(params: {
     where.performanceId = performanceId
   }
 
-  // Count total matching records for pagination
   const total = await prisma.listing.count({ where })
 
   // Fetch paginated records with all needed relations
@@ -81,7 +81,6 @@ export async function getAllListings(params: {
     take: pageSize,
   })
 
-  // Calculate pagination info
   const totalPages = Math.ceil(total / pageSize)
 
   return {
