@@ -332,10 +332,31 @@ export const listingsRouter = createTRPCRouter({
         emulatorId: z.string(),
         performanceId: z.number(),
         notes: z.string().optional(),
+        customFieldValues: z.array(
+          z.object({
+            customFieldDefinitionId: z.string().uuid(),
+            value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
+          })
+        ).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { gameId, deviceId, emulatorId, performanceId, notes } = input
+      const { gameId, deviceId, emulatorId, performanceId, notes, customFieldValues } = input;
+      const authorId = ctx.session.user.id;
+
+      console.log('Attempting to create listing with authorId:', authorId);
+      const userExists = await ctx.prisma.user.findUnique({
+        where: { id: authorId },
+        select: { id: true }, 
+      });
+
+      if (!userExists) {
+        console.error('CRITICAL: User with session ID not found in database:', authorId);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `User with ID ${authorId} not found. Cannot create listing.`,
+        });
+      }
 
       const existingListing = await ctx.prisma.listing.findFirst({
         where: {
@@ -343,26 +364,53 @@ export const listingsRouter = createTRPCRouter({
           deviceId,
           emulatorId,
         },
-      })
+      });
 
       if (existingListing) {
         throw new TRPCError({
           code: 'CONFLICT',
           message:
             'A listing for this game, device, and emulator combination already exists',
-        })
+        });
       }
 
-      return ctx.prisma.listing.create({
-        data: {
-          gameId,
-          deviceId,
-          emulatorId,
-          performanceId,
-          notes,
-          authorId: ctx.session.user.id,
-        },
-      })
+      return ctx.prisma.$transaction(async (tx) => {
+        const newListing = await tx.listing.create({
+          data: {
+            gameId,
+            deviceId,
+            emulatorId,
+            performanceId,
+            notes,
+            authorId: authorId,
+          },
+        });
+
+        if (customFieldValues && customFieldValues.length > 0) {
+          for (const cfv of customFieldValues) {
+            // Validate the customFieldDefinitionId exists and belongs to the emulator for this listing
+            const fieldDef = await tx.customFieldDefinition.findUnique({
+                where: { id: cfv.customFieldDefinitionId },
+            });
+            if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: `Invalid custom field definition ID: ${cfv.customFieldDefinitionId} for emulator ${emulatorId}`,
+                });
+            }
+            // TODO: Add more specific validation for cfv.value based on fieldDef.type if needed here
+            // For now, assuming client sends compatible JSON structure
+            await tx.listingCustomFieldValue.create({
+              data: {
+                listingId: newListing.id,
+                customFieldDefinitionId: cfv.customFieldDefinitionId,
+                value: cfv.value === null ? Prisma.JsonNull : cfv.value as Prisma.InputJsonValue,
+              },
+            });
+          }
+        }
+        return newListing;
+      });
     }),
 
   vote: protectedProcedure

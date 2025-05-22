@@ -16,6 +16,14 @@ enum Role {
   SUPER_ADMIN
 }
 
+enum CustomFieldType {
+  TEXT
+  TEXTAREA
+  URL
+  BOOLEAN
+  SELECT
+}
+
 model User {
   id             String            @id @default(uuid())
   email          String            @unique
@@ -65,10 +73,29 @@ model Game {
   @@unique([title, systemId])
 }
 
+model CustomFieldDefinition {
+  id           String            @id @default(uuid())
+  emulatorId   String
+  name         String // Internal name, e.g., "driver_version"
+  label        String // UI display label, e.g., "Driver Version"
+  type         CustomFieldType
+  options      Json? // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
+  isRequired   Boolean           @default(false)
+  displayOrder Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  emulator     Emulator          @relation(fields: [emulatorId], references: [id])
+  listingValues ListingCustomFieldValue[]
+
+  @@unique([emulatorId, name])
+  @@index([emulatorId])
+}
+
 model Emulator {
-  id       String    @id @default(uuid())
-  name     String    @unique
-  listings Listing[]
+  id                    String                  @id @default(uuid())
+  name                  String                  @unique
+  listings              Listing[]
+  customFieldDefinitions CustomFieldDefinition[]
 }
 
 model PerformanceScale {
@@ -95,6 +122,7 @@ model Listing {
   device        Device            @relation(fields: [deviceId], references: [id])
   approvals     ListingApproval[]
   votes         Vote[]
+  customFieldValues ListingCustomFieldValue[]
 
   @@unique([gameId, deviceId, emulatorId])
 }
@@ -150,4 +178,20 @@ model ListingApproval {
   notes          String?
   approvedBy     User     @relation("ApprovalsGiven", fields: [approvedById], references: [id])
   listing        Listing  @relation(fields: [listingId], references: [id])
+}
+
+model ListingCustomFieldValue {
+  id                      String                @id @default(uuid())
+  listingId               String
+  customFieldDefinitionId String
+  value                   Json
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  listing                 Listing               @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  customFieldDefinition   CustomFieldDefinition @relation(fields: [customFieldDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, customFieldDefinitionId])
+  @@index([listingId])
+  @@index([customFieldDefinitionId])
 }
