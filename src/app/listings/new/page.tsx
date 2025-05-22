@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,6 +10,8 @@ import { CustomFieldType, type CustomFieldDefinition as PrismaCustomFieldDefinit
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import SelectInput from '@/components/ui/SelectInput'
+import Autocomplete from '@/components/ui/Autocomplete'
+import { Gamepad2, Puzzle, HardDrive, Zap, ListChecks, FileText, CheckSquare, LinkIcon as UrlIcon, CaseSensitive } from 'lucide-react'
 
 // Zod schema for the main listing form
 const listingFormSchema = z.object({
@@ -41,6 +43,9 @@ function AddListingPage() {
   const router = useRouter()
   const utils = api.useUtils()
 
+  const [gameSearchTerm, setGameSearchTerm] = useState('')
+  const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
+
   // --- Form State --- 
   const {
     control,
@@ -49,10 +54,13 @@ function AddListingPage() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-    reset, // Added reset
   } = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
     defaultValues: {
+      gameId: '',
+      deviceId: '',
+      emulatorId: '',
+      performanceId: undefined,
       notes: '',
       customFieldValues: [],
     },
@@ -61,9 +69,15 @@ function AddListingPage() {
   const selectedEmulatorId = watch('emulatorId')
 
   // --- Data Fetching --- 
-  const { data: gamesData } = api.games.list.useQuery({ limit: 1000, search: '' })
+  const { data: gamesData, isLoading: gamesLoading, refetch: refetchGames } = api.games.list.useQuery(
+    { search: gameSearchTerm || undefined, limit: 20 }, // Limit for autocomplete suggestions
+    { enabled: false } // Initially disabled, enabled by onSearch
+  )
   const { data: devicesData } = api.devices.list.useQuery({ limit: 1000 })
-  const { data: emulatorsData } = api.emulators.list.useQuery({})
+  const { data: emulatorsData, isLoading: emulatorsLoading, refetch: refetchEmulators } = api.emulators.list.useQuery(
+    { search: emulatorSearchTerm || undefined }, // No limit, emulators list is likely small
+    { enabled: false }
+  )
   const { data: performanceScalesData } = api.listings.performanceScales.useQuery()
 
   const {
@@ -75,6 +89,21 @@ function AddListingPage() {
   )
 
   const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>([])
+
+  // Debounced search handlers for Autocomplete
+  const debouncedGameSearch = useCallback(async (query: string) => {
+    setGameSearchTerm(query)
+    if (query.length >= 2) {
+      await refetchGames()
+    }
+  }, [refetchGames])
+
+  const debouncedEmulatorSearch = useCallback(async (query: string) => {
+    setEmulatorSearchTerm(query)
+    if (query.length >= 1) { // Emulators list might be small, search on 1 char
+      await refetchEmulators()
+    }
+  }, [refetchEmulators])
 
   useEffect(() => {
     if (customFieldDefinitionsData) {
@@ -117,9 +146,9 @@ function AddListingPage() {
         }
         return { customFieldDefinitionId: field.id, value: defaultValue }
       })
-      setValue('customFieldValues', newCustomValues)
+      setValue('customFieldValues', newCustomValues, { shouldValidate: false, shouldDirty: false })
     }
-  }, [customFieldDefinitionsData, setValue, watch, reset])
+  }, [customFieldDefinitionsData, setValue, watch])
 
   // --- Mutation --- 
   const createListingMutation = api.listings.create.useMutation({
@@ -162,6 +191,14 @@ function AddListingPage() {
     const errorForField = errors.customFieldValues?.[index]?.value
     // For error messages, ensure they are strings
     const errorMessage = typeof errorForField?.message === 'string' ? errorForField.message : undefined
+    let icon = null
+    switch(fieldDef.type) {
+      case CustomFieldType.TEXT: icon = <CaseSensitive className="w-5 h-5" />; break;
+      case CustomFieldType.TEXTAREA: icon = <FileText className="w-5 h-5" />; break;
+      case CustomFieldType.URL: icon = <UrlIcon className="w-5 h-5" />; break;
+      case CustomFieldType.BOOLEAN: icon = <CheckSquare className="w-5 h-5" />; break; 
+      case CustomFieldType.SELECT: icon = <ListChecks className="w-5 h-5" />; break;
+    }
 
     switch (fieldDef.type) {
       case CustomFieldType.TEXT:
@@ -172,7 +209,7 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=''
-              render={({ field }) => <Input id={fieldName} {...field} className="mt-1 w-full" />}
+              render={({ field }) => <Input id={fieldName} {...field} leftIcon={icon} className="mt-1 w-full" />}
             />
             {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
           </div>
@@ -185,7 +222,7 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=''
-              render={({ field }) => <textarea id={fieldName} {...field} rows={3} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />}
+              render={({ field }) => <Input as="textarea" id={fieldName} {...field} leftIcon={icon} rows={3} className="mt-1 w-full" />}
             />
             {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
           </div>
@@ -198,14 +235,15 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=''
-              render={({ field }) => <Input id={fieldName} type="url" {...field} className="mt-1 w-full" />}
+              render={({ field }) => <Input id={fieldName} type="url" {...field} leftIcon={icon} className="mt-1 w-full" />}
             />
             {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
           </div>
         )
       case CustomFieldType.BOOLEAN:
         return (
-          <div key={fieldDef.id} className="mb-4 flex items-center">
+          <div key={fieldDef.id} className="mb-4 flex items-center pt-2">
+            {icon && <span className="mr-2 text-gray-500">{icon}</span>}
             <Controller
               name={fieldName}
               control={control}
@@ -213,7 +251,7 @@ function AddListingPage() {
               render={({ field }) => <input id={fieldName} type="checkbox" checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />}
             />
             <label htmlFor={fieldName} className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{fieldDef.label} {fieldDef.isRequired && '*'}</label>
-            {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+            {errorMessage && <p className="text-red-500 text-xs mt-1 ml-6">{errorMessage}</p>}
           </div>
         )
       case CustomFieldType.SELECT:
@@ -226,7 +264,8 @@ function AddListingPage() {
               defaultValue={fieldDef.parsedOptions?.[0]?.value ?? ''}
               render={({ field }) => (
                 <SelectInput 
-                  label={fieldDef.label} // This label prop might be for internal use by SelectInput if it has one
+                  label={fieldDef.label}
+                  leftIcon={icon}
                   options={fieldDef.parsedOptions?.map(opt => ({ id: opt.value, name: opt.label })) ?? []}
                   value={field.value as string}
                   onChange={(e) => field.onChange(e.target.value)}
@@ -254,11 +293,16 @@ function AddListingPage() {
               name="gameId"
               control={control}
               render={({ field }) => (
-                <SelectInput 
+                <Autocomplete
                   label="Game"
-                  options={gamesData?.games.map(g => ({ id: g.id, name: g.title })) ?? []} 
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  leftIcon={<Puzzle className="w-5 h-5" />}
+                  options={gamesData?.games.map(g => ({ value: g.id, label: g.title })) ?? []}
+                  value={field.value}
+                  onChange={(value) => field.onChange(value)}
+                  onSearch={debouncedGameSearch}
+                  placeholder="Search for a game..."
+                  loading={gamesLoading}
+                  minCharsToSearch={2}
                 />
               )}
             />
@@ -271,9 +315,10 @@ function AddListingPage() {
               name="deviceId"
               control={control}
               render={({ field }) => (
-                <SelectInput 
+                <SelectInput
                   label="Device"
-                  options={devicesData?.map(d => ({ id: d.id, name: `${d.brand.name} ${d.modelName}` })) ?? []} 
+                  leftIcon={<HardDrive className="w-5 h-5" />}
+                  options={devicesData?.map(d => ({ id: d.id, name: `${d.brand.name} ${d.modelName}` })) ?? []}
                   value={field.value ?? ''}
                   onChange={(e) => field.onChange(e.target.value)}
                 />
@@ -288,15 +333,19 @@ function AddListingPage() {
               name="emulatorId"
               control={control}
               render={({ field }) => (
-                <SelectInput 
+                <Autocomplete
                   label="Emulator"
-                  options={emulatorsData?.map(e => ({ id: e.id, name: e.name })) ?? []} 
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    field.onChange(e.target.value)
-                    // Reset custom fields when emulator changes, they will be repopulated by useEffect
-                    setValue('customFieldValues', []) 
+                  leftIcon={<Gamepad2 className="w-5 h-5" />}
+                  options={emulatorsData?.map(e => ({ value: e.id, label: e.name })) ?? []}
+                  value={field.value}
+                  onChange={(value) => {
+                    field.onChange(value)
+                    setValue('customFieldValues', [])
                   }}
+                  onSearch={debouncedEmulatorSearch}
+                  placeholder="Search for an emulator..."
+                  loading={emulatorsLoading}
+                  minCharsToSearch={1}
                 />
               )}
             />
@@ -309,10 +358,11 @@ function AddListingPage() {
               name="performanceId"
               control={control}
               render={({ field }) => (
-                <SelectInput 
+                <SelectInput
                   label="Performance"
-                  options={performanceScalesData?.map(p => ({ id: String(p.id), name: p.label })) ?? []} 
-                  value={String(field.value ?? '')} // Ensure value is string for SelectInput
+                  leftIcon={<Zap className="w-5 h-5" />}
+                  options={performanceScalesData?.map(p => ({ id: String(p.id), name: p.label })) ?? []}
+                  value={String(field.value ?? '')}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               )}
@@ -322,26 +372,21 @@ function AddListingPage() {
 
           <div>
             <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-            <textarea 
-              id="notes" 
-              {...register('notes')} 
-              rows={4} 
-              className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
-            />
-            {errors.notes && <p className="text-red-500 text-xs mt-1">{errors.notes.message as string}</p>}
+            <Input as="textarea" id="notes" {...register('notes')} leftIcon={<FileText className="w-5 h-5" />} rows={4} className="mt-1 w-full" />
+            {errors.notes && <p className="text-red-500 text-xs mt-1">{String(errors.notes.message ?? '')}</p>}
           </div>
 
           {/* Dynamic Custom Fields Section */}
-          {selectedEmulatorId && isLoadingCustomFields && <p>Loading custom fields...</p>}
+          {selectedEmulatorId && isLoadingCustomFields && <p className="text-center py-4">Loading custom fields...</p>}
           {selectedEmulatorId && !isLoadingCustomFields && parsedCustomFields.length > 0 && (
-            <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Additional Details (Emulator Specific)</h2>
+            <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Additional Details ({customFieldDefinitionsData?.find(e=>e.emulatorId === selectedEmulatorId)?.emulator.name ?? 'Selected Emulator'})</h2>
               {parsedCustomFields.map((fieldDef, index) => renderCustomField(fieldDef, index))}
             </div>
           )}
           
-          <div className="flex justify-end pt-6">
-            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
+          <div className="flex justify-end pt-8">
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting} size="lg">
               Create Listing
             </Button>
           </div>

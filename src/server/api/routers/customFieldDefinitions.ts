@@ -79,6 +79,9 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       return prisma.customFieldDefinition.findMany({
         where: { emulatorId: input.emulatorId },
         orderBy: { displayOrder: 'asc' },
+        include: {
+          emulator: true,
+        }
       });
     }),
 
@@ -212,5 +215,33 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       return prisma.customFieldDefinition.delete({
         where: { id: input.id },
       });
+    }),
+
+  updateOrder: protectedProcedure
+    .input(
+      z.array(
+        z.object({
+          id: z.string().uuid(),
+          displayOrder: z.number().int(),
+        }),
+      )
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.session.user.role !== 'SUPER_ADMIN') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only Super Admins can reorder custom fields.',
+        });
+      }
+
+      // Perform updates in a transaction
+      return ctx.prisma.$transaction(
+        input.map(fieldOrder => 
+          ctx.prisma.customFieldDefinition.update({
+            where: { id: fieldOrder.id },
+            data: { displayOrder: fieldOrder.displayOrder },
+          })
+        )
+      );
     }),
 }); 
