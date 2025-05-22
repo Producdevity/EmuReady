@@ -9,6 +9,7 @@ import React, {
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react'
+import SearchGameField from './SearchGameField'
 
 interface AutocompleteOption {
   value: string
@@ -21,7 +22,7 @@ interface Props {
   value?: string
   onChange: (value: string) => void
   onInputChange?: (input: string) => void
-  onSearch?: (query: string) => Promise<void>
+  onSearch: (query: string) => Promise<void>
   placeholder?: string
   label?: string
   leftIcon?: ReactNode
@@ -88,7 +89,7 @@ function Autocomplete(props: Props) {
     if (props.onInputChange) {
       props.onInputChange(newValue)
     }
-    debouncedSearch(newValue)
+    return debouncedSearch(newValue)
   }
 
   // Handle option selection
@@ -97,7 +98,7 @@ function Autocomplete(props: Props) {
     setIsOpen(false)
     setHighlightedIndex(-1)
     props.onChange(option.value)
-    // Refocus input for keyboard users
+    // Refocus input for keyboard userss
     inputRef.current?.focus()
   }
 
@@ -131,6 +132,10 @@ function Autocomplete(props: Props) {
     }
     setIsOpen(false)
   }
+
+  const handleFocus = useCallback(() => {
+    setIsOpen(true)
+  }, [])
 
   // Click outside closes dropdown
   useEffect(() => {
@@ -168,7 +173,17 @@ function Autocomplete(props: Props) {
             {props.leftIcon}
           </span>
         )}
-        <input
+        <SearchGameField
+          inputValue={inputValue}
+          placeholder={placeholder}
+          disabled={disabled}
+          inputRef={inputRef}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+        />
+        {/* <input
           ref={inputRef}
           type="text"
           className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 pr-10 ${props.leftIcon ? 'pl-10' : ''}`}
@@ -180,7 +195,7 @@ function Autocomplete(props: Props) {
           onKeyDown={handleKeyDown}
           disabled={disabled}
           autoComplete="off"
-        />
+        /> */}
         {props.rightIcon && !loading && (
           <span className="absolute right-3 text-gray-400 dark:text-gray-500 flex items-center">
             {props.rightIcon}

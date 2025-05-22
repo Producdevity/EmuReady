@@ -24,6 +24,7 @@ function AddListingPage() {
   const [listingId, setListingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
   const [isSearching, setIsSearching] = useState(false)
 
   // Use a small initial limit for performance and enable lazy loading
@@ -35,10 +36,11 @@ function AddListingPage() {
   } = api.games.list.useQuery(
     {
       limit: 100,
-      search: undefined,
+      search: searchTerm || undefined,
     },
     {
       refetchOnWindowFocus: false,
+      enabled: searchTerm.length >= 2 || searchTerm === '',
     },
   )
 
@@ -61,6 +63,7 @@ function AddListingPage() {
   }, [success, error])
 
   const handleGameSearch = async (query: string) => {
+    setSearchTerm(query)
     setIsSearching(true)
 
     try {
