@@ -48,7 +48,7 @@ describe('Input', () => {
 
     expect(screen.getByTestId('left-icon')).toBeInTheDocument()
     const inputElement = screen.getByPlaceholderText('Search')
-    expect(inputElement).toHaveClass('pl-2')
+    expect(inputElement).toHaveClass('pl-10')
   })
 
   it('renders right icon when provided', () => {
