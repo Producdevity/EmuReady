@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm';
 import Button from '@/components/ui/Button';
-import { Pencil, Trash2, GripVertical, X } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, X, Check, Undo } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import {
   DndContext,
@@ -103,13 +103,18 @@ export default function CustomFieldList({
   const [orderedFields, setOrderedFields] = useState<SortableCustomField[]>(() => 
     [...initialCustomFields].sort((a, b) => a.displayOrder - b.displayOrder)
   );
+  const [previousOrder, setPreviousOrder] = useState<SortableCustomField[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    // Keep local state in sync if initialCustomFields prop changes and not in reorder mode
-    if (!isReorderMode) {
-        setOrderedFields([...initialCustomFields].sort((a, b) => a.displayOrder - b.displayOrder));
+    // Keep local state in sync if initialCustomFields prop changes and not in reorder mode or dirty
+    if (!isReorderMode && !isDirty) {
+        const sortedInitialFields = [...initialCustomFields].sort((a, b) => a.displayOrder - b.displayOrder);
+        setOrderedFields(sortedInitialFields);
+        // Ensure previousOrder is also in sync when not dirty and not in reorder mode
+        setPreviousOrder(sortedInitialFields);
     }
-  }, [initialCustomFields, isReorderMode]);
+  }, [initialCustomFields, isReorderMode, isDirty]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -121,31 +126,62 @@ export default function CustomFieldList({
   const updateOrderMutation = api.customFieldDefinitions.updateOrder.useMutation({
     onSuccess: () => {
       utils.customFieldDefinitions.listByEmulator.invalidate({ emulatorId });
+      setIsDirty(false); // Reset dirty state on successful save
       // Optionally show success notification
       alert('Order updated successfully!');
     },
     onError: (error) => {
       console.error('Error updating order:', error);
       alert(`Error updating order: ${error.message}`);
-      // Revert to original order from prop on error if optimistic update was more complex
-      setOrderedFields([...initialCustomFields].sort((a, b) => a.displayOrder - b.displayOrder));
+      // Revert to previousOrder on error if an optimistic update was performed or simply keep dirty
+      // For now, we let the user decide to cancel or try again.
+      // setOrderedFields(previousOrder); // Or revert to initialCustomFields
     },
   });
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
+    if (active.id !== over?.id && over) { // Ensure over is not null
       setOrderedFields((items) => {
+        // Store current order before changing if not already dirty (i.e., first drag)
+        if (!isDirty) {
+          setPreviousOrder([...items]);
+        }
         const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over!.id); // over.id should exist here
+        const newIndex = items.findIndex((item) => item.id === over.id);
         const newItems = arrayMove(items, oldIndex, newIndex);
-        // Update displayOrder based on new array index for persistence
-        const payload = newItems.map((item, index) => ({ id: item.id, displayOrder: index }));
-        // Call mutation immediately or defer to a "Save Order" button
-        // For simplicity, calling immediately, but this can be chatty.
-        updateOrderMutation.mutate(payload);
+        setIsDirty(true); // Mark as dirty, needs save or cancel
+        // DO NOT call mutation immediately
+        // updateOrderMutation.mutate(payload);
         return newItems;
       });
+    }
+  };
+
+  const handleConfirmReorder = () => {
+    const payload = orderedFields.map((item, index) => ({ id: item.id, displayOrder: index }));
+    updateOrderMutation.mutate(payload);
+    // isDirty will be set to false in onSuccess of the mutation
+  };
+
+  const handleCancelReorder = () => {
+    setOrderedFields(previousOrder); // Revert to the order before drag started
+    setIsDirty(false);
+  };
+
+  const toggleReorderMode = () => {
+    if (isReorderMode && isDirty) {
+      // If exiting reorder mode with unsaved changes, revert them
+      // and reset dirty state.
+      const sortedInitialFields = [...initialCustomFields].sort((a, b) => a.displayOrder - b.displayOrder);
+      setOrderedFields(sortedInitialFields);
+      setPreviousOrder(sortedInitialFields); // also reset previousOrder to initial
+      setIsDirty(false);
+    }
+    setIsReorderMode(!isReorderMode);
+    // If entering reorder mode, ensure previousOrder is set to current display order
+    if (!isReorderMode) { 
+      setPreviousOrder([...orderedFields]);
     }
   };
 
@@ -204,9 +240,19 @@ export default function CustomFieldList({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" onClick={() => setIsReorderMode(!isReorderMode)}>
-          {isReorderMode ? <><X className="mr-2 h-4 w-4"/> Cancel Reorder</> : <><GripVertical className="mr-2 h-4 w-4" /> Reorder Fields</>}
+      <div className="flex justify-end mb-4 space-x-2">
+        {isReorderMode && isDirty && (
+          <>
+            <Button variant="outline" onClick={handleCancelReorder} size="sm">
+              <Undo className="mr-2 h-4 w-4" /> Cancel Changes
+            </Button>
+            <Button variant="primary" onClick={handleConfirmReorder} size="sm" isLoading={updateOrderMutation.isPending}>
+              <Check className="mr-2 h-4 w-4" /> Confirm Order
+            </Button>
+          </>
+        )}
+        <Button variant="outline" onClick={toggleReorderMode} size="sm">
+          {isReorderMode ? <><X className="mr-2 h-4 w-4"/> Finish Reordering</> : <><GripVertical className="mr-2 h-4 w-4" /> Reorder Fields</>}
         </Button>
       </div>
       <SortableContext items={orderedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
