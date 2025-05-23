@@ -51,6 +51,7 @@
     "react-dom": "^19.0.0",
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.56.4",
+    "react-hot-toast": "^2.5.2",
     "superjson": "^2.2.2",
     "tailwind-merge": "^3.3.0",
     "ts-node": "^10.9.2",
