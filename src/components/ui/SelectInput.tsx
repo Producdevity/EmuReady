@@ -20,6 +20,7 @@ function SelectInput(props: Props) {
       <label className="block mb-1 font-medium">{props.label}</label>
       <Input
         leftIcon={props.leftIcon}
+        name={props.label}
         as="select"
         value={props.value}
         onChange={props.onChange}
