@@ -102,3 +102,22 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
     },
   })
 })
+
+/**
+ * Middleware to check if a user has SUPER_ADMIN role
+ */
+export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+    throw new TRPCError({ code: 'FORBIDDEN' })
+  }
+
+  return next({
+    ctx: {
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  })
+})
