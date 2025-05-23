@@ -4,6 +4,7 @@ import { type PropsWithChildren } from 'react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Inter } from 'next/font/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Toaster } from 'sonner'
 import Providers from '@/components/Providers'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -27,6 +28,7 @@ export default function RootLayout(props: PropsWithChildren) {
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
+          <Toaster richColors closeButton />
           <div className="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
             <Navbar />
             <Main>{props.children}</Main>
