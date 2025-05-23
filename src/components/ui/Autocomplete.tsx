@@ -89,7 +89,7 @@ function Autocomplete(props: Props) {
     if (props.onInputChange) {
       props.onInputChange(newValue)
     }
-    return debouncedSearch(newValue)
+    debouncedSearch(newValue)
   }
 
   // Handle option selection
@@ -98,7 +98,7 @@ function Autocomplete(props: Props) {
     setIsOpen(false)
     setHighlightedIndex(-1)
     props.onChange(option.value)
-    // Refocus input for keyboard userss
+    // Refocus input for keyboard users
     inputRef.current?.focus()
   }
 
@@ -183,19 +183,6 @@ function Autocomplete(props: Props) {
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         />
-        {/* <input
-          ref={inputRef}
-          type="text"
-          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 pr-10 ${props.leftIcon ? 'pl-10' : ''}`}
-          placeholder={placeholder}
-          value={inputValue}
-          onChange={handleChange}
-          onFocus={() => setIsOpen(true)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          autoComplete="off"
-        /> */}
         {props.rightIcon && !loading && (
           <span className="absolute right-3 text-gray-400 dark:text-gray-500 flex items-center">
             {props.rightIcon}
