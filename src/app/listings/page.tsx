@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
 import hasPermission from '@/utils/hasPermission'
-import { Role } from '@orm'
+import { Role, ListingApprovalStatus } from '@orm'
 import {
   Badge,
   Pagination,
@@ -65,6 +65,7 @@ function ListingsPage() {
     limit: 10,
     sortField: sortField ?? undefined,
     sortDirection: sortDirection ?? undefined,
+    approvalStatus: ListingApprovalStatus.APPROVED,
   }
 
   const { data, isLoading, error, refetch } =

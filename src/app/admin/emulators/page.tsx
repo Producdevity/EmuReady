@@ -1,56 +1,32 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import React, { useState } from 'react'
+import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import Link from 'next/link'
 import { api } from '@/lib/api'
-import { Button, Input } from '@/components/ui'
-import { Settings } from 'lucide-react'
+import Button from '@/components/ui/Button'
+import { Settings, Pencil } from 'lucide-react'
 
-const customFieldsButtonClasses =
+const actionButtonClasses =
   'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
 
 function AdminEmulatorsPage() {
   const { data: emulators, refetch } = api.emulators.list.useQuery()
-  const createEmulator = api.emulators.create.useMutation()
-  const updateEmulator = api.emulators.update.useMutation()
   const deleteEmulator = api.emulators.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [name, setName] = useState('')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const openModal = (emulator?: { id: string; name: string }) => {
     setEditId(emulator?.id ?? null)
     setName(emulator?.name ?? '')
     setModalOpen(true)
-    setError('')
-    setSuccess('')
   }
+
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
-    setName('')
-  }
-
-  const handleSubmit = async (ev: FormEvent) => {
-    ev.preventDefault()
-    setError('')
-    setSuccess('')
-    try {
-      if (editId) {
-        await updateEmulator.mutateAsync({ id: editId, name })
-        setSuccess('Emulator updated!')
-      } else {
-        await createEmulator.mutateAsync({ name })
-        setSuccess('Emulator created!')
-      }
-      refetch()
-      closeModal()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save emulator.')
-    }
   }
 
   const handleDelete = async (id: string) => {
@@ -87,13 +63,30 @@ function AdminEmulatorsPage() {
               >
                 <td className="px-4 py-2">{emu.name}</td>
                 <td className="px-4 py-2 flex gap-2 justify-end items-center">
-                  <Link href={`/admin/emulators/${emu.id}/custom-fields`} className={customFieldsButtonClasses}>
+                  <Link
+                    href={`/admin/emulators/${emu.id}/custom-fields`}
+                    className={actionButtonClasses}
+                  >
                     <Settings className="mr-2 h-4 w-4" /> Custom Fields
                   </Link>
-                  <Button variant="secondary" size="sm" onClick={() => openModal(emu)}>
-                    Edit
+                  <Link
+                    href={`/admin/emulators/${emu.id}`}
+                    className={actionButtonClasses}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                  </Link>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => openModal(emu)}
+                  >
+                    Quick Edit
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(emu.id)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDelete(emu.id)}
+                  >
                     Delete
                   </Button>
                 </td>
@@ -103,37 +96,15 @@ function AdminEmulatorsPage() {
         </table>
       </div>
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">
-          <form
-            className="bg-white dark:bg-gray-900 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 relative"
-            onSubmit={handleSubmit}
-          >
-            <h2 className="text-2xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
-              {editId ? 'Edit Emulator' : 'Add Emulator'}
-            </h2>
-            <label className="block mb-2 font-medium">Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="mb-4 w-full"
-            />
-            {error && <div className="text-red-500 mb-2">{error}</div>}
-            {success && <div className="text-green-600 mb-2">{success}</div>}
-            <div className="flex gap-2 justify-end mt-6">
-              <Button type="button" variant="secondary" onClick={closeModal}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                isLoading={createEmulator.isPending || updateEmulator.isPending}
-                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-              >
-                {editId ? 'Save' : 'Create'}
-              </Button>
-            </div>
-          </form>
-        </div>
+        <EmulatorModal
+          editId={editId}
+          emulatorName={name}
+          onClose={closeModal}
+          onSuccess={() => {
+            refetch().catch(console.error)
+            closeModal()
+          }}
+        />
       )}
     </div>
   )
