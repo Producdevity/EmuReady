@@ -232,13 +232,12 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     setIsOpen(true);
   };
   
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Timeout to allow click on suggestion list to register
+  const handleInputBlur = (_e: React.FocusEvent<HTMLInputElement>) => {
     setTimeout(() => {
       if (listRef.current && !listRef.current.contains(document.activeElement)) {
          setIsOpen(false);
       }
-    }, 100); // Small delay
+    }, 100); 
   };
 
   useEffect(() => {
@@ -299,7 +298,6 @@ function Autocomplete<T extends AutocompleteOptionBase>({
           disabled={disabled}
           autoComplete="off"
           aria-autocomplete="list"
-          aria-expanded={isOpen}
           aria-controls={isOpen ? "autocomplete-list" : undefined}
           aria-activedescendant={highlightedIndex >=0 && suggestions[highlightedIndex] ? `option-${optionToValue(suggestions[highlightedIndex])}` : undefined}
         />
