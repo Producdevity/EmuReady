@@ -5,6 +5,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
+  superAdminProcedure,
 } from '@/server/api/trpc'
 
 export const emulatorsRouter = createTRPCRouter({
@@ -42,6 +43,12 @@ export const emulatorsRouter = createTRPCRouter({
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: input.id },
         include: {
+          systems: true,
+          customFieldDefinitions: {
+            orderBy: {
+              displayOrder: 'asc'
+            }
+          },
           _count: {
             select: { listings: true },
           },
@@ -142,5 +149,52 @@ export const emulatorsRouter = createTRPCRouter({
       return ctx.prisma.emulator.delete({
         where: { id: input.id },
       })
+    }),
+
+  updateSupportedSystems: superAdminProcedure
+    .input(
+      z.object({
+        emulatorId: z.string().uuid(),
+        systemIds: z.array(z.string().uuid()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { emulatorId, systemIds } = input;
+
+      const emulator = await ctx.prisma.emulator.findUnique({
+        where: { id: emulatorId },
+      });
+
+      if (!emulator) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Emulator not found.',
+        });
+      }
+
+      const systems = await ctx.prisma.system.findMany({
+        where: { id: { in: systemIds } },
+        select: { id: true }, 
+      });
+
+      if (systems.length !== systemIds.length) {
+        const foundSystemIds = new Set(systems.map(s => s.id));
+        const invalidIds = systemIds.filter(id => !foundSystemIds.has(id)); 
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `One or more system IDs are invalid: ${invalidIds.join(', ')}.`,
+        });
+      }
+      
+      await ctx.prisma.emulator.update({
+        where: { id: emulatorId },
+        data: {
+          systems: {
+            set: systemIds.map(id => ({ id })), 
+          },
+        },
+      });
+
+      return { success: true, message: 'Supported systems updated successfully.' };
     }),
 })
