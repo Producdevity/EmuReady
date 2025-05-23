@@ -15,15 +15,20 @@ async function main() {
     console.warn('I hope you know what you are doing 😅')
 
     // Clear all data in the correct order (children before parents)
-    await prisma.listingApproval.deleteMany()
+    // await prisma.listingApproval.deleteMany() // Removed as ListingApproval model is deleted
     await prisma.vote.deleteMany()
+    await prisma.commentVote.deleteMany() // Added CommentVote
     await prisma.comment.deleteMany()
+    await prisma.listingCustomFieldValue.deleteMany() // Added ListingCustomFieldValue
     await prisma.listing.deleteMany()
+    await prisma.customFieldDefinition.deleteMany() // Added CustomFieldDefinition
     await prisma.performanceScale.deleteMany()
     await prisma.device.deleteMany()
     await prisma.emulator.deleteMany()
     await prisma.game.deleteMany()
     await prisma.system.deleteMany()
+    await prisma.deviceBrand.deleteMany() // Added DeviceBrand
+    await prisma.user.deleteMany() // User should be last or close to last
 
     console.log('✅ Database cleared!')
   }
