@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import { api } from '@/lib/api'
 import Button from '@/components/ui/Button'
 import { Eye, CheckCircle, XCircle, Undo, ExternalLink } from 'lucide-react'
-import toast from '@/lib/toast'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
+import toast from '@/lib/toast'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import SelectInput from '@/components/ui/SelectInput'
@@ -14,6 +14,7 @@ import { type inferProcedureOutput } from '@trpc/server'
 import { type AppRouter } from '@/server/api/root'
 import { ListingApprovalStatus } from '@orm'
 import Pagination from '@/components/ui/Pagination'
+import getStatusBadgeColor from './utils/getStatusBadgeColor'
 
 type ProcessedListing = inferProcedureOutput<
   AppRouter['listings']['listProcessed']
@@ -22,21 +23,21 @@ type ProcessedListing = inferProcedureOutput<
 const statusOptions = [
   { id: 'all' as const, name: 'All Processed' },
   { id: ListingApprovalStatus.APPROVED, name: 'Approved' },
+  { id: ListingApprovalStatus.PENDING, name: 'Pending' },
   { id: ListingApprovalStatus.REJECTED, name: 'Rejected' },
 ]
 
-export default function ProcessedListingsPage() {
+function ProcessedListingsPage() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [filterStatus, setFilterStatus] = useState<
-    ListingApprovalStatus | undefined
-  >(undefined)
+  const [filterStatus, setFilterStatus] =
+    useState<ListingApprovalStatus | null>(null)
   const itemsPerPage = 10
 
   const { data, isLoading, error, refetch } =
     api.listings.listProcessed.useQuery({
       page: currentPage,
       limit: itemsPerPage,
-      filterStatus: filterStatus,
+      filterStatus: filterStatus ?? undefined,
     })
 
   const processedListings = data?.listings ?? []
@@ -59,6 +60,7 @@ export default function ProcessedListingsPage() {
       closeOverrideModal()
     },
     onError: (err) => {
+      console.error('Failed to override status:', err)
       toast.error(`Failed to override status: ${err.message}`)
     },
   })
@@ -85,22 +87,14 @@ export default function ProcessedListingsPage() {
       overrideMutation.mutate({
         listingId: selectedListingForOverride.id,
         newStatus: newStatusForOverride,
-        overrideNotes: overrideNotes ?? undefined, // Use ?? for potentially empty string notes
+        overrideNotes: overrideNotes ?? undefined,
       })
     }
   }
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage)
-  }
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (value === 'all') {
-      setFilterStatus(undefined)
-    } else {
-      setFilterStatus(value as ListingApprovalStatus)
-    }
+  const handleFilterChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    const value = ev.target.value as ListingApprovalStatus | 'all'
+    setFilterStatus(value === 'all' ? null : value)
     setCurrentPage(1)
   }
 
@@ -110,23 +104,6 @@ export default function ProcessedListingsPage() {
         Error loading processed listings: {error.message}
       </div>
     )
-  }
-
-  const getStatusBadgeColor = (
-    status: ListingApprovalStatus | null | undefined,
-  ) => {
-    if (!status)
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
-    switch (status) {
-      case ListingApprovalStatus.APPROVED:
-        return 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100'
-      case ListingApprovalStatus.REJECTED:
-        return 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100'
-      case ListingApprovalStatus.PENDING:
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
-    }
   }
 
   return (
@@ -298,7 +275,7 @@ export default function ProcessedListingsPage() {
               <Pagination
                 currentPage={paginationData.currentPage}
                 totalPages={paginationData.pages}
-                onPageChange={handlePageChange}
+                onPageChange={setCurrentPage}
               />
             </div>
           )}
@@ -372,3 +349,5 @@ export default function ProcessedListingsPage() {
     </div>
   )
 }
+
+export default ProcessedListingsPage
