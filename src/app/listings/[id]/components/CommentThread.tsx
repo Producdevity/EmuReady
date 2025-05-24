@@ -15,6 +15,7 @@ import {
   ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline'
 import { canEditComment, canDeleteComment } from '@/utils/hasPermission'
+import { ConfirmDialogProvider, useConfirmDialog } from '@/components/ui'
 
 // TODO: use type from api
 interface CommentType {
@@ -102,8 +103,14 @@ function CommentThread(props: Props) {
     }))
   }
 
+  const confirm = useConfirmDialog()
+
   const handleDeleteComment = async (commentId: string) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
+    const confirmed = await confirm({
+      title: 'Delete this comment?',
+      description: 'This action cannot be undone.',
+    })
+    if (confirmed) {
       deleteComment.mutate({ commentId })
     }
   }
@@ -415,4 +422,12 @@ function CommentThread(props: Props) {
   )
 }
 
-export default CommentThread
+function WrappedCommentThread(props: Props) {
+  return (
+    <ConfirmDialogProvider>
+      <CommentThread {...props} />
+    </ConfirmDialogProvider>
+  )
+}
+
+export default WrappedCommentThread
