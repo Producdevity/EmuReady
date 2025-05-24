@@ -1,6 +1,6 @@
 export { default as Autocomplete } from './Autocomplete'
 export { default as Badge } from './Badge'
-export { default as Button } from './Button'
+export { default as Button, buttonVariants } from './Button'
 export { default as Card } from './Card'
 export { default as Dropdown } from './Dropdown'
 export { default as ErrorFallback } from './ErrorFallback'
