@@ -281,16 +281,11 @@ export default function ProcessedListingsPage() {
                       </Button>
                       <Link
                         href={`/admin/listings/${listing.id}/edit`}
-                        passHref
-                        legacyBehavior
+                        className="text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 p-1.5 inline-flex items-center ml-1"
+                        aria-label="Edit Listing"
+                        title="Edit Listing (Admin)"
                       >
-                        <a
-                          className="text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 p-1.5 inline-flex items-center ml-1"
-                          aria-label="Edit Listing"
-                          title="Edit Listing (Admin)"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </a>
+                        <Eye className="h-4 w-4" />
                       </Link>
                     </td>
                   </tr>
