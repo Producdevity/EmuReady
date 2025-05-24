@@ -107,10 +107,11 @@ model Emulator {
 }
 
 model PerformanceScale {
-  id       Int       @id @default(autoincrement())
-  label    String    @unique
-  rank     Int
-  listings Listing[]
+  id          Int       @id @default(autoincrement())
+  label       String    @unique
+  rank        Int
+  description String?
+  listings    Listing[]
 }
 
 model Listing {

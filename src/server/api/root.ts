@@ -7,6 +7,7 @@ import { gamesRouter } from './routers/games'
 import { emulatorsRouter } from './routers/emulators'
 import { usersRouter } from './routers/users'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
+import { performanceScalesRouter } from './routers/performanceScales'
 import type { inferRouterOutputs } from '@trpc/server'
 
 export const appRouter = createTRPCRouter({
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   emulators: emulatorsRouter,
   users: usersRouter,
   customFieldDefinitions: customFieldDefinitionRouter,
+  performanceScales: performanceScalesRouter,
 })
 
 export type AppRouter = typeof appRouter
