@@ -47,6 +47,7 @@ const Input = forwardRef<HTMLElement, Props>(
         {as === 'input' && (
           <input
             ref={ref as Ref<HTMLInputElement>}
+            type="text"
             className={twMerge(
               commonInputStyling,
               'py-2 px-3',
