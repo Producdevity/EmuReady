@@ -9,32 +9,38 @@ describe('Button', () => {
     const button = screen.getByRole('button', { name: /click me/i })
 
     expect(button).toBeInTheDocument()
-    expect(button).toHaveClass('bg-blue-600') // primary variant
+    expect(button).toHaveClass('bg-primary', 'text-primary-foreground')
   })
 
   it('applies different variants correctly', () => {
     const { rerender } = render(<Button variant="secondary">Secondary</Button>)
-    expect(screen.getByRole('button')).toHaveClass('bg-gray-100')
+    expect(screen.getByRole('button')).toHaveClass(
+      'bg-secondary',
+      'text-secondary-foreground',
+    )
 
     rerender(<Button variant="outline">Outline</Button>)
-    expect(screen.getByRole('button')).toHaveClass('border-gray-300')
+    expect(screen.getByRole('button')).toHaveClass('border', 'bg-background')
 
     rerender(<Button variant="ghost">Ghost</Button>)
-    expect(screen.getByRole('button')).toHaveClass('bg-transparent')
+    expect(screen.getByRole('button')).toHaveClass('hover:bg-accent')
 
     rerender(<Button variant="danger">Danger</Button>)
     expect(screen.getByRole('button')).toHaveClass('bg-red-600')
+
+    rerender(<Button variant="primary">Primary</Button>)
+    expect(screen.getByRole('button')).toHaveClass('bg-blue-600')
   })
 
   it('applies different sizes correctly', () => {
     const { rerender } = render(<Button size="sm">Small</Button>)
-    expect(screen.getByRole('button')).toHaveClass('text-sm')
+    expect(screen.getByRole('button')).toHaveClass('h-8', 'text-sm')
 
     rerender(<Button size="md">Medium</Button>)
-    expect(screen.getByRole('button')).toHaveClass('text-base')
+    expect(screen.getByRole('button')).toHaveClass('h-9', 'text-base')
 
     rerender(<Button size="lg">Large</Button>)
-    expect(screen.getByRole('button')).toHaveClass('text-lg')
+    expect(screen.getByRole('button')).toHaveClass('h-10', 'text-base')
   })
 
   it('shows loading state when isLoading is true', () => {
