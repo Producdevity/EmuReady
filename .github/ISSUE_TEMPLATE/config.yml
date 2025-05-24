@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Contributing Guidelines
     url: ../CONTRIBUTING.md
-    about: Please read the contributing guidelines before submitting an issue. 
+    about: Please read the contributing guidelines before submitting an issue.
