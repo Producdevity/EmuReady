@@ -6,16 +6,14 @@ import { Eye, CheckCircle, XCircle, Undo, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import toast from '@/lib/toast'
 import { Button, Modal, Input, SelectInput } from '@/components/ui'
-import { type inferProcedureOutput } from '@trpc/server'
-import { type AppRouter } from '@/server/api/root'
 import { ListingApprovalStatus } from '@orm'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import Pagination from '@/components/ui/Pagination'
 import getStatusBadgeColor from './utils/getStatusBadgeColor'
+import { type RouterOutput } from '@/types/trpc'
 
-type ProcessedListing = inferProcedureOutput<
-  AppRouter['listings']['listProcessed']
->['listings'][number]
+type ProcessedListing =
+  RouterOutput['listings']['getProcessed']['listings'][number]
 
 const statusOptions = [
   { id: 'all' as const, name: 'All Processed' },
@@ -31,7 +29,7 @@ function ProcessedListingsPage() {
   const itemsPerPage = 10
 
   const { data, isLoading, error, refetch } =
-    api.listings.listProcessed.useQuery({
+    api.listings.getProcessed.useQuery({
       page: currentPage,
       limit: itemsPerPage,
       filterStatus: filterStatus ?? undefined,
@@ -52,8 +50,8 @@ function ProcessedListingsPage() {
     onSuccess: async () => {
       toast.success('Listing status overridden successfully!')
       await refetch()
-      await utils.listings.listPending.invalidate()
-      await utils.listings.list.invalidate()
+      await utils.listings.getPending.invalidate()
+      await utils.listings.get.invalidate()
       closeOverrideModal()
     },
     onError: (err) => {
