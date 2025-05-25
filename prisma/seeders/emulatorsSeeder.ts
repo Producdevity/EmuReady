@@ -37,7 +37,7 @@ const emulators: EmulatorData[] = [
   { name: 'NethersX2', supportedSystemNames: ['Sony PlayStation 2'] },
   { name: 'PCSX2', supportedSystemNames: ['Sony PlayStation 2'] },
   { name: 'PPSSPP', supportedSystemNames: ['Sony PlayStation Portable'] },
-  { name: 'Pluvia', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'Pluvia', supportedSystemNames: ['Microsoft Windows'] },
   { name: 'RPCS3', supportedSystemNames: ['Sony PlayStation 3'] },
   {
     name: 'RPCSX',
