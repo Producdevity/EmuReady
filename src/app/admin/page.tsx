@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { Role } from '@orm'
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',

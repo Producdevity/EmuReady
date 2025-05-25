@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
 import {
   Badge,

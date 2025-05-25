@@ -1,6 +1,6 @@
 'use client'
 
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'

@@ -1,6 +1,5 @@
 'use client'
 
-import hasPermission from '@/utils/hasPermission'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -14,7 +13,8 @@ import {
 } from '@heroicons/react/24/outline'
 import UserRoleModal from './components/UserRoleModal'
 import { Role } from '@orm'
-import formatDate from '@/utils/formatDate'
+import { formatDate } from '@/utils/date'
+import { hasPermission } from '@/utils/permissions'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
 
 interface UserForModal {

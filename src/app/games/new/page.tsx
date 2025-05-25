@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Role } from '@orm'
 import { api } from '@/lib/api'
 import { ImageUpload, LoadingSpinner } from '@/components/ui'
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 
 function AddGamePage() {
   const router = useRouter()
