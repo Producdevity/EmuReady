@@ -17,18 +17,45 @@ const emulators: EmulatorData[] = [
   { name: 'DraStic', supportedSystemNames: ['Nintendo DS'] },
   { name: 'DuckStation', supportedSystemNames: ['Sony PlayStation'] },
   { name: 'Eden', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'Flycast', supportedSystemNames: ['Sega Dreamcast'] },
   { name: 'GameFusion - GameHub', supportedSystemNames: ['Microsoft Windows'] },
+  {
+    name: 'Lemuroid',
+    supportedSystemNames: [
+      'Nintendo DS',
+      'Nintendo Entertainment System',
+      'Super Nintendo Entertainment System',
+      'Nintendo 64',
+      'Sony PlayStation',
+      'Sony PlayStation Portable',
+      'Sega Genesis/Mega Drive',
+      'Sega Game Gear',
+      'Sega Master System',
+    ],
+  },
   { name: 'MiceWine', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'NethersX2', supportedSystemNames: ['Sony PlayStation 2'] },
   { name: 'PCSX2', supportedSystemNames: ['Sony PlayStation 2'] },
   { name: 'PPSSPP', supportedSystemNames: ['Sony PlayStation Portable'] },
   { name: 'Pluvia', supportedSystemNames: ['Nintendo Switch'] },
   { name: 'RPCS3', supportedSystemNames: ['Sony PlayStation 3'] },
   {
+    name: 'RPCSX',
+    supportedSystemNames: ['Sony PlayStation 3', 'Sony PlayStation 4'],
+  },
+  { name: 'Redream', supportedSystemNames: ['Sega Dreamcast'] },
+  {
     name: 'RetroArch',
     supportedSystemNames: [
-      'Super Nintendo Entertainment System',
+      'Nintendo 64',
+      'Nintendo DS',
       'Nintendo Entertainment System',
+      'Sega Game Gear',
       'Sega Genesis/Mega Drive',
+      'Sega Master System',
+      'Sony PlayStation Portable',
+      'Sony PlayStation',
+      'Super Nintendo Entertainment System',
     ],
   },
   { name: 'Ryujinx', supportedSystemNames: ['Nintendo Switch'] },
@@ -38,6 +65,7 @@ const emulators: EmulatorData[] = [
     supportedSystemNames: ['Super Nintendo Entertainment System'],
   },
   { name: 'Sudachi', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'Vita3K', supportedSystemNames: ['Sony PlayStation Vita'] },
   {
     name: 'Winlator Afeimod Glibc',
     supportedSystemNames: ['Microsoft Windows'],
@@ -65,6 +93,7 @@ const emulators: EmulatorData[] = [
   { name: 'Winlator WinMali', supportedSystemNames: ['Microsoft Windows'] },
   { name: 'Winlator longjunyu' },
   { name: 'Xemu', supportedSystemNames: ['Microsoft Xbox'] },
+  { name: 'Yaba Sanshiro', supportedSystemNames: ['Sega Saturn'] },
   { name: 'Yuzu', supportedSystemNames: ['Nintendo Switch'] },
   { name: 'melonDS', supportedSystemNames: ['Nintendo DS'] },
 ]
@@ -95,14 +124,7 @@ async function emulatorsSeeder(prisma: PrismaClient) {
 
     await prisma.emulator.upsert({
       where: { name },
-      update: {
-        // If you want to override existing systems on update:
-        // systems: {
-        //   set: systemsToConnect ? systemsToConnect.map(system => ({ id: system.id })) : [],
-        // },
-        // For now, let a separate admin UI handle changing existing relations more explicitly.
-        // This seeder will only add connections if they don't exist on create.
-      },
+      update: { ...connectSystems },
       create: {
         name,
         ...connectSystems,
