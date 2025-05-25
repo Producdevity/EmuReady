@@ -77,7 +77,6 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       return
     }
     // Try to find the selected item in current suggestions or staticItems to set its label as inputValue
-    // This part might need refinement if items are purely async
     const allAvailableItems = loadItems ? suggestions : (staticItems ?? [])
     const selectedItem = allAvailableItems.find(
       (item) => optionToValue(item) === value,
@@ -92,17 +91,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       if (staticSelectedItem) {
         setInputValue(optionToLabel(staticSelectedItem))
       } else {
-        // If value is present but not in items, clear input or show value itself?
-        // For now, clearing, as label is unknown.
-        // setInputValue(String(value)); // Or consider this if value should be shown
+        // If value is present but not in items, clear input
         setInputValue('')
       }
-    } else if (inputValue && !selectedItem) {
-      // If there was an input value but the current props.value doesn\'t match anything,
-      // and it wasn\'t cleared by value === null, it might mean the user typed something
-      // that is not a valid selection yet. Let user input persist for now.
-      // Or, if `value` is a free-text entry, this logic changes.
-      // Assuming `value` must correspond to an option for now.
     }
   }, [
     value,
@@ -111,12 +102,18 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     optionToLabel,
     suggestions,
     loadItems,
-    inputValue,
+    // Removed inputValue from dependencies to prevent feedback loop
   ])
 
   const performSearch = useCallback(
     async (query: string) => {
-      if (query.length < minCharsToTrigger) {
+      // For static items, allow showing all items when query is empty
+      // For async loading, allow showing initial results even with empty query
+      if (
+        query.length < minCharsToTrigger &&
+        !(loadItems && query.length === 0) &&
+        !(staticItems && query.length === 0)
+      ) {
         setSuggestions([])
         setIsOpen(query.length > 0) // Keep open if user is typing but below threshold
         return
@@ -128,22 +125,27 @@ function Autocomplete<T extends AutocompleteOptionBase>({
           const newSuggestions = await loadItems(query)
           setSuggestions(newSuggestions)
         } else if (staticItems) {
-          const lowerQuery = query.toLowerCase()
-          const filtered = staticItems.filter((item) => {
-            if (filterKeys.length > 0) {
-              return filterKeys.some((key) => {
-                const val = item[key]
-                return (
-                  typeof val === 'string' &&
-                  val.toLowerCase().includes(lowerQuery)
-                )
-              })
-            } else {
-              // Default to filtering by label if no filterKeys provided
-              return optionToLabel(item).toLowerCase().includes(lowerQuery)
-            }
-          })
-          setSuggestions(filtered)
+          if (query.length === 0) {
+            // Show all items when query is empty for static items
+            setSuggestions(staticItems)
+          } else {
+            const lowerQuery = query.toLowerCase()
+            const filtered = staticItems.filter((item) => {
+              if (filterKeys.length > 0) {
+                return filterKeys.some((key) => {
+                  const val = item[key]
+                  return (
+                    typeof val === 'string' &&
+                    val.toLowerCase().includes(lowerQuery)
+                  )
+                })
+              } else {
+                // Default to filtering by label if no filterKeys provided
+                return optionToLabel(item).toLowerCase().includes(lowerQuery)
+              }
+            })
+            setSuggestions(filtered)
+          }
         }
       } catch (error) {
         console.error('Error fetching/filtering suggestions:', error)
@@ -193,13 +195,13 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (disabled) return
 
-    if (
-      !isOpen &&
-      (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
-      suggestions.length > 0
-    ) {
-      setIsOpen(true)
-      setHighlightedIndex(0) // Start from top or based on previous
+    if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      // Open dropdown and trigger search
+      if (!loadItems && staticItems && staticItems.length > 0) {
+        performSearch(inputValue)
+      } else if (loadItems && inputValue.length >= minCharsToTrigger) {
+        performSearch(inputValue)
+      }
       return
     }
 
@@ -249,20 +251,16 @@ function Autocomplete<T extends AutocompleteOptionBase>({
 
   const handleInputFocus = () => {
     if (disabled) return
-    // If there\'s text and suggestions could be shown, open it.
-    // Or, if configured to show all options on focus (if staticItems)
-    if (
-      inputValue.length >= minCharsToTrigger ||
-      (!loadItems &&
-        staticItems &&
-        staticItems.length > 0 &&
-        inputValue.length === 0)
-    ) {
-      // For static items, on focus, if input is empty, show all or filtered if text exists
-      // For loadItems, only open if there\'s enough text, or handled by inputChange
+
+    // For static items, always show results on focus
+    if (!loadItems && staticItems && staticItems.length > 0) {
+      performSearch(inputValue)
+    } else if (loadItems && inputValue.length >= minCharsToTrigger) {
+      // For async loading, only show results if there's enough text
       performSearch(inputValue)
     }
-    setIsOpen(true)
+    // Note: We don't call performSearch('') for async loading on focus anymore
+    // as this was causing test failures and unexpected behavior
   }
 
   const handleInputBlur = (_e: FocusEvent<HTMLInputElement>) => {
@@ -282,10 +280,12 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       const optionElement = currentList.children[highlightedIndex] as
         | HTMLLIElement
         | undefined
-      optionElement?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-      })
+      if (optionElement && typeof optionElement.scrollIntoView === 'function') {
+        optionElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      }
     }
   }, [highlightedIndex, isOpen])
 
@@ -305,6 +305,15 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const showNoResults =
     isOpen &&
     !isLoading &&
@@ -316,10 +325,15 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     inputValue.length < minCharsToTrigger &&
     (!staticItems || staticItems.length === 0 || loadItems)
 
+  const inputId = `autocomplete-input-${Math.random().toString(36).substr(2, 9)}`
+
   return (
     <div className={twMerge('relative', className)}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label
+          htmlFor={inputId}
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
           {label}
         </label>
       )}
@@ -331,6 +345,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         )}
         <input
           ref={inputRef}
+          id={inputId}
           type="text"
           className={twMerge(
             'w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
@@ -391,7 +406,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
             role="listbox"
             className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
           >
-            {isLoading && suggestions.length === 0 && !showMinCharsMessage && (
+            {isLoading && (
               <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
                 Loading...
               </li>
@@ -423,8 +438,8 @@ function Autocomplete<T extends AutocompleteOptionBase>({
                         ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
                         : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
                     )}
-                    onMouseDown={({ preventDefault }) => {
-                      preventDefault()
+                    onMouseDown={(ev) => {
+                      ev.preventDefault()
                       handleOptionClick(item)
                     }}
                     onMouseEnter={() => setHighlightedIndex(idx)}
