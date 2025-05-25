@@ -1,33 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { api } from '@/lib/api'
 import { CheckCircle, XCircle, ExternalLink, Eye } from 'lucide-react'
-import toast from '@/lib/toast'
 import Link from 'next/link'
+import toast from '@/lib/toast'
 import { Button, Modal, Input } from '@/components/ui'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
-import { type inferProcedureOutput } from '@trpc/server'
-import { type AppRouter } from '@/server/api/root'
+import { api } from '@/lib/api'
+import { type RouterOutput } from '@/types/trpc'
 
-// Type for a pending listing, directly from the updated listPending output
-type PendingListing = inferProcedureOutput<
-  AppRouter['listings']['listPending']
->[number]
+type PendingListing = RouterOutput['listings']['getPending'][number]
 
 function AdminApprovalsPage() {
   const {
     data: pendingListings,
     isLoading,
     refetch,
-  } = api.listings.listPending.useQuery(undefined, {
-    // Added undefined as input since listPending doesn't expect one, and options object for potential future use
+  } = api.listings.getPending.useQuery(undefined, {
+    // Added undefined as input since getPending doesn't expect one, and options object for potential future use
     staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes to allow for refetch on focus/reconnect
   })
   const utils = api.useUtils()
 
   const [showRejectionModal, setShowRejectionModal] = useState(false)
-  // selectedListingForRejection is now directly a Listing object (or the inferred PendingListing type)
   const [selectedListingForRejection, setSelectedListingForRejection] =
     useState<PendingListing | null>(null)
   const [rejectionNotes, setRejectionNotes] = useState('')
@@ -36,7 +31,7 @@ function AdminApprovalsPage() {
     onSuccess: async () => {
       toast.success('Listing approved!')
       await refetch()
-      await utils.listings.list.invalidate() // Invalidate main list as it might filter by status
+      await utils.listings.get.invalidate()
     },
     onError: (error) => {
       toast.error(`Approval failed: ${error.message}`)
@@ -47,7 +42,7 @@ function AdminApprovalsPage() {
     onSuccess: async () => {
       toast.success('Listing rejected!')
       await refetch()
-      await utils.listings.list.invalidate()
+      await utils.listings.get.invalidate()
       closeRejectionModal()
     },
     onError: (error) => {
@@ -57,7 +52,7 @@ function AdminApprovalsPage() {
 
   const openRejectionModal = (listing: PendingListing) => {
     setSelectedListingForRejection(listing)
-    setRejectionNotes(listing.processedNotes ?? '') // Use ?? for nullish coalescing
+    setRejectionNotes(listing.processedNotes ?? '')
     setShowRejectionModal(true)
   }
 
