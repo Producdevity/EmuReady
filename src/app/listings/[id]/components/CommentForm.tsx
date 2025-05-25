@@ -22,7 +22,7 @@ function CommentForm(props: Props) {
   const [content, setContent] = useState(props.initialContent ?? '')
   const { data: session } = useSession()
 
-  const addComment = api.listings.comment.useMutation({
+  const addComment = api.listings.createComment.useMutation({
     onSuccess: () => {
       setContent('')
       props.onCommentSuccess()
@@ -42,10 +42,7 @@ function CommentForm(props: Props) {
 
     const sanitizedContent = sanitizeString(content)
 
-    if (sanitizedContent.trim().length === 0) {
-      // Don't submit if sanitization removed all content
-      return
-    }
+    if (sanitizedContent.trim().length === 0) return
 
     if (props.isEditing && props.commentId) {
       editComment.mutate({
