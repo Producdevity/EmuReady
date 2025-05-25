@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CommentForm from './CommentForm'
 import { api } from '@/lib/api'
-import { formatDistanceToNow } from 'date-fns'
 import {
   ChevronUpIcon,
   ChevronDownIcon,
@@ -14,7 +13,8 @@ import {
   ChevronRightIcon,
   ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline'
-import { canEditComment, canDeleteComment } from '@/utils/hasPermission'
+import { formatTimeAgo } from '@/utils/date'
+import { canEditComment, canDeleteComment } from '@/utils/permissions'
 import { ConfirmDialogProvider, useConfirmDialog } from '@/components/ui'
 
 // TODO: use type from api
@@ -110,13 +110,8 @@ function CommentThread(props: Props) {
       title: 'Delete this comment?',
       description: 'This action cannot be undone.',
     })
-    if (confirmed) {
-      deleteComment.mutate({ commentId })
-    }
-  }
-
-  const formatRelativeTime = (date: Date | string) => {
-    return formatDistanceToNow(new Date(date), { addSuffix: true })
+    if (!confirmed) return
+    deleteComment.mutate({ commentId })
   }
 
   const isCommentExpanded = (commentId: string) => {
@@ -183,7 +178,7 @@ function CommentThread(props: Props) {
                     {comment.user?.name ?? 'Anonymous'}
                   </span>
                   <span className="text-xs text-gray-400 ml-2">
-                    {formatRelativeTime(comment.createdAt)}
+                    {formatTimeAgo(comment.createdAt)}
                   </span>
                   {comment.isEdited && (
                     <span className="text-xs text-gray-400 italic ml-1">
@@ -347,7 +342,6 @@ function CommentThread(props: Props) {
     )
   }
 
-  // Sorting controls component
   const SortControls = () => (
     <div className="flex justify-start mb-4">
       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg inline-flex p-1">
@@ -391,15 +385,12 @@ function CommentThread(props: Props) {
         Comments {commentsData?.comments && `(${commentsData.comments.length})`}
       </h2>
 
-      {/* Comment form */}
       <CommentForm listingId={props.listingId} onCommentSuccess={refreshData} />
 
-      {/* Sort controls */}
       {commentsData?.comments && commentsData.comments.length > 0 && (
         <SortControls />
       )}
 
-      {/* Comments list */}
       <div className="space-y-2">
         {isLoading ? (
           <div className="text-gray-500 dark:text-gray-400 animate-pulse">
