@@ -6,9 +6,9 @@ import { isArray, isString } from 'remeda'
 import { useParams } from 'next/navigation'
 import { formatDate } from '@/utils/date'
 import { api } from '@/lib/api'
-import type { RouterOutputs } from '@/server/api/root'
+import { type RouterOutput } from '@/types/trpc'
 
-type UserProfile = RouterOutputs['users']['getUserById']
+type UserProfile = RouterOutput['users']['getUserById']
 type UserListing = UserProfile['listings'][0]
 type UserVote = UserProfile['votes'][0]
 
