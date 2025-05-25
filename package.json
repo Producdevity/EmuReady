@@ -18,8 +18,8 @@
     "test:ci": "vitest --run",
     "test:e2e": "playwright test",
     "prepare-deploy": "npm run lint && npm run typecheck && npm run test:ci && npm run build",
-    "vercel:build": "prisma generate && prisma migrate deploy && next build",
-    "vercel:build:fresh": "prisma generate && prisma migrate deploy && prisma db seed && next build",
+    "vercel:build": "prisma migrate deploy && next build",
+    "vercel:build:fresh": "prisma migrate deploy && prisma db seed && next build",
     "prepare": "husky"
   },
   "prisma": {
