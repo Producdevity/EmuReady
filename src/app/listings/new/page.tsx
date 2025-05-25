@@ -27,6 +27,8 @@ import {
   CheckSquare,
   LinkIcon,
   CaseSensitive,
+  AlertCircle,
+  Info,
 } from 'lucide-react'
 import toast from '@/lib/toast'
 
@@ -53,11 +55,19 @@ type ListingFormValues = z.infer<typeof listingFormSchema>
 interface GameOption extends AutocompleteOptionBase {
   id: string
   title: string
+  system: {
+    id: string
+    name: string
+  }
 }
 
 interface EmulatorOption extends AutocompleteOptionBase {
   id: string
   name: string
+  systems: Array<{
+    id: string
+    name: string
+  }>
 }
 
 interface CustomFieldOptionUI {
@@ -75,6 +85,10 @@ function AddListingPage() {
 
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
+  const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
+  const [availableEmulators, setAvailableEmulators] = useState<
+    EmulatorOption[]
+  >([])
 
   const {
     control,
@@ -96,19 +110,9 @@ function AddListingPage() {
   })
 
   const selectedEmulatorId = watch('emulatorId')
+  const selectedGameId = watch('gameId')
 
-  // Data fetching for Autocomplete options - these are not directly used in Autocomplete props anymore
-  // They serve to make `utils.games.get.fetch` and `utils.emulators.get.fetch` available.
-  // The `isLoading` states from these might be useful for global loading indicators if desired.
-  const {} = api.games.get.useQuery(
-    { search: gameSearchTerm, limit: 1 },
-    { enabled: false },
-  )
-  const {} = api.emulators.get.useQuery(
-    { search: emulatorSearchTerm },
-    { enabled: false },
-  )
-
+  // Data fetching for Autocomplete options
   const { data: devicesData } = api.devices.get.useQuery({ limit: 1000 })
   const { data: performanceScalesData } =
     api.listings.performanceScales.useQuery()
@@ -131,7 +135,13 @@ function AddListingPage() {
           search: query,
           limit: 20,
         })
-        return result.games.map((g) => ({ id: g.id, title: g.title })) ?? []
+        return (
+          result.games.map((g) => ({
+            id: g.id,
+            title: g.title,
+            system: g.system,
+          })) ?? []
+        )
       } catch (error) {
         console.error('Error fetching games:', error)
         return []
@@ -144,16 +154,78 @@ function AddListingPage() {
     async (query: string): Promise<EmulatorOption[]> => {
       setEmulatorSearchTerm(query)
       if (query.length < 1) return Promise.resolve([])
+
+      // If no game is selected, show a message instead of loading emulators
+      if (!selectedGame) {
+        return Promise.resolve([])
+      }
+
       try {
         const result = await utils.emulators.get.fetch({ search: query })
-        return result.map((e) => ({ id: e.id, name: e.name })) ?? []
+
+        // Get full emulator data with systems for filtering
+        const emulatorsWithSystems = await Promise.all(
+          result.map(async (emulator) => {
+            try {
+              const fullEmulator = await utils.emulators.byId.fetch({
+                id: emulator.id,
+              })
+              return {
+                id: fullEmulator.id,
+                name: fullEmulator.name,
+                systems: fullEmulator.systems,
+              }
+            } catch {
+              return {
+                id: emulator.id,
+                name: emulator.name,
+                systems: [],
+              }
+            }
+          }),
+        )
+
+        // Filter to only emulators that support the selected game's system
+        const compatibleEmulators = emulatorsWithSystems.filter((emulator) =>
+          emulator.systems.some(
+            (system) => system.id === selectedGame.system.id,
+          ),
+        )
+
+        setAvailableEmulators(compatibleEmulators)
+        return compatibleEmulators
       } catch (error) {
         console.error('Error fetching emulators:', error)
         return []
       }
     },
-    [utils.emulators.get],
+    [utils.emulators.get, utils.emulators.byId, selectedGame],
   )
+
+  // Update selected game when gameId changes
+  useEffect(() => {
+    if (selectedGameId && !selectedGame) {
+      // Try to find the game in recent searches or fetch it
+      loadGameItems(gameSearchTerm).then((games) => {
+        const game = games.find((g) => g.id === selectedGameId)
+        if (game) {
+          setSelectedGame(game)
+        }
+      })
+    } else if (!selectedGameId) {
+      setSelectedGame(null)
+      setAvailableEmulators([])
+      setValue('emulatorId', '') // Clear emulator when game is cleared
+    }
+  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, setValue])
+
+  // Clear emulator when game changes
+  useEffect(() => {
+    if (selectedGame) {
+      setValue('emulatorId', '') // Clear emulator selection when game changes
+      setAvailableEmulators([]) // Clear available emulators
+    }
+  }, [selectedGame, setValue])
 
   useEffect(() => {
     if (customFieldDefinitionsData) {
@@ -199,62 +271,33 @@ function AddListingPage() {
           case CustomFieldType.BOOLEAN:
             defaultValue = false
             break
-          case CustomFieldType.TEXT:
-          case CustomFieldType.TEXTAREA:
-          case CustomFieldType.URL:
-            defaultValue = ''
-            break
           case CustomFieldType.SELECT:
             defaultValue = field.parsedOptions?.[0]?.value ?? ''
             break
           default:
-            defaultValue = undefined
+            defaultValue = ''
         }
-        return { customFieldDefinitionId: field.id, value: defaultValue }
+        return {
+          customFieldDefinitionId: field.id,
+          value: defaultValue,
+        }
       })
-      setValue(
-        'customFieldValues',
-        newCustomValues.filter((cv) => cv.value !== undefined),
-        { shouldValidate: false, shouldDirty: false },
-      )
+      setValue('customFieldValues', newCustomValues)
     }
   }, [customFieldDefinitionsData, setValue, watch])
 
   const createListingMutation = api.listings.create.useMutation({
-    onSuccess: (data) => {
-      utils.listings.get.invalidate()
-      router.push(`/listings/${data.id}`)
+    onSuccess: () => {
       toast.success('Listing created successfully!')
+      router.push('/listings')
     },
     onError: (error) => {
-      console.error('Failed to create listing:', error)
-      toast.error(`Failed to create listing: ${error.message}`)
+      toast.error(`Error creating listing: ${error.message}`)
     },
   })
 
   const onSubmit = (data: ListingFormValues) => {
-    // Ensure customFieldValues are correctly formatted, especially for boolean and numbers if stored as strings by form
-    const finalCustomFieldValues = data.customFieldValues?.map((cfv) => {
-      const definition = parsedCustomFields.find(
-        (d) => d.id === cfv.customFieldDefinitionId,
-      )
-      let finalValue = cfv.value
-      if (definition) {
-        if (definition.type === CustomFieldType.BOOLEAN) {
-          finalValue = Boolean(cfv.value)
-        }
-        // Add coercion for numbers if text inputs are used for number types in custom fields (not currently a type)
-      }
-      return {
-        customFieldDefinitionId: cfv.customFieldDefinitionId,
-        value: finalValue,
-      }
-    })
-
-    createListingMutation.mutate({
-      ...data,
-      customFieldValues: finalCustomFieldValues,
-    })
+    createListingMutation.mutate(data)
   }
 
   const renderCustomField = (
@@ -262,33 +305,32 @@ function AddListingPage() {
     index: number,
   ) => {
     const fieldName = `customFieldValues.${index}.value` as const
-    const errorForField = errors.customFieldValues?.[index]?.value
-    // For error messages, ensure they are strings
-    const errorMessage =
-      typeof errorForField?.message === 'string'
-        ? errorForField.message
-        : undefined
-    let icon = null
-    switch (fieldDef.type) {
-      case CustomFieldType.TEXT:
-        icon = <CaseSensitive className="w-5 h-5" />
-        break
-      case CustomFieldType.TEXTAREA:
-        icon = <FileText className="w-5 h-5" />
-        break
-      case CustomFieldType.URL:
-        icon = <LinkIcon className="w-5 h-5" />
-        break
-      case CustomFieldType.BOOLEAN:
-        icon = <CheckSquare className="w-5 h-5" />
-        break
-      case CustomFieldType.SELECT:
-        icon = <ListChecks className="w-5 h-5" />
-        break
+    const errorMessage = errors.customFieldValues?.[index]?.value?.message
+    const errorText =
+      typeof errorMessage === 'string' ? errorMessage : undefined
+
+    const getIcon = (type: CustomFieldType) => {
+      switch (type) {
+        case CustomFieldType.TEXT:
+          return <CaseSensitive className="w-5 h-5" />
+        case CustomFieldType.TEXTAREA:
+          return <FileText className="w-5 h-5" />
+        case CustomFieldType.URL:
+          return <LinkIcon className="w-5 h-5" />
+        case CustomFieldType.BOOLEAN:
+          return <CheckSquare className="w-5 h-5" />
+        case CustomFieldType.SELECT:
+          return <ListChecks className="w-5 h-5" />
+        default:
+          return <FileText className="w-5 h-5" />
+      }
     }
+
+    const icon = getIcon(fieldDef.type)
 
     switch (fieldDef.type) {
       case CustomFieldType.TEXT:
+      case CustomFieldType.URL:
         return (
           <div key={fieldDef.id} className="mb-4">
             <label
@@ -304,14 +346,15 @@ function AddListingPage() {
               render={({ field }) => (
                 <Input
                   id={fieldName}
-                  {...field}
                   leftIcon={icon}
-                  className="mt-1 w-full"
+                  value={field.value as string}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  placeholder={`Enter ${fieldDef.label.toLowerCase()}`}
                 />
               )}
             />
-            {errorMessage && (
-              <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
+            {errorText && (
+              <p className="text-red-500 text-xs mt-1">{errorText}</p>
             )}
           </div>
         )
@@ -332,76 +375,49 @@ function AddListingPage() {
                 <Input
                   as="textarea"
                   id={fieldName}
-                  {...field}
                   leftIcon={icon}
+                  value={field.value as string}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  placeholder={`Enter ${fieldDef.label.toLowerCase()}`}
                   rows={3}
-                  className="mt-1 w-full"
                 />
               )}
             />
-            {errorMessage && (
-              <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
-            )}
-          </div>
-        )
-      case CustomFieldType.URL:
-        return (
-          <div key={fieldDef.id} className="mb-4">
-            <label
-              htmlFor={fieldName}
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {fieldDef.label} {fieldDef.isRequired && '*'}
-            </label>
-            <Controller
-              name={fieldName}
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <Input
-                  id={fieldName}
-                  type="url"
-                  {...field}
-                  leftIcon={icon}
-                  className="mt-1 w-full"
-                />
-              )}
-            />
-            {errorMessage && (
-              <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
+            {errorText && (
+              <p className="text-red-500 text-xs mt-1">{errorText}</p>
             )}
           </div>
         )
       case CustomFieldType.BOOLEAN:
         return (
-          <div key={fieldDef.id} className="mb-4 flex items-center pt-2">
-            {icon && <span className="mr-2 text-gray-500">{icon}</span>}
+          <div key={fieldDef.id} className="mb-4">
             <Controller
               name={fieldName}
               control={control}
               defaultValue={false}
               render={({ field }) => (
-                <input
-                  id={fieldName}
-                  type="checkbox"
-                  checked={
-                    typeof field.value === 'boolean'
-                      ? field.value
-                      : !!field.value
-                  }
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
+                <label
+                  htmlFor={fieldName}
+                  className="flex items-center cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    id={fieldName}
+                    checked={field.value as boolean}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="mr-3 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
+                  />
+                  <span className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {icon}
+                    <span className="ml-2">
+                      {fieldDef.label} {fieldDef.isRequired && '*'}
+                    </span>
+                  </span>
+                </label>
               )}
             />
-            <label
-              htmlFor={fieldName}
-              className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {fieldDef.label} {fieldDef.isRequired && '*'}
-            </label>
-            {errorMessage && (
-              <p className="text-red-500 text-xs mt-1 ml-6">{errorMessage}</p>
+            {errorText && (
+              <p className="text-red-500 text-xs mt-1 ml-6">{errorText}</p>
             )}
           </div>
         )
@@ -433,8 +449,8 @@ function AddListingPage() {
                 />
               )}
             />
-            {errorMessage && (
-              <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
+            {errorText && (
+              <p className="text-red-500 text-xs mt-1">{errorText}</p>
             )}
           </div>
         )
@@ -453,13 +469,13 @@ function AddListingPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl"
         >
-          {/* Standard Fields */}
+          {/* Game Selection */}
           <div>
             <label
               htmlFor="gameId"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Game
+              Game *
             </label>
             <Controller
               name="gameId"
@@ -469,10 +485,25 @@ function AddListingPage() {
                   label="Game"
                   leftIcon={<Puzzle className="w-5 h-5" />}
                   value={field.value}
-                  onChange={(value) => field.onChange(value)}
+                  onChange={(value) => {
+                    field.onChange(value)
+                    // Find and set the selected game
+                    if (value) {
+                      loadGameItems(gameSearchTerm).then((games) => {
+                        const game = games.find((g) => g.id === value)
+                        if (game) {
+                          setSelectedGame(game)
+                        }
+                      })
+                    } else {
+                      setSelectedGame(null)
+                    }
+                  }}
                   loadItems={loadGameItems}
                   optionToValue={(item) => item.id}
-                  optionToLabel={(item) => item.title}
+                  optionToLabel={(item) =>
+                    `${item.title} (${item.system.name})`
+                  }
                   placeholder="Search for a game..."
                   minCharsToTrigger={2}
                 />
@@ -483,14 +514,26 @@ function AddListingPage() {
                 {String(errors.gameId.message ?? '')}
               </p>
             )}
+            {selectedGame && (
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center text-sm text-blue-700 dark:text-blue-300">
+                  <Info className="w-4 h-4 mr-2" />
+                  <span>
+                    Selected: <strong>{selectedGame.title}</strong> for{' '}
+                    <strong>{selectedGame.system.name}</strong>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Device Selection */}
           <div>
             <label
               htmlFor="deviceId"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Device
+              Device *
             </label>
             <Controller
               name="deviceId"
@@ -517,33 +560,62 @@ function AddListingPage() {
             )}
           </div>
 
+          {/* Emulator Selection */}
           <div>
             <label
               htmlFor="emulatorId"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Emulator
+              Emulator *
             </label>
-            <Controller
-              name="emulatorId"
-              control={control}
-              render={({ field }) => (
-                <Autocomplete<EmulatorOption>
-                  label="Emulator"
-                  leftIcon={<Gamepad2 className="w-5 h-5" />}
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value)
-                    setValue('customFieldValues', [])
-                  }}
-                  loadItems={loadEmulatorItems}
-                  optionToValue={(item) => item.id}
-                  optionToLabel={(item) => item.name}
-                  placeholder="Search for an emulator..."
-                  minCharsToTrigger={1}
+            {!selectedGame ? (
+              <div className="mt-1 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center text-sm text-yellow-700 dark:text-yellow-300">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  <span>
+                    Please select a game first to see compatible emulators
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Controller
+                  name="emulatorId"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete<EmulatorOption>
+                      label="Emulator"
+                      leftIcon={<Gamepad2 className="w-5 h-5" />}
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value)
+                        setValue('customFieldValues', [])
+                      }}
+                      loadItems={loadEmulatorItems}
+                      optionToValue={(item) => item.id}
+                      optionToLabel={(item) => item.name}
+                      placeholder={`Search for emulators that support ${selectedGame.system.name}...`}
+                      minCharsToTrigger={1}
+                    />
+                  )}
                 />
-              )}
-            />
+                {availableEmulators.length === 0 &&
+                  selectedGame &&
+                  emulatorSearchTerm.length >= 1 && (
+                    <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center text-sm text-orange-700 dark:text-orange-300">
+                        <AlertCircle className="w-4 h-4 mr-2" />
+                        <span>
+                          No emulators found that support{' '}
+                          <strong>{selectedGame.system.name}</strong>. Try a
+                          different search term or contact an admin to add
+                          support.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+              </>
+            )}
             {errors.emulatorId && (
               <p className="text-red-500 text-xs mt-1">
                 {String(errors.emulatorId.message ?? '')}
@@ -551,12 +623,13 @@ function AddListingPage() {
             )}
           </div>
 
+          {/* Performance Selection */}
           <div>
             <label
               htmlFor="performanceId"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Performance
+              Performance *
             </label>
             <Controller
               name="performanceId"
@@ -583,6 +656,7 @@ function AddListingPage() {
             )}
           </div>
 
+          {/* Notes */}
           <div>
             <label
               htmlFor="notes"
@@ -597,6 +671,7 @@ function AddListingPage() {
               leftIcon={<FileText className="w-5 h-5" />}
               rows={4}
               className="mt-1 w-full"
+              placeholder="Share your experience, settings, or any additional details..."
             />
             {errors.notes && (
               <p className="text-red-500 text-xs mt-1">
@@ -607,18 +682,23 @@ function AddListingPage() {
 
           {/* Dynamic Custom Fields Section */}
           {selectedEmulatorId && isLoadingCustomFields && (
-            <p className="text-center py-4">Loading custom fields...</p>
+            <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                Loading emulator-specific fields...
+              </p>
+            </div>
           )}
           {selectedEmulatorId &&
             !isLoadingCustomFields &&
             parsedCustomFields.length > 0 && (
               <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
-                  Additional Details (
-                  {customFieldDefinitionsData?.find(
-                    (e) => e.emulatorId === selectedEmulatorId,
-                  )?.emulator.name ?? 'Selected Emulator'}
-                  )
+                  Emulator-Specific Details
+                  {customFieldDefinitionsData?.[0]?.emulator?.name && (
+                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                      ({customFieldDefinitionsData[0].emulator.name})
+                    </span>
+                  )}
                 </h2>
                 {parsedCustomFields.map((fieldDef, index) =>
                   renderCustomField(fieldDef, index),
