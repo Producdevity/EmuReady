@@ -11,6 +11,7 @@ import {
   UpdateSystemSchema,
   DeleteSystemSchema,
 } from '@/schemas/system'
+import { SystemQueries } from '../queries'
 
 export const systemsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
@@ -40,18 +41,7 @@ export const systemsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const system = await ctx.prisma.system.findUnique({
         where: { id: input.id },
-        include: {
-          games: {
-            orderBy: {
-              title: 'asc',
-            },
-          },
-          _count: {
-            select: {
-              games: true,
-            },
-          },
-        },
+        include: SystemQueries.systemWithGamesInclude,
       })
 
       if (!system) {

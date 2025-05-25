@@ -13,6 +13,7 @@ import {
   DeleteEmulatorSchema,
   UpdateSupportedSystemsSchema,
 } from '@/schemas/emulator'
+import { EmulatorQueries } from '../queries'
 
 export const emulatorsRouter = createTRPCRouter({
   get: publicProcedure
@@ -34,15 +35,7 @@ export const emulatorsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: input.id },
-        include: {
-          systems: true,
-          customFieldDefinitions: {
-            orderBy: {
-              displayOrder: 'asc',
-            },
-          },
-          _count: { select: { listings: true } },
-        },
+        include: EmulatorQueries.emulatorDetailedInclude,
       })
 
       if (!emulator) ResourceError.emulator.notFound()

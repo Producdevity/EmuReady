@@ -11,6 +11,7 @@ import {
   UpdateDeviceSchema,
   DeleteDeviceSchema,
 } from '@/schemas/device'
+import { DeviceQueries } from '../queries'
 
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
@@ -39,9 +40,7 @@ export const devicesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const device = await ctx.prisma.device.findUnique({
         where: { id: input.id },
-        include: {
-          brand: true,
-        },
+        include: DeviceQueries.deviceWithBrandInclude,
       })
 
       if (!device) {

@@ -26,6 +26,11 @@ import {
   GetListingByIdSchema,
   GetCommentsSchema,
 } from '@/schemas/listing'
+import {
+  getListingWithStats,
+  getCommentsWithVotes,
+  userPublicSelect,
+} from '../queries'
 
 export const listingsRouter = createTRPCRouter({
   get: publicProcedure
@@ -227,71 +232,7 @@ export const listingsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { id } = input
 
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id },
-        include: {
-          game: {
-            include: {
-              system: true,
-            },
-          },
-          device: {
-            include: {
-              brand: true,
-            },
-          },
-          emulator: true,
-          performance: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          comments: {
-            where: {
-              parentId: null,
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-              replies: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                },
-                orderBy: {
-                  createdAt: 'asc',
-                },
-              },
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-          _count: {
-            select: {
-              votes: true,
-            },
-          },
-          votes: ctx.session
-            ? {
-                where: {
-                  userId: ctx.session.user.id,
-                },
-              }
-            : undefined,
-        },
-      })
+      const listing = await getListingWithStats(id, ctx.session?.user.id)
 
       if (!listing) {
         throw new TRPCError({
@@ -300,27 +241,7 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      // Count upvotes
-      const upVotes = await ctx.prisma.vote.count({
-        where: {
-          listingId: listing.id,
-          value: true,
-        },
-      })
-
-      const successRate =
-        listing._count.votes > 0 ? upVotes / listing._count.votes : 0
-
-      const userVote =
-        ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
-
-      return {
-        ...listing,
-        successRate,
-        userVote,
-        // Remove the raw votes array from the response
-        votes: undefined,
-      }
+      return listing
     }),
 
   create: authorProcedure
@@ -546,10 +467,7 @@ export const listingsRouter = createTRPCRouter({
         },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-            },
+            select: userPublicSelect,
           },
         },
       })
@@ -583,38 +501,10 @@ export const listingsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { listingId } = input
 
-      const comments = await ctx.prisma.comment.findMany({
-        where: {
-          listingId,
-          parentId: null, // Only get top-level comments
-          deletedAt: null, // Don't show soft-deleted comments
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
-          },
-          replies: {
-            where: {
-              deletedAt: null, // Don't show soft-deleted replies
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  profileImage: true,
-                },
-              },
-            },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
+      const comments = await getCommentsWithVotes(
+        listingId,
+        ctx.session?.user.id,
+      )
 
       return { comments }
     }),
@@ -666,11 +556,7 @@ export const listingsRouter = createTRPCRouter({
         },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
+            select: userPublicSelect,
           },
         },
       })

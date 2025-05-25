@@ -15,6 +15,7 @@ import {
   UpdateUserRoleSchema,
   DeleteUserSchema,
 } from '@/schemas/user'
+import { getUserProfile, getPublicUserData, userBasicSelect } from '../queries'
 
 function hashPassword(password: string): string {
   const salt = bcryptjs.genSaltSync(10)
@@ -70,54 +71,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        profileImage: true,
-        role: true,
-        createdAt: true,
-        listings: {
-          select: {
-            id: true,
-            createdAt: true,
-            device: {
-              select: {
-                brand: { select: { id: true, name: true } },
-                modelName: true,
-              },
-            },
-            game: { select: { title: true } },
-            emulator: { select: { name: true } },
-            performance: { select: { label: true } },
-          },
-        },
-        votes: {
-          select: {
-            id: true,
-            value: true,
-            listing: {
-              select: {
-                id: true,
-                device: {
-                  select: {
-                    brand: {
-                      select: { id: true, name: true },
-                    },
-                    modelName: true,
-                  },
-                },
-                game: { select: { title: true } },
-                emulator: { select: { name: true } },
-                performance: { select: { label: true } },
-              },
-            },
-          },
-        },
-      },
-    })
+    const user = await getUserProfile(ctx.session.user.id)
 
     if (!user) ResourceError.user.notFound()
 
@@ -126,54 +80,10 @@ export const usersRouter = createTRPCRouter({
 
   getUserById: publicProcedure
     .input(GetUserByIdSchema)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { userId } = input
 
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          profileImage: true,
-          role: true,
-          createdAt: true,
-          listings: {
-            select: {
-              id: true,
-              createdAt: true,
-              device: {
-                select: {
-                  brand: { select: { id: true, name: true } },
-                  modelName: true,
-                },
-              },
-              game: { select: { title: true } },
-              emulator: { select: { name: true } },
-              performance: { select: { label: true } },
-            },
-          },
-          votes: {
-            select: {
-              id: true,
-              value: true,
-              listing: {
-                select: {
-                  id: true,
-                  device: {
-                    select: {
-                      brand: { select: { id: true, name: true } },
-                      modelName: true,
-                    },
-                  },
-                  game: { select: { title: true } },
-                  emulator: { select: { name: true } },
-                  performance: { select: { label: true } },
-                },
-              },
-            },
-          },
-        },
-      })
+      const user = await getPublicUserData(userId)
 
       if (!user) ResourceError.user.notFound()
 
@@ -240,11 +150,7 @@ export const usersRouter = createTRPCRouter({
   getAll: adminProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.user.findMany({
       select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
+        ...userBasicSelect,
         _count: {
           select: {
             listings: true,
