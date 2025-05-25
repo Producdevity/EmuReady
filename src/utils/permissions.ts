@@ -27,10 +27,11 @@ export function hasPermission(userRole?: Role, requiredRole?: Role): boolean {
  * @returns boolean
  */
 export function canEditComment(
-  userRole: Role | undefined,
-  commentUserId: string,
-  currentUserId: string,
+  userRole?: Role,
+  commentUserId?: string,
+  currentUserId?: string,
 ): boolean {
+  if (!currentUserId || !commentUserId) return false
   if (hasPermission(userRole, Role.SUPER_ADMIN)) return true
   return commentUserId === currentUserId
 }
@@ -43,10 +44,11 @@ export function canEditComment(
  * @returns boolean
  */
 export function canDeleteComment(
-  userRole: Role | undefined,
-  commentUserId: string,
-  currentUserId: string,
+  userRole?: Role,
+  commentUserId?: string,
+  currentUserId?: string,
 ): boolean {
+  if (!currentUserId || !commentUserId) return false
   if (hasPermission(userRole, Role.ADMIN)) return true
   return commentUserId === currentUserId
 }
