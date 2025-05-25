@@ -38,7 +38,7 @@ export const systemsRouter = createTRPCRouter({
     }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const system = await ctx.prisma.system.findUnique({
         where: { id: input.id },

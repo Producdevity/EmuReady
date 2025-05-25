@@ -66,12 +66,11 @@ export const devicesRouter = createTRPCRouter({
   create: adminProcedure
     .input(
       z.object({
-        brandId: z.string(),
+        brandId: z.string().uuid(),
         modelName: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if the brand exists
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.brandId },
       })
