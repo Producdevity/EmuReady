@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Role } from '@orm'
-import hasPermission, {
-  canEditComment,
-  canDeleteComment,
-} from './hasPermission'
+import { hasPermission, canEditComment, canDeleteComment } from './permissions'
 
 describe('hasPermission', () => {
   it('should return true if user has the required role', () => {

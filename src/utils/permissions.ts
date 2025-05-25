@@ -5,10 +5,10 @@ import { Role } from '@orm'
  * Provide no role to allow all users.
  * returns true if the user has permission, false otherwise.
  *
- * @param userRole
- * @param requiredRole
+ * @param userRole - The role of the user attempting to perform the action
+ * @param requiredRole - The minimum role required to perform the action
  */
-function hasPermission(userRole?: Role, requiredRole?: Role): boolean {
+export function hasPermission(userRole?: Role, requiredRole?: Role): boolean {
   if (!userRole) return false
   if (!requiredRole) return true
 
@@ -31,8 +31,7 @@ export function canEditComment(
   commentUserId: string,
   currentUserId: string,
 ): boolean {
-  if (!userRole) return false
-  if (userRole === Role.SUPER_ADMIN) return true
+  if (hasPermission(userRole, Role.SUPER_ADMIN)) return true
   return commentUserId === currentUserId
 }
 
@@ -48,9 +47,6 @@ export function canDeleteComment(
   commentUserId: string,
   currentUserId: string,
 ): boolean {
-  if (!userRole) return false
-  if (userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) return true
+  if (hasPermission(userRole, Role.ADMIN)) return true
   return commentUserId === currentUserId
 }
-
-export default hasPermission
