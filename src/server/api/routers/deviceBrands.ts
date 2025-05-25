@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 
 import {
@@ -6,17 +5,17 @@ import {
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import {
+  GetDeviceBrandsSchema,
+  GetDeviceBrandByIdSchema,
+  CreateDeviceBrandSchema,
+  UpdateDeviceBrandSchema,
+  DeleteDeviceBrandSchema,
+} from '@/schemas/deviceBrand'
 
 export const deviceBrandsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-          limit: z.number().default(50),
-        })
-        .optional(),
-    )
+  get: publicProcedure
+    .input(GetDeviceBrandsSchema)
     .query(async ({ ctx, input }) => {
       const { search, limit } = input ?? {}
 
@@ -32,7 +31,7 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetDeviceBrandByIdSchema)
     .query(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.id },
@@ -49,11 +48,7 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-      }),
-    )
+    .input(CreateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand with the same name already exists
       const existingBrand = await ctx.prisma.deviceBrand.findFirst({
@@ -75,12 +70,7 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-      }),
-    )
+    .input(UpdateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
@@ -117,7 +107,7 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand is used in any devices
       const devicesCount = await ctx.prisma.device.count({

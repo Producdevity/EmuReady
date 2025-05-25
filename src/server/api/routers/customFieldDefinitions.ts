@@ -1,35 +1,24 @@
-import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { TRPCError } from '@trpc/server'
 import { CustomFieldType, Prisma } from '@orm'
+import {
+  CreateCustomFieldDefinitionSchema,
+  GetCustomFieldDefinitionsByEmulatorSchema,
+  GetCustomFieldDefinitionByIdSchema,
+  UpdateCustomFieldDefinitionSchema,
+  DeleteCustomFieldDefinitionSchema,
+  UpdateCustomFieldDefinitionOrderSchema,
+} from '@/schemas/customFieldDefinition'
 
-const customFieldOptionSchema = z.object({
-  value: z.string().min(1),
-  label: z.string().min(1),
-})
-
-type CustomFieldOptionArray = z.infer<typeof customFieldOptionSchema>[]
+type CustomFieldOptionArray = {
+  value: string
+  label: string
+}[]
 
 export const customFieldDefinitionRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(
-      z.object({
-        emulatorId: z.string().uuid(),
-        name: z
-          .string()
-          .min(1)
-          .regex(/^[a-z0-9_]+$/, {
-            message:
-              'Name must be lowercase alphanumeric with underscores only.',
-          }),
-        label: z.string().min(1),
-        type: z.nativeEnum(CustomFieldType),
-        options: z.array(customFieldOptionSchema).optional(),
-        isRequired: z.boolean().optional().default(false),
-        displayOrder: z.number().int().optional().default(0),
-      }),
-    )
+    .input(CreateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       if (ctx.session.user.role !== 'SUPER_ADMIN') {
         throw new TRPCError({
@@ -83,8 +72,8 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       })
     }),
 
-  listByEmulator: protectedProcedure
-    .input(z.object({ emulatorId: z.string().uuid() }))
+  getByEmulator: protectedProcedure
+    .input(GetCustomFieldDefinitionsByEmulatorSchema)
     .query(async ({ input }) => {
       return prisma.customFieldDefinition.findMany({
         where: { emulatorId: input.emulatorId },
@@ -96,7 +85,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     }),
 
   byId: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(GetCustomFieldDefinitionByIdSchema)
     .query(async ({ ctx, input }) => {
       if (ctx.session.user.role !== 'SUPER_ADMIN') {
         throw new TRPCError({
@@ -117,24 +106,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z
-          .string()
-          .min(1)
-          .regex(/^[a-z0-9_]+$/, {
-            message:
-              'Name must be lowercase alphanumeric with underscores only.',
-          })
-          .optional(),
-        label: z.string().min(1).optional(),
-        type: z.nativeEnum(CustomFieldType).optional(),
-        options: z.array(customFieldOptionSchema).optional(),
-        isRequired: z.boolean().optional(),
-        displayOrder: z.number().int().optional(),
-      }),
-    )
+    .input(UpdateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       if (ctx.session.user.role !== 'SUPER_ADMIN') {
         throw new TRPCError({
@@ -230,7 +202,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(DeleteCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       if (ctx.session.user.role !== 'SUPER_ADMIN') {
         throw new TRPCError({
@@ -256,14 +228,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     }),
 
   updateOrder: protectedProcedure
-    .input(
-      z.array(
-        z.object({
-          id: z.string().uuid(),
-          displayOrder: z.number().int(),
-        }),
-      ),
-    )
+    .input(UpdateCustomFieldDefinitionOrderSchema)
     .mutation(async ({ ctx, input }) => {
       if (ctx.session.user.role !== 'SUPER_ADMIN') {
         throw new TRPCError({

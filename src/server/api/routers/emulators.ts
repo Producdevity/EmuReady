@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 
 import {
@@ -7,16 +6,18 @@ import {
   adminProcedure,
   superAdminProcedure,
 } from '@/server/api/trpc'
+import {
+  GetEmulatorsSchema,
+  GetEmulatorByIdSchema,
+  CreateEmulatorSchema,
+  UpdateEmulatorSchema,
+  DeleteEmulatorSchema,
+  UpdateSupportedSystemsSchema,
+} from '@/schemas/emulator'
 
 export const emulatorsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-        })
-        .optional(),
-    )
+  get: publicProcedure
+    .input(GetEmulatorsSchema)
     .query(async ({ ctx, input }) => {
       const { search } = input ?? {}
 
@@ -38,7 +39,7 @@ export const emulatorsRouter = createTRPCRouter({
     }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetEmulatorByIdSchema)
     .query(async ({ ctx, input }) => {
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: input.id },
@@ -66,11 +67,7 @@ export const emulatorsRouter = createTRPCRouter({
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-      }),
-    )
+    .input(CreateEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if emulator already exists
       const existing = await ctx.prisma.emulator.findUnique({
@@ -90,12 +87,7 @@ export const emulatorsRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-      }),
-    )
+    .input(UpdateEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
 
@@ -132,7 +124,7 @@ export const emulatorsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if emulator is used in any listings
       const listingsCount = await ctx.prisma.listing.count({
@@ -152,12 +144,7 @@ export const emulatorsRouter = createTRPCRouter({
     }),
 
   updateSupportedSystems: superAdminProcedure
-    .input(
-      z.object({
-        emulatorId: z.string().uuid(),
-        systemIds: z.array(z.string().uuid()),
-      }),
-    )
+    .input(UpdateSupportedSystemsSchema)
     .mutation(async ({ ctx, input }) => {
       const { emulatorId, systemIds } = input
 

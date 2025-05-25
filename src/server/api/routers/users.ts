@@ -6,7 +6,13 @@ import {
 } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import bcryptjs from 'bcryptjs'
-import { z } from 'zod'
+import {
+  RegisterUserSchema,
+  GetUserByIdSchema,
+  UpdateUserSchema,
+  UpdateUserRoleSchema,
+  DeleteUserSchema,
+} from '@/schemas/user'
 
 function hashPassword(password: string): string {
   const salt = bcryptjs.genSaltSync(10)
@@ -27,13 +33,7 @@ function comparePassword(
 
 export const usersRouter = createTRPCRouter({
   register: publicProcedure
-    .input(
-      z.object({
-        name: z.string().min(2).max(50),
-        email: z.string().email(),
-        password: z.string().min(8),
-      }),
-    )
+    .input(RegisterUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { name, email, password } = input
 
@@ -165,7 +165,7 @@ export const usersRouter = createTRPCRouter({
   }),
 
   getUserById: publicProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(GetUserByIdSchema)
     .query(async ({ ctx, input }) => {
       const { userId } = input
 
@@ -260,15 +260,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(2).max(50).optional(),
-        email: z.string().email().optional(),
-        currentPassword: z.string().optional(),
-        newPassword: z.string().min(8).optional(),
-        profileImage: z.string().optional(),
-      }),
-    )
+    .input(UpdateUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { name, email, currentPassword, newPassword, profileImage } = input
       const userId = ctx.session.user.id
@@ -362,12 +354,7 @@ export const usersRouter = createTRPCRouter({
   }),
 
   updateRole: adminProcedure
-    .input(
-      z.object({
-        userId: z.string().uuid(),
-        role: z.enum(['USER', 'AUTHOR', 'ADMIN']),
-      }),
-    )
+    .input(UpdateUserRoleSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, role } = input
 
@@ -392,7 +379,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ userId: z.string().uuid() }))
+    .input(DeleteUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId } = input
 

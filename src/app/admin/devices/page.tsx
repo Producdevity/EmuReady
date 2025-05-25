@@ -9,9 +9,9 @@ function AdminDevicesPage() {
     data: devices,
     isLoading: devicesLoading,
     refetch,
-  } = api.devices.list.useQuery()
+  } = api.devices.get.useQuery()
   const { data: brands, isLoading: brandsLoading } =
-    api.deviceBrands.list.useQuery()
+    api.deviceBrands.get.useQuery()
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deleteDevice = api.devices.delete.useMutation()

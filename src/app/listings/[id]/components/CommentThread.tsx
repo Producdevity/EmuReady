@@ -16,25 +16,12 @@ import {
 import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
 import { ConfirmDialogProvider, useConfirmDialog } from '@/components/ui'
+import { type RouterOutput } from '@/types/trpc'
 
-// TODO: use type from api
-interface CommentType {
-  id: string
-  content: string
-  createdAt: string | Date
-  updatedAt: string | Date
-  deletedAt?: string | Date | null
-  isEdited?: boolean
-  score?: number
-  userVote?: boolean | null
-  replyCount?: number
-  user?: {
-    id?: string
-    name?: string | null
-    profileImage?: string | null
-  }
-  replies?: CommentType[]
-}
+type CommentsData = RouterOutput['listings']['getSortedComments']
+type TopLevelComment = CommentsData['comments'][number]
+type ReplyComment = TopLevelComment['replies'][number]
+type AnyComment = TopLevelComment | ReplyComment
 
 type SortBy = 'newest' | 'oldest' | 'popular'
 
@@ -80,12 +67,8 @@ function CommentThread(props: Props) {
   const utils = api.useUtils()
 
   const refreshData = () => {
-    // TODO: handle errors
     utils.listings.getSortedComments
-      .invalidate({
-        listingId: props.listingId,
-        sortBy,
-      })
+      .invalidate({ listingId: props.listingId, sortBy })
       .catch(console.error)
     setReplyingTo(null)
     setEditingCommentId(null)
@@ -123,7 +106,7 @@ function CommentThread(props: Props) {
     return expandedComments[commentId]
   }
 
-  const renderComment = (comment: CommentType, level = 0) => {
+  const renderComment = (comment: AnyComment, level = 0) => {
     if (!comment) return null
 
     const isDeleted = !!comment.deletedAt
@@ -131,22 +114,25 @@ function CommentThread(props: Props) {
     const isReplying = replyingTo === comment.id
     const expanded = isCommentExpanded(comment.id)
 
-    const canEdit =
-      session &&
-      comment.user?.id &&
-      canEditComment(session.user.role, comment.user.id, session.user.id)
+    const canEdit = canEditComment(
+      session?.user.role,
+      comment.user.id,
+      session?.user.id,
+    )
 
-    const canDelete =
-      session &&
-      comment.user?.id &&
-      canDeleteComment(session.user.role, comment.user.id, session.user.id)
+    const canDelete = canDeleteComment(
+      session?.user.role,
+      comment.user.id,
+      session?.user.id,
+    )
 
-    // Determine appropriate left margin for nesting
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''
-
-    // Add border for nested comments
     const borderStyle =
       level > 0 ? 'border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''
+
+    // Check if this comment has replies (only top-level comments have replies)
+    const hasReplies =
+      'replies' in comment && comment.replies && comment.replies.length > 0
 
     return (
       <motion.div
@@ -277,7 +263,7 @@ function CommentThread(props: Props) {
                   </button>
 
                   {/* Show collapse/expand button if comment has replies */}
-                  {comment.replies && comment.replies.length > 0 && (
+                  {hasReplies && (
                     <button
                       onClick={() => toggleCommentExpanded(comment.id)}
                       className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center ml-2"
@@ -288,8 +274,11 @@ function CommentThread(props: Props) {
                         <ChevronRightIcon className="h-4 w-4 mr-1" />
                       )}
                       <span>
-                        {expanded ? 'Hide' : 'Show'} {comment.replies.length}{' '}
-                        {comment.replies.length === 1 ? 'reply' : 'replies'}
+                        {expanded ? 'Hide' : 'Show'}{' '}
+                        {hasReplies ? comment.replies.length : 0}{' '}
+                        {hasReplies && comment.replies.length === 1
+                          ? 'reply'
+                          : 'replies'}
                       </span>
                     </button>
                   )}
@@ -321,7 +310,7 @@ function CommentThread(props: Props) {
         </AnimatePresence>
 
         {/* Replies */}
-        {!isDeleted && comment.replies && comment.replies.length > 0 && (
+        {!isDeleted && hasReplies && (
           <AnimatePresence>
             {expanded && (
               <motion.div
@@ -331,9 +320,10 @@ function CommentThread(props: Props) {
                 transition={{ duration: 0.3 }}
                 className="mt-2"
               >
-                {comment.replies.map((reply) =>
-                  renderComment(reply, level + 1),
-                )}
+                {hasReplies &&
+                  comment.replies.map((reply) =>
+                    renderComment(reply, level + 1),
+                  )}
               </motion.div>
             )}
           </AnimatePresence>

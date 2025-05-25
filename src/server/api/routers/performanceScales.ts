@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 
 import {
@@ -6,16 +5,22 @@ import {
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import {
+  GetPerformanceScaleByIdSchema,
+  CreatePerformanceScaleSchema,
+  UpdatePerformanceScaleSchema,
+  DeletePerformanceScaleSchema,
+} from '@/schemas/performanceScale'
 
 export const performanceScalesRouter = createTRPCRouter({
-  list: publicProcedure.query(async ({ ctx }) => {
+  get: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.performanceScale.findMany({
       orderBy: { rank: 'desc' },
     })
   }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(GetPerformanceScaleByIdSchema)
     .query(async ({ ctx, input }) => {
       const scale = await ctx.prisma.performanceScale.findUnique({
         where: { id: input.id },
@@ -32,13 +37,7 @@ export const performanceScalesRouter = createTRPCRouter({
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        label: z.string().min(1),
-        rank: z.number(),
-        description: z.string().optional(),
-      }),
-    )
+    .input(CreatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const existingScale = await ctx.prisma.performanceScale.findFirst({
         where: {
@@ -70,14 +69,7 @@ export const performanceScalesRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        label: z.string().min(1),
-        rank: z.number(),
-        description: z.string().optional(),
-      }),
-    )
+    .input(UpdatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
@@ -124,7 +116,7 @@ export const performanceScalesRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.number() }))
+    .input(DeletePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const listingsCount = await ctx.prisma.listing.count({
         where: { performanceId: input.id },

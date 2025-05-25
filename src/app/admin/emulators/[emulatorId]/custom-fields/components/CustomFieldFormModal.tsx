@@ -125,7 +125,7 @@ function CustomFieldFormModal({
 
   const createMutation = api.customFieldDefinitions.create.useMutation({
     onSuccess: () => {
-      utils.customFieldDefinitions.listByEmulator.invalidate({ emulatorId })
+      utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId })
       onClose()
     },
     onError: (error) => {
@@ -136,7 +136,7 @@ function CustomFieldFormModal({
 
   const updateMutation = api.customFieldDefinitions.update.useMutation({
     onSuccess: () => {
-      utils.customFieldDefinitions.listByEmulator.invalidate({ emulatorId })
+      utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId })
       utils.customFieldDefinitions.byId.invalidate({ id: fieldIdToEdit! })
       onClose()
     },

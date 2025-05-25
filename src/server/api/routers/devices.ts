@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 
 import {
@@ -6,45 +5,42 @@ import {
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import {
+  GetDevicesSchema,
+  GetDeviceByIdSchema,
+  CreateDeviceSchema,
+  UpdateDeviceSchema,
+  DeleteDeviceSchema,
+} from '@/schemas/device'
 
 export const devicesRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-          brandId: z.string().optional(),
-          limit: z.number().default(50),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const { search, brandId, limit } = input ?? {}
+  get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
+    const { search, brandId, limit } = input ?? {}
 
-      return ctx.prisma.device.findMany({
-        where: {
-          ...(brandId ? { brandId } : {}),
-          ...(search
-            ? {
-                OR: [
-                  { modelName: { contains: search, mode: 'insensitive' } },
-                  {
-                    brand: { name: { contains: search, mode: 'insensitive' } },
-                  },
-                ],
-              }
-            : {}),
-        },
-        include: {
-          brand: true,
-        },
-        take: limit,
-        orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-      })
-    }),
+    return ctx.prisma.device.findMany({
+      where: {
+        ...(brandId ? { brandId } : {}),
+        ...(search
+          ? {
+              OR: [
+                { modelName: { contains: search, mode: 'insensitive' } },
+                {
+                  brand: { name: { contains: search, mode: 'insensitive' } },
+                },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        brand: true,
+      },
+      take: limit,
+      orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+    })
+  }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetDeviceByIdSchema)
     .query(async ({ ctx, input }) => {
       const device = await ctx.prisma.device.findUnique({
         where: { id: input.id },
@@ -64,12 +60,7 @@ export const devicesRouter = createTRPCRouter({
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        brandId: z.string().uuid(),
-        modelName: z.string().min(1),
-      }),
-    )
+    .input(CreateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.brandId },
@@ -109,13 +100,7 @@ export const devicesRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        brandId: z.string(),
-        modelName: z.string().min(1),
-      }),
-    )
+    .input(UpdateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
@@ -171,7 +156,7 @@ export const devicesRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if device is used in any listings
       const listingsCount = await ctx.prisma.listing.count({

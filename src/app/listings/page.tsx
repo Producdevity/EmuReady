@@ -50,9 +50,9 @@ function ListingsPage() {
   const { data: session } = useSession()
   const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
-  const { data: systems } = api.systems.list.useQuery()
-  const { data: devices } = api.devices.list.useQuery()
-  const { data: emulators } = api.emulators.list.useQuery()
+  const { data: systems } = api.systems.get.useQuery()
+  const { data: devices } = api.devices.get.useQuery()
+  const { data: emulators } = api.emulators.get.useQuery()
   const { data: performanceScales } = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {

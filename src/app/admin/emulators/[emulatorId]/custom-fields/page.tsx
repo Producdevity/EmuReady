@@ -26,7 +26,7 @@ export default function EmulatorCustomFieldsPage() {
     isLoading: isLoadingCustomFields,
     error: customFieldsError,
     refetch: refetchCustomFields,
-  } = api.customFieldDefinitions.listByEmulator.useQuery(
+  } = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId },
     { enabled: !!emulatorId },
   )

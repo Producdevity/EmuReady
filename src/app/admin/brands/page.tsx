@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
 function AdminBrandsPage() {
-  const { data: brands, refetch } = api.deviceBrands.list.useQuery()
+  const { data: brands, refetch } = api.deviceBrands.get.useQuery()
   const createBrand = api.deviceBrands.create.useMutation()
   const updateBrand = api.deviceBrands.update.useMutation()
   const deleteBrand = api.deviceBrands.delete.useMutation()

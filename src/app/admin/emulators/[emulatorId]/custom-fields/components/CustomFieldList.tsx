@@ -176,7 +176,7 @@ function CustomFieldList(props: CustomFieldListProps) {
   const updateOrderMutation =
     api.customFieldDefinitions.updateOrder.useMutation({
       onSuccess: () => {
-        utils.customFieldDefinitions.listByEmulator
+        utils.customFieldDefinitions.getByEmulator
           .invalidate({ emulatorId: props.emulatorId })
           .then(() => toast.success('Order updated successfully!'))
 
@@ -243,7 +243,7 @@ function CustomFieldList(props: CustomFieldListProps) {
 
   const deleteMutation = api.customFieldDefinitions.delete.useMutation({
     onSuccess: () => {
-      utils.customFieldDefinitions.listByEmulator
+      utils.customFieldDefinitions.getByEmulator
         .invalidate({ emulatorId: props.emulatorId })
         .then(() => toast.success('Custom field deleted successfully!'))
       props.onDeleteSuccess()

@@ -98,22 +98,22 @@ function AddListingPage() {
   const selectedEmulatorId = watch('emulatorId')
 
   // Data fetching for Autocomplete options - these are not directly used in Autocomplete props anymore
-  // They serve to make `utils.games.list.fetch` and `utils.emulators.list.fetch` available.
+  // They serve to make `utils.games.get.fetch` and `utils.emulators.get.fetch` available.
   // The `isLoading` states from these might be useful for global loading indicators if desired.
-  api.games.list.useQuery(
-    { search: gameSearchTerm, limit: 20 },
+  const {} = api.games.get.useQuery(
+    { search: gameSearchTerm, limit: 1 },
     { enabled: false },
   )
-  api.emulators.list.useQuery(
+  const {} = api.emulators.get.useQuery(
     { search: emulatorSearchTerm },
     { enabled: false },
   )
 
-  const { data: devicesData } = api.devices.list.useQuery({ limit: 1000 })
+  const { data: devicesData } = api.devices.get.useQuery({ limit: 1000 })
   const { data: performanceScalesData } =
     api.listings.performanceScales.useQuery()
   const { data: customFieldDefinitionsData, isLoading: isLoadingCustomFields } =
-    api.customFieldDefinitions.listByEmulator.useQuery(
+    api.customFieldDefinitions.getByEmulator.useQuery(
       { emulatorId: selectedEmulatorId! },
       { enabled: !!selectedEmulatorId },
     )
@@ -127,7 +127,7 @@ function AddListingPage() {
       setGameSearchTerm(query)
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.games.list.fetch({
+        const result = await utils.games.get.fetch({
           search: query,
           limit: 20,
         })
@@ -137,7 +137,7 @@ function AddListingPage() {
         return []
       }
     },
-    [utils.games.list],
+    [utils.games.get],
   )
 
   const loadEmulatorItems = useCallback(
@@ -145,14 +145,14 @@ function AddListingPage() {
       setEmulatorSearchTerm(query)
       if (query.length < 1) return Promise.resolve([])
       try {
-        const result = await utils.emulators.list.fetch({ search: query })
+        const result = await utils.emulators.get.fetch({ search: query })
         return result.map((e) => ({ id: e.id, name: e.name })) ?? []
       } catch (error) {
         console.error('Error fetching emulators:', error)
         return []
       }
     },
-    [utils.emulators.list],
+    [utils.emulators.get],
   )
 
   useEffect(() => {

@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
 function AdminSystemsPage() {
-  const { data: systems, refetch } = api.systems.list.useQuery()
+  const { data: systems, refetch } = api.systems.get.useQuery()
   const createSystem = api.systems.create.useMutation()
   const updateSystem = api.systems.update.useMutation()
   const deleteSystem = api.systems.delete.useMutation()

@@ -18,9 +18,9 @@ export const CreateListingSchema = z.object({
 })
 
 export const GetListingsSchema = z.object({
-  systemId: z.string().optional(),
-  deviceId: z.string().optional(),
-  emulatorId: z.string().optional(),
+  systemId: z.string().uuid().optional(),
+  deviceId: z.string().uuid().optional(),
+  emulatorId: z.string().uuid().optional(),
   performanceId: z.number().optional(),
   searchTerm: z.string().optional(),
   page: z.number().default(1),
@@ -69,7 +69,7 @@ export const CreateVoteComment = z.object({
 export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1).max(1000),
-  parentId: z.string().optional(),
+  parentId: z.string().uuid().optional(),
 })
 
 export const EditCommentSchema = z.object({

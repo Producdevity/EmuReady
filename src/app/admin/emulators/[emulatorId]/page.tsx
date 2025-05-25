@@ -21,7 +21,7 @@ export default function EditEmulatorPage() {
     data: allSystems,
     isLoading: isLoadingSystems,
     error: systemsError,
-  } = api.systems.list.useQuery({})
+  } = api.systems.get.useQuery({})
 
   if (isLoadingEmulator || isLoadingSystems) {
     return (

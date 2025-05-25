@@ -18,7 +18,7 @@ function AddGamePage() {
   const [success, setSuccess] = useState('')
 
   const { data: systems, isLoading: systemsLoading } =
-    api.systems.list.useQuery()
+    api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
 
   useEffect(() => {

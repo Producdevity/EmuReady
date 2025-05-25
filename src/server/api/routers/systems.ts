@@ -4,41 +4,39 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import {
+  GetSystemsSchema,
+  GetSystemByIdSchema,
+  CreateSystemSchema,
+  UpdateSystemSchema,
+  DeleteSystemSchema,
+} from '@/schemas/system'
 
 export const systemsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const { search } = input ?? {}
+  get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
+    const { search } = input ?? {}
 
-      return await ctx.prisma.system.findMany({
-        where: search
-          ? {
-              name: { contains: search },
-            }
-          : undefined,
-        include: {
-          _count: {
-            select: {
-              games: true,
-            },
+    return await ctx.prisma.system.findMany({
+      where: search
+        ? {
+            name: { contains: search },
+          }
+        : undefined,
+      include: {
+        _count: {
+          select: {
+            games: true,
           },
         },
-        orderBy: {
-          name: 'asc',
-        },
-      })
-    }),
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    })
+  }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(GetSystemByIdSchema)
     .query(async ({ ctx, input }) => {
       const system = await ctx.prisma.system.findUnique({
         where: { id: input.id },
@@ -67,11 +65,7 @@ export const systemsRouter = createTRPCRouter({
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-      }),
-    )
+    .input(CreateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.prisma.system.findUnique({
         where: { name: input.name },
@@ -90,12 +84,7 @@ export const systemsRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-      }),
-    )
+    .input(UpdateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
 
@@ -130,7 +119,7 @@ export const systemsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteSystemSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if system has games
       const gamesCount = await ctx.prisma.game.count({
