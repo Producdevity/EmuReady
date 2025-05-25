@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,12 +10,13 @@ import {
   CustomFieldType,
   type CustomFieldDefinition as PrismaCustomFieldDefinition,
 } from '@orm'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import SelectInput from '@/components/ui/SelectInput'
-import Autocomplete, {
+import {
+  Input,
+  Button,
+  SelectInput,
+  Autocomplete,
   type AutocompleteOptionBase,
-} from '@/components/ui/Autocomplete'
+} from '@/components/ui'
 import {
   Gamepad2,
   Puzzle,
@@ -24,11 +25,12 @@ import {
   ListChecks,
   FileText,
   CheckSquare,
-  LinkIcon as UrlIcon,
+  LinkIcon,
   CaseSensitive,
 } from 'lucide-react'
 import toast from '@/lib/toast'
 
+// TODO: share schema with server-side validation
 const listingFormSchema = z.object({
   gameId: z.string().min(1, 'Game is required'),
   deviceId: z.string().min(1, 'Device is required'),
@@ -74,7 +76,6 @@ function AddListingPage() {
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
 
-  // --- Form State ---
   const {
     control,
     register,
@@ -219,7 +220,6 @@ function AddListingPage() {
     }
   }, [customFieldDefinitionsData, setValue, watch])
 
-  // --- Mutation ---
   const createListingMutation = api.listings.create.useMutation({
     onSuccess: (data) => {
       utils.listings.get.invalidate()
@@ -277,7 +277,7 @@ function AddListingPage() {
         icon = <FileText className="w-5 h-5" />
         break
       case CustomFieldType.URL:
-        icon = <UrlIcon className="w-5 h-5" />
+        icon = <LinkIcon className="w-5 h-5" />
         break
       case CustomFieldType.BOOLEAN:
         icon = <CheckSquare className="w-5 h-5" />
