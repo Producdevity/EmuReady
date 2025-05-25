@@ -200,7 +200,7 @@ function ListingsPage() {
           {isLoading ? (
             <LoadingSpinner text="Loading listings..." />
           ) : (
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+            <table className="table-auto min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
                 <tr>
                   <SortableHeader
@@ -307,10 +307,10 @@ function ListingsPage() {
                       {listing.author?.name ?? 'Anonymous'}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-col">
                         <Link
                           href={`/listings/${listing.id}`}
-                          className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                          className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
                         >
                           <EyeIcon className="w-4 h-4" /> View
                         </Link>
@@ -318,9 +318,9 @@ function ListingsPage() {
                         {isAdmin && (
                           <button
                             onClick={() => confirmDelete(listing.id)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
+                            className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
                               deleteConfirmId === listing.id
-                                ? 'bg-red-700 text-white hover:bg-red-800'
+                                ? 'bg-orange-700 text-white hover:bg-orange-800'
                                 : 'bg-red-600 text-white hover:bg-red-700'
                             }`}
                           >
