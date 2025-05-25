@@ -1,3 +1,4 @@
+import { Role } from '@orm'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
         name: sanitizedName,
         email,
         hashedPassword,
-        role: 'USER', // Default role
+        role: Role.USER, // Default role
       },
       select: {
         id: true,

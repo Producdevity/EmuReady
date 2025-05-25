@@ -6,7 +6,8 @@ import { systemsRouter } from './routers/systems'
 import { gamesRouter } from './routers/games'
 import { emulatorsRouter } from './routers/emulators'
 import { usersRouter } from './routers/users'
-import type { inferRouterOutputs } from '@trpc/server'
+import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
+import { performanceScalesRouter } from './routers/performanceScales'
 
 export const appRouter = createTRPCRouter({
   listings: listingsRouter,
@@ -16,13 +17,8 @@ export const appRouter = createTRPCRouter({
   games: gamesRouter,
   emulators: emulatorsRouter,
   users: usersRouter,
+  customFieldDefinitions: customFieldDefinitionRouter,
+  performanceScales: performanceScalesRouter,
 })
 
 export type AppRouter = typeof appRouter
-
-/**
- * Inference helper for outputs.
- *
- * @example type AuthOutput = RouterOutputs['auth']['getSession']
- */
-export type RouterOutputs = inferRouterOutputs<AppRouter>

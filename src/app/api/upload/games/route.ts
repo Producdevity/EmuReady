@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
 import { authOptions } from '@/server/auth'
+import { Role } from '@orm'
+import { hasPermission } from '@/utils/permissions'
 
 // Set route to be dynamic to prevent caching
 export const dynamic = 'force-dynamic'
@@ -32,15 +34,12 @@ function isImage(file: File) {
   return ALLOWED_EXTENSIONS.includes(fileExtension)
 }
 
-// Main API route handler
+// TODO: consider only allowing urls
 export async function POST(request: NextRequest) {
   try {
     // Check authentication - only authors and admins can upload
     const session = await getServerSession(authOptions)
-    if (
-      !session ||
-      !['AUTHOR', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
-    ) {
+    if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 401 },

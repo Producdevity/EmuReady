@@ -1,14 +1,16 @@
 import { createRef } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { CustomFieldType } from '@orm'
 import Input from './Input'
 
 describe('Input', () => {
   it('renders input element by default', () => {
     render(<Input placeholder="Test placeholder" />)
-    const inputElement = screen.getByPlaceholderText('Test placeholder')
+    const inputElement: HTMLInputElement =
+      screen.getByPlaceholderText('Test placeholder')
     expect(inputElement).toBeInTheDocument()
-    expect(inputElement.tagName).toBe('INPUT')
+    expect(inputElement.type).toBe('text')
   })
 
   it('handles value changes', () => {
@@ -25,7 +27,7 @@ describe('Input', () => {
     render(<Input as="textarea" placeholder="Textarea" rows={4} />)
 
     const textareaElement = screen.getByPlaceholderText('Textarea')
-    expect(textareaElement.tagName).toBe('TEXTAREA')
+    expect(textareaElement.tagName).toBe(CustomFieldType.TEXTAREA)
     expect(textareaElement).toHaveAttribute('rows', '4')
   })
 
@@ -38,7 +40,7 @@ describe('Input', () => {
     )
 
     const selectElement = screen.getByRole('combobox')
-    expect(selectElement.tagName).toBe('SELECT')
+    expect(selectElement.tagName).toBe(CustomFieldType.SELECT)
     expect(selectElement).toHaveValue('option2')
   })
 
@@ -48,7 +50,7 @@ describe('Input', () => {
 
     expect(screen.getByTestId('left-icon')).toBeInTheDocument()
     const inputElement = screen.getByPlaceholderText('Search')
-    expect(inputElement).toHaveClass('pl-2')
+    expect(inputElement).toHaveClass('pl-10')
   })
 
   it('renders right icon when provided', () => {
@@ -72,7 +74,6 @@ describe('Input', () => {
     render(<Input ref={ref} placeholder="Test ref" />)
 
     expect(ref.current).not.toBeNull()
-    expect(ref.current?.tagName).toBe('INPUT')
     expect(ref.current).toBe(screen.getByPlaceholderText('Test ref'))
   })
 })

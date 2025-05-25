@@ -9,7 +9,7 @@ import { authOptions } from '@/server/auth'
 import { Badge, OptimizedImage } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
 import getImageUrl from '@/app/games/utils/getImageUrl'
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 
 export const metadata: Metadata = {
   title: 'Game Details',

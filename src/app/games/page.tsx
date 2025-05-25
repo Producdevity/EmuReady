@@ -13,9 +13,9 @@ function GamesPage() {
   const [systemId, setSystemId] = useState('')
   const limit = 12
 
-  const { data: systems } = api.systems.list.useQuery()
+  const { data: systems } = api.systems.get.useQuery()
 
-  const { data, isLoading } = api.games.list.useQuery({
+  const { data, isLoading } = api.games.get.useQuery({
     search: search || undefined,
     systemId: systemId || undefined,
     limit,

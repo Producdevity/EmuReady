@@ -1,50 +1,41 @@
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-
 import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import { ResourceError } from '@/lib/errors'
+import {
+  GetDevicesSchema,
+  GetDeviceByIdSchema,
+  CreateDeviceSchema,
+  UpdateDeviceSchema,
+  DeleteDeviceSchema,
+} from '@/schemas/device'
 
 export const devicesRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-          brandId: z.string().optional(),
-          limit: z.number().default(50),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const { search, brandId, limit } = input ?? {}
+  get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
+    const { search, brandId, limit } = input ?? {}
 
-      return ctx.prisma.device.findMany({
-        where: {
-          ...(brandId ? { brandId } : {}),
-          ...(search
-            ? {
-                OR: [
-                  { modelName: { contains: search, mode: 'insensitive' } },
-                  {
-                    brand: { name: { contains: search, mode: 'insensitive' } },
-                  },
-                ],
-              }
-            : {}),
-        },
-        include: {
-          brand: true,
-        },
-        take: limit,
-        orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-      })
-    }),
+    return ctx.prisma.device.findMany({
+      where: {
+        ...(brandId ? { brandId } : {}),
+        ...(search
+          ? {
+              OR: [
+                { modelName: { contains: search, mode: 'insensitive' } },
+                { brand: { name: { contains: search, mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
+      },
+      include: { brand: true },
+      take: limit,
+      orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+    })
+  }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetDeviceByIdSchema)
     .query(async ({ ctx, input }) => {
       const device = await ctx.prisma.device.findUnique({
         where: { id: input.id },
@@ -54,69 +45,35 @@ export const devicesRouter = createTRPCRouter({
       })
 
       if (!device) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device not found',
-        })
+        ResourceError.device.notFound()
       }
 
       return device
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        brandId: z.string(),
-        modelName: z.string().min(1),
-      }),
-    )
+    .input(CreateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if the brand exists
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.brandId },
       })
 
-      if (!brand) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device brand not found',
-        })
-      }
+      if (!brand) ResourceError.deviceBrand.notFound()
 
-      // Check if a device with the same brand and model already exists
       const existingDevice = await ctx.prisma.device.findFirst({
         where: {
           brandId: input.brandId,
-          modelName: {
-            equals: input.modelName,
-            mode: 'insensitive',
-          },
+          modelName: { equals: input.modelName, mode: 'insensitive' },
         },
       })
 
-      if (existingDevice) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `A device with model name "${input.modelName}" already exists for this brand`,
-        })
-      }
+      if (existingDevice) ResourceError.device.alreadyExists(input.modelName)
 
-      return ctx.prisma.device.create({
-        data: input,
-        include: {
-          brand: true,
-        },
-      })
+      return ctx.prisma.device.create({ data: input, include: { brand: true } })
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        brandId: z.string(),
-        modelName: z.string().min(1),
-      }),
-    )
+    .input(UpdateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
@@ -124,26 +81,14 @@ export const devicesRouter = createTRPCRouter({
         where: { id },
       })
 
-      if (!device) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device not found',
-        })
-      }
+      if (!device) ResourceError.device.notFound()
 
-      // Check if the brand exists
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.brandId },
       })
 
-      if (!brand) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device brand not found',
-        })
-      }
+      if (!brand) ResourceError.deviceBrand.notFound()
 
-      // Check if another device with the same brand and model already exists
       const existingDevice = await ctx.prisma.device.findFirst({
         where: {
           brandId: input.brandId,
@@ -155,39 +100,25 @@ export const devicesRouter = createTRPCRouter({
         },
       })
 
-      if (existingDevice) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `A device with model name "${input.modelName}" already exists for this brand`,
-        })
-      }
+      if (existingDevice) ResourceError.device.alreadyExists(input.modelName)
 
       return ctx.prisma.device.update({
         where: { id },
         data,
-        include: {
-          brand: true,
-        },
+        include: { brand: true },
       })
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if device is used in any listings
       const listingsCount = await ctx.prisma.listing.count({
         where: { deviceId: input.id },
       })
 
-      if (listingsCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete device that is used in ${listingsCount} listings`,
-        })
-      }
+      if (listingsCount > 0) ResourceError.device.inUse(listingsCount)
 
-      return ctx.prisma.device.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
 })

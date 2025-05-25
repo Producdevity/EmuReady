@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 
 function AdminBrandsPage() {
-  const { data: brands, refetch } = api.deviceBrands.list.useQuery()
+  const { data: brands, refetch } = api.deviceBrands.get.useQuery()
   const createBrand = api.deviceBrands.create.useMutation()
   const updateBrand = api.deviceBrands.update.useMutation()
   const deleteBrand = api.deviceBrands.delete.useMutation()
@@ -50,6 +50,7 @@ function AdminBrandsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    // TODO: use a confirmation modal instead of browser confirm // eg:   const confirm = useConfirmDialog()
     if (!confirm('Delete this brand?')) return
     try {
       await deleteBrand.mutateAsync({ id })

@@ -1,23 +1,24 @@
 'use client'
 
-import { api } from '@/lib/api'
 import Link from 'next/link'
 import Image from 'next/image'
+import { isArray, isString } from 'remeda'
 import { useParams } from 'next/navigation'
-import type { RouterOutputs } from '@/server/api/root'
+import { formatDate } from '@/utils/date'
+import { api } from '@/lib/api'
+import { type RouterOutput } from '@/types/trpc'
 
-type UserProfile = RouterOutputs['users']['getUserById']
-type UserListing = UserProfile['listings'][0]
-type UserVote = UserProfile['votes'][0]
+type UserProfile = RouterOutput['users']['getUserById']
+type UserListing = NonNullable<UserProfile>['listings'][0]
+type UserVote = NonNullable<UserProfile>['votes'][0]
 
 export default function UserProfilePage() {
   const params = useParams()
-  const userId =
-    typeof params.id === 'string'
-      ? params.id
-      : Array.isArray(params.id)
-        ? params.id[0]
-        : ''
+  const userId = isString(params.id)
+    ? params.id
+    : isArray(params.id)
+      ? params.id[0]
+      : ''
 
   const {
     data: profile,
@@ -92,7 +93,7 @@ export default function UserProfilePage() {
                       Member Since
                     </h2>
                     <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                      {new Date(profile.createdAt).toLocaleDateString()}
+                      {formatDate(profile.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -124,7 +125,7 @@ export default function UserProfilePage() {
                             </Link>
                           </h3>
                           <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(listing.createdAt).toLocaleDateString()}
+                            {formatDate(listing.createdAt)}
                           </p>
                         </div>
                       ))}

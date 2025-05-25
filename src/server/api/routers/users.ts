@@ -4,9 +4,17 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
-import { TRPCError } from '@trpc/server'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import bcryptjs from 'bcryptjs'
-import { z } from 'zod'
+import { ResourceError } from '@/lib/errors'
+import {
+  RegisterUserSchema,
+  GetUserByIdSchema,
+  UpdateUserSchema,
+  UpdateUserRoleSchema,
+  DeleteUserSchema,
+} from '@/schemas/user'
 
 function hashPassword(password: string): string {
   const salt = bcryptjs.genSaltSync(10)
@@ -27,13 +35,7 @@ function comparePassword(
 
 export const usersRouter = createTRPCRouter({
   register: publicProcedure
-    .input(
-      z.object({
-        name: z.string().min(2).max(50),
-        email: z.string().email(),
-        password: z.string().min(8),
-      }),
-    )
+    .input(RegisterUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { name, email, password } = input
 
@@ -41,12 +43,7 @@ export const usersRouter = createTRPCRouter({
         where: { email },
       })
 
-      if (existingUser) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'User with this email already exists',
-        })
-      }
+      if (existingUser) ResourceError.user.emailExists()
 
       const hashedPassword = hashPassword(password)
 
@@ -55,7 +52,7 @@ export const usersRouter = createTRPCRouter({
           name,
           email,
           hashedPassword,
-          role: 'USER',
+          role: Role.USER,
         },
         select: {
           id: true,
@@ -88,30 +85,13 @@ export const usersRouter = createTRPCRouter({
             createdAt: true,
             device: {
               select: {
-                brand: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
+                brand: { select: { id: true, name: true } },
                 modelName: true,
               },
             },
-            game: {
-              select: {
-                title: true,
-              },
-            },
-            emulator: {
-              select: {
-                name: true,
-              },
-            },
-            performance: {
-              select: {
-                label: true,
-              },
-            },
+            game: { select: { title: true } },
+            emulator: { select: { name: true } },
+            performance: { select: { label: true } },
           },
         },
         votes: {
@@ -124,29 +104,14 @@ export const usersRouter = createTRPCRouter({
                 device: {
                   select: {
                     brand: {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
+                      select: { id: true, name: true },
                     },
                     modelName: true,
                   },
                 },
-                game: {
-                  select: {
-                    title: true,
-                  },
-                },
-                emulator: {
-                  select: {
-                    name: true,
-                  },
-                },
-                performance: {
-                  select: {
-                    label: true,
-                  },
-                },
+                game: { select: { title: true } },
+                emulator: { select: { name: true } },
+                performance: { select: { label: true } },
               },
             },
           },
@@ -154,18 +119,13 @@ export const usersRouter = createTRPCRouter({
       },
     })
 
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      })
-    }
+    if (!user) ResourceError.user.notFound()
 
     return user
   }),
 
   getUserById: publicProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(GetUserByIdSchema)
     .query(async ({ ctx, input }) => {
       const { userId } = input
 
@@ -183,30 +143,13 @@ export const usersRouter = createTRPCRouter({
               createdAt: true,
               device: {
                 select: {
-                  brand: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
+                  brand: { select: { id: true, name: true } },
                   modelName: true,
                 },
               },
-              game: {
-                select: {
-                  title: true,
-                },
-              },
-              emulator: {
-                select: {
-                  name: true,
-                },
-              },
-              performance: {
-                select: {
-                  label: true,
-                },
-              },
+              game: { select: { title: true } },
+              emulator: { select: { name: true } },
+              performance: { select: { label: true } },
             },
           },
           votes: {
@@ -218,30 +161,13 @@ export const usersRouter = createTRPCRouter({
                   id: true,
                   device: {
                     select: {
-                      brand: {
-                        select: {
-                          id: true,
-                          name: true,
-                        },
-                      },
+                      brand: { select: { id: true, name: true } },
                       modelName: true,
                     },
                   },
-                  game: {
-                    select: {
-                      title: true,
-                    },
-                  },
-                  emulator: {
-                    select: {
-                      name: true,
-                    },
-                  },
-                  performance: {
-                    select: {
-                      label: true,
-                    },
-                  },
+                  game: { select: { title: true } },
+                  emulator: { select: { name: true } },
+                  performance: { select: { label: true } },
                 },
               },
             },
@@ -249,31 +175,17 @@ export const usersRouter = createTRPCRouter({
         },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) ResourceError.user.notFound()
 
       return user
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(2).max(50).optional(),
-        email: z.string().email().optional(),
-        currentPassword: z.string().optional(),
-        newPassword: z.string().min(8).optional(),
-        profileImage: z.string().optional(),
-      }),
-    )
+    .input(UpdateUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { name, email, currentPassword, newPassword, profileImage } = input
       const userId = ctx.session.user.id
 
-      // Get the current user
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -283,28 +195,16 @@ export const usersRouter = createTRPCRouter({
         },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) return ResourceError.user.notFound()
 
-      // If email is being changed, check if it's already in use
       if (email && email !== user.email) {
         const existingUser = await ctx.prisma.user.findUnique({
           where: { email },
         })
 
-        if (existingUser) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'Email is already in use',
-          })
-        }
+        if (existingUser) ResourceError.user.emailExists()
       }
 
-      // If passwords are provided, verify and update
       let hashedPassword = undefined
       if (currentPassword && newPassword) {
         const isPasswordValid = comparePassword(
@@ -312,12 +212,7 @@ export const usersRouter = createTRPCRouter({
           user.hashedPassword!,
         )
 
-        if (!isPasswordValid) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Current password is incorrect',
-          })
-        }
+        if (!isPasswordValid) ResourceError.user.invalidPassword()
 
         hashedPassword = hashPassword(newPassword)
       }
@@ -362,21 +257,16 @@ export const usersRouter = createTRPCRouter({
   }),
 
   updateRole: adminProcedure
-    .input(
-      z.object({
-        userId: z.string().uuid(),
-        role: z.enum(['USER', 'AUTHOR', 'ADMIN']),
-      }),
-    )
+    .input(UpdateUserRoleSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, role } = input
 
       // Prevent self-demotion from ADMIN
-      if (userId === ctx.session.user.id && role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You cannot demote yourself from the admin role',
-        })
+      if (
+        userId === ctx.session.user.id &&
+        !hasPermission(ctx.session.user.role, Role.ADMIN)
+      ) {
+        ResourceError.user.cannotDemoteSelf()
       }
 
       return await ctx.prisma.user.update({
@@ -392,21 +282,14 @@ export const usersRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ userId: z.string().uuid() }))
+    .input(DeleteUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId } = input
 
       // Prevent self-deletion
-      if (userId === ctx.session.user.id) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You cannot delete your own account',
-        })
-      }
+      if (userId === ctx.session.user.id) ResourceError.user.cannotDeleteSelf()
 
-      await ctx.prisma.user.delete({
-        where: { id: userId },
-      })
+      await ctx.prisma.user.delete({ where: { id: userId } })
 
       return { success: true }
     }),

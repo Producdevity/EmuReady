@@ -1,30 +1,26 @@
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-
 import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import { ResourceError } from '@/lib/errors'
+import {
+  GetDeviceBrandsSchema,
+  GetDeviceBrandByIdSchema,
+  CreateDeviceBrandSchema,
+  UpdateDeviceBrandSchema,
+  DeleteDeviceBrandSchema,
+} from '@/schemas/deviceBrand'
 
 export const deviceBrandsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-          limit: z.number().default(50),
-        })
-        .optional(),
-    )
+  get: publicProcedure
+    .input(GetDeviceBrandsSchema)
     .query(async ({ ctx, input }) => {
       const { search, limit } = input ?? {}
 
       return ctx.prisma.deviceBrand.findMany({
         where: search
-          ? {
-              name: { contains: search, mode: 'insensitive' },
-            }
+          ? { name: { contains: search, mode: 'insensitive' } }
           : undefined,
         take: limit,
         orderBy: [{ name: 'asc' }],
@@ -32,28 +28,21 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetDeviceBrandByIdSchema)
     .query(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.id },
       })
 
       if (!brand) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device brand not found',
-        })
+        ResourceError.deviceBrand.notFound()
       }
 
       return brand
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-      }),
-    )
+    .input(CreateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand with the same name already exists
       const existingBrand = await ctx.prisma.deviceBrand.findFirst({
@@ -63,10 +52,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (existingBrand) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `Brand "${input.name}" already exists`,
-        })
+        ResourceError.deviceBrand.alreadyExists(input.name)
       }
 
       return ctx.prisma.deviceBrand.create({
@@ -75,12 +61,7 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-      }),
-    )
+    .input(UpdateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
@@ -89,10 +70,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (!brand) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device brand not found',
-        })
+        ResourceError.deviceBrand.notFound()
       }
 
       // Check if another brand with the same name already exists
@@ -104,10 +82,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (existingBrand) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `Brand "${input.name}" already exists`,
-        })
+        ResourceError.deviceBrand.alreadyExists(input.name)
       }
 
       return ctx.prisma.deviceBrand.update({
@@ -117,7 +92,7 @@ export const deviceBrandsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand is used in any devices
       const devicesCount = await ctx.prisma.device.count({
@@ -125,10 +100,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (devicesCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete brand that is used by ${devicesCount} devices`,
-        })
+        ResourceError.deviceBrand.inUse(devicesCount)
       }
 
       return ctx.prisma.deviceBrand.delete({

@@ -1,40 +1,35 @@
-import { z } from 'zod'
+import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { TRPCError } from '@trpc/server'
-import { Prisma } from '@orm'
+import { Prisma, ListingApprovalStatus } from '@orm'
 import {
   createTRPCRouter,
   publicProcedure,
   protectedProcedure,
   authorProcedure,
   adminProcedure,
+  superAdminProcedure,
 } from '@/server/api/trpc'
+import {
+  ApproveListingSchema,
+  CreateCommentSchema,
+  CreateListingSchema,
+  CreateVoteComment,
+  CreateVoteSchema,
+  DeleteCommentSchema,
+  DeleteListingSchema,
+  EditCommentSchema,
+  GetSortedCommentsSchema,
+  GetProcessedSchema,
+  OverrideApprovalStatusSchema,
+  RejectListingSchema,
+  GetListingsSchema,
+  GetListingByIdSchema,
+  GetCommentsSchema,
+} from '@/schemas/listing'
 
 export const listingsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z.object({
-        systemId: z.string().optional(),
-        deviceId: z.string().optional(),
-        emulatorId: z.string().optional(),
-        performanceId: z.number().optional(),
-        searchTerm: z.string().optional(),
-        page: z.number().default(1),
-        limit: z.number().default(10),
-        sortField: z
-          .enum([
-            'game.title',
-            'game.system.name',
-            'device',
-            'emulator.name',
-            'performance.label',
-            'successRate',
-            'author.name',
-            'createdAt',
-          ])
-          .optional(),
-        sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-      }),
-    )
+  get: publicProcedure
+    .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
       const {
         systemId,
@@ -46,6 +41,7 @@ export const listingsRouter = createTRPCRouter({
         limit,
         sortField,
         sortDirection,
+        approvalStatus,
       } = input
       const skip = (page - 1) * limit
 
@@ -58,6 +54,9 @@ export const listingsRouter = createTRPCRouter({
         ...(deviceId ? { deviceId } : {}),
         ...(emulatorId ? { emulatorId } : {}),
         ...(performanceId ? { performanceId } : {}),
+        ...(approvalStatus
+          ? { status: approvalStatus }
+          : { status: ListingApprovalStatus.APPROVED }),
       }
 
       if (searchTerm) {
@@ -224,7 +223,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetListingByIdSchema)
     .query(async ({ ctx, input }) => {
       const { id } = input
 
@@ -325,17 +324,34 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   create: authorProcedure
-    .input(
-      z.object({
-        gameId: z.string(),
-        deviceId: z.string(),
-        emulatorId: z.string(),
-        performanceId: z.number(),
-        notes: z.string().optional(),
-      }),
-    )
+    .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
-      const { gameId, deviceId, emulatorId, performanceId, notes } = input
+      const {
+        gameId,
+        deviceId,
+        emulatorId,
+        performanceId,
+        notes,
+        customFieldValues,
+      } = input
+      const authorId = ctx.session.user.id
+
+      console.log('Attempting to create listing with authorId:', authorId)
+      const userExists = await ctx.prisma.user.findUnique({
+        where: { id: authorId },
+        select: { id: true },
+      })
+
+      if (!userExists) {
+        console.error(
+          'CRITICAL: User with session ID not found in database:',
+          authorId,
+        )
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `User with ID ${authorId} not found. Cannot create listing.`,
+        })
+      }
 
       const existingListing = await ctx.prisma.listing.findFirst({
         where: {
@@ -353,25 +369,51 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      return ctx.prisma.listing.create({
-        data: {
-          gameId,
-          deviceId,
-          emulatorId,
-          performanceId,
-          notes,
-          authorId: ctx.session.user.id,
-        },
+      return ctx.prisma.$transaction(async (tx) => {
+        const newListing = await tx.listing.create({
+          data: {
+            gameId,
+            deviceId,
+            emulatorId,
+            performanceId,
+            notes,
+            authorId: authorId,
+            status: ListingApprovalStatus.PENDING,
+          },
+        })
+
+        if (customFieldValues && customFieldValues.length > 0) {
+          for (const cfv of customFieldValues) {
+            // Validate the customFieldDefinitionId exists and belongs to the emulator for this listing
+            const fieldDef = await tx.customFieldDefinition.findUnique({
+              where: { id: cfv.customFieldDefinitionId },
+            })
+            if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: `Invalid custom field definition ID: ${cfv.customFieldDefinitionId} for emulator ${emulatorId}`,
+              })
+            }
+            // TODO: Add more specific validation for cfv.value based on fieldDef.type if needed here
+            // For now, assuming client sends compatible JSON structure
+            await tx.listingCustomFieldValue.create({
+              data: {
+                listingId: newListing.id,
+                customFieldDefinitionId: cfv.customFieldDefinitionId,
+                value:
+                  cfv.value === null
+                    ? Prisma.JsonNull
+                    : (cfv.value as Prisma.InputJsonValue),
+              },
+            })
+          }
+        }
+        return newListing
       })
     }),
 
   vote: protectedProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        value: z.boolean(),
-      }),
-    )
+    .input(CreateVoteSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, value } = input
 
@@ -449,15 +491,8 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // Add a comment to a listing
-  comment: protectedProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        content: z.string().min(1).max(1000),
-        parentId: z.string().optional(),
-      }),
-    )
+  createComment: protectedProcedure
+    .input(CreateCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, content, parentId } = input
 
@@ -521,7 +556,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { id } = input
 
@@ -540,14 +575,11 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.performanceScale.findMany({
-      orderBy: { rank: 'asc' },
-    })
+    return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } })
   }),
 
-  // Add a procedure to get comments for a listing
   getComments: publicProcedure
-    .input(z.object({ listingId: z.string() }))
+    .input(GetCommentsSchema)
     .query(async ({ ctx, input }) => {
       const { listingId } = input
 
@@ -589,25 +621,13 @@ export const listingsRouter = createTRPCRouter({
 
   // Edit a comment
   editComment: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.string(),
-        content: z.string().min(1).max(1000),
-      }),
-    )
+    .input(EditCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { commentId, content } = input
-      const userId = ctx.session.user.id
 
       const comment = await ctx.prisma.comment.findUnique({
         where: { id: commentId },
-        include: {
-          user: {
-            select: {
-              id: true,
-            },
-          },
-        },
+        include: { user: { select: { id: true } } },
       })
 
       if (!comment) {
@@ -624,8 +644,12 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      const canEdit =
-        comment.user.id === userId || ctx.session.user.role === 'SUPER_ADMIN'
+      const canEdit = canEditComment(
+        ctx.session.user.role,
+        comment.user.id,
+        ctx.session.user.id,
+      )
+
       if (!canEdit) {
         throw new TRPCError({
           code: 'FORBIDDEN',
@@ -652,22 +676,12 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // Soft delete a comment
   deleteComment: protectedProcedure
-    .input(z.object({ commentId: z.string() }))
+    .input(DeleteCommentSchema)
     .mutation(async ({ ctx, input }) => {
-      const { commentId } = input
-      const userId = ctx.session.user.id
-
       const comment = await ctx.prisma.comment.findUnique({
-        where: { id: commentId },
-        include: {
-          user: {
-            select: {
-              id: true,
-            },
-          },
-        },
+        where: { id: input.commentId },
+        include: { user: { select: { id: true } } },
       })
 
       if (!comment) {
@@ -684,10 +698,11 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      const canDelete =
-        comment.user.id === userId ||
-        ctx.session.user.role === 'ADMIN' ||
-        ctx.session.user.role === 'SUPER_ADMIN'
+      const canDelete = canDeleteComment(
+        ctx.session.user.role,
+        comment.user.id,
+        ctx.session.user.id,
+      )
 
       if (!canDelete) {
         throw new TRPCError({
@@ -697,21 +712,13 @@ export const listingsRouter = createTRPCRouter({
       }
 
       return ctx.prisma.comment.update({
-        where: { id: commentId },
-        data: {
-          deletedAt: new Date(),
-        },
+        where: { id: input.commentId },
+        data: { deletedAt: new Date() },
       })
     }),
 
-  // Get comments for a listing with sorting options
   getSortedComments: publicProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        sortBy: z.enum(['newest', 'oldest', 'popular']).default('newest'),
-      }),
-    )
+    .input(GetSortedCommentsSchema)
     .query(async ({ ctx, input }) => {
       const { listingId, sortBy } = input
 
@@ -801,7 +808,6 @@ export const listingsRouter = createTRPCRouter({
 
       // Transform the comments to include vote data
       const transformedComments = comments.map((comment) => {
-        // Process replies
         const transformedReplies = comment.replies.map((reply) => {
           return {
             ...reply,
@@ -821,19 +827,12 @@ export const listingsRouter = createTRPCRouter({
       return { comments: transformedComments }
     }),
 
-  // Vote on a comment
   voteComment: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.string(),
-        value: z.boolean(), // true = upvote, false = downvote
-      }),
-    )
+    .input(CreateVoteComment)
     .mutation(async ({ ctx, input }) => {
       const { commentId, value } = input
       const userId = ctx.session.user.id
 
-      // Check if comment exists
       const comment = await ctx.prisma.comment.findUnique({
         where: { id: commentId },
       })
@@ -913,6 +912,185 @@ export const listingsRouter = createTRPCRouter({
         })
 
         return voteResult
+      })
+    }),
+
+  getPending: adminProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.listing.findMany({
+      where: { status: ListingApprovalStatus.PENDING },
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true } },
+        emulator: true,
+        author: { select: { id: true, name: true, email: true } },
+        performance: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    })
+  }),
+
+  approveListing: adminProcedure
+    .input(ApproveListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingId } = input
+      const adminUserId = ctx.session.user.id
+
+      // Verify admin user exists
+      const adminUserExists = await ctx.prisma.user.findUnique({
+        where: { id: adminUserId },
+        select: { id: true },
+      })
+      if (!adminUserExists) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Approving user (admin) with ID ${adminUserId} not found in database.`,
+        })
+      }
+
+      const listingToApprove = await ctx.prisma.listing.findUnique({
+        where: { id: listingId },
+      })
+
+      if (
+        !listingToApprove ||
+        listingToApprove.status !== ListingApprovalStatus.PENDING
+      ) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pending listing not found or already processed.',
+        })
+      }
+
+      return ctx.prisma.listing.update({
+        where: { id: listingId },
+        data: {
+          status: ListingApprovalStatus.APPROVED,
+          processedByUserId: adminUserId,
+          processedAt: new Date(),
+          processedNotes: null,
+        },
+      })
+    }),
+
+  rejectListing: adminProcedure
+    .input(RejectListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingId, notes } = input
+      const adminUserId = ctx.session.user.id
+
+      // Verify admin user exists
+      const adminUserExists = await ctx.prisma.user.findUnique({
+        where: { id: adminUserId },
+        select: { id: true },
+      })
+      if (!adminUserExists) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Rejecting user (admin) with ID ${adminUserId} not found in database.`,
+        })
+      }
+
+      const listingToReject = await ctx.prisma.listing.findUnique({
+        where: { id: listingId },
+      })
+
+      if (
+        !listingToReject ||
+        listingToReject.status !== ListingApprovalStatus.PENDING
+      ) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pending listing not found or already processed.',
+        })
+      }
+
+      return ctx.prisma.listing.update({
+        where: { id: listingId },
+        data: {
+          status: ListingApprovalStatus.REJECTED,
+          processedByUserId: adminUserId,
+          processedAt: new Date(),
+          processedNotes: notes,
+        },
+      })
+    }),
+
+  getProcessed: superAdminProcedure
+    .input(GetProcessedSchema)
+    .query(async ({ ctx, input }) => {
+      const { page, limit, filterStatus } = input
+      const skip = (page - 1) * limit
+
+      const whereClause: Prisma.ListingWhereInput = {
+        NOT: { status: ListingApprovalStatus.PENDING }, // Exclude PENDING listings
+      }
+
+      if (filterStatus) {
+        whereClause.status = filterStatus
+      }
+
+      const listings = await ctx.prisma.listing.findMany({
+        where: whereClause,
+        include: {
+          game: { include: { system: true } },
+          device: { include: { brand: true } },
+          emulator: true,
+          author: { select: { id: true, name: true, email: true } },
+          performance: true,
+          processedByUser: { select: { id: true, name: true, email: true } }, // Admin who processed
+        },
+        orderBy: {
+          processedAt: 'desc', // Show most recently processed first
+        },
+        skip,
+        take: limit,
+      })
+
+      const totalListings = await ctx.prisma.listing.count({
+        where: whereClause,
+      })
+
+      return {
+        listings,
+        pagination: {
+          total: totalListings,
+          pages: Math.ceil(totalListings / limit),
+          currentPage: page,
+          limit,
+        },
+      }
+    }),
+
+  overrideApprovalStatus: superAdminProcedure
+    .input(OverrideApprovalStatusSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingId, newStatus, overrideNotes } = input
+      const superAdminUserId = ctx.session.user.id
+
+      const listingToOverride = await ctx.prisma.listing.findUnique({
+        where: { id: listingId },
+      })
+
+      if (!listingToOverride) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Listing not found.',
+        })
+      }
+
+      // Prevent setting to PENDING if it was never processed, or other invalid transitions if needed.
+      // For now, allowing any override by SUPER_ADMIN.
+
+      return ctx.prisma.listing.update({
+        where: { id: listingId },
+        data: {
+          status: newStatus,
+          processedByUserId: superAdminUserId, // Log the SUPER_ADMIN as the latest processor
+          processedAt: new Date(), // Update timestamp to the override time
+          processedNotes: overrideNotes ?? listingToOverride.processedNotes, // Keep old notes if no new ones
+        },
       })
     }),
 })

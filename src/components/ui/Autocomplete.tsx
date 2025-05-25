@@ -1,145 +1,318 @@
 'use client'
 
-import React, {
+import {
   useState,
   useRef,
   useEffect,
   useCallback,
   type ReactNode,
   type ChangeEvent,
+  type FocusEvent,
   type KeyboardEvent,
 } from 'react'
+import { twMerge } from 'tailwind-merge'
 
-interface AutocompleteOption {
-  value: string
-  label: string
-  icon?: ReactNode
+// Generic Option type to allow flexibility for the consumer
+export interface AutocompleteOptionBase {
+  // Allow any other properties, but prefer unknown over any for better type safety
+  [key: string]: unknown
 }
 
-interface Props {
-  options: AutocompleteOption[]
-  value?: string
-  onChange: (value: string) => void
-  onInputChange?: (input: string) => void
-  onSearch?: (query: string) => Promise<void>
+interface AutocompleteProps<T extends AutocompleteOptionBase> {
+  value?: string | null // The actual selected value (e.g., an ID)
+  onChange: (value: string | null) => void // Callback with the new value
+
+  // Data handling: Provide either static items or a function to load them
+  items?: T[] // Static list of items
+  loadItems?: (query: string) => Promise<T[]> // Async function to fetch items
+
+  optionToValue: (option: T) => string // Function to get the value from an option (e.g., option.id)
+  optionToLabel: (option: T) => string // Function to get the display label from an option (e.g., option.label)
+  optionToIcon?: (option: T) => ReactNode // Optional: Function to get an icon for an option
+
+  filterKeys?: (keyof T)[] // Keys to use for client-side fuzzy filtering (if items is provided)
+
   placeholder?: string
   label?: string
   leftIcon?: ReactNode
   rightIcon?: ReactNode
-  loading?: boolean
   disabled?: boolean
   className?: string
-  minCharsToSearch?: number
-  searchDebounce?: number
+  minCharsToTrigger?: number // Renamed from minCharsToSearch for clarity
+  debounceTime?: number // Renamed from searchDebounce
 }
 
-function Autocomplete(props: Props) {
-  const placeholder = props.placeholder ?? 'Type to search...'
-  const loading = props.loading ?? false
-  const disabled = props.disabled ?? false
-  const className = props.className ?? ''
-  const minCharsToSearch = props.minCharsToSearch ?? 2
-  const searchDebounce = props.searchDebounce ?? 300
-
+function Autocomplete<T extends AutocompleteOptionBase>({
+  value,
+  onChange,
+  items: staticItems,
+  loadItems,
+  optionToValue,
+  optionToLabel,
+  optionToIcon,
+  filterKeys = [], // Default to empty array, implying label search or specific logic
+  placeholder = 'Type to search...',
+  label,
+  leftIcon,
+  rightIcon,
+  disabled = false,
+  className = '',
+  minCharsToTrigger = 2,
+  debounceTime = 300,
+}: AutocompleteProps<T>) {
   const [inputValue, setInputValue] = useState('')
+  const [suggestions, setSuggestions] = useState<T[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+
   const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const listRef = useRef<HTMLUListElement>(null) // Changed to ul
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Keep inputValue in sync with value prop
+  // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
-    if (!props.value) return setInputValue('')
+    // Only run this effect if value prop is explicitly provided (controlled mode)
+    // In uncontrolled mode, handleOptionClick manages inputValue directly
+    if (value === undefined) {
+      return // Uncontrolled mode - don't interfere with inputValue
+    }
+    
+    if (value === null) {
+      setInputValue('')
+      return
+    }
+    
+    // For static items, always check staticItems first
+    if (staticItems && staticItems.length > 0) {
+      const staticSelectedItem = staticItems.find(
+        (item) => optionToValue(item) === value,
+      )
+      if (staticSelectedItem) {
+        setInputValue(optionToLabel(staticSelectedItem))
+        return
+      }
+    }
+    
+    // For loadItems, check suggestions
+    if (loadItems) {
+      const selectedItem = suggestions.find(
+        (item) => optionToValue(item) === value,
+      )
+      if (selectedItem) {
+        setInputValue(optionToLabel(selectedItem))
+      } else if (suggestions.length === 0) {
+        // For loadItems case, if suggestions are empty but we have a value,
+        // don't clear the input - it might have been set by handleOptionClick
+        // This prevents the useEffect from overriding the input value after selection
+      }
+    } else {
+      // If value is present but not in items, clear input
+      setInputValue('')
+    }
+  }, [
+    value,
+    staticItems,
+    optionToValue,
+    optionToLabel,
+    suggestions,
+    loadItems,
+    // Removed inputValue from dependencies to prevent feedback loop
+  ])
 
-    const selected = props.options.find((o) => o.value === props.value)
-    setInputValue(selected ? selected.label : '')
-  }, [props.value, props.options])
+  const performSearch = useCallback(
+    async (query: string) => {
+      // For static items, allow showing all items when query is empty
+      // For async loading, allow showing initial results even with empty query
+      if (
+        query.length < minCharsToTrigger &&
+        !(loadItems && query.length === 0) &&
+        !(staticItems && query.length === 0)
+      ) {
+        setSuggestions([])
+        setIsOpen(query.length > 0) // Keep open if user is typing but below threshold
+        return
+      }
 
-  // Debounced search
+      setIsLoading(true)
+      setIsOpen(true) // Open dropdown immediately when loading starts
+      try {
+        if (loadItems) {
+          const newSuggestions = await loadItems(query)
+          setSuggestions(newSuggestions)
+        } else if (staticItems) {
+          if (query.length === 0) {
+            // Show all items when query is empty for static items
+            setSuggestions(staticItems)
+          } else {
+            const lowerQuery = query.toLowerCase()
+            const filtered = staticItems.filter((item) => {
+              if (filterKeys.length > 0) {
+                return filterKeys.some((key) => {
+                  const val = item[key]
+                  return (
+                    typeof val === 'string' &&
+                    val.toLowerCase().includes(lowerQuery)
+                  )
+                })
+              } else {
+                // Default to filtering by label if no filterKeys provided
+                return optionToLabel(item).toLowerCase().includes(lowerQuery)
+              }
+            })
+            setSuggestions(filtered)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching/filtering suggestions:', error)
+        setSuggestions([])
+      }
+      setIsLoading(false)
+      setIsOpen(true)
+      setHighlightedIndex(-1)
+    },
+    [loadItems, staticItems, optionToLabel, filterKeys, minCharsToTrigger],
+  )
+
   const debouncedSearch = useCallback(
     (query: string) => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
       }
-      if (props.onSearch && query.length >= minCharsToSearch) {
-        searchTimeoutRef.current = setTimeout(() => {
-          props.onSearch!(query)
-        }, searchDebounce)
-      }
+      debounceTimeoutRef.current = setTimeout(() => {
+        performSearch(query)
+      }, debounceTime)
     },
-    [props.onSearch, minCharsToSearch, searchDebounce],
+    [performSearch, debounceTime],
   )
 
-  // Filter options based on inputValue
-  const filteredOptions = props.options.filter((option) =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase()),
-  )
-
-  // Handle input changes
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    setInputValue(newValue)
-    setIsOpen(true)
-    setHighlightedIndex(-1)
-    if (!newValue) {
-      props.onChange('')
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value
+    setInputValue(newQuery)
+    if (newQuery.length === 0) {
+      onChange(null) // Clear selection if input is cleared
+      setSuggestions([])
+      setIsOpen(false)
+    } else {
+      debouncedSearch(newQuery)
     }
-    if (props.onInputChange) {
-      props.onInputChange(newValue)
-    }
-    debouncedSearch(newValue)
   }
 
-  // Handle option selection
-  const handleOptionSelect = (option: AutocompleteOption) => {
-    setInputValue(option.label)
+  const handleOptionClick = (item: T) => {
+    const itemValue = optionToValue(item)
+    const itemLabel = optionToLabel(item)
+    setInputValue(itemLabel)
+    onChange(itemValue)
     setIsOpen(false)
-    setHighlightedIndex(-1)
-    props.onChange(option.value)
-    // Refocus input for keyboard users
+    setSuggestions([]) // Clear suggestions after selection
     inputRef.current?.focus()
   }
 
-  // Keyboard navigation
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) return
+
     if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      setIsOpen(true)
-      setHighlightedIndex(0)
+      // Open dropdown and trigger search
+      if (!loadItems && staticItems && staticItems.length > 0) {
+        performSearch(inputValue)
+      } else if (loadItems && inputValue.length >= minCharsToTrigger) {
+        performSearch(inputValue)
+      }
       return
     }
-    if (e.key === 'ArrowDown') {
-      setHighlightedIndex((prev) =>
-        prev < filteredOptions.length - 1 ? prev + 1 : 0,
-      )
-    } else if (e.key === 'ArrowUp') {
-      setHighlightedIndex((prev) =>
-        prev > 0 ? prev - 1 : filteredOptions.length - 1,
-      )
-    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-      e.preventDefault()
-      handleOptionSelect(filteredOptions[highlightedIndex])
-    } else if (e.key === 'Escape') {
-      setIsOpen(false)
+
+    if (!isOpen && e.key !== 'Tab') {
+      // If closed and user types more, trigger search
+      if (inputValue.length >= minCharsToTrigger && !loadItems) {
+        // for static items, re-filter
+        debouncedSearch(inputValue)
+      } else if (inputValue.length >= minCharsToTrigger && loadItems) {
+        // for dynamic, user typing should re-trigger if desired
+        // or rely on input change handler
+      }
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0,
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1,
+        )
+        break
+      case 'Enter':
+        if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+          e.preventDefault()
+          handleOptionClick(suggestions[highlightedIndex])
+        }
+        break
+      case 'Escape':
+        setIsOpen(false)
+        setSuggestions([])
+        break
+      case 'Tab':
+        // Allow tab to function normally, potentially closing dropdown if desired
+        setIsOpen(false)
+        // if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+        //   handleOptionClick(suggestions[highlightedIndex]);
+        // }
+        break
     }
   }
 
-  // Blur handler closes dropdown only if focus is not moving to dropdown
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (listRef.current?.contains(e.relatedTarget as Node)) {
-      return
+  const handleInputFocus = () => {
+    if (disabled) return
+
+    // For static items, always show results on focus
+    if (!loadItems && staticItems && staticItems.length > 0) {
+      performSearch(inputValue)
+    } else if (loadItems && inputValue.length >= minCharsToTrigger) {
+      // For async loading, only show results if there's enough text
+      performSearch(inputValue)
     }
-    setIsOpen(false)
+    // Note: We don't call performSearch('') for async loading on focus anymore
+    // as this was causing test failures and unexpected behavior
   }
+
+  const handleInputBlur = (_e: FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      if (
+        listRef.current &&
+        !listRef.current.contains(document.activeElement)
+      ) {
+        setIsOpen(false)
+      }
+    }, 100)
+  }
+
+  useEffect(() => {
+    const currentList = listRef.current
+    if (isOpen && highlightedIndex >= 0 && currentList) {
+      const optionElement = currentList.children[highlightedIndex] as
+        | HTMLLIElement
+        | undefined
+      if (optionElement && typeof optionElement.scrollIntoView === 'function') {
+        optionElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      }
+    }
+  }, [highlightedIndex, isOpen])
 
   // Click outside closes dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        listRef.current &&
-        !listRef.current.contains(event.target as Node) &&
         inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
+        !inputRef.current.contains(event.target as Node) &&
+        listRef.current &&
+        !listRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false)
       }
@@ -148,46 +321,77 @@ function Autocomplete(props: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // No results logic
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const showNoResults =
     isOpen &&
-    !loading &&
-    filteredOptions.length === 0 &&
-    inputValue.length >= minCharsToSearch
+    !isLoading &&
+    suggestions.length === 0 &&
+    inputValue.length >= minCharsToTrigger
+  const showMinCharsMessage =
+    isOpen &&
+    !isLoading &&
+    inputValue.length < minCharsToTrigger &&
+    suggestions.length === 0 &&
+    (staticItems == null || staticItems.length === 0 || loadItems != null)
+
+  const inputId = `autocomplete-input-${Math.random().toString(36).substr(2, 9)}`
 
   return (
-    <div className={`relative ${className}`}>
-      {props.label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {props.label}
+    <div className={twMerge('relative', className)}>
+      {label && (
+        <label
+          htmlFor={inputId}
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          {label}
         </label>
       )}
       <div className="relative flex items-center">
-        {props.leftIcon && (
-          <span className="absolute left-3 text-gray-400 dark:text-gray-500 flex items-center">
-            {props.leftIcon}
+        {leftIcon && (
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+            {leftIcon}
           </span>
         )}
         <input
           ref={inputRef}
+          id={inputId}
           type="text"
-          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${props.leftIcon ? 'pl-10' : ''} ${props.rightIcon || loading ? 'pr-10' : ''}`}
+          className={twMerge(
+            'w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
+            leftIcon ? 'pl-10' : '',
+            rightIcon || isLoading ? 'pr-10' : '',
+          )}
           placeholder={placeholder}
           value={inputValue}
-          onChange={handleChange}
-          onFocus={() => setIsOpen(true)}
-          onBlur={handleBlur}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           autoComplete="off"
+          aria-autocomplete="list"
+          aria-controls={isOpen ? 'autocomplete-list' : undefined}
+          aria-activedescendant={
+            highlightedIndex >= 0 && suggestions[highlightedIndex]
+              ? `option-${optionToValue(suggestions[highlightedIndex])}`
+              : undefined
+          }
         />
-        {props.rightIcon && !loading && (
-          <span className="absolute right-3 text-gray-400 dark:text-gray-500 flex items-center">
-            {props.rightIcon}
+        {rightIcon && !isLoading && (
+          <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+            {rightIcon}
           </span>
         )}
-        {loading && (
-          <span className="absolute right-3 animate-spin">
+        {isLoading && (
+          <span className="absolute inset-y-0 right-0 pr-3 flex items-center animate-spin">
             <svg
               className="h-5 w-5 text-blue-500"
               fill="none"
@@ -210,41 +414,61 @@ function Autocomplete(props: Props) {
           </span>
         )}
       </div>
-      {isOpen && filteredOptions.length > 0 && (
-        <div
-          ref={listRef}
-          className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
-        >
-          {filteredOptions.map((option, idx) => (
-            <div
-              key={option.value}
-              className={`flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl ${
-                idx === highlightedIndex
-                  ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
-                  : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              onMouseDown={() => handleOptionSelect(option)}
-              onMouseEnter={() => setHighlightedIndex(idx)}
-              aria-selected={idx === highlightedIndex}
-              role="option"
-            >
-              {option.icon && <span className="mr-2">{option.icon}</span>}
-              {option.label}
-            </div>
-          ))}
-        </div>
-      )}
-      {showNoResults && (
-        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-2 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-center animate-fade-in">
-          No results found.
-        </div>
-      )}
+
       {isOpen &&
-        inputValue.length < minCharsToSearch &&
-        !filteredOptions.length && (
-          <div className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-2 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-center animate-fade-in">
-            Type at least {minCharsToSearch} characters to search
-          </div>
+        (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading) && (
+          <ul
+            ref={listRef}
+            id="autocomplete-list"
+            role="listbox"
+            className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
+          >
+            {isLoading && (
+              <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
+                Loading...
+              </li>
+            )}
+            {!isLoading && showNoResults && (
+              <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
+                No results found.
+              </li>
+            )}
+            {!isLoading && showMinCharsMessage && (
+              <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
+                Type at least {minCharsToTrigger} characters to search
+              </li>
+            )}
+            {!isLoading &&
+              suggestions.map((item, idx) => {
+                const itemValue = optionToValue(item)
+                const itemLabel = optionToLabel(item)
+                const itemIcon = optionToIcon ? optionToIcon(item) : undefined
+                return (
+                  <li
+                    key={itemValue}
+                    id={`option-${itemValue}`}
+                    role="option"
+                    aria-selected={idx === highlightedIndex}
+                    className={twMerge(
+                      'flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl',
+                      idx === highlightedIndex
+                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
+                        : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
+                    )}
+                    onMouseDown={(ev) => {
+                      ev.preventDefault()
+                      handleOptionClick(item)
+                    }}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
+                  >
+                    {itemIcon && (
+                      <span className="mr-2 flex-shrink-0">{itemIcon}</span>
+                    )}
+                    <span className="flex-grow">{itemLabel}</span>
+                  </li>
+                )
+              })}
+          </ul>
         )}
     </div>
   )

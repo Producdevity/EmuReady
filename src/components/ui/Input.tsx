@@ -29,7 +29,8 @@ const Input = forwardRef<HTMLElement, Props>(
     { leftIcon, rightIcon, className = '', as = 'input', children, ...props },
     ref,
   ) => {
-    const baseClass = `w-full px-3 py-2 outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl transition-all duration-200`
+    const commonInputStyling =
+      'w-full outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent'
 
     return (
       <div
@@ -39,16 +40,18 @@ const Input = forwardRef<HTMLElement, Props>(
         )}
       >
         {leftIcon && (
-          <span className="pl-3 text-gray-400 dark:text-gray-500 pointer-events-none flex items-center">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
             {leftIcon}
           </span>
         )}
         {as === 'input' && (
           <input
             ref={ref as Ref<HTMLInputElement>}
+            type="text"
             className={twMerge(
-              baseClass,
-              leftIcon ? 'pl-2' : '',
+              commonInputStyling,
+              'py-2 px-3',
+              leftIcon ? 'pl-10' : '',
               rightIcon ? 'pr-10' : '',
             )}
             {...props}
@@ -58,11 +61,11 @@ const Input = forwardRef<HTMLElement, Props>(
           <select
             ref={ref as Ref<HTMLSelectElement>}
             className={twMerge(
-              baseClass,
-              'bg-white dark:bg-gray-800 appearance-none',
-              leftIcon ? 'pl-2' : '',
+              commonInputStyling,
+              'appearance-none',
+              'py-2 px-3',
+              leftIcon ? 'pl-10' : '',
               rightIcon ? 'pr-10' : '',
-              className,
             )}
             {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
           >
@@ -73,15 +76,16 @@ const Input = forwardRef<HTMLElement, Props>(
           <textarea
             ref={ref as Ref<HTMLTextAreaElement>}
             className={twMerge(
-              baseClass,
-              leftIcon ? 'pl-2' : '',
+              commonInputStyling,
+              'py-2 px-3',
+              leftIcon ? 'pl-10' : '',
               rightIcon ? 'pr-10' : '',
             )}
             {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
           />
         )}
         {rightIcon && (
-          <span className="absolute right-3 text-gray-400 dark:text-gray-500 flex items-center">
+          <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500">
             {rightIcon}
           </span>
         )}

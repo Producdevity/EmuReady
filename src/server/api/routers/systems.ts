@@ -3,42 +3,40 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from '@/server/api/trpc'
-import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import { ResourceError } from '@/lib/errors'
+import {
+  GetSystemsSchema,
+  GetSystemByIdSchema,
+  CreateSystemSchema,
+  UpdateSystemSchema,
+  DeleteSystemSchema,
+} from '@/schemas/system'
 
 export const systemsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          search: z.string().optional(),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const { search } = input ?? {}
+  get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
+    const { search } = input ?? {}
 
-      return await ctx.prisma.system.findMany({
-        where: search
-          ? {
-              name: { contains: search },
-            }
-          : undefined,
-        include: {
-          _count: {
-            select: {
-              games: true,
-            },
+    return await ctx.prisma.system.findMany({
+      where: search
+        ? {
+            name: { contains: search },
+          }
+        : undefined,
+      include: {
+        _count: {
+          select: {
+            games: true,
           },
         },
-        orderBy: {
-          name: 'asc',
-        },
-      })
-    }),
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    })
+  }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetSystemByIdSchema)
     .query(async ({ ctx, input }) => {
       const system = await ctx.prisma.system.findUnique({
         where: { id: input.id },
@@ -57,31 +55,21 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (!system) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'System not found',
-        })
+        ResourceError.system.notFound()
       }
 
       return system
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-      }),
-    )
+    .input(CreateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.prisma.system.findUnique({
         where: { name: input.name },
       })
 
       if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'System with this name already exists',
-        })
+        ResourceError.system.alreadyExists(input.name)
       }
 
       return ctx.prisma.system.create({
@@ -90,12 +78,7 @@ export const systemsRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-      }),
-    )
+    .input(UpdateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
 
@@ -104,22 +87,16 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (!system) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'System not found',
-        })
+        ResourceError.system.notFound()
       }
 
-      if (name !== system.name) {
+      if (name !== system?.name) {
         const existing = await ctx.prisma.system.findUnique({
           where: { name },
         })
 
         if (existing) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'System with this name already exists',
-          })
+          ResourceError.system.alreadyExists(name)
         }
       }
 
@@ -130,7 +107,7 @@ export const systemsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteSystemSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if system has games
       const gamesCount = await ctx.prisma.game.count({
@@ -138,10 +115,7 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (gamesCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete system that has ${gamesCount} games`,
-        })
+        ResourceError.system.hasGames(gamesCount)
       }
 
       return ctx.prisma.system.delete({

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Role } from '@orm'
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 import { LoadingSpinner } from '@/components/ui'
 
 const adminNav = [
@@ -14,10 +14,13 @@ const adminNav = [
   { href: '/admin/devices', label: 'Devices' },
   { href: '/admin/emulators', label: 'Emulators' },
   { href: '/admin/performance', label: 'Performance Scales' },
-  { href: '/admin/listings', label: 'Listing Approvals' },
+  { href: '/admin/approvals', label: 'Listing Approvals' },
 ]
 
-const superAdminNav = [{ href: '/admin/users', label: 'Users Management' }]
+const superAdminNav = [
+  { href: '/admin/users', label: 'Users Management' },
+  { href: '/admin/processed-listings', label: 'Processed Listings' },
+]
 
 function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()

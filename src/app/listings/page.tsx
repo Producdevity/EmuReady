@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
-import hasPermission from '@/utils/hasPermission'
-import { Role } from '@orm'
+import { hasPermission } from '@/utils/permissions'
+import { Role, ListingApprovalStatus } from '@orm'
 import {
   Badge,
   Pagination,
@@ -50,9 +50,9 @@ function ListingsPage() {
   const { data: session } = useSession()
   const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
-  const { data: systems } = api.systems.list.useQuery()
-  const { data: devices } = api.devices.list.useQuery()
-  const { data: emulators } = api.emulators.list.useQuery()
+  const { data: systems } = api.systems.get.useQuery()
+  const { data: devices } = api.devices.get.useQuery()
+  const { data: emulators } = api.emulators.get.useQuery()
   const { data: performanceScales } = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
@@ -65,10 +65,11 @@ function ListingsPage() {
     limit: 10,
     sortField: sortField ?? undefined,
     sortDirection: sortDirection ?? undefined,
+    approvalStatus: ListingApprovalStatus.APPROVED,
   }
 
   const { data, isLoading, error, refetch } =
-    api.listings.list.useQuery(filterParams)
+    api.listings.get.useQuery(filterParams)
 
   const listings = data?.listings ?? []
   const pagination = data?.pagination

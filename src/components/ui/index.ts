@@ -1,12 +1,20 @@
-export { default as Autocomplete } from './Autocomplete'
+export {
+  default as Autocomplete,
+  type AutocompleteOptionBase,
+} from './Autocomplete'
 export { default as Badge } from './Badge'
-export { default as Button } from './Button'
+export { default as Button, buttonVariants } from './Button'
 export { default as Card } from './Card'
+export {
+  default as ConfirmDialogProvider,
+  useConfirmDialog,
+} from './ConfirmDialogProvider'
 export { default as Dropdown } from './Dropdown'
 export { default as ErrorFallback } from './ErrorFallback'
 export { default as ImageUpload } from './ImageUpload'
 export { default as Input } from './Input'
 export { default as LoadingSpinner } from './LoadingSpinner'
+export { default as Modal } from './Modal'
 export { default as OptimizedImage } from './OptimizedImage'
 export { default as Pagination } from './Pagination'
 export { default as ProfileUpload } from './ProfileUpload'

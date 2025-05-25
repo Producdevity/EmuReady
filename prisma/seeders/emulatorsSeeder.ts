@@ -2,56 +2,133 @@ import { type PrismaClient } from '@orm'
 
 type EmulatorData = {
   name: string
+  supportedSystemNames?: string[]
 }
 
 const emulators: EmulatorData[] = [
-  { name: 'AetherSX2' },
-  { name: 'Cemu' },
-  { name: 'Citra' },
-  { name: 'Citron' },
-  { name: 'Dolphin' },
-  { name: 'DraStic' },
-  { name: 'DuckStation' },
-  { name: 'Eden' },
-  { name: 'GameFusion - GameHub' },
-  { name: 'MiceWine' },
-  { name: 'PCSX2' },
-  { name: 'PPSSPP' },
-  { name: 'Pluvia' },
-  { name: 'RPCS3' },
-  { name: 'RetroArch' },
-  { name: 'Ryujinx' },
-  { name: 'ShadPS4' },
-  { name: 'Snes9x' },
-  { name: 'Sudachi' },
-  { name: 'Winlator Afeimod Glibc' },
-  { name: 'Winlator Afeimod Proot' },
-  { name: 'Winlator Ajay Glibc' },
-  { name: 'Winlator Ajay Proot' },
-  { name: 'Winlator Cmod Bionic' },
-  { name: 'Winlator Cmod Glibc' },
-  { name: 'Winlator Cmod Proot' },
-  { name: 'Winlator Frost Glibc' },
-  { name: 'Winlator Frost Proot' },
-  { name: 'Winlator Official Glibc' },
-  { name: 'Winlator Official Proot' },
-  { name: 'Winlator Official' },
-  { name: 'Winlator WinMali' },
+  { name: 'AetherSX2', supportedSystemNames: ['Sony PlayStation 2'] },
+  { name: 'Cemu', supportedSystemNames: ['Nintendo Wii U'] },
+  { name: 'Citra', supportedSystemNames: ['Nintendo 3DS'] },
+  { name: 'Citron', supportedSystemNames: ['Nintendo 3DS'] },
+  {
+    name: 'Dolphin',
+    supportedSystemNames: ['Nintendo GameCube', 'Nintendo Wii'],
+  },
+  { name: 'DraStic', supportedSystemNames: ['Nintendo DS'] },
+  { name: 'DuckStation', supportedSystemNames: ['Sony PlayStation'] },
+  { name: 'Eden', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'Flycast', supportedSystemNames: ['Sega Dreamcast'] },
+  { name: 'GameFusion - GameHub', supportedSystemNames: ['Microsoft Windows'] },
+  {
+    name: 'Lemuroid',
+    supportedSystemNames: [
+      'Nintendo DS',
+      'Nintendo Entertainment System',
+      'Super Nintendo Entertainment System',
+      'Nintendo 64',
+      'Sony PlayStation',
+      'Sony PlayStation Portable',
+      'Sega Genesis/Mega Drive',
+      'Sega Game Gear',
+      'Sega Master System',
+    ],
+  },
+  { name: 'MiceWine', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'NethersX2', supportedSystemNames: ['Sony PlayStation 2'] },
+  { name: 'PCSX2', supportedSystemNames: ['Sony PlayStation 2'] },
+  { name: 'PPSSPP', supportedSystemNames: ['Sony PlayStation Portable'] },
+  { name: 'Pluvia', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'RPCS3', supportedSystemNames: ['Sony PlayStation 3'] },
+  {
+    name: 'RPCSX',
+    supportedSystemNames: ['Sony PlayStation 3', 'Sony PlayStation 4'],
+  },
+  { name: 'Redream', supportedSystemNames: ['Sega Dreamcast'] },
+  {
+    name: 'RetroArch',
+    supportedSystemNames: [
+      'Nintendo 64',
+      'Nintendo DS',
+      'Nintendo Entertainment System',
+      'Sega Game Gear',
+      'Sega Genesis/Mega Drive',
+      'Sega Master System',
+      'Sony PlayStation Portable',
+      'Sony PlayStation',
+      'Super Nintendo Entertainment System',
+    ],
+  },
+  { name: 'Ryujinx', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'ShadPS4', supportedSystemNames: ['Sony PlayStation 3'] },
+  {
+    name: 'Snes9x',
+    supportedSystemNames: ['Super Nintendo Entertainment System'],
+  },
+  { name: 'Sudachi', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'Vita3K', supportedSystemNames: ['Sony PlayStation Vita'] },
+  {
+    name: 'Winlator Afeimod Glibc',
+    supportedSystemNames: ['Microsoft Windows'],
+  },
+  {
+    name: 'Winlator Afeimod Proot',
+    supportedSystemNames: ['Microsoft Windows'],
+  },
+  { name: 'Winlator Ajay Glibc', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator Ajay Proot', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator Cmod Bionic', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator Cmod Glibc', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator Cmod Proot', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator Frost Glibc', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator Frost Proot', supportedSystemNames: ['Microsoft Windows'] },
+  {
+    name: 'Winlator Official Glibc',
+    supportedSystemNames: ['Microsoft Windows'],
+  },
+  {
+    name: 'Winlator Official Proot',
+    supportedSystemNames: ['Microsoft Windows'],
+  },
+  { name: 'Winlator Official', supportedSystemNames: ['Microsoft Windows'] },
+  { name: 'Winlator WinMali', supportedSystemNames: ['Microsoft Windows'] },
   { name: 'Winlator longjunyu' },
-  { name: 'Xemu' },
-  { name: 'Yuzu' },
-  { name: 'mGBA' },
-  { name: 'melonDS' },
+  { name: 'Xemu', supportedSystemNames: ['Microsoft Xbox'] },
+  { name: 'Yaba Sanshiro', supportedSystemNames: ['Sega Saturn'] },
+  { name: 'Yuzu', supportedSystemNames: ['Nintendo Switch'] },
+  { name: 'melonDS', supportedSystemNames: ['Nintendo DS'] },
 ]
 
 async function emulatorsSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding emulators...')
 
-  for (const emulator of emulators) {
+  for (const emuData of emulators) {
+    const { name, supportedSystemNames } = emuData
+    let connectSystems = {}
+
+    if (supportedSystemNames && supportedSystemNames.length > 0) {
+      const systemsToConnect = await prisma.system.findMany({
+        where: {
+          name: { in: supportedSystemNames },
+        },
+        select: { id: true },
+      })
+
+      if (systemsToConnect.length > 0) {
+        connectSystems = {
+          systems: {
+            connect: systemsToConnect.map((system) => ({ id: system.id })),
+          },
+        }
+      }
+    }
+
     await prisma.emulator.upsert({
-      where: { name: emulator.name },
-      update: {},
-      create: emulator,
+      where: { name },
+      update: { ...connectSystems },
+      create: {
+        name,
+        ...connectSystems,
+      },
     })
   }
 

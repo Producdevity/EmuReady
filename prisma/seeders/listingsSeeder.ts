@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm'
+import { Role, type PrismaClient } from '@orm'
 
 type ListingData = {
   gameTitle: string
@@ -74,7 +74,7 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   // Get an admin user for authoring the listings
   const adminUser = await prisma.user.findFirst({
-    where: { role: 'ADMIN' },
+    where: { role: Role.ADMIN },
   })
 
   if (!adminUser) {

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Role } from '@orm'
 import { api } from '@/lib/api'
 import { ImageUpload, LoadingSpinner } from '@/components/ui'
-import hasPermission from '@/utils/hasPermission'
+import { hasPermission } from '@/utils/permissions'
 
 function AddGamePage() {
   const router = useRouter()
@@ -18,7 +18,7 @@ function AddGamePage() {
   const [success, setSuccess] = useState('')
 
   const { data: systems, isLoading: systemsLoading } =
-    api.systems.list.useQuery()
+    api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
 
   useEffect(() => {

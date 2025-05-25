@@ -1,5 +1,6 @@
 'use client'
 
+import toast from '@/lib/toast'
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input, LoadingSpinner } from '@/components/ui'
@@ -9,9 +10,9 @@ function AdminDevicesPage() {
     data: devices,
     isLoading: devicesLoading,
     refetch,
-  } = api.devices.list.useQuery()
+  } = api.devices.get.useQuery()
   const { data: brands, isLoading: brandsLoading } =
-    api.deviceBrands.list.useQuery()
+    api.deviceBrands.get.useQuery()
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deleteDevice = api.devices.delete.useMutation()
@@ -62,12 +63,17 @@ function AdminDevicesPage() {
   }
 
   const handleDelete = async (id: string) => {
+    // TODO: use a confirmation modal instead of browser confirm
     if (!confirm('Delete this device?')) return
     try {
       await deleteDevice.mutateAsync({ id })
       refetch()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete device.')
+      toast.error(
+        `Failed to delete device: ${
+          err instanceof Error ? err.message : 'Unknown error occurred.'
+        }`,
+      )
     }
   }
 
