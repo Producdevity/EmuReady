@@ -50,6 +50,7 @@ function AdminBrandsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    // TODO: use a confirmation modal instead of browser confirm // eg:   const confirm = useConfirmDialog()
     if (!confirm('Delete this brand?')) return
     try {
       await deleteBrand.mutateAsync({ id })

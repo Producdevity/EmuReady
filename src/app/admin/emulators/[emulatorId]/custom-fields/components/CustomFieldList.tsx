@@ -202,8 +202,6 @@ function CustomFieldList(props: CustomFieldListProps) {
         const newIndex = items.findIndex((item) => item.id === over.id)
         const newItems = arrayMove(items, oldIndex, newIndex)
         setIsDirty(true) // Mark as dirty, needs save or cancel
-        // DO NOT call mutation immediately
-        // updateOrderMutation.mutate(payload);
         return newItems
       })
     }
@@ -255,6 +253,7 @@ function CustomFieldList(props: CustomFieldListProps) {
   })
 
   const handleDelete = (fieldId: string) => {
+    // TODO: use a confirmation modal instead of browser confirm
     if (window.confirm('Are you sure you want to delete this custom field?')) {
       deleteMutation.mutate({ id: fieldId })
     }

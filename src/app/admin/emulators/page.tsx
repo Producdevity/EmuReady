@@ -1,5 +1,6 @@
 'use client'
 
+import toast from '@/lib/toast'
 import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import Link from 'next/link'
@@ -30,12 +31,17 @@ function AdminEmulatorsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    // TODO: use a confirmation modal instead of browser confirm
     if (!confirm('Delete this emulator?')) return
     try {
       await deleteEmulator.mutateAsync({ id })
       refetch()
-    } catch {
-      alert('Failed to delete emulator.')
+    } catch (err) {
+      toast.error(
+        `Failed to delete emulator: ${
+          err instanceof Error ? err.message : 'Unknown error occurred.'
+        }`,
+      )
     }
   }
 

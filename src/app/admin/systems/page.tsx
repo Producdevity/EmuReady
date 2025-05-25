@@ -1,5 +1,6 @@
 'use client'
 
+import toast from '@/lib/toast'
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
@@ -49,12 +50,13 @@ function AdminSystemsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    // TODO: use a confirmation modal instead of browser confirm
     if (!confirm('Delete this system?')) return
     try {
       await deleteSystem.mutateAsync({ id })
       refetch()
     } catch {
-      alert('Failed to delete system.')
+      toast.error('Failed to delete system.')
     }
   }
 
