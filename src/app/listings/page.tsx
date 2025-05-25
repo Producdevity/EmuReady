@@ -69,7 +69,7 @@ function ListingsPage() {
   }
 
   const { data, isLoading, error, refetch } =
-    api.listings.list.useQuery(filterParams)
+    api.listings.get.useQuery(filterParams)
 
   const listings = data?.listings ?? []
   const pagination = data?.pagination
