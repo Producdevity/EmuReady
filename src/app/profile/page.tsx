@@ -1,11 +1,12 @@
 'use client'
 
-import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
+import { formatDate } from '@/utils/date'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { ProfileUpload } from '@/components/ui'
+import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
 import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfilePageError from './components/ProfilePageError'
 
@@ -198,7 +199,7 @@ function ProfilePage() {
                           </Link>
                         </h3>
                         <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(listing.createdAt).toLocaleDateString()}
+                          {formatDate(listing.createdAt)}
                         </p>
                       </div>
                     ))}

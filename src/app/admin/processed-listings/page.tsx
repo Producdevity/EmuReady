@@ -2,17 +2,14 @@
 
 import { useState, type ChangeEvent } from 'react'
 import { api } from '@/lib/api'
-import Button from '@/components/ui/Button'
 import { Eye, CheckCircle, XCircle, Undo, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
 import toast from '@/lib/toast'
-import Modal from '@/components/ui/Modal'
-import Input from '@/components/ui/Input'
-import SelectInput from '@/components/ui/SelectInput'
+import { Button, Modal, Input, SelectInput } from '@/components/ui'
 import { type inferProcedureOutput } from '@trpc/server'
 import { type AppRouter } from '@/server/api/root'
 import { ListingApprovalStatus } from '@orm'
+import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import Pagination from '@/components/ui/Pagination'
 import getStatusBadgeColor from './utils/getStatusBadgeColor'
 
@@ -199,14 +196,12 @@ function ProcessedListingsPage() {
                       className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
                       title={
                         listing.processedAt
-                          ? new Date(listing.processedAt).toLocaleString()
+                          ? formatDateTime(listing.processedAt)
                           : 'N/A'
                       }
                     >
                       {listing.processedAt
-                        ? formatDistanceToNow(new Date(listing.processedAt), {
-                            addSuffix: true,
-                          })
+                        ? formatTimeAgo(listing.processedAt)
                         : 'N/A'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-1">

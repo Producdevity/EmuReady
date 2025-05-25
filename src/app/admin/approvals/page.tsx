@@ -1,14 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { api } from '@/lib/api'
-import Button from '@/components/ui/Button'
 import { CheckCircle, XCircle, ExternalLink, Eye } from 'lucide-react'
 import toast from '@/lib/toast'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
-import Modal from '@/components/ui/Modal'
-import Input from '@/components/ui/Input'
+import { Button, Modal, Input } from '@/components/ui'
+import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { type inferProcedureOutput } from '@trpc/server'
 import { type AppRouter } from '@/server/api/root'
 
@@ -189,11 +187,9 @@ function AdminApprovalsPage() {
                 </td>
                 <td
                   className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-                  title={new Date(listing.createdAt).toLocaleString()}
+                  title={formatDateTime(listing.createdAt)}
                 >
-                  {formatDistanceToNow(new Date(listing.createdAt), {
-                    addSuffix: true,
-                  })}
+                  {formatTimeAgo(listing.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 flex items-center">
                   <Button
