@@ -7,33 +7,24 @@ import { useSession } from 'next-auth/react'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
 import { LoadingSpinner } from '@/components/ui'
-
-const adminNav = [
-  { href: '/admin/systems', label: 'Systems' },
-  { href: '/admin/brands', label: 'Brands' },
-  { href: '/admin/devices', label: 'Devices' },
-  { href: '/admin/emulators', label: 'Emulators' },
-  { href: '/admin/performance', label: 'Performance Scales' },
-  { href: '/admin/approvals', label: 'Listing Approvals' },
-]
-
-const superAdminNav = [
-  { href: '/admin/users', label: 'Users Management' },
-  { href: '/admin/processed-listings', label: 'Processed Listings' },
-]
+import { adminNav, superAdminNav } from './data'
 
 function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session, status } = useSession()
   const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
-  const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
   useEffect(() => {
-    if (status === 'loading' || (status === 'authenticated' && isAdmin)) return
+    if (
+      status === 'loading' ||
+      (status === 'authenticated' &&
+        hasPermission(session?.user.role, Role.ADMIN))
+    )
+      return
 
     router.replace('/login')
-  }, [status, isAdmin, router])
+  }, [status, router, session?.user.role])
 
   if (status === 'loading') return <LoadingSpinner size="lg" />
 
@@ -63,7 +54,7 @@ function AdminLayout(props: PropsWithChildren) {
             {isSuperAdmin && (
               <>
                 <div className="pt-4 pb-2">
-                  <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                  <div className="border-t border-gray-200 dark:border-gray-700" />
                   <p className="mt-4 px-4 text-sm uppercase font-semibold text-gray-500 dark:text-gray-400">
                     Super Admin
                   </p>
