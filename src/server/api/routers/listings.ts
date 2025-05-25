@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { Prisma, ListingApprovalStatus } from '@orm'
 import {
@@ -9,34 +8,27 @@ import {
   adminProcedure,
   superAdminProcedure,
 } from '@/server/api/trpc'
+import {
+  ApproveListingSchema,
+  CreateCommentSchema,
+  CreateListingSchema,
+  CreateVoteComment,
+  CreateVoteSchema,
+  DeleteCommentSchema,
+  DeleteListingSchema,
+  EditCommentSchema,
+  GetSortedCommentsSchema,
+  GetProcessedSchema,
+  OverrideApprovalStatusSchema,
+  RejectListingSchema,
+  GetListingsSchema,
+  GetListingByIdSchema,
+  GetCommentsSchema,
+} from '@/schemas/listing'
 
 export const listingsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(
-      z.object({
-        systemId: z.string().optional(),
-        deviceId: z.string().optional(),
-        emulatorId: z.string().optional(),
-        performanceId: z.number().optional(),
-        searchTerm: z.string().optional(),
-        page: z.number().default(1),
-        limit: z.number().default(10),
-        sortField: z
-          .enum([
-            'game.title',
-            'game.system.name',
-            'device',
-            'emulator.name',
-            'performance.label',
-            'successRate',
-            'author.name',
-            'createdAt',
-          ])
-          .optional(),
-        sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-        approvalStatus: z.nativeEnum(ListingApprovalStatus).optional(),
-      }),
-    )
+  get: publicProcedure
+    .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
       const {
         systemId,
@@ -230,7 +222,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   byId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetListingByIdSchema)
     .query(async ({ ctx, input }) => {
       const { id } = input
 
@@ -331,23 +323,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   create: authorProcedure
-    .input(
-      z.object({
-        gameId: z.string(),
-        deviceId: z.string(),
-        emulatorId: z.string(),
-        performanceId: z.number(),
-        notes: z.string().optional(),
-        customFieldValues: z
-          .array(
-            z.object({
-              customFieldDefinitionId: z.string().uuid(),
-              value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
-            }),
-          )
-          .optional(),
-      }),
-    )
+    .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
       const {
         gameId,
@@ -436,12 +412,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   vote: protectedProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        value: z.boolean(),
-      }),
-    )
+    .input(CreateVoteSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, value } = input
 
@@ -519,15 +490,8 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // Add a comment to a listing
-  comment: protectedProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        content: z.string().min(1).max(1000),
-        parentId: z.string().optional(),
-      }),
-    )
+  createComment: protectedProcedure
+    .input(CreateCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, content, parentId } = input
 
@@ -591,7 +555,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(DeleteListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { id } = input
 
@@ -610,14 +574,11 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.performanceScale.findMany({
-      orderBy: { rank: 'asc' },
-    })
+    return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } })
   }),
 
-  // Add a procedure to get comments for a listing
   getComments: publicProcedure
-    .input(z.object({ listingId: z.string() }))
+    .input(GetCommentsSchema)
     .query(async ({ ctx, input }) => {
       const { listingId } = input
 
@@ -659,12 +620,7 @@ export const listingsRouter = createTRPCRouter({
 
   // Edit a comment
   editComment: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.string(),
-        content: z.string().min(1).max(1000),
-      }),
-    )
+    .input(EditCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { commentId, content } = input
       const userId = ctx.session.user.id
@@ -722,9 +678,8 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // Soft delete a comment
   deleteComment: protectedProcedure
-    .input(z.object({ commentId: z.string() }))
+    .input(DeleteCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { commentId } = input
       const userId = ctx.session.user.id
@@ -774,14 +729,8 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // Get comments for a listing with sorting options
   getSortedComments: publicProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        sortBy: z.enum(['newest', 'oldest', 'popular']).default('newest'),
-      }),
-    )
+    .input(GetSortedCommentsSchema)
     .query(async ({ ctx, input }) => {
       const { listingId, sortBy } = input
 
@@ -891,14 +840,8 @@ export const listingsRouter = createTRPCRouter({
       return { comments: transformedComments }
     }),
 
-  // Vote on a comment
   voteComment: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.string(),
-        value: z.boolean(), // true = upvote, false = downvote
-      }),
-    )
+    .input(CreateVoteComment)
     .mutation(async ({ ctx, input }) => {
       const { commentId, value } = input
       const userId = ctx.session.user.id
@@ -986,8 +929,7 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // New procedures for listing approvals
-  listPending: adminProcedure.query(async ({ ctx }) => {
+  getPending: adminProcedure.query(async ({ ctx }) => {
     return ctx.prisma.listing.findMany({
       where: { status: ListingApprovalStatus.PENDING },
       include: {
@@ -1004,7 +946,7 @@ export const listingsRouter = createTRPCRouter({
   }),
 
   approveListing: adminProcedure
-    .input(z.object({ listingId: z.string().uuid() }))
+    .input(ApproveListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId } = input
       const adminUserId = ctx.session.user.id
@@ -1047,9 +989,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   rejectListing: adminProcedure
-    .input(
-      z.object({ listingId: z.string().uuid(), notes: z.string().optional() }),
-    )
+    .input(RejectListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, notes } = input
       const adminUserId = ctx.session.user.id
@@ -1091,16 +1031,8 @@ export const listingsRouter = createTRPCRouter({
       })
     }),
 
-  // New procedures for SUPER_ADMIN review of processed listings
-  listProcessed: superAdminProcedure
-    .input(
-      z.object({
-        page: z.number().default(1),
-        limit: z.number().default(10),
-        filterStatus: z.nativeEnum(ListingApprovalStatus).optional(), // Filter by APPROVED or REJECTED
-        // Add other filters like processedByAdminId, date ranges etc. if needed
-      }),
-    )
+  getProcessed: superAdminProcedure
+    .input(GetProcessedSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, filterStatus } = input
       const skip = (page - 1) * limit
@@ -1146,13 +1078,7 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   overrideApprovalStatus: superAdminProcedure
-    .input(
-      z.object({
-        listingId: z.string().uuid(),
-        newStatus: z.nativeEnum(ListingApprovalStatus), // PENDING, APPROVED, or REJECTED
-        overrideNotes: z.string().optional(),
-      }),
-    )
+    .input(OverrideApprovalStatusSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, newStatus, overrideNotes } = input
       const superAdminUserId = ctx.session.user.id
