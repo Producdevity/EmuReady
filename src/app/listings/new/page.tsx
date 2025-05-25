@@ -131,10 +131,7 @@ function AddListingPage() {
       setGameSearchTerm(query)
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.games.get.fetch({
-          search: query,
-          limit: 20,
-        })
+        const result = await utils.games.get.fetch({ search: query, limit: 20 })
         return (
           result.games.map((g) => ({
             id: g.id,
@@ -156,9 +153,7 @@ function AddListingPage() {
       if (query.length < 1) return Promise.resolve([])
 
       // If no game is selected, show a message instead of loading emulators
-      if (!selectedGame) {
-        return Promise.resolve([])
-      }
+      if (!selectedGame) return Promise.resolve([])
 
       try {
         const result = await utils.emulators.get.fetch({ search: query })
@@ -170,11 +165,17 @@ function AddListingPage() {
               const fullEmulator = await utils.emulators.byId.fetch({
                 id: emulator.id,
               })
-              return {
-                id: fullEmulator.id,
-                name: fullEmulator.name,
-                systems: fullEmulator.systems,
-              }
+              return fullEmulator
+                ? {
+                    id: fullEmulator.id,
+                    name: fullEmulator.name,
+                    systems: fullEmulator.systems,
+                  }
+                : {
+                    id: emulator.id,
+                    name: emulator.name,
+                    systems: [],
+                  }
             } catch {
               return {
                 id: emulator.id,
@@ -654,6 +655,7 @@ function AddListingPage() {
                 {String(errors.performanceId.message ?? '')}
               </p>
             )}
+            {/*  TODO: show the description of the performance scale*/}
           </div>
 
           {/* Notes */}

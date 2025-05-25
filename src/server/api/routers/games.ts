@@ -1,4 +1,3 @@
-import { TRPCError } from '@trpc/server'
 import type { Prisma } from '@orm'
 
 import {
@@ -7,6 +6,7 @@ import {
   adminProcedure,
   authorProcedure,
 } from '@/server/api/trpc'
+import { ResourceError } from '@/lib/errors'
 import {
   GetGamesSchema,
   GetGameByIdSchema,
@@ -150,12 +150,7 @@ export const gamesRouter = createTRPCRouter({
         },
       })
 
-      if (!game) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Game not found',
-        })
-      }
+      if (!game) ResourceError.game.notFound()
 
       return game
     }),
@@ -163,23 +158,15 @@ export const gamesRouter = createTRPCRouter({
   create: authorProcedure
     .input(CreateGameSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if system exists
       const system = await ctx.prisma.system.findUnique({
         where: { id: input.systemId },
       })
 
-      if (!system) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'System not found',
-        })
-      }
+      if (!system) ResourceError.system.notFound()
 
       return ctx.prisma.game.create({
         data: input,
-        include: {
-          system: true,
-        },
+        include: { system: true },
       })
     }),
 
@@ -188,56 +175,32 @@ export const gamesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
-      // Check if game exists
-      const game = await ctx.prisma.game.findUnique({
-        where: { id },
-      })
+      const game = await ctx.prisma.game.findUnique({ where: { id } })
 
-      if (!game) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Game not found',
-        })
-      }
+      if (!game) ResourceError.game.notFound()
 
-      // Check if system exists
       const system = await ctx.prisma.system.findUnique({
         where: { id: data.systemId },
       })
 
-      if (!system) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'System not found',
-        })
-      }
+      if (!system) ResourceError.system.notFound()
 
       return ctx.prisma.game.update({
         where: { id },
         data,
-        include: {
-          system: true,
-        },
+        include: { system: true },
       })
     }),
 
   delete: adminProcedure
     .input(DeleteGameSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if game is used in any listings
       const listingsCount = await ctx.prisma.listing.count({
         where: { gameId: input.id },
       })
 
-      if (listingsCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete game that is used in ${listingsCount} listings`,
-        })
-      }
+      if (listingsCount > 0) ResourceError.game.inUse(listingsCount)
 
-      return ctx.prisma.game.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.game.delete({ where: { id: input.id } })
     }),
 })

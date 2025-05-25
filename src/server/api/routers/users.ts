@@ -6,8 +6,8 @@ import {
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
-import { TRPCError } from '@trpc/server'
 import bcryptjs from 'bcryptjs'
+import { ResourceError } from '@/lib/errors'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,
@@ -43,12 +43,7 @@ export const usersRouter = createTRPCRouter({
         where: { email },
       })
 
-      if (existingUser) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'User with this email already exists',
-        })
-      }
+      if (existingUser) ResourceError.user.emailExists()
 
       const hashedPassword = hashPassword(password)
 
@@ -90,30 +85,13 @@ export const usersRouter = createTRPCRouter({
             createdAt: true,
             device: {
               select: {
-                brand: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
+                brand: { select: { id: true, name: true } },
                 modelName: true,
               },
             },
-            game: {
-              select: {
-                title: true,
-              },
-            },
-            emulator: {
-              select: {
-                name: true,
-              },
-            },
-            performance: {
-              select: {
-                label: true,
-              },
-            },
+            game: { select: { title: true } },
+            emulator: { select: { name: true } },
+            performance: { select: { label: true } },
           },
         },
         votes: {
@@ -126,29 +104,14 @@ export const usersRouter = createTRPCRouter({
                 device: {
                   select: {
                     brand: {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
+                      select: { id: true, name: true },
                     },
                     modelName: true,
                   },
                 },
-                game: {
-                  select: {
-                    title: true,
-                  },
-                },
-                emulator: {
-                  select: {
-                    name: true,
-                  },
-                },
-                performance: {
-                  select: {
-                    label: true,
-                  },
-                },
+                game: { select: { title: true } },
+                emulator: { select: { name: true } },
+                performance: { select: { label: true } },
               },
             },
           },
@@ -156,12 +119,7 @@ export const usersRouter = createTRPCRouter({
       },
     })
 
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      })
-    }
+    if (!user) ResourceError.user.notFound()
 
     return user
   }),
@@ -185,30 +143,13 @@ export const usersRouter = createTRPCRouter({
               createdAt: true,
               device: {
                 select: {
-                  brand: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
+                  brand: { select: { id: true, name: true } },
                   modelName: true,
                 },
               },
-              game: {
-                select: {
-                  title: true,
-                },
-              },
-              emulator: {
-                select: {
-                  name: true,
-                },
-              },
-              performance: {
-                select: {
-                  label: true,
-                },
-              },
+              game: { select: { title: true } },
+              emulator: { select: { name: true } },
+              performance: { select: { label: true } },
             },
           },
           votes: {
@@ -220,30 +161,13 @@ export const usersRouter = createTRPCRouter({
                   id: true,
                   device: {
                     select: {
-                      brand: {
-                        select: {
-                          id: true,
-                          name: true,
-                        },
-                      },
+                      brand: { select: { id: true, name: true } },
                       modelName: true,
                     },
                   },
-                  game: {
-                    select: {
-                      title: true,
-                    },
-                  },
-                  emulator: {
-                    select: {
-                      name: true,
-                    },
-                  },
-                  performance: {
-                    select: {
-                      label: true,
-                    },
-                  },
+                  game: { select: { title: true } },
+                  emulator: { select: { name: true } },
+                  performance: { select: { label: true } },
                 },
               },
             },
@@ -251,12 +175,7 @@ export const usersRouter = createTRPCRouter({
         },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) ResourceError.user.notFound()
 
       return user
     }),
@@ -267,7 +186,6 @@ export const usersRouter = createTRPCRouter({
       const { name, email, currentPassword, newPassword, profileImage } = input
       const userId = ctx.session.user.id
 
-      // Get the current user
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -277,28 +195,16 @@ export const usersRouter = createTRPCRouter({
         },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) return ResourceError.user.notFound()
 
-      // If email is being changed, check if it's already in use
       if (email && email !== user.email) {
         const existingUser = await ctx.prisma.user.findUnique({
           where: { email },
         })
 
-        if (existingUser) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'Email is already in use',
-          })
-        }
+        if (existingUser) ResourceError.user.emailExists()
       }
 
-      // If passwords are provided, verify and update
       let hashedPassword = undefined
       if (currentPassword && newPassword) {
         const isPasswordValid = comparePassword(
@@ -306,12 +212,7 @@ export const usersRouter = createTRPCRouter({
           user.hashedPassword!,
         )
 
-        if (!isPasswordValid) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Current password is incorrect',
-          })
-        }
+        if (!isPasswordValid) ResourceError.user.invalidPassword()
 
         hashedPassword = hashPassword(newPassword)
       }
@@ -365,10 +266,7 @@ export const usersRouter = createTRPCRouter({
         userId === ctx.session.user.id &&
         !hasPermission(ctx.session.user.role, Role.ADMIN)
       ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You cannot demote yourself from the admin role',
-        })
+        ResourceError.user.cannotDemoteSelf()
       }
 
       return await ctx.prisma.user.update({
@@ -389,16 +287,9 @@ export const usersRouter = createTRPCRouter({
       const { userId } = input
 
       // Prevent self-deletion
-      if (userId === ctx.session.user.id) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You cannot delete your own account',
-        })
-      }
+      if (userId === ctx.session.user.id) ResourceError.user.cannotDeleteSelf()
 
-      await ctx.prisma.user.delete({
-        where: { id: userId },
-      })
+      await ctx.prisma.user.delete({ where: { id: userId } })
 
       return { success: true }
     }),

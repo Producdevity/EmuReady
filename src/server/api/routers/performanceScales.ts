@@ -1,10 +1,9 @@
-import { TRPCError } from '@trpc/server'
-
 import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import { ResourceError } from '@/lib/errors'
 import {
   GetPerformanceScaleByIdSchema,
   CreatePerformanceScaleSchema,
@@ -14,9 +13,7 @@ import {
 
 export const performanceScalesRouter = createTRPCRouter({
   get: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.performanceScale.findMany({
-      orderBy: { rank: 'desc' },
-    })
+    return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'desc' } })
   }),
 
   byId: publicProcedure
@@ -26,12 +23,7 @@ export const performanceScalesRouter = createTRPCRouter({
         where: { id: input.id },
       })
 
-      if (!scale) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Performance scale not found',
-        })
-      }
+      if (!scale) ResourceError.performanceScale.notFound()
 
       return scale
     }),
@@ -50,22 +42,14 @@ export const performanceScalesRouter = createTRPCRouter({
 
       if (existingScale) {
         if (existingScale.label.toLowerCase() === input.label.toLowerCase()) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `A performance scale with label "${input.label}" already exists`,
-          })
+          ResourceError.performanceScale.labelExists(input.label)
         }
         if (existingScale.rank === input.rank) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `A performance scale with rank ${input.rank} already exists`,
-          })
+          ResourceError.performanceScale.rankExists(input.rank)
         }
       }
 
-      return ctx.prisma.performanceScale.create({
-        data: input,
-      })
+      return ctx.prisma.performanceScale.create({ data: input })
     }),
 
   update: adminProcedure
@@ -77,12 +61,7 @@ export const performanceScalesRouter = createTRPCRouter({
         where: { id },
       })
 
-      if (!scale) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Performance scale not found',
-        })
-      }
+      if (!scale) ResourceError.performanceScale.notFound()
 
       const existingScale = await ctx.prisma.performanceScale.findFirst({
         where: {
@@ -96,23 +75,14 @@ export const performanceScalesRouter = createTRPCRouter({
 
       if (existingScale) {
         if (existingScale.label.toLowerCase() === input.label.toLowerCase()) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `A performance scale with label "${input.label}" already exists`,
-          })
+          ResourceError.performanceScale.labelExists(input.label)
         }
         if (existingScale.rank === input.rank) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `A performance scale with rank ${input.rank} already exists`,
-          })
+          ResourceError.performanceScale.rankExists(input.rank)
         }
       }
 
-      return ctx.prisma.performanceScale.update({
-        where: { id },
-        data,
-      })
+      return ctx.prisma.performanceScale.update({ where: { id }, data })
     }),
 
   delete: adminProcedure
@@ -122,15 +92,8 @@ export const performanceScalesRouter = createTRPCRouter({
         where: { performanceId: input.id },
       })
 
-      if (listingsCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete performance scale that is used in ${listingsCount} listings`,
-        })
-      }
+      if (listingsCount > 0) ResourceError.performanceScale.inUse(listingsCount)
 
-      return ctx.prisma.performanceScale.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.performanceScale.delete({ where: { id: input.id } })
     }),
 })

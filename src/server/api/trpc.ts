@@ -56,13 +56,10 @@ export const publicProcedure = t.procedure
  * Middleware to check if a user is signed in
  */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    AppError.unauthorized()
-  }
+  if (!ctx.session?.user) AppError.unauthorized()
+
   return next({
-    ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
-    },
+    ctx: { session: { ...ctx.session, user: ctx.session.user } },
   })
 })
 
@@ -74,7 +71,7 @@ export const authorProcedure = t.procedure.use(({ ctx, next }) => {
     AppError.unauthorized()
   }
 
-  // For now we consider User as Author
+  // For now, we consider User as Author
   if (!hasPermission(ctx.session.user.role, Role.USER)) {
     AppError.forbidden()
   }

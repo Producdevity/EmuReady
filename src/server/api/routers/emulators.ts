@@ -1,11 +1,10 @@
-import { TRPCError } from '@trpc/server'
-
 import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
   superAdminProcedure,
 } from '@/server/api/trpc'
+import { ResourceError, AppError } from '@/lib/errors'
 import {
   GetEmulatorsSchema,
   GetEmulatorByIdSchema,
@@ -22,19 +21,11 @@ export const emulatorsRouter = createTRPCRouter({
       const { search } = input ?? {}
 
       return ctx.prisma.emulator.findMany({
-        where: search
-          ? {
-              name: { contains: search },
-            }
-          : undefined,
+        where: search ? { name: { contains: search } } : undefined,
         include: {
-          _count: {
-            select: { listings: true },
-          },
+          _count: { select: { listings: true } },
         },
-        orderBy: {
-          name: 'asc',
-        },
+        orderBy: { name: 'asc' },
       })
     }),
 
@@ -50,18 +41,11 @@ export const emulatorsRouter = createTRPCRouter({
               displayOrder: 'asc',
             },
           },
-          _count: {
-            select: { listings: true },
-          },
+          _count: { select: { listings: true } },
         },
       })
 
-      if (!emulator) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Emulator not found',
-        })
-      }
+      if (!emulator) ResourceError.emulator.notFound()
 
       return emulator
     }),
@@ -69,21 +53,13 @@ export const emulatorsRouter = createTRPCRouter({
   create: adminProcedure
     .input(CreateEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if emulator already exists
-      const existing = await ctx.prisma.emulator.findUnique({
+      const emulator = await ctx.prisma.emulator.findUnique({
         where: { name: input.name },
       })
 
-      if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'Emulator with this name already exists',
-        })
-      }
+      if (emulator) ResourceError.emulator.alreadyExists(input.name)
 
-      return ctx.prisma.emulator.create({
-        data: input,
-      })
+      return ctx.prisma.emulator.create({ data: input })
     }),
 
   update: adminProcedure
@@ -91,36 +67,19 @@ export const emulatorsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
 
-      // Check if emulator exists
-      const emulator = await ctx.prisma.emulator.findUnique({
-        where: { id },
-      })
+      const emulator = await ctx.prisma.emulator.findUnique({ where: { id } })
 
-      if (!emulator) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Emulator not found',
-        })
-      }
+      if (!emulator) return ResourceError.emulator.notFound()
 
-      // Check if name is already taken by another emulator
       if (name !== emulator.name) {
         const existing = await ctx.prisma.emulator.findUnique({
           where: { name },
         })
 
-        if (existing) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'Emulator with this name already exists',
-          })
-        }
+        if (existing) ResourceError.emulator.alreadyExists(name)
       }
 
-      return ctx.prisma.emulator.update({
-        where: { id },
-        data: { name },
-      })
+      return ctx.prisma.emulator.update({ where: { id }, data: { name } })
     }),
 
   delete: adminProcedure
@@ -131,55 +90,38 @@ export const emulatorsRouter = createTRPCRouter({
         where: { emulatorId: input.id },
       })
 
-      if (listingsCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete emulator that is used in ${listingsCount} listings`,
-        })
-      }
+      if (listingsCount > 0) ResourceError.emulator.inUse(listingsCount)
 
-      return ctx.prisma.emulator.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.emulator.delete({ where: { id: input.id } })
     }),
 
   updateSupportedSystems: superAdminProcedure
     .input(UpdateSupportedSystemsSchema)
     .mutation(async ({ ctx, input }) => {
-      const { emulatorId, systemIds } = input
-
       const emulator = await ctx.prisma.emulator.findUnique({
-        where: { id: emulatorId },
+        where: { id: input.emulatorId },
       })
 
-      if (!emulator) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Emulator not found.',
-        })
-      }
+      if (!emulator) ResourceError.emulator.notFound()
 
       const systems = await ctx.prisma.system.findMany({
-        where: { id: { in: systemIds } },
+        where: { id: { in: input.systemIds } },
         select: { id: true },
       })
 
-      if (systems.length !== systemIds.length) {
-        const foundSystemIds = new Set(systems.map((s) => s.id))
-        const invalidIds = systemIds.filter((id) => !foundSystemIds.has(id))
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `One or more system IDs are invalid: ${invalidIds.join(', ')}.`,
-        })
+      if (systems.length !== input.systemIds.length) {
+        const foundSystemIds = new Set(systems.map((system) => system.id))
+        const invalidIds = input.systemIds.filter(
+          (id) => !foundSystemIds.has(id),
+        )
+        AppError.badRequest(
+          `One or more system IDs are invalid: ${invalidIds.join(', ')}.`,
+        )
       }
 
       await ctx.prisma.emulator.update({
-        where: { id: emulatorId },
-        data: {
-          systems: {
-            set: systemIds.map((id) => ({ id })),
-          },
-        },
+        where: { id: input.emulatorId },
+        data: { systems: { set: input.systemIds.map((id) => ({ id })) } },
       })
 
       return {

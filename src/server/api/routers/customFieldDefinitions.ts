@@ -1,7 +1,7 @@
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
-import { TRPCError } from '@trpc/server'
 import { CustomFieldType, Prisma, Role } from '@orm'
+import { AppError, ResourceError, ValidationError } from '@/lib/errors'
 import {
   CreateCustomFieldDefinitionSchema,
   GetCustomFieldDefinitionsByEmulatorSchema,
@@ -22,25 +22,15 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(CreateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Super Admins can create custom fields.',
-        })
+        AppError.insufficientPermissions('SUPER_ADMIN')
       }
 
       if (input.type === CustomFieldType.SELECT) {
         if (!input.options || input.options.length === 0) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Options are required for SELECT type custom fields.',
-          })
+          ValidationError.requiresOptions('SELECT')
         }
       } else if (input.options && input.options.length > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message:
-            'Options can only be provided for SELECT type custom fields.',
-        })
+        ValidationError.optionsNotAllowed(input.type)
       }
 
       const existingField = await prisma.customFieldDefinition.findUnique({
@@ -50,11 +40,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       })
 
       if (existingField) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message:
-            'A custom field with this name already exists for this emulator.',
-        })
+        ResourceError.customField.alreadyExists(input.name)
       }
 
       return prisma.customFieldDefinition.create({
@@ -89,19 +75,13 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(GetCustomFieldDefinitionByIdSchema)
     .query(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Super Admins can fetch custom field details by ID.',
-        })
+        AppError.insufficientPermissions('SUPER_ADMIN')
       }
       const field = await prisma.customFieldDefinition.findUnique({
         where: { id: input.id },
       })
       if (!field) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Custom field not found.',
-        })
+        ResourceError.customField.notFound()
       }
       return field
     }),
@@ -110,10 +90,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(UpdateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Super Admins can update custom fields.',
-        })
+        AppError.insufficientPermissions('SUPER_ADMIN')
       }
 
       const fieldToUpdate = await prisma.customFieldDefinition.findUnique({
@@ -121,10 +98,8 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       })
 
       if (!fieldToUpdate) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Custom field not found.',
-        })
+        ResourceError.customField.notFound()
+        return // This will never execute, but helps TypeScript understand
       }
 
       const newType = input.type ?? fieldToUpdate.type
@@ -136,11 +111,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           if (input.options && input.options.length > 0) {
             optionsToSave = input.options as Prisma.JsonArray
           } else if (input.options && input.options.length === 0) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message:
-                'Options list cannot be empty for SELECT type. Provide at least one option.',
-            })
+            ValidationError.emptyOptions('SELECT')
           } else {
             optionsToSave = Prisma.DbNull
           }
@@ -148,11 +119,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           const currentOptions =
             fieldToUpdate.options as CustomFieldOptionArray | null
           if (!Array.isArray(currentOptions) || currentOptions.length === 0) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message:
-                'Existing options are invalid or empty for SELECT type. Please provide new options if changing type to SELECT or updating options.',
-            })
+            ValidationError.invalidOptions('SELECT')
           }
           optionsToSave = currentOptions
         }
@@ -162,11 +129,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           input.options &&
           input.options.length > 0
         ) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message:
-              'Options can only be provided for SELECT type custom fields.',
-          })
+          ValidationError.optionsNotAllowed(newType)
         }
         optionsToSave = Prisma.DbNull
       }
@@ -181,11 +144,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           },
         })
         if (existingField) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message:
-              'A custom field with this name already exists for this emulator.',
-          })
+          ResourceError.customField.alreadyExists(input.name)
         }
       }
 
@@ -206,10 +165,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(DeleteCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Super Admins can delete custom fields.',
-        })
+        AppError.insufficientPermissions('SUPER_ADMIN')
       }
 
       const fieldToDelete = await prisma.customFieldDefinition.findUnique({
@@ -217,10 +173,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       })
 
       if (!fieldToDelete) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Custom field not found.',
-        })
+        ResourceError.customField.notFound()
       }
 
       return prisma.customFieldDefinition.delete({
@@ -232,10 +185,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(UpdateCustomFieldDefinitionOrderSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Super Admins can reorder custom fields.',
-        })
+        AppError.insufficientPermissions('SUPER_ADMIN')
       }
 
       return ctx.prisma.$transaction(

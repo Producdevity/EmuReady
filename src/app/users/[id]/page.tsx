@@ -9,8 +9,8 @@ import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 
 type UserProfile = RouterOutput['users']['getUserById']
-type UserListing = UserProfile['listings'][0]
-type UserVote = UserProfile['votes'][0]
+type UserListing = NonNullable<UserProfile>['listings'][0]
+type UserVote = NonNullable<UserProfile>['votes'][0]
 
 export default function UserProfilePage() {
   const params = useParams()
