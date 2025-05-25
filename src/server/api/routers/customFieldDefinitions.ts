@@ -1,7 +1,7 @@
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { TRPCError } from '@trpc/server'
-import { CustomFieldType, Prisma } from '@orm'
+import { CustomFieldType, Prisma, Role } from '@orm'
 import {
   CreateCustomFieldDefinitionSchema,
   GetCustomFieldDefinitionsByEmulatorSchema,
@@ -10,6 +10,7 @@ import {
   DeleteCustomFieldDefinitionSchema,
   UpdateCustomFieldDefinitionOrderSchema,
 } from '@/schemas/customFieldDefinition'
+import { hasPermission } from '@/utils/permissions'
 
 type CustomFieldOptionArray = {
   value: string
@@ -20,7 +21,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   create: protectedProcedure
     .input(CreateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== 'SUPER_ADMIN') {
+      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only Super Admins can create custom fields.',
@@ -87,7 +88,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   byId: protectedProcedure
     .input(GetCustomFieldDefinitionByIdSchema)
     .query(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== 'SUPER_ADMIN') {
+      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only Super Admins can fetch custom field details by ID.',
@@ -108,7 +109,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   update: protectedProcedure
     .input(UpdateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== 'SUPER_ADMIN') {
+      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only Super Admins can update custom fields.',
@@ -204,7 +205,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(DeleteCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== 'SUPER_ADMIN') {
+      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only Super Admins can delete custom fields.',
@@ -230,14 +231,13 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   updateOrder: protectedProcedure
     .input(UpdateCustomFieldDefinitionOrderSchema)
     .mutation(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== 'SUPER_ADMIN') {
+      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only Super Admins can reorder custom fields.',
         })
       }
 
-      // Perform updates in a transaction
       return ctx.prisma.$transaction(
         input.map((fieldOrder) =>
           ctx.prisma.customFieldDefinition.update({

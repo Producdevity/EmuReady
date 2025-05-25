@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import sanitizeForClient from './sanitizeForClient'
+import { Role } from '@orm'
 
 describe('sanitizeForClient', () => {
   it('should handle primitive values', () => {
@@ -70,7 +71,7 @@ describe('sanitizeForClient', () => {
       createdAt: new Date(),
       user: {
         name: 'Test User',
-        roles: ['USER', 'AUTHOR'],
+        roles: [Role.USER, Role.AUTHOR],
       },
       metadata: {
         count: 42,

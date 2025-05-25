@@ -4,6 +4,8 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import { TRPCError } from '@trpc/server'
 import bcryptjs from 'bcryptjs'
 import {
@@ -55,7 +57,7 @@ export const usersRouter = createTRPCRouter({
           name,
           email,
           hashedPassword,
-          role: 'USER',
+          role: Role.USER,
         },
         select: {
           id: true,
@@ -359,7 +361,10 @@ export const usersRouter = createTRPCRouter({
       const { userId, role } = input
 
       // Prevent self-demotion from ADMIN
-      if (userId === ctx.session.user.id && role !== 'ADMIN') {
+      if (
+        userId === ctx.session.user.id &&
+        !hasPermission(ctx.session.user.role, Role.ADMIN)
+      ) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You cannot demote yourself from the admin role',

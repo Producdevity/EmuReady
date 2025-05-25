@@ -1,3 +1,4 @@
+import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { TRPCError } from '@trpc/server'
 import { Prisma, ListingApprovalStatus } from '@orm'
 import {
@@ -623,17 +624,10 @@ export const listingsRouter = createTRPCRouter({
     .input(EditCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { commentId, content } = input
-      const userId = ctx.session.user.id
 
       const comment = await ctx.prisma.comment.findUnique({
         where: { id: commentId },
-        include: {
-          user: {
-            select: {
-              id: true,
-            },
-          },
-        },
+        include: { user: { select: { id: true } } },
       })
 
       if (!comment) {
@@ -650,8 +644,12 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      const canEdit =
-        comment.user.id === userId || ctx.session.user.role === 'SUPER_ADMIN'
+      const canEdit = canEditComment(
+        ctx.session.user.role,
+        comment.user.id,
+        ctx.session.user.id,
+      )
+
       if (!canEdit) {
         throw new TRPCError({
           code: 'FORBIDDEN',
@@ -681,18 +679,9 @@ export const listingsRouter = createTRPCRouter({
   deleteComment: protectedProcedure
     .input(DeleteCommentSchema)
     .mutation(async ({ ctx, input }) => {
-      const { commentId } = input
-      const userId = ctx.session.user.id
-
       const comment = await ctx.prisma.comment.findUnique({
-        where: { id: commentId },
-        include: {
-          user: {
-            select: {
-              id: true,
-            },
-          },
-        },
+        where: { id: input.commentId },
+        include: { user: { select: { id: true } } },
       })
 
       if (!comment) {
@@ -709,10 +698,11 @@ export const listingsRouter = createTRPCRouter({
         })
       }
 
-      const canDelete =
-        comment.user.id === userId ||
-        ctx.session.user.role === 'ADMIN' ||
-        ctx.session.user.role === 'SUPER_ADMIN'
+      const canDelete = canDeleteComment(
+        ctx.session.user.role,
+        comment.user.id,
+        ctx.session.user.id,
+      )
 
       if (!canDelete) {
         throw new TRPCError({
@@ -722,10 +712,8 @@ export const listingsRouter = createTRPCRouter({
       }
 
       return ctx.prisma.comment.update({
-        where: { id: commentId },
-        data: {
-          deletedAt: new Date(),
-        },
+        where: { id: input.commentId },
+        data: { deletedAt: new Date() },
       })
     }),
 
@@ -820,7 +808,6 @@ export const listingsRouter = createTRPCRouter({
 
       // Transform the comments to include vote data
       const transformedComments = comments.map((comment) => {
-        // Process replies
         const transformedReplies = comment.replies.map((reply) => {
           return {
             ...reply,
@@ -846,7 +833,6 @@ export const listingsRouter = createTRPCRouter({
       const { commentId, value } = input
       const userId = ctx.session.user.id
 
-      // Check if comment exists
       const comment = await ctx.prisma.comment.findUnique({
         where: { id: commentId },
       })

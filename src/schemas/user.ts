@@ -1,3 +1,4 @@
+import { Role } from '@orm'
 import { z } from 'zod'
 
 export const RegisterUserSchema = z.object({
@@ -18,7 +19,7 @@ export const UpdateUserSchema = z.object({
 
 export const UpdateUserRoleSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(['USER', 'AUTHOR', 'ADMIN']),
+  role: z.enum([Role.USER, Role.AUTHOR, Role.ADMIN]),
 })
 
 export const DeleteUserSchema = z.object({ userId: z.string().uuid() })

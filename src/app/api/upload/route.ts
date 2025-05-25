@@ -1,3 +1,5 @@
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
@@ -12,10 +14,7 @@ function isImage(file: File) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (
-      !session ||
-      !['AUTHOR', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
-    ) {
+    if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 401 },
@@ -53,10 +52,7 @@ export async function POST(request: NextRequest) {
 
     const imageUrl = `/uploads/games/${fileName}`
 
-    return NextResponse.json({
-      success: true,
-      imageUrl,
-    })
+    return NextResponse.json({ success: true, imageUrl })
   } catch (error: unknown) {
     console.error('Error uploading file:', error)
     const errorMessage =

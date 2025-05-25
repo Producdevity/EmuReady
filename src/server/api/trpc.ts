@@ -73,7 +73,8 @@ export const authorProcedure = t.procedure.use(({ ctx, next }) => {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
 
-  if (!hasPermission(ctx.session.user.role, Role.AUTHOR)) {
+  // For now we consider User as Author
+  if (!hasPermission(ctx.session.user.role, Role.USER)) {
     throw new TRPCError({ code: 'FORBIDDEN' })
   }
 
