@@ -11,6 +11,7 @@
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck",
     "postinstall": "prisma generate",
     "analyze": "ANALYZE=true next build",
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
