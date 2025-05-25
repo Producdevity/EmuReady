@@ -1,12 +1,13 @@
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 import { getServerSession, type Session } from 'next-auth'
-import { initTRPC, TRPCError } from '@trpc/server'
+import { initTRPC } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import { hasPermission } from '@/utils/permissions'
 import { prisma } from '@/server/db'
 import { authOptions } from '@/server/auth'
 import { Role } from '@orm'
+import { AppError } from '@/lib/errors'
 
 type CreateContextOptions = {
   session: Session | null
@@ -56,7 +57,7 @@ export const publicProcedure = t.procedure
  */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session?.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+    AppError.unauthorized()
   }
   return next({
     ctx: {
@@ -70,12 +71,12 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
  */
 export const authorProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session?.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+    AppError.unauthorized()
   }
 
   // For now we consider User as Author
   if (!hasPermission(ctx.session.user.role, Role.USER)) {
-    throw new TRPCError({ code: 'FORBIDDEN' })
+    AppError.forbidden()
   }
 
   return next({
@@ -90,11 +91,11 @@ export const authorProcedure = t.procedure.use(({ ctx, next }) => {
  */
 export const adminProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session?.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+    AppError.unauthorized()
   }
 
   if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-    throw new TRPCError({ code: 'FORBIDDEN' })
+    AppError.insufficientPermissions('ADMIN')
   }
 
   return next({
@@ -109,11 +110,11 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
  */
 export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session?.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+    AppError.unauthorized()
   }
 
   if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-    throw new TRPCError({ code: 'FORBIDDEN' })
+    AppError.insufficientPermissions('SUPER_ADMIN')
   }
 
   return next({

@@ -1,10 +1,9 @@
-import { TRPCError } from '@trpc/server'
-
 import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
+import { ResourceError } from '@/lib/errors'
 import {
   GetDeviceBrandsSchema,
   GetDeviceBrandByIdSchema,
@@ -21,9 +20,7 @@ export const deviceBrandsRouter = createTRPCRouter({
 
       return ctx.prisma.deviceBrand.findMany({
         where: search
-          ? {
-              name: { contains: search, mode: 'insensitive' },
-            }
+          ? { name: { contains: search, mode: 'insensitive' } }
           : undefined,
         take: limit,
         orderBy: [{ name: 'asc' }],
@@ -38,10 +35,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (!brand) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device brand not found',
-        })
+        ResourceError.deviceBrand.notFound()
       }
 
       return brand
@@ -58,10 +52,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (existingBrand) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `Brand "${input.name}" already exists`,
-        })
+        ResourceError.deviceBrand.alreadyExists(input.name)
       }
 
       return ctx.prisma.deviceBrand.create({
@@ -79,10 +70,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (!brand) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device brand not found',
-        })
+        ResourceError.deviceBrand.notFound()
       }
 
       // Check if another brand with the same name already exists
@@ -94,10 +82,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (existingBrand) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `Brand "${input.name}" already exists`,
-        })
+        ResourceError.deviceBrand.alreadyExists(input.name)
       }
 
       return ctx.prisma.deviceBrand.update({
@@ -115,10 +100,7 @@ export const deviceBrandsRouter = createTRPCRouter({
       })
 
       if (devicesCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete brand that is used by ${devicesCount} devices`,
-        })
+        ResourceError.deviceBrand.inUse(devicesCount)
       }
 
       return ctx.prisma.deviceBrand.delete({

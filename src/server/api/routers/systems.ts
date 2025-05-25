@@ -3,7 +3,7 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from '@/server/api/trpc'
-import { TRPCError } from '@trpc/server'
+import { ResourceError } from '@/lib/errors'
 import {
   GetSystemsSchema,
   GetSystemByIdSchema,
@@ -55,10 +55,7 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (!system) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'System not found',
-        })
+        ResourceError.system.notFound()
       }
 
       return system
@@ -72,10 +69,7 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'System with this name already exists',
-        })
+        ResourceError.system.alreadyExists(input.name)
       }
 
       return ctx.prisma.system.create({
@@ -93,22 +87,16 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (!system) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'System not found',
-        })
+        ResourceError.system.notFound()
       }
 
-      if (name !== system.name) {
+      if (name !== system?.name) {
         const existing = await ctx.prisma.system.findUnique({
           where: { name },
         })
 
         if (existing) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'System with this name already exists',
-          })
+          ResourceError.system.alreadyExists(name)
         }
       }
 
@@ -127,10 +115,7 @@ export const systemsRouter = createTRPCRouter({
       })
 
       if (gamesCount > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Cannot delete system that has ${gamesCount} games`,
-        })
+        ResourceError.system.hasGames(gamesCount)
       }
 
       return ctx.prisma.system.delete({
