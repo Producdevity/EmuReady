@@ -200,7 +200,7 @@ function ListingsPage() {
           {isLoading ? (
             <LoadingSpinner text="Loading listings..." />
           ) : (
-            <table className="table-auto min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+            <table className="table-auto md:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
                 <tr>
                   <SortableHeader
