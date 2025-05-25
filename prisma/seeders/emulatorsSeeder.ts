@@ -9,7 +9,7 @@ const emulators: EmulatorData[] = [
   { name: 'AetherSX2', supportedSystemNames: ['Sony PlayStation 2'] },
   { name: 'Cemu', supportedSystemNames: ['Nintendo Wii U'] },
   { name: 'Citra', supportedSystemNames: ['Nintendo 3DS'] },
-  { name: 'Citron', supportedSystemNames: ['Nintendo 3DS'] },
+  { name: 'Citron', supportedSystemNames: ['Nintendo Switch'] },
   {
     name: 'Dolphin',
     supportedSystemNames: ['Nintendo GameCube', 'Nintendo Wii'],
