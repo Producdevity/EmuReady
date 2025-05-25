@@ -70,30 +70,45 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const listRef = useRef<HTMLUListElement>(null) // Changed to ul
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Effect to update inputValue when the external `value` prop changes
+  // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
-    if (value === null || value === undefined) {
+    // Only run this effect if value prop is explicitly provided (controlled mode)
+    // In uncontrolled mode, handleOptionClick manages inputValue directly
+    if (value === undefined) {
+      return // Uncontrolled mode - don't interfere with inputValue
+    }
+    
+    if (value === null) {
       setInputValue('')
       return
     }
-    // Try to find the selected item in current suggestions or staticItems to set its label as inputValue
-    const allAvailableItems = loadItems ? suggestions : (staticItems ?? [])
-    const selectedItem = allAvailableItems.find(
-      (item) => optionToValue(item) === value,
-    )
-    if (selectedItem) {
-      setInputValue(optionToLabel(selectedItem))
-    } else if (!loadItems && staticItems && staticItems.length > 0) {
-      // Fallback for static items if not in suggestions (e.g. initial load with a value)
+    
+    // For static items, always check staticItems first
+    if (staticItems && staticItems.length > 0) {
       const staticSelectedItem = staticItems.find(
         (item) => optionToValue(item) === value,
       )
       if (staticSelectedItem) {
         setInputValue(optionToLabel(staticSelectedItem))
-      } else {
-        // If value is present but not in items, clear input
-        setInputValue('')
+        return
       }
+    }
+    
+    // For loadItems, check suggestions
+    if (loadItems) {
+      const selectedItem = suggestions.find(
+        (item) => optionToValue(item) === value,
+      )
+      if (selectedItem) {
+        setInputValue(optionToLabel(selectedItem))
+      } else if (suggestions.length === 0) {
+        // For loadItems case, if suggestions are empty but we have a value,
+        // don't clear the input - it might have been set by handleOptionClick
+        // This prevents the useEffect from overriding the input value after selection
+      }
+    } else {
+      // If value is present but not in items, clear input
+      setInputValue('')
     }
   }, [
     value,
@@ -120,6 +135,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       }
 
       setIsLoading(true)
+      setIsOpen(true) // Open dropdown immediately when loading starts
       try {
         if (loadItems) {
           const newSuggestions = await loadItems(query)
@@ -323,7 +339,8 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     isOpen &&
     !isLoading &&
     inputValue.length < minCharsToTrigger &&
-    (!staticItems || staticItems.length === 0 || loadItems)
+    suggestions.length === 0 &&
+    (staticItems == null || staticItems.length === 0 || loadItems != null)
 
   const inputId = `autocomplete-input-${Math.random().toString(36).substr(2, 9)}`
 
@@ -399,7 +416,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       </div>
 
       {isOpen &&
-        (suggestions.length > 0 || showNoResults || showMinCharsMessage) && (
+        (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading) && (
           <ul
             ref={listRef}
             id="autocomplete-list"
