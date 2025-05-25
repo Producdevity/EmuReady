@@ -27,8 +27,8 @@ import {
   LinkIcon as UrlIcon,
   CaseSensitive,
 } from 'lucide-react'
+import toast from '@/lib/toast'
 
-// Zod schema for the main listing form
 const listingFormSchema = z.object({
   gameId: z.string().min(1, 'Game is required'),
   deviceId: z.string().min(1, 'Device is required'),
@@ -222,18 +222,16 @@ function AddListingPage() {
   // --- Mutation ---
   const createListingMutation = api.listings.create.useMutation({
     onSuccess: (data) => {
-      utils.listings.list.invalidate() // Invalidate list cache
-      router.push(`/listings/${data.id}`) // Navigate to the new listing's page
-      // TODO: Add success toast/notification
+      utils.listings.get.invalidate()
+      router.push(`/listings/${data.id}`)
+      toast.success('Listing created successfully!')
     },
     onError: (error) => {
       console.error('Failed to create listing:', error)
-      alert(`Error: ${error.message}`)
-      // TODO: Add error toast/notification
+      toast.error(`Failed to create listing: ${error.message}`)
     },
   })
 
-  // --- Form Submission ---
   const onSubmit = (data: ListingFormValues) => {
     // Ensure customFieldValues are correctly formatted, especially for boolean and numbers if stored as strings by form
     const finalCustomFieldValues = data.customFieldValues?.map((cfv) => {
@@ -259,7 +257,6 @@ function AddListingPage() {
     })
   }
 
-  // --- Dynamic Custom Field Rendering --- (Helper function)
   const renderCustomField = (
     fieldDef: CustomFieldDefinitionWithOptions,
     index: number,
@@ -446,7 +443,6 @@ function AddListingPage() {
     }
   }
 
-  // --- Main Render ---
   return (
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
