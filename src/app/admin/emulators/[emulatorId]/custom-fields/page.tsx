@@ -1,24 +1,25 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { useParams } from 'next/navigation';
-import { api } from '@/lib/api';
-import Button from '@/components/ui/Button';
-import { PlusCircle } from 'lucide-react';
-import CustomFieldList from './components/CustomFieldList';
-import CustomFieldFormModal from './components/CustomFieldFormModal';
+import React, { useState } from 'react'
+import { useParams } from 'next/navigation'
+import { api } from '@/lib/api'
+import Button from '@/components/ui/Button'
+import { PlusCircle } from 'lucide-react'
+import CustomFieldList from './components/CustomFieldList'
+import CustomFieldFormModal from './components/CustomFieldFormModal'
 
 export default function EmulatorCustomFieldsPage() {
-  const params = useParams();
-  const emulatorId = params.emulatorId as string;
+  const params = useParams()
+  const emulatorId = params.emulatorId as string
 
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
-  const { data: emulator, isLoading: isLoadingEmulator, error: emulatorError } = api.emulators.byId.useQuery(
-    { id: emulatorId }, 
-    { enabled: !!emulatorId }
-  );
+  const {
+    data: emulator,
+    isLoading: isLoadingEmulator,
+    error: emulatorError,
+  } = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
 
   const {
     data: customFields,
@@ -27,39 +28,39 @@ export default function EmulatorCustomFieldsPage() {
     refetch: refetchCustomFields,
   } = api.customFieldDefinitions.listByEmulator.useQuery(
     { emulatorId },
-    { enabled: !!emulatorId }
-  );
+    { enabled: !!emulatorId },
+  )
 
   const handleOpenCreateModal = () => {
-    setEditingFieldId(null);
-    setIsFormModalOpen(true);
-  };
+    setEditingFieldId(null)
+    setIsFormModalOpen(true)
+  }
 
   const handleOpenEditModal = (fieldId: string) => {
-    setEditingFieldId(fieldId);
-    setIsFormModalOpen(true);
-  };
+    setEditingFieldId(fieldId)
+    setIsFormModalOpen(true)
+  }
 
   const handleCloseModal = () => {
-    setIsFormModalOpen(false);
-    setEditingFieldId(null);
-    refetchCustomFields(); // Refetch when modal closes to see updates
-  };
+    setIsFormModalOpen(false)
+    setEditingFieldId(null)
+    refetchCustomFields() // Refetch when modal closes to see updates
+  }
 
   if (isLoadingEmulator || isLoadingCustomFields) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   if (emulatorError) {
-    return <div>Error loading emulator: {emulatorError.message}</div>;
+    return <div>Error loading emulator: {emulatorError.message}</div>
   }
 
   if (customFieldsError) {
-    return <div>Error loading custom fields: {customFieldsError.message}</div>;
+    return <div>Error loading custom fields: {customFieldsError.message}</div>
   }
 
   if (!emulator) {
-    return <div>Emulator not found.</div>;
+    return <div>Emulator not found.</div>
   }
 
   return (
@@ -74,14 +75,16 @@ export default function EmulatorCustomFieldsPage() {
       </div>
 
       {customFields && customFields.length > 0 ? (
-        <CustomFieldList 
+        <CustomFieldList
           customFields={customFields}
           onEdit={handleOpenEditModal}
-          onDeleteSuccess={refetchCustomFields} 
+          onDeleteSuccess={refetchCustomFields}
           emulatorId={emulatorId}
         />
       ) : (
-        <p className="text-center text-gray-500 dark:text-gray-400 py-8">No custom fields defined for this emulator yet.</p>
+        <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+          No custom fields defined for this emulator yet.
+        </p>
       )}
 
       {isFormModalOpen && (
@@ -93,5 +96,5 @@ export default function EmulatorCustomFieldsPage() {
         />
       )}
     </div>
-  );
-} 
+  )
+}

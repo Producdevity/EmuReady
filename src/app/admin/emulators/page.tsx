@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import Link from 'next/link'
 import { api } from '@/lib/api'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui'
 import { Settings, Pencil } from 'lucide-react'
 
 const actionButtonClasses =
