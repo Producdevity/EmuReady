@@ -6,9 +6,7 @@ export const RegisterUserSchema = z.object({
   password: z.string().min(8),
 })
 
-export const GetUserByIdSchema = z.object({
-  userId: z.string().uuid(),
-})
+export const GetUserByIdSchema = z.object({ userId: z.string().uuid() })
 
 export const UpdateUserSchema = z.object({
   name: z.string().min(2).max(50).optional(),
@@ -23,6 +21,4 @@ export const UpdateUserRoleSchema = z.object({
   role: z.enum(['USER', 'AUTHOR', 'ADMIN']),
 })
 
-export const DeleteUserSchema = z.object({
-  userId: z.string().uuid(),
-})
+export const DeleteUserSchema = z.object({ userId: z.string().uuid() })

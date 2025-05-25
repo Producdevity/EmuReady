@@ -9,9 +9,7 @@ export const GetGamesSchema = z
   })
   .optional()
 
-export const GetGameByIdSchema = z.object({
-  id: z.string().uuid(),
-})
+export const GetGameByIdSchema = z.object({ id: z.string().uuid() })
 
 export const CreateGameSchema = z.object({
   title: z.string().min(1),
@@ -26,6 +24,4 @@ export const UpdateGameSchema = z.object({
   imageUrl: z.string().optional(),
 })
 
-export const DeleteGameSchema = z.object({
-  id: z.string().uuid(),
-})
+export const DeleteGameSchema = z.object({ id: z.string().uuid() })

@@ -1,8 +1,6 @@
 import { z } from 'zod'
 
-export const GetPerformanceScaleByIdSchema = z.object({
-  id: z.number(),
-})
+export const GetPerformanceScaleByIdSchema = z.object({ id: z.number() })
 
 export const CreatePerformanceScaleSchema = z.object({
   label: z.string().min(1),
@@ -17,6 +15,4 @@ export const UpdatePerformanceScaleSchema = z.object({
   description: z.string().optional(),
 })
 
-export const DeletePerformanceScaleSchema = z.object({
-  id: z.number(),
-})
+export const DeletePerformanceScaleSchema = z.object({ id: z.number() })

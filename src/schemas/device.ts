@@ -8,9 +8,7 @@ export const GetDevicesSchema = z
   })
   .optional()
 
-export const GetDeviceByIdSchema = z.object({
-  id: z.string().uuid(),
-})
+export const GetDeviceByIdSchema = z.object({ id: z.string().uuid() })
 
 export const CreateDeviceSchema = z.object({
   brandId: z.string().uuid(),
@@ -23,6 +21,4 @@ export const UpdateDeviceSchema = z.object({
   modelName: z.string().min(1),
 })
 
-export const DeleteDeviceSchema = z.object({
-  id: z.string().uuid(),
-})
+export const DeleteDeviceSchema = z.object({ id: z.string().uuid() })
