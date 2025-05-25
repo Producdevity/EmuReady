@@ -61,7 +61,9 @@ export const listingsRouter = createTRPCRouter({
         ...(deviceId ? { deviceId } : {}),
         ...(emulatorId ? { emulatorId } : {}),
         ...(performanceId ? { performanceId } : {}),
-        ...(approvalStatus ? { status: approvalStatus } : { status: ListingApprovalStatus.APPROVED }),
+        ...(approvalStatus
+          ? { status: approvalStatus }
+          : { status: ListingApprovalStatus.APPROVED }),
       }
 
       if (searchTerm) {
@@ -336,30 +338,42 @@ export const listingsRouter = createTRPCRouter({
         emulatorId: z.string(),
         performanceId: z.number(),
         notes: z.string().optional(),
-        customFieldValues: z.array(
-          z.object({
-            customFieldDefinitionId: z.string().uuid(),
-            value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
-          })
-        ).optional(),
+        customFieldValues: z
+          .array(
+            z.object({
+              customFieldDefinitionId: z.string().uuid(),
+              value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
+            }),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { gameId, deviceId, emulatorId, performanceId, notes, customFieldValues } = input;
-      const authorId = ctx.session.user.id;
+      const {
+        gameId,
+        deviceId,
+        emulatorId,
+        performanceId,
+        notes,
+        customFieldValues,
+      } = input
+      const authorId = ctx.session.user.id
 
-      console.log('Attempting to create listing with authorId:', authorId);
+      console.log('Attempting to create listing with authorId:', authorId)
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: authorId },
-        select: { id: true }, 
-      });
+        select: { id: true },
+      })
 
       if (!userExists) {
-        console.error('CRITICAL: User with session ID not found in database:', authorId);
+        console.error(
+          'CRITICAL: User with session ID not found in database:',
+          authorId,
+        )
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `User with ID ${authorId} not found. Cannot create listing.`,
-        });
+        })
       }
 
       const existingListing = await ctx.prisma.listing.findFirst({
@@ -368,14 +382,14 @@ export const listingsRouter = createTRPCRouter({
           deviceId,
           emulatorId,
         },
-      });
+      })
 
       if (existingListing) {
         throw new TRPCError({
           code: 'CONFLICT',
           message:
             'A listing for this game, device, and emulator combination already exists',
-        });
+        })
       }
 
       return ctx.prisma.$transaction(async (tx) => {
@@ -389,19 +403,19 @@ export const listingsRouter = createTRPCRouter({
             authorId: authorId,
             status: ListingApprovalStatus.PENDING,
           },
-        });
+        })
 
         if (customFieldValues && customFieldValues.length > 0) {
           for (const cfv of customFieldValues) {
             // Validate the customFieldDefinitionId exists and belongs to the emulator for this listing
             const fieldDef = await tx.customFieldDefinition.findUnique({
-                where: { id: cfv.customFieldDefinitionId },
-            });
+              where: { id: cfv.customFieldDefinitionId },
+            })
             if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
-                throw new TRPCError({
-                    code: 'BAD_REQUEST',
-                    message: `Invalid custom field definition ID: ${cfv.customFieldDefinitionId} for emulator ${emulatorId}`,
-                });
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: `Invalid custom field definition ID: ${cfv.customFieldDefinitionId} for emulator ${emulatorId}`,
+              })
             }
             // TODO: Add more specific validation for cfv.value based on fieldDef.type if needed here
             // For now, assuming client sends compatible JSON structure
@@ -409,13 +423,16 @@ export const listingsRouter = createTRPCRouter({
               data: {
                 listingId: newListing.id,
                 customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value === null ? Prisma.JsonNull : cfv.value as Prisma.InputJsonValue,
+                value:
+                  cfv.value === null
+                    ? Prisma.JsonNull
+                    : (cfv.value as Prisma.InputJsonValue),
               },
-            });
+            })
           }
         }
-        return newListing;
-      });
+        return newListing
+      })
     }),
 
   vote: protectedProcedure
@@ -970,50 +987,52 @@ export const listingsRouter = createTRPCRouter({
     }),
 
   // New procedures for listing approvals
-  listPending: adminProcedure
-    .query(async ({ ctx }) => {
-      return ctx.prisma.listing.findMany({
-        where: { status: ListingApprovalStatus.PENDING },
-        include: {
-          game: { include: { system: true } },
-          device: { include: { brand: true } },
-          emulator: true,
-          author: { select: { id: true, name: true, email: true } },
-          performance: true,
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-      });
-    }),
+  listPending: adminProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.listing.findMany({
+      where: { status: ListingApprovalStatus.PENDING },
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true } },
+        emulator: true,
+        author: { select: { id: true, name: true, email: true } },
+        performance: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    })
+  }),
 
   approveListing: adminProcedure
     .input(z.object({ listingId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const { listingId } = input;
-      const adminUserId = ctx.session.user.id;
+      const { listingId } = input
+      const adminUserId = ctx.session.user.id
 
       // Verify admin user exists
       const adminUserExists = await ctx.prisma.user.findUnique({
         where: { id: adminUserId },
         select: { id: true },
-      });
+      })
       if (!adminUserExists) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `Approving user (admin) with ID ${adminUserId} not found in database.`,
-        });
+        })
       }
 
       const listingToApprove = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-      });
+      })
 
-      if (!listingToApprove || listingToApprove.status !== ListingApprovalStatus.PENDING) {
+      if (
+        !listingToApprove ||
+        listingToApprove.status !== ListingApprovalStatus.PENDING
+      ) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Pending listing not found or already processed.',
-        });
+        })
       }
 
       return ctx.prisma.listing.update({
@@ -1024,36 +1043,41 @@ export const listingsRouter = createTRPCRouter({
           processedAt: new Date(),
           processedNotes: null,
         },
-      });
+      })
     }),
 
   rejectListing: adminProcedure
-    .input(z.object({ listingId: z.string().uuid(), notes: z.string().optional() }))
+    .input(
+      z.object({ listingId: z.string().uuid(), notes: z.string().optional() }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const { listingId, notes } = input;
-      const adminUserId = ctx.session.user.id;
+      const { listingId, notes } = input
+      const adminUserId = ctx.session.user.id
 
       // Verify admin user exists
       const adminUserExists = await ctx.prisma.user.findUnique({
         where: { id: adminUserId },
         select: { id: true },
-      });
+      })
       if (!adminUserExists) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `Rejecting user (admin) with ID ${adminUserId} not found in database.`,
-        });
+        })
       }
 
       const listingToReject = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-      });
+      })
 
-      if (!listingToReject || listingToReject.status !== ListingApprovalStatus.PENDING) {
+      if (
+        !listingToReject ||
+        listingToReject.status !== ListingApprovalStatus.PENDING
+      ) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Pending listing not found or already processed.',
-        });
+        })
       }
 
       return ctx.prisma.listing.update({
@@ -1064,7 +1088,7 @@ export const listingsRouter = createTRPCRouter({
           processedAt: new Date(),
           processedNotes: notes,
         },
-      });
+      })
     }),
 
   // New procedures for SUPER_ADMIN review of processed listings
@@ -1075,18 +1099,18 @@ export const listingsRouter = createTRPCRouter({
         limit: z.number().default(10),
         filterStatus: z.nativeEnum(ListingApprovalStatus).optional(), // Filter by APPROVED or REJECTED
         // Add other filters like processedByAdminId, date ranges etc. if needed
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
-      const { page, limit, filterStatus } = input;
-      const skip = (page - 1) * limit;
+      const { page, limit, filterStatus } = input
+      const skip = (page - 1) * limit
 
       const whereClause: Prisma.ListingWhereInput = {
         NOT: { status: ListingApprovalStatus.PENDING }, // Exclude PENDING listings
-      };
+      }
 
       if (filterStatus) {
-        whereClause.status = filterStatus;
+        whereClause.status = filterStatus
       }
 
       const listings = await ctx.prisma.listing.findMany({
@@ -1104,9 +1128,11 @@ export const listingsRouter = createTRPCRouter({
         },
         skip,
         take: limit,
-      });
+      })
 
-      const totalListings = await ctx.prisma.listing.count({ where: whereClause });
+      const totalListings = await ctx.prisma.listing.count({
+        where: whereClause,
+      })
 
       return {
         listings,
@@ -1116,25 +1142,30 @@ export const listingsRouter = createTRPCRouter({
           currentPage: page,
           limit,
         },
-      };
+      }
     }),
 
   overrideApprovalStatus: superAdminProcedure
-    .input(z.object({
-      listingId: z.string().uuid(),
-      newStatus: z.nativeEnum(ListingApprovalStatus), // PENDING, APPROVED, or REJECTED
-      overrideNotes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        listingId: z.string().uuid(),
+        newStatus: z.nativeEnum(ListingApprovalStatus), // PENDING, APPROVED, or REJECTED
+        overrideNotes: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const { listingId, newStatus, overrideNotes } = input;
-      const superAdminUserId = ctx.session.user.id;
+      const { listingId, newStatus, overrideNotes } = input
+      const superAdminUserId = ctx.session.user.id
 
       const listingToOverride = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-      });
+      })
 
       if (!listingToOverride) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Listing not found.' });
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Listing not found.',
+        })
       }
 
       // Prevent setting to PENDING if it was never processed, or other invalid transitions if needed.
@@ -1145,9 +1176,9 @@ export const listingsRouter = createTRPCRouter({
         data: {
           status: newStatus,
           processedByUserId: superAdminUserId, // Log the SUPER_ADMIN as the latest processor
-          processedAt: new Date(),           // Update timestamp to the override time
+          processedAt: new Date(), // Update timestamp to the override time
           processedNotes: overrideNotes ?? listingToOverride.processedNotes, // Keep old notes if no new ones
         },
-      });
+      })
     }),
 })

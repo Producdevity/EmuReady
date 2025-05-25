@@ -46,8 +46,8 @@ export const emulatorsRouter = createTRPCRouter({
           systems: true,
           customFieldDefinitions: {
             orderBy: {
-              displayOrder: 'asc'
-            }
+              displayOrder: 'asc',
+            },
           },
           _count: {
             select: { listings: true },
@@ -159,42 +159,45 @@ export const emulatorsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { emulatorId, systemIds } = input;
+      const { emulatorId, systemIds } = input
 
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: emulatorId },
-      });
+      })
 
       if (!emulator) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Emulator not found.',
-        });
+        })
       }
 
       const systems = await ctx.prisma.system.findMany({
         where: { id: { in: systemIds } },
-        select: { id: true }, 
-      });
+        select: { id: true },
+      })
 
       if (systems.length !== systemIds.length) {
-        const foundSystemIds = new Set(systems.map(s => s.id));
-        const invalidIds = systemIds.filter(id => !foundSystemIds.has(id)); 
+        const foundSystemIds = new Set(systems.map((s) => s.id))
+        const invalidIds = systemIds.filter((id) => !foundSystemIds.has(id))
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: `One or more system IDs are invalid: ${invalidIds.join(', ')}.`,
-        });
+        })
       }
-      
+
       await ctx.prisma.emulator.update({
         where: { id: emulatorId },
         data: {
           systems: {
-            set: systemIds.map(id => ({ id })), 
+            set: systemIds.map((id) => ({ id })),
           },
         },
-      });
+      })
 
-      return { success: true, message: 'Supported systems updated successfully.' };
+      return {
+        success: true,
+        message: 'Supported systems updated successfully.',
+      }
     }),
 })
