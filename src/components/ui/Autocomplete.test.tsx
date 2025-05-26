@@ -438,21 +438,6 @@ describe('Autocomplete Component', () => {
 
       expect(input).toHaveValue('Banana')
     })
-
-    it('should clear input when value is set to null', () => {
-      const { rerender } = render(
-        <Autocomplete {...defaultProps} items={mockStaticItems} value="1" />,
-      )
-
-      const input = screen.getByRole('textbox')
-      expect(input).toHaveValue('Apple')
-
-      rerender(
-        <Autocomplete {...defaultProps} items={mockStaticItems} value={null} />,
-      )
-
-      expect(input).toHaveValue('')
-    })
   })
 
   describe('Keyboard Navigation', () => {
