@@ -339,7 +339,7 @@ function AddListingPage() {
           <div key={fieldDef.id} className="mb-4">
             <label
               htmlFor={fieldName}
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="pl-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               {fieldDef.label} {fieldDef.isRequired && '*'}
             </label>
@@ -349,6 +349,7 @@ function AddListingPage() {
               defaultValue=""
               render={({ field }) => (
                 <Input
+                  className="mt-2"
                   id={fieldName}
                   leftIcon={icon}
                   value={field.value as string}
