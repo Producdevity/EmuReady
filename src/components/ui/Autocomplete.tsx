@@ -70,20 +70,14 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const listRef = useRef<HTMLUListElement>(null) // Changed to ul
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  useEffect(() => {
+    // Load initial items from server if loadItems is provided
+    if (!loadItems) return
+    loadItems('').then(setSuggestions)
+  }, [loadItems])
+
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
-    // Only run this effect if value prop is explicitly provided (controlled mode)
-    // In uncontrolled mode, handleOptionClick manages inputValue directly
-    if (value === undefined) {
-      return // Uncontrolled mode - don't interfere with inputValue
-    }
-    
-    if (value === null) {
-      setInputValue('')
-      return
-    }
-    
-    // For static items, always check staticItems first
     if (staticItems && staticItems.length > 0) {
       const staticSelectedItem = staticItems.find(
         (item) => optionToValue(item) === value,
@@ -93,7 +87,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         return
       }
     }
-    
+
     // For loadItems, check suggestions
     if (loadItems) {
       const selectedItem = suggestions.find(
@@ -110,15 +104,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       // If value is present but not in items, clear input
       setInputValue('')
     }
-  }, [
-    value,
-    staticItems,
-    optionToValue,
-    optionToLabel,
-    suggestions,
-    loadItems,
-    // Removed inputValue from dependencies to prevent feedback loop
-  ])
+  }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems])
 
   const performSearch = useCallback(
     async (query: string) => {
@@ -180,7 +166,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         clearTimeout(debounceTimeoutRef.current)
       }
       debounceTimeoutRef.current = setTimeout(() => {
-        performSearch(query)
+        performSearch(query).catch(console.error)
       }, debounceTime)
     },
     [performSearch, debounceTime],
@@ -214,9 +200,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       // Open dropdown and trigger search
       if (!loadItems && staticItems && staticItems.length > 0) {
-        performSearch(inputValue)
+        performSearch(inputValue).catch(console.error)
       } else if (loadItems && inputValue.length >= minCharsToTrigger) {
-        performSearch(inputValue)
+        performSearch(inputValue).catch(console.error)
       }
       return
     }
@@ -268,6 +254,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputFocus = () => {
     if (disabled) return
 
+    if (suggestions.length > 0) setIsOpen(true)
     // For static items, always show results on focus
     if (!loadItems && staticItems && staticItems.length > 0) {
       performSearch(inputValue)
@@ -416,7 +403,10 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       </div>
 
       {isOpen &&
-        (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading) && (
+        (suggestions.length > 0 ||
+          showNoResults ||
+          showMinCharsMessage ||
+          isLoading) && (
           <ul
             ref={listRef}
             id="autocomplete-list"
