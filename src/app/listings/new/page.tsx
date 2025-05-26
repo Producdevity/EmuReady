@@ -31,6 +31,7 @@ import {
   Info,
 } from 'lucide-react'
 import toast from '@/lib/toast'
+import useMounted from '@/hooks/useMounted'
 
 // TODO: share schema with server-side validation
 const listingFormSchema = z.object({
@@ -81,6 +82,7 @@ interface CustomFieldDefinitionWithOptions extends PrismaCustomFieldDefinition {
 
 function AddListingPage() {
   const router = useRouter()
+  const mounted = useMounted()
   const utils = api.useUtils()
 
   const [gameSearchTerm, setGameSearchTerm] = useState('')
@@ -88,6 +90,9 @@ function AddListingPage() {
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
   const [availableEmulators, setAvailableEmulators] = useState<
     EmulatorOption[]
+  >([])
+  const [parsedCustomFields, setParsedCustomFields] = useState<
+    CustomFieldDefinitionWithOptions[]
   >([])
 
   const {
@@ -121,9 +126,6 @@ function AddListingPage() {
       { emulatorId: selectedEmulatorId! },
       { enabled: !!selectedEmulatorId },
     )
-  const [parsedCustomFields, setParsedCustomFields] = useState<
-    CustomFieldDefinitionWithOptions[]
-  >([])
 
   // Autocomplete loadItems functions
   const loadGameItems = useCallback(
@@ -150,13 +152,13 @@ function AddListingPage() {
   const loadEmulatorItems = useCallback(
     async (query: string): Promise<EmulatorOption[]> => {
       setEmulatorSearchTerm(query)
-      if (query.length < 1) return Promise.resolve([])
 
       // If no game is selected, show a message instead of loading emulators
       if (!selectedGame) return Promise.resolve([])
 
       try {
         const result = await utils.emulators.get.fetch({ search: query })
+        console.log('Fetched emulators:', result)
 
         // Get full emulator data with systems for filtering
         const emulatorsWithSystems = await Promise.all(
@@ -165,6 +167,7 @@ function AddListingPage() {
               const fullEmulator = await utils.emulators.byId.fetch({
                 id: emulator.id,
               })
+              console.log('fullEmulator:', fullEmulator)
               return fullEmulator
                 ? {
                     id: fullEmulator.id,
@@ -460,6 +463,8 @@ function AddListingPage() {
     }
   }
 
+  if (!mounted) return null
+
   return (
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -472,12 +477,6 @@ function AddListingPage() {
         >
           {/* Game Selection */}
           <div>
-            <label
-              htmlFor="gameId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Game *
-            </label>
             <Controller
               name="gameId"
               control={control}
@@ -489,16 +488,12 @@ function AddListingPage() {
                   onChange={(value) => {
                     field.onChange(value)
                     // Find and set the selected game
-                    if (value) {
-                      loadGameItems(gameSearchTerm).then((games) => {
-                        const game = games.find((g) => g.id === value)
-                        if (game) {
-                          setSelectedGame(game)
-                        }
-                      })
-                    } else {
-                      setSelectedGame(null)
-                    }
+                    if (!value) return setSelectedGame(null)
+
+                    loadGameItems(gameSearchTerm).then((games) => {
+                      const game = games.find((g) => g.id === value)
+                      if (game) setSelectedGame(game)
+                    })
                   }}
                   loadItems={loadGameItems}
                   optionToValue={(item) => item.id}
@@ -530,12 +525,6 @@ function AddListingPage() {
 
           {/* Device Selection */}
           <div>
-            <label
-              htmlFor="deviceId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Device *
-            </label>
             <Controller
               name="deviceId"
               control={control}
@@ -563,21 +552,23 @@ function AddListingPage() {
 
           {/* Emulator Selection */}
           <div>
-            <label
-              htmlFor="emulatorId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Emulator *
-            </label>
             {!selectedGame ? (
-              <div className="mt-1 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <div className="flex items-center text-sm text-yellow-700 dark:text-yellow-300">
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  <span>
-                    Please select a game first to see compatible emulators
-                  </span>
+              <>
+                <label
+                  htmlFor="emulatorId"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Emulator
+                </label>
+                <div className="mt-1 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center text-sm text-yellow-700 dark:text-yellow-300">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <span>
+                      Please select a game first to see compatible emulators
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </>
             ) : (
               <>
                 <Controller
@@ -626,12 +617,6 @@ function AddListingPage() {
 
           {/* Performance Selection */}
           <div>
-            <label
-              htmlFor="performanceId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Performance *
-            </label>
             <Controller
               name="performanceId"
               control={control}
