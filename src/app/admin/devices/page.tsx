@@ -1,6 +1,7 @@
 'use client'
 
 import toast from '@/lib/toast'
+import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input, LoadingSpinner } from '@/components/ui'
@@ -93,12 +94,12 @@ function AdminDevicesPage() {
         <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg">
           <p>
             You need to create at least one device brand before adding devices.{' '}
-            <a
+            <Link
               href="/admin/brands"
               className="underline hover:text-yellow-800 dark:hover:text-yellow-200"
             >
               Go to Device Brand Management
-            </a>
+            </Link>
           </p>
         </div>
       )}
