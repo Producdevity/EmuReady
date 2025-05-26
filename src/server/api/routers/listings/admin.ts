@@ -7,7 +7,11 @@ import {
   OverrideApprovalStatusSchema,
   DeleteListingSchema,
 } from '@/schemas/listing'
-import { createTRPCRouter, adminProcedure, superAdminProcedure } from '@/server/api/trpc'
+import {
+  createTRPCRouter,
+  adminProcedure,
+  superAdminProcedure,
+} from '@/server/api/trpc'
 
 export const adminRouter = createTRPCRouter({
   getPending: adminProcedure.query(async ({ ctx }) => {
@@ -184,4 +188,4 @@ export const adminRouter = createTRPCRouter({
 
       return { success: true }
     }),
-}) 
+})

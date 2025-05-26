@@ -7,7 +7,12 @@ import {
   CreateVoteSchema,
 } from '@/schemas/listing'
 import { validateCustomFields } from './validation'
-import { createTRPCRouter, publicProcedure, protectedProcedure, authorProcedure } from '@/server/api/trpc'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  authorProcedure,
+} from '@/server/api/trpc'
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure
@@ -231,6 +236,16 @@ export const coreRouter = createTRPCRouter({
               email: true,
             },
           },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: true,
+            },
+            orderBy: {
+              customFieldDefinition: {
+                name: 'asc',
+              },
+            },
+          },
           comments: {
             where: {
               parentId: null,
@@ -339,7 +354,9 @@ export const coreRouter = createTRPCRouter({
       })
 
       if (existingListing) {
-        AppError.conflict('A listing for this game, device, and emulator combination already exists')
+        AppError.conflict(
+          'A listing for this game, device, and emulator combination already exists',
+        )
       }
 
       return ctx.prisma.$transaction(async (tx) => {
@@ -452,4 +469,4 @@ export const coreRouter = createTRPCRouter({
   performanceScales: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } })
   }),
-}) 
+})

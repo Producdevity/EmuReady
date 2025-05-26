@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
-import { ConfirmDialogProvider, useConfirmDialog } from '@/components/ui'
+import { useConfirmDialog } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 
 type CommentsData = RouterOutput['listings']['getSortedComments']

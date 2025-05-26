@@ -19,6 +19,7 @@ This directory contains the modular implementation of the listings router, broke
 ## Module Responsibilities
 
 ### Core Router (`core.ts`)
+
 - `get` - Fetch listings with filtering, sorting, and pagination
 - `byId` - Fetch a single listing by ID
 - `create` - Create new listings with custom field validation
@@ -26,6 +27,7 @@ This directory contains the modular implementation of the listings router, broke
 - `performanceScales` - Fetch performance scale options
 
 ### Comments Router (`comments.ts`)
+
 - `create` - Create new comments and replies
 - `get` - Fetch comments for a listing
 - `getSorted` - Fetch comments with different sorting options
@@ -34,6 +36,7 @@ This directory contains the modular implementation of the listings router, broke
 - `vote` - Vote on comments (upvote/downvote)
 
 ### Admin Router (`admin.ts`)
+
 - `getPending` - Fetch pending listings for approval
 - `approve` - Approve pending listings
 - `reject` - Reject pending listings with notes
@@ -42,6 +45,7 @@ This directory contains the modular implementation of the listings router, broke
 - `delete` - Hard delete listings
 
 ### Validation Module (`validation.ts`)
+
 - `validateCustomFields` - Validates required custom fields based on emulator
 - `validateFieldValue` - Validates individual field values based on type
 
@@ -66,11 +70,11 @@ import { adminRouter } from './listings/admin'
 export const listingsRouter = createTRPCRouter({
   // Core operations
   ...coreRouter._def.procedures,
-  
+
   // Comment operations
   createComment: commentsRouter.create,
   // ... other comment procedures
-  
+
   // Admin operations
   getPending: adminRouter.getPending,
   // ... other admin procedures
@@ -86,4 +90,4 @@ Each module can be tested independently. See `../listings.test.ts` for examples 
 - Consider extracting common database operations into shared utilities
 - Add more granular permission checks
 - Implement caching for frequently accessed data
-- Add metrics and logging for better observability 
+- Add metrics and logging for better observability

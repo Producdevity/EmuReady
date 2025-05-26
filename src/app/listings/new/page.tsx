@@ -178,6 +178,7 @@ function AddListingPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormValues>({
     resolver: zodResolver(currentSchema),
@@ -379,6 +380,78 @@ function AddListingPage() {
 
   const onSubmit = (data: ListingFormValues) => {
     console.log('Submitting listing data:', data)
+
+    // Additional client-side validation for custom fields
+    if (parsedCustomFields.length > 0) {
+      const requiredFields = parsedCustomFields.filter(
+        (field) => field.isRequired,
+      )
+      const missingFields: string[] = []
+
+      for (const field of requiredFields) {
+        const fieldValue = data.customFieldValues?.find(
+          (cfv) => cfv.customFieldDefinitionId === field.id,
+        )
+
+        if (!fieldValue) {
+          missingFields.push(field.label)
+          continue
+        }
+
+        // Check if value is empty based on field type
+        switch (field.type) {
+          case CustomFieldType.TEXT:
+          case CustomFieldType.TEXTAREA:
+          case CustomFieldType.URL:
+            if (
+              !fieldValue.value ||
+              (typeof fieldValue.value === 'string' &&
+                fieldValue.value.trim() === '')
+            ) {
+              missingFields.push(field.label)
+            }
+            break
+          case CustomFieldType.SELECT:
+            if (!fieldValue.value || fieldValue.value === '') {
+              missingFields.push(field.label)
+            }
+            break
+          // BOOLEAN fields are always valid (true or false)
+        }
+      }
+
+      if (missingFields.length > 0) {
+        toast.error(
+          `Please fill in all required fields: ${missingFields.join(', ')}`,
+        )
+
+        // Set errors on the specific fields
+        missingFields.forEach((fieldLabel) => {
+          const field = parsedCustomFields.find((f) => f.label === fieldLabel)
+          if (field) {
+            const fieldIndex = parsedCustomFields.indexOf(field)
+            setError(`customFieldValues.${fieldIndex}.value`, {
+              type: 'required',
+              message: `${fieldLabel} is required`,
+            })
+          }
+        })
+
+        // Scroll to the first error field
+        const firstErrorField = document
+          .querySelector('.text-red-500')
+          ?.closest('.mb-4')
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        }
+
+        return
+      }
+    }
+
     createListingMutation.mutate(data)
   }
 
@@ -443,7 +516,11 @@ function AddListingPage() {
               }}
               render={({ field }) => (
                 <Input
-                  className="mt-2"
+                  className={cn(
+                    'mt-2',
+                    errorText &&
+                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+                  )}
                   id={fieldName}
                   leftIcon={icon}
                   value={field.value as string}
@@ -489,6 +566,10 @@ function AddListingPage() {
               render={({ field }) => (
                 <Input
                   as="textarea"
+                  className={cn(
+                    errorText &&
+                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+                  )}
                   id={fieldName}
                   leftIcon={icon}
                   value={field.value as string}
@@ -566,6 +647,10 @@ function AddListingPage() {
                 <SelectInput
                   label={fieldDef.label}
                   leftIcon={icon}
+                  className={cn(
+                    errorText &&
+                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+                  )}
                   options={
                     fieldDef.parsedOptions?.map((opt) => ({
                       id: opt.value,
@@ -833,15 +918,53 @@ function AddListingPage() {
               </div>
             )}
 
+          {/* Form Validation Summary */}
+          {Object.keys(errors).length > 0 && (
+            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                    Please fix the following errors:
+                  </h3>
+                  <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    {errors.gameId && <li>• {errors.gameId.message}</li>}
+                    {errors.deviceId && <li>• {errors.deviceId.message}</li>}
+                    {errors.emulatorId && (
+                      <li>• {errors.emulatorId.message}</li>
+                    )}
+                    {errors.performanceId && (
+                      <li>• {errors.performanceId.message}</li>
+                    )}
+                    {errors.notes && <li>• {errors.notes.message}</li>}
+                    {errors.customFieldValues && (
+                      <>
+                        {Array.isArray(errors.customFieldValues) ? (
+                          errors.customFieldValues.map((error, index) =>
+                            error?.value?.message ? (
+                              <li key={index}>• {error.value.message}</li>
+                            ) : null,
+                          )
+                        ) : (
+                          <li>• {errors.customFieldValues.message}</li>
+                        )}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end pt-8">
             <Button
               type="submit"
               variant="primary"
               isLoading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || Object.keys(errors).length > 0}
               size="lg"
             >
-              Create Listing
+              {isSubmitting ? 'Creating...' : 'Create Listing'}
             </Button>
           </div>
         </form>

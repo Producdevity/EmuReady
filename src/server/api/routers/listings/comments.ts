@@ -9,7 +9,11 @@ import {
   GetSortedCommentsSchema,
   CreateVoteComment,
 } from '@/schemas/listing'
-import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+} from '@/server/api/trpc'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure
@@ -383,4 +387,4 @@ export const commentsRouter = createTRPCRouter({
         return voteResult
       })
     }),
-}) 
+})

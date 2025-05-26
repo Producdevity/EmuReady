@@ -72,9 +72,9 @@ describe('Listings Router Custom Field Validation', () => {
     // Mock no existing listing
     mockPrisma.listing.findFirst.mockResolvedValue(null)
 
-        // Import the router after mocking
+    // Import the router after mocking
     const { coreRouter } = await import('./listings/core')
-    
+
     // Create a caller with the mocked context
     const caller = coreRouter.createCaller(mockContext as any)
 
@@ -89,7 +89,7 @@ describe('Listings Router Custom Field Validation', () => {
 
     // Should throw an error for missing required field
     await expect(caller.create(listingData)).rejects.toThrow(
-      "Required field missing: Required Field",
+      'Required field missing: Required Field',
     )
   })
 

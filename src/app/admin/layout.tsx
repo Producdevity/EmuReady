@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
-import { ConfirmDialogProvider, LoadingSpinner } from '@/components/ui'
+import { LoadingSpinner } from '@/components/ui'
 import { adminNav, superAdminNav } from './data'
 
 function AdminLayout(props: PropsWithChildren) {

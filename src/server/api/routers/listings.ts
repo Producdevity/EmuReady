@@ -6,7 +6,7 @@ import { adminRouter } from './listings/admin'
 export const listingsRouter = createTRPCRouter({
   // Core listing operations
   ...coreRouter._def.procedures,
-  
+
   // Comment operations
   createComment: commentsRouter.create,
   getComments: commentsRouter.get,
@@ -14,7 +14,7 @@ export const listingsRouter = createTRPCRouter({
   editComment: commentsRouter.edit,
   deleteComment: commentsRouter.delete,
   voteComment: commentsRouter.vote,
-  
+
   // Admin operations
   getPending: adminRouter.getPending,
   approveListing: adminRouter.approve,
