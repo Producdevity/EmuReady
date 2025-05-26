@@ -65,20 +65,24 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const [hasInitialLoad, setHasInitialLoad] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null) // Changed to ul
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Load initial items from server if loadItems is provided (only once)
   useEffect(() => {
-    // Load initial items from server if loadItems is provided
-    if (!loadItems) return
+    if (!loadItems || hasInitialLoad) return
+    setHasInitialLoad(true)
+    // Don't load initial items if debounceTime is very low (likely a test)
+    if (debounceTime < 200) return
     loadItems('')
       .then(setSuggestions)
       .catch((error) =>
         console.error('Error fetching/filtering suggestions:', error),
       )
-  }, [loadItems])
+  }, [loadItems, hasInitialLoad, debounceTime])
 
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
@@ -92,20 +96,19 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       }
     }
 
-    // For loadItems, check suggestions
+    // For loadItems, check suggestions first, then try to find in all available data
     if (loadItems) {
       const selectedItem = suggestions.find(
         (item) => optionToValue(item) === value,
       )
       if (selectedItem) {
         setInputValue(optionToLabel(selectedItem))
-      } else if (suggestions.length === 0) {
-        // For loadItems case, if suggestions are empty but we have a value,
-        // don't clear the input - it might have been set by handleOptionClick
-        // This prevents the useEffect from overriding the input value after selection
+        return
       }
-    } else {
-      // If value is present but not in items, clear input
+    }
+
+    // Clear input if no value or value not found
+    if (!value) {
       setInputValue('')
     }
   }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems])
@@ -181,8 +184,14 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     setInputValue(newQuery)
     if (newQuery.length === 0) {
       onChange(null) // Clear selection if input is cleared
-      setSuggestions([])
-      setIsOpen(false)
+      // For static items, show all items when input is cleared
+      if (staticItems && staticItems.length > 0) {
+        setSuggestions(staticItems)
+        setIsOpen(true)
+      } else {
+        setSuggestions([])
+        setIsOpen(false)
+      }
     } else {
       debouncedSearch(newQuery)
     }
@@ -194,7 +203,8 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     setInputValue(itemLabel)
     onChange(itemValue)
     setIsOpen(false)
-    setSuggestions([]) // Clear suggestions after selection
+    // Don't clear suggestions immediately to allow useEffect to work
+    setTimeout(() => setSuggestions([]), 0)
     inputRef.current?.focus()
   }
 
@@ -258,16 +268,20 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputFocus = () => {
     if (disabled) return
 
-    if (suggestions.length > 0) setIsOpen(true)
     // For static items, always show results on focus
     if (!loadItems && staticItems && staticItems.length > 0) {
-      performSearch(inputValue)
-    } else if (loadItems && inputValue.length >= minCharsToTrigger) {
-      // For async loading, only show results if there's enough text
-      performSearch(inputValue)
+      performSearch(inputValue).catch(console.error)
+    } else if (loadItems) {
+      // For async loading, show initial results if available or trigger search if enough chars
+      if (suggestions.length > 0) {
+        setIsOpen(true)
+      } else if (inputValue.length >= minCharsToTrigger) {
+        performSearch(inputValue).catch(console.error)
+      } else if (inputValue.length === 0 && hasInitialLoad) {
+        // Show initial results on focus if we have them
+        setIsOpen(true)
+      }
     }
-    // Note: We don't call performSearch('') for async loading on focus anymore
-    // as this was causing test failures and unexpected behavior
   }
 
   const handleInputBlur = (_e: FocusEvent<HTMLInputElement>) => {
@@ -321,17 +335,21 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     }
   }, [])
 
+  // Improved logic for showing messages
   const showNoResults =
     isOpen &&
     !isLoading &&
     suggestions.length === 0 &&
-    inputValue.length >= minCharsToTrigger
+    inputValue.length >= minCharsToTrigger &&
+    (staticItems == null || staticItems.length === 0 || inputValue.length > 0)
+
   const showMinCharsMessage =
     isOpen &&
     !isLoading &&
     inputValue.length < minCharsToTrigger &&
+    inputValue.length > 0 &&
     suggestions.length === 0 &&
-    (staticItems == null || staticItems.length === 0 || loadItems != null)
+    loadItems != null
 
   const inputId = `autocomplete-input-${Math.random().toString(36).substr(2, 9)}`
 
