@@ -5,7 +5,7 @@ import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import Link from 'next/link'
 import { api } from '@/lib/api'
-import { Button } from '@/components/ui'
+import { Button, useConfirmDialog } from '@/components/ui'
 import { Settings, Pencil } from 'lucide-react'
 
 const actionButtonClasses =
@@ -14,6 +14,7 @@ const actionButtonClasses =
 function AdminEmulatorsPage() {
   const { data: emulators, refetch } = api.emulators.get.useQuery()
   const deleteEmulator = api.emulators.delete.useMutation()
+  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -31,8 +32,13 @@ function AdminEmulatorsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    // TODO: use a confirmation modal instead of browser confirm
-    if (!confirm('Delete this emulator?')) return
+    console.log('Deleting emulator with ID:', id)
+    const confirmed = await confirm({
+      title: 'Delete this emulator?',
+      description: 'This action cannot be undone.',
+    })
+    if (!confirmed) return
+
     try {
       await deleteEmulator.mutateAsync({ id })
       refetch()

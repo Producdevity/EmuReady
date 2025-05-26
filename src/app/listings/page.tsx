@@ -14,6 +14,8 @@ import {
   SuccessRateBar,
   LoadingSpinner,
   SortableHeader,
+  Button,
+  useConfirmDialog,
 } from '@/components/ui'
 import ListingFilters, {
   type SelectInputEvent,
@@ -27,6 +29,7 @@ import {
 function ListingsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const confirm = useConfirmDialog()
 
   const [systemId, setSystemId] = useState(searchParams.get('systemId') ?? '')
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
@@ -149,7 +152,13 @@ function ListingsPage() {
     })
   }
 
-  const confirmDelete = (id: string) => {
+  const confirmDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Delete this listing?',
+      description: 'This action cannot be undone.',
+    })
+    if (!confirmed) return
+
     if (deleteConfirmId !== id) return setDeleteConfirmId(id)
 
     deleteListing.mutate({ id })
@@ -182,18 +191,14 @@ function ListingsPage() {
       />
 
       {/* Main Content - Listings */}
-      <section className="flex-1 p-4 overflow-x-auto">
+      <section className="flex-1 overflow-x-auto py-6 px-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Game Listings
           </h1>
-          {/*TODO: create "Add New Item" component*/}
-          <Link
-            href="/listings/new"
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-          >
-            Add New Listing
-          </Link>
+          <Button asChild variant="fancy">
+            <Link href="/listings/new">Add Listing</Link>
+          </Button>
         </div>
 
         <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">

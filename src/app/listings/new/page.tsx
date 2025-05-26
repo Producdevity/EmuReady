@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { twMerge } from 'tailwind-merge'
 import { z } from 'zod'
 import { api } from '@/lib/api'
 import {
@@ -34,6 +33,7 @@ import {
 } from 'lucide-react'
 import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
+import { cn } from '@/lib/utils'
 
 // TODO: share schema with server-side validation
 const listingFormSchema = z.object({
@@ -235,7 +235,6 @@ function AddListingPage() {
 
       try {
         const result = await utils.emulators.get.fetch({ search: query })
-        console.log('Fetched emulators:', result)
 
         // Get full emulator data with systems for filtering
         const emulatorsWithSystems = await Promise.all(
@@ -379,6 +378,7 @@ function AddListingPage() {
   })
 
   const onSubmit = (data: ListingFormValues) => {
+    console.log('Submitting listing data:', data)
     createListingMutation.mutate(data)
   }
 
@@ -722,7 +722,7 @@ function AddListingPage() {
                   selectedGame &&
                   emulatorSearchTerm.length >= 1 && (
                     <div
-                      className={twMerge(
+                      className={cn(
                         'p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800',
                         emulatorInputFocus ? 'mt-14' : 'mt-2',
                       )}
