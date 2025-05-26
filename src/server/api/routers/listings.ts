@@ -1,6 +1,6 @@
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { TRPCError } from '@trpc/server'
-import { Prisma, ListingApprovalStatus } from '@orm'
+import { Prisma, ListingApprovalStatus, CustomFieldType } from '@orm'
 import {
   createTRPCRouter,
   publicProcedure,
@@ -370,6 +370,73 @@ export const listingsRouter = createTRPCRouter({
       }
 
       return ctx.prisma.$transaction(async (tx) => {
+        // Get all custom field definitions for this emulator to validate required fields
+        const customFieldDefinitions = await tx.customFieldDefinition.findMany({
+          where: { emulatorId },
+        })
+
+        // Validate required custom fields
+        const requiredFields = customFieldDefinitions.filter(
+          (field) => field.isRequired,
+        )
+
+        for (const requiredField of requiredFields) {
+          const providedValue = customFieldValues?.find(
+            (cfv) => cfv.customFieldDefinitionId === requiredField.id,
+          )
+
+          if (!providedValue) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Required custom field '${requiredField.label}' is missing`,
+            })
+          }
+
+          // Validate the value based on field type
+          const { value } = providedValue
+          switch (requiredField.type) {
+            case CustomFieldType.TEXT:
+            case CustomFieldType.TEXTAREA:
+            case CustomFieldType.URL:
+              if (
+                !value ||
+                (typeof value === 'string' && value.trim() === '')
+              ) {
+                throw new TRPCError({
+                  code: 'BAD_REQUEST',
+                  message: `Required custom field '${requiredField.label}' cannot be empty`,
+                })
+              }
+              break
+            case CustomFieldType.SELECT:
+              if (!value || value === '') {
+                throw new TRPCError({
+                  code: 'BAD_REQUEST',
+                  message: `Required custom field '${requiredField.label}' must have a selected value`,
+                })
+              }
+              // Validate that the selected value is one of the valid options
+              if (Array.isArray(requiredField.options)) {
+                const validValues = (
+                  requiredField.options as Array<{
+                    value: string
+                    label: string
+                  }>
+                ).map((opt) => opt.value)
+                if (!validValues.includes(String(value))) {
+                  throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: `Invalid value for custom field '${requiredField.label}'. Must be one of: ${validValues.join(', ')}`,
+                  })
+                }
+              }
+              break
+            case CustomFieldType.BOOLEAN:
+              // Boolean fields are always valid (true or false)
+              break
+          }
+        }
+
         const newListing = await tx.listing.create({
           data: {
             gameId,
@@ -394,8 +461,34 @@ export const listingsRouter = createTRPCRouter({
                 message: `Invalid custom field definition ID: ${cfv.customFieldDefinitionId} for emulator ${emulatorId}`,
               })
             }
-            // TODO: Add more specific validation for cfv.value based on fieldDef.type if needed here
-            // For now, assuming client sends compatible JSON structure
+
+            // Additional validation for non-required fields
+            if (!fieldDef.isRequired) {
+              switch (fieldDef.type) {
+                case CustomFieldType.SELECT:
+                  // For non-required SELECT fields, validate the value if provided
+                  if (
+                    cfv.value &&
+                    cfv.value !== '' &&
+                    Array.isArray(fieldDef.options)
+                  ) {
+                    const validValues = (
+                      fieldDef.options as Array<{
+                        value: string
+                        label: string
+                      }>
+                    ).map((opt) => opt.value)
+                    if (!validValues.includes(String(cfv.value))) {
+                      throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: `Invalid value for custom field '${fieldDef.label}'. Must be one of: ${validValues.join(', ')}`,
+                      })
+                    }
+                  }
+                  break
+              }
+            }
+
             await tx.listingCustomFieldValue.create({
               data: {
                 listingId: newListing.id,

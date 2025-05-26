@@ -53,6 +53,77 @@ const listingFormSchema = z.object({
     .optional(),
 })
 
+// Dynamic schema builder for custom field validation
+const createDynamicListingSchema = (
+  customFields: CustomFieldDefinitionWithOptions[],
+) => {
+  const baseSchema = z.object({
+    gameId: z.string().min(1, 'Game is required'),
+    deviceId: z.string().min(1, 'Device is required'),
+    emulatorId: z.string().min(1, 'Emulator is required'),
+    performanceId: z.coerce.number().min(1, 'Performance rating is required'),
+    notes: z.string().optional(),
+    customFieldValues: z
+      .array(
+        z.object({
+          customFieldDefinitionId: z.string(),
+          value: z.any(),
+        }),
+      )
+      .optional(),
+  })
+
+  if (customFields.length === 0) {
+    return baseSchema
+  }
+
+  // Add custom validation for custom field values
+  return baseSchema.refine(
+    (data) => {
+      if (!data.customFieldValues) return false
+
+      // Check each required custom field
+      for (const field of customFields) {
+        if (!field.isRequired) continue
+
+        const fieldValue = data.customFieldValues.find(
+          (cfv) => cfv.customFieldDefinitionId === field.id,
+        )
+
+        if (!fieldValue) return false
+
+        // Validate based on field type
+        switch (field.type) {
+          case CustomFieldType.TEXT:
+          case CustomFieldType.TEXTAREA:
+          case CustomFieldType.URL:
+            if (
+              !fieldValue.value ||
+              (typeof fieldValue.value === 'string' &&
+                fieldValue.value.trim() === '')
+            ) {
+              return false
+            }
+            break
+          case CustomFieldType.SELECT:
+            if (!fieldValue.value || fieldValue.value === '') {
+              return false
+            }
+            break
+          case CustomFieldType.BOOLEAN:
+            // Boolean fields are always valid (true or false)
+            break
+        }
+      }
+      return true
+    },
+    {
+      message: 'All required custom fields must be filled',
+      path: ['customFieldValues'],
+    },
+  )
+}
+
 type ListingFormValues = z.infer<typeof listingFormSchema>
 
 interface GameOption extends AutocompleteOptionBase {
@@ -98,6 +169,9 @@ function AddListingPage() {
     CustomFieldDefinitionWithOptions[]
   >([])
 
+  const [currentSchema, setCurrentSchema] =
+    useState<z.ZodType<ListingFormValues>>(listingFormSchema)
+
   const {
     control,
     register,
@@ -106,7 +180,7 @@ function AddListingPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormValues>({
-    resolver: zodResolver(listingFormSchema),
+    resolver: zodResolver(currentSchema),
     defaultValues: {
       gameId: '',
       deviceId: '',
@@ -264,6 +338,10 @@ function AddListingPage() {
       )
       setParsedCustomFields(parsed)
 
+      // Update the schema with custom field validation
+      const dynamicSchema = createDynamicListingSchema(parsed)
+      setCurrentSchema(dynamicSchema)
+
       const currentCustomValues = watch('customFieldValues') ?? []
       const newCustomValues = parsed.map((field) => {
         const existingValueObj = currentCustomValues.find(
@@ -347,6 +425,22 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=""
+              rules={{
+                required: fieldDef.isRequired
+                  ? `${fieldDef.label} is required`
+                  : false,
+                validate: fieldDef.isRequired
+                  ? (value) => {
+                      if (
+                        !value ||
+                        (typeof value === 'string' && value.trim() === '')
+                      ) {
+                        return `${fieldDef.label} is required`
+                      }
+                      return true
+                    }
+                  : undefined,
+              }}
               render={({ field }) => (
                 <Input
                   className="mt-2"
@@ -376,6 +470,22 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=""
+              rules={{
+                required: fieldDef.isRequired
+                  ? `${fieldDef.label} is required`
+                  : false,
+                validate: fieldDef.isRequired
+                  ? (value) => {
+                      if (
+                        !value ||
+                        (typeof value === 'string' && value.trim() === '')
+                      ) {
+                        return `${fieldDef.label} is required`
+                      }
+                      return true
+                    }
+                  : undefined,
+              }}
               render={({ field }) => (
                 <Input
                   as="textarea"
@@ -439,6 +549,19 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue={fieldDef.parsedOptions?.[0]?.value ?? ''}
+              rules={{
+                required: fieldDef.isRequired
+                  ? `${fieldDef.label} is required`
+                  : false,
+                validate: fieldDef.isRequired
+                  ? (value) => {
+                      if (!value || value === '') {
+                        return `${fieldDef.label} is required`
+                      }
+                      return true
+                    }
+                  : undefined,
+              }}
               render={({ field }) => (
                 <SelectInput
                   label={fieldDef.label}

@@ -91,6 +91,39 @@ describe('Listing Schemas', () => {
       })
       expect(missingValueResult.success).toBe(true)
     })
+
+    it('should accept various value types for custom fields', () => {
+      const testCases = [
+        { value: 'string value' },
+        { value: 123 },
+        { value: true },
+        { value: false },
+        { value: null },
+        { value: { nested: 'object' } },
+        { value: ['array', 'values'] },
+      ]
+
+      testCases.forEach((testCase) => {
+        const result = CreateListingSchema.safeParse({
+          ...validData,
+          customFieldValues: [
+            {
+              customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174003',
+              ...testCase,
+            },
+          ],
+        })
+        expect(result.success).toBe(true)
+      })
+    })
+
+    it('should handle empty customFieldValues array', () => {
+      const result = CreateListingSchema.safeParse({
+        ...validData,
+        customFieldValues: [],
+      })
+      expect(result.success).toBe(true)
+    })
   })
 
   describe('GetListingsSchema', () => {
