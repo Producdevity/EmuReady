@@ -403,12 +403,4 @@ function CommentThread(props: Props) {
   )
 }
 
-function WrappedCommentThread(props: Props) {
-  return (
-    <ConfirmDialogProvider>
-      <CommentThread {...props} />
-    </ConfirmDialogProvider>
-  )
-}
-
-export default WrappedCommentThread
+export default CommentThread

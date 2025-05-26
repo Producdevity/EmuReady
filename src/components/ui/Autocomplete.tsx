@@ -10,7 +10,7 @@ import {
   type FocusEvent,
   type KeyboardEvent,
 } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
 // Generic Option type to allow flexibility for the consumer
 export interface AutocompleteOptionBase {
@@ -351,13 +351,11 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     suggestions.length === 0 &&
     loadItems != null
 
-  const inputId = `autocomplete-input-${Math.random().toString(36).substr(2, 9)}`
-
   return (
-    <div className={twMerge('relative', className)}>
+    <div className={cn('relative', className)}>
       {label && (
         <label
-          htmlFor={inputId}
+          htmlFor={label}
           className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           {label}
@@ -371,9 +369,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         )}
         <input
           ref={inputRef}
-          id={inputId}
+          id={label}
           type="text"
-          className={twMerge(
+          className={cn(
             'w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
             leftIcon ? 'pl-10' : '',
             rightIcon || isLoading ? 'pr-10' : '',
@@ -461,7 +459,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
                     id={`option-${itemValue}`}
                     role="option"
                     aria-selected={idx === highlightedIndex}
-                    className={twMerge(
+                    className={cn(
                       'flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl',
                       idx === highlightedIndex
                         ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'

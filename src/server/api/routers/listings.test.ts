@@ -72,11 +72,11 @@ describe('Listings Router Custom Field Validation', () => {
     // Mock no existing listing
     mockPrisma.listing.findFirst.mockResolvedValue(null)
 
-    // Import the router after mocking
-    const { listingsRouter } = await import('./listings')
-
+        // Import the router after mocking
+    const { coreRouter } = await import('./listings/core')
+    
     // Create a caller with the mocked context
-    const caller = listingsRouter.createCaller(mockContext as any)
+    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test data without required custom field
     const listingData = {
@@ -89,7 +89,7 @@ describe('Listings Router Custom Field Validation', () => {
 
     // Should throw an error for missing required field
     await expect(caller.create(listingData)).rejects.toThrow(
-      "Required custom field 'Required Field' is missing",
+      "Required field missing: Required Field",
     )
   })
 
@@ -124,8 +124,8 @@ describe('Listings Router Custom Field Validation', () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
     mockPrisma.listing.findFirst.mockResolvedValue(null)
 
-    const { listingsRouter } = await import('./listings')
-    const caller = listingsRouter.createCaller(mockContext as any)
+    const { coreRouter } = await import('./listings/core')
+    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test with empty string value
     const listingData = {
@@ -181,8 +181,8 @@ describe('Listings Router Custom Field Validation', () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
     mockPrisma.listing.findFirst.mockResolvedValue(null)
 
-    const { listingsRouter } = await import('./listings')
-    const caller = listingsRouter.createCaller(mockContext as any)
+    const { coreRouter } = await import('./listings/core')
+    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test with invalid option value
     const listingData = {
@@ -236,8 +236,8 @@ describe('Listings Router Custom Field Validation', () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
     mockPrisma.listing.findFirst.mockResolvedValue(null)
 
-    const { listingsRouter } = await import('./listings')
-    const caller = listingsRouter.createCaller(mockContext as any)
+    const { coreRouter } = await import('./listings/core')
+    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test with valid data
     const listingData = {

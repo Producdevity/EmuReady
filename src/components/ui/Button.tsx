@@ -6,10 +6,14 @@ import { cn } from '@/lib/utils'
 // Legacy types for backward compatibility
 export type ButtonSize = 'sm' | 'md' | 'lg'
 export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
+  | 'default'
+  | 'destructive'
   | 'outline'
+  | 'secondary'
   | 'ghost'
+  | 'link'
+  | 'fancy'
+  | 'primary'
   | 'danger'
 
 // Extended shadcn variants with legacy mappings
@@ -30,6 +34,9 @@ export const buttonVariants = cva(
         ghost:
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',
+
+        fancy:
+          'px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105',
 
         // Legacy variants mapped to modern design tokens
         primary:

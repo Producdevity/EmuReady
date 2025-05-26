@@ -6,7 +6,7 @@ import {
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
 export type InputAs = 'input' | 'select' | 'textarea'
 
@@ -34,7 +34,7 @@ const Input = forwardRef<HTMLElement, Props>(
 
     return (
       <div
-        className={twMerge(
+        className={cn(
           'relative flex items-center bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-200',
           className,
         )}
@@ -48,7 +48,7 @@ const Input = forwardRef<HTMLElement, Props>(
           <input
             ref={ref as Ref<HTMLInputElement>}
             type="text"
-            className={twMerge(
+            className={cn(
               commonInputStyling,
               'py-2 px-3',
               leftIcon ? 'pl-10' : '',
@@ -60,7 +60,7 @@ const Input = forwardRef<HTMLElement, Props>(
         {as === 'select' && (
           <select
             ref={ref as Ref<HTMLSelectElement>}
-            className={twMerge(
+            className={cn(
               commonInputStyling,
               'appearance-none',
               'py-2 px-3',
@@ -75,7 +75,7 @@ const Input = forwardRef<HTMLElement, Props>(
         {as === 'textarea' && (
           <textarea
             ref={ref as Ref<HTMLTextAreaElement>}
-            className={twMerge(
+            className={cn(
               commonInputStyling,
               'py-2 px-3',
               leftIcon ? 'pl-10' : '',

@@ -1,8 +1,8 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import React, { type ReactNode, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { twMerge } from 'tailwind-merge'
 
 interface Props {
   isOpen: boolean
@@ -47,10 +47,10 @@ function Modal({ onClose, ...props }: Props) {
       onClick={onClose}
     >
       <div
-        className={twMerge(
+        className={cn(
           'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden w-full transform transition-all duration-300 ease-out animate-slide-up',
           sizeClasses[size],
-          props.className ?? '',
+          props.className,
         )}
         onClick={(ev) => ev.stopPropagation()}
       >

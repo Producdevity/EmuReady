@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { sanitizeString } from '@/utils/validation'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
 interface Props {
   listingId: string
@@ -80,9 +80,9 @@ function CommentForm(props: Props) {
         <textarea
           value={content}
           onChange={(ev) => setContent(ev.target.value)}
-          className={twMerge(
+          className={cn(
             'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white',
-            props.isReply ? 'text-sm' : '',
+            props.isReply && 'text-sm',
           )}
           rows={rows}
           placeholder={
