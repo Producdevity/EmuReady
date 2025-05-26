@@ -20,7 +20,10 @@ export interface AutocompleteOptionBase {
 
 interface AutocompleteProps<T extends AutocompleteOptionBase> {
   value?: string | null // The actual selected value (e.g., an ID)
-  onChange: (value: string | null) => void // Callback with the new value
+  onChange: (value: string | null) => void // Callback with the new selected value
+
+  onFocus?: () => void
+  onBlur?: () => void
 
   // Data handling: Provide either static items or a function to load them
   items?: T[] // Static list of items
@@ -45,6 +48,8 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
 function Autocomplete<T extends AutocompleteOptionBase>({
   value,
   onChange,
+  onFocus,
+  onBlur,
   items: staticItems,
   loadItems,
   optionToValue,
@@ -75,7 +80,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   useEffect(() => {
     if (!loadItems || hasInitialLoad) return
     setHasInitialLoad(true)
-    // Don't load initial items if debounceTime is very low (likely a test)
+
     if (debounceTime < 200) return
     loadItems('')
       .then(setSuggestions)
@@ -91,26 +96,18 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         (item) => optionToValue(item) === value,
       )
       if (staticSelectedItem) {
-        setInputValue(optionToLabel(staticSelectedItem))
-        return
+        return setInputValue(optionToLabel(staticSelectedItem))
       }
     }
 
     // For loadItems, check suggestions first, then try to find in all available data
-    if (loadItems) {
-      const selectedItem = suggestions.find(
-        (item) => optionToValue(item) === value,
-      )
-      if (selectedItem) {
-        setInputValue(optionToLabel(selectedItem))
-        return
-      }
-    }
+    if (!loadItems) return
 
-    // Clear input if no value or value not found
-    if (!value) {
-      setInputValue('')
-    }
+    const selectedItem = suggestions.find(
+      (item) => optionToValue(item) === value,
+    )
+    if (!selectedItem) return
+    setInputValue(optionToLabel(selectedItem))
   }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems])
 
   const performSearch = useCallback(
@@ -268,6 +265,8 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputFocus = () => {
     if (disabled) return
 
+    onFocus?.()
+
     // For static items, always show results on focus
     if (!loadItems && staticItems && staticItems.length > 0) {
       performSearch(inputValue).catch(console.error)
@@ -285,6 +284,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   }
 
   const handleInputBlur = (_e: FocusEvent<HTMLInputElement>) => {
+    onBlur?.()
     setTimeout(() => {
       if (
         listRef.current &&

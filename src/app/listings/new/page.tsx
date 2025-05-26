@@ -1,9 +1,11 @@
 'use client'
 
+import GitHubIcon from '@/components/icons/GitHubIcon'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { twMerge } from 'tailwind-merge'
 import { z } from 'zod'
 import { api } from '@/lib/api'
 import {
@@ -85,6 +87,7 @@ function AddListingPage() {
   const mounted = useMounted()
   const utils = api.useUtils()
 
+  const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
@@ -167,7 +170,6 @@ function AddListingPage() {
               const fullEmulator = await utils.emulators.byId.fetch({
                 id: emulator.id,
               })
-              console.log('fullEmulator:', fullEmulator)
               return fullEmulator
                 ? {
                     id: fullEmulator.id,
@@ -212,9 +214,7 @@ function AddListingPage() {
       // Try to find the game in recent searches or fetch it
       loadGameItems(gameSearchTerm).then((games) => {
         const game = games.find((g) => g.id === selectedGameId)
-        if (game) {
-          setSelectedGame(game)
-        }
+        if (game) setSelectedGame(game)
       })
     } else if (!selectedGameId) {
       setSelectedGame(null)
@@ -581,8 +581,11 @@ function AddListingPage() {
                       value={field.value}
                       onChange={(value) => {
                         field.onChange(value)
+                        // reset, setting customFieldValues is handled in useEffect
                         setValue('customFieldValues', [])
                       }}
+                      onFocus={() => setEmulatorInputFocus(true)}
+                      onBlur={() => setEmulatorInputFocus(false)}
                       loadItems={loadEmulatorItems}
                       optionToValue={(item) => item.id}
                       optionToLabel={(item) => item.name}
@@ -594,14 +597,29 @@ function AddListingPage() {
                 {availableEmulators.length === 0 &&
                   selectedGame &&
                   emulatorSearchTerm.length >= 1 && (
-                    <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div
+                      className={twMerge(
+                        'p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800',
+                        emulatorInputFocus ? 'mt-14' : 'mt-2',
+                      )}
+                    >
                       <div className="flex items-center text-sm text-orange-700 dark:text-orange-300">
                         <AlertCircle className="w-4 h-4 mr-2" />
                         <span>
                           No emulators found that support{' '}
                           <strong>{selectedGame.system.name}</strong>. Try a
-                          different search term or contact an admin to add
-                          support.
+                          different search term, or request to add your emulator
+                          by opening a GitHub issue.
+                          <a
+                            href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Request Emulator on GitHub"
+                            className="ml-1 underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                          >
+                            <GitHubIcon className="inline w-4 h-4 mr-1" />
+                            Request Emulator
+                          </a>
                         </span>
                       </div>
                     </div>
@@ -687,9 +705,7 @@ function AddListingPage() {
                     </span>
                   )}
                 </h2>
-                {parsedCustomFields.map((fieldDef, index) =>
-                  renderCustomField(fieldDef, index),
-                )}
+                {parsedCustomFields.map(renderCustomField)}
               </div>
             )}
 
