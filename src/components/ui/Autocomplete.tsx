@@ -57,7 +57,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   rightIcon,
   disabled = false,
   className = '',
-  minCharsToTrigger = 2,
+  minCharsToTrigger = 0,
   debounceTime = 300,
 }: AutocompleteProps<T>) {
   const [inputValue, setInputValue] = useState('')
@@ -73,7 +73,11 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   useEffect(() => {
     // Load initial items from server if loadItems is provided
     if (!loadItems) return
-    loadItems('').then(setSuggestions)
+    loadItems('')
+      .then(setSuggestions)
+      .catch((error) =>
+        console.error('Error fetching/filtering suggestions:', error),
+      )
   }, [loadItems])
 
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
