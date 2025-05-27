@@ -110,7 +110,7 @@ function ListingDetailsClient(props: Props) {
         <Card className="p-8 shadow-2xl rounded-3xl border-0 bg-white dark:bg-gray-900">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Game Info */}
-            <div className="flex-1">
+            <div className="flex-1 pr-8 border-r border-gray-200 dark:border-gray-700 ">
               <h1 className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-300 mb-2">
                 {props.listing?.game.title}
               </h1>

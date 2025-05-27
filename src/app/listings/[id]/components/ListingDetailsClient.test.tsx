@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import ListingDetailsClient, { type Listing } from './ListingDetailsClient'
 
-// Mock the API
 vi.mock('@/lib/api', () => ({
   api: {
     useUtils: () => ({
@@ -15,24 +14,20 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-// Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }))
 
-// Mock next/image
 vi.mock('next/image', () => ({
   default: ({ alt, ...props }: any) => <img alt={alt} {...props} />,
 }))
 
-// Mock next/link
 vi.mock('next/link', () => ({
   default: ({ children, href }: any) => <a href={href}>{children}</a>,
 }))
 
-// Mock UI components
 vi.mock('@/components/ui', () => ({
   Card: ({ children, className }: any) => (
     <div className={className}>{children}</div>
@@ -42,7 +37,6 @@ vi.mock('@/components/ui', () => ({
   ),
 }))
 
-// Mock other components
 vi.mock('./VoteButtons', () => ({
   default: () => <div data-testid="vote-buttons">Vote Buttons</div>,
 }))
