@@ -1,3 +1,4 @@
+import type { Prisma } from '@orm'
 import {
   createTRPCRouter,
   publicProcedure,
@@ -16,14 +17,40 @@ export const deviceBrandsRouter = createTRPCRouter({
   get: publicProcedure
     .input(GetDeviceBrandsSchema)
     .query(async ({ ctx, input }) => {
-      const { search, limit } = input ?? {}
+      const { search, limit, sortField, sortDirection } = input ?? {}
+
+      // Build orderBy based on sortField and sortDirection
+      const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
+
+      if (sortField && sortDirection) {
+        switch (sortField) {
+          case 'name':
+            orderBy.push({ name: sortDirection })
+            break
+          case 'devicesCount':
+            orderBy.push({ devices: { _count: sortDirection } })
+            break
+        }
+      }
+
+      // Default ordering if no sort specified
+      if (!orderBy.length) {
+        orderBy.push({ name: 'asc' })
+      }
 
       return ctx.prisma.deviceBrand.findMany({
         where: search
           ? { name: { contains: search, mode: 'insensitive' } }
           : undefined,
+        include: {
+          _count: {
+            select: {
+              devices: true,
+            },
+          },
+        },
         take: limit,
-        orderBy: [{ name: 'asc' }],
+        orderBy,
       })
     }),
 

@@ -2,13 +2,26 @@
 
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, SortableHeader } from '@/components/ui'
+import { Search } from 'lucide-react'
+import { useConfirmDialog } from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
+import { isEmpty } from 'remeda'
+
+type DeviceBrandSortField = 'name' | 'devicesCount'
 
 function AdminBrandsPage() {
-  const { data: brands, refetch } = api.deviceBrands.get.useQuery()
+  const table = useAdminTable<DeviceBrandSortField>()
+
+  const { data: brands, refetch } = api.deviceBrands.get.useQuery({
+    search: isEmpty(table.search) ? undefined : table.search,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
+  })
   const createBrand = api.deviceBrands.create.useMutation()
   const updateBrand = api.deviceBrands.update.useMutation()
   const deleteBrand = api.deviceBrands.delete.useMutation()
+  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -50,8 +63,14 @@ function AdminBrandsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    // TODO: use a confirmation modal instead of browser confirm // eg:   const confirm = useConfirmDialog()
-    if (!confirm('Delete this brand?')) return
+    const confirmed = await confirm({
+      title: 'Delete Brand',
+      description:
+        'Are you sure you want to delete this brand? This action cannot be undone.',
+    })
+
+    if (!confirmed) return
+
     try {
       await deleteBrand.mutateAsync({ id })
       refetch()
@@ -66,36 +85,70 @@ function AdminBrandsPage() {
         <h1 className="text-2xl font-bold">Manage Device Brands</h1>
         <Button onClick={() => openModal()}>Add Brand</Button>
       </div>
+
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            placeholder="Search brands..."
+            value={table.search}
+            onChange={table.handleSearchChange}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                Brand Name
-              </th>
+              <SortableHeader
+                label="Brand Name"
+                field="name"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Devices"
+                field="devicesCount"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {brands?.map((brand: { id: string; name: string }) => (
-              <tr
-                key={brand.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <td className="px-4 py-2">{brand.name}</td>
-                <td className="px-4 py-2 flex gap-2 justify-end">
-                  <Button variant="secondary" onClick={() => openModal(brand)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => handleDelete(brand.id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {brands?.map(
+              (brand: {
+                id: string
+                name: string
+                _count: { devices: number }
+              }) => (
+                <tr
+                  key={brand.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <td className="px-4 py-2">{brand.name}</td>
+                  <td className="px-4 py-2">{brand._count.devices} devices</td>
+                  <td className="px-4 py-2 flex gap-2 justify-end">
+                    <Button
+                      variant="secondary"
+                      onClick={() => openModal(brand)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDelete(brand.id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>

@@ -1,21 +1,27 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
-import { Badge, Button, LoadingSpinner } from '@/components/ui'
-import {
-  UserCircleIcon,
-  PencilIcon,
-  TrashIcon,
-  ShieldCheckIcon,
-} from '@heroicons/react/24/outline'
-import UserRoleModal from './components/UserRoleModal'
-import { Role } from '@orm'
-import { formatDate } from '@/utils/date'
-import { hasPermission } from '@/utils/permissions'
+import { Button, Input, SortableHeader } from '@/components/ui'
+import { Search } from 'lucide-react'
+import { formatDateTime } from '@/utils/date'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
+import UserRoleModal from './components/UserRoleModal'
+import { useConfirmDialog } from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
+import { isEmpty } from 'remeda'
+import { type RouterOutput } from '@/types/trpc'
+import { type Role } from '@orm'
+
+type User = RouterOutput['users']['getAll'][number]
+type UserSortField =
+  | 'name'
+  | 'email'
+  | 'role'
+  | 'createdAt'
+  | 'listingsCount'
+  | 'votesCount'
+  | 'commentsCount'
 
 interface UserForModal {
   id: string
@@ -25,189 +31,175 @@ interface UserForModal {
 }
 
 function AdminUsersPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const table = useAdminTable<UserSortField>()
   const [userToEdit, setUserToEdit] = useState<UserForModal | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  if (status === 'loading') return <LoadingSpinner text="Loading..." />
-
-  if (!session || !hasPermission(session.user.role, Role.SUPER_ADMIN)) {
-    router.push('/admin')
-    return null
-  }
-
-  const { data: users, isLoading } = api.users.getAll.useQuery()
-
-  const deleteUserMutation = api.users.delete.useMutation({
-    onSuccess: () => {
-      // TODO: Show success toast
-      // TODO: Show error toast if delete fails
-      // TODO: handle error
-      api.useUtils().users.getAll.invalidate().catch(console.error)
-    },
+  const { data: users, refetch } = api.users.getAll.useQuery({
+    search: isEmpty(table.search) ? undefined : table.search,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
   })
+  const deleteUser = api.users.delete.useMutation()
+  const confirm = useConfirmDialog()
 
-  const handleDeleteUser = (user: UserForModal) => {
-    const userName = user.name ?? 'this user'
+  const handleDeleteUser = async (userId: string) => {
+    const confirmed = await confirm({
+      title: 'Delete User',
+      description:
+        'Are you sure you want to delete this user? This action cannot be undone.',
+    })
 
-    // TODO: Show nice confirmation modal
-    if (!window.confirm(`Are you sure you want to delete user ${userName}?`)) {
-      return
+    if (!confirmed) return
+
+    try {
+      await deleteUser.mutateAsync({ userId })
+      refetch()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete user.')
     }
-    deleteUserMutation.mutate({ userId: user.id })
   }
 
-  const openRoleModal = (user: UserForModal) => {
-    setUserToEdit(user)
+  const openRoleModal = (user: User) => {
+    setUserToEdit({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    })
     setIsModalOpen(true)
   }
 
+  const closeRoleModal = () => {
+    setIsModalOpen(false)
+    setUserToEdit(null)
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Users Management
-        </h1>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">User Management</h1>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <LoadingSpinner text="Loading users..." />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            placeholder="Search users..."
+            value={table.search}
+            onChange={table.handleSearchChange}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+          <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+            <tr>
+              <SortableHeader
+                label="Name"
+                field="name"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Email"
+                field="email"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Role"
+                field="role"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Listings"
+                field="listingsCount"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Votes"
+                field="votesCount"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Comments"
+                field="commentsCount"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Joined"
+                field="createdAt"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <th className="px-4 py-2"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {users?.map((user: User) => (
+              <tr
+                key={user.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <td className="px-4 py-2 font-medium">{user.name}</td>
+                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
+                  {user.email}
+                </td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(
+                      user.role,
+                    )}`}
                   >
-                    User
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    {user.role}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
+                  {user._count.listings}
+                </td>
+                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
+                  {user._count.votes}
+                </td>
+                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
+                  {user._count.comments}
+                </td>
+                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
+                  {formatDateTime(user.createdAt)}
+                </td>
+                <td className="px-4 py-2 flex gap-2 justify-end">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => openRoleModal(user)}
                   >
-                    Email
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    Edit Role
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDeleteUser(user.id)}
                   >
-                    Role
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Created
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Activity
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {users?.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          {/* User image is not available from the API for now, so just show the placeholder */}
-                          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <UserCircleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.name ?? 'Unnamed User'}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            ID: {user.id.substring(0, 8)}...
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {user.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge
-                        variant={getRoleBadgeColor(user.role)}
-                        className="inline-flex items-center gap-1"
-                      >
-                        <ShieldCheckIcon className="h-3 w-3" />
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white flex gap-2">
-                        <span title="Listings">
-                          {user._count.listings}{' '}
-                          <span className="text-gray-500 dark:text-gray-400">
-                            listings
-                          </span>
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span title="Comments">
-                          {user._count.comments}{' '}
-                          <span className="text-gray-500 dark:text-gray-400">
-                            comments
-                          </span>
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {user.id === session.user.id ? (
-                        <span className="text-gray-500 dark:text-gray-400 italic">
-                          (Current user)
-                        </span>
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openRoleModal(user)}
-                            className="inline-flex items-center gap-1"
-                          >
-                            <PencilIcon className="h-3.5 w-3.5" />
-                            Edit Role
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user)}
-                            className="inline-flex items-center gap-1"
-                          >
-                            <TrashIcon className="h-3.5 w-3.5" />
-                            Delete
-                          </Button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {userToEdit && (
@@ -215,8 +207,8 @@ function AdminUsersPage() {
           user={userToEdit}
           isOpen={isModalOpen}
           onClose={() => {
-            setIsModalOpen(false)
-            setUserToEdit(null)
+            closeRoleModal()
+            refetch()
           }}
         />
       )}

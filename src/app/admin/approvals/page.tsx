@@ -1,25 +1,42 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle, XCircle, ExternalLink, Eye } from 'lucide-react'
+import { CheckCircle, XCircle, ExternalLink, Eye, Search } from 'lucide-react'
 import Link from 'next/link'
 import toast from '@/lib/toast'
-import { Button, Modal, Input } from '@/components/ui'
+import { Button, Modal, Input, SortableHeader } from '@/components/ui'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
+import useAdminTable from '@/hooks/useAdminTable'
+import { isEmpty } from 'remeda'
 
 type PendingListing = RouterOutput['listings']['getPending'][number]
+type PendingListingSortField =
+  | 'game.title'
+  | 'game.system.name'
+  | 'device'
+  | 'emulator.name'
+  | 'author.name'
+  | 'createdAt'
 
 function AdminApprovalsPage() {
+  const table = useAdminTable<PendingListingSortField>()
+
   const {
     data: pendingListings,
     isLoading,
     refetch,
-  } = api.listings.getPending.useQuery(undefined, {
-    // Added undefined as input since getPending doesn't expect one, and options object for potential future use
-    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes to allow for refetch on focus/reconnect
-  })
+  } = api.listings.getPending.useQuery(
+    {
+      search: isEmpty(table.search) ? undefined : table.search,
+      sortField: table.sortField ?? undefined,
+      sortDirection: table.sortDirection ?? undefined,
+    },
+    {
+      staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes to allow for refetch on focus/reconnect
+    },
+  )
   const utils = api.useUtils()
 
   const [showRejectionModal, setShowRejectionModal] = useState(false)
@@ -94,53 +111,71 @@ function AdminApprovalsPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
+      <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-white">
         Listing Approvals
       </h1>
       <p className="text-gray-600 dark:text-gray-400 mb-8">
         Review and approve or reject new game listings submitted by users.
       </p>
 
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            placeholder="Search pending listings..."
+            value={table.search}
+            onChange={table.handleSearchChange}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Game
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                System
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Device
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Emulator
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Author
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Submitted
-              </th>
+              <SortableHeader
+                label="Game"
+                field="game.title"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="System"
+                field="game.system.name"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Device"
+                field="device"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Emulator"
+                field="emulator.name"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Author"
+                field="author.name"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
+              <SortableHeader
+                label="Submitted"
+                field="createdAt"
+                currentSortField={table.sortField}
+                currentSortDirection={table.sortDirection}
+                onSort={table.handleSort}
+              />
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
