@@ -91,15 +91,11 @@ function ListingsPage() {
     approvalStatus: ListingApprovalStatus.APPROVED,
   }
 
-  const { data, isLoading, error, refetch } =
-    api.listings.get.useQuery(filterParams)
-
-  const listings = data?.listings ?? []
-  const pagination = data?.pagination
+  const listingsQuery = api.listings.get.useQuery(filterParams)
 
   const deleteListing = api.listings.delete.useMutation({
     onSuccess: () => {
-      refetch().catch(console.error)
+      listingsQuery.refetch().catch(console.error)
       setDeleteConfirmId(null)
     },
   })
@@ -184,7 +180,7 @@ function ListingsPage() {
     deleteListing.mutate({ id })
   }
 
-  if (error)
+  if (listingsQuery?.error)
     return (
       <div className="p-8 text-center text-red-500">
         Failed to load listings.
@@ -228,7 +224,7 @@ function ListingsPage() {
         </div>
 
         <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
-          {isLoading ? (
+          {listingsQuery.isLoading ? (
             <LoadingSpinner text="Loading listings..." />
           ) : (
             <table className="table-auto md:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
@@ -305,7 +301,7 @@ function ListingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {listings.map((listing) => (
+                {listingsQuery.data?.listings.map((listing) => (
                   <tr
                     key={listing.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -401,25 +397,27 @@ function ListingsPage() {
             </table>
           )}
 
-          {!isLoading && listings.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-xl text-gray-500 dark:text-gray-400">
-                No listings found matching the criteria.
-              </p>
-            </div>
-          )}
+          {!listingsQuery.isLoading &&
+            listingsQuery.data?.listings.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-xl text-gray-500 dark:text-gray-400">
+                  No listings found matching the criteria.
+                </p>
+              </div>
+            )}
         </div>
 
-        {pagination && pagination.pages > 1 && (
-          <Pagination
-            currentPage={page}
-            totalPages={pagination.pages}
-            onPageChange={(newPage) => {
-              setPage(newPage)
-              updateQuery({ page: newPage })
-            }}
-          />
-        )}
+        {listingsQuery.data?.pagination &&
+          listingsQuery.data?.pagination?.pages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={listingsQuery.data.pagination.pages}
+              onPageChange={(newPage) => {
+                setPage(newPage)
+                updateQuery({ page: newPage })
+              }}
+            />
+          )}
       </section>
     </main>
   )
