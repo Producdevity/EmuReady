@@ -33,6 +33,6 @@ const themes: ThemeOption[] = [
     label: 'Dark',
     colorClass: 'text-blue-400',
   },
-]
+] as const
 
 export default themes

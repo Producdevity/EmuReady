@@ -8,6 +8,7 @@ import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
+import storageKeys from '@/data/storageKeys'
 import {
   Badge,
   Pagination,
@@ -16,7 +17,11 @@ import {
   SortableHeader,
   Button,
   useConfirmDialog,
+  ColumnVisibilityControl,
 } from '@/components/ui'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 import ListingFilters, {
   type SelectInputEvent,
 } from './components/ListingFilters'
@@ -25,6 +30,17 @@ import {
   type SortDirection,
   type SortField,
 } from './types'
+
+const LISTINGS_COLUMNS: ColumnDefinition[] = [
+  { key: 'game', label: 'Game', defaultVisible: true },
+  { key: 'system', label: 'System', defaultVisible: true },
+  { key: 'device', label: 'Device', defaultVisible: true },
+  { key: 'emulator', label: 'Emulator', defaultVisible: true },
+  { key: 'performance', label: 'Performance', defaultVisible: true },
+  { key: 'successRate', label: 'Success Rate', defaultVisible: true },
+  { key: 'author', label: 'Author', defaultVisible: false },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
 
 function ListingsPage() {
   const router = useRouter()
@@ -49,6 +65,10 @@ function ListingsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     (searchParams.get('sortDirection') as SortDirection) ?? null,
   )
+
+  const columnVisibility = useColumnVisibility(LISTINGS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.listings,
+  })
 
   const { data: session } = useSession()
   const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
@@ -196,9 +216,15 @@ function ListingsPage() {
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Game Listings
           </h1>
-          <Button asChild variant="fancy">
-            <Link href="/listings/new">Add Listing</Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <ColumnVisibilityControl
+              columns={LISTINGS_COLUMNS}
+              columnVisibility={columnVisibility}
+            />
+            <Button asChild variant="fancy">
+              <Link href="/listings/new">Add Listing</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
@@ -208,58 +234,74 @@ function ListingsPage() {
             <table className="table-auto md:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
                 <tr>
-                  <SortableHeader
-                    label="Game"
-                    field="game.title"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="System"
-                    field="game.system.name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Device"
-                    field="device"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Emulator"
-                    field="emulator.name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Performance"
-                    field="performance.label"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Success Rate"
-                    field="successRate"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Author"
-                    field="author.name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Actions
-                  </th>
+                  {columnVisibility.isColumnVisible('game') && (
+                    <SortableHeader
+                      label="Game"
+                      field="game.title"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('system') && (
+                    <SortableHeader
+                      label="System"
+                      field="game.system.name"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('device') && (
+                    <SortableHeader
+                      label="Device"
+                      field="device"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('emulator') && (
+                    <SortableHeader
+                      label="Emulator"
+                      field="emulator.name"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('performance') && (
+                    <SortableHeader
+                      label="Performance"
+                      field="performance.label"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('successRate') && (
+                    <SortableHeader
+                      label="Success Rate"
+                      field="successRate"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('author') && (
+                    <SortableHeader
+                      label="Author"
+                      field="author.name"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -268,75 +310,91 @@ function ListingsPage() {
                     key={listing.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                      <Link
-                        href={`/games/${listing.game.id}`}
-                        className="hover:text-blue-600 dark:hover:text-blue-400"
-                      >
-                        {listing.game.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.game.system?.name ?? 'Unknown'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.device
-                        ? `${listing.device.brand.name} ${listing.device.modelName}`
-                        : 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.emulator?.name ?? 'N/A'}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge
-                        variant={
-                          listing.performance?.label === 'Perfect'
-                            ? 'success'
-                            : listing.performance?.label === 'Great'
-                              ? 'info'
-                              : listing.performance?.label === 'Playable'
-                                ? 'warning'
-                                : 'danger'
-                        }
-                      >
-                        {listing.performance?.label ?? 'N/A'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <SuccessRateBar
-                        rate={listing.successRate * 100}
-                        voteCount={listing._count.votes}
-                      />
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.author?.name ?? 'Anonymous'}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="flex items-center gap-2 flex-col">
+                    {columnVisibility.isColumnVisible('game') && (
+                      <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
                         <Link
-                          href={`/listings/${listing.id}`}
-                          className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                          href={`/games/${listing.game.id}`}
+                          className="hover:text-blue-600 dark:hover:text-blue-400"
                         >
-                          <EyeIcon className="w-4 h-4" /> View
+                          {listing.game.title}
                         </Link>
-
-                        {isAdmin && (
-                          <button
-                            onClick={() => confirmDelete(listing.id)}
-                            className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
-                              deleteConfirmId === listing.id
-                                ? 'bg-orange-700 text-white hover:bg-orange-800'
-                                : 'bg-red-600 text-white hover:bg-red-700'
-                            }`}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('system') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.game.system?.name ?? 'Unknown'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('device') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.device
+                          ? `${listing.device.brand.name} ${listing.device.modelName}`
+                          : 'N/A'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('emulator') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.emulator?.name ?? 'N/A'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('performance') && (
+                      <td className="px-4 py-2">
+                        <Badge
+                          variant={
+                            listing.performance?.label === 'Perfect'
+                              ? 'success'
+                              : listing.performance?.label === 'Great'
+                                ? 'info'
+                                : listing.performance?.label === 'Playable'
+                                  ? 'warning'
+                                  : 'danger'
+                          }
+                        >
+                          {listing.performance?.label ?? 'N/A'}
+                        </Badge>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('successRate') && (
+                      <td className="px-4 py-2">
+                        <SuccessRateBar
+                          rate={listing.successRate * 100}
+                          voteCount={listing._count.votes}
+                        />
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('author') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.author?.name ?? 'Anonymous'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2 flex-col">
+                          <Link
+                            href={`/listings/${listing.id}`}
+                            className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
                           >
-                            <TrashIcon className="w-4 h-4" />
-                            {deleteConfirmId === listing.id
-                              ? 'Confirm'
-                              : 'Delete'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                            <EyeIcon className="w-4 h-4" /> View
+                          </Link>
+
+                          {isAdmin && (
+                            <button
+                              onClick={() => confirmDelete(listing.id)}
+                              className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
+                                deleteConfirmId === listing.id
+                                  ? 'bg-orange-700 text-white hover:bg-orange-800'
+                                  : 'bg-red-600 text-white hover:bg-red-700'
+                              }`}
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                              {deleteConfirmId === listing.id
+                                ? 'Confirm'
+                                : 'Delete'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
