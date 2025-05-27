@@ -331,7 +331,6 @@ export const coreRouter = createTRPCRouter({
       } = input
       const authorId = ctx.session.user.id
 
-      console.log('Attempting to create listing with authorId:', authorId)
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: authorId },
         select: { id: true },
