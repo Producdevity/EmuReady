@@ -26,15 +26,6 @@ export const gamesRouter = createTRPCRouter({
       sortField,
       sortDirection,
     } = input ?? {}
-    console.log('GET GAMESSSSS', {
-      systemId,
-      search,
-      limit,
-      offset,
-      page,
-      sortField,
-      sortDirection,
-    })
 
     // Calculate offset from page if provided
     const actualOffset = page ? (page - 1) * limit : offset
