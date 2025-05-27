@@ -4,6 +4,11 @@ export const adminNav = [
     label: 'Systems',
     description: 'Manage game systems and platforms.',
   },
+  {
+    href: '/admin/games',
+    label: 'Games',
+    description: 'Manage games and view related data.',
+  },
   { href: '/admin/brands', label: 'Brands', description: 'Manage brands.' },
   {
     href: '/admin/devices',
