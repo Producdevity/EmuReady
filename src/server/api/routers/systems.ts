@@ -1,3 +1,4 @@
+import type { Prisma } from '@orm'
 import {
   adminProcedure,
   createTRPCRouter,
@@ -14,12 +15,31 @@ import {
 
 export const systemsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
-    const { search } = input ?? {}
+    const { search, sortField, sortDirection } = input ?? {}
+
+    // Build orderBy based on sortField and sortDirection
+    const orderBy: Prisma.SystemOrderByWithRelationInput[] = []
+
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'name':
+          orderBy.push({ name: sortDirection })
+          break
+        case 'gamesCount':
+          orderBy.push({ games: { _count: sortDirection } })
+          break
+      }
+    }
+
+    // Default ordering if no sort specified
+    if (!orderBy.length) {
+      orderBy.push({ name: 'asc' })
+    }
 
     return await ctx.prisma.system.findMany({
       where: search
         ? {
-            name: { contains: search },
+            name: { contains: search, mode: 'insensitive' },
           }
         : undefined,
       include: {
@@ -29,9 +49,7 @@ export const systemsRouter = createTRPCRouter({
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy,
     })
   }),
 

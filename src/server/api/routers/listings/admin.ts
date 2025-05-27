@@ -1,9 +1,11 @@
+import type { Prisma } from '@orm'
 import { ListingApprovalStatus } from '@orm'
 import { ResourceError } from '@/lib/errors'
 import {
   ApproveListingSchema,
   RejectListingSchema,
   GetProcessedSchema,
+  GetPendingListingsSchema,
   OverrideApprovalStatusSchema,
   DeleteListingSchema,
 } from '@/schemas/listing'
@@ -14,21 +16,120 @@ import {
 } from '@/server/api/trpc'
 
 export const adminRouter = createTRPCRouter({
-  getPending: adminProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.listing.findMany({
-      where: { status: ListingApprovalStatus.PENDING },
-      include: {
-        game: { include: { system: true } },
-        device: { include: { brand: true } },
-        emulator: true,
-        author: { select: { id: true, name: true, email: true } },
-        performance: true,
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    })
-  }),
+  getPending: adminProcedure
+    .input(GetPendingListingsSchema)
+    .query(async ({ ctx, input }) => {
+      const { search, sortField, sortDirection } = input ?? {}
+
+      // Build where clause for search
+      let where: Prisma.ListingWhereInput = {
+        status: ListingApprovalStatus.PENDING,
+      }
+
+      if (search && search.trim() !== '') {
+        const searchTerm = search.trim()
+        where = {
+          ...where,
+          OR: [
+            {
+              game: {
+                title: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              game: {
+                system: {
+                  name: {
+                    contains: searchTerm,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+            {
+              device: {
+                modelName: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              device: {
+                brand: {
+                  name: {
+                    contains: searchTerm,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+            {
+              emulator: {
+                name: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              author: {
+                name: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
+        }
+      }
+
+      // Build orderBy based on sortField and sortDirection
+      const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
+
+      if (sortField && sortDirection) {
+        switch (sortField) {
+          case 'game.title':
+            orderBy.push({ game: { title: sortDirection } })
+            break
+          case 'game.system.name':
+            orderBy.push({ game: { system: { name: sortDirection } } })
+            break
+          case 'device':
+            orderBy.push({ device: { modelName: sortDirection } })
+            break
+          case 'emulator.name':
+            orderBy.push({ emulator: { name: sortDirection } })
+            break
+          case 'author.name':
+            orderBy.push({ author: { name: sortDirection } })
+            break
+          case 'createdAt':
+            orderBy.push({ createdAt: sortDirection })
+            break
+        }
+      }
+
+      // Default ordering if no sort specified
+      if (!orderBy.length) {
+        orderBy.push({ createdAt: 'asc' })
+      }
+
+      return ctx.prisma.listing.findMany({
+        where,
+        include: {
+          game: { include: { system: true } },
+          device: { include: { brand: true } },
+          emulator: true,
+          author: { select: { id: true, name: true, email: true } },
+          performance: true,
+        },
+        orderBy,
+      })
+    }),
 
   approve: adminProcedure
     .input(ApproveListingSchema)
