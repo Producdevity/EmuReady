@@ -1,3 +1,6 @@
+/**
+ * @documentation /docs/ERROR_HANDLING.md
+ */
 import { TRPCError } from '@trpc/server'
 
 // Define error types as constants for better type safety
