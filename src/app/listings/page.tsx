@@ -73,10 +73,10 @@ function ListingsPage() {
   const { data: session } = useSession()
   const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
-  const { data: systems } = api.systems.get.useQuery()
-  const { data: devices } = api.devices.get.useQuery()
-  const { data: emulators } = api.emulators.get.useQuery()
-  const { data: performanceScales } = api.listings.performanceScales.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
+  const devicesQuery = api.devices.get.useQuery()
+  const emulatorsQuery = api.emulators.get.useQuery()
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
     systemId: systemId || undefined,
@@ -199,10 +199,10 @@ function ListingsPage() {
         emulatorId={emulatorId}
         performanceId={performanceId}
         searchTerm={search}
-        systems={systems ?? []}
-        devices={devices ?? []}
-        emulators={emulators ?? []}
-        performanceScales={performanceScales ?? []}
+        systems={systemsQuery.data ?? []}
+        devices={devicesQuery.data ?? []}
+        emulators={emulatorsQuery.data ?? []}
+        performanceScales={performanceScalesQuery.data ?? []}
         onSystemChange={handleFilterChange}
         onDeviceChange={handleDeviceChange}
         onEmulatorChange={handleEmulatorChange}
