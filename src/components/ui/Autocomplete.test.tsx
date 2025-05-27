@@ -49,7 +49,7 @@ const gameProps = {
   onChange: vi.fn(),
 }
 
-describe('Autocomplete Component', () => {
+describe('Autocomplete', () => {
   let user: ReturnType<typeof userEvent.setup>
 
   beforeEach(() => {
@@ -282,7 +282,6 @@ describe('Autocomplete Component', () => {
 
       const input = screen.getByRole('textbox')
 
-      // Clear any initial calls
       mockLoadItems.mockClear()
 
       // Simulate rapid typing by firing change events quickly
@@ -308,8 +307,11 @@ describe('Autocomplete Component', () => {
     })
 
     it('should handle loadItems errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      mockLoadItems.mockRejectedValue(new Error('Network error'))
+      const consoleErrorMock = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
+      mockLoadItems.mockRejectedValueOnce(new Error('Network error'))
 
       render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} />)
 
@@ -317,13 +319,13 @@ describe('Autocomplete Component', () => {
       await user.type(input, 'ap')
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
+        expect(consoleErrorMock).toHaveBeenCalledWith(
           'Error fetching/filtering suggestions:',
           expect.any(Error),
         )
       })
 
-      consoleSpy.mockRestore()
+      consoleErrorMock.mockRestore()
     })
 
     it('should show minimum characters message', async () => {
