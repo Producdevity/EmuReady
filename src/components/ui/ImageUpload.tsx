@@ -4,6 +4,7 @@ import { useState, useRef, type ChangeEvent } from 'react'
 import Image from 'next/image'
 import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { LoadingSpinner } from '@/components/ui'
+import getErrorMessage from '@/utils/getErrorMessage'
 import http from '@/rest/http'
 
 interface UploadResponseSuccess {
@@ -69,9 +70,7 @@ function ImageUpload(props: Props) {
       setImage(data.imageUrl)
       props.onImageUploaded(data.imageUrl)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'An error occurred during upload',
-      )
+      setError(getErrorMessage(err, 'An error occurred during upload'))
       console.error('Upload error:', err)
     } finally {
       setIsUploading(false)

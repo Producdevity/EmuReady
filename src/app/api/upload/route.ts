@@ -1,11 +1,11 @@
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import { authOptions } from '@/server/auth'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 function isImage(file: File) {
   return file.type.startsWith('image/')
@@ -53,10 +53,12 @@ export async function POST(request: NextRequest) {
     const imageUrl = `/uploads/games/${fileName}`
 
     return NextResponse.json({ success: true, imageUrl })
-  } catch (error: unknown) {
+  } catch (error) {
     console.error('Error uploading file:', error)
-    const errorMessage =
-      error instanceof Error ? error.message : 'An error occurred during upload'
+    const errorMessage = getErrorMessage(
+      error,
+      'An error occurred during upload',
+    )
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

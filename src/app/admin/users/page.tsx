@@ -1,17 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { api } from '@/lib/api'
-import { Button, Input, SortableHeader } from '@/components/ui'
 import { Search } from 'lucide-react'
+import { api } from '@/lib/api'
+import { isEmpty } from 'remeda'
+import { Button, Input, SortableHeader } from '@/components/ui'
 import { formatDateTime } from '@/utils/date'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
 import UserRoleModal from './components/UserRoleModal'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
-import { isEmpty } from 'remeda'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterOutput } from '@/types/trpc'
 import { type Role } from '@orm'
+import toast from '@/lib/toast'
 
 type User = RouterOutput['users']['getAll'][number]
 type UserSortField =
@@ -56,7 +58,7 @@ function AdminUsersPage() {
       await deleteUser.mutateAsync({ userId })
       refetch()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete user.')
+      toast.error(`Failed to delete user: ${getErrorMessage(err)}`)
     }
   }
 

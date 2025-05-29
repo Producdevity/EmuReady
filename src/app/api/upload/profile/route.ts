@@ -1,10 +1,10 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
 import { authOptions } from '@/server/auth'
 import { prisma } from '@/server/db'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,10 +98,12 @@ export async function POST(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, max-age=0')
 
     return response
-  } catch (error: unknown) {
+  } catch (error) {
     console.error('Error uploading profile image:', error)
-    const errorMessage =
-      error instanceof Error ? error.message : 'An error occurred during upload'
+    const errorMessage = getErrorMessage(
+      error,
+      'An error occurred during upload',
+    )
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

@@ -1,10 +1,11 @@
 'use client'
 
-import toast from '@/lib/toast'
-import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import { api } from '@/lib/api'
 import { Button, Input, LoadingSpinner } from '@/components/ui'
+import toast from '@/lib/toast'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 function AdminDevicesPage() {
   const {
@@ -59,7 +60,7 @@ function AdminDevicesPage() {
       refetch()
       closeModal()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save device.')
+      setError(getErrorMessage(err, 'Failed to save device.'))
     }
   }
 
@@ -70,11 +71,7 @@ function AdminDevicesPage() {
       await deleteDevice.mutateAsync({ id })
       refetch()
     } catch (err) {
-      toast.error(
-        `Failed to delete device: ${
-          err instanceof Error ? err.message : 'Unknown error occurred.'
-        }`,
-      )
+      toast.error(`Failed to delete device: ${getErrorMessage(err)}`)
     }
   }
 

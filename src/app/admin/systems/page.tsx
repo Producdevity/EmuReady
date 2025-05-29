@@ -1,13 +1,14 @@
 'use client'
 
-import toast from '@/lib/toast'
 import { useState, type FormEvent } from 'react'
+import { isEmpty } from 'remeda'
+import { Search } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button, Input, SortableHeader } from '@/components/ui'
-import { Search } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
-import { isEmpty } from 'remeda'
+import getErrorMessage from '@/utils/getErrorMessage'
+import toast from '@/lib/toast'
 
 type SystemSortField = 'name' | 'gamesCount'
 
@@ -58,7 +59,7 @@ function AdminSystemsPage() {
       refetch()
       closeModal()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save system.')
+      setError(getErrorMessage(err, 'Failed to save system.'))
     }
   }
 
@@ -75,9 +76,7 @@ function AdminSystemsPage() {
       await deleteSystem.mutateAsync({ id })
       refetch()
     } catch (err) {
-      toast.error(
-        `Failed to delete system: ${err instanceof Error ? err.message : 'Unknown error'}`,
-      )
+      toast.error(`Failed to delete system: ${getErrorMessage(err)}`)
     }
   }
 

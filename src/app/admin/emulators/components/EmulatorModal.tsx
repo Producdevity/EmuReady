@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 interface Props {
   editId: string | null
@@ -34,7 +35,7 @@ function EmulatorModal(props: Props) {
 
       props.onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save emulator.')
+      setError(getErrorMessage(err, 'Failed to save emulator.'))
     }
   }
 
