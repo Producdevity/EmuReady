@@ -3,6 +3,7 @@
  */
 'use client'
 
+import getErrorMessage from '@/utils/getErrorMessage'
 import toggleInSet from '@/utils/toggleInSet'
 import { useState, useEffect, useCallback } from 'react'
 
@@ -37,15 +38,15 @@ function useColumnVisibility(
     // If we have a storage key, try to load from localStorage
     if (opts?.storageKey && typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem(opts?.storageKey)
+        const stored = localStorage.getItem(opts.storageKey)
         if (stored) {
           const parsedColumns = JSON.parse(stored) as string[]
           return new Set(parsedColumns)
         }
       } catch (error) {
-        console.warn(
+        console.error(
           'Failed to load column visibility from localStorage:',
-          error,
+          getErrorMessage(error),
         )
       }
     }
@@ -74,7 +75,10 @@ function useColumnVisibility(
           JSON.stringify([...visibleColumns]),
         )
       } catch (error) {
-        console.warn('Failed to save column visibility to localStorage:', error)
+        console.error(
+          'Failed to save column visibility to localStorage:',
+          error,
+        )
       }
     }
   }, [visibleColumns, opts?.storageKey])

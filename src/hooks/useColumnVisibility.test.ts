@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+} from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -22,13 +30,15 @@ describe('useColumnVisibility', () => {
     { key: 'optional', label: 'Optional' }, // defaultVisible undefined (should default to true)
   ]
 
+  let consoleErrorMock: MockInstance
+
   beforeEach(() => {
     vi.clearAllMocks()
+    consoleErrorMock = vi.spyOn(console, 'error')
   })
 
   afterEach(() => {
-    localStorageMock.getItem.mockClear()
-    localStorageMock.setItem.mockClear()
+    vi.restoreAllMocks()
   })
 
   describe('initialization', () => {
@@ -75,11 +85,10 @@ describe('useColumnVisibility', () => {
     })
 
     it('should handle localStorage errors gracefully', () => {
+      consoleErrorMock.mockImplementation(() => {})
       localStorageMock.getItem.mockImplementation(() => {
         throw new Error('localStorage error')
       })
-
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       const { result } = renderHook(() =>
         useColumnVisibility(mockColumns, {
@@ -87,7 +96,7 @@ describe('useColumnVisibility', () => {
         }),
       )
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(consoleErrorMock).toHaveBeenCalledWith(
         'Failed to load column visibility from localStorage:',
         expect.any(Error),
       )
@@ -95,8 +104,6 @@ describe('useColumnVisibility', () => {
       // Should fall back to default behavior
       expect(result.current.isColumnVisible('name')).toBe(true)
       expect(result.current.isColumnVisible('role')).toBe(false)
-
-      consoleSpy.mockRestore()
     })
   })
 
@@ -261,28 +268,23 @@ describe('useColumnVisibility', () => {
     })
 
     it('should handle localStorage save errors gracefully', () => {
+      consoleErrorMock.mockImplementation(() => {})
       localStorageMock.setItem.mockImplementation(() => {
         throw new Error('localStorage save error')
       })
 
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
       const { result } = renderHook(() =>
-        useColumnVisibility(mockColumns, {
-          storageKey: 'test-columns',
-        }),
+        useColumnVisibility(mockColumns, { storageKey: 'test-columns' }),
       )
 
       act(() => {
         result.current.toggleColumn('name')
       })
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(consoleErrorMock).toHaveBeenCalledWith(
         'Failed to save column visibility to localStorage:',
         expect.any(Error),
       )
-
-      consoleSpy.mockRestore()
     })
 
     it('should not use localStorage when no storageKey is provided', () => {
