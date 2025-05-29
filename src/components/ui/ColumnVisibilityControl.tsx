@@ -143,7 +143,7 @@ function ColumnVisibilityControl(props: Props) {
                       onChange={() =>
                         props.columnVisibility.toggleColumn(column.key)
                       }
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(ev) => ev.stopPropagation()}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                   )}
