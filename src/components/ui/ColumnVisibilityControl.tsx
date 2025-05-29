@@ -48,6 +48,10 @@ function ColumnVisibilityControl(props: Props) {
 
   const toggleableColumns = props.columns.filter((col) => !col.alwaysVisible)
 
+  const displayCount = props.columnVisibility.isHydrated
+    ? `${visibleCount}/${props.columns.length}`
+    : '...'
+
   return (
     <div className={`relative ${props.className ?? ''}`} ref={dropdownRef}>
       <Button
@@ -57,7 +61,7 @@ function ColumnVisibilityControl(props: Props) {
         className="flex items-center gap-2"
       >
         <EyeIcon className="h-4 w-4" />
-        Columns ({visibleCount}/{props.columns.length})
+        Columns ({displayCount})
         <ChevronDownIcon
           className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />

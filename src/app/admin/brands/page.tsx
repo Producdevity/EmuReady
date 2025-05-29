@@ -5,15 +5,33 @@ import { isEmpty } from 'remeda'
 import { Search } from 'lucide-react'
 import toast from '@/lib/toast'
 import { api } from '@/lib/api'
-import { Button, Input, SortableHeader } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
+import {
+  Button,
+  Input,
+  SortableHeader,
+  ColumnVisibilityControl,
+} from '@/components/ui'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 type DeviceBrandSortField = 'name' | 'devicesCount'
 
+const BRANDS_COLUMNS: ColumnDefinition[] = [
+  { key: 'name', label: 'Brand Name', defaultVisible: true },
+  { key: 'devicesCount', label: 'Devices', defaultVisible: true },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
+
 function AdminBrandsPage() {
   const table = useAdminTable<DeviceBrandSortField>()
+  const columnVisibility = useColumnVisibility(BRANDS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminBrands,
+  })
 
   const { data: brands, refetch } = api.deviceBrands.get.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
@@ -85,7 +103,13 @@ function AdminBrandsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Device Brands</h1>
-        <Button onClick={() => openModal()}>Add Brand</Button>
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={BRANDS_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          <Button onClick={() => openModal()}>Add Brand</Button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -104,21 +128,29 @@ function AdminBrandsPage() {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
             <tr>
-              <SortableHeader
-                label="Brand Name"
-                field="name"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Devices"
-                field="devicesCount"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <th className="px-4 py-2"></th>
+              {columnVisibility.isColumnVisible('name') && (
+                <SortableHeader
+                  label="Brand Name"
+                  field="name"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('devicesCount') && (
+                <SortableHeader
+                  label="Devices"
+                  field="devicesCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('actions') && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -132,22 +164,30 @@ function AdminBrandsPage() {
                   key={brand.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  <td className="px-4 py-2">{brand.name}</td>
-                  <td className="px-4 py-2">{brand._count.devices} devices</td>
-                  <td className="px-4 py-2 flex gap-2 justify-end">
-                    <Button
-                      variant="secondary"
-                      onClick={() => openModal(brand)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(brand.id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
+                  {columnVisibility.isColumnVisible('name') && (
+                    <td className="px-4 py-2">{brand.name}</td>
+                  )}
+                  {columnVisibility.isColumnVisible('devicesCount') && (
+                    <td className="px-4 py-2">
+                      {brand._count.devices} devices
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-4 py-2 flex gap-2 justify-end">
+                      <Button
+                        variant="secondary"
+                        onClick={() => openModal(brand)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleDelete(brand.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  )}
                 </tr>
               ),
             )}

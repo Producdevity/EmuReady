@@ -4,16 +4,25 @@ import { useState } from 'react'
 import { Search } from 'lucide-react'
 import { api } from '@/lib/api'
 import { isEmpty } from 'remeda'
-import { Button, Input, SortableHeader } from '@/components/ui'
-import { formatDateTime } from '@/utils/date'
+import {
+  Button,
+  Input,
+  SortableHeader,
+  Badge,
+  ColumnVisibilityControl,
+} from '@/components/ui'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
 import UserRoleModal from './components/UserRoleModal'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
-import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterOutput } from '@/types/trpc'
 import { type Role } from '@orm'
 import toast from '@/lib/toast'
+import storageKeys from '@/data/storageKeys'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 type User = RouterOutput['users']['getAll'][number]
 type UserSortField =
@@ -32,10 +41,22 @@ interface UserForModal {
   role: Role
 }
 
+const USERS_COLUMNS: ColumnDefinition[] = [
+  { key: 'name', label: 'Name', defaultVisible: true },
+  { key: 'email', label: 'Email', defaultVisible: true },
+  { key: 'role', label: 'Role', defaultVisible: true },
+  { key: 'createdAt', label: 'Joined', defaultVisible: true },
+  { key: 'listingsCount', label: 'Listings', defaultVisible: false },
+  { key: 'votesCount', label: 'Votes', defaultVisible: false },
+  { key: 'commentsCount', label: 'Comments', defaultVisible: false },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
+
 function AdminUsersPage() {
   const table = useAdminTable<UserSortField>()
-  const [userToEdit, setUserToEdit] = useState<UserForModal | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const columnVisibility = useColumnVisibility(USERS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminUsers,
+  })
 
   const { data: users, refetch } = api.users.getAll.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
@@ -44,6 +65,8 @@ function AdminUsersPage() {
   })
   const deleteUser = api.users.delete.useMutation()
   const confirm = useConfirmDialog()
+
+  const [selectedUser, setSelectedUser] = useState<UserForModal | null>(null)
 
   const handleDeleteUser = async (userId: string) => {
     const confirmed = await confirm({
@@ -63,27 +86,31 @@ function AdminUsersPage() {
   }
 
   const openRoleModal = (user: User) => {
-    setUserToEdit({
+    setSelectedUser({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
     })
-    setIsModalOpen(true)
   }
 
   const closeRoleModal = () => {
-    setIsModalOpen(false)
-    setUserToEdit(null)
+    setSelectedUser(null)
   }
 
   return (
-    <div>
+    <div className="container mx-auto p-4 md:p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">User Management</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          Users Management
+        </h1>
+        <ColumnVisibilityControl
+          columns={USERS_COLUMNS}
+          columnVisibility={columnVisibility}
+        />
       </div>
 
-      <div className="mb-4">
+      <div className="mb-6">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
@@ -95,123 +122,152 @@ function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-          <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <SortableHeader
-                label="Name"
-                field="name"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Email"
-                field="email"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Role"
-                field="role"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Listings"
-                field="listingsCount"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Votes"
-                field="votesCount"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Comments"
-                field="commentsCount"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Joined"
-                field="createdAt"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <th className="px-4 py-2"></th>
+              {columnVisibility.isColumnVisible('name') && (
+                <SortableHeader
+                  label="Name"
+                  field="name"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('email') && (
+                <SortableHeader
+                  label="Email"
+                  field="email"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('role') && (
+                <SortableHeader
+                  label="Role"
+                  field="role"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('createdAt') && (
+                <SortableHeader
+                  label="Joined"
+                  field="createdAt"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('listingsCount') && (
+                <SortableHeader
+                  label="Listings"
+                  field="listingsCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('votesCount') && (
+                <SortableHeader
+                  label="Votes"
+                  field="votesCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('commentsCount') && (
+                <SortableHeader
+                  label="Comments"
+                  field="commentsCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('actions') && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {users?.map((user: User) => (
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {users?.map((user) => (
               <tr
                 key={user.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
               >
-                <td className="px-4 py-2 font-medium">{user.name}</td>
-                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
-                  {user.email}
-                </td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                      user.role,
-                    )}`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
-                  {user._count.listings}
-                </td>
-                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
-                  {user._count.votes}
-                </td>
-                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
-                  {user._count.comments}
-                </td>
-                <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
-                  {formatDateTime(user.createdAt)}
-                </td>
-                <td className="px-4 py-2 flex gap-2 justify-end">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => openRoleModal(user)}
-                  >
-                    Edit Role
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDeleteUser(user.id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
+                {columnVisibility.isColumnVisible('name') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {user.name ?? 'N/A'}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('email') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user.email}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('role') && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge variant={getRoleBadgeColor(user.role)}>
+                      {user.role}
+                    </Badge>
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('createdAt') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('listingsCount') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user._count.listings}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('votesCount') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user._count.votes}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('commentsCount') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user._count.comments}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('actions') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openRoleModal(user)}
+                    >
+                      Change Role
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDeleteUser(user.id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {userToEdit && (
+      {selectedUser && (
         <UserRoleModal
-          user={userToEdit}
-          isOpen={isModalOpen}
-          onClose={() => {
-            closeRoleModal()
-            refetch()
-          }}
+          user={selectedUser}
+          isOpen={true}
+          onClose={closeRoleModal}
         />
       )}
     </div>

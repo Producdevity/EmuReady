@@ -5,6 +5,7 @@ import { useState, type ChangeEvent } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { api } from '@/lib/api'
+import storageKeys from '@/data/storageKeys'
 import {
   Button,
   Input,
@@ -13,9 +14,13 @@ import {
   SelectInput,
   SortableHeader,
   Pagination,
+  ColumnVisibilityControl,
 } from '@/components/ui'
 import { Pencil, Eye, Trash2, Plus, Search } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import { isEmpty } from 'remeda'
@@ -24,12 +29,23 @@ import useAdminTable from '@/hooks/useAdminTable'
 type Game = RouterOutput['games']['get']['games'][number]
 type GameSortField = 'title' | 'system.name' | 'listingsCount'
 
+const GAMES_COLUMNS: ColumnDefinition[] = [
+  { key: 'game', label: 'Game', defaultVisible: true },
+  { key: 'system', label: 'System', defaultVisible: true },
+  { key: 'listings', label: 'Listings', defaultVisible: true },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
+
 function AdminGamesPage() {
   const [systemId, setSystemId] = useState('')
   const confirm = useConfirmDialog()
 
   const table = useAdminTable<GameSortField>({
     defaultLimit: 20,
+  })
+
+  const columnVisibility = useColumnVisibility(GAMES_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminGames,
   })
 
   const { data: systems } = api.systems.get.useQuery()
@@ -77,12 +93,18 @@ function AdminGamesPage() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Games Management
         </h1>
-        <Button asChild>
-          <Link href="/games/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Game
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={GAMES_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          <Button asChild>
+            <Link href="/games/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Game
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -122,30 +144,38 @@ function AdminGamesPage() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <SortableHeader
-                      label="Game"
-                      field="title"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                    />
-                    <SortableHeader
-                      label="System"
-                      field="system.name"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                    />
-                    <SortableHeader
-                      label="Listings"
-                      field="listingsCount"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                    />
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {columnVisibility.isColumnVisible('game') && (
+                      <SortableHeader
+                        label="Game"
+                        field="title"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('system') && (
+                      <SortableHeader
+                        label="System"
+                        field="system.name"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('listings') && (
+                      <SortableHeader
+                        label="Listings"
+                        field="listingsCount"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -154,61 +184,69 @@ function AdminGamesPage() {
                       key={game.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
-                            {game.imageUrl ? (
-                              <Image
-                                src={game.imageUrl}
-                                alt={game.title}
-                                width={48}
-                                height={48}
-                                className="rounded-md object-cover"
-                              />
-                            ) : (
-                              <div className="h-12 w-12 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  No img
-                                </span>
+                      {columnVisibility.isColumnVisible('game') && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-12 w-12">
+                              {game.imageUrl ? (
+                                <Image
+                                  src={game.imageUrl}
+                                  alt={game.title}
+                                  width={48}
+                                  height={48}
+                                  className="rounded-md object-cover"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    No img
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {game.title}
                               </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {game.title}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              ID: {game.id.substring(0, 8)}...
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                ID: {game.id.substring(0, 8)}...
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="default">{game.system.name}</Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {game._count.listings} listings
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/admin/games/${game.id}`}>
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/games/${game.id}`} target="_blank">
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(game)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('system') && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant="default">{game.system.name}</Badge>
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('listings') && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {game._count.listings} listings
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('actions') && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/admin/games/${game.id}`}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/games/${game.id}`} target="_blank">
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(game)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

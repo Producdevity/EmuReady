@@ -3,17 +3,35 @@
 import { useState, type FormEvent } from 'react'
 import { isEmpty } from 'remeda'
 import { Search } from 'lucide-react'
+import toast from '@/lib/toast'
 import { api } from '@/lib/api'
-import { Button, Input, SortableHeader } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
+import {
+  Button,
+  Input,
+  SortableHeader,
+  ColumnVisibilityControl,
+} from '@/components/ui'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 import getErrorMessage from '@/utils/getErrorMessage'
-import toast from '@/lib/toast'
 
 type SystemSortField = 'name' | 'gamesCount'
 
+const SYSTEMS_COLUMNS: ColumnDefinition[] = [
+  { key: 'name', label: 'System Name', defaultVisible: true },
+  { key: 'gamesCount', label: 'Games', defaultVisible: true },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
+
 function AdminSystemsPage() {
   const table = useAdminTable<SystemSortField>()
+  const columnVisibility = useColumnVisibility(SYSTEMS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminSystems,
+  })
 
   const { data: systems, refetch } = api.systems.get.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
@@ -38,6 +56,7 @@ function AdminSystemsPage() {
     setError('')
     setSuccess('')
   }
+
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
@@ -83,8 +102,14 @@ function AdminSystemsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Systems</h1>
-        <Button onClick={() => openModal()}>Add System</Button>
+        <h1 className="text-2xl font-bold">Manage Game Systems</h1>
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={SYSTEMS_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          <Button onClick={() => openModal()}>Add System</Button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -103,47 +128,64 @@ function AdminSystemsPage() {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
             <tr>
-              <SortableHeader
-                label="Name"
-                field="name"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <SortableHeader
-                label="Games"
-                field="gamesCount"
-                currentSortField={table.sortField}
-                currentSortDirection={table.sortDirection}
-                onSort={table.handleSort}
-              />
-              <th className="px-4 py-2"></th>
+              {columnVisibility.isColumnVisible('name') && (
+                <SortableHeader
+                  label="System Name"
+                  field="name"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('gamesCount') && (
+                <SortableHeader
+                  label="Games"
+                  field="gamesCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('actions') && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {systems?.map(
-              (sys: {
+              (system: {
                 id: string
                 name: string
                 _count: { games: number }
               }) => (
                 <tr
-                  key={sys.id}
+                  key={system.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  <td className="px-4 py-2">{sys.name}</td>
-                  <td className="px-4 py-2">{sys._count.games} games</td>
-                  <td className="px-4 py-2 flex gap-2 justify-end">
-                    <Button variant="secondary" onClick={() => openModal(sys)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(sys.id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
+                  {columnVisibility.isColumnVisible('name') && (
+                    <td className="px-4 py-2">{system.name}</td>
+                  )}
+                  {columnVisibility.isColumnVisible('gamesCount') && (
+                    <td className="px-4 py-2">{system._count.games} games</td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-4 py-2 flex gap-2 justify-end">
+                      <Button
+                        variant="secondary"
+                        onClick={() => openModal(system)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleDelete(system.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  )}
                 </tr>
               ),
             )}

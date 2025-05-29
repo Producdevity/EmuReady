@@ -28,29 +28,16 @@ export interface UseColumnVisibilityReturn {
   resetToDefaults: () => void
   showAll: () => void
   hideAll: () => void
+  isHydrated: boolean
 }
 
 function useColumnVisibility(
   columns: ColumnDefinition[],
   opts?: UseColumnVisibilityOptions,
 ): UseColumnVisibilityReturn {
-  const getInitialVisibleColumns = useCallback((): Set<string> => {
-    // If we have a storage key, try to load from localStorage
-    if (opts?.storageKey && typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem(opts.storageKey)
-        if (stored) {
-          const parsedColumns = JSON.parse(stored) as string[]
-          return new Set(parsedColumns)
-        }
-      } catch (error) {
-        console.error(
-          'Failed to load column visibility from localStorage:',
-          getErrorMessage(error),
-        )
-      }
-    }
+  const [isHydrated, setIsHydrated] = useState(false)
 
+  const getDefaultVisibleColumns = useCallback((): Set<string> => {
     // default to defaultVisibleColumns when provided
     if (opts?.defaultVisibleColumns) return new Set(opts.defaultVisibleColumns)
 
@@ -60,28 +47,51 @@ function useColumnVisibility(
         .filter((col) => col.defaultVisible !== false)
         .map((col) => col.key),
     )
-  }, [columns, opts?.storageKey, opts?.defaultVisibleColumns])
+  }, [columns, opts?.defaultVisibleColumns])
 
+  const getStoredVisibleColumns = useCallback((): Set<string> | null => {
+    if (!opts?.storageKey || typeof window === 'undefined') return null
+
+    try {
+      const stored = localStorage.getItem(opts.storageKey)
+      if (stored) {
+        const parsedColumns = JSON.parse(stored) as string[]
+        return new Set(parsedColumns)
+      }
+    } catch (error) {
+      console.error(
+        'Failed to load column visibility from localStorage:',
+        getErrorMessage(error),
+      )
+    }
+    return null
+  }, [opts?.storageKey])
+
+  // Initialize with default columns (for SSR consistency)
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    getInitialVisibleColumns,
+    getDefaultVisibleColumns,
   )
 
-  // Save to localStorage when visibleColumns changes
+  // Hydrate from localStorage after mount
   useEffect(() => {
-    if (opts?.storageKey && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          opts?.storageKey,
-          JSON.stringify([...visibleColumns]),
-        )
-      } catch (error) {
-        console.error(
-          'Failed to save column visibility to localStorage:',
-          error,
-        )
-      }
+    const storedColumns = getStoredVisibleColumns()
+    if (storedColumns) {
+      setVisibleColumns(storedColumns)
     }
-  }, [visibleColumns, opts?.storageKey])
+    setIsHydrated(true)
+  }, [getStoredVisibleColumns])
+
+  // Save to localStorage when visibleColumns changes (only after hydration)
+  useEffect(() => {
+    if (!isHydrated || !opts?.storageKey || typeof window === 'undefined')
+      return
+
+    try {
+      localStorage.setItem(opts.storageKey, JSON.stringify([...visibleColumns]))
+    } catch (error) {
+      console.error('Failed to save column visibility to localStorage:', error)
+    }
+  }, [visibleColumns, opts?.storageKey, isHydrated])
 
   const isColumnVisible = useCallback(
     (columnKey: string): boolean => {
@@ -122,8 +132,8 @@ function useColumnVisibility(
   )
 
   const resetToDefaults = useCallback(() => {
-    setVisibleColumns(getInitialVisibleColumns())
-  }, [getInitialVisibleColumns])
+    setVisibleColumns(getDefaultVisibleColumns())
+  }, [getDefaultVisibleColumns])
 
   const showAll = useCallback(() => {
     setVisibleColumns(new Set(columns.map((col) => col.key)))
@@ -145,6 +155,7 @@ function useColumnVisibility(
     resetToDefaults,
     showAll,
     hideAll,
+    isHydrated,
   }
 }
 
