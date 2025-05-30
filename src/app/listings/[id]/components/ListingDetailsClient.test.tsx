@@ -50,7 +50,7 @@ describe('ListingDetailsClient', () => {
     id: 'listing-1',
     game: {
       title: 'Super Mario Bros',
-      system: { name: 'Nintendo Entertainment System' },
+      system: { name: 'Nintendo Switch' },
     },
     device: {
       brand: { name: 'Samsung' },
@@ -79,9 +79,7 @@ describe('ListingDetailsClient', () => {
     render(<ListingDetailsClient {...defaultProps} />)
 
     expect(screen.getByText('Super Mario Bros')).toBeInTheDocument()
-    expect(
-      screen.getByText(/Nintendo Entertainment System/),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/Nintendo Switch/)).toBeInTheDocument()
     expect(screen.getByText(/Samsung Galaxy S21/)).toBeInTheDocument()
     expect(screen.getByText(/RetroArch/)).toBeInTheDocument()
     expect(screen.getByText(/Perfect/)).toBeInTheDocument()
