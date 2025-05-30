@@ -9,6 +9,7 @@ import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
 import storageKeys from '@/data/storageKeys'
+import SystemIcon from '@/components/icons/systems/SystemIcon'
 import {
   Badge,
   Pagination,
@@ -65,6 +66,7 @@ function ListingsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     (searchParams.get('sortDirection') as SortDirection) ?? null,
   )
+  const [showSystemIcons, setShowSystemIcons] = useState(false)
 
   const columnVisibility = useColumnVisibility(LISTINGS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.listings,
@@ -213,6 +215,14 @@ function ListingsPage() {
             Game Listings
           </h1>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSystemIcons(!showSystemIcons)}
+              className="flex items-center gap-2"
+            >
+              {showSystemIcons ? 'Show Names' : 'Show Icons'}
+            </Button>
             <ColumnVisibilityControl
               columns={LISTINGS_COLUMNS}
               columnVisibility={columnVisibility}
@@ -318,7 +328,20 @@ function ListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('system') && (
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.game.system?.name ?? 'Unknown'}
+                        {showSystemIcons && listing.game.system?.key ? (
+                          <div className="flex items-center gap-2">
+                            <SystemIcon
+                              name={listing.game.system.name}
+                              systemKey={listing.game.system.key}
+                              size="lg"
+                            />
+                            <span className="sr-only">
+                              {listing.game.system?.name}
+                            </span>
+                          </div>
+                        ) : (
+                          (listing.game.system?.name ?? 'Unknown')
+                        )}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('device') && (

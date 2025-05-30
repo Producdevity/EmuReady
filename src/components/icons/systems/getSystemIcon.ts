@@ -1,4 +1,6 @@
+import { type Maybe, type Nullable } from '@/types/utils'
 import { type ReactElement } from 'react'
+import { isString } from 'remeda'
 import MicrosoftWindowsIcon from './MicrosoftWindowsIcon'
 import MicrosoftXbox360Icon from './MicrosoftXbox360Icon'
 import MicrosoftXboxIcon from './MicrosoftXboxIcon'
@@ -41,12 +43,15 @@ const systemIcons: Record<string, () => ReactElement> = {
   sony_playstation_vita: SonyPlaystationVitaIcon,
 }
 
-function getSystemIcon(systemName: string) {
-  const icon = systemIcons[systemName]
-  if (!icon) {
-    throw new Error(`Icon not found for system "${systemName}"`)
+type Icon = () => ReactElement
+
+function getSystemIcon(systemKey: Maybe<string>): Nullable<Icon> {
+  if (!systemKey || !isString(systemKey)) {
+    return null
   }
-  return icon
+
+  const icon = systemIcons[systemKey]
+  return icon || null
 }
 
 export default getSystemIcon

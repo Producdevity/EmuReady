@@ -2,7 +2,7 @@ import { type PrismaClient } from '@orm'
 
 type SystemData = {
   name: string
-  key: string
+  key?: string
 }
 
 const systems: SystemData[] = [
@@ -21,6 +21,7 @@ const systems: SystemData[] = [
   { name: 'Sony PlayStation 2', key: 'sony_playstation_2' },
   { name: 'Sony PlayStation 3', key: 'sony_playstation_3' },
   { name: 'Sony PlayStation 4', key: 'sony_playstation_4' },
+  { name: 'Sony PlayStation 5', key: 'sony_playstation_5' },
   { name: 'Sony PlayStation Portable', key: 'sony_playstation_portable' },
   { name: 'Sony PlayStation Vita', key: 'sony_playstation_vita' },
   { name: 'Sony PlayStation', key: 'sony_playstation' },
@@ -32,7 +33,7 @@ async function systemsSeeder(prisma: PrismaClient) {
   for (const system of systems) {
     await prisma.system.upsert({
       where: { name: system.name },
-      update: {},
+      update: { key: system.key },
       create: system,
     })
   }
