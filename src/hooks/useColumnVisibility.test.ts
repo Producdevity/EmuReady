@@ -98,7 +98,7 @@ describe('useColumnVisibility', () => {
 
       expect(consoleErrorMock).toHaveBeenCalledWith(
         'Failed to load column visibility from localStorage:',
-        expect.any(Error),
+        'localStorage error',
       )
 
       // Should fall back to default behavior

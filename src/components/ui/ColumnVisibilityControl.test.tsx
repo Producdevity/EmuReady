@@ -16,20 +16,28 @@ describe('ColumnVisibilityControl', () => {
 
   const createMockColumnVisibility = (
     overrides: Partial<UseColumnVisibilityReturn> = {},
-  ): UseColumnVisibilityReturn => ({
-    visibleColumns: new Set(['name', 'email', 'actions']),
-    isColumnVisible: vi.fn((key: string) => {
-      if (key === 'actions') return true // alwaysVisible
-      return ['name', 'email'].includes(key)
-    }),
-    toggleColumn: vi.fn(),
-    showColumn: vi.fn(),
-    hideColumn: vi.fn(),
-    resetToDefaults: vi.fn(),
-    showAll: vi.fn(),
-    hideAll: vi.fn(),
-    ...overrides,
-  })
+  ): UseColumnVisibilityReturn => {
+    const base = {
+      visibleColumns: new Set(['name', 'email', 'actions']),
+      isColumnVisible: vi.fn((key: string) => {
+        if (key === 'actions') return true // alwaysVisible
+        return ['name', 'email'].includes(key)
+      }),
+      toggleColumn: vi.fn(),
+      showColumn: vi.fn(),
+      hideColumn: vi.fn(),
+      resetToDefaults: vi.fn(),
+      showAll: vi.fn(),
+      hideAll: vi.fn(),
+      isHydrated: true,
+    }
+
+    return {
+      ...base,
+      ...overrides,
+      isHydrated: overrides.isHydrated ?? true,
+    }
+  }
 
   it('should render the column visibility button with correct count', () => {
     const mockColumnVisibility = createMockColumnVisibility()

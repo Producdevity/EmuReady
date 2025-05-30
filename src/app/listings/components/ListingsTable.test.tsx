@@ -91,7 +91,7 @@ function TestListingsTable(props: {
 function makeMockColumnVisibility(
   overrides: Partial<ReturnType<typeof useColumnVisibility>> = {},
 ): ReturnType<typeof useColumnVisibility> {
-  return {
+  const base = {
     visibleColumns: new Set([
       'game',
       'system',
@@ -120,7 +120,13 @@ function makeMockColumnVisibility(
     resetToDefaults: vi.fn(),
     showAll: vi.fn(),
     hideAll: vi.fn(),
+    isHydrated: true,
+  }
+
+  return {
+    ...base,
     ...overrides,
+    isHydrated: overrides.isHydrated ?? true,
   }
 }
 
