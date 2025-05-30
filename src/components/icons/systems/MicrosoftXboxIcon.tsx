@@ -5,8 +5,8 @@ function MicrosoftXboxIcon() {
       xmlns="http://www.w3.org/2000/svg"
       x="0"
       y="0"
-      width="755.509px"
-      height="117.345px"
+      width="100"
+      height="100"
       viewBox="0 0 755.509 117.345"
     >
       <title>Microsoft Xbox</title>

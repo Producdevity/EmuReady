@@ -1,4 +1,3 @@
-// TODO: implement
 function MicrosoftWindowsIcon() {
   return (
     <svg
@@ -6,11 +5,15 @@ function MicrosoftWindowsIcon() {
       xmlns="http://www.w3.org/2000/svg"
       x="0"
       y="0"
-      width="171.81796"
-      height="43.527214"
-      viewBox="0 0 171.81796 43.527214"
+      width="100"
+      height="100"
+      viewBox="0 0 21 21"
     >
       <title>Microsoft Windows</title>
+      <path fill="#f35325" d="M0 0h10v10H0z" />
+      <path fill="#81bc06" d="M11 0h10v10H11z" />
+      <path fill="#05a6f0" d="M0 11h10v10H0z" />
+      <path fill="#ffba08" d="M11 11h10v10H11z" />
     </svg>
   )
 }
