@@ -11,7 +11,7 @@ import { Role, ListingApprovalStatus } from '@orm'
 import storageKeys from '@/data/storageKeys'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
-  Badge,
+  PerformanceBadge,
   Pagination,
   SuccessRateBar,
   LoadingSpinner,
@@ -361,19 +361,10 @@ function ListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('performance') && (
                       <td className="px-4 py-2">
-                        <Badge
-                          variant={
-                            listing.performance?.label === 'Perfect'
-                              ? 'success'
-                              : listing.performance?.label === 'Great'
-                                ? 'info'
-                                : listing.performance?.label === 'Playable'
-                                  ? 'warning'
-                                  : 'danger'
-                          }
-                        >
-                          {listing.performance?.label ?? 'N/A'}
-                        </Badge>
+                        <PerformanceBadge
+                          rank={listing.performance?.rank ?? 8}
+                          label={listing.performance?.label ?? 'N/A'}
+                        />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('successRate') && (
