@@ -380,7 +380,6 @@ function AddListingPage() {
   })
 
   const onSubmit = (data: ListingFormValues) => {
-    console.log('Submitting listing data:', data)
 
     // Additional client-side validation for custom fields
     if (parsedCustomFields.length > 0) {
