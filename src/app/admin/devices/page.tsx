@@ -1,11 +1,33 @@
 'use client'
 
-import toast from '@/lib/toast'
 import { useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import { api } from '@/lib/api'
-import { Button, Input, LoadingSpinner } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
+import {
+  Button,
+  Input,
+  LoadingSpinner,
+  ColumnVisibilityControl,
+} from '@/components/ui'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
+import toast from '@/lib/toast'
+import getErrorMessage from '@/utils/getErrorMessage'
+import { type RouterInput } from '@/types/trpc'
+
+const DEVICES_COLUMNS: ColumnDefinition[] = [
+  { key: 'brand', label: 'Brand', defaultVisible: true },
+  { key: 'model', label: 'Model', defaultVisible: true },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
 
 function AdminDevicesPage() {
+  const columnVisibility = useColumnVisibility(DEVICES_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminDevices,
+  })
+
   const {
     data: devices,
     isLoading: devicesLoading,
@@ -49,16 +71,23 @@ function AdminDevicesPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateDevice.mutateAsync({ id: editId, brandId, modelName })
+        await updateDevice.mutateAsync({
+          id: editId,
+          brandId,
+          modelName,
+        } satisfies RouterInput['devices']['update'])
         setSuccess('Device updated!')
       } else {
-        await createDevice.mutateAsync({ brandId, modelName })
+        await createDevice.mutateAsync({
+          brandId,
+          modelName,
+        } satisfies RouterInput['devices']['create'])
         setSuccess('Device created!')
       }
       refetch()
       closeModal()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save device.')
+      setError(getErrorMessage(err, 'Failed to save device.'))
     }
   }
 
@@ -66,14 +95,12 @@ function AdminDevicesPage() {
     // TODO: use a confirmation modal instead of browser confirm
     if (!confirm('Delete this device?')) return
     try {
-      await deleteDevice.mutateAsync({ id })
+      await deleteDevice.mutateAsync({
+        id,
+      } satisfies RouterInput['devices']['delete'])
       refetch()
     } catch (err) {
-      toast.error(
-        `Failed to delete device: ${
-          err instanceof Error ? err.message : 'Unknown error occurred.'
-        }`,
-      )
+      toast.error(`Failed to delete device: ${getErrorMessage(err)}`)
     }
   }
 
@@ -84,21 +111,27 @@ function AdminDevicesPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Devices</h1>
-        <Button onClick={() => openModal()} disabled={!areBrandsAvailable}>
-          Add Device
-        </Button>
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={DEVICES_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          <Button onClick={() => openModal()} disabled={!areBrandsAvailable}>
+            Add Device
+          </Button>
+        </div>
       </div>
 
       {!isLoading && !areBrandsAvailable && (
         <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg">
           <p>
             You need to create at least one device brand before adding devices.{' '}
-            <a
+            <Link
               href="/admin/brands"
               className="underline hover:text-yellow-800 dark:hover:text-yellow-200"
             >
               Go to Device Brand Management
-            </a>
+            </Link>
           </p>
         </div>
       )}
@@ -107,13 +140,21 @@ function AdminDevicesPage() {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                Brand
-              </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                Model
-              </th>
-              <th className="px-4 py-2"></th>
+              {columnVisibility.isColumnVisible('brand') && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Brand
+                </th>
+              )}
+              {columnVisibility.isColumnVisible('model') && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Model
+                </th>
+              )}
+              {columnVisibility.isColumnVisible('actions') && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -129,16 +170,25 @@ function AdminDevicesPage() {
                 key={dev.id}
                 className="hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td className="px-4 py-2">{dev.brand.name}</td>
-                <td className="px-4 py-2">{dev.modelName}</td>
-                <td className="px-4 py-2 flex gap-2 justify-end">
-                  <Button variant="secondary" onClick={() => openModal(dev)}>
-                    Edit
-                  </Button>
-                  <Button variant="danger" onClick={() => handleDelete(dev.id)}>
-                    Delete
-                  </Button>
-                </td>
+                {columnVisibility.isColumnVisible('brand') && (
+                  <td className="px-4 py-2">{dev.brand.name}</td>
+                )}
+                {columnVisibility.isColumnVisible('model') && (
+                  <td className="px-4 py-2">{dev.modelName}</td>
+                )}
+                {columnVisibility.isColumnVisible('actions') && (
+                  <td className="px-4 py-2 flex gap-2 justify-end">
+                    <Button variant="secondary" onClick={() => openModal(dev)}>
+                      Edit
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDelete(dev.id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                )}
               </tr>
             ))}
             {devices?.length === 0 && (

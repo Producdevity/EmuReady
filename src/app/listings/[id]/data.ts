@@ -5,11 +5,21 @@ export async function getListingById(id: string) {
     where: { id },
     include: {
       game: { include: { system: true } },
-      device: true,
+      device: { include: { brand: true } },
       emulator: true,
       performance: true,
       author: {
         select: { id: true, name: true, email: true, profileImage: true },
+      },
+      customFieldValues: {
+        include: {
+          customFieldDefinition: true,
+        },
+        orderBy: {
+          customFieldDefinition: {
+            name: 'asc',
+          },
+        },
       },
       comments: {
         where: { parentId: null },

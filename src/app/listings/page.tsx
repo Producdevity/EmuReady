@@ -8,13 +8,21 @@ import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
+import storageKeys from '@/data/storageKeys'
+import SystemIcon from '@/components/icons/SystemIcon'
 import {
-  Badge,
+  PerformanceBadge,
   Pagination,
   SuccessRateBar,
   LoadingSpinner,
   SortableHeader,
+  Button,
+  useConfirmDialog,
+  ColumnVisibilityControl,
 } from '@/components/ui'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 import ListingFilters, {
   type SelectInputEvent,
 } from './components/ListingFilters'
@@ -23,10 +31,23 @@ import {
   type SortDirection,
   type SortField,
 } from './types'
+import { type RouterInput } from '@/types/trpc'
+
+const LISTINGS_COLUMNS: ColumnDefinition[] = [
+  { key: 'game', label: 'Game', defaultVisible: true },
+  { key: 'system', label: 'System', defaultVisible: true },
+  { key: 'device', label: 'Device', defaultVisible: true },
+  { key: 'emulator', label: 'Emulator', defaultVisible: true },
+  { key: 'performance', label: 'Performance', defaultVisible: true },
+  { key: 'successRate', label: 'Success Rate', defaultVisible: true },
+  { key: 'author', label: 'Author', defaultVisible: false },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
 
 function ListingsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const confirm = useConfirmDialog()
 
   const [systemId, setSystemId] = useState(searchParams.get('systemId') ?? '')
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
@@ -46,14 +67,19 @@ function ListingsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     (searchParams.get('sortDirection') as SortDirection) ?? null,
   )
+  const [showSystemIcons, setShowSystemIcons] = useState(false)
+
+  const columnVisibility = useColumnVisibility(LISTINGS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.listings,
+  })
 
   const { data: session } = useSession()
   const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
 
-  const { data: systems } = api.systems.get.useQuery()
-  const { data: devices } = api.devices.get.useQuery()
-  const { data: emulators } = api.emulators.get.useQuery()
-  const { data: performanceScales } = api.listings.performanceScales.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
+  const devicesQuery = api.devices.get.useQuery()
+  const emulatorsQuery = api.emulators.get.useQuery()
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
     systemId: systemId || undefined,
@@ -68,15 +94,11 @@ function ListingsPage() {
     approvalStatus: ListingApprovalStatus.APPROVED,
   }
 
-  const { data, isLoading, error, refetch } =
-    api.listings.get.useQuery(filterParams)
-
-  const listings = data?.listings ?? []
-  const pagination = data?.pagination
+  const listingsQuery = api.listings.get.useQuery(filterParams)
 
   const deleteListing = api.listings.delete.useMutation({
     onSuccess: () => {
-      refetch().catch(console.error)
+      listingsQuery.refetch().catch(console.error)
       setDeleteConfirmId(null)
     },
   })
@@ -149,13 +171,18 @@ function ListingsPage() {
     })
   }
 
-  const confirmDelete = (id: string) => {
-    if (deleteConfirmId !== id) return setDeleteConfirmId(id)
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Listing',
+      description: 'Are you sure you want to delete this listing?',
+    })
 
-    deleteListing.mutate({ id })
+    if (!confirmed) return
+
+    deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
   }
 
-  if (error)
+  if (listingsQuery?.error)
     return (
       <div className="p-8 text-center text-red-500">
         Failed to load listings.
@@ -170,10 +197,10 @@ function ListingsPage() {
         emulatorId={emulatorId}
         performanceId={performanceId}
         searchTerm={search}
-        systems={systems ?? []}
-        devices={devices ?? []}
-        emulators={emulators ?? []}
-        performanceScales={performanceScales ?? []}
+        systems={systemsQuery.data ?? []}
+        devices={devicesQuery.data ?? []}
+        emulators={emulatorsQuery.data ?? []}
+        performanceScales={performanceScalesQuery.data ?? []}
         onSystemChange={handleFilterChange}
         onDeviceChange={handleDeviceChange}
         onEmulatorChange={handleEmulatorChange}
@@ -182,181 +209,232 @@ function ListingsPage() {
       />
 
       {/* Main Content - Listings */}
-      <section className="flex-1 p-4 overflow-x-auto">
+      <section className="flex-1 overflow-x-auto py-6 px-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Game Listings
           </h1>
-          {/*TODO: create "Add New Item" component*/}
-          <Link
-            href="/listings/new"
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-          >
-            Add New Listing
-          </Link>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => {
+                // TODO: save this in local storage
+                setShowSystemIcons(!showSystemIcons)
+              }}
+            >
+              {showSystemIcons ? 'Show System Names' : 'Show System Icons'}
+            </Button>
+            <ColumnVisibilityControl
+              columns={LISTINGS_COLUMNS}
+              columnVisibility={columnVisibility}
+            />
+            <Button asChild variant="fancy">
+              <Link href="/listings/new">Add Listing</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
-          {isLoading ? (
+          {listingsQuery.isLoading ? (
             <LoadingSpinner text="Loading listings..." />
           ) : (
-            <table className="table-auto min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+            <table className="table-auto md:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
                 <tr>
-                  <SortableHeader
-                    label="Game"
-                    field="game.title"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="System"
-                    field="game.system.name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Device"
-                    field="device"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Emulator"
-                    field="emulator.name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Performance"
-                    field="performance.label"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Success Rate"
-                    field="successRate"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <SortableHeader
-                    label="Author"
-                    field="author.name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Actions
-                  </th>
+                  {columnVisibility.isColumnVisible('game') && (
+                    <SortableHeader
+                      label="Game"
+                      field="game.title"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('system') && (
+                    <SortableHeader
+                      label="System"
+                      field="game.system.name"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('device') && (
+                    <SortableHeader
+                      label="Device"
+                      field="device"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('emulator') && (
+                    <SortableHeader
+                      label="Emulator"
+                      field="emulator.name"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('performance') && (
+                    <SortableHeader
+                      label="Performance"
+                      field="performance.label"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('successRate') && (
+                    <SortableHeader
+                      label="Success Rate"
+                      field="successRate"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('author') && (
+                    <SortableHeader
+                      label="Author"
+                      field="author.name"
+                      currentSortField={sortField}
+                      currentSortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {listings.map((listing) => (
+                {listingsQuery.data?.listings.map((listing) => (
                   <tr
                     key={listing.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                      <Link
-                        href={`/games/${listing.game.id}`}
-                        className="hover:text-blue-600 dark:hover:text-blue-400"
-                      >
-                        {listing.game.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.game.system?.name ?? 'Unknown'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.device
-                        ? `${listing.device.brand.name} ${listing.device.modelName}`
-                        : 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.emulator?.name ?? 'N/A'}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge
-                        variant={
-                          listing.performance?.label === 'Perfect'
-                            ? 'success'
-                            : listing.performance?.label === 'Great'
-                              ? 'info'
-                              : listing.performance?.label === 'Playable'
-                                ? 'warning'
-                                : 'danger'
-                        }
-                      >
-                        {listing.performance?.label ?? 'N/A'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <SuccessRateBar
-                        rate={listing.successRate * 100}
-                        voteCount={listing._count.votes}
-                      />
-                    </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {listing.author?.name ?? 'Anonymous'}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="flex items-center gap-2 flex-col">
+                    {columnVisibility.isColumnVisible('game') && (
+                      <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
                         <Link
-                          href={`/listings/${listing.id}`}
-                          className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                          href={`/games/${listing.game.id}`}
+                          className="hover:text-blue-600 dark:hover:text-blue-400"
                         >
-                          <EyeIcon className="w-4 h-4" /> View
+                          {listing.game.title}
                         </Link>
-
-                        {isAdmin && (
-                          <button
-                            onClick={() => confirmDelete(listing.id)}
-                            className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
-                              deleteConfirmId === listing.id
-                                ? 'bg-orange-700 text-white hover:bg-orange-800'
-                                : 'bg-red-600 text-white hover:bg-red-700'
-                            }`}
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                            {deleteConfirmId === listing.id
-                              ? 'Confirm'
-                              : 'Delete'}
-                          </button>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('system') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {showSystemIcons && listing.game.system?.key ? (
+                          <div className="flex items-center gap-2">
+                            <SystemIcon
+                              name={listing.game.system.name}
+                              systemKey={listing.game.system.key}
+                              size="lg"
+                            />
+                            <span className="sr-only">
+                              {listing.game.system?.name}
+                            </span>
+                          </div>
+                        ) : (
+                          (listing.game.system?.name ?? 'Unknown')
                         )}
-                      </div>
-                    </td>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('device') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.device
+                          ? `${listing.device.brand.name} ${listing.device.modelName}`
+                          : 'N/A'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('emulator') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.emulator?.name ?? 'N/A'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('performance') && (
+                      <td className="px-4 py-2">
+                        <PerformanceBadge
+                          rank={listing.performance?.rank ?? 8}
+                          label={listing.performance?.label ?? 'N/A'}
+                        />
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('successRate') && (
+                      <td className="px-4 py-2">
+                        <SuccessRateBar
+                          rate={listing.successRate * 100}
+                          voteCount={listing._count.votes}
+                        />
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('author') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {listing.author?.name ?? 'Anonymous'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2 flex-col">
+                          <Link
+                            href={`/listings/${listing.id}`}
+                            className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                          >
+                            <EyeIcon className="w-4 h-4" /> View
+                          </Link>
+
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDelete(listing.id)}
+                              className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
+                                deleteConfirmId === listing.id
+                                  ? 'bg-orange-700 text-white hover:bg-orange-800'
+                                  : 'bg-red-600 text-white hover:bg-red-700'
+                              }`}
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                              {deleteConfirmId === listing.id
+                                ? 'Confirm'
+                                : 'Delete'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
 
-          {!isLoading && listings.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-xl text-gray-500 dark:text-gray-400">
-                No listings found matching the criteria.
-              </p>
-            </div>
-          )}
+          {!listingsQuery.isLoading &&
+            listingsQuery.data?.listings.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-xl text-gray-500 dark:text-gray-400">
+                  No listings found matching the criteria.
+                </p>
+              </div>
+            )}
         </div>
 
-        {pagination && pagination.pages > 1 && (
-          <Pagination
-            currentPage={page}
-            totalPages={pagination.pages}
-            onPageChange={(newPage) => {
-              setPage(newPage)
-              updateQuery({ page: newPage })
-            }}
-          />
-        )}
+        {listingsQuery.data?.pagination &&
+          listingsQuery.data?.pagination?.pages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={listingsQuery.data.pagination.pages}
+              onPageChange={(newPage) => {
+                setPage(newPage)
+                updateQuery({ page: newPage })
+              }}
+            />
+          )}
       </section>
     </main>
   )

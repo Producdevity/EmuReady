@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 // import Checkbox from '@/components/ui/Checkbox'; // Fallback to HTML checkbox
 import toast from '@/lib/toast'
 import { Input } from '@/components/ui'
+import { type RouterInput } from '@/types/trpc'
 
 interface Props {
   emulatorId: string
@@ -73,7 +74,7 @@ function ManageSupportedSystems(props: Props) {
     updateMutation.mutate({
       emulatorId: props.emulatorId,
       systemIds: Array.from(selectedSystemIds),
-    })
+    } satisfies RouterInput['emulators']['updateSupportedSystems'])
   }
 
   if (!props.allSystems || props.allSystems.length === 0) {

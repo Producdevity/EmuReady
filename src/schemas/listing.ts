@@ -43,6 +43,23 @@ export const GetListingsSchema = z.object({
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
 
+export const GetPendingListingsSchema = z
+  .object({
+    search: z.string().optional(),
+    sortField: z
+      .enum([
+        'game.title',
+        'game.system.name',
+        'device',
+        'emulator.name',
+        'author.name',
+        'createdAt',
+      ])
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).optional(),
+  })
+  .optional()
+
 export const DeleteListingSchema = z.object({ id: z.string().uuid() })
 
 export const GetProcessedSchema = z.object({

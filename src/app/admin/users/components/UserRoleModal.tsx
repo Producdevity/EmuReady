@@ -6,6 +6,8 @@ import { Button } from '@/components/ui'
 import { ShieldCheckIcon } from '@heroicons/react/24/outline'
 import { Role } from '@orm'
 import UserRoleButton from './UserRoleButton'
+import { type RouterInput } from '@/types/trpc'
+import toast from '@/lib/toast'
 
 interface User {
   id: string
@@ -28,24 +30,24 @@ function UserRoleModal({ user, isOpen, onClose }: Props) {
 
   const updateRoleMutation = api.users.updateRole.useMutation({
     onSuccess: () => {
-      // TODO: show success message maybe?
-      // TODO: handle errors
+      toast.success(`Role updated to ${role}`)
       api.useUtils().users.getAll.invalidate().catch(console.error)
       onClose()
     },
     onError: (error) => {
-      // TODO: handle errors
       console.error('Error updating role:', error)
       setIsLoading(false)
-      // TODO: show error toast or message
-      alert(`Error: ${error.message}`)
+      toast.error(`Failed to update role: ${error.message}`)
     },
   })
 
   const handleSubmit = (ev: FormEvent) => {
     ev.preventDefault()
     setIsLoading(true)
-    updateRoleMutation.mutate({ userId: user.id, role })
+    updateRoleMutation.mutate({
+      userId: user.id,
+      role,
+    } satisfies RouterInput['users']['updateRole'])
   }
 
   if (!isOpen) return null

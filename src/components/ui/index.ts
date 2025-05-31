@@ -5,6 +5,7 @@ export {
 export { default as Badge } from './Badge'
 export { default as Button, buttonVariants } from './Button'
 export { default as Card } from './Card'
+export { default as ColumnVisibilityControl } from './ColumnVisibilityControl'
 export {
   default as ConfirmDialogProvider,
   useConfirmDialog,
@@ -17,6 +18,7 @@ export { default as LoadingSpinner } from './LoadingSpinner'
 export { default as Modal } from './Modal'
 export { default as OptimizedImage } from './OptimizedImage'
 export { default as Pagination } from './Pagination'
+export { default as PerformanceBadge } from './PerformanceBadge'
 export { default as ProfileUpload } from './ProfileUpload'
 export { default as SelectInput } from './SelectInput'
 export { default as SortableHeader } from './SortableHeader'

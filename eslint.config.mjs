@@ -17,6 +17,7 @@ const eslintConfig = [
       },
     },
     rules: {
+      'prefer-template': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
@@ -39,6 +40,7 @@ const eslintConfig = [
     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@next/next/no-img-element': 'off',
     },
   },
 ]

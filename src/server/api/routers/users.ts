@@ -1,3 +1,4 @@
+import type { Prisma } from '@orm'
 import {
   adminProcedure,
   createTRPCRouter,
@@ -11,6 +12,7 @@ import { ResourceError } from '@/lib/errors'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,
+  GetAllUsersSchema,
   UpdateUserSchema,
   UpdateUserRoleSchema,
   DeleteUserSchema,
@@ -237,24 +239,87 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Admin-only routes
-  getAll: adminProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        _count: {
-          select: {
-            listings: true,
-            votes: true,
-            comments: true,
+  getAll: adminProcedure
+    .input(GetAllUsersSchema)
+    .query(async ({ ctx, input }) => {
+      const { search, sortField, sortDirection } = input ?? {}
+
+      // Build where clause for search
+      let where: Prisma.UserWhereInput = {}
+
+      if (search && search.trim() !== '') {
+        const searchTerm = search.trim()
+        where = {
+          OR: [
+            {
+              name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      }
+
+      // Build orderBy based on sortField and sortDirection
+      const orderBy: Prisma.UserOrderByWithRelationInput[] = []
+
+      if (sortField && sortDirection) {
+        switch (sortField) {
+          case 'name':
+            orderBy.push({ name: sortDirection })
+            break
+          case 'email':
+            orderBy.push({ email: sortDirection })
+            break
+          case 'role':
+            orderBy.push({ role: sortDirection })
+            break
+          case 'createdAt':
+            orderBy.push({ createdAt: sortDirection })
+            break
+          case 'listingsCount':
+            orderBy.push({ listings: { _count: sortDirection } })
+            break
+          case 'votesCount':
+            orderBy.push({ votes: { _count: sortDirection } })
+            break
+          case 'commentsCount':
+            orderBy.push({ comments: { _count: sortDirection } })
+            break
+        }
+      }
+
+      // Default ordering if no sort specified
+      if (!orderBy.length) {
+        orderBy.push({ createdAt: 'desc' })
+      }
+
+      return await ctx.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          _count: {
+            select: {
+              listings: true,
+              votes: true,
+              comments: true,
+            },
           },
         },
-      },
-    })
-  }),
+        orderBy,
+      })
+    }),
 
   updateRole: adminProcedure
     .input(UpdateUserRoleSchema)

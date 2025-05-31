@@ -6,6 +6,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { authOptions } from '@/server/auth'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 // Set route to be dynamic to prevent caching
 export const dynamic = 'force-dynamic'
@@ -106,10 +107,12 @@ export async function POST(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, max-age=0')
 
     return response
-  } catch (error: unknown) {
+  } catch (error) {
     console.error('Error uploading game image:', error)
-    const errorMessage =
-      error instanceof Error ? error.message : 'An error occurred during upload'
+    const errorMessage = getErrorMessage(
+      error,
+      'An error occurred during upload',
+    )
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

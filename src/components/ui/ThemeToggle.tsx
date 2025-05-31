@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import themes, { type ThemeValue, type ThemeOption } from '@/data/themes'
 import useMounted from '@/hooks/useMounted'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
 function getNextTheme(current: ThemeValue): ThemeOption {
   const index = themes.findIndex((t) => t.value === current)
@@ -31,7 +31,7 @@ function ThemeToggle(props: Props) {
   return (
     <button
       onClick={handleToggle}
-      className={twMerge(
+      className={cn(
         'p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ',
         props.className,
       )}

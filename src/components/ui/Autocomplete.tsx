@@ -10,7 +10,7 @@ import {
   type FocusEvent,
   type KeyboardEvent,
 } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
 // Generic Option type to allow flexibility for the consumer
 export interface AutocompleteOptionBase {
@@ -20,7 +20,10 @@ export interface AutocompleteOptionBase {
 
 interface AutocompleteProps<T extends AutocompleteOptionBase> {
   value?: string | null // The actual selected value (e.g., an ID)
-  onChange: (value: string | null) => void // Callback with the new value
+  onChange: (value: string | null) => void // Callback with the new selected value
+
+  onFocus?: () => void
+  onBlur?: () => void
 
   // Data handling: Provide either static items or a function to load them
   items?: T[] // Static list of items
@@ -45,6 +48,8 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
 function Autocomplete<T extends AutocompleteOptionBase>({
   value,
   onChange,
+  onFocus,
+  onBlur,
   items: staticItems,
   loadItems,
   optionToValue,
@@ -57,7 +62,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   rightIcon,
   disabled = false,
   className = '',
-  minCharsToTrigger = 2,
+  minCharsToTrigger = 0,
   debounceTime = 300,
 }: AutocompleteProps<T>) {
   const [inputValue, setInputValue] = useState('')
@@ -65,60 +70,45 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const [hasInitialLoad, setHasInitialLoad] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null) // Changed to ul
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Load initial items from server if loadItems is provided (only once)
+  useEffect(() => {
+    if (!loadItems || hasInitialLoad) return
+    setHasInitialLoad(true)
+
+    if (debounceTime < 200) return
+    loadItems('')
+      .then(setSuggestions)
+      .catch((error) =>
+        console.error('Error fetching/filtering suggestions:', error),
+      )
+  }, [loadItems, hasInitialLoad, debounceTime])
+
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
-    // Only run this effect if value prop is explicitly provided (controlled mode)
-    // In uncontrolled mode, handleOptionClick manages inputValue directly
-    if (value === undefined) {
-      return // Uncontrolled mode - don't interfere with inputValue
-    }
-    
-    if (value === null) {
-      setInputValue('')
-      return
-    }
-    
-    // For static items, always check staticItems first
     if (staticItems && staticItems.length > 0) {
       const staticSelectedItem = staticItems.find(
         (item) => optionToValue(item) === value,
       )
       if (staticSelectedItem) {
-        setInputValue(optionToLabel(staticSelectedItem))
-        return
+        return setInputValue(optionToLabel(staticSelectedItem))
       }
     }
-    
-    // For loadItems, check suggestions
-    if (loadItems) {
-      const selectedItem = suggestions.find(
-        (item) => optionToValue(item) === value,
-      )
-      if (selectedItem) {
-        setInputValue(optionToLabel(selectedItem))
-      } else if (suggestions.length === 0) {
-        // For loadItems case, if suggestions are empty but we have a value,
-        // don't clear the input - it might have been set by handleOptionClick
-        // This prevents the useEffect from overriding the input value after selection
-      }
-    } else {
-      // If value is present but not in items, clear input
-      setInputValue('')
-    }
-  }, [
-    value,
-    staticItems,
-    optionToValue,
-    optionToLabel,
-    suggestions,
-    loadItems,
-    // Removed inputValue from dependencies to prevent feedback loop
-  ])
+
+    // For loadItems, check suggestions first, then try to find in all available data
+    if (!loadItems) return
+
+    const selectedItem = suggestions.find(
+      (item) => optionToValue(item) === value,
+    )
+    if (!selectedItem) return
+    setInputValue(optionToLabel(selectedItem))
+  }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems])
 
   const performSearch = useCallback(
     async (query: string) => {
@@ -180,7 +170,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         clearTimeout(debounceTimeoutRef.current)
       }
       debounceTimeoutRef.current = setTimeout(() => {
-        performSearch(query)
+        performSearch(query).catch(console.error)
       }, debounceTime)
     },
     [performSearch, debounceTime],
@@ -191,8 +181,14 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     setInputValue(newQuery)
     if (newQuery.length === 0) {
       onChange(null) // Clear selection if input is cleared
-      setSuggestions([])
-      setIsOpen(false)
+      // For static items, show all items when input is cleared
+      if (staticItems && staticItems.length > 0) {
+        setSuggestions(staticItems)
+        setIsOpen(true)
+      } else {
+        setSuggestions([])
+        setIsOpen(false)
+      }
     } else {
       debouncedSearch(newQuery)
     }
@@ -204,7 +200,8 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     setInputValue(itemLabel)
     onChange(itemValue)
     setIsOpen(false)
-    setSuggestions([]) // Clear suggestions after selection
+    // Don't clear suggestions immediately to allow useEffect to work
+    setTimeout(() => setSuggestions([]), 0)
     inputRef.current?.focus()
   }
 
@@ -214,9 +211,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       // Open dropdown and trigger search
       if (!loadItems && staticItems && staticItems.length > 0) {
-        performSearch(inputValue)
+        performSearch(inputValue).catch(console.error)
       } else if (loadItems && inputValue.length >= minCharsToTrigger) {
-        performSearch(inputValue)
+        performSearch(inputValue).catch(console.error)
       }
       return
     }
@@ -268,18 +265,26 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputFocus = () => {
     if (disabled) return
 
+    onFocus?.()
+
     // For static items, always show results on focus
     if (!loadItems && staticItems && staticItems.length > 0) {
-      performSearch(inputValue)
-    } else if (loadItems && inputValue.length >= minCharsToTrigger) {
-      // For async loading, only show results if there's enough text
-      performSearch(inputValue)
+      performSearch(inputValue).catch(console.error)
+    } else if (loadItems) {
+      // For async loading, show initial results if available or trigger search if enough chars
+      if (suggestions.length > 0) {
+        setIsOpen(true)
+      } else if (inputValue.length >= minCharsToTrigger) {
+        performSearch(inputValue).catch(console.error)
+      } else if (inputValue.length === 0 && hasInitialLoad) {
+        // Show initial results on focus if we have them
+        setIsOpen(true)
+      }
     }
-    // Note: We don't call performSearch('') for async loading on focus anymore
-    // as this was causing test failures and unexpected behavior
   }
 
   const handleInputBlur = (_e: FocusEvent<HTMLInputElement>) => {
+    onBlur?.()
     setTimeout(() => {
       if (
         listRef.current &&
@@ -330,25 +335,27 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     }
   }, [])
 
+  // Improved logic for showing messages
   const showNoResults =
     isOpen &&
     !isLoading &&
     suggestions.length === 0 &&
-    inputValue.length >= minCharsToTrigger
+    inputValue.length >= minCharsToTrigger &&
+    (staticItems == null || staticItems.length === 0 || inputValue.length > 0)
+
   const showMinCharsMessage =
     isOpen &&
     !isLoading &&
     inputValue.length < minCharsToTrigger &&
+    inputValue.length > 0 &&
     suggestions.length === 0 &&
-    (staticItems == null || staticItems.length === 0 || loadItems != null)
-
-  const inputId = `autocomplete-input-${Math.random().toString(36).substr(2, 9)}`
+    loadItems != null
 
   return (
-    <div className={twMerge('relative', className)}>
+    <div className={cn('relative', className)}>
       {label && (
         <label
-          htmlFor={inputId}
+          htmlFor={label}
           className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           {label}
@@ -362,9 +369,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         )}
         <input
           ref={inputRef}
-          id={inputId}
+          id={label}
           type="text"
-          className={twMerge(
+          className={cn(
             'w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
             leftIcon ? 'pl-10' : '',
             rightIcon || isLoading ? 'pr-10' : '',
@@ -416,7 +423,10 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       </div>
 
       {isOpen &&
-        (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading) && (
+        (suggestions.length > 0 ||
+          showNoResults ||
+          showMinCharsMessage ||
+          isLoading) && (
           <ul
             ref={listRef}
             id="autocomplete-list"
@@ -449,7 +459,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
                     id={`option-${itemValue}`}
                     role="option"
                     aria-selected={idx === highlightedIndex}
-                    className={twMerge(
+                    className={cn(
                       'flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl',
                       idx === highlightedIndex
                         ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'

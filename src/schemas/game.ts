@@ -1,11 +1,18 @@
 import { z } from 'zod'
 
+export const GameSortField = z.enum(['title', 'system.name', 'listingsCount'])
+
+export const SortDirection = z.enum(['asc', 'desc'])
+
 export const GetGamesSchema = z
   .object({
     systemId: z.string().uuid().optional(),
     search: z.string().optional(),
     limit: z.number().default(100),
     offset: z.number().default(0),
+    page: z.number().optional(),
+    sortField: GameSortField.optional(),
+    sortDirection: SortDirection.optional(),
   })
   .optional()
 

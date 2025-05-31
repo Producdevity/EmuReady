@@ -1,7 +1,14 @@
 import { z } from 'zod'
 
+export const SystemSortField = z.enum(['name', 'gamesCount'])
+export const SortDirection = z.enum(['asc', 'desc'])
+
 export const GetSystemsSchema = z
-  .object({ search: z.string().optional() })
+  .object({
+    search: z.string().optional(),
+    sortField: SystemSortField.optional(),
+    sortDirection: SortDirection.optional(),
+  })
   .optional()
 
 export const GetSystemByIdSchema = z.object({ id: z.string().uuid() })

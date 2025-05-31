@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
+import getErrorMessage from '@/utils/getErrorMessage'
+import { type RouterInput } from '@/types/trpc'
 
 interface Props {
   editId: string | null
@@ -24,17 +26,22 @@ function EmulatorModal(props: Props) {
     setSuccess('')
     try {
       if (props.editId) {
-        await updateEmulator.mutateAsync({ id: props.editId, name })
+        await updateEmulator.mutateAsync({
+          id: props.editId,
+          name,
+        } satisfies RouterInput['emulators']['update'])
         setSuccess('Emulator updated!')
       } else {
-        await createEmulator.mutateAsync({ name })
+        await createEmulator.mutateAsync({
+          name,
+        } satisfies RouterInput['emulators']['create'])
         setSuccess('Emulator created!')
       }
       setName('')
 
       props.onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save emulator.')
+      setError(getErrorMessage(err, 'Failed to save emulator.'))
     }
   }
 

@@ -70,6 +70,7 @@ function ListingFilters(props: FiltersProps) {
       <div className="space-y-4">
         <SelectInput
           label="System"
+          className="mb-6"
           leftIcon={<CpuChipIcon className="w-5 h-5" />}
           value={props.systemId}
           onChange={handleSystemChange}
@@ -78,6 +79,7 @@ function ListingFilters(props: FiltersProps) {
 
         <SelectInput
           label="Device"
+          className="mb-6"
           leftIcon={<DevicePhoneMobileIcon className="w-5 h-5" />}
           value={props.deviceId}
           onChange={handleDeviceChange}
@@ -89,6 +91,7 @@ function ListingFilters(props: FiltersProps) {
 
         <SelectInput
           label="Emulator"
+          className="mb-6"
           leftIcon={<CpuChipIcon className="w-5 h-5" />}
           value={props.emulatorId}
           onChange={handleEmulatorChange}
@@ -97,6 +100,7 @@ function ListingFilters(props: FiltersProps) {
 
         <SelectInput
           label="Performance"
+          className="mb-6"
           leftIcon={<RocketLaunchIcon className="w-5 h-5" />}
           value={props.performanceId}
           onChange={handlePerformanceChange}
@@ -120,4 +124,5 @@ function ListingFilters(props: FiltersProps) {
     </aside>
   )
 }
+
 export default ListingFilters

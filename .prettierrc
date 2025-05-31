@@ -8,6 +8,10 @@
   "trailingComma": "all",
   "overrides": [
     {
+      "files": ["*.svg"],
+      "options": { "parser": "html" }
+    },
+    {
       "files": ["*.json", ".prettierrc"],
       "options": { "parser": "json" }
     },

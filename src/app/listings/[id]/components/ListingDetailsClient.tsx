@@ -11,7 +11,10 @@ import { api } from '@/lib/api'
 export interface Listing {
   id: string
   game: { title: string; system?: { name?: string } }
-  device?: { brand?: string; modelName?: string }
+  device?: {
+    brand?: { name?: string }
+    modelName?: string
+  }
   emulator?: { name?: string }
   performance?: { label?: string }
   notes?: string | null
@@ -21,6 +24,17 @@ export interface Listing {
     id?: string
     profileImage?: string | null
   }
+  customFieldValues?: Array<{
+    id: string
+    value: unknown
+    customFieldDefinition: {
+      id: string
+      label: string
+      name: string
+      type: string
+      options?: unknown
+    }
+  }>
 }
 
 interface Props {
@@ -40,6 +54,51 @@ function ListingDetailsClient(props: Props) {
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
   }
 
+  const renderCustomFieldValue = (
+    fieldValue: NonNullable<Props['listing']['customFieldValues']>[0],
+  ) => {
+    const { value, customFieldDefinition } = fieldValue
+
+    switch (customFieldDefinition.type) {
+      case 'BOOLEAN':
+        return (
+          <Badge variant={value ? 'success' : 'default'}>
+            {value ? 'Yes' : 'No'}
+          </Badge>
+        )
+      case 'SELECT':
+        // For select fields, try to find the label from options
+        if (Array.isArray(customFieldDefinition.options)) {
+          const option = (
+            customFieldDefinition.options as Array<{
+              value: string
+              label: string
+            }>
+          ).find((opt) => opt.value === String(value))
+          return option?.label ?? String(value)
+        }
+        return String(value)
+      case 'URL':
+        if (typeof value === 'string' && value.trim()) {
+          return (
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {value}
+            </a>
+          )
+        }
+        return String(value)
+      case 'TEXT':
+      case 'TEXTAREA':
+      default:
+        return String(value ?? '')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-10 px-4 flex justify-center items-start">
       <motion.div
@@ -51,7 +110,7 @@ function ListingDetailsClient(props: Props) {
         <Card className="p-8 shadow-2xl rounded-3xl border-0 bg-white dark:bg-gray-900">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Game Info */}
-            <div className="flex-1">
+            <div className="flex-1 pr-8 border-r border-gray-200 dark:border-gray-700 ">
               <h1 className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-300 mb-2">
                 {props.listing?.game.title}
               </h1>
@@ -60,7 +119,7 @@ function ListingDetailsClient(props: Props) {
                   System: {props.listing?.game.system?.name}
                 </Badge>
                 <Badge variant="default">
-                  Device: {props.listing?.device?.brand}{' '}
+                  Device: {props.listing?.device?.brand?.name}{' '}
                   {props.listing?.device?.modelName}
                 </Badge>
                 <Badge variant="default">
@@ -78,6 +137,33 @@ function ListingDetailsClient(props: Props) {
                   {props.listing?.notes ?? 'No notes provided.'}
                 </p>
               </div>
+
+              {/* Custom Fields Section */}
+              {props.listing?.customFieldValues &&
+                props.listing.customFieldValues.length > 0 && (
+                  <div className="mb-6">
+                    <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                      Emulator-Specific Details
+                    </h2>
+                    <div className="space-y-3">
+                      {props.listing.customFieldValues.map((fieldValue) => (
+                        <div
+                          key={fieldValue.id}
+                          className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                              {fieldValue.customFieldDefinition.label}:
+                            </span>
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {renderCustomFieldValue(fieldValue)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   Rating

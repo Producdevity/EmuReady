@@ -1,6 +1,25 @@
 import { Role } from '@orm'
 import { z } from 'zod'
 
+export const UserSortField = z.enum([
+  'name',
+  'email',
+  'role',
+  'createdAt',
+  'listingsCount',
+  'votesCount',
+  'commentsCount',
+])
+export const SortDirection = z.enum(['asc', 'desc'])
+
+export const GetAllUsersSchema = z
+  .object({
+    search: z.string().optional(),
+    sortField: UserSortField.optional(),
+    sortDirection: SortDirection.optional(),
+  })
+  .optional()
+
 export const RegisterUserSchema = z.object({
   name: z.string().min(2).max(50),
   email: z.string().email(),

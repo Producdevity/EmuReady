@@ -1,14 +1,48 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { isEmpty } from 'remeda'
+import { Search } from 'lucide-react'
+import toast from '@/lib/toast'
 import { api } from '@/lib/api'
-import { Button, Input } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
+import {
+  Button,
+  Input,
+  SortableHeader,
+  ColumnVisibilityControl,
+} from '@/components/ui'
+import { useConfirmDialog } from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
+import getErrorMessage from '@/utils/getErrorMessage'
+import { type RouterInput } from '@/types/trpc'
+
+type DeviceBrandSortField = 'name' | 'devicesCount'
+
+const BRANDS_COLUMNS: ColumnDefinition[] = [
+  { key: 'name', label: 'Brand Name', defaultVisible: true },
+  { key: 'devicesCount', label: 'Devices', defaultVisible: true },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
 
 function AdminBrandsPage() {
-  const { data: brands, refetch } = api.deviceBrands.get.useQuery()
+  const table = useAdminTable<DeviceBrandSortField>()
+  const columnVisibility = useColumnVisibility(BRANDS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminBrands,
+  })
+
+  const { data: brands, refetch } = api.deviceBrands.get.useQuery({
+    search: isEmpty(table.search) ? undefined : table.search,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
+  })
   const createBrand = api.deviceBrands.create.useMutation()
   const updateBrand = api.deviceBrands.update.useMutation()
   const deleteBrand = api.deviceBrands.delete.useMutation()
+  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -36,27 +70,40 @@ function AdminBrandsPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateBrand.mutateAsync({ id: editId, name })
+        await updateBrand.mutateAsync({
+          id: editId,
+          name,
+        } satisfies RouterInput['deviceBrands']['update'])
         setSuccess('Brand updated!')
       } else {
-        await createBrand.mutateAsync({ name })
+        await createBrand.mutateAsync({
+          name,
+        } satisfies RouterInput['deviceBrands']['create'])
         setSuccess('Brand created!')
       }
       refetch()
       closeModal()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save brand.')
+      setError(getErrorMessage(err, 'Failed to save brand.'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    // TODO: use a confirmation modal instead of browser confirm // eg:   const confirm = useConfirmDialog()
-    if (!confirm('Delete this brand?')) return
+    const confirmed = await confirm({
+      title: 'Delete Brand',
+      description:
+        'Are you sure you want to delete this brand? This action cannot be undone.',
+    })
+
+    if (!confirmed) return
+
     try {
-      await deleteBrand.mutateAsync({ id })
+      await deleteBrand.mutateAsync({
+        id,
+      } satisfies RouterInput['deviceBrands']['delete'])
       refetch()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete brand.')
+      toast.error(`Failed to delete brand: ${getErrorMessage(err)}`)
     }
   }
 
@@ -64,38 +111,94 @@ function AdminBrandsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Device Brands</h1>
-        <Button onClick={() => openModal()}>Add Brand</Button>
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={BRANDS_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          <Button onClick={() => openModal()}>Add Brand</Button>
+        </div>
       </div>
+
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            placeholder="Search brands..."
+            value={table.search}
+            onChange={table.handleSearchChange}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
           <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                Brand Name
-              </th>
-              <th className="px-4 py-2"></th>
+              {columnVisibility.isColumnVisible('name') && (
+                <SortableHeader
+                  label="Brand Name"
+                  field="name"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('devicesCount') && (
+                <SortableHeader
+                  label="Devices"
+                  field="devicesCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('actions') && (
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {brands?.map((brand: { id: string; name: string }) => (
-              <tr
-                key={brand.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <td className="px-4 py-2">{brand.name}</td>
-                <td className="px-4 py-2 flex gap-2 justify-end">
-                  <Button variant="secondary" onClick={() => openModal(brand)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => handleDelete(brand.id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {brands?.map(
+              (brand: {
+                id: string
+                name: string
+                _count: { devices: number }
+              }) => (
+                <tr
+                  key={brand.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  {columnVisibility.isColumnVisible('name') && (
+                    <td className="px-4 py-2">{brand.name}</td>
+                  )}
+                  {columnVisibility.isColumnVisible('devicesCount') && (
+                    <td className="px-4 py-2">
+                      {brand._count.devices} devices
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-4 py-2 flex gap-2 justify-end">
+                      <Button
+                        variant="secondary"
+                        onClick={() => openModal(brand)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleDelete(brand.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>

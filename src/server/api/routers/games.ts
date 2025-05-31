@@ -17,7 +17,18 @@ import {
 
 export const gamesRouter = createTRPCRouter({
   get: publicProcedure.input(GetGamesSchema).query(async ({ ctx, input }) => {
-    const { systemId, search, limit = 100, offset = 0 } = input ?? {}
+    const {
+      systemId,
+      search,
+      limit = 100,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
+    } = input ?? {}
+
+    // Calculate offset from page if provided
+    const actualOffset = page ? (page - 1) * limit : offset
 
     // Build where clause with optimized search pattern
     let where: Prisma.GameWhereInput = {
@@ -67,8 +78,31 @@ export const gamesRouter = createTRPCRouter({
       }
     }
 
+    // Build orderBy based on sortField and sortDirection
+    const orderBy: Prisma.GameOrderByWithRelationInput[] = []
+
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'title':
+          orderBy.push({ title: sortDirection })
+          break
+        case 'system.name':
+          orderBy.push({ system: { name: sortDirection } })
+          break
+        case 'listingsCount':
+          orderBy.push({ listings: { _count: sortDirection } })
+          break
+      }
+    }
+
+    // Default ordering if no sort specified
+    if (!orderBy.length) {
+      orderBy.push({ title: 'asc' })
+    }
+
     // For empty search with offset 0, we can optimize by returning fewer results initially
-    const effectiveLimit = !search && offset === 0 ? Math.min(limit, 50) : limit
+    const effectiveLimit =
+      !search && actualOffset === 0 ? Math.min(limit, 50) : limit
 
     // Always run count query for consistent pagination
     const total = await ctx.prisma.game.count({ where })
@@ -93,10 +127,8 @@ export const gamesRouter = createTRPCRouter({
           },
         },
       },
-      orderBy: {
-        title: 'asc',
-      },
-      skip: offset,
+      orderBy,
+      skip: actualOffset,
       take: effectiveLimit,
     })
 
@@ -107,7 +139,8 @@ export const gamesRouter = createTRPCRouter({
       pagination: {
         total,
         pages: Math.ceil(total / limit),
-        offset,
+        page: page ?? Math.floor(actualOffset / limit) + 1,
+        offset: actualOffset,
         limit: effectiveLimit,
       },
     }

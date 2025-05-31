@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
 interface DropdownOption {
   value: string
@@ -42,7 +42,7 @@ function Dropdown(props: Props) {
   }, [])
 
   return (
-    <div className={twMerge('relative', props.className)} ref={dropdownRef}>
+    <div className={cn('relative', props.className)} ref={dropdownRef}>
       {props.label && (
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {props.label}

@@ -10,7 +10,10 @@ import listingsSeeder from './seeders/listingsSeeder'
 const prisma = new PrismaClient()
 
 async function main() {
-  if (process.env.CLEAR_DB === 'true') {
+  const args = process.argv.slice(2)
+  const clearDb = args.includes('--clear')
+
+  if (clearDb) {
     console.warn('🗑️ Clearing database...')
     console.warn('I hope you know what you are doing 😅')
 

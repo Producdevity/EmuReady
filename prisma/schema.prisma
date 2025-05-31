@@ -63,9 +63,10 @@ model Device {
 }
 
 model System {
-  id    String @id @default(uuid())
-  name  String @unique
-  games Game[]
+  id        String  @id @default(uuid())
+  name      String  @unique
+  key       String? @unique
+  games     Game[]
   emulators Emulator[]
 }
 

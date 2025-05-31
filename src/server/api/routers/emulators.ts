@@ -21,7 +21,9 @@ export const emulatorsRouter = createTRPCRouter({
       const { search } = input ?? {}
 
       return ctx.prisma.emulator.findMany({
-        where: search ? { name: { contains: search } } : undefined,
+        where: search
+          ? { name: { contains: search, mode: 'insensitive' } }
+          : undefined,
         include: {
           _count: { select: { listings: true } },
         },

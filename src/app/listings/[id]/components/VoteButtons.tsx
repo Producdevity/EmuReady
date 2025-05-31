@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { motion } from 'framer-motion'
 import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
+import { type RouterInput } from '@/types/trpc'
 
 interface Props {
   listingId: string
@@ -79,7 +80,7 @@ function VoteButtons(props: Props) {
     voteMutation.mutate({
       listingId: props.listingId,
       value,
-    })
+    } satisfies RouterInput['listings']['vote'])
   }
 
   const successRate =

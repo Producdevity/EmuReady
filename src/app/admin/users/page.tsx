@@ -1,21 +1,38 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { Search } from 'lucide-react'
 import { api } from '@/lib/api'
-import { Badge, Button, LoadingSpinner } from '@/components/ui'
+import { isEmpty } from 'remeda'
 import {
-  UserCircleIcon,
-  PencilIcon,
-  TrashIcon,
-  ShieldCheckIcon,
-} from '@heroicons/react/24/outline'
-import UserRoleModal from './components/UserRoleModal'
-import { Role } from '@orm'
-import { formatDate } from '@/utils/date'
-import { hasPermission } from '@/utils/permissions'
+  Button,
+  Input,
+  SortableHeader,
+  Badge,
+  ColumnVisibilityControl,
+} from '@/components/ui'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
+import UserRoleModal from './components/UserRoleModal'
+import { useConfirmDialog } from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
+import { type Role } from '@orm'
+import toast from '@/lib/toast'
+import storageKeys from '@/data/storageKeys'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
+import getErrorMessage from '@/utils/getErrorMessage'
+
+type User = RouterOutput['users']['getAll'][number]
+type UserSortField =
+  | 'name'
+  | 'email'
+  | 'role'
+  | 'createdAt'
+  | 'listingsCount'
+  | 'votesCount'
+  | 'commentsCount'
 
 interface UserForModal {
   id: string
@@ -24,200 +41,235 @@ interface UserForModal {
   role: Role
 }
 
+const USERS_COLUMNS: ColumnDefinition[] = [
+  { key: 'name', label: 'Name', defaultVisible: true },
+  { key: 'email', label: 'Email', defaultVisible: true },
+  { key: 'role', label: 'Role', defaultVisible: true },
+  { key: 'createdAt', label: 'Joined', defaultVisible: true },
+  { key: 'listingsCount', label: 'Listings', defaultVisible: false },
+  { key: 'votesCount', label: 'Votes', defaultVisible: false },
+  { key: 'commentsCount', label: 'Comments', defaultVisible: false },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
+
 function AdminUsersPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [userToEdit, setUserToEdit] = useState<UserForModal | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  if (status === 'loading') return <LoadingSpinner text="Loading..." />
-
-  if (!session || !hasPermission(session.user.role, Role.SUPER_ADMIN)) {
-    router.push('/admin')
-    return null
-  }
-
-  const { data: users, isLoading } = api.users.getAll.useQuery()
-
-  const deleteUserMutation = api.users.delete.useMutation({
-    onSuccess: () => {
-      // TODO: Show success toast
-      // TODO: Show error toast if delete fails
-      // TODO: handle error
-      api.useUtils().users.getAll.invalidate().catch(console.error)
-    },
+  const table = useAdminTable<UserSortField>()
+  const columnVisibility = useColumnVisibility(USERS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminUsers,
   })
 
-  const handleDeleteUser = (user: UserForModal) => {
-    const userName = user.name ?? 'this user'
+  const { data: users, refetch } = api.users.getAll.useQuery({
+    search: isEmpty(table.search) ? undefined : table.search,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
+  })
+  const deleteUser = api.users.delete.useMutation()
+  const confirm = useConfirmDialog()
 
-    // TODO: Show nice confirmation modal
-    if (!window.confirm(`Are you sure you want to delete user ${userName}?`)) {
-      return
+  const [selectedUser, setSelectedUser] = useState<UserForModal | null>(null)
+
+  const handleDelete = async (userId: string) => {
+    const confirmed = await confirm({
+      title: 'Delete User',
+      description:
+        'Are you sure you want to delete this user? This action cannot be undone.',
+    })
+
+    if (!confirmed) return
+
+    try {
+      await deleteUser.mutateAsync({
+        userId,
+      } satisfies RouterInput['users']['delete'])
+      refetch()
+    } catch (err) {
+      toast.error(`Failed to delete user: ${getErrorMessage(err)}`)
     }
-    deleteUserMutation.mutate({ userId: user.id })
   }
 
-  const openRoleModal = (user: UserForModal) => {
-    setUserToEdit(user)
-    setIsModalOpen(true)
+  const openRoleModal = (user: User) => {
+    setSelectedUser({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    })
+  }
+
+  const closeRoleModal = () => {
+    setSelectedUser(null)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+    <div className="container mx-auto p-4 md:p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
           Users Management
         </h1>
+        <ColumnVisibilityControl
+          columns={USERS_COLUMNS}
+          columnVisibility={columnVisibility}
+        />
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <LoadingSpinner text="Loading users..." />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    User
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Email
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Role
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Created
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Activity
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {users?.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          {/* User image is not available from the API for now, so just show the placeholder */}
-                          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <UserCircleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.name ?? 'Unnamed User'}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            ID: {user.id.substring(0, 8)}...
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {user.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge
-                        variant={getRoleBadgeColor(user.role)}
-                        className="inline-flex items-center gap-1"
-                      >
-                        <ShieldCheckIcon className="h-3 w-3" />
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white flex gap-2">
-                        <span title="Listings">
-                          {user._count.listings}{' '}
-                          <span className="text-gray-500 dark:text-gray-400">
-                            listings
-                          </span>
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span title="Comments">
-                          {user._count.comments}{' '}
-                          <span className="text-gray-500 dark:text-gray-400">
-                            comments
-                          </span>
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {user.id === session.user.id ? (
-                        <span className="text-gray-500 dark:text-gray-400 italic">
-                          (Current user)
-                        </span>
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openRoleModal(user)}
-                            className="inline-flex items-center gap-1"
-                          >
-                            <PencilIcon className="h-3.5 w-3.5" />
-                            Edit Role
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user)}
-                            className="inline-flex items-center gap-1"
-                          >
-                            <TrashIcon className="h-3.5 w-3.5" />
-                            Delete
-                          </Button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            placeholder="Search users..."
+            value={table.search}
+            onChange={table.handleSearchChange}
+            className="pl-10"
+          />
+        </div>
       </div>
 
-      {userToEdit && (
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+              {columnVisibility.isColumnVisible('name') && (
+                <SortableHeader
+                  label="Name"
+                  field="name"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('email') && (
+                <SortableHeader
+                  label="Email"
+                  field="email"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('role') && (
+                <SortableHeader
+                  label="Role"
+                  field="role"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('createdAt') && (
+                <SortableHeader
+                  label="Joined"
+                  field="createdAt"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('listingsCount') && (
+                <SortableHeader
+                  label="Listings"
+                  field="listingsCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('votesCount') && (
+                <SortableHeader
+                  label="Votes"
+                  field="votesCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('commentsCount') && (
+                <SortableHeader
+                  label="Comments"
+                  field="commentsCount"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
+              )}
+              {columnVisibility.isColumnVisible('actions') && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {users?.map((user) => (
+              <tr
+                key={user.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+              >
+                {columnVisibility.isColumnVisible('name') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {user.name ?? 'N/A'}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('email') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user.email}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('role') && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge variant={getRoleBadgeColor(user.role)}>
+                      {user.role}
+                    </Badge>
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('createdAt') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('listingsCount') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user._count.listings}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('votesCount') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user._count.votes}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('commentsCount') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {user._count.comments}
+                  </td>
+                )}
+                {columnVisibility.isColumnVisible('actions') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openRoleModal(user)}
+                    >
+                      Change Role
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(user.id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedUser && (
         <UserRoleModal
-          user={userToEdit}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setUserToEdit(null)
-          }}
+          user={selectedUser}
+          isOpen={true}
+          onClose={closeRoleModal}
         />
       )}
     </div>

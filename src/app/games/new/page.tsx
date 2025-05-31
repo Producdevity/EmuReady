@@ -7,6 +7,7 @@ import { Role } from '@orm'
 import { api } from '@/lib/api'
 import { ImageUpload, LoadingSpinner } from '@/components/ui'
 import { hasPermission } from '@/utils/permissions'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 function AddGamePage() {
   const router = useRouter()
@@ -58,7 +59,7 @@ function AddGamePage() {
       router.push(`/games/${result.id}`)
     } catch (err) {
       console.error(err)
-      setError(err instanceof Error ? err?.message : 'Failed to add game.')
+      setError(getErrorMessage(err, 'Failed to add game.'))
     }
   }
 

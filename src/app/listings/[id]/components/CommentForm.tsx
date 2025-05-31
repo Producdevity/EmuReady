@@ -5,7 +5,8 @@ import { useSession } from 'next-auth/react'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { sanitizeString } from '@/utils/validation'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
+import { type RouterInput } from '@/types/trpc'
 
 interface Props {
   listingId: string
@@ -22,7 +23,7 @@ function CommentForm(props: Props) {
   const [content, setContent] = useState(props.initialContent ?? '')
   const { data: session } = useSession()
 
-  const addComment = api.listings.createComment.useMutation({
+  const createComment = api.listings.createComment.useMutation({
     onSuccess: () => {
       setContent('')
       props.onCommentSuccess()
@@ -48,13 +49,13 @@ function CommentForm(props: Props) {
       editComment.mutate({
         commentId: props.commentId,
         content: sanitizedContent,
-      })
+      } satisfies RouterInput['listings']['editComment'])
     } else {
-      addComment.mutate({
+      createComment.mutate({
         listingId: props.listingId,
         content: sanitizedContent,
         parentId: props.parentId,
-      })
+      } satisfies RouterInput['listings']['createComment'])
     }
   }
 
@@ -80,9 +81,9 @@ function CommentForm(props: Props) {
         <textarea
           value={content}
           onChange={(ev) => setContent(ev.target.value)}
-          className={twMerge(
+          className={cn(
             'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white',
-            props.isReply ? 'text-sm' : '',
+            props.isReply && 'text-sm',
           )}
           rows={rows}
           placeholder={

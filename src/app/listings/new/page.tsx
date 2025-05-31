@@ -1,5 +1,6 @@
 'use client'
 
+import GitHubIcon from '@/components/icons/GitHubIcon'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
@@ -31,6 +32,11 @@ import {
   Info,
 } from 'lucide-react'
 import toast from '@/lib/toast'
+import useMounted from '@/hooks/useMounted'
+import { cn } from '@/lib/utils'
+import { type RouterInput } from '@/types/trpc'
+
+type ListingFormValues = RouterInput['listings']['create']
 
 // TODO: share schema with server-side validation
 const listingFormSchema = z.object({
@@ -50,7 +56,76 @@ const listingFormSchema = z.object({
     .optional(),
 })
 
-type ListingFormValues = z.infer<typeof listingFormSchema>
+// Dynamic schema builder for custom field validation
+const createDynamicListingSchema = (
+  customFields: CustomFieldDefinitionWithOptions[],
+) => {
+  const baseSchema = z.object({
+    gameId: z.string().min(1, 'Game is required'),
+    deviceId: z.string().min(1, 'Device is required'),
+    emulatorId: z.string().min(1, 'Emulator is required'),
+    performanceId: z.coerce.number().min(1, 'Performance rating is required'),
+    notes: z.string().optional(),
+    customFieldValues: z
+      .array(
+        z.object({
+          customFieldDefinitionId: z.string(),
+          value: z.any(),
+        }),
+      )
+      .optional(),
+  })
+
+  if (customFields.length === 0) {
+    return baseSchema
+  }
+
+  // Add custom validation for custom field values
+  return baseSchema.refine(
+    (data) => {
+      if (!data.customFieldValues) return false
+
+      // Check each required custom field
+      for (const field of customFields) {
+        if (!field.isRequired) continue
+
+        const fieldValue = data.customFieldValues.find(
+          (cfv) => cfv.customFieldDefinitionId === field.id,
+        )
+
+        if (!fieldValue) return false
+
+        // Validate based on field type
+        switch (field.type) {
+          case CustomFieldType.TEXT:
+          case CustomFieldType.TEXTAREA:
+          case CustomFieldType.URL:
+            if (
+              !fieldValue.value ||
+              (typeof fieldValue.value === 'string' &&
+                fieldValue.value.trim() === '')
+            ) {
+              return false
+            }
+            break
+          case CustomFieldType.SELECT:
+            if (!fieldValue.value || fieldValue.value === '') {
+              return false
+            }
+            break
+          case CustomFieldType.BOOLEAN:
+            // Boolean fields are always valid (true or false)
+            break
+        }
+      }
+      return true
+    },
+    {
+      message: 'All required custom fields must be filled',
+      path: ['customFieldValues'],
+    },
+  )
+}
 
 interface GameOption extends AutocompleteOptionBase {
   id: string
@@ -81,14 +156,22 @@ interface CustomFieldDefinitionWithOptions extends PrismaCustomFieldDefinition {
 
 function AddListingPage() {
   const router = useRouter()
+  const mounted = useMounted()
   const utils = api.useUtils()
 
+  const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
   const [availableEmulators, setAvailableEmulators] = useState<
     EmulatorOption[]
   >([])
+  const [parsedCustomFields, setParsedCustomFields] = useState<
+    CustomFieldDefinitionWithOptions[]
+  >([])
+
+  const [currentSchema, setCurrentSchema] =
+    useState<z.ZodType<ListingFormValues>>(listingFormSchema)
 
   const {
     control,
@@ -96,9 +179,10 @@ function AddListingPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormValues>({
-    resolver: zodResolver(listingFormSchema),
+    resolver: zodResolver(currentSchema),
     defaultValues: {
       gameId: '',
       deviceId: '',
@@ -121,9 +205,6 @@ function AddListingPage() {
       { emulatorId: selectedEmulatorId! },
       { enabled: !!selectedEmulatorId },
     )
-  const [parsedCustomFields, setParsedCustomFields] = useState<
-    CustomFieldDefinitionWithOptions[]
-  >([])
 
   // Autocomplete loadItems functions
   const loadGameItems = useCallback(
@@ -150,7 +231,6 @@ function AddListingPage() {
   const loadEmulatorItems = useCallback(
     async (query: string): Promise<EmulatorOption[]> => {
       setEmulatorSearchTerm(query)
-      if (query.length < 1) return Promise.resolve([])
 
       // If no game is selected, show a message instead of loading emulators
       if (!selectedGame) return Promise.resolve([])
@@ -209,9 +289,7 @@ function AddListingPage() {
       // Try to find the game in recent searches or fetch it
       loadGameItems(gameSearchTerm).then((games) => {
         const game = games.find((g) => g.id === selectedGameId)
-        if (game) {
-          setSelectedGame(game)
-        }
+        if (game) setSelectedGame(game)
       })
     } else if (!selectedGameId) {
       setSelectedGame(null)
@@ -261,6 +339,10 @@ function AddListingPage() {
       )
       setParsedCustomFields(parsed)
 
+      // Update the schema with custom field validation
+      const dynamicSchema = createDynamicListingSchema(parsed)
+      setCurrentSchema(dynamicSchema)
+
       const currentCustomValues = watch('customFieldValues') ?? []
       const newCustomValues = parsed.map((field) => {
         const existingValueObj = currentCustomValues.find(
@@ -298,6 +380,79 @@ function AddListingPage() {
   })
 
   const onSubmit = (data: ListingFormValues) => {
+    console.log('Submitting listing data:', data)
+
+    // Additional client-side validation for custom fields
+    if (parsedCustomFields.length > 0) {
+      const requiredFields = parsedCustomFields.filter(
+        (field) => field.isRequired,
+      )
+      const missingFields: string[] = []
+
+      for (const field of requiredFields) {
+        const fieldValue = data.customFieldValues?.find(
+          (cfv) => cfv.customFieldDefinitionId === field.id,
+        )
+
+        if (!fieldValue) {
+          missingFields.push(field.label)
+          continue
+        }
+
+        // Check if value is empty based on field type
+        switch (field.type) {
+          case CustomFieldType.TEXT:
+          case CustomFieldType.TEXTAREA:
+          case CustomFieldType.URL:
+            if (
+              !fieldValue.value ||
+              (typeof fieldValue.value === 'string' &&
+                fieldValue.value.trim() === '')
+            ) {
+              missingFields.push(field.label)
+            }
+            break
+          case CustomFieldType.SELECT:
+            if (!fieldValue.value || fieldValue.value === '') {
+              missingFields.push(field.label)
+            }
+            break
+          // BOOLEAN fields are always valid (true or false)
+        }
+      }
+
+      if (missingFields.length > 0) {
+        toast.error(
+          `Please fill in all required fields: ${missingFields.join(', ')}`,
+        )
+
+        // Set errors on the specific fields
+        missingFields.forEach((fieldLabel) => {
+          const field = parsedCustomFields.find((f) => f.label === fieldLabel)
+          if (field) {
+            const fieldIndex = parsedCustomFields.indexOf(field)
+            setError(`customFieldValues.${fieldIndex}.value`, {
+              type: 'required',
+              message: `${fieldLabel} is required`,
+            })
+          }
+        })
+
+        // Scroll to the first error field
+        const firstErrorField = document
+          .querySelector('.text-red-500')
+          ?.closest('.mb-4')
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        }
+
+        return
+      }
+    }
+
     createListingMutation.mutate(data)
   }
 
@@ -336,7 +491,7 @@ function AddListingPage() {
           <div key={fieldDef.id} className="mb-4">
             <label
               htmlFor={fieldName}
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="pl-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               {fieldDef.label} {fieldDef.isRequired && '*'}
             </label>
@@ -344,8 +499,29 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=""
+              rules={{
+                required: fieldDef.isRequired
+                  ? `${fieldDef.label} is required`
+                  : false,
+                validate: fieldDef.isRequired
+                  ? (value) => {
+                      if (
+                        !value ||
+                        (typeof value === 'string' && value.trim() === '')
+                      ) {
+                        return `${fieldDef.label} is required`
+                      }
+                      return true
+                    }
+                  : undefined,
+              }}
               render={({ field }) => (
                 <Input
+                  className={cn(
+                    'mt-2',
+                    errorText &&
+                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+                  )}
                   id={fieldName}
                   leftIcon={icon}
                   value={field.value as string}
@@ -372,9 +548,29 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue=""
+              rules={{
+                required: fieldDef.isRequired
+                  ? `${fieldDef.label} is required`
+                  : false,
+                validate: fieldDef.isRequired
+                  ? (value) => {
+                      if (
+                        !value ||
+                        (typeof value === 'string' && value.trim() === '')
+                      ) {
+                        return `${fieldDef.label} is required`
+                      }
+                      return true
+                    }
+                  : undefined,
+              }}
               render={({ field }) => (
                 <Input
                   as="textarea"
+                  className={cn(
+                    errorText &&
+                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+                  )}
                   id={fieldName}
                   leftIcon={icon}
                   value={field.value as string}
@@ -435,10 +631,27 @@ function AddListingPage() {
               name={fieldName}
               control={control}
               defaultValue={fieldDef.parsedOptions?.[0]?.value ?? ''}
+              rules={{
+                required: fieldDef.isRequired
+                  ? `${fieldDef.label} is required`
+                  : false,
+                validate: fieldDef.isRequired
+                  ? (value) => {
+                      if (!value || value === '') {
+                        return `${fieldDef.label} is required`
+                      }
+                      return true
+                    }
+                  : undefined,
+              }}
               render={({ field }) => (
                 <SelectInput
                   label={fieldDef.label}
                   leftIcon={icon}
+                  className={cn(
+                    errorText &&
+                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+                  )}
                   options={
                     fieldDef.parsedOptions?.map((opt) => ({
                       id: opt.value,
@@ -460,6 +673,8 @@ function AddListingPage() {
     }
   }
 
+  if (!mounted) return null
+
   return (
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -472,12 +687,6 @@ function AddListingPage() {
         >
           {/* Game Selection */}
           <div>
-            <label
-              htmlFor="gameId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Game *
-            </label>
             <Controller
               name="gameId"
               control={control}
@@ -489,16 +698,12 @@ function AddListingPage() {
                   onChange={(value) => {
                     field.onChange(value)
                     // Find and set the selected game
-                    if (value) {
-                      loadGameItems(gameSearchTerm).then((games) => {
-                        const game = games.find((g) => g.id === value)
-                        if (game) {
-                          setSelectedGame(game)
-                        }
-                      })
-                    } else {
-                      setSelectedGame(null)
-                    }
+                    if (!value) return setSelectedGame(null)
+
+                    loadGameItems(gameSearchTerm).then((games) => {
+                      const game = games.find((g) => g.id === value)
+                      if (game) setSelectedGame(game)
+                    })
                   }}
                   loadItems={loadGameItems}
                   optionToValue={(item) => item.id}
@@ -530,12 +735,6 @@ function AddListingPage() {
 
           {/* Device Selection */}
           <div>
-            <label
-              htmlFor="deviceId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Device *
-            </label>
             <Controller
               name="deviceId"
               control={control}
@@ -563,21 +762,23 @@ function AddListingPage() {
 
           {/* Emulator Selection */}
           <div>
-            <label
-              htmlFor="emulatorId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Emulator *
-            </label>
             {!selectedGame ? (
-              <div className="mt-1 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <div className="flex items-center text-sm text-yellow-700 dark:text-yellow-300">
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  <span>
-                    Please select a game first to see compatible emulators
-                  </span>
+              <>
+                <label
+                  htmlFor="emulatorId"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Emulator
+                </label>
+                <div className="mt-1 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center text-sm text-yellow-700 dark:text-yellow-300">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <span>
+                      Please select a game first to see compatible emulators
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </>
             ) : (
               <>
                 <Controller
@@ -590,8 +791,11 @@ function AddListingPage() {
                       value={field.value}
                       onChange={(value) => {
                         field.onChange(value)
+                        // reset, setting customFieldValues is handled in useEffect
                         setValue('customFieldValues', [])
                       }}
+                      onFocus={() => setEmulatorInputFocus(true)}
+                      onBlur={() => setEmulatorInputFocus(false)}
                       loadItems={loadEmulatorItems}
                       optionToValue={(item) => item.id}
                       optionToLabel={(item) => item.name}
@@ -603,14 +807,29 @@ function AddListingPage() {
                 {availableEmulators.length === 0 &&
                   selectedGame &&
                   emulatorSearchTerm.length >= 1 && (
-                    <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div
+                      className={cn(
+                        'p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800',
+                        emulatorInputFocus ? 'mt-14' : 'mt-2',
+                      )}
+                    >
                       <div className="flex items-center text-sm text-orange-700 dark:text-orange-300">
                         <AlertCircle className="w-4 h-4 mr-2" />
                         <span>
                           No emulators found that support{' '}
                           <strong>{selectedGame.system.name}</strong>. Try a
-                          different search term or contact an admin to add
-                          support.
+                          different search term, or request to add your emulator
+                          by opening a GitHub issue.
+                          <a
+                            href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Request Emulator on GitHub"
+                            className="ml-1 underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                          >
+                            <GitHubIcon className="inline w-4 h-4 mr-1" />
+                            Request Emulator
+                          </a>
                         </span>
                       </div>
                     </div>
@@ -626,12 +845,6 @@ function AddListingPage() {
 
           {/* Performance Selection */}
           <div>
-            <label
-              htmlFor="performanceId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Performance *
-            </label>
             <Controller
               name="performanceId"
               control={control}
@@ -702,21 +915,57 @@ function AddListingPage() {
                     </span>
                   )}
                 </h2>
-                {parsedCustomFields.map((fieldDef, index) =>
-                  renderCustomField(fieldDef, index),
-                )}
+                {parsedCustomFields.map(renderCustomField)}
               </div>
             )}
+
+          {/* Form Validation Summary */}
+          {Object.keys(errors).length > 0 && (
+            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                    Please fix the following errors:
+                  </h3>
+                  <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    {errors.gameId && <li>• {errors.gameId.message}</li>}
+                    {errors.deviceId && <li>• {errors.deviceId.message}</li>}
+                    {errors.emulatorId && (
+                      <li>• {errors.emulatorId.message}</li>
+                    )}
+                    {errors.performanceId && (
+                      <li>• {errors.performanceId.message}</li>
+                    )}
+                    {errors.notes && <li>• {errors.notes.message}</li>}
+                    {errors.customFieldValues && (
+                      <>
+                        {Array.isArray(errors.customFieldValues) ? (
+                          errors.customFieldValues.map((error, index) =>
+                            error?.value?.message ? (
+                              <li key={index}>• {error.value.message}</li>
+                            ) : null,
+                          )
+                        ) : (
+                          <li>• {errors.customFieldValues.message}</li>
+                        )}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end pt-8">
             <Button
               type="submit"
               variant="primary"
               isLoading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || Object.keys(errors).length > 0}
               size="lg"
             >
-              Create Listing
+              {isSubmitting ? 'Creating...' : 'Create Listing'}
             </Button>
           </div>
         </form>

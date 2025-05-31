@@ -1,8 +1,9 @@
 'use client'
 
-import { uploadProfileImage } from '@/rest/user'
 import { useState, useRef, type ChangeEvent } from 'react'
 import Image from 'next/image'
+import { uploadProfileImage } from '@/rest/user'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 interface ProfileUploadProps {
   currentImage?: string | null
@@ -51,12 +52,7 @@ function ProfileUpload(props: ProfileUploadProps) {
         }
       })
       .catch((err) => {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'An error occurred during upload',
-        )
-        // Reset preview if upload fails
+        setError(getErrorMessage(err, 'An error occurred during upload'))
         setPreviewUrl(null)
         console.error('Error uploading profile image:', err)
       })

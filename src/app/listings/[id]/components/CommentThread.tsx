@@ -15,8 +15,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
-import { ConfirmDialogProvider, useConfirmDialog } from '@/components/ui'
-import { type RouterOutput } from '@/types/trpc'
+import { useConfirmDialog } from '@/components/ui'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
 type CommentsData = RouterOutput['listings']['getSortedComments']
 type TopLevelComment = CommentsData['comments'][number]
@@ -75,8 +75,10 @@ function CommentThread(props: Props) {
   }
 
   const handleVote = (commentId: string, isUpvote: boolean) => {
-    if (!session) return
-    voteComment.mutate({ commentId, value: isUpvote })
+    voteComment.mutate({
+      commentId,
+      value: isUpvote,
+    } satisfies RouterInput['listings']['voteComment'])
   }
 
   const toggleCommentExpanded = (commentId: string) => {
@@ -90,11 +92,15 @@ function CommentThread(props: Props) {
 
   const handleDeleteComment = async (commentId: string) => {
     const confirmed = await confirm({
-      title: 'Delete this comment?',
-      description: 'This action cannot be undone.',
+      title: 'Delete Comment',
+      description: 'Are you sure you want to delete this comment?',
     })
+
     if (!confirmed) return
-    deleteComment.mutate({ commentId })
+
+    deleteComment.mutate({
+      commentId,
+    } satisfies RouterInput['listings']['deleteComment'])
   }
 
   const isCommentExpanded = (commentId: string) => {
@@ -403,12 +409,4 @@ function CommentThread(props: Props) {
   )
 }
 
-function WrappedCommentThread(props: Props) {
-  return (
-    <ConfirmDialogProvider>
-      <CommentThread {...props} />
-    </ConfirmDialogProvider>
-  )
-}
-
-export default WrappedCommentThread
+export default CommentThread
