@@ -1,6 +1,5 @@
 'use client'
 
-import GitHubIcon from '@/components/icons/GitHubIcon'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
@@ -35,6 +34,9 @@ import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
+import GitHubIcon from '@/components/icons/GitHubIcon'
+import { isString } from 'remeda'
 
 type ListingFormValues = RouterInput['listings']['create']
 
@@ -406,11 +408,11 @@ function AddListingPage() {
 
   const createListingMutation = api.listings.create.useMutation({
     onSuccess: () => {
-      toast.success('Listing created successfully!')
+      toast.success('Listing successfully submitted for review!')
       router.push('/listings')
     },
     onError: (error) => {
-      toast.error(`Error creating listing: ${error.message}`)
+      toast.error(`Error creating listing: ${getErrorMessage(error)}`)
     },
   })
 
@@ -537,15 +539,10 @@ function AddListingPage() {
                   ? `${fieldDef.label} is required`
                   : false,
                 validate: fieldDef.isRequired
-                  ? (value) => {
-                      if (
-                        !value ||
-                        (typeof value === 'string' && value.trim() === '')
-                      ) {
-                        return `${fieldDef.label} is required`
-                      }
-                      return true
-                    }
+                  ? (value) =>
+                      !value || (isString(value) && value.trim() === '')
+                        ? `${fieldDef.label} is required`
+                        : true
                   : undefined,
               }}
               render={({ field }) => (
