@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import Link from 'next/link'
 import { sanitizeString } from '@/utils/validation'
 import { cn } from '@/lib/utils'
+import { type RouterInput } from '@/types/trpc'
 
 interface Props {
   listingId: string
@@ -22,7 +23,7 @@ function CommentForm(props: Props) {
   const [content, setContent] = useState(props.initialContent ?? '')
   const { data: session } = useSession()
 
-  const addComment = api.listings.createComment.useMutation({
+  const createComment = api.listings.createComment.useMutation({
     onSuccess: () => {
       setContent('')
       props.onCommentSuccess()
@@ -48,13 +49,13 @@ function CommentForm(props: Props) {
       editComment.mutate({
         commentId: props.commentId,
         content: sanitizedContent,
-      })
+      } satisfies RouterInput['listings']['editComment'])
     } else {
-      addComment.mutate({
+      createComment.mutate({
         listingId: props.listingId,
         content: sanitizedContent,
         parentId: props.parentId,
-      })
+      } satisfies RouterInput['listings']['createComment'])
     }
   }
 
