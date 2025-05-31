@@ -59,6 +59,7 @@ function AdminApprovalsPage() {
       toast.success('Listing rejected successfully!')
       await pendingListingsQuery.refetch()
       await utils.listings.getProcessed.invalidate()
+      await utils.listings.get.invalidate()
       closeApprovalModal()
     },
     onError: (err) => {
