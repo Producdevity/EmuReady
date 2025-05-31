@@ -10,6 +10,7 @@ import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
 import storageKeys from '@/data/storageKeys'
 import SystemIcon from '@/components/icons/SystemIcon'
+import useLocalStorage from '@/hooks/useLocalStorage'
 import {
   PerformanceBadge,
   Pagination,
@@ -67,7 +68,10 @@ function ListingsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     (searchParams.get('sortDirection') as SortDirection) ?? null,
   )
-  const [showSystemIcons, setShowSystemIcons] = useState(false)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
+    storageKeys.showSystemIcons,
+    false
+  )
 
   const columnVisibility = useColumnVisibility(LISTINGS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.listings,
@@ -219,12 +223,12 @@ function ListingsPage() {
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
-              onClick={() => {
-                // TODO: save this in local storage
-                setShowSystemIcons(!showSystemIcons)
-              }}
+              onClick={() => setShowSystemIcons(!showSystemIcons)}
             >
-              {showSystemIcons ? 'Show System Names' : 'Show System Icons'}
+              {isSystemIconsHydrated 
+                ? (showSystemIcons ? 'Show System Names' : 'Show System Icons')
+                : 'Show System Icons'
+              }
             </Button>
             <ColumnVisibilityControl
               columns={LISTINGS_COLUMNS}
@@ -331,7 +335,7 @@ function ListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('system') && (
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {showSystemIcons && listing.game.system?.key ? (
+                        {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
                           <div className="flex items-center gap-2">
                             <SystemIcon
                               name={listing.game.system.name}

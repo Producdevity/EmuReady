@@ -3,9 +3,10 @@
  */
 'use client'
 
-import getErrorMessage from '@/utils/getErrorMessage'
-import toggleInSet from '@/utils/toggleInSet'
 import { useState, useEffect, useCallback } from 'react'
+import toggleInSet from '@/utils/toggleInSet'
+import useLocalStorage from './useLocalStorage'
+import storageKeys from '@/data/storageKeys'
 
 export interface ColumnDefinition {
   key: string
@@ -25,9 +26,9 @@ export interface UseColumnVisibilityReturn {
   toggleColumn: (columnKey: string) => void
   showColumn: (columnKey: string) => void
   hideColumn: (columnKey: string) => void
-  resetToDefaults: () => void
   showAll: () => void
   hideAll: () => void
+  resetToDefaults: () => void
   isHydrated: boolean
 }
 
@@ -35,116 +36,126 @@ function useColumnVisibility(
   columns: ColumnDefinition[],
   opts?: UseColumnVisibilityOptions,
 ): UseColumnVisibilityReturn {
-  const [isHydrated, setIsHydrated] = useState(false)
-
-  const getDefaultVisibleColumns = useCallback((): Set<string> => {
-    // default to defaultVisibleColumns when provided
-    if (opts?.defaultVisibleColumns) return new Set(opts.defaultVisibleColumns)
-
-    // Otherwise, use column definitions
-    return new Set(
-      columns
-        .filter((col) => col.defaultVisible !== false)
-        .map((col) => col.key),
-    )
+  const getDefaultVisibleColumns = useCallback(() => {
+    if (opts?.defaultVisibleColumns) {
+      return opts.defaultVisibleColumns
+    }
+    return columns
+      .filter((col) => col.defaultVisible !== false)
+      .map((col) => col.key)
   }, [columns, opts?.defaultVisibleColumns])
 
-  const getStoredVisibleColumns = useCallback((): Set<string> | null => {
-    if (!opts?.storageKey || typeof window === 'undefined') return null
+  // Handle localStorage read with proper error handling for tests
+  const getInitialColumns = useCallback(() => {
+    if (!opts?.storageKey || typeof window === 'undefined') {
+      return getDefaultVisibleColumns()
+    }
 
     try {
-      const stored = localStorage.getItem(opts.storageKey)
-      if (stored) {
-        const parsedColumns = JSON.parse(stored) as string[]
-        return new Set(parsedColumns)
+      const item = window.localStorage.getItem(opts.storageKey)
+      if (item) {
+        return JSON.parse(item)
       }
+      return getDefaultVisibleColumns()
     } catch (error) {
-      console.error(
-        'Failed to load column visibility from localStorage:',
-        getErrorMessage(error),
-      )
+      console.error('Failed to load column visibility from localStorage:', (error as Error).message)
+      return getDefaultVisibleColumns()
     }
-    return null
-  }, [opts?.storageKey])
+  }, [opts?.storageKey, getDefaultVisibleColumns])
 
-  // Initialize with default columns (for SSR consistency)
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    getDefaultVisibleColumns,
+  // Conditionally use localStorage or plain state
+  const shouldUseLocalStorage = Boolean(opts?.storageKey)
+  
+  // Use useLocalStorage only when storageKey is provided
+  const [localStorageColumns, setLocalStorageColumns, isLocalStorageHydrated] = useLocalStorage<string[]>(
+    opts?.storageKey ?? storageKeys.columnVisibility.listings,
+    getInitialColumns()
+  )
+  
+  // Use plain state when no storageKey
+  const [plainStateColumns, setPlainStateColumns] = useState<string[]>(getInitialColumns)
+  
+  // Choose which state to use
+  const storedColumns = shouldUseLocalStorage ? localStorageColumns : plainStateColumns
+  const isHydrated = shouldUseLocalStorage ? isLocalStorageHydrated : true
+
+  // Wrap setStoredColumns with error handling for localStorage save errors  
+  const setStoredColumns = useCallback((newColumns: string[]) => {
+    if (shouldUseLocalStorage) {
+      try {
+        setLocalStorageColumns(newColumns)
+      } catch (error) {
+        console.error('Failed to save column visibility to localStorage:', error)
+      }
+    } else {
+      setPlainStateColumns(newColumns)
+    }
+  }, [shouldUseLocalStorage, setLocalStorageColumns, setPlainStateColumns])
+
+  const [visibleColumns, setVisibleColumns] = useState(
+    () => new Set(storedColumns),
   )
 
-  // Hydrate from localStorage after mount
+  // Only sync from localStorage to state on mount or when localStorage value changes
   useEffect(() => {
-    const storedColumns = getStoredVisibleColumns()
-    if (storedColumns) {
-      setVisibleColumns(storedColumns)
-    }
-    setIsHydrated(true)
-  }, [getStoredVisibleColumns])
+    setVisibleColumns(new Set(storedColumns))
+  }, [storedColumns])
 
-  // Save to localStorage when visibleColumns changes (only after hydration)
-  useEffect(() => {
-    if (!isHydrated || !opts?.storageKey || typeof window === 'undefined')
-      return
-
-    try {
-      localStorage.setItem(opts.storageKey, JSON.stringify([...visibleColumns]))
-    } catch (error) {
-      console.error('Failed to save column visibility to localStorage:', error)
+  // Helper function to update both state and localStorage
+  const updateVisibleColumns = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns)
+    if (isHydrated) {
+      setStoredColumns(Array.from(newColumns))
     }
-  }, [visibleColumns, opts?.storageKey, isHydrated])
+  }, [setStoredColumns, isHydrated])
 
   const isColumnVisible = useCallback(
-    (columnKey: string): boolean => {
-      const column = columns.find((col) => col.key === columnKey)
-      return column?.alwaysVisible ? true : visibleColumns.has(columnKey)
-    },
-    [visibleColumns, columns],
-  )
-
-  const toggleColumn = useCallback(
     (columnKey: string) => {
       const column = columns.find((col) => col.key === columnKey)
-
-      if (column?.alwaysVisible) return
-
-      setVisibleColumns((prev) => toggleInSet(prev, columnKey))
+      // Always show columns marked as alwaysVisible
+      if (column?.alwaysVisible) return true
+      return visibleColumns.has(columnKey)
     },
-    [columns],
+    [columns, visibleColumns],
   )
+
+  const toggleColumn = useCallback((columnKey: string) => {
+    const column = columns.find((col) => col.key === columnKey)
+    // Don't allow toggling columns marked as alwaysVisible
+    if (column?.alwaysVisible) return
+
+    updateVisibleColumns(toggleInSet(visibleColumns, columnKey))
+  }, [columns, visibleColumns, updateVisibleColumns])
 
   const showColumn = useCallback((columnKey: string) => {
-    setVisibleColumns((prev) => new Set([...prev, columnKey]))
-  }, [])
+    updateVisibleColumns(new Set([...visibleColumns, columnKey]))
+  }, [visibleColumns, updateVisibleColumns])
 
-  const hideColumn = useCallback(
-    (columnKey: string) => {
-      const column = columns.find((col) => col.key === columnKey)
+  const hideColumn = useCallback((columnKey: string) => {
+    const column = columns.find((col) => col.key === columnKey)
+    // Don't allow hiding columns marked as alwaysVisible
+    if (column?.alwaysVisible) return
 
-      if (column?.alwaysVisible) return
-
-      setVisibleColumns((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(columnKey)
-        return newSet
-      })
-    },
-    [columns],
-  )
-
-  const resetToDefaults = useCallback(() => {
-    setVisibleColumns(getDefaultVisibleColumns())
-  }, [getDefaultVisibleColumns])
+    const next = new Set(visibleColumns)
+    next.delete(columnKey)
+    updateVisibleColumns(next)
+  }, [columns, visibleColumns, updateVisibleColumns])
 
   const showAll = useCallback(() => {
-    setVisibleColumns(new Set(columns.map((col) => col.key)))
-  }, [columns])
+    updateVisibleColumns(new Set(columns.map((col) => col.key)))
+  }, [columns, updateVisibleColumns])
 
   const hideAll = useCallback(() => {
+    // Only hide columns that are not marked as alwaysVisible
     const alwaysVisibleColumns = columns
       .filter((col) => col.alwaysVisible)
       .map((col) => col.key)
-    setVisibleColumns(new Set(alwaysVisibleColumns))
-  }, [columns])
+    updateVisibleColumns(new Set(alwaysVisibleColumns))
+  }, [columns, updateVisibleColumns])
+
+  const resetToDefaults = useCallback(() => {
+    updateVisibleColumns(new Set(getDefaultVisibleColumns()))
+  }, [getDefaultVisibleColumns, updateVisibleColumns])
 
   return {
     visibleColumns,
@@ -152,9 +163,9 @@ function useColumnVisibility(
     toggleColumn,
     showColumn,
     hideColumn,
-    resetToDefaults,
     showAll,
     hideAll,
+    resetToDefaults,
     isHydrated,
   }
 }
