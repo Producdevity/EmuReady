@@ -18,6 +18,7 @@ import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type RouterInput } from '@/types/trpc'
 
 type SystemSortField = 'name' | 'gamesCount'
 
@@ -69,10 +70,15 @@ function AdminSystemsPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateSystem.mutateAsync({ id: editId, name })
+        await updateSystem.mutateAsync({
+          id: editId,
+          name,
+        } satisfies RouterInput['systems']['update'])
         setSuccess('System updated!')
       } else {
-        await createSystem.mutateAsync({ name })
+        await createSystem.mutateAsync({
+          name,
+        } satisfies RouterInput['systems']['create'])
         setSuccess('System created!')
       }
       refetch()
@@ -92,7 +98,9 @@ function AdminSystemsPage() {
     if (!confirmed) return
 
     try {
-      await deleteSystem.mutateAsync({ id })
+      await deleteSystem.mutateAsync({
+        id,
+      } satisfies RouterInput['systems']['delete'])
       refetch()
     } catch (err) {
       toast.error(`Failed to delete system: ${getErrorMessage(err)}`)

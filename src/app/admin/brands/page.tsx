@@ -18,6 +18,7 @@ import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type RouterInput } from '@/types/trpc'
 
 type DeviceBrandSortField = 'name' | 'devicesCount'
 
@@ -69,10 +70,15 @@ function AdminBrandsPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateBrand.mutateAsync({ id: editId, name })
+        await updateBrand.mutateAsync({
+          id: editId,
+          name,
+        } satisfies RouterInput['deviceBrands']['update'])
         setSuccess('Brand updated!')
       } else {
-        await createBrand.mutateAsync({ name })
+        await createBrand.mutateAsync({
+          name,
+        } satisfies RouterInput['deviceBrands']['create'])
         setSuccess('Brand created!')
       }
       refetch()
@@ -92,7 +98,9 @@ function AdminBrandsPage() {
     if (!confirmed) return
 
     try {
-      await deleteBrand.mutateAsync({ id })
+      await deleteBrand.mutateAsync({
+        id,
+      } satisfies RouterInput['deviceBrands']['delete'])
       refetch()
     } catch (err) {
       toast.error(`Failed to delete brand: ${getErrorMessage(err)}`)

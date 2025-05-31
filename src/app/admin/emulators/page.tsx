@@ -16,6 +16,7 @@ import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+import { type RouterInput } from '@/types/trpc'
 
 const actionButtonClasses =
   'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
@@ -51,16 +52,20 @@ function AdminEmulatorsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    console.log('Deleting emulator with ID:', id)
     const confirmed = await confirm({
-      title: 'Delete this emulator?',
-      description: 'This action cannot be undone.',
+      title: 'Delete Emulator',
+      description:
+        'Are you sure you want to delete this emulator? This action cannot be undone.',
     })
+
     if (!confirmed) return
 
     try {
-      await deleteEmulator.mutateAsync({ id })
+      await deleteEmulator.mutateAsync({
+        id,
+      } satisfies RouterInput['emulators']['delete'])
       refetch()
+      toast.success('Emulator deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete emulator: ${getErrorMessage(err)}`)
     }

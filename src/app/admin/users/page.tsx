@@ -15,7 +15,7 @@ import getRoleBadgeColor from './utils/getRoleBadgeColor'
 import UserRoleModal from './components/UserRoleModal'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { type Role } from '@orm'
 import toast from '@/lib/toast'
 import storageKeys from '@/data/storageKeys'
@@ -68,7 +68,7 @@ function AdminUsersPage() {
 
   const [selectedUser, setSelectedUser] = useState<UserForModal | null>(null)
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDelete = async (userId: string) => {
     const confirmed = await confirm({
       title: 'Delete User',
       description:
@@ -78,7 +78,9 @@ function AdminUsersPage() {
     if (!confirmed) return
 
     try {
-      await deleteUser.mutateAsync({ userId })
+      await deleteUser.mutateAsync({
+        userId,
+      } satisfies RouterInput['users']['delete'])
       refetch()
     } catch (err) {
       toast.error(`Failed to delete user: ${getErrorMessage(err)}`)
@@ -251,7 +253,7 @@ function AdminUsersPage() {
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
+                      onClick={() => handleDelete(user.id)}
                     >
                       Delete
                     </Button>

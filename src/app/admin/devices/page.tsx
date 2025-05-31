@@ -15,6 +15,7 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type RouterInput } from '@/types/trpc'
 
 const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'brand', label: 'Brand', defaultVisible: true },
@@ -70,10 +71,17 @@ function AdminDevicesPage() {
     setSuccess('')
     try {
       if (editId) {
-        await updateDevice.mutateAsync({ id: editId, brandId, modelName })
+        await updateDevice.mutateAsync({
+          id: editId,
+          brandId,
+          modelName,
+        } satisfies RouterInput['devices']['update'])
         setSuccess('Device updated!')
       } else {
-        await createDevice.mutateAsync({ brandId, modelName })
+        await createDevice.mutateAsync({
+          brandId,
+          modelName,
+        } satisfies RouterInput['devices']['create'])
         setSuccess('Device created!')
       }
       refetch()
@@ -87,7 +95,9 @@ function AdminDevicesPage() {
     // TODO: use a confirmation modal instead of browser confirm
     if (!confirm('Delete this device?')) return
     try {
-      await deleteDevice.mutateAsync({ id })
+      await deleteDevice.mutateAsync({
+        id,
+      } satisfies RouterInput['devices']['delete'])
       refetch()
     } catch (err) {
       toast.error(`Failed to delete device: ${getErrorMessage(err)}`)

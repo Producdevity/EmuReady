@@ -22,7 +22,7 @@ import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import toast from '@/lib/toast'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { isEmpty } from 'remeda'
 import useAdminTable from '@/hooks/useAdminTable'
 
@@ -74,9 +74,9 @@ function AdminGamesPage() {
       description: `Are you sure you want to delete "${game.title}"? This action cannot be undone.`,
     })
 
-    if (confirmed) {
-      deleteGame.mutate({ id: game.id })
-    }
+    if (!confirmed) return
+
+    deleteGame.mutate({ id: game.id } satisfies RouterInput['games']['delete'])
   }
 
   const handleSystemChange = (ev: ChangeEvent<HTMLInputElement>) => {

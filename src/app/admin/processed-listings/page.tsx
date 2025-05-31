@@ -20,7 +20,7 @@ import { ListingApprovalStatus } from '@orm'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import Pagination from '@/components/ui/Pagination'
 import getStatusBadgeColor from './utils/getStatusBadgeColor'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
 type ProcessedListing =
   RouterOutput['listings']['getProcessed']['listings'][number]
@@ -106,7 +106,7 @@ function ProcessedListingsPage() {
         listingId: selectedListingForOverride.id,
         newStatus: newStatusForOverride,
         overrideNotes: overrideNotes ?? undefined,
-      })
+      } satisfies RouterInput['listings']['overrideApprovalStatus'])
     }
   }
 

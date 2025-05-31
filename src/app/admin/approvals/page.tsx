@@ -12,7 +12,7 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import { ListingApprovalStatus } from '@orm'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
 type PendingListing = RouterOutput['listings']['getPending'][number]
 
@@ -94,12 +94,12 @@ function AdminApprovalsPage() {
       if (approvalDecision === ListingApprovalStatus.APPROVED) {
         approveMutation.mutate({
           listingId: selectedListingForApproval.id,
-        })
+        } satisfies RouterInput['listings']['approveListing'])
       } else if (approvalDecision === ListingApprovalStatus.REJECTED) {
         rejectMutation.mutate({
           listingId: selectedListingForApproval.id,
           notes: approvalNotes || undefined,
-        })
+        } satisfies RouterInput['listings']['rejectListing'])
       }
     }
   }
