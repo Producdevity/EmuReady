@@ -1,63 +1,28 @@
-import { notFound } from 'next/navigation'
+'use client'
+
+import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui'
-import { prisma } from '@/server/db'
+import { Button, LoadingSpinner } from '@/components/ui'
+import { api } from '@/lib/api'
 import GameEditForm from './components/GameEditForm'
 import GameRelatedData from './components/GameRelatedData'
 
-interface Props {
-  params: Promise<{ id: string }>
-}
+function AdminGameEditPage() {
+  const params = useParams()
+  const id = params.id as string
 
-async function getGameData(id: string) {
-  const game = await prisma.game.findUnique({
-    where: { id },
-    include: {
-      system: {
-        include: {
-          emulators: true,
-        },
-      },
-      listings: {
-        include: {
-          device: {
-            include: {
-              brand: true,
-            },
-          },
-          emulator: true,
-          performance: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      },
-    },
-  })
+  const { data: game, isLoading, error } = api.games.byId.useQuery({ id })
 
-  if (!game) return null
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <LoadingSpinner text="Loading game data..." />
+      </div>
+    )
+  }
 
-  return game
-}
-
-async function AdminGameEditPage(props: Props) {
-  const { id } = await props.params
-  const game = await getGameData(id)
-
-  if (!game) {
+  if (error || !game) {
     notFound()
   }
 
