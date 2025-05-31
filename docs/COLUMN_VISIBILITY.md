@@ -48,6 +48,7 @@ interface UseColumnVisibilityReturn {
   resetToDefaults: () => void
   showAll: () => void
   hideAll: () => void
+  isHydrated: boolean
 }
 ```
 
