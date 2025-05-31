@@ -1,18 +1,18 @@
-import { Prisma, ListingApprovalStatus } from '@orm'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateListingSchema,
-  GetListingsSchema,
-  GetListingByIdSchema,
   CreateVoteSchema,
+  GetListingByIdSchema,
+  GetListingsSchema,
 } from '@/schemas/listing'
-import { validateCustomFields } from './validation'
 import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
   authorProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
 } from '@/server/api/trpc'
+import { ListingApprovalStatus, Prisma } from '@orm'
+import { validateCustomFields } from './validation'
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure
@@ -119,39 +119,16 @@ export const coreRouter = createTRPCRouter({
       const listings = await ctx.prisma.listing.findMany({
         where: filters,
         include: {
-          game: {
-            include: {
-              system: true,
-            },
-          },
-          device: {
-            include: {
-              brand: true,
-            },
-          },
+          game: { include: { system: true } },
+          device: { include: { brand: true } },
           emulator: true,
           performance: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          _count: {
-            select: {
-              votes: true,
-              comments: true,
-            },
-          },
+          author: { select: { id: true, name: true, email: true } },
+          _count: { select: { votes: true, comments: true } },
           votes: ctx.session
             ? {
-                where: {
-                  userId: ctx.session.user.id,
-                },
-                select: {
-                  value: true,
-                },
+                where: { userId: ctx.session.user.id },
+                select: { value: true },
               }
             : undefined,
         },
@@ -165,10 +142,7 @@ export const coreRouter = createTRPCRouter({
         listings.map(async (listing) => {
           // Count upvotes
           const upVotes = await ctx.prisma.vote.count({
-            where: {
-              listingId: listing.id,
-              value: true,
-            },
+            where: { listingId: listing.id, value: true },
           })
 
           const totalVotes = listing._count.votes
@@ -191,11 +165,11 @@ export const coreRouter = createTRPCRouter({
 
       // Handle sorting by success rate since it's calculated after the database query
       if (sortField === 'successRate' && sortDirection) {
-        listingsWithStats.sort((a, b) => {
-          return sortDirection === 'asc'
+        listingsWithStats.sort((a, b) =>
+          sortDirection === 'asc'
             ? a.successRate - b.successRate
-            : b.successRate - a.successRate
-        })
+            : b.successRate - a.successRate,
+        )
       }
 
       return {
@@ -217,75 +191,29 @@ export const coreRouter = createTRPCRouter({
       const listing = await ctx.prisma.listing.findUnique({
         where: { id },
         include: {
-          game: {
-            include: {
-              system: true,
-            },
-          },
-          device: {
-            include: {
-              brand: true,
-            },
-          },
+          game: { include: { system: true } },
+          device: { include: { brand: true } },
           emulator: true,
           performance: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
+          author: { select: { id: true, name: true, email: true } },
           customFieldValues: {
-            include: {
-              customFieldDefinition: true,
-            },
-            orderBy: {
-              customFieldDefinition: {
-                name: 'asc',
-              },
-            },
+            include: { customFieldDefinition: true },
+            orderBy: { customFieldDefinition: { name: 'asc' } },
           },
           comments: {
-            where: {
-              parentId: null,
-            },
+            where: { parentId: null },
             include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
+              user: { select: { id: true, name: true } },
               replies: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                },
-                orderBy: {
-                  createdAt: 'asc',
-                },
+                include: { user: { select: { id: true, name: true } } },
+                orderBy: { createdAt: 'asc' },
               },
             },
-            orderBy: {
-              createdAt: 'desc',
-            },
+            orderBy: { createdAt: 'desc' },
           },
-          _count: {
-            select: {
-              votes: true,
-            },
-          },
+          _count: { select: { votes: true } },
           votes: ctx.session
-            ? {
-                where: {
-                  userId: ctx.session.user.id,
-                },
-              }
+            ? { where: { userId: ctx.session.user.id } }
             : undefined,
         },
       })
@@ -297,10 +225,7 @@ export const coreRouter = createTRPCRouter({
 
       // Count upvotes
       const upVotes = await ctx.prisma.vote.count({
-        where: {
-          listingId: listing.id,
-          value: true,
-        },
+        where: { listingId: listing.id, value: true },
       })
 
       const successRate =
@@ -336,13 +261,8 @@ export const coreRouter = createTRPCRouter({
         select: { id: true },
       })
 
-      if (!userExists) {
-        console.error(
-          'CRITICAL: User with session ID not found in database:',
-          authorId,
-        )
-        ResourceError.user.notInDatabase(authorId)
-      }
+      // TODO: consider logging this error
+      if (!userExists) return ResourceError.user.notInDatabase(authorId)
 
       const existingListing = await ctx.prisma.listing.findFirst({
         where: {
@@ -403,28 +323,18 @@ export const coreRouter = createTRPCRouter({
         where: { id: listingId },
       })
 
-      if (!listing) {
-        ResourceError.listing.notFound()
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
-      // Verify user exists in database
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true },
       })
 
-      if (!userExists) {
-        ResourceError.user.notInDatabase(userId)
-      }
+      if (!userExists) return ResourceError.user.notInDatabase(userId)
 
       // Check if user already voted
       const existingVote = await ctx.prisma.vote.findUnique({
-        where: {
-          userId_listingId: {
-            userId,
-            listingId,
-          },
-        },
+        where: { userId_listingId: { userId, listingId } },
       })
 
       if (existingVote) {
@@ -449,23 +359,42 @@ export const coreRouter = createTRPCRouter({
               listingId,
             },
           },
-          data: {
-            value,
-          },
+          data: { value },
         })
       }
 
       // Create new vote
-      return ctx.prisma.vote.create({
-        data: {
-          value,
-          userId,
-          listingId,
-        },
-      })
+      return ctx.prisma.vote.create({ data: { value, userId, listingId } })
     }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } })
+  }),
+
+  featured: publicProcedure.query(async ({ ctx }) => {
+    const listings = await ctx.prisma.listing.findMany({
+      where: { status: ListingApprovalStatus.APPROVED },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true } },
+        emulator: true,
+        performance: true,
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
+      },
+    })
+
+    async function calculateSuccessRate(listing: (typeof listings)[0]) {
+      const upVotes = await ctx.prisma.vote.count({
+        where: { listingId: listing.id, value: true },
+      })
+      const totalVotes = listing._count.votes
+      const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
+      return { ...listing, successRate }
+    }
+
+    return await Promise.all(listings.map(calculateSuccessRate))
   }),
 })

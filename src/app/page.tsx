@@ -1,42 +1,27 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import getImageUrl from './games/utils/getImageUrl'
-import { prisma } from '@/server/db'
-import { SuccessRateBar } from '@/components/ui'
+import { SuccessRateBar, LoadingSpinner } from '@/components/ui'
+import { api } from '@/lib/api'
 import {
   HandThumbUpIcon,
   ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline'
 
-export default async function Home() {
-  const latestListings = await prisma.listing.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-    include: {
-      game: { include: { system: true } },
-      device: { include: { brand: true } },
-      emulator: true,
-      performance: true,
-      author: { select: { id: true, name: true } },
-      _count: {
-        select: {
-          votes: true,
-          comments: true,
-        },
-      },
-    },
-  })
+function Home() {
+  const listingsQuery = api.listings.featured.useQuery()
 
-  const listingsWithSuccessRate = await Promise.all(
-    latestListings.map(async (listing) => {
-      const upVotes = await prisma.vote.count({
-        where: { listingId: listing.id, value: true },
-      })
-      const totalVotes = listing._count.votes
-      const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-      return { ...listing, successRate }
-    }),
-  )
+  if (listingsQuery.isLoading) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          <LoadingSpinner text="Loading featured content..." />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -106,7 +91,7 @@ export default async function Home() {
             Latest Compatibility Listings
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {listingsWithSuccessRate.map((listing) => (
+            {(listingsQuery.data ?? []).map((listing) => (
               <div
                 key={listing.id}
                 className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm"
@@ -244,3 +229,5 @@ export default async function Home() {
     </div>
   )
 }
+
+export default Home
