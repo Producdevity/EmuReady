@@ -2,7 +2,7 @@
 
 import GitHubIcon from '@/components/icons/GitHubIcon'
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -156,8 +156,12 @@ interface CustomFieldDefinitionWithOptions extends PrismaCustomFieldDefinition {
 
 function AddListingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const mounted = useMounted()
   const utils = api.useUtils()
+
+  // Extract gameId from URL parameters
+  const gameIdFromUrl = searchParams.get('gameId')
 
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
@@ -169,6 +173,7 @@ function AddListingPage() {
   const [parsedCustomFields, setParsedCustomFields] = useState<
     CustomFieldDefinitionWithOptions[]
   >([])
+  const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
 
   const [currentSchema, setCurrentSchema] =
     useState<z.ZodType<ListingFormValues>>(listingFormSchema)
@@ -184,7 +189,7 @@ function AddListingPage() {
   } = useForm<ListingFormValues>({
     resolver: zodResolver(currentSchema),
     defaultValues: {
-      gameId: '',
+      gameId: gameIdFromUrl ?? '',
       deviceId: '',
       emulatorId: '',
       performanceId: undefined,
@@ -205,6 +210,12 @@ function AddListingPage() {
       { emulatorId: selectedEmulatorId! },
       { enabled: !!selectedEmulatorId },
     )
+
+  // Fetch game data if gameId is provided in URL
+  const { data: preSelectedGameData } = api.games.byId.useQuery(
+    { id: gameIdFromUrl! },
+    { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
+  )
 
   // Autocomplete loadItems functions
   const loadGameItems = useCallback(
@@ -283,20 +294,44 @@ function AddListingPage() {
     [utils.emulators.get, utils.emulators.byId, selectedGame],
   )
 
-  // Update selected game when gameId changes
+  // Handle pre-selected game from URL parameter
   useEffect(() => {
-    if (selectedGameId && !selectedGame) {
+    if (preSelectedGameData && gameIdFromUrl && !isInitialGameLoaded) {
+      const gameOption: GameOption = {
+        id: preSelectedGameData.id,
+        title: preSelectedGameData.title,
+        system: preSelectedGameData.system,
+      }
+      setSelectedGame(gameOption)
+      setValue('gameId', preSelectedGameData.id)
+      setIsInitialGameLoaded(true)
+
+      // Set the game search term to help with the autocomplete display
+      setGameSearchTerm(preSelectedGameData.title)
+    }
+  }, [preSelectedGameData, gameIdFromUrl, isInitialGameLoaded, setValue])
+
+  // Update selected game when gameId changes (but not during initial load)
+  useEffect(() => {
+    if (isInitialGameLoaded && selectedGameId && !selectedGame) {
       // Try to find the game in recent searches or fetch it
       loadGameItems(gameSearchTerm).then((games) => {
         const game = games.find((g) => g.id === selectedGameId)
         if (game) setSelectedGame(game)
       })
-    } else if (!selectedGameId) {
+    } else if (isInitialGameLoaded && !selectedGameId) {
       setSelectedGame(null)
       setAvailableEmulators([])
       setValue('emulatorId', '') // Clear emulator when game is cleared
     }
-  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, setValue])
+  }, [
+    selectedGameId,
+    selectedGame,
+    gameSearchTerm,
+    loadGameItems,
+    setValue,
+    isInitialGameLoaded,
+  ])
 
   // Clear emulator when game changes
   useEffect(() => {
@@ -380,7 +415,6 @@ function AddListingPage() {
   })
 
   const onSubmit = (data: ListingFormValues) => {
-
     // Additional client-side validation for custom fields
     if (parsedCustomFields.length > 0) {
       const requiredFields = parsedCustomFields.filter(
