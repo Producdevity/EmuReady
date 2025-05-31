@@ -1,14 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from '@/lib/toast'
 
-function useLocalStorage<T>(key: string, initialValue: T) {
+function useLocalStorage<T>(key: string, initialValue: T, enabled = true) {
   const [isHydrated, setIsHydrated] = useState(false)
 
-  // Pure initializer - no side effects
   const [storedValue, setStoredValue] = useState<T>(() => {
-    if (typeof window === 'undefined') {
-      return initialValue
-    }
+    if (!enabled || typeof window === 'undefined') return initialValue
     try {
       const item = window.localStorage.getItem(key)
       return item ? JSON.parse(item) : initialValue
@@ -23,6 +20,11 @@ function useLocalStorage<T>(key: string, initialValue: T) {
   storedValueRef.current = storedValue
 
   useEffect(() => {
+    if (!enabled) {
+      setIsHydrated(true)
+      return
+    }
+
     setIsHydrated(true)
 
     // Try to read from localStorage again after hydration
@@ -33,21 +35,37 @@ function useLocalStorage<T>(key: string, initialValue: T) {
         setStoredValue(parsed)
       }
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error)
+      // Don't throw, just log and continue with current value
+      console.error(
+        `Error reading localStorage key "${key}":`,
+        (error as Error).message,
+      )
 
       // Only show user-facing error for JSON parsing issues with existing data
-      const item = window.localStorage.getItem(key)
-      if (item !== null && typeof item === 'string') {
-        // We have data but can't parse it
-        toast.warning(
-          'Failed to load your preferences. Please refresh the page to try again.',
-        )
+      try {
+        const item = window.localStorage.getItem(key)
+        if (item !== null && typeof item === 'string') {
+          // We have data but can't parse it
+          toast.warning(
+            'Failed to load your preferences. Please refresh the page to try again.',
+          )
+        }
+      } catch {
+        // If even getting the item fails, just ignore
       }
     }
-  }, [key])
+  }, [key, enabled])
 
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
+      if (!enabled) {
+        // When disabled, only update local state, no localStorage
+        const valueToStore =
+          value instanceof Function ? value(storedValueRef.current) : value
+        setStoredValue(valueToStore)
+        return
+      }
+
       try {
         const valueToStore =
           value instanceof Function ? value(storedValueRef.current) : value
@@ -58,9 +76,11 @@ function useLocalStorage<T>(key: string, initialValue: T) {
       } catch (error) {
         console.warn(`Error setting localStorage key "${key}":`, error)
         toast.warning('Failed to save your preferences. Please try again.')
+        // Re-throw so calling code can handle it too
+        throw error
       }
     },
-    [key],
+    [key, enabled],
   )
 
   return [storedValue, setValue, isHydrated] as const
