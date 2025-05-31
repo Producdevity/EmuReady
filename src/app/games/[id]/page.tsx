@@ -1,32 +1,27 @@
-import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useSession } from 'next-auth/react'
+import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getGameById } from '../data'
-import { getServerSession } from 'next-auth'
 import { Role } from '@orm'
-import { authOptions } from '@/server/auth'
-import { Badge, OptimizedImage } from '@/components/ui'
+import { Badge, LoadingSpinner, OptimizedImage } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
 import getImageUrl from '@/app/games/utils/getImageUrl'
 import { hasPermission } from '@/utils/permissions'
+import { api } from '@/lib/api'
+import { ChevronLeft } from 'lucide-react'
 
-export const metadata: Metadata = {
-  title: 'Game Details',
-  description: 'View game details and compatibility listings',
-}
+function GameDetailsPage() {
+  const params = useParams()
+  const { data: session } = useSession()
+  const gameQuery = api.games.byId.useQuery({ id: params.id as string })
 
-interface Props {
-  params: Promise<{ id: string }>
-}
-
-async function GameDetailsPage(props: Props) {
-  const { id } = await props.params
-  const game = await getGameById(id)
-  const session = await getServerSession(authOptions)
   const canEdit = hasPermission(session?.user.role, Role.ADMIN)
 
-  if (!game) notFound()
+  if (gameQuery.isLoading) return <LoadingSpinner text="Loading game data..." />
+
+  if (gameQuery.error || !gameQuery.data) notFound()
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
@@ -36,18 +31,7 @@ async function GameDetailsPage(props: Props) {
             href="/games"
             className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <ChevronLeft className="h-4 w-4" />
             Back to Games
           </Link>
         </div>
@@ -55,10 +39,13 @@ async function GameDetailsPage(props: Props) {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/4 flex-shrink-0">
-              {game.imageUrl ? (
+              {gameQuery.data.imageUrl ? (
                 <OptimizedImage
-                  src={getImageUrl(game.imageUrl, game.title)}
-                  alt={game.title}
+                  src={getImageUrl(
+                    gameQuery.data.imageUrl,
+                    gameQuery.data.title,
+                  )}
+                  alt={gameQuery.data.title}
                   width={300}
                   height={400}
                   className="w-full rounded-lg shadow-md"
@@ -80,16 +67,18 @@ async function GameDetailsPage(props: Props) {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {game.title}
+                    {gameQuery.data.title}
                   </h1>
                   <div className="mt-2">
-                    <Badge variant="default">System: {game.system?.name}</Badge>
+                    <Badge variant="default">
+                      System: {gameQuery.data.system?.name}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  {canEdit && <GameEditForm gameData={game} />}
+                  {canEdit && <GameEditForm gameData={gameQuery.data} />}
                   <Link
-                    href={`/listings/new?gameId=${game.id}`}
+                    href={`/listings/new?gameId=${gameQuery.data.id}`}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
                   >
                     Add Listing for this Game
@@ -105,7 +94,7 @@ async function GameDetailsPage(props: Props) {
             Compatibility Listings
           </h2>
 
-          {game.listings && game.listings.length > 0 ? (
+          {gameQuery.data.listings && gameQuery.data.listings.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
@@ -131,7 +120,7 @@ async function GameDetailsPage(props: Props) {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {game.listings.map((listing) => (
+                  {gameQuery.data.listings.map((listing) => (
                     <tr
                       key={listing.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -188,7 +177,7 @@ async function GameDetailsPage(props: Props) {
                 No compatibility listings yet for this game.
               </p>
               <Link
-                href={`/listings/new?gameId=${game.id}`}
+                href={`/listings/new?gameId=${gameQuery.data.id}`}
                 className="mt-4 inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
               >
                 Be the first to add a listing
