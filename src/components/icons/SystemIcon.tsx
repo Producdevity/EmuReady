@@ -1,6 +1,6 @@
 import { type Maybe } from '@/types/utils'
 import { cn } from '@/lib/utils'
-import getSystemIcon from './getSystemIcon'
+import getSystemIcon from './systems/getSystemIcon'
 
 type Size = Exclude<Props['size'], undefined>
 

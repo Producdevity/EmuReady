@@ -9,7 +9,7 @@ import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
 import storageKeys from '@/data/storageKeys'
-import SystemIcon from '@/components/icons/systems/SystemIcon'
+import SystemIcon from '@/components/icons/SystemIcon'
 import {
   Badge,
   Pagination,
