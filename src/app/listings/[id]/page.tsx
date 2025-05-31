@@ -1,45 +1,42 @@
 import { type Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { getListingById, getListingUpVotes, getListingVotes } from './data'
+import { notFound, useParams } from 'next/navigation'
+import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/ui'
 import ListingDetailsClient from './components/ListingDetailsClient'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth'
 import sanitizeForClient from '@/utils/sanitizeForClient'
 
 export const metadata: Metadata = {
-  title: 'Listing Details',
-  description: 'View listing details and compatibility listings',
+  title: 'Listing Details | EmuReady',
+  description: 'View detailed information about a compatibility listing',
 }
 
-interface Props {
-  params: Promise<{ id: string }>
-}
+function ListingDetailsPage() {
+  const params = useParams()
+  const id = params.id as string
 
-async function ListingDetailsPage(props: Props) {
-  const { id } = await props.params
-  const session = await getServerSession(authOptions)
+  const { data: listing, isLoading, error } = api.listings.byId.useQuery({ id })
 
-  const listing = await getListingById(id)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <LoadingSpinner text="Loading listing details..." />
+        </div>
+      </div>
+    )
+  }
 
-  if (!listing) notFound()
-
-  const upVotes = await getListingUpVotes(listing.id)
-  const totalVotes = listing._count.votes
-  const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-
-  let userVote: boolean | null = null
-  if (session?.user?.id) {
-    const votes = await getListingVotes(listing.id, session.user.id)
-    userVote = votes.length > 0 ? votes[0].value : null
+  if (error || !listing) {
+    notFound()
   }
 
   return (
     <ListingDetailsClient
       listing={sanitizeForClient(listing)}
-      successRate={successRate}
-      upVotes={upVotes}
-      totalVotes={totalVotes}
-      userVote={userVote}
+      successRate={listing.successRate}
+      upVotes={Math.round(listing.successRate * listing._count.votes)}
+      totalVotes={listing._count.votes}
+      userVote={listing.userVote}
     />
   )
 }
