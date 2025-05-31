@@ -31,6 +31,7 @@ import {
   type SortDirection,
   type SortField,
 } from './types'
+import { type RouterInput } from '@/types/trpc'
 
 const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -170,16 +171,15 @@ function ListingsPage() {
     })
   }
 
-  const confirmDelete = async (id: string) => {
+  const handleDelete = async (id: string) => {
     const confirmed = await confirm({
-      title: 'Delete this listing?',
-      description: 'This action cannot be undone.',
+      title: 'Delete Listing',
+      description: 'Are you sure you want to delete this listing?',
     })
+
     if (!confirmed) return
 
-    if (deleteConfirmId !== id) return setDeleteConfirmId(id)
-
-    deleteListing.mutate({ id })
+    deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
   }
 
   if (listingsQuery?.error)
@@ -218,10 +218,13 @@ function ListingsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowSystemIcons(!showSystemIcons)}
               className="flex items-center gap-2"
+              onClick={() => {
+                // TODO: save this in local storage
+                setShowSystemIcons(!showSystemIcons)
+              }}
             >
-              {showSystemIcons ? 'Show Names' : 'Show Icons'}
+              {showSystemIcons ? 'Show System Names' : 'Show System Icons'}
             </Button>
             <ColumnVisibilityControl
               columns={LISTINGS_COLUMNS}
@@ -398,7 +401,7 @@ function ListingsPage() {
 
                           {isAdmin && (
                             <button
-                              onClick={() => confirmDelete(listing.id)}
+                              onClick={() => handleDelete(listing.id)}
                               className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
                                 deleteConfirmId === listing.id
                                   ? 'bg-orange-700 text-white hover:bg-orange-800'

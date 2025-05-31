@@ -9,6 +9,8 @@ import { ProfileUpload } from '@/components/ui'
 import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
 import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfilePageError from './components/ProfilePageError'
+import { type RouterInput } from '@/types/trpc'
+import { toast } from 'react-hot-toast'
 
 function ProfilePage() {
   const { data: session, status } = useSession()
@@ -24,31 +26,25 @@ function ProfilePage() {
 
   const updateProfile = api.users.update.useMutation({
     onMutate: async (newData) => {
-      // Cancel any outgoing refetches to avoid overwriting optimistic update
-      await utils.users.getProfile.cancel()
-
-      const previousProfile = utils.users.getProfile.getData()
-
-      utils.users.getProfile.setData(undefined, (old) => {
-        if (!old) return old
-        return { ...old, ...newData }
-      })
-
-      return { previousProfile }
+      // Optimistically update the profile image
+      setProfileImage(newData.profileImage ?? null)
     },
-    onError: (err, _newData, context) => {
-      utils.users.getProfile.setData(undefined, context?.previousProfile)
-      console.error('Error updating profile:', err)
+    onSuccess: () => {
+      utils.users.getProfile.invalidate().catch(console.error)
+      toast.success('Profile updated successfully!')
     },
-    onSettled: () => {
-      utils.users.getProfile.invalidate().catch(console.error) // TODO: handle error correctly
+    onError: (error) => {
+      // Revert optimistic update on error
+      setProfileImage(profile?.profileImage ?? null)
+      toast.error(`Failed to update profile: ${error.message}`)
     },
   })
 
-  const handleProfileImageUpload = (imageUrl: string) => {
+  const handleImageUpload = async (imageUrl: string) => {
     setProfileImage(imageUrl)
-
-    updateProfile.mutate({ profileImage: imageUrl })
+    updateProfile.mutate({
+      profileImage: imageUrl,
+    } satisfies RouterInput['users']['update'])
   }
 
   if (status === 'loading' || (isLoading && session))
@@ -79,7 +75,7 @@ function ProfilePage() {
               <div className="md:w-1/3 flex flex-col items-center">
                 <ProfileUpload
                   currentImage={profileImage ?? profile.profileImage}
-                  onUploadSuccess={handleProfileImageUpload}
+                  onUploadSuccess={handleImageUpload}
                 />
               </div>
 
