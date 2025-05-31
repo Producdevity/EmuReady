@@ -1,89 +1,47 @@
 'use client'
 
+import { CreateListingSchema } from '@/schemas/listing'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api } from '@/lib/api'
-import {
-  CustomFieldType,
-  type CustomFieldDefinition as PrismaCustomFieldDefinition,
-} from '@orm'
+import { CustomFieldType, type CustomFieldDefinition } from '@orm'
 import {
   Input,
   Button,
   SelectInput,
-  Autocomplete,
   type AutocompleteOptionBase,
 } from '@/components/ui'
-import {
-  Gamepad2,
-  Puzzle,
-  HardDrive,
-  Zap,
-  ListChecks,
-  FileText,
-  CheckSquare,
-  LinkIcon,
-  CaseSensitive,
-  AlertCircle,
-  Info,
-} from 'lucide-react'
+import { HardDrive, Zap, FileText } from 'lucide-react'
 import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
-import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import GitHubIcon from '@/components/icons/GitHubIcon'
-import { isString } from 'remeda'
+import CustomFieldRenderer from './components/CustomFieldRenderer'
+import FormValidationSummary from './components/FormValidationSummary'
+import GameSelector from './components/GameSelector'
+import EmulatorSelector from './components/EmulatorSelector'
+import validateCustomFields from './utils/validateCustomFields'
 
-type ListingFormValues = RouterInput['listings']['create']
+export type ListingFormValues = RouterInput['listings']['create']
 
-// TODO: share schema with server-side validation
-const listingFormSchema = z.object({
+const listingFormSchema = CreateListingSchema.extend({
   gameId: z.string().min(1, 'Game is required'),
   deviceId: z.string().min(1, 'Device is required'),
   emulatorId: z.string().min(1, 'Emulator is required'),
   performanceId: z.coerce.number().min(1, 'Performance rating is required'),
-  notes: z.string().optional(),
-  // Placeholder for custom field values - will be dynamically built
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string(),
-        value: z.any(), // Will be refined based on field type
-      }),
-    )
-    .optional(),
 })
 
 // Dynamic schema builder for custom field validation
-const createDynamicListingSchema = (
+function createDynamicListingSchema(
   customFields: CustomFieldDefinitionWithOptions[],
-) => {
-  const baseSchema = z.object({
-    gameId: z.string().min(1, 'Game is required'),
-    deviceId: z.string().min(1, 'Device is required'),
-    emulatorId: z.string().min(1, 'Emulator is required'),
-    performanceId: z.coerce.number().min(1, 'Performance rating is required'),
-    notes: z.string().optional(),
-    customFieldValues: z
-      .array(
-        z.object({
-          customFieldDefinitionId: z.string(),
-          value: z.any(),
-        }),
-      )
-      .optional(),
-  })
-
-  if (customFields.length === 0) {
-    return baseSchema
-  }
+) {
+  if (customFields.length === 0) return listingFormSchema
 
   // Add custom validation for custom field values
-  return baseSchema.refine(
+  return listingFormSchema.refine(
     (data) => {
       if (!data.customFieldValues) return false
 
@@ -152,7 +110,7 @@ interface CustomFieldOptionUI {
   label: string
 }
 
-interface CustomFieldDefinitionWithOptions extends PrismaCustomFieldDefinition {
+interface CustomFieldDefinitionWithOptions extends CustomFieldDefinition {
   parsedOptions?: CustomFieldOptionUI[]
 }
 
@@ -162,7 +120,6 @@ function AddListingPage() {
   const mounted = useMounted()
   const utils = api.useUtils()
 
-  // Extract gameId from URL parameters
   const gameIdFromUrl = searchParams.get('gameId')
 
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
@@ -344,66 +301,63 @@ function AddListingPage() {
   }, [selectedGame, setValue])
 
   useEffect(() => {
-    if (customFieldDefinitionsData) {
-      const parsed = customFieldDefinitionsData.map(
-        (field): CustomFieldDefinitionWithOptions => {
-          let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
-          if (
-            field.type === CustomFieldType.SELECT &&
-            Array.isArray(field.options)
-          ) {
-            parsedOptions = field.options.reduce(
-              (acc: CustomFieldOptionUI[], opt: unknown) => {
-                if (
-                  typeof opt === 'object' &&
-                  opt !== null &&
-                  'value' in opt &&
-                  'label' in opt
-                ) {
-                  const knownOpt = opt as { value: unknown; label: unknown }
-                  acc.push({
-                    value: String(knownOpt.value),
-                    label: String(knownOpt.label),
-                  })
-                }
-                return acc
-              },
-              [],
-            )
-          }
-          return { ...field, parsedOptions }
-        },
+    if (!customFieldDefinitionsData) return
+
+    const parsed = customFieldDefinitionsData.map(
+      (field): CustomFieldDefinitionWithOptions => {
+        let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
+        if (
+          field.type === CustomFieldType.SELECT &&
+          Array.isArray(field.options)
+        ) {
+          parsedOptions = field.options.reduce(
+            (acc: CustomFieldOptionUI[], opt: unknown) => {
+              if (
+                typeof opt === 'object' &&
+                opt !== null &&
+                'value' in opt &&
+                'label' in opt
+              ) {
+                const knownOpt = opt as { value: unknown; label: unknown }
+                acc.push({
+                  value: String(knownOpt.value),
+                  label: String(knownOpt.label),
+                })
+              }
+              return acc
+            },
+            [],
+          )
+        }
+        return { ...field, parsedOptions }
+      },
+    )
+    setParsedCustomFields(parsed)
+    const dynamicSchema = createDynamicListingSchema(parsed)
+    setCurrentSchema(dynamicSchema)
+    const currentCustomValues = watch('customFieldValues') ?? []
+    const newCustomValues = parsed.map((field) => {
+      const existingValueObj = currentCustomValues.find(
+        (cv) => cv.customFieldDefinitionId === field.id,
       )
-      setParsedCustomFields(parsed)
-
-      // Update the schema with custom field validation
-      const dynamicSchema = createDynamicListingSchema(parsed)
-      setCurrentSchema(dynamicSchema)
-
-      const currentCustomValues = watch('customFieldValues') ?? []
-      const newCustomValues = parsed.map((field) => {
-        const existingValueObj = currentCustomValues.find(
-          (cv) => cv.customFieldDefinitionId === field.id,
-        )
-        if (existingValueObj) return existingValueObj
-        let defaultValue: string | boolean | number | null | undefined
-        switch (field.type) {
-          case CustomFieldType.BOOLEAN:
-            defaultValue = false
-            break
-          case CustomFieldType.SELECT:
-            defaultValue = field.parsedOptions?.[0]?.value ?? ''
-            break
-          default:
-            defaultValue = ''
-        }
-        return {
-          customFieldDefinitionId: field.id,
-          value: defaultValue,
-        }
-      })
-      setValue('customFieldValues', newCustomValues)
-    }
+      if (existingValueObj) return existingValueObj
+      let defaultValue: string | boolean | number | null | undefined
+      switch (field.type) {
+        case CustomFieldType.BOOLEAN:
+          defaultValue = false
+          break
+        case CustomFieldType.SELECT:
+          defaultValue = field.parsedOptions?.[0]?.value ?? ''
+          break
+        default:
+          defaultValue = ''
+      }
+      return {
+        customFieldDefinitionId: field.id,
+        value: defaultValue,
+      }
+    })
+    setValue('customFieldValues', newCustomValues)
   }, [customFieldDefinitionsData, setValue, watch])
 
   const createListingMutation = api.listings.create.useMutation({
@@ -418,289 +372,10 @@ function AddListingPage() {
 
   const onSubmit = (data: ListingFormValues) => {
     // Additional client-side validation for custom fields
-    if (parsedCustomFields.length > 0) {
-      const requiredFields = parsedCustomFields.filter(
-        (field) => field.isRequired,
-      )
-      const missingFields: string[] = []
-
-      for (const field of requiredFields) {
-        const fieldValue = data.customFieldValues?.find(
-          (cfv) => cfv.customFieldDefinitionId === field.id,
-        )
-
-        if (!fieldValue) {
-          missingFields.push(field.label)
-          continue
-        }
-
-        // Check if value is empty based on field type
-        switch (field.type) {
-          case CustomFieldType.TEXT:
-          case CustomFieldType.TEXTAREA:
-          case CustomFieldType.URL:
-            if (
-              !fieldValue.value ||
-              (typeof fieldValue.value === 'string' &&
-                fieldValue.value.trim() === '')
-            ) {
-              missingFields.push(field.label)
-            }
-            break
-          case CustomFieldType.SELECT:
-            if (!fieldValue.value || fieldValue.value === '') {
-              missingFields.push(field.label)
-            }
-            break
-          // BOOLEAN fields are always valid (true or false)
-        }
-      }
-
-      if (missingFields.length > 0) {
-        toast.error(
-          `Please fill in all required fields: ${missingFields.join(', ')}`,
-        )
-
-        // Set errors on the specific fields
-        missingFields.forEach((fieldLabel) => {
-          const field = parsedCustomFields.find((f) => f.label === fieldLabel)
-          if (field) {
-            const fieldIndex = parsedCustomFields.indexOf(field)
-            setError(`customFieldValues.${fieldIndex}.value`, {
-              type: 'required',
-              message: `${fieldLabel} is required`,
-            })
-          }
-        })
-
-        // Scroll to the first error field
-        const firstErrorField = document
-          .querySelector('.text-red-500')
-          ?.closest('.mb-4')
-        if (firstErrorField) {
-          firstErrorField.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          })
-        }
-
-        return
-      }
-    }
+    const isValid = validateCustomFields(data, parsedCustomFields, setError)
+    if (!isValid) return
 
     createListingMutation.mutate(data)
-  }
-
-  const renderCustomField = (
-    fieldDef: CustomFieldDefinitionWithOptions,
-    index: number,
-  ) => {
-    const fieldName = `customFieldValues.${index}.value` as const
-    const errorMessage = errors.customFieldValues?.[index]?.value?.message
-    const errorText =
-      typeof errorMessage === 'string' ? errorMessage : undefined
-
-    const getIcon = (type: CustomFieldType) => {
-      switch (type) {
-        case CustomFieldType.TEXT:
-          return <CaseSensitive className="w-5 h-5" />
-        case CustomFieldType.TEXTAREA:
-          return <FileText className="w-5 h-5" />
-        case CustomFieldType.URL:
-          return <LinkIcon className="w-5 h-5" />
-        case CustomFieldType.BOOLEAN:
-          return <CheckSquare className="w-5 h-5" />
-        case CustomFieldType.SELECT:
-          return <ListChecks className="w-5 h-5" />
-        default:
-          return <FileText className="w-5 h-5" />
-      }
-    }
-
-    const icon = getIcon(fieldDef.type)
-
-    switch (fieldDef.type) {
-      case CustomFieldType.TEXT:
-      case CustomFieldType.URL:
-        return (
-          <div key={fieldDef.id} className="mb-4">
-            <label
-              htmlFor={fieldName}
-              className="pl-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {fieldDef.label} {fieldDef.isRequired && '*'}
-            </label>
-            <Controller
-              name={fieldName}
-              control={control}
-              defaultValue=""
-              rules={{
-                required: fieldDef.isRequired
-                  ? `${fieldDef.label} is required`
-                  : false,
-                validate: fieldDef.isRequired
-                  ? (value) =>
-                      !value || (isString(value) && value.trim() === '')
-                        ? `${fieldDef.label} is required`
-                        : true
-                  : undefined,
-              }}
-              render={({ field }) => (
-                <Input
-                  className={cn(
-                    'mt-2',
-                    errorText &&
-                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
-                  )}
-                  id={fieldName}
-                  leftIcon={icon}
-                  value={field.value as string}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  placeholder={`Enter ${fieldDef.label.toLowerCase()}`}
-                />
-              )}
-            />
-            {errorText && (
-              <p className="text-red-500 text-xs mt-1">{errorText}</p>
-            )}
-          </div>
-        )
-      case CustomFieldType.TEXTAREA:
-        return (
-          <div key={fieldDef.id} className="mb-4">
-            <label
-              htmlFor={fieldName}
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {fieldDef.label} {fieldDef.isRequired && '*'}
-            </label>
-            <Controller
-              name={fieldName}
-              control={control}
-              defaultValue=""
-              rules={{
-                required: fieldDef.isRequired
-                  ? `${fieldDef.label} is required`
-                  : false,
-                validate: fieldDef.isRequired
-                  ? (value) => {
-                      if (
-                        !value ||
-                        (typeof value === 'string' && value.trim() === '')
-                      ) {
-                        return `${fieldDef.label} is required`
-                      }
-                      return true
-                    }
-                  : undefined,
-              }}
-              render={({ field }) => (
-                <Input
-                  as="textarea"
-                  className={cn(
-                    errorText &&
-                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
-                  )}
-                  id={fieldName}
-                  leftIcon={icon}
-                  value={field.value as string}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  placeholder={`Enter ${fieldDef.label.toLowerCase()}`}
-                  rows={3}
-                />
-              )}
-            />
-            {errorText && (
-              <p className="text-red-500 text-xs mt-1">{errorText}</p>
-            )}
-          </div>
-        )
-      case CustomFieldType.BOOLEAN:
-        return (
-          <div key={fieldDef.id} className="mb-4">
-            <Controller
-              name={fieldName}
-              control={control}
-              defaultValue={false}
-              render={({ field }) => (
-                <label
-                  htmlFor={fieldName}
-                  className="flex items-center cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    id={fieldName}
-                    checked={field.value as boolean}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                    className="mr-3 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
-                  />
-                  <span className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {icon}
-                    <span className="ml-2">
-                      {fieldDef.label} {fieldDef.isRequired && '*'}
-                    </span>
-                  </span>
-                </label>
-              )}
-            />
-            {errorText && (
-              <p className="text-red-500 text-xs mt-1 ml-6">{errorText}</p>
-            )}
-          </div>
-        )
-      case CustomFieldType.SELECT:
-        return (
-          <div key={fieldDef.id} className="mb-4">
-            <label
-              htmlFor={fieldName}
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {fieldDef.label} {fieldDef.isRequired && '*'}
-            </label>
-            <Controller
-              name={fieldName}
-              control={control}
-              defaultValue={fieldDef.parsedOptions?.[0]?.value ?? ''}
-              rules={{
-                required: fieldDef.isRequired
-                  ? `${fieldDef.label} is required`
-                  : false,
-                validate: fieldDef.isRequired
-                  ? (value) => {
-                      if (!value || value === '') {
-                        return `${fieldDef.label} is required`
-                      }
-                      return true
-                    }
-                  : undefined,
-              }}
-              render={({ field }) => (
-                <SelectInput
-                  label={fieldDef.label}
-                  leftIcon={icon}
-                  className={cn(
-                    errorText &&
-                      'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
-                  )}
-                  options={
-                    fieldDef.parsedOptions?.map((opt) => ({
-                      id: opt.value,
-                      name: opt.label,
-                    })) ?? []
-                  }
-                  value={field.value as string}
-                  onChange={(e) => field.onChange(e.target.value)}
-                />
-              )}
-            />
-            {errorText && (
-              <p className="text-red-500 text-xs mt-1">{errorText}</p>
-            )}
-          </div>
-        )
-      default:
-        return null
-    }
   }
 
   if (!mounted) return null
@@ -717,50 +392,14 @@ function AddListingPage() {
         >
           {/* Game Selection */}
           <div>
-            <Controller
-              name="gameId"
+            <GameSelector
               control={control}
-              render={({ field }) => (
-                <Autocomplete<GameOption>
-                  label="Game"
-                  leftIcon={<Puzzle className="w-5 h-5" />}
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value)
-                    // Find and set the selected game
-                    if (!value) return setSelectedGame(null)
-
-                    loadGameItems(gameSearchTerm).then((games) => {
-                      const game = games.find((g) => g.id === value)
-                      if (game) setSelectedGame(game)
-                    })
-                  }}
-                  loadItems={loadGameItems}
-                  optionToValue={(item) => item.id}
-                  optionToLabel={(item) =>
-                    `${item.title} (${item.system.name})`
-                  }
-                  placeholder="Search for a game..."
-                  minCharsToTrigger={2}
-                />
-              )}
+              selectedGame={selectedGame}
+              errorMessage={String(errors.gameId?.message ?? '')}
+              loadGameItems={loadGameItems}
+              onGameSelect={setSelectedGame}
+              gameSearchTerm={gameSearchTerm}
             />
-            {errors.gameId && (
-              <p className="text-red-500 text-xs mt-1">
-                {String(errors.gameId.message ?? '')}
-              </p>
-            )}
-            {selectedGame && (
-              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center text-sm text-blue-700 dark:text-blue-300">
-                  <Info className="w-4 h-4 mr-2" />
-                  <span>
-                    Selected: <strong>{selectedGame.title}</strong> for{' '}
-                    <strong>{selectedGame.system.name}</strong>
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Device Selection */}
@@ -792,85 +431,18 @@ function AddListingPage() {
 
           {/* Emulator Selection */}
           <div>
-            {!selectedGame ? (
-              <>
-                <label
-                  htmlFor="emulatorId"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Emulator
-                </label>
-                <div className="mt-1 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <div className="flex items-center text-sm text-yellow-700 dark:text-yellow-300">
-                    <AlertCircle className="w-4 h-4 mr-2" />
-                    <span>
-                      Please select a game first to see compatible emulators
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <Controller
-                  name="emulatorId"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete<EmulatorOption>
-                      label="Emulator"
-                      leftIcon={<Gamepad2 className="w-5 h-5" />}
-                      value={field.value}
-                      onChange={(value) => {
-                        field.onChange(value)
-                        // reset, setting customFieldValues is handled in useEffect
-                        setValue('customFieldValues', [])
-                      }}
-                      onFocus={() => setEmulatorInputFocus(true)}
-                      onBlur={() => setEmulatorInputFocus(false)}
-                      loadItems={loadEmulatorItems}
-                      optionToValue={(item) => item.id}
-                      optionToLabel={(item) => item.name}
-                      placeholder={`Search for emulators that support ${selectedGame.system.name}...`}
-                      minCharsToTrigger={1}
-                    />
-                  )}
-                />
-                {availableEmulators.length === 0 &&
-                  selectedGame &&
-                  emulatorSearchTerm.length >= 1 && (
-                    <div
-                      className={cn(
-                        'p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800',
-                        emulatorInputFocus ? 'mt-14' : 'mt-2',
-                      )}
-                    >
-                      <div className="flex items-center text-sm text-orange-700 dark:text-orange-300">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        <span>
-                          No emulators found that support{' '}
-                          <strong>{selectedGame.system.name}</strong>. Try a
-                          different search term, or request to add your emulator
-                          by opening a GitHub issue.
-                          <a
-                            href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="Request Emulator on GitHub"
-                            className="ml-1 underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                          >
-                            <GitHubIcon className="inline w-4 h-4 mr-1" />
-                            Request Emulator
-                          </a>
-                        </span>
-                      </div>
-                    </div>
-                  )}
-              </>
-            )}
-            {errors.emulatorId && (
-              <p className="text-red-500 text-xs mt-1">
-                {String(errors.emulatorId.message ?? '')}
-              </p>
-            )}
+            <EmulatorSelector
+              control={control}
+              selectedGame={selectedGame}
+              availableEmulators={availableEmulators}
+              emulatorSearchTerm={emulatorSearchTerm}
+              emulatorInputFocus={emulatorInputFocus}
+              errorMessage={String(errors.emulatorId?.message ?? '')}
+              loadEmulatorItems={loadEmulatorItems}
+              setValue={setValue}
+              onFocus={() => setEmulatorInputFocus(true)}
+              onBlur={() => setEmulatorInputFocus(false)}
+            />
           </div>
 
           {/* Performance Selection */}
@@ -945,47 +517,27 @@ function AddListingPage() {
                     </span>
                   )}
                 </h2>
-                {parsedCustomFields.map(renderCustomField)}
+                {parsedCustomFields.map((fieldDef, index) => (
+                  <CustomFieldRenderer
+                    key={fieldDef.id}
+                    fieldDef={fieldDef}
+                    index={index}
+                    control={control}
+                    errorMessage={
+                      errors.customFieldValues?.[index]?.value?.message &&
+                      typeof errors.customFieldValues[index]?.value?.message ===
+                        'string'
+                        ? (errors.customFieldValues[index]?.value
+                            ?.message as string)
+                        : undefined
+                    }
+                  />
+                ))}
               </div>
             )}
 
           {/* Form Validation Summary */}
-          {Object.keys(errors).length > 0 && (
-            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-              <div className="flex items-start">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" />
-                <div>
-                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
-                    Please fix the following errors:
-                  </h3>
-                  <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
-                    {errors.gameId && <li>• {errors.gameId.message}</li>}
-                    {errors.deviceId && <li>• {errors.deviceId.message}</li>}
-                    {errors.emulatorId && (
-                      <li>• {errors.emulatorId.message}</li>
-                    )}
-                    {errors.performanceId && (
-                      <li>• {errors.performanceId.message}</li>
-                    )}
-                    {errors.notes && <li>• {errors.notes.message}</li>}
-                    {errors.customFieldValues && (
-                      <>
-                        {Array.isArray(errors.customFieldValues) ? (
-                          errors.customFieldValues.map((error, index) =>
-                            error?.value?.message ? (
-                              <li key={index}>• {error.value.message}</li>
-                            ) : null,
-                          )
-                        ) : (
-                          <li>• {errors.customFieldValues.message}</li>
-                        )}
-                      </>
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+          <FormValidationSummary errors={errors} />
 
           <div className="flex justify-end pt-8">
             <Button
