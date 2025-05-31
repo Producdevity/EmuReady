@@ -34,6 +34,9 @@ import {
 import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
 import { cn } from '@/lib/utils'
+import { type RouterInput } from '@/types/trpc'
+
+type ListingFormValues = RouterInput['listings']['create']
 
 // TODO: share schema with server-side validation
 const listingFormSchema = z.object({
@@ -123,8 +126,6 @@ const createDynamicListingSchema = (
     },
   )
 }
-
-type ListingFormValues = z.infer<typeof listingFormSchema>
 
 interface GameOption extends AutocompleteOptionBase {
   id: string
