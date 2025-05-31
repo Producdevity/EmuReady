@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 import toast from '@/lib/toast'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
 
@@ -18,7 +18,7 @@ const updateGameSchema = z.object({
   imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 })
 
-type UpdateGameInput = z.infer<typeof updateGameSchema>
+type UpdateGameInput = Omit<RouterInput['games']['update'], 'id'>
 
 interface Props {
   game: Game
@@ -61,7 +61,6 @@ function GameEditForm(props: Props) {
     updateGame.mutate({
       id: props.game.id,
       ...data,
-      imageUrl: data.imageUrl ?? undefined,
     })
   }
 
