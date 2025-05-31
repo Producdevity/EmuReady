@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
@@ -11,6 +10,7 @@ import { Role, ListingApprovalStatus } from '@orm'
 import storageKeys from '@/data/storageKeys'
 import SystemIcon from '@/components/icons/SystemIcon'
 import useLocalStorage from '@/hooks/useLocalStorage'
+import useListingsState from './hooks/useListingsState'
 import {
   PerformanceBadge,
   Pagination,
@@ -46,32 +46,14 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function ListingsPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const confirm = useConfirmDialog()
 
-  const [systemId, setSystemId] = useState(searchParams.get('systemId') ?? '')
-  const [search, setSearch] = useState(searchParams.get('search') ?? '')
-  const pageParam = Number(searchParams.get('page'))
-  const [page, setPage] = useState(pageParam > 0 ? pageParam : 1)
-  const [deviceId, setDeviceId] = useState(searchParams.get('deviceId') ?? '')
-  const [emulatorId, setEmulatorId] = useState(
-    searchParams.get('emulatorId') ?? '',
-  )
-  const [performanceId, setPerformanceId] = useState(
-    searchParams.get('performanceId') ?? '',
-  )
+  // Use the custom hook for state management
+  const listingsState = useListingsState()
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [sortField, setSortField] = useState<SortField | null>(
-    (searchParams.get('sortField') as SortField) ?? null,
-  )
-  const [sortDirection, setSortDirection] = useState<SortDirection>(
-    (searchParams.get('sortDirection') as SortDirection) ?? null,
-  )
-  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
-    storageKeys.showSystemIcons,
-    false
-  )
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
+    useLocalStorage(storageKeys.showSystemIcons, false)
 
   const columnVisibility = useColumnVisibility(LISTINGS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.listings,
@@ -86,15 +68,17 @@ function ListingsPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
-    systemId: systemId || undefined,
-    deviceId: deviceId || undefined,
-    emulatorId: emulatorId || undefined,
-    performanceId: performanceId ? parseInt(performanceId) : undefined,
-    searchTerm: search || undefined,
-    page,
+    systemId: listingsState.systemId || undefined,
+    deviceId: listingsState.deviceId || undefined,
+    emulatorId: listingsState.emulatorId || undefined,
+    performanceId: listingsState.performanceId
+      ? parseInt(listingsState.performanceId)
+      : undefined,
+    searchTerm: listingsState.search || undefined,
+    page: listingsState.page,
     limit: 10,
-    sortField: sortField ?? undefined,
-    sortDirection: sortDirection ?? undefined,
+    sortField: listingsState.sortField ?? undefined,
+    sortDirection: listingsState.sortDirection ?? undefined,
     approvalStatus: ListingApprovalStatus.APPROVED,
   }
 
@@ -107,55 +91,43 @@ function ListingsPage() {
     },
   })
 
-  // Helper to update URL and state
-  const updateQuery = (params: Record<string, string | number | null>) => {
-    const newParams = new URLSearchParams(searchParams.toString())
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === null || value === '' || value === undefined) {
-        return newParams.delete(key)
-      }
-      newParams.set(key, String(value))
-    })
-    router.replace(`?${newParams.toString()}`)
-  }
-
   const handleFilterChange = (ev: SelectInputEvent) => {
-    setSystemId(ev.target.value)
-    setPage(1)
-    updateQuery({ systemId: ev.target.value, page: 1 })
+    listingsState.setSystemId(ev.target.value)
+    listingsState.setPage(1)
+    listingsState.updateQuery({ systemId: ev.target.value, page: 1 })
   }
 
   const handleDeviceChange = (ev: SelectInputEvent) => {
-    setDeviceId(ev.target.value)
-    setPage(1)
-    updateQuery({ deviceId: ev.target.value, page: 1 })
+    listingsState.setDeviceId(ev.target.value)
+    listingsState.setPage(1)
+    listingsState.updateQuery({ deviceId: ev.target.value, page: 1 })
   }
 
   const handleEmulatorChange = (ev: SelectInputEvent) => {
-    setEmulatorId(ev.target.value)
-    setPage(1)
-    updateQuery({ emulatorId: ev.target.value, page: 1 })
+    listingsState.setEmulatorId(ev.target.value)
+    listingsState.setPage(1)
+    listingsState.updateQuery({ emulatorId: ev.target.value, page: 1 })
   }
 
   const handlePerformanceChange = (ev: SelectInputEvent) => {
-    setPerformanceId(ev.target.value)
-    setPage(1)
-    updateQuery({ performanceId: ev.target.value, page: 1 })
+    listingsState.setPerformanceId(ev.target.value)
+    listingsState.setPage(1)
+    listingsState.updateQuery({ performanceId: ev.target.value, page: 1 })
   }
 
   const handleSearchChange = (ev: SelectInputEvent) => {
-    setSearch(ev.target.value)
-    setPage(1)
-    updateQuery({ search: ev.target.value, page: 1 })
+    listingsState.setSearch(ev.target.value)
+    listingsState.setPage(1)
+    listingsState.updateQuery({ search: ev.target.value, page: 1 })
   }
 
   const handleSort = (field: string) => {
-    let newSortField: SortField | null = sortField
+    let newSortField: SortField | null = listingsState.sortField
     let newSortDirection: SortDirection
-    if (sortField === field) {
-      if (sortDirection === 'asc') {
+    if (listingsState.sortField === field) {
+      if (listingsState.sortDirection === 'asc') {
         newSortDirection = 'desc'
-      } else if (sortDirection === 'desc') {
+      } else if (listingsState.sortDirection === 'desc') {
         newSortField = null
         newSortDirection = null
       } else {
@@ -165,10 +137,10 @@ function ListingsPage() {
       newSortField = field as SortField
       newSortDirection = 'asc'
     }
-    setSortField(newSortField)
-    setSortDirection(newSortDirection)
-    setPage(1)
-    updateQuery({
+    listingsState.setSortField(newSortField)
+    listingsState.setSortDirection(newSortDirection)
+    listingsState.setPage(1)
+    listingsState.updateQuery({
       sortField: newSortField,
       sortDirection: newSortDirection,
       page: 1,
@@ -196,11 +168,11 @@ function ListingsPage() {
   return (
     <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
       <ListingFilters
-        systemId={systemId}
-        deviceId={deviceId}
-        emulatorId={emulatorId}
-        performanceId={performanceId}
-        searchTerm={search}
+        systemId={listingsState.systemId}
+        deviceId={listingsState.deviceId}
+        emulatorId={listingsState.emulatorId}
+        performanceId={listingsState.performanceId}
+        searchTerm={listingsState.search}
         systems={systemsQuery.data ?? []}
         devices={devicesQuery.data ?? []}
         emulators={emulatorsQuery.data ?? []}
@@ -225,10 +197,11 @@ function ListingsPage() {
               className="flex items-center gap-2"
               onClick={() => setShowSystemIcons(!showSystemIcons)}
             >
-              {isSystemIconsHydrated 
-                ? (showSystemIcons ? 'Show System Names' : 'Show System Icons')
-                : 'Show System Icons'
-              }
+              {isSystemIconsHydrated
+                ? showSystemIcons
+                  ? 'Show System Names'
+                  : 'Show System Icons'
+                : 'Show System Icons'}
             </Button>
             <ColumnVisibilityControl
               columns={LISTINGS_COLUMNS}
@@ -251,8 +224,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="Game"
                       field="game.title"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -260,8 +233,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="System"
                       field="game.system.name"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -269,8 +242,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="Device"
                       field="device"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -278,8 +251,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="Emulator"
                       field="emulator.name"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -287,8 +260,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="Performance"
                       field="performance.label"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -296,8 +269,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="Success Rate"
                       field="successRate"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -305,8 +278,8 @@ function ListingsPage() {
                     <SortableHeader
                       label="Author"
                       field="author.name"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}
                     />
                   )}
@@ -335,7 +308,9 @@ function ListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('system') && (
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
+                        {isSystemIconsHydrated &&
+                        showSystemIcons &&
+                        listing.game.system?.key ? (
                           <div className="flex items-center gap-2">
                             <SystemIcon
                               name={listing.game.system.name}
@@ -431,11 +406,11 @@ function ListingsPage() {
         {listingsQuery.data?.pagination &&
           listingsQuery.data?.pagination?.pages > 1 && (
             <Pagination
-              currentPage={page}
+              currentPage={listingsState.page}
               totalPages={listingsQuery.data.pagination.pages}
               onPageChange={(newPage) => {
-                setPage(newPage)
-                updateQuery({ page: newPage })
+                listingsState.setPage(newPage)
+                listingsState.updateQuery({ page: newPage })
               }}
             />
           )}
