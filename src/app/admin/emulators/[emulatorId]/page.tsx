@@ -6,7 +6,7 @@ import { Button } from '@/components/ui'
 import { ArrowLeft } from 'lucide-react'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
 
-export default function EditEmulatorPage() {
+function EditEmulatorPage() {
   const router = useRouter()
   const params = useParams()
   const emulatorId = params.emulatorId as string
@@ -117,3 +117,5 @@ export default function EditEmulatorPage() {
     </div>
   )
 }
+
+export default EditEmulatorPage
