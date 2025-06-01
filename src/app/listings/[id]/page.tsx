@@ -1,22 +1,17 @@
-import { type Metadata } from 'next'
+'use client'
+
 import { notFound, useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { LoadingSpinner } from '@/components/ui'
 import ListingDetailsClient from './components/ListingDetailsClient'
 import sanitizeForClient from '@/utils/sanitizeForClient'
 
-export const metadata: Metadata = {
-  title: 'Listing Details | EmuReady',
-  description: 'View detailed information about a compatibility listing',
-}
-
 function ListingDetailsPage() {
   const params = useParams()
-  const id = params.id as string
 
-  const { data: listing, isLoading, error } = api.listings.byId.useQuery({ id })
+  const listingQuery = api.listings.byId.useQuery({ id: params.id as string })
 
-  if (isLoading) {
+  if (listingQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
         <div className="max-w-6xl mx-auto">
@@ -26,17 +21,17 @@ function ListingDetailsPage() {
     )
   }
 
-  if (error || !listing) {
-    notFound()
-  }
+  if (listingQuery.error || !listingQuery.data) return notFound()
 
   return (
     <ListingDetailsClient
-      listing={sanitizeForClient(listing)}
-      successRate={listing.successRate}
-      upVotes={Math.round(listing.successRate * listing._count.votes)}
-      totalVotes={listing._count.votes}
-      userVote={listing.userVote}
+      listing={sanitizeForClient(listingQuery.data)}
+      successRate={listingQuery.data.successRate}
+      upVotes={Math.round(
+        listingQuery.data.successRate * listingQuery.data._count.votes,
+      )}
+      totalVotes={listingQuery.data._count.votes}
+      userVote={listingQuery.data.userVote}
     />
   )
 }
