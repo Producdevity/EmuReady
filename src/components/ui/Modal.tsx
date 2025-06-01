@@ -1,8 +1,8 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import React, { type ReactNode, useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   isOpen: boolean
