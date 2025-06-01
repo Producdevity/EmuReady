@@ -1,15 +1,15 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api } from '@/lib/api'
 import { CustomFieldType } from '@orm'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import SelectInput from '@/components/ui/SelectInput'
+import toast from '@/lib/toast'
+import { Button, Input, SelectInput } from '@/components/ui'
 import { PlusCircle, Trash2 } from 'lucide-react'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 const customFieldOptionSchema = z.object({
   value: z.string().min(1, 'Value is required'),
@@ -130,19 +130,25 @@ function CustomFieldFormModal({
     },
     onError: (error) => {
       console.error('Error creating custom field:', error)
-      alert(`Error: ${error.message}`)
+      toast.error(
+        `Failed to create custom field: ${getErrorMessage(error.message)}`,
+      )
     },
   })
 
   const updateMutation = api.customFieldDefinitions.update.useMutation({
     onSuccess: () => {
       utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId })
-      utils.customFieldDefinitions.byId.invalidate({ id: fieldIdToEdit! })
+      if (fieldIdToEdit) {
+        utils.customFieldDefinitions.byId.invalidate({ id: fieldIdToEdit })
+      }
       onClose()
     },
     onError: (error) => {
       console.error('Error updating custom field:', error)
-      alert(`Error: ${error.message}`)
+      toast.error(
+        `Failed to update custom field: ${getErrorMessage(error.message)}`,
+      )
     },
   })
 
@@ -160,10 +166,8 @@ function CustomFieldFormModal({
       if (data.options && data.options.length > 0) {
         basePayload.options = data.options
       } else {
-        alert(
-          'Options are required for SELECT type fields and cannot be empty.',
-        )
-        return
+        // TODO: replace this with inline validation
+        return toast.warning('Options are required for SELECT type fields.')
       }
     }
 
@@ -177,19 +181,19 @@ function CustomFieldFormModal({
         displayOrder: basePayload.displayOrder,
         options: basePayload.options,
       }
-      updateMutation.mutate(updatePayload)
-    } else {
-      const createPayload: CustomFieldCreatePayload = {
-        emulatorId,
-        name: basePayload.name,
-        label: basePayload.label,
-        type: basePayload.type,
-        isRequired: basePayload.isRequired,
-        displayOrder: basePayload.displayOrder,
-        options: basePayload.options,
-      }
-      createMutation.mutate(createPayload)
+      return updateMutation.mutate(updatePayload)
     }
+
+    const createPayload: CustomFieldCreatePayload = {
+      emulatorId,
+      name: basePayload.name,
+      label: basePayload.label,
+      type: basePayload.type,
+      isRequired: basePayload.isRequired,
+      displayOrder: basePayload.displayOrder,
+      options: basePayload.options,
+    }
+    createMutation.mutate(createPayload)
   }
 
   if (!isOpen) return null
@@ -268,8 +272,8 @@ function CustomFieldFormModal({
                     name: opt.label,
                   }))}
                   value={field.value}
-                  onChange={(e) =>
-                    field.onChange(e.target.value as CustomFieldType)
+                  onChange={(ev) =>
+                    field.onChange(ev.target.value as CustomFieldType)
                   }
                 />
               )}
