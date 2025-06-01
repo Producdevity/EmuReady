@@ -4,6 +4,7 @@ import { type PropsWithChildren } from 'react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Inter } from 'next/font/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import Providers from '@/components/Providers'
 import Navbar from '@/components/Navbar'
@@ -35,8 +36,9 @@ export default function RootLayout(props: PropsWithChildren) {
             <Footer />
           </div>
         </Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
-      <SpeedInsights />
       {/* TODO: show annoying cookie banner? */}
       {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
     </html>
