@@ -1,8 +1,19 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import Image from 'next/image'
 import { LoadingSpinner } from '@/components/ui'
+
+type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+
+const objectFitMap: Record<ObjectFit, string> = {
+  contain: 'object-contain',
+  cover: 'object-cover',
+  fill: 'object-fill',
+  none: 'object-none',
+  'scale-down': 'object-scale-down',
+}
 
 interface Props {
   src: string
@@ -10,10 +21,11 @@ interface Props {
   width?: number
   height?: number
   className?: string
+  imageClassName?: string
   priority?: boolean
   quality?: number
   fallbackSrc?: string
-  objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+  objectFit?: ObjectFit
 }
 
 function OptimizedImage(props: Props) {
@@ -26,10 +38,7 @@ function OptimizedImage(props: Props) {
   }
 
   return (
-    <div
-      className={`relative ${props.className ?? ''}`}
-      style={{ width: props.width, height: props.height }}
-    >
+    <div className={cn('relative', props.className)}>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 animate-pulse">
           <LoadingSpinner size="sm" />
@@ -40,8 +49,12 @@ function OptimizedImage(props: Props) {
         alt={props.alt}
         width={props.width ?? 300}
         height={props.height ?? 300}
-        className={`transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-        style={{ objectFit: props.objectFit ?? 'cover' }}
+        className={cn(
+          'transition-opacity duration-300',
+          isLoading ? 'opacity-0' : 'opacity-100',
+          objectFitMap[props.objectFit ?? 'contain'],
+          props.imageClassName,
+        )}
         priority={props.priority ?? false}
         quality={props.quality ?? 85}
         onLoad={() => setIsLoading(false)}

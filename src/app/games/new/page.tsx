@@ -5,9 +5,22 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Role } from '@orm'
 import { api } from '@/lib/api'
-import { ImageUpload, LoadingSpinner, Button } from '@/components/ui'
+import {
+  LoadingSpinner,
+  Button,
+  RawgImageSelector,
+  Autocomplete,
+  Input,
+} from '@/components/ui'
 import { hasPermission } from '@/utils/permissions'
 import getErrorMessage from '@/utils/getErrorMessage'
+import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
+
+// Define the System type for Autocomplete
+interface SystemOption extends AutocompleteOptionBase {
+  id: string
+  name: string
+}
 
 function AddGamePage() {
   const router = useRouter()
@@ -18,8 +31,7 @@ function AddGamePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const { data: systems, isLoading: systemsLoading } =
-    api.systems.get.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
 
   useEffect(() => {
@@ -64,15 +76,16 @@ function AddGamePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
+    <div className="max-w-2xl mx-auto mt-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
         Add New Game
       </h1>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block mb-1 font-medium">Game Title</label>
-          <input
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
+            Game Title
+          </label>
+          <Input
             value={title}
             onChange={(ev) => setTitle(ev.target.value)}
             placeholder="Enter game title"
@@ -81,36 +94,35 @@ function AddGamePage() {
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">System</label>
-          <select
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          <Autocomplete<SystemOption>
+            label="System"
+            placeholder="Search for a system..."
             value={systemId}
-            onChange={(ev) => setSystemId(ev.target.value)}
-            required
-            disabled={systemsLoading}
-          >
-            <option value="">Select system...</option>
-            {systems?.map((sys: { id: string; name: string }) => (
-              <option key={sys.id} value={sys.id}>
-                {sys.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setSystemId(value ?? '')}
+            items={systemsQuery.data ?? []}
+            optionToValue={(option) => option.id}
+            optionToLabel={(option) => option.name}
+            filterKeys={['name']}
+            minCharsToTrigger={0}
+            disabled={systemsQuery.isLoading}
+            className="w-full"
+          />
         </div>
 
-        <ImageUpload
-          onImageUploaded={setImageUrl}
-          label="Game Cover Image (optional)"
-          uploadPath="/api/upload/games"
+        <RawgImageSelector
+          gameTitle={title}
+          selectedImageUrl={imageUrl}
+          onImageSelect={setImageUrl}
+          onError={setError}
         />
 
         {error && (
-          <div className="text-red-500 fixed top-4 right-4 bg-white dark:bg-gray-800 border border-red-400 px-4 py-2 rounded shadow z-50">
+          <div className="text-red-500  bg-white dark:bg-gray-800 border border-red-400 px-4 py-2 rounded shadow z-50">
             {error}
           </div>
         )}
         {success && (
-          <div className="text-green-600 fixed top-4 right-4 bg-white dark:bg-gray-800 border border-green-400 px-4 py-2 rounded shadow z-50">
+          <div className="text-green-600  bg-white dark:bg-gray-800 border border-green-400 px-4 py-2 rounded shadow z-50">
             {success}
           </div>
         )}

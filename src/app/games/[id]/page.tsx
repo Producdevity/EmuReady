@@ -48,9 +48,11 @@ function GameDetailsPage() {
                   alt={gameQuery.data.title}
                   width={300}
                   height={400}
-                  className="w-full h-auto rounded-lg shadow-md"
+                  className="w-full max-h-96 rounded-lg shadow-md"
+                  imageClassName="w-full max-h-96"
                   objectFit="contain"
                   fallbackSrc="/placeholder/game.svg"
+                  priority
                 />
               ) : (
                 <Image
