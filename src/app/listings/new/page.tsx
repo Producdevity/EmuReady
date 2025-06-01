@@ -167,24 +167,18 @@ function AddListingPage() {
   const [currentSchema, setCurrentSchema] =
     useState<z.ZodType<ListingFormValues>>(listingFormSchema)
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<ListingFormValues>({
-    resolver: zodResolver(currentSchema),
-    defaultValues: {
-      gameId: gameIdFromUrl ?? '',
-      deviceId: '',
-      emulatorId: '',
-      performanceId: undefined,
-      notes: '',
-      customFieldValues: [],
-    },
-  })
+  const { control, register, handleSubmit, watch, setValue, formState } =
+    useForm<ListingFormValues>({
+      resolver: zodResolver(currentSchema),
+      defaultValues: {
+        gameId: gameIdFromUrl ?? '',
+        deviceId: '',
+        emulatorId: '',
+        performanceId: undefined,
+        notes: '',
+        customFieldValues: [],
+      },
+    })
 
   const selectedEmulatorId = watch('emulatorId')
   const selectedGameId = watch('gameId')
@@ -421,7 +415,7 @@ function AddListingPage() {
             <GameSelector
               control={control}
               selectedGame={selectedGame}
-              errorMessage={String(errors.gameId?.message ?? '')}
+              errorMessage={String(formState.errors.gameId?.message ?? '')}
               loadGameItems={loadGameItems}
               onGameSelect={setSelectedGame}
               gameSearchTerm={gameSearchTerm}
@@ -448,9 +442,9 @@ function AddListingPage() {
                 />
               )}
             />
-            {errors.deviceId && (
+            {formState.errors.deviceId && (
               <p className="text-red-500 text-xs mt-1">
-                {String(errors.deviceId.message ?? '')}
+                {String(formState.errors.deviceId.message ?? '')}
               </p>
             )}
           </div>
@@ -463,7 +457,7 @@ function AddListingPage() {
               availableEmulators={availableEmulators}
               emulatorSearchTerm={emulatorSearchTerm}
               emulatorInputFocus={emulatorInputFocus}
-              errorMessage={String(errors.emulatorId?.message ?? '')}
+              errorMessage={String(formState.errors.emulatorId?.message ?? '')}
               loadEmulatorItems={loadEmulatorItems}
               setValue={setValue}
               onFocus={() => setEmulatorInputFocus(true)}
@@ -491,9 +485,9 @@ function AddListingPage() {
                 />
               )}
             />
-            {errors.performanceId && (
+            {formState.errors.performanceId && (
               <p className="text-red-500 text-xs mt-1">
-                {String(errors.performanceId.message ?? '')}
+                {String(formState.errors.performanceId.message ?? '')}
               </p>
             )}
             {/*  TODO: show the description of the performance scale*/}
@@ -516,9 +510,9 @@ function AddListingPage() {
               className="mt-1 w-full"
               placeholder="Share your experience, settings, or any additional details..."
             />
-            {errors.notes && (
+            {formState.errors.notes && (
               <p className="text-red-500 text-xs mt-1">
-                {String(errors.notes.message ?? '')}
+                {String(formState.errors.notes.message ?? '')}
               </p>
             )}
           </div>
@@ -550,10 +544,11 @@ function AddListingPage() {
                     index={index}
                     control={control}
                     errorMessage={
-                      errors.customFieldValues?.[index]?.value?.message &&
-                      typeof errors.customFieldValues[index]?.value?.message ===
-                        'string'
-                        ? (errors.customFieldValues[index]?.value
+                      formState.errors.customFieldValues?.[index]?.value
+                        ?.message &&
+                      typeof formState.errors.customFieldValues[index]?.value
+                        ?.message === 'string'
+                        ? (formState.errors.customFieldValues[index]?.value
                             ?.message as string)
                         : undefined
                     }
@@ -563,17 +558,21 @@ function AddListingPage() {
             )}
 
           {/* Form Validation Summary */}
-          <FormValidationSummary errors={errors} />
+          <FormValidationSummary errors={formState.errors} />
 
           <div className="flex justify-end pt-8">
             <Button
               type="submit"
               variant="primary"
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
+              isLoading={createListingMutation.isPending}
+              disabled={
+                formState.isSubmitting ?? createListingMutation.isPending
+              }
               size="lg"
             >
-              {isSubmitting ? 'Creating...' : 'Create Listing'}
+              {createListingMutation.isPending
+                ? 'Creating...'
+                : 'Create Listing'}
             </Button>
           </div>
         </form>
