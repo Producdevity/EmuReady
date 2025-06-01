@@ -2,7 +2,7 @@ import { type ComponentProps } from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import LoadingIcon from '@/components/icons/LoadingIcon'
 
 // Legacy types for backward compatibility
 export type ButtonSize = 'sm' | 'md' | 'lg'
@@ -19,7 +19,7 @@ export type ButtonVariant =
 
 // Extended shadcn variants with legacy mappings
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive overflow-hidden",
   {
     variants: {
       variant: {
@@ -100,18 +100,21 @@ function Button({
         buttonVariants({ variant, size: mappedSize, className }),
         isFullWidth && 'w-full',
         (isLoading || disabled) && 'cursor-not-allowed',
+        'transition-all duration-200 ease-in-out',
       )}
       disabled={isLoading || disabled}
       {...props}
     >
-      {isLoading ? (
-        <>
-          <LoadingSpinner size="sm" />
-          Loading...
-        </>
-      ) : (
-        children
-      )}
+      <span className="flex items-center gap-2">
+        {isLoading ? (
+          <>
+            <LoadingIcon />
+            <span>Loading...</span>
+          </>
+        ) : (
+          children
+        )}
+      </span>
     </Comp>
   )
 }
