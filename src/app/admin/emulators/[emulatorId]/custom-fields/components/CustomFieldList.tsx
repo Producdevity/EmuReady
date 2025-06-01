@@ -1,12 +1,7 @@
 'use client'
 
-import toast from '@/lib/toast'
-import React, { useState, useEffect, type ReactNode } from 'react'
-import { api } from '@/lib/api'
-import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
-import Button from '@/components/ui/Button'
+import { useState, useEffect, Fragment, type ReactNode } from 'react'
 import { Pencil, Trash2, GripVertical, X, Check, Undo } from 'lucide-react'
-import Badge from '@/components/ui/Badge'
 import {
   DndContext,
   closestCenter,
@@ -24,6 +19,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import toast from '@/lib/toast'
+import { api } from '@/lib/api'
+import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
+import { type Maybe } from '@/types/utils'
+import { Button, Badge, useConfirmDialog } from '@/components/ui'
 
 interface CustomFieldOptionUI {
   value: string
@@ -52,7 +52,7 @@ function SortableRow({
   isReorderMode: boolean
   renderOptionsPreview: (
     optionsAsJson: Prisma.JsonValue | null | undefined,
-  ) => React.ReactNode
+  ) => ReactNode
 }) {
   const {
     attributes,
@@ -72,7 +72,7 @@ function SortableRow({
   }
 
   return (
-    <React.Fragment>
+    <Fragment>
       <tr
         ref={setNodeRef}
         style={style}
@@ -140,12 +140,13 @@ function SortableRow({
           )}
         </td>
       </tr>
-    </React.Fragment>
+    </Fragment>
   )
 }
 
 function CustomFieldList(props: CustomFieldListProps) {
   const utils = api.useUtils()
+  const confirm = useConfirmDialog()
   const [isReorderMode, setIsReorderMode] = useState(false)
   const [orderedFields, setOrderedFields] = useState<SortableCustomField[]>(
     () =>
@@ -239,7 +240,7 @@ function CustomFieldList(props: CustomFieldListProps) {
     }
   }
 
-  const deleteMutation = api.customFieldDefinitions.delete.useMutation({
+  const deleteCustomField = api.customFieldDefinitions.delete.useMutation({
     onSuccess: () => {
       utils.customFieldDefinitions.getByEmulator
         .invalidate({ emulatorId: props.emulatorId })
@@ -252,15 +253,19 @@ function CustomFieldList(props: CustomFieldListProps) {
     },
   })
 
-  const handleDelete = (fieldId: string) => {
-    // TODO: use a confirmation modal instead of browser confirm
-    if (window.confirm('Are you sure you want to delete this custom field?')) {
-      deleteMutation.mutate({ id: fieldId })
-    }
+  const handleDelete = async (fieldId: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Custom Field',
+      description: 'Are you sure you want to delete this custom field?',
+    })
+
+    if (!confirmed) return
+
+    deleteCustomField.mutate({ id: fieldId })
   }
 
   const renderOptionsPreview = (
-    optionsAsJson: Prisma.JsonValue | null | undefined,
+    optionsAsJson: Maybe<Prisma.JsonValue>,
   ): ReactNode => {
     if (!Array.isArray(optionsAsJson)) {
       return <span className="text-gray-500 italic">N/A</span>

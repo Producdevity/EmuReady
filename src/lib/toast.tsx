@@ -1,6 +1,6 @@
+import { type ReactNode } from 'react'
 import { type ExternalToast, toast as sonnerToast } from 'sonner'
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react'
-import React, { type ReactNode } from 'react'
 
 const DEFAULT_TOAST_OPTIONS: ExternalToast = {
   duration: 3000,
@@ -12,6 +12,7 @@ interface ToastOptions {
 }
 
 type ToastType = 'success' | 'error' | 'warning' | 'info' | 'message'
+
 const iconMap: Record<ToastType, ReactNode> = {
   success: <CheckCircle className="h-5 w-5" />,
   error: <XCircle className="h-5 w-5" />,
@@ -20,7 +21,7 @@ const iconMap: Record<ToastType, ReactNode> = {
   message: null,
 }
 
-type ToastTitle = (() => React.ReactNode) | React.ReactNode
+type ToastTitle = (() => ReactNode) | ReactNode
 
 const toastMap: Record<
   ToastType,
@@ -63,18 +64,11 @@ const toast = {
   },
 }
 
-// Example of how to use custom styling if richColors is not enough:
-// const showCustomErrorToast = (message: string) => {
-//   sonnerToast.custom((t) => (
-//     <div style={{ padding: '10px', background: 'red', color: 'white' }}>
-//       {message}
-//       <button onClick={() => sonnerToast.dismiss(t)}>Close</button>
-//     </div>
-//   ), { duration: 5000 });
-// };
-
-/** Example of how to use custom styling if richColors is not enough:
+/**
+ * @docs
+ * Example of how to use custom styling if richColors is not enough:
  *
+ * @example
  * ```tsx
  * const showCustomErrorToast = (message: string) => {
  *   sonnerToast.custom((t) => (

@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { type System } from '@orm'
 import { api } from '@/lib/api'
 import Button from '@/components/ui/Button'
-// import Checkbox from '@/components/ui/Checkbox'; // Fallback to HTML checkbox
 import toast from '@/lib/toast'
 import { Input } from '@/components/ui'
 import { type RouterInput } from '@/types/trpc'

@@ -1,8 +1,8 @@
 'use client'
 
-import storageKeys from '@/data/storageKeys'
-import { ThemeProvider as NextThemeProvider } from 'next-themes'
 import { type PropsWithChildren } from 'react'
+import { ThemeProvider as NextThemeProvider } from 'next-themes'
+import storageKeys from '@/data/storageKeys'
 
 function ThemeProvider(props: PropsWithChildren) {
   return (

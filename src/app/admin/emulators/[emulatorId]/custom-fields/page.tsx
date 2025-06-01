@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import Button from '@/components/ui/Button'
