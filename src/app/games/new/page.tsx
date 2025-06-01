@@ -5,7 +5,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Role } from '@orm'
 import { api } from '@/lib/api'
-import { ImageUpload, LoadingSpinner } from '@/components/ui'
+import { ImageUpload, LoadingSpinner, Button } from '@/components/ui'
 import { hasPermission } from '@/utils/permissions'
 import getErrorMessage from '@/utils/getErrorMessage'
 
@@ -114,13 +114,16 @@ function AddGamePage() {
             {success}
           </div>
         )}
-        <button
+        <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200 transform hover:scale-105"
+          variant="primary"
+          size="lg"
+          isFullWidth
           disabled={createGame.isPending}
+          isLoading={createGame.isPending}
         >
-          {createGame.isPending ? 'Adding...' : 'Add Game'}
-        </button>
+          Add Game
+        </Button>
       </form>
     </div>
   )
