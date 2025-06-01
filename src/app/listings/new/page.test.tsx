@@ -1,4 +1,4 @@
-import React from 'react'
+import { type PropsWithChildren } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -167,12 +167,15 @@ const queryClient = new QueryClient({
   },
 })
 
-function TestWrapper({ children }: { children: React.ReactNode }) {
+function TestWrapper(props: PropsWithChildren) {
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {props.children}
+    </QueryClientProvider>
   )
 }
 
+// TODO: this takes minutes to run, convert this into a playwright test, skip for now
 describe.skip('AddListingPage Integration Tests', () => {
   const mockPush = vi.fn()
   const mockGet = vi.fn(() => null)
