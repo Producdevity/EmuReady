@@ -29,7 +29,7 @@ export default function RootLayout(props: PropsWithChildren) {
       <body className={inter.className}>
         <Providers>
           <Toaster richColors closeButton />
-          <div className="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+          <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Navbar />
             <Main>{props.children}</Main>
             <Footer />
