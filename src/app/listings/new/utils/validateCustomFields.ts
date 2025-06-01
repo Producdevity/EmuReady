@@ -1,7 +1,6 @@
 import { CustomFieldType } from '@orm'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
-import { type UseFormSetError } from 'react-hook-form'
 
 interface CustomFieldOptionUI {
   value: string
@@ -22,7 +21,6 @@ type ListingFormValues = RouterInput['listings']['create']
 function validateCustomFields(
   data: ListingFormValues,
   parsedCustomFields: CustomFieldDefinitionWithOptions[],
-  setError: UseFormSetError<ListingFormValues>,
 ): boolean {
   if (parsedCustomFields.length === 0) return true
 
@@ -62,32 +60,26 @@ function validateCustomFields(
   }
 
   if (missingFields.length > 0) {
+    // Provide user-friendly toast message
     toast.error(
       `Please fill in all required fields: ${missingFields.join(', ')}`,
     )
 
-    // Set errors on the specific fields
-    missingFields.forEach((fieldLabel) => {
-      const field = parsedCustomFields.find((f) => f.label === fieldLabel)
-      if (field) {
-        const fieldIndex = parsedCustomFields.indexOf(field)
-        setError(`customFieldValues.${fieldIndex}.value` as const, {
-          type: 'required',
-          message: `${fieldLabel} is required`,
-        })
-      }
-    })
+    // The schema validation will handle setting specific field errors,
+    // so we don't need to set them here to avoid conflicts
 
     // Scroll to the first error field
-    const firstErrorField = document
-      .querySelector('.text-red-500')
-      ?.closest('.mb-4')
-    if (firstErrorField) {
-      firstErrorField.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      })
-    }
+    setTimeout(() => {
+      const firstErrorField = document
+        .querySelector('.text-red-500')
+        ?.closest('.mb-4')
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      }
+    }, 100)
 
     return false
   }

@@ -23,7 +23,6 @@ import CustomFieldRenderer from './components/CustomFieldRenderer'
 import FormValidationSummary from './components/FormValidationSummary'
 import GameSelector from './components/GameSelector'
 import EmulatorSelector from './components/EmulatorSelector'
-import validateCustomFields from './utils/validateCustomFields'
 
 export type ListingFormValues = RouterInput['listings']['create']
 
@@ -34,57 +33,88 @@ const listingFormSchema = CreateListingSchema.extend({
   performanceId: z.coerce.number().min(1, 'Performance rating is required'),
 })
 
-// Dynamic schema builder for custom field validation
+// Dynamic schema builder for custom field validation with specific field errors
 function createDynamicListingSchema(
   customFields: CustomFieldDefinitionWithOptions[],
 ) {
   if (customFields.length === 0) return listingFormSchema
 
-  // Add custom validation for custom field values
-  return listingFormSchema.refine(
-    (data) => {
-      if (!data.customFieldValues) return false
+  // Create dynamic validation for each custom field
+  const customFieldValidation = z
+    .array(
+      z.object({
+        customFieldDefinitionId: z.string().uuid(),
+        value: z.any(),
+      }),
+    )
+    .optional()
+    .superRefine((values, ctx) => {
+      if (!values) return
 
-      // Check each required custom field
-      for (const field of customFields) {
-        if (!field.isRequired) continue
+      customFields.forEach((field, index) => {
+        if (!field.isRequired) return
 
-        const fieldValue = data.customFieldValues.find(
+        const fieldValue = values.find(
           (cfv) => cfv.customFieldDefinitionId === field.id,
         )
 
-        if (!fieldValue) return false
+        let isValid = true
+        const errorMessage = `${field.label} is required`
 
-        // Validate based on field type
-        switch (field.type) {
-          case CustomFieldType.TEXT:
-          case CustomFieldType.TEXTAREA:
-          case CustomFieldType.URL:
-            if (
-              !fieldValue.value ||
-              (typeof fieldValue.value === 'string' &&
-                fieldValue.value.trim() === '')
-            ) {
-              return false
-            }
-            break
-          case CustomFieldType.SELECT:
-            if (!fieldValue.value || fieldValue.value === '') {
-              return false
-            }
-            break
-          case CustomFieldType.BOOLEAN:
-            // Boolean fields are always valid (true or false)
-            break
+        if (!fieldValue) {
+          isValid = false
+        } else {
+          // Validate based on field type
+          switch (field.type) {
+            case CustomFieldType.TEXT:
+            case CustomFieldType.TEXTAREA:
+            case CustomFieldType.URL:
+              if (
+                !fieldValue.value ||
+                (typeof fieldValue.value === 'string' &&
+                  fieldValue.value.trim() === '')
+              ) {
+                isValid = false
+              }
+              break
+            case CustomFieldType.SELECT:
+              if (!fieldValue.value || fieldValue.value === '') {
+                isValid = false
+              }
+              break
+            case CustomFieldType.BOOLEAN:
+              // Boolean fields are always valid (true or false)
+              isValid = true
+              break
+          }
         }
-      }
-      return true
-    },
-    {
-      message: 'All required custom fields must be filled',
-      path: ['customFieldValues'],
-    },
-  )
+
+        if (!isValid) {
+          // Find the actual index in the values array for this field
+          const valueIndex = values.findIndex(
+            (v) => v.customFieldDefinitionId === field.id,
+          )
+          if (valueIndex >= 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: errorMessage,
+              path: [valueIndex, 'value'],
+            })
+          } else {
+            // If the field value doesn't exist, add it at the expected index
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: errorMessage,
+              path: [index, 'value'],
+            })
+          }
+        }
+      })
+    })
+
+  return listingFormSchema.extend({
+    customFieldValues: customFieldValidation,
+  })
 }
 
 interface GameOption extends AutocompleteOptionBase {
@@ -143,7 +173,6 @@ function AddListingPage() {
     handleSubmit,
     watch,
     setValue,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormValues>({
     resolver: zodResolver(currentSchema),
@@ -371,10 +400,7 @@ function AddListingPage() {
   })
 
   const onSubmit = (data: ListingFormValues) => {
-    // Additional client-side validation for custom fields
-    const isValid = validateCustomFields(data, parsedCustomFields, setError)
-    if (!isValid) return
-
+    // Schema validation handles all validation including custom fields
     createListingMutation.mutate(data)
   }
 
@@ -544,7 +570,7 @@ function AddListingPage() {
               type="submit"
               variant="primary"
               isLoading={isSubmitting}
-              disabled={isSubmitting || Object.keys(errors).length > 0}
+              disabled={isSubmitting}
               size="lg"
             >
               {isSubmitting ? 'Creating...' : 'Create Listing'}
