@@ -61,3 +61,10 @@ node_modules/
 .vscode
 .cursor
 .idea
+
+# Notes
+CLAUDE.md
+CLERK_SETUP.md
+CLERK_WEBHOOKS_SETUP.md
+DEVELOPMENT_SETUP.md
+
