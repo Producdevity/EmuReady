@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui'
 import { ArrowLeft } from 'lucide-react'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
 

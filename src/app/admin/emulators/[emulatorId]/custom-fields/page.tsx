@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui'
 import { PlusCircle } from 'lucide-react'
 import CustomFieldList from './components/CustomFieldList'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
