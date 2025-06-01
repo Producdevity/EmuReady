@@ -11,10 +11,9 @@ function ThemeProvider(props: PropsWithChildren) {
       attribute="class"
       defaultTheme="system"
       enableSystem
+      disableTransitionOnChange
     >
-      <div className="transition-colors duration-500 ease-in-out">
-        {props.children}
-      </div>
+      {props.children}
     </NextThemeProvider>
   )
 }
