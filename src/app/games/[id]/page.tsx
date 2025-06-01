@@ -48,7 +48,7 @@ function GameDetailsPage() {
                   alt={gameQuery.data.title}
                   width={300}
                   height={400}
-                  className="w-full rounded-lg shadow-md"
+                  className="w-full h-auto rounded-lg shadow-md"
                   objectFit="contain"
                   fallbackSrc="/placeholder/game.svg"
                 />
@@ -56,7 +56,7 @@ function GameDetailsPage() {
                 <Image
                   src="/placeholder/game.svg"
                   alt="No image available"
-                  className="w-full rounded-lg shadow-md"
+                  className="w-full h-auto rounded-lg shadow-md"
                   width={300}
                   height={400}
                   unoptimized
