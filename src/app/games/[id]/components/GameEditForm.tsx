@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, RawgImageSelector } from '@/components/ui'
 import { PencilIcon } from '@heroicons/react/24/outline'
 import { sanitizeString } from '@/utils/validation'
 
@@ -46,14 +46,6 @@ export default function GameEditForm({ gameData }: Props) {
 
     // Sanitize inputs before submitting
     const sanitizedTitle = sanitizeString(title)
-    const sanitizedImageUrl = imageUrl.trim()
-
-    // Add basic URL validation for image
-    if (sanitizedImageUrl && !sanitizedImageUrl.match(/^https?:\/\/.+/i)) {
-      setError('Image URL must start with http:// or https://')
-      setIsLoading(false)
-      return
-    }
 
     if (!sanitizedTitle) {
       setError('Title cannot be empty')
@@ -65,8 +57,12 @@ export default function GameEditForm({ gameData }: Props) {
       id: gameData.id,
       title: sanitizedTitle,
       systemId: gameData.systemId,
-      imageUrl: sanitizedImageUrl || undefined,
+      imageUrl: imageUrl || undefined,
     })
+  }
+
+  const handleImageSelect = (url: string) => {
+    setImageUrl(url)
   }
 
   return (
@@ -78,7 +74,7 @@ export default function GameEditForm({ gameData }: Props) {
 
       {open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Game</h2>
               <Button
@@ -107,15 +103,12 @@ export default function GameEditForm({ gameData }: Props) {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="imageUrl" className="block text-sm font-medium">
-                  Image URL
-                </label>
-                <Input
-                  id="imageUrl"
-                  value={imageUrl}
-                  onChange={(ev) => setImageUrl(ev.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  maxLength={500}
+                <RawgImageSelector
+                  gameTitle={title}
+                  systemName={gameData.system?.name}
+                  selectedImageUrl={imageUrl}
+                  onImageSelect={handleImageSelect}
+                  onError={setError}
                 />
               </div>
 

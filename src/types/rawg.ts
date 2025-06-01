@@ -70,9 +70,9 @@ export interface GameImageOption {
   id: string
   url: string
   type: 'background' | 'screenshot'
-  source: 'rawg'
+  source: 'rawg' | 'custom'
   gameId: number
   gameName: string
   width?: number
   height?: number
-} 
+}

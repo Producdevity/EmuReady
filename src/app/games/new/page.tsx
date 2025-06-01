@@ -34,6 +34,11 @@ function AddGamePage() {
   const systemsQuery = api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
 
+  // Get the selected system's name based on systemId
+  const selectedSystem = systemId
+    ? systemsQuery.data?.find((system) => system.id === systemId)
+    : null
+
   useEffect(() => {
     if (!success && !error) return
     const timer = setTimeout(() => {
@@ -111,6 +116,7 @@ function AddGamePage() {
 
         <RawgImageSelector
           gameTitle={title}
+          systemName={selectedSystem?.name}
           selectedImageUrl={imageUrl}
           onImageSelect={setImageUrl}
           onError={setError}

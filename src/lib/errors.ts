@@ -233,6 +233,10 @@ export class ResourceError {
   static game = {
     notFound: () => AppError.notFound('Game'),
     inUse: (count: number) => AppError.resourceInUse('game', count),
+    alreadyExists: (title: string, systemName: string) =>
+      AppError.conflict(
+        `A game titled "${title}" already exists for the system "${systemName}"`,
+      ),
   }
 
   static emulator = {

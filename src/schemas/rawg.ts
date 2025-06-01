@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const SearchGameImagesSchema = z.object({
   query: z.string().min(1, 'Search query is required'),
+  includeScreenshots: z.boolean().optional().default(false),
 })
 
 export const SearchGamesSchema = z.object({
@@ -13,4 +14,4 @@ export const SearchGamesSchema = z.object({
 export const GetGameImagesSchema = z.object({
   gameId: z.number().positive(),
   gameName: z.string(),
-}) 
+})

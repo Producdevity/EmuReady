@@ -1,4 +1,5 @@
 import type { Prisma } from '@orm'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 import {
   createTRPCRouter,
@@ -201,10 +202,34 @@ export const gamesRouter = createTRPCRouter({
 
       if (!system) ResourceError.system.notFound()
 
-      return ctx.prisma.game.create({
-        data: input,
-        include: { system: true },
+      // Check if game with same title already exists for this system
+      const existingGame = await ctx.prisma.game.findFirst({
+        where: {
+          title: input.title,
+          systemId: input.systemId,
+        },
       })
+
+      if (existingGame) {
+        ResourceError.game.alreadyExists(input.title, system!.name)
+      }
+
+      try {
+        return await ctx.prisma.game.create({
+          data: input,
+          include: { system: true },
+        })
+      } catch (error) {
+        // Fallback error handling for rare race conditions
+        if (error instanceof PrismaClientKnownRequestError) {
+          // P2002 is the error code for unique constraint violations
+          if (error.code === 'P2002') {
+            ResourceError.game.alreadyExists(input.title, system!.name)
+          }
+        }
+        // Re-throw any other errors
+        throw error
+      }
     }),
 
   update: adminProcedure
