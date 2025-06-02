@@ -10,5 +10,18 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
     exclude: ['tests-examples/**', 'playwright.config.ts'],
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
+    typecheck: {
+      enabled: false,
+    },
+    testTimeout: 15000,
+    hookTimeout: 10000,
+    reporters: ['verbose'],
+    silent: false,
   },
 })
