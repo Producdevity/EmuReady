@@ -137,11 +137,16 @@ describe('FormValidationSummary', () => {
       gameId: { type: 'required', message: 'Game is required' },
     }
 
-    render(<FormValidationSummary errors={errors} />)
+    const { container } = render(<FormValidationSummary errors={errors} />)
 
-    // Check for the presence of an SVG icon (AlertCircle from Lucide)
-    const icon = document.querySelector('svg')
-    expect(icon).toBeInTheDocument()
+    // Check for the presence of the error text which confirms the component renders
+    expect(
+      screen.getByText('Please fix the following errors:'),
+    ).toBeInTheDocument()
+
+    // Check for the container with error styling (which contains the AlertCircle icon)
+    const errorContainer = container.querySelector('.bg-red-50')
+    expect(errorContainer).toBeInTheDocument()
   })
 
   it('should have proper styling classes', () => {
