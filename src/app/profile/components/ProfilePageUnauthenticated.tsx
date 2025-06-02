@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 
 function ProfilePageUnauthenticated() {
   return (
@@ -11,20 +11,9 @@ function ProfilePageUnauthenticated() {
           You need to be logged in to access this page.
         </p>
 
-        <Link
-          href="/login"
-          className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white inline-block px-4 py-2 rounded-md text-sm font-medium"
-        >
-          Sign In
-        </Link>
+        <SignInButton mode="modal" />
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          Don&#39;t have an account?{' '}
-          <Link
-            href="/register"
-            className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Register here
-          </Link>
+          Don&#39;t have an account? <SignUpButton mode="modal" />
         </p>
       </div>
     </div>

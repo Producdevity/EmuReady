@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon, HomeIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 
 export default function NotFound() {
   const router = useRouter()
@@ -64,23 +65,21 @@ export default function NotFound() {
             </span>
           </Link>
 
-          <Link
-            href="/login"
-            className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
-          >
-            <span className="block text-gray-900 dark:text-white font-medium">
-              Login
-            </span>
-          </Link>
+          <SignInButton mode="modal">
+            <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+              <span className="block text-gray-900 dark:text-white font-medium">
+                Login
+              </span>
+            </p>
+          </SignInButton>
 
-          <Link
-            href="/register"
-            className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
-          >
-            <span className="block text-gray-900 dark:text-white font-medium">
-              Register
-            </span>
-          </Link>
+          <SignUpButton mode="modal">
+            <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+              <span className="block text-gray-900 dark:text-white font-medium">
+                Register
+              </span>
+            </p>
+          </SignUpButton>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { SignUpButton } from '@clerk/nextjs'
 import getImageUrl from './games/utils/getImageUrl'
 import { SuccessRateBar, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -45,12 +46,11 @@ function Home() {
               >
                 Browse Compatibility Reports
               </Link>
-              <Link
-                href="/register"
-                className="bg-white/90 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-700 dark:text-indigo-200 px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 transform hover:scale-105"
-              >
-                Join the Community
-              </Link>
+              <SignUpButton>
+                <span className="bg-white/90 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-700 dark:text-indigo-200 px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 transform hover:scale-105">
+                  Join the Community
+                </span>
+              </SignUpButton>
             </div>
           </div>
         </section>
@@ -218,12 +218,11 @@ function Home() {
             Submit your own compatibility reports and help others find the best
             gaming experience on their Android devices.
           </p>
-          <Link
-            href="/register"
-            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all inline-block"
-          >
-            Create an Account
-          </Link>
+          <SignUpButton>
+            <span className="cursor-pointer bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all inline-block">
+              Create an Account
+            </span>
+          </SignUpButton>
         </section>
       </div>
     </div>

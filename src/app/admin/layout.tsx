@@ -14,15 +14,15 @@ function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, isLoaded } = useUser()
-  
+
   // Get user role from database using TRPC
-  const { data: userData, isLoading: isUserDataLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user }
-  )
+  const { data: userData, isLoading: isUserDataLoading } =
+    api.users.getProfile.useQuery(undefined, { enabled: !!user })
 
   const userRole = userData?.role as Role | undefined
-  const isSuperAdmin = userRole ? hasPermission(userRole, Role.SUPER_ADMIN) : false
+  const isSuperAdmin = userRole
+    ? hasPermission(userRole, Role.SUPER_ADMIN)
+    : false
 
   useEffect(() => {
     if (!isLoaded || isUserDataLoading) return
