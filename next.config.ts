@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com",
               "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com data:",
               "connect-src 'self' https://*.google-analytics.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://challenges.cloudflare.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live",
-              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com",
+              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live",
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
