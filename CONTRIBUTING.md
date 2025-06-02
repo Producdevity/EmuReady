@@ -164,6 +164,12 @@ npm run build
 npm run prepare-deploy
 ```
 
+7. Setup Clerk for authentication
+
+If you want to test and use authentication, you can set up a free Clerk development environment:
+. You will need to create a Clerk account and set up an application.
+. Follow the [Clerk Setup Guide](docs/AUTHENTICATION_SETUP.md) for detailed instructions.
+
 ### Improving The Documentation
 
 Documentation improvements are always welcome. The documentation is in the `README.md` file and other markdown files throughout the repository.
