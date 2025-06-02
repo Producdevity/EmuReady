@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import { motion } from 'framer-motion'
 import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/solid'
@@ -17,8 +17,8 @@ interface Props {
 }
 
 function VoteButtons(props: Props) {
-  const { status } = useSession()
-  const isAuthenticated = status === 'authenticated'
+  const { user } = useUser()
+  const isAuthenticated = !!user
 
   const [optimisticVote, setOptimisticVote] = useState<boolean | null>(
     props.currentVote,
@@ -139,7 +139,7 @@ function VoteButtons(props: Props) {
 
       {!isAuthenticated && (
         <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-          <Link href="/login" className="text-blue-500 hover:underline">
+          <Link href="/sign-in" className="text-blue-500 hover:underline">
             Sign in
           </Link>{' '}
           to vote

@@ -7,8 +7,8 @@ import {
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
-import bcryptjs from 'bcryptjs'
 import { ResourceError } from '@/lib/errors'
+import { updateUserRole } from '@/utils/roleSync'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,
@@ -18,28 +18,11 @@ import {
   DeleteUserSchema,
 } from '@/schemas/user'
 
-function hashPassword(password: string): string {
-  const salt = bcryptjs.genSaltSync(10)
-  return bcryptjs.hashSync(password, salt)
-}
-
-function comparePassword(
-  plainPassword: string,
-  hashedPassword: string,
-): boolean {
-  try {
-    return bcryptjs.compareSync(plainPassword, hashedPassword)
-  } catch (error) {
-    console.error('Error comparing passwords:', error)
-    return false
-  }
-}
-
 export const usersRouter = createTRPCRouter({
   register: publicProcedure
     .input(RegisterUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const { name, email, password } = input
+      const { name, email } = input
 
       const existingUser = await ctx.prisma.user.findUnique({
         where: { email },
@@ -47,13 +30,13 @@ export const usersRouter = createTRPCRouter({
 
       if (existingUser) ResourceError.user.emailExists()
 
-      const hashedPassword = hashPassword(password)
-
+      // Note: This endpoint is deprecated since Clerk handles user registration
+      // This is kept for backward compatibility but should not be used in production
       const user = await ctx.prisma.user.create({
         data: {
+          clerkId: `legacy_${Date.now()}_${Math.random().toString(36).substring(2)}`,
           name,
           email,
-          hashedPassword,
           role: Role.USER,
         },
         select: {
@@ -185,7 +168,7 @@ export const usersRouter = createTRPCRouter({
   update: protectedProcedure
     .input(UpdateUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const { name, email, currentPassword, newPassword, profileImage } = input
+      const { name, email, profileImage } = input
       const userId = ctx.session.user.id
 
       const user = await ctx.prisma.user.findUnique({
@@ -193,7 +176,6 @@ export const usersRouter = createTRPCRouter({
         select: {
           id: true,
           email: true,
-          hashedPassword: true,
         },
       })
 
@@ -207,25 +189,12 @@ export const usersRouter = createTRPCRouter({
         if (existingUser) ResourceError.user.emailExists()
       }
 
-      let hashedPassword = undefined
-      if (currentPassword && newPassword) {
-        const isPasswordValid = comparePassword(
-          currentPassword,
-          user.hashedPassword!,
-        )
-
-        if (!isPasswordValid) ResourceError.user.invalidPassword()
-
-        hashedPassword = hashPassword(newPassword)
-      }
-
-      // Update user
+      // Update user (note: password changes handled by Clerk)
       return await ctx.prisma.user.update({
         where: { id: userId },
         data: {
           ...(name && { name }),
           ...(email && { email }),
-          ...(hashedPassword && { hashedPassword }),
           ...(profileImage && { profileImage }),
         },
         select: {
@@ -334,9 +303,12 @@ export const usersRouter = createTRPCRouter({
         ResourceError.user.cannotDemoteSelf()
       }
 
-      return await ctx.prisma.user.update({
+      // Use the role sync utility to update both database and Clerk
+      await updateUserRole(userId, role)
+
+      // Return updated user data
+      return await ctx.prisma.user.findUnique({
         where: { id: userId },
-        data: { role },
         select: {
           id: true,
           name: true,

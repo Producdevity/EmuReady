@@ -6,14 +6,17 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import { signOut, useSession } from 'next-auth/react'
+import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
 import { ThemeToggle } from '@/components/ui'
 import { Role } from '@orm'
 
 function Navbar() {
-  const { data: session } = useSession()
+  const { user, isLoaded } = useUser()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+
+  // Get user role with proper type casting
+  const userRole = user?.publicMetadata?.role as Role | null
 
   const getNavItemClass = useCallback(
     (path: string) => {
@@ -72,46 +75,52 @@ function Navbar() {
             <div className="ml-4 flex items-center md:ml-6 space-x-3">
               <ThemeToggle />
 
-              {session ? (
-                <div className="flex items-center space-x-3">
-                  <Link href="/profile" className={getNavItemClass('/profile')}>
-                    Profile
-                  </Link>
-                  {hasPermission(session?.user?.role, Role.AUTHOR) && (
-                    <Link
-                      href="/listings/new"
-                      className={getNavItemClass('/listings/new')}
-                    >
-                      Create Listing
-                    </Link>
-                  )}
-                  {hasPermission(session?.user?.role, Role.ADMIN) && (
-                    <Link href="/admin" className={getNavItemClass('/admin')}>
-                      Admin
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => signOut()}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+              {/* Always show auth buttons while debugging */}
+              {!isLoaded ? (
+                <div>Loading...</div>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <Link
-                    href="/login"
-                    className="text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sign Up
-                  </Link>
-                </div>
+                <>
+                  {user ? (
+                    <div className="flex items-center space-x-3">
+                      <Link href="/profile" className={getNavItemClass('/profile')}>
+                        Profile
+                      </Link>
+                      {userRole && hasPermission(userRole, Role.AUTHOR) && (
+                        <Link
+                          href="/listings/new"
+                          className={getNavItemClass('/listings/new')}
+                        >
+                          Create Listing
+                        </Link>
+                      )}
+                      {userRole && hasPermission(userRole, Role.ADMIN) && (
+                        <Link href="/admin" className={getNavItemClass('/admin')}>
+                          Admin
+                        </Link>
+                      )}
+                      <UserButton
+                        appearance={{
+                          elements: {
+                            avatarBox: "h-8 w-8",
+                          },
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-3">
+                      <SignInButton mode="modal">
+                        <button className="text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                          Sign In
+                        </button>
+                      </SignInButton>
+                      <SignUpButton mode="modal">
+                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium">
+                          Sign Up
+                        </button>
+                      </SignUpButton>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -163,60 +172,67 @@ function Navbar() {
               <ThemeToggle className="ml-auto" />
             </div>
             <div className="mt-3 space-y-1 px-2">
-              {session ? (
-                <>
-                  <Link
-                    href="/profile"
-                    className={getNavItemClass('/profile')}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  {hasPermission(session?.user?.role, Role.AUTHOR) && (
-                    <Link
-                      href="/listings/new"
-                      className={getNavItemClass('/listings/new')}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Create Listing
-                    </Link>
-                  )}
-                  {hasPermission(session?.user?.role, Role.ADMIN) && (
-                    <Link
-                      href="/admin"
-                      className={getNavItemClass('admin')}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => {
-                      // TODO: handle errors
-                      signOut().catch(console.error)
-                      setMobileMenuOpen(false)
-                    }}
-                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    Sign Out
-                  </button>
-                </>
+              {!isLoaded ? (
+                <div className="px-3 py-2">Loading...</div>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="block px-3 py-2 rounded-md text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
+                  {user ? (
+                    <>
+                      <Link
+                        href="/profile"
+                        className={getNavItemClass('/profile')}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      {userRole && hasPermission(userRole, Role.AUTHOR) && (
+                        <Link
+                          href="/listings/new"
+                          className={getNavItemClass('/listings/new')}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Create Listing
+                        </Link>
+                      )}
+                      {userRole && hasPermission(userRole, Role.ADMIN) && (
+                        <Link
+                          href="/admin"
+                          className={getNavItemClass('admin')}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Admin
+                        </Link>
+                      )}
+                      <div className="px-3 py-2">
+                        <UserButton
+                          appearance={{
+                            elements: {
+                              avatarBox: "h-8 w-8",
+                            },
+                          }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <SignInButton mode="modal">
+                        <button
+                          className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Sign In
+                        </button>
+                      </SignInButton>
+                      <SignUpButton mode="modal">
+                        <button
+                          className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Sign Up
+                        </button>
+                      </SignUpButton>
+                    </>
+                  )}
                 </>
               )}
             </div>

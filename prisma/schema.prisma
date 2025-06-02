@@ -32,8 +32,8 @@ enum ListingApprovalStatus {
 
 model User {
   id             String            @id @default(uuid())
+  clerkId        String            @unique
   email          String            @unique
-  hashedPassword String
   name           String?
   profileImage   String?
   role           Role              @default(USER)

@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { auth } from '@clerk/nextjs/server'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
-import { authOptions } from '@/server/auth'
 import { prisma } from '@/server/db'
 import getErrorMessage from '@/utils/getErrorMessage'
 
@@ -30,8 +29,8 @@ function isImage(file: File) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const { userId } = await auth()
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 401 },
@@ -67,7 +66,6 @@ export async function POST(request: NextRequest) {
       : 'jpg' // Fallback to jpg if extension is invalid
 
     // Create unique filename with timestamp and random string for additional security
-    const userId = session.user.id
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 10)
     const fileName = `profile-${userId}-${timestamp}-${randomString}.${fileExtension}`
@@ -84,8 +82,9 @@ export async function POST(request: NextRequest) {
 
     const imageUrl = `/uploads/profiles/${fileName}`
 
+    // Update user profile image in database
     await prisma.user.update({
-      where: { id: userId },
+      where: { clerkId: userId },
       data: { profileImage: imageUrl },
     })
 

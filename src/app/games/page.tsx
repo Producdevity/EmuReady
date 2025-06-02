@@ -1,7 +1,7 @@
 'use client'
 
 import { Role } from '@orm'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { useState, type SyntheticEvent, type ChangeEvent } from 'react'
 import Link from 'next/link'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
@@ -11,7 +11,7 @@ import GameCard from './components/GameCard'
 import { hasPermission } from '@/utils/permissions'
 
 function GamesPage() {
-  const { data: session } = useSession()
+  const { user } = useUser()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [systemId, setSystemId] = useState('')
@@ -39,13 +39,16 @@ function GamesPage() {
     setPage(1)
   }
 
+  // Get user role from Clerk's publicMetadata
+  const userRole = user?.publicMetadata?.role as Role | undefined
+
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
-        {hasPermission(session?.user.role, Role.ADMIN) && (
+        {userRole && hasPermission(userRole, Role.ADMIN) && (
           <Button asChild variant="fancy" className="hidden md:inline-flex">
             <Link href="/games/new">Add Game</Link>
           </Button>

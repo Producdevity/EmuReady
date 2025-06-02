@@ -1,11 +1,11 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { auth } from '@clerk/nextjs/server'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
-import { authOptions } from '@/server/auth'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
+import { prisma } from '@/server/db'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 // Set route to be dynamic to prevent caching
@@ -38,12 +38,25 @@ function isImage(file: File) {
 // TODO: consider only allowing urls
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication - only authors and admins can upload
-    const session = await getServerSession(authOptions)
-    if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
+    // Check authentication - verify user has AUTHOR role
+    const { userId } = await auth()
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 401 },
+      )
+    }
+
+    // Check user role for upload permissions
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { role: true },
+    })
+    
+    if (!user || !hasPermission(user.role, Role.AUTHOR)) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 },
       )
     }
 
@@ -79,7 +92,6 @@ export async function POST(request: NextRequest) {
       : 'jpg' // Fallback to jpg if extension is invalid
 
     // Create unique filename with timestamp and random string for additional security
-    const userId = session.user.id
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 10)
     const fileName = `game-${userId}-${timestamp}-${randomString}.${fileExtension}`
