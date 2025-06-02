@@ -863,6 +863,7 @@ async function gamesSeeder(prisma: PrismaClient) {
       update: { imageUrl: game.imageUrl },
       create: {
         title: game.title,
+        imageUrl: game.imageUrl,
         systemId,
       },
     })
