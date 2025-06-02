@@ -34,11 +34,12 @@ describe('useColumnVisibility', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    consoleErrorMock = vi.spyOn(console, 'error')
+    // Create a silent mock that doesn't output anything
+    consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    consoleErrorMock.mockRestore()
   })
 
   describe('initialization', () => {
