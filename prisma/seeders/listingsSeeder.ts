@@ -1,179 +1,282 @@
-import { Role, type PrismaClient } from '@orm'
+import { Role, ListingApprovalStatus, type PrismaClient } from '@orm'
 
-type ListingData = {
-  gameTitle: string
-  systemName: string
-  deviceBrand: string
-  deviceModel: string
-  emulatorName: string
-  performanceLabel: string
-  notes: string
+// Helper function to get random element from array
+function getRandomElement<T>(array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)]
 }
 
-const listings: ListingData[] = [
-  {
-    gameTitle: 'The Legend of Zelda: Breath of the Wild',
-    systemName: 'Nintendo Switch',
-    deviceBrand: 'AYANEO',
-    deviceModel: 'Kun',
-    emulatorName: 'Yuzu',
-    performanceLabel: 'Great',
-    notes:
-      'Runs at 30-40 FPS with occasional dips in demanding areas. No major graphical glitches.',
-  },
-  {
-    gameTitle: 'Animal Crossing: New Horizons',
-    systemName: 'Nintendo Switch',
-    deviceBrand: 'AYANEO',
-    deviceModel: 'Air Plus',
-    emulatorName: 'Yuzu',
-    performanceLabel: 'Perfect',
-    notes: 'Runs at full speed (30 FPS) with no issues at all.',
-  },
-  {
-    gameTitle: 'Super Mario Odyssey',
-    systemName: 'Nintendo Switch',
-    deviceBrand: 'GPD',
-    deviceModel: 'Win 4',
-    emulatorName: 'Yuzu',
-    performanceLabel: 'Perfect',
-    notes: 'Solid 60 FPS throughout the game. Excellent experience.',
-  },
-  {
-    gameTitle: 'Final Fantasy X',
-    systemName: 'Sony PlayStation 2',
-    deviceBrand: 'ASUS',
-    deviceModel: 'ROG Ally RC71L',
-    emulatorName: 'PCSX2',
-    performanceLabel: 'Perfect',
-    notes: 'Perfect emulation at 60 FPS with enhanced resolution.',
-  },
-  {
-    gameTitle: 'Monster Hunter Freedom Unite',
-    systemName: 'Sony PlayStation Portable',
-    deviceBrand: 'Retroid',
-    deviceModel: 'Pocket 4',
-    emulatorName: 'PPSSPP',
-    performanceLabel: 'Perfect',
-    notes: 'Runs at full speed with enhanced textures. Great experience.',
-  },
-  {
-    gameTitle: 'Pokémon X/Y',
-    systemName: 'Nintendo 3DS',
-    deviceBrand: 'AYN',
-    deviceModel: 'Odin 2',
-    emulatorName: 'Citra',
-    performanceLabel: 'Playable',
-    notes:
-      'Generally runs at full speed but has some frame drops during battles.',
-  },
+// Helper function to get random elements from array (without duplicates)
+function getRandomElements<T>(array: T[], count: number): T[] {
+  const shuffled = [...array].sort(() => 0.5 - Math.random())
+  return shuffled.slice(0, Math.min(count, array.length))
+}
+
+// Sample notes for different performance levels
+const sampleNotes = {
+  Perfect: [
+    'Runs flawlessly at full speed with no issues.',
+    'Perfect emulation with enhanced graphics.',
+    'Solid 60 FPS throughout the entire game.',
+    'No graphical glitches or audio issues.',
+    'Enhanced resolution and textures work great.',
+  ],
+  Great: [
+    'Runs at near full speed with minor occasional dips.',
+    'Great performance with very few non-game-breaking issues.',
+    'Mostly stable with occasional frame drops in demanding areas.',
+    'Audio and video sync perfectly most of the time.',
+    'Enhanced settings work well with minor adjustments.',
+  ],
+  Playable: [
+    'Generally playable but has some frame drops.',
+    'Runs well enough to complete the game.',
+    'Some minor graphical glitches but nothing game-breaking.',
+    'Performance varies depending on the area.',
+    'Requires tweaking settings for optimal experience.',
+  ],
+  Poor: [
+    'Runs but with significant performance issues.',
+    'Single digit FPS in most areas.',
+    'Playable but not enjoyable due to poor performance.',
+    'Requires lowest settings and still struggles.',
+    'Better to wait for emulator improvements.',
+  ],
+  Ingame: [
+    'Loads and plays but has major issues.',
+    'Frequent crashes and graphical corruption.',
+    'Audio issues make it barely playable.',
+    'Many game mechanics do not work correctly.',
+    'Needs significant work from emulator developers.',
+  ],
+  Intro: [
+    'Only gets past the intro screen.',
+    'Crashes after initial loading.',
+    'Menu works but gameplay does not start.',
+    'Unable to progress beyond character selection.',
+    'Emulator compatibility issues prevent gameplay.',
+  ],
+  Loadable: [
+    'Game loads but does not start properly.',
+    'Stuck on loading screen.',
+    'Shows title screen but nothing else.',
+    'Emulator recognizes the game but cannot run it.',
+    'Compatibility layer needs work.',
+  ],
+  Nothing: [
+    'Does not work at all.',
+    'Emulator does not recognize the game.',
+    'Immediate crash on loading.',
+    'Complete incompatibility.',
+    'Requires different emulator or major updates.',
+  ],
+}
+
+// Sample comment content
+const sampleComments = [
+  'Thanks for this report! Very helpful.',
+  'I can confirm this works on my device too.',
+  'Did you try adjusting the graphics settings?',
+  'What driver version are you using?',
+  'This helped me get the game running perfectly!',
+  'I\'m getting different results, might be device specific.',
+  'Great detailed report, thanks for sharing.',
+  'Any tips for improving performance?',
+  'Works even better with the latest emulator update.',
+  'I had similar issues until I updated my drivers.',
+  'This game runs amazing on this device!',
+  'Performance improved significantly after tweaking settings.',
+  'Confirmed working on the same setup.',
+  'Thanks for the detailed performance notes.',
+  'Anyone tried this with different emulator versions?',
 ]
 
-async function listingsSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding listings...')
-
-  // Get an admin user for authoring the listings
-  const adminUser = await prisma.user.findFirst({
-    where: { role: Role.ADMIN },
-  })
-
-  if (!adminUser) {
-    console.warn('No admin user found, skipping listings seeding')
-    return
-  }
-
-  // Get all the lookups we need
-  const games = await prisma.game.findMany({
-    include: { system: true },
-  })
-  const gameMap = new Map()
-  games.forEach((game) => {
-    gameMap.set(`${game.title}-${game.system.name}`, game.id)
-  })
-
-  const devices = await prisma.device.findMany({
-    include: { brand: true },
-  })
-  const deviceMap = new Map()
-  devices.forEach((device) => {
-    deviceMap.set(`${device.brand.name}-${device.modelName}`, device.id)
-  })
-
-  const emulators = await prisma.emulator.findMany()
-  const emulatorMap = new Map(
-    emulators.map((emulator) => [emulator.name, emulator.id]),
-  )
-
-  const performanceScales = await prisma.performanceScale.findMany()
-  const performanceMap = new Map(
-    performanceScales.map((scale) => [scale.label, scale.id]),
-  )
-
-  // Create listings
-  for (const listing of listings) {
-    // Find the game ID
-    const gameId = gameMap.get(`${listing.gameTitle}-${listing.systemName}`)
-    if (!gameId) {
-      console.warn(
-        `Game "${listing.gameTitle}" for system "${listing.systemName}" not found, skipping listing`,
-      )
-      continue
-    }
-
-    // Find the device ID
-    const deviceId = deviceMap.get(
-      `${listing.deviceBrand}-${listing.deviceModel}`,
-    )
-    if (!deviceId) {
-      console.warn(
-        `Device "${listing.deviceBrand} ${listing.deviceModel}" not found, skipping listing`,
-      )
-      continue
-    }
-
-    // Find the emulator ID
-    const emulatorId = emulatorMap.get(listing.emulatorName)
-    if (!emulatorId) {
-      console.warn(
-        `Emulator "${listing.emulatorName}" not found, skipping listing`,
-      )
-      continue
-    }
-
-    // Find the performance scale ID
-    const performanceId = performanceMap.get(listing.performanceLabel)
-    if (!performanceId) {
-      console.warn(
-        `Performance scale "${listing.performanceLabel}" not found, skipping listing`,
-      )
-      continue
-    }
-
-    // Create or update the listing
-    await prisma.listing.upsert({
-      where: {
-        gameId_deviceId_emulatorId: {
-          gameId,
-          deviceId,
-          emulatorId,
-        },
-      },
-      update: {
-        performanceId,
-        notes: listing.notes,
-      },
-      create: {
-        gameId,
-        deviceId,
-        emulatorId,
-        performanceId,
-        notes: listing.notes,
-        authorId: adminUser.id,
+async function createVotesAndComments(
+  prisma: PrismaClient,
+  listingId: string,
+  users: Array<{ id: string; role: Role }>,
+) {
+  // Add some random votes (60% upvotes, 40% downvotes)
+  const votersCount = Math.floor(Math.random() * 8) + 2 // 2-9 voters
+  const voters = getRandomElements(users, votersCount)
+  
+  for (const voter of voters) {
+    const isUpvote = Math.random() > 0.4 // 60% chance of upvote
+    
+    await prisma.vote.create({
+      data: {
+        value: isUpvote,
+        userId: voter.id,
+        listingId,
       },
     })
   }
 
-  console.log('✅ Listings seeded successfully')
+  // Add some random comments (30% chance per listing)
+  if (Math.random() < 0.3) {
+    const commenterCount = Math.floor(Math.random() * 3) + 1 // 1-3 comments
+    const commenters = getRandomElements(users, commenterCount)
+    
+    for (const commenter of commenters) {
+      const content = getRandomElement(sampleComments)
+      
+      await prisma.comment.create({
+        data: {
+          content,
+          userId: commenter.id,
+          listingId,
+          score: Math.floor(Math.random() * 10) - 2, // -2 to 7 score
+        },
+      })
+    }
+  }
+}
+
+async function listingsSeeder(prisma: PrismaClient) {
+  console.log('🌱 Seeding listings with comprehensive test data...')
+
+  // Get all required data
+  const users = await prisma.user.findMany()
+  const adminUsers = users.filter(user => 
+    user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN
+  )
+  
+  if (adminUsers.length === 0) {
+    console.warn('No admin/super admin users found, skipping listings seeding')
+    return
+  }
+
+  const devices = await prisma.device.findMany({
+    include: { brand: true },
+  })
+
+  const games = await prisma.game.findMany({
+    include: { system: true },
+  })
+
+  const emulators = await prisma.emulator.findMany({
+    include: { systems: true },
+  })
+
+  const performanceScales = await prisma.performanceScale.findMany()
+
+  console.log(`📊 Found ${devices.length} devices, ${games.length} games, ${emulators.length} emulators`)
+
+  let totalListingsCreated = 0
+  let totalVotesCreated = 0
+  let totalCommentsCreated = 0
+
+  // Create 2 listings per device
+  for (const device of devices) {
+    console.log(`Creating listings for ${device.brand.name} ${device.modelName}...`)
+    
+    // Find compatible games (games that have emulators supporting their system)
+    const compatibleGames = games.filter(game => 
+      emulators.some(emulator => 
+        emulator.systems.some(system => system.id === game.systemId)
+      )
+    )
+
+    if (compatibleGames.length < 2) {
+      console.warn(`Not enough compatible games for ${device.brand.name} ${device.modelName}, skipping`)
+      continue
+    }
+
+    // Pick 2 different games for this device
+    const selectedGames = getRandomElements(compatibleGames, 2)
+
+    for (let i = 0; i < selectedGames.length; i++) {
+      const game = selectedGames[i]
+      
+      // Find compatible emulators for this game's system
+      const compatibleEmulators = emulators.filter(emulator =>
+        emulator.systems.some(system => system.id === game.systemId)
+      )
+
+      if (compatibleEmulators.length === 0) {
+        console.warn(`No compatible emulators for ${game.title} on ${game.system.name}`)
+        continue
+      }
+
+      const selectedEmulator = getRandomElement(compatibleEmulators)
+      const selectedPerformance = getRandomElement(performanceScales)
+      const author = getRandomElement(users)
+      
+      // Get sample notes for this performance level
+      const notesForLevel = sampleNotes[selectedPerformance.label as keyof typeof sampleNotes]
+      const notes = getRandomElement(notesForLevel)
+
+      // First listing per device: PENDING
+      // Second listing per device: APPROVED
+      const isApproved = i === 1
+      const processor = isApproved ? getRandomElement(adminUsers) : null
+      
+      const processedAt = isApproved 
+        ? new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) // Random date in last 30 days
+        : null
+
+      const processedNotes = isApproved && Math.random() > 0.7 
+        ? ['Verified and approved.', 'Looks good, approved!', 'Testing confirmed, approved.'][Math.floor(Math.random() * 3)]
+        : null
+
+      try {
+        // Check if this combination already exists
+        const existingListing = await prisma.listing.findUnique({
+          where: {
+            gameId_deviceId_emulatorId: {
+              gameId: game.id,
+              deviceId: device.id,
+              emulatorId: selectedEmulator.id,
+            },
+          },
+        })
+
+        if (existingListing) {
+          console.log(`Listing already exists for ${game.title} on ${device.brand.name} ${device.modelName} with ${selectedEmulator.name}`)
+          continue
+        }
+
+        const listing = await prisma.listing.create({
+          data: {
+            gameId: game.id,
+            deviceId: device.id,
+            emulatorId: selectedEmulator.id,
+            performanceId: selectedPerformance.id,
+            notes,
+            authorId: author.id,
+            status: isApproved ? ListingApprovalStatus.APPROVED : ListingApprovalStatus.PENDING,
+            processedAt,
+            processedNotes,
+            processedByUserId: processor?.id,
+          },
+        })
+
+        totalListingsCreated++
+
+        // Add votes and comments to this listing
+        const votesBefore = await prisma.vote.count()
+        const commentsBefore = await prisma.comment.count()
+        
+        await createVotesAndComments(prisma, listing.id, users)
+        
+        const votesAfter = await prisma.vote.count()
+        const commentsAfter = await prisma.comment.count()
+        
+        totalVotesCreated += (votesAfter - votesBefore)
+        totalCommentsCreated += (commentsAfter - commentsBefore)
+
+        console.log(`  ✅ Created ${isApproved ? 'APPROVED' : 'PENDING'} listing: ${game.title} (${selectedEmulator.name}) - ${selectedPerformance.label}`)
+      } catch (error) {
+        console.error(`  ❌ Failed to create listing for ${game.title} on ${device.brand.name} ${device.modelName}:`, error)
+      }
+    }
+  }
+
+  console.log('✅ Listings seeding completed!')
+  console.log(`📈 Statistics:`)
+  console.log(`   📝 ${totalListingsCreated} listings created`)
+  console.log(`   👍 ${totalVotesCreated} votes added`)
+  console.log(`   💬 ${totalCommentsCreated} comments added`)
+  console.log(`   ✅ ~50% of listings are auto-approved for testing`)
 }
 
 export default listingsSeeder
