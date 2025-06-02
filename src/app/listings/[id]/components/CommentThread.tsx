@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import CommentForm from './CommentForm'
 import { api } from '@/lib/api'
@@ -17,6 +17,7 @@ import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
 import { useConfirmDialog } from '@/components/ui'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
+import { type Role } from '@orm'
 
 type CommentsData = RouterOutput['listings']['getSortedComments']
 type TopLevelComment = CommentsData['comments'][number]
@@ -32,7 +33,7 @@ interface Props {
 
 function CommentThread(props: Props) {
   const initialSortBy = props.initialSortBy ?? 'newest'
-  const { data: session } = useSession()
+  const { user } = useUser()
   const [sortBy, setSortBy] = useState<SortBy>(initialSortBy)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
@@ -120,16 +121,19 @@ function CommentThread(props: Props) {
     const isReplying = replyingTo === comment.id
     const expanded = isCommentExpanded(comment.id)
 
+    // Get user role from Clerk's publicMetadata
+    const userRole = user?.publicMetadata?.role as Role | undefined
+
     const canEdit = canEditComment(
-      session?.user.role,
+      userRole,
       comment.user.id,
-      session?.user.id,
+      user?.id,
     )
 
     const canDelete = canDeleteComment(
-      session?.user.role,
+      userRole,
       comment.user.id,
-      session?.user.id,
+      user?.id,
     )
 
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''

@@ -3,30 +3,49 @@
 import { useEffect, type PropsWithChildren } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
 import { LoadingSpinner } from '@/components/ui'
 import { adminNav, superAdminNav } from './data'
+import { api } from '@/lib/api'
 
 function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
   const router = useRouter()
-  const { data: session, status } = useSession()
-  const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
+  const { user, isLoaded } = useUser()
+  
+  // Get user role from database using TRPC
+  const { data: userData, isLoading: isUserDataLoading } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!user }
+  )
+
+  const userRole = userData?.role as Role | undefined
+  const isSuperAdmin = userRole ? hasPermission(userRole, Role.SUPER_ADMIN) : false
 
   useEffect(() => {
-    if (
-      status === 'loading' ||
-      (status === 'authenticated' &&
-        hasPermission(session?.user.role, Role.ADMIN))
-    )
+    if (!isLoaded || isUserDataLoading) return
+
+    if (!user) {
+      router.replace('/sign-in')
       return
+    }
 
-    router.replace('/login')
-  }, [status, router, session?.user.role])
+    // Check if user has admin permissions once data is loaded
+    if (userData && (!userRole || !hasPermission(userRole, Role.ADMIN))) {
+      router.replace('/')
+    }
+  }, [isLoaded, user, userData, userRole, router, isUserDataLoading])
 
-  if (status === 'loading') return <LoadingSpinner size="lg" />
+  if (!isLoaded || isUserDataLoading) return <LoadingSpinner size="lg" />
+
+  if (!user || !userData) return null
+
+  // Don't render admin content if user doesn't have admin role
+  if (!userRole || !hasPermission(userRole, Role.ADMIN)) {
+    return null
+  }
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">

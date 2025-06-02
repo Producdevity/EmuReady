@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
@@ -59,8 +59,11 @@ function ListingsPage() {
     storageKey: storageKeys.columnVisibility.listings,
   })
 
-  const { data: session } = useSession()
-  const isAdmin = hasPermission(session?.user.role, Role.ADMIN)
+  const { user } = useUser()
+  
+  // Get user role from Clerk's publicMetadata
+  const userRole = user?.publicMetadata?.role as Role | undefined
+  const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
 
   const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.get.useQuery()

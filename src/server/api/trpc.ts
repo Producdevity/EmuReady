@@ -1,13 +1,23 @@
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { getServerSession, type Session } from 'next-auth'
+import { auth } from '@clerk/nextjs/server'
 import { initTRPC } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import { hasPermission } from '@/utils/permissions'
 import { prisma } from '@/server/db'
-import { authOptions } from '@/server/auth'
 import { Role } from '@orm'
 import { AppError } from '@/lib/errors'
+
+type User = {
+  id: string
+  email: string | null
+  name: string | null
+  role: Role
+}
+
+type Session = {
+  user: User
+}
 
 type CreateContextOptions = {
   session: Session | null
@@ -20,9 +30,44 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
   }
 }
 
-export const createTRPCContext = async (opts: CreateNextContextOptions) => {
-  const { req, res } = opts
-  const session = await getServerSession(req, res, authOptions)
+export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
+  const { userId } = await auth()
+
+  let session: Session | null = null
+
+  if (userId) {
+    // Find user in database - they should exist due to webhook sync
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+    })
+
+    if (user) {
+      session = {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      }
+    } else {
+      // User not found in database - this shouldn't happen with webhooks
+      // In development, this is common when webhooks aren't set up
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`🔧 Dev mode: User with clerkId ${userId} not found in database.`)
+        console.warn('   Either run the seeder (npx prisma db seed) or set up webhooks for auto-sync.')
+        console.warn('   See DEVELOPMENT_SETUP.md for details.')
+      } else {
+        console.warn(`User with clerkId ${userId} not found in database. Check webhook configuration.`)
+      }
+    }
+  }
 
   return createInnerTRPCContext({ session })
 }

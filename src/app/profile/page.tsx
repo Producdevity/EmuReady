@@ -2,7 +2,7 @@
 
 import { formatDate } from '@/utils/date'
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { ProfileUpload } from '@/components/ui'
@@ -11,17 +11,18 @@ import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfilePageError from './components/ProfilePageError'
 import { type RouterInput } from '@/types/trpc'
 import { toast } from 'react-hot-toast'
+import { type Role } from '@orm'
 
 function ProfilePage() {
-  const { data: session, status } = useSession()
+  const { user, isLoaded } = useUser()
   const [isEditing, setIsEditing] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
 
-  // Always call these hooks, regardless of session state
+  // Always call these hooks, regardless of user state
   const utils = api.useUtils()
   const { data: profile, isLoading } = api.users.getProfile.useQuery(
     undefined,
-    { enabled: !!session },
+    { enabled: !!user },
   )
 
   const updateProfile = api.users.update.useMutation({
@@ -47,12 +48,14 @@ function ProfilePage() {
     } satisfies RouterInput['users']['update'])
   }
 
-  if (status === 'loading' || (isLoading && session))
-    return <ProfilePageLoader />
+  if (!isLoaded || (isLoading && user)) return <ProfilePageLoader />
 
-  if (status === 'unauthenticated') return <ProfilePageUnauthenticated />
+  if (!user) return <ProfilePageUnauthenticated />
 
-  if (!session || !profile) return <ProfilePageError />
+  if (!profile) return <ProfilePageError />
+
+  // Get user role from Clerk's publicMetadata
+  const userRole = user.publicMetadata?.role as Role | undefined
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -89,7 +92,7 @@ function ProfilePage() {
                       </label>
                       <input
                         type="text"
-                        defaultValue={session.user?.name ?? ''}
+                        defaultValue={user.fullName ?? ''}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       />
                     </div>
@@ -100,7 +103,7 @@ function ProfilePage() {
                       </label>
                       <input
                         type="email"
-                        defaultValue={session.user?.email ?? ''}
+                        defaultValue={user.primaryEmailAddress?.emailAddress ?? ''}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                         disabled
                       />
@@ -143,7 +146,7 @@ function ProfilePage() {
                         Name
                       </h2>
                       <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                        {session.user?.name ?? 'No name provided'}
+                        {user.fullName ?? 'No name provided'}
                       </p>
                     </div>
 
@@ -152,7 +155,7 @@ function ProfilePage() {
                         Email
                       </h2>
                       <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                        {session.user?.email ?? 'No email provided'}
+                        {user.primaryEmailAddress?.emailAddress ?? 'No email provided'}
                       </p>
                     </div>
 
@@ -161,7 +164,7 @@ function ProfilePage() {
                         Role
                       </h2>
                       <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                        {session.user?.role ?? 'User'}
+                        {userRole ?? 'User'}
                       </p>
                     </div>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { CreateListingSchema } from '@/schemas/listing'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,6 +13,7 @@ import {
   Button,
   SelectInput,
   type AutocompleteOptionBase,
+  LoadingSpinner,
 } from '@/components/ui'
 import { HardDrive, Zap, FileText } from 'lucide-react'
 import toast from '@/lib/toast'
@@ -581,4 +582,21 @@ function AddListingPage() {
   )
 }
 
-export default AddListingPage
+function LoadingFallback() {
+  return (
+    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto text-center">
+        <LoadingSpinner size="lg" />
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading form...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function NewListingPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AddListingPage />
+    </Suspense>
+  )
+}

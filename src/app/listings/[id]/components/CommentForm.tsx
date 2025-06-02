@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { sanitizeString } from '@/utils/validation'
@@ -21,7 +21,7 @@ interface Props {
 
 function CommentForm(props: Props) {
   const [content, setContent] = useState(props.initialContent ?? '')
-  const { data: session } = useSession()
+  const { user } = useUser()
 
   const createComment = api.listings.createComment.useMutation({
     onSuccess: () => {
@@ -59,12 +59,12 @@ function CommentForm(props: Props) {
     }
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <div className="mb-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <p className="text-gray-600 dark:text-gray-400">
           Please{' '}
-          <Link href="/login" className="text-blue-600 hover:text-blue-700">
+          <Link href="/sign-in" className="text-blue-600 hover:text-blue-700">
             sign in
           </Link>{' '}
           to leave a comment.

@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { auth } from '@clerk/nextjs/server'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
-import { authOptions } from '@/server/auth'
+import { prisma } from '@/server/db'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 function isImage(file: File) {
@@ -13,11 +13,25 @@ function isImage(file: File) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
+    const { userId } = await auth()
+    
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 401 },
+      )
+    }
+
+    // Check user role for upload permissions
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { role: true },
+    })
+    
+    if (!user || !hasPermission(user.role, Role.AUTHOR)) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 },
       )
     }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,10 +14,12 @@ import { ChevronLeft } from 'lucide-react'
 
 function GameDetailsPage() {
   const params = useParams()
-  const { data: session } = useSession()
+  const { user } = useUser()
   const gameQuery = api.games.byId.useQuery({ id: params.id as string })
 
-  const canEdit = hasPermission(session?.user.role, Role.ADMIN)
+  // Get user role from Clerk's publicMetadata
+  const userRole = user?.publicMetadata?.role as Role | undefined
+  const canEdit = userRole ? hasPermission(userRole, Role.ADMIN) : false
 
   if (gameQuery.isLoading) return <LoadingSpinner text="Loading game data..." />
 

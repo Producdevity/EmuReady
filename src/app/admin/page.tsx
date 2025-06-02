@@ -1,9 +1,10 @@
 import { type Metadata } from 'next'
 import Link from 'next/link'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth'
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
+import { prisma } from '@/server/db'
 import { adminNav, superAdminNav } from './data'
 
 export const metadata: Metadata = {
@@ -11,8 +12,23 @@ export const metadata: Metadata = {
 }
 
 async function AdminDashboardPage() {
-  const session = await getServerSession(authOptions)
-  const isSuperAdmin = hasPermission(session?.user.role, Role.SUPER_ADMIN)
+  const { userId } = await auth()
+  
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  // Check user role for admin access
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { role: true },
+  })
+  
+  if (!user || !hasPermission(user.role, Role.ADMIN)) {
+    redirect('/')
+  }
+  
+  const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
 
   return (
     <div className="space-y-8">

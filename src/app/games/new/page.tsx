@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Role } from '@orm'
@@ -24,7 +24,7 @@ interface SystemOption extends AutocompleteOptionBase {
 
 function AddGamePage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { user, isLoaded } = useUser()
   const [title, setTitle] = useState('')
   const [systemId, setSystemId] = useState('')
   const [imageUrl, setImageUrl] = useState('')
@@ -33,6 +33,12 @@ function AddGamePage() {
 
   const systemsQuery = api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
+
+  // Get user role from database using TRPC
+  const { data: userData, isLoading: isUserDataLoading } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!user }
+  )
 
   // Get the selected system's name based on systemId
   const selectedSystem = systemId
@@ -48,9 +54,12 @@ function AddGamePage() {
     return () => clearTimeout(timer)
   }, [success, error])
 
-  if (status === 'loading') return <LoadingSpinner />
+  if (!isLoaded || isUserDataLoading) return <LoadingSpinner />
 
-  if (!session || !hasPermission(session.user.role, Role.AUTHOR)) {
+  // Get user role from database
+  const userRole = userData?.role as Role | undefined
+
+  if (!user || !userData || (userRole && !hasPermission(userRole, Role.AUTHOR))) {
     return (
       <div className="p-8 text-center">
         You do not have permission to add games.
