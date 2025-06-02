@@ -91,23 +91,35 @@ function Autocomplete<T extends AutocompleteOptionBase>({
 
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
+    // If value is null or undefined, clear the input
+    if (value == null) {
+      setInputValue('')
+      return
+    }
+
     if (staticItems && staticItems.length > 0) {
       const staticSelectedItem = staticItems.find(
         (item) => optionToValue(item) === value,
       )
       if (staticSelectedItem) {
-        return setInputValue(optionToLabel(staticSelectedItem))
+        setInputValue(optionToLabel(staticSelectedItem))
+        return
       }
     }
 
     // For loadItems, check suggestions first, then try to find in all available data
-    if (!loadItems) return
+    if (loadItems) {
+      const selectedItem = suggestions.find(
+        (item) => optionToValue(item) === value,
+      )
+      if (selectedItem) {
+        setInputValue(optionToLabel(selectedItem))
+        return
+      }
+    }
 
-    const selectedItem = suggestions.find(
-      (item) => optionToValue(item) === value,
-    )
-    if (!selectedItem) return
-    setInputValue(optionToLabel(selectedItem))
+    // If we reach here and no item was found, but value is not null,
+    // it might mean the item hasn't been loaded yet, so keep current input
   }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems])
 
   const performSearch = useCallback(
@@ -179,8 +191,24 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value
     setInputValue(newQuery)
+    
+    // Only clear selection if we had a selection and user is typing something different
+    if (value != null && newQuery !== '') {
+      // Find the current selected item to compare
+      const currentSelectedItem = staticItems?.find(item => optionToValue(item) === value) ??
+                                  suggestions.find(item => optionToValue(item) === value)
+      
+      // Only clear if the typed text doesn't match the selected item's label
+      if (!currentSelectedItem || optionToLabel(currentSelectedItem) !== newQuery) {
+        onChange(null) // Clear selection when user starts typing something different
+      }
+    }
+    
     if (newQuery.length === 0) {
-      onChange(null) // Clear selection if input is cleared
+      // Clear selection when input is empty
+      if (value != null) {
+        onChange(null)
+      }
       // For static items, show all items when input is cleared
       if (staticItems && staticItems.length > 0) {
         setSuggestions(staticItems)
@@ -384,7 +412,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           autoComplete="off"
+          role="combobox"
           aria-autocomplete="list"
+          aria-expanded={isOpen}
           aria-controls={isOpen ? 'autocomplete-list' : undefined}
           aria-activedescendant={
             highlightedIndex >= 0 && suggestions[highlightedIndex]
