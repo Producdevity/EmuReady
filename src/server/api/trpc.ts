@@ -151,12 +151,10 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
  * Middleware to check if a user has SUPER_ADMIN role
  */
 export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    AppError.unauthorized()
-  }
+  if (!ctx.session?.user) return AppError.unauthorized()
 
   if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-    AppError.insufficientPermissions('SUPER_ADMIN')
+    AppError.insufficientPermissions(Role.SUPER_ADMIN)
   }
 
   return next({

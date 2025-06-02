@@ -5,12 +5,12 @@ import { TRPCError } from '@trpc/server'
 
 // Define error types as constants for better type safety
 export const ERROR_CODES = {
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  NOT_FOUND: 'NOT_FOUND',
-  CONFLICT: 'CONFLICT',
   BAD_REQUEST: 'BAD_REQUEST',
+  CONFLICT: 'CONFLICT',
+  FORBIDDEN: 'FORBIDDEN',
   INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+  NOT_FOUND: 'NOT_FOUND',
+  UNAUTHORIZED: 'UNAUTHORIZED',
 } as const
 
 export type ErrorCode = keyof typeof ERROR_CODES
@@ -18,21 +18,22 @@ export type ErrorCode = keyof typeof ERROR_CODES
 // Define common error scenarios with default messages
 export const ERROR_MESSAGES = {
   // Authentication & Authorization
-  UNAUTHORIZED: 'You must be logged in to perform this action',
   FORBIDDEN: 'You do not have permission to perform this action',
   INSUFFICIENT_PERMISSIONS: 'You do not have sufficient permissions',
+  NOT_AUTHENTICATED: 'You must be logged in to perform this action',
+  UNAUTHORIZED: 'You must be logged in to perform this action',
 
   // Resource errors
-  NOT_FOUND: 'The requested resource was not found',
   ALREADY_EXISTS: 'A resource with this identifier already exists',
+  NOT_FOUND: 'The requested resource was not found',
 
   // Validation errors
   INVALID_INPUT: 'The provided input is invalid',
   MISSING_REQUIRED_FIELD: 'A required field is missing',
 
   // Business logic errors
-  RESOURCE_IN_USE: 'Cannot delete resource as it is currently in use',
   OPERATION_NOT_ALLOWED: 'This operation is not allowed',
+  RESOURCE_IN_USE: 'Cannot delete resource as it is currently in use',
 
   // System errors
   DATABASE_ERROR: 'A database error occurred',
@@ -42,6 +43,13 @@ export const ERROR_MESSAGES = {
 // Error factory functions for common scenarios
 export class AppError {
   // Authentication & Authorization
+  static notAuthenticated(message?: string): never {
+    throw new TRPCError({
+      code: ERROR_CODES.UNAUTHORIZED,
+      message: message ?? ERROR_MESSAGES.NOT_AUTHENTICATED,
+    })
+  }
+
   static unauthorized(message?: string): never {
     throw new TRPCError({
       code: ERROR_CODES.UNAUTHORIZED,
@@ -61,10 +69,7 @@ export class AppError {
       ? `You need ${requiredRole} permissions to perform this action`
       : ERROR_MESSAGES.INSUFFICIENT_PERMISSIONS
 
-    throw new TRPCError({
-      code: ERROR_CODES.FORBIDDEN,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.FORBIDDEN, message })
   }
 
   // Resource errors
@@ -73,10 +78,7 @@ export class AppError {
       ? `${resource} not found`
       : ERROR_MESSAGES.NOT_FOUND
 
-    throw new TRPCError({
-      code: ERROR_CODES.NOT_FOUND,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.NOT_FOUND, message })
   }
 
   static alreadyExists(resource?: string, identifier?: string): never {
@@ -88,17 +90,11 @@ export class AppError {
       message = `${resource} already exists`
     }
 
-    throw new TRPCError({
-      code: ERROR_CODES.CONFLICT,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.CONFLICT, message })
   }
 
   static conflict(message: string): never {
-    throw new TRPCError({
-      code: ERROR_CODES.CONFLICT,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.CONFLICT, message })
   }
 
   // Validation errors
@@ -114,10 +110,7 @@ export class AppError {
       ? `Invalid input for field: ${field}`
       : ERROR_MESSAGES.INVALID_INPUT
 
-    throw new TRPCError({
-      code: ERROR_CODES.BAD_REQUEST,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.BAD_REQUEST, message })
   }
 
   static missingRequiredField(field: string): never {
@@ -133,10 +126,7 @@ export class AppError {
       ? `Cannot delete ${resource} that is used in ${count} records`
       : `Cannot delete ${resource} as it is currently in use`
 
-    throw new TRPCError({
-      code: ERROR_CODES.BAD_REQUEST,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.BAD_REQUEST, message })
   }
 
   static operationNotAllowed(operation?: string): never {
@@ -144,10 +134,7 @@ export class AppError {
       ? `Operation not allowed: ${operation}`
       : ERROR_MESSAGES.OPERATION_NOT_ALLOWED
 
-    throw new TRPCError({
-      code: ERROR_CODES.BAD_REQUEST,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.BAD_REQUEST, message })
   }
 
   // System errors
@@ -163,18 +150,12 @@ export class AppError {
       ? `Database error during ${operation}`
       : ERROR_MESSAGES.DATABASE_ERROR
 
-    throw new TRPCError({
-      code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES.INTERNAL_SERVER_ERROR, message })
   }
 
   // Generic error thrower with custom code and message
   static custom(code: ErrorCode, message: string): never {
-    throw new TRPCError({
-      code: ERROR_CODES[code],
-      message,
-    })
+    throw new TRPCError({ code: ERROR_CODES[code], message })
   }
 }
 

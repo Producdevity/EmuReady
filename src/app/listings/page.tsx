@@ -1,7 +1,7 @@
 'use client'
 
+import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import { Suspense, useState } from 'react'
-import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '@/lib/api'
@@ -47,8 +47,6 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
 
 function ListingsPage() {
   const confirm = useConfirmDialog()
-
-  // Use the custom hook for state management
   const listingsState = useListingsState()
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -59,10 +57,9 @@ function ListingsPage() {
     storageKey: storageKeys.columnVisibility.listings,
   })
 
-  const { user } = useUser()
-  
-  // Get user role from Clerk's publicMetadata
-  const userRole = user?.publicMetadata?.role as Role | undefined
+  const userQuery = api.users.me.useQuery()
+
+  const userRole = userQuery?.data?.role as Role | undefined
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
 
   const systemsQuery = api.systems.get.useQuery()
@@ -204,7 +201,7 @@ function ListingsPage() {
                 ? showSystemIcons
                   ? 'Show System Names'
                   : 'Show System Icons'
-                : 'Show System Icons'}
+                : '...'}
             </Button>
             <ColumnVisibilityControl
               columns={LISTINGS_COLUMNS}
@@ -397,13 +394,7 @@ function ListingsPage() {
           )}
 
           {!listingsQuery.isLoading &&
-            listingsQuery.data?.listings.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-xl text-gray-500 dark:text-gray-400">
-                  No listings found matching the criteria.
-                </p>
-              </div>
-            )}
+            listingsQuery.data?.listings.length === 0 && <NoListingsFound />}
         </div>
 
         {listingsQuery.data?.pagination &&

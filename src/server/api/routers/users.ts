@@ -6,9 +6,9 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
-import { ResourceError } from '@/lib/errors'
-import { updateUserRole } from '@/utils/roleSync'
+import { Role }                    from '@orm'
+import { AppError, ResourceError } from '@/lib/errors'
+import { updateUserRole }          from '@/utils/roleSync'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,
@@ -19,6 +19,18 @@ import {
 } from '@/schemas/user'
 
 export const usersRouter = createTRPCRouter({
+
+  me: protectedProcedure.query(({ ctx }) => {
+    if (!ctx.session?.user) return AppError.notAuthenticated()
+
+    return {
+      id: ctx.session.user.id,
+      email: ctx.session.user.email,
+      name: ctx.session.user.name,
+      role: ctx.session.user.role,
+    }
+  }),
+
   register: publicProcedure
     .input(RegisterUserSchema)
     .mutation(async ({ ctx, input }) => {
