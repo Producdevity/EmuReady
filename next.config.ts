@@ -31,12 +31,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://va.vercel-scripts.com https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
-              "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev",
-              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com",
-              "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev data:",
-              "connect-src 'self' https://*.google-analytics.com https://*.clerk.com https://*.clerk.accounts.dev wss://*.clerk.accounts.dev https://challenges.cloudflare.com https://clerk-telemetry.com", // Added clerk-telemetry.com
-              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://va.vercel-scripts.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com",
+              "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com",
+              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com",
+              "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com data:",
+              "connect-src 'self' https://*.google-analytics.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://challenges.cloudflare.com https://clerk-telemetry.com",
+              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com",
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
