@@ -17,8 +17,11 @@ import {
   AdminTableContainer,
   Autocomplete,
   useConfirmDialog,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from '@/components/ui'
-import { Pencil, Eye, Trash2, Plus, Search, Joystick } from 'lucide-react'
+import { Pencil, Eye, Trash2, Search, Joystick } from 'lucide-react'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
@@ -101,10 +104,7 @@ function AdminGamesPage() {
             columnVisibility={columnVisibility}
           />
           <Button asChild>
-            <Link href="/games/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Game
-            </Link>
+            <Link href="/games/new">Add Game</Link>
           </Button>
         </div>
       </div>
@@ -123,7 +123,7 @@ function AdminGamesPage() {
           <Autocomplete
             value={systemId}
             onChange={handleSystemChange}
-            items={[{ id: '', name: 'All Systems' }, ...(systems ?? [])]}
+            items={systems ?? []}
             optionToValue={(system) => system.id}
             optionToLabel={(system) => system.name}
             leftIcon={<Joystick className="w-5 h-5" />}
@@ -191,13 +191,13 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-12 w-12">
+                            <div className="flex-shrink-0 h-16 w-16 flex justify-center items-center">
                               {game.imageUrl ? (
                                 <Image
                                   src={game.imageUrl}
                                   alt={game.title}
-                                  width={48}
-                                  height={48}
+                                  width={72}
+                                  height={72}
                                   className="rounded-md object-cover"
                                 />
                               ) : (
@@ -209,12 +209,34 @@ function AdminGamesPage() {
                               )}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {game.title}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                ID: {game.id.substring(0, 8)}...
-                              </div>
+                              {game.title.length > 30 ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                      {game.title.substring(0, 30)}...
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    {game.title}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {game.title}
+                                </div>
+                              )}
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    ID: {game.id.substring(0, 8)}
+                                    {game.id.length > 8 && '...'}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                  ID: {game.id}
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                           </div>
                         </td>
