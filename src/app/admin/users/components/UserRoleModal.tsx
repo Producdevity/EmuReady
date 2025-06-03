@@ -9,6 +9,7 @@ import toast from '@/lib/toast'
 import UserRoleButton from './UserRoleButton'
 import { type RouterInput } from '@/types/trpc'
 import { hasPermission } from '@/utils/permissions'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 interface User {
   id: string
@@ -50,7 +51,7 @@ function UserRoleModal(props: Props) {
     onError: (error) => {
       console.error('Error updating role:', error)
       setIsLoading(false)
-      toast.error(`Failed to update role: ${error.message}`)
+      toast.error(`Failed to update role: ${getErrorMessage(error)}`)
     },
   })
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { isEmpty } from 'remeda'
 import { api } from '@/lib/api'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -15,15 +16,15 @@ import {
   ColumnVisibilityControl,
   AdminTableContainer,
   Autocomplete,
+  useConfirmDialog,
 } from '@/components/ui'
 import { Pencil, Eye, Trash2, Plus, Search, Joystick } from 'lucide-react'
-import { useConfirmDialog } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
-import { isEmpty } from 'remeda'
+import getErrorMessage from '@/utils/getErrorMessage'
 import useAdminTable from '@/hooks/useAdminTable'
 
 type Game = RouterOutput['games']['get']['games'][number]
@@ -61,10 +62,11 @@ function AdminGamesPage() {
   const deleteGame = api.games.delete.useMutation({
     onSuccess: () => {
       toast.success('Game deleted successfully')
-      refetch()
+      refetch().catch(console.error)
     },
     onError: (error) => {
-      toast.error(`Failed to delete game: ${error.message}`)
+      toast.error(`Failed to delete game: ${getErrorMessage(error)}`)
+      console.error('Error deleting game:', error)
     },
   })
 

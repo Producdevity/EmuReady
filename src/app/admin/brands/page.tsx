@@ -82,7 +82,7 @@ function AdminBrandsPage() {
         } satisfies RouterInput['deviceBrands']['create'])
         setSuccess('Brand created!')
       }
-      refetch()
+      refetch().catch(console.error)
       closeModal()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save brand.'))
@@ -102,7 +102,7 @@ function AdminBrandsPage() {
       await deleteBrand.mutateAsync({
         id,
       } satisfies RouterInput['deviceBrands']['delete'])
-      refetch()
+      refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete brand: ${getErrorMessage(err)}`)
     }
@@ -185,7 +185,10 @@ function AdminBrandsPage() {
                 {columnVisibility.isColumnVisible('actions') && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
-                      <Button variant="secondary" onClick={() => openModal(brand)}>
+                      <Button
+                        variant="secondary"
+                        onClick={() => openModal(brand)}
+                      >
                         Edit
                       </Button>
                       <Button
@@ -201,7 +204,10 @@ function AdminBrandsPage() {
             ))}
             {brands?.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={3}
+                  className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                >
                   No brands found. Add your first brand.
                 </td>
               </tr>

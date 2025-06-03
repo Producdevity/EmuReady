@@ -97,7 +97,7 @@ function AdminDevicesPage() {
         )
         setSuccess('Device created!')
       }
-      refetch()
+      refetch().catch(console.error)
       closeModal()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save device.'))
@@ -119,7 +119,7 @@ function AdminDevicesPage() {
       await deleteDevice.mutateAsync({
         id,
       } satisfies RouterInput['devices']['delete'])
-      refetch()
+      refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete device: ${getErrorMessage(err)}`)
     }

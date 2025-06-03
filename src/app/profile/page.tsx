@@ -12,6 +12,7 @@ import ProfilePageError from './components/ProfilePageError'
 import { type RouterInput } from '@/types/trpc'
 import { toast } from 'react-hot-toast'
 import { type Role } from '@orm'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 function ProfilePage() {
   const { user, isLoaded } = useUser()
@@ -37,7 +38,7 @@ function ProfilePage() {
     onError: (error) => {
       // Revert optimistic update on error
       setProfileImage(profile?.profileImage ?? null)
-      toast.error(`Failed to update profile: ${error.message}`)
+      toast.error(`Failed to update profile: ${getErrorMessage(error)}`)
     },
   })
 
@@ -103,7 +104,9 @@ function ProfilePage() {
                       </label>
                       <input
                         type="email"
-                        defaultValue={user.primaryEmailAddress?.emailAddress ?? ''}
+                        defaultValue={
+                          user.primaryEmailAddress?.emailAddress ?? ''
+                        }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                         disabled
                       />
@@ -155,7 +158,8 @@ function ProfilePage() {
                         Email
                       </h2>
                       <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                        {user.primaryEmailAddress?.emailAddress ?? 'No email provided'}
+                        {user.primaryEmailAddress?.emailAddress ??
+                          'No email provided'}
                       </p>
                     </div>
 

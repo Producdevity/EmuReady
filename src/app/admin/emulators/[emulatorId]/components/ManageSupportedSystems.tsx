@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { Button, Input } from '@/components/ui'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 interface Props {
   emulatorId: string
@@ -51,7 +52,7 @@ function ManageSupportedSystems(props: Props) {
       await utils.emulators.byId.invalidate({ id: props.emulatorId })
     },
     onError: (error) => {
-      toast.error(`Error updating systems: ${error.message}`)
+      toast.error(`Error updating systems: ${getErrorMessage(error)}`)
       console.error('Error updating supported systems:', error)
     },
   })

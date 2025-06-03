@@ -82,7 +82,7 @@ function AdminUsersPage() {
       await deleteUser.mutateAsync({
         userId,
       } satisfies RouterInput['users']['delete'])
-      refetch()
+      refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete user: ${getErrorMessage(err)}`)
     }

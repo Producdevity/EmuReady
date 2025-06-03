@@ -19,6 +19,7 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import { ListingApprovalStatus } from '@orm'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
+import getErrorMessage from '@/utils/getErrorMessage'
 import getStatusBadgeColor from './utils/getStatusBadgeColor'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
@@ -79,7 +80,7 @@ function ProcessedListingsPage() {
     },
     onError: (err) => {
       console.error('Failed to override status:', err)
-      toast.error(`Failed to override status: ${err.message}`)
+      toast.error(`Failed to override status: ${getErrorMessage(err)}`)
     },
   })
 

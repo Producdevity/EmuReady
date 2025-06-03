@@ -67,7 +67,7 @@ function AdminEmulatorsPage() {
       await deleteEmulator.mutateAsync({
         id,
       } satisfies RouterInput['emulators']['delete'])
-      refetch()
+      refetch().catch(console.error)
       toast.success('Emulator deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete emulator: ${getErrorMessage(err)}`)

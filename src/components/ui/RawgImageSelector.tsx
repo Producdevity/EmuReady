@@ -104,7 +104,7 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
 
   const handleSearch = () => {
     if (searchTerm.trim().length >= 2) {
-      searchQuery.refetch()
+      searchQuery.refetch().catch(console.error)
     }
   }
 
@@ -137,14 +137,14 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
     setIncludeScreenshots(checked)
     if (searchTerm.trim().length >= 2) {
       // Re-fetch results with the new setting
-      searchQuery.refetch()
+      searchQuery.refetch().catch(console.error)
     }
   }
 
   const enableScreenshots = () => {
     setIncludeScreenshots(true)
     if (searchTerm.trim().length >= 2) {
-      searchQuery.refetch()
+      searchQuery.refetch().catch(console.error)
     }
   }
 

@@ -5,6 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Eye, EyeClosed, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui'
 import {
   type ColumnDefinition,
@@ -120,11 +121,53 @@ function ColumnVisibilityControl(props: Props) {
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    {isVisible ? (
-                      <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    ) : (
-                      <EyeClosed className="h-4 w-4 text-gray-400" />
-                    )}
+                    <motion.div
+                      className="relative"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <AnimatePresence mode="wait">
+                        {isVisible ? (
+                          <motion.div
+                            key="eye-open"
+                            initial={{ scale: 0.8, opacity: 0, rotateX: -90 }}
+                            animate={{
+                              scale: 1,
+                              opacity: 1,
+                              rotateX: 0,
+                              transition: { duration: 0.3, ease: 'easeOut' },
+                            }}
+                            exit={{
+                              scale: 0.8,
+                              opacity: 0,
+                              rotateX: 90,
+                              transition: { duration: 0.2, ease: 'easeIn' },
+                            }}
+                          >
+                            <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="eye-closed"
+                            initial={{ scale: 0.8, opacity: 0, rotateX: 90 }}
+                            animate={{
+                              scale: 1,
+                              opacity: 1,
+                              rotateX: 0,
+                              transition: { duration: 0.3, ease: 'easeOut' },
+                            }}
+                            exit={{
+                              scale: 0.8,
+                              opacity: 0,
+                              rotateX: -90,
+                              transition: { duration: 0.2, ease: 'easeIn' },
+                            }}
+                          >
+                            <EyeClosed className="h-4 w-4 text-gray-400" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       {column.label}
                     </span>

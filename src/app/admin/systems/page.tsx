@@ -81,7 +81,7 @@ function AdminSystemsPage() {
         } satisfies RouterInput['systems']['create'])
         setSuccess('System created!')
       }
-      refetch()
+      refetch().catch(console.error)
       closeModal()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save system.'))
@@ -101,7 +101,7 @@ function AdminSystemsPage() {
       await deleteSystem.mutateAsync({
         id,
       } satisfies RouterInput['systems']['delete'])
-      refetch()
+      refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete system: ${getErrorMessage(err)}`)
     }

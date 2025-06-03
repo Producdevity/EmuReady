@@ -111,7 +111,7 @@ function AdminSoCsPage() {
         )
         setSuccess('SoC created!')
       }
-      refetch()
+      refetch().catch(console.error)
       closeModal()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save SoC.'))
@@ -124,7 +124,7 @@ function AdminSoCsPage() {
       await deleteSoC.mutateAsync({
         id,
       } satisfies RouterInput['socs']['delete'])
-      refetch()
+      refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete SoC: ${getErrorMessage(err)}`)
     }

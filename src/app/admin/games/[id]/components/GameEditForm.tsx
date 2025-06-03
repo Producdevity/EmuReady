@@ -9,6 +9,7 @@ import { api } from '@/lib/api'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
 
@@ -36,7 +37,8 @@ function GameEditForm(props: Props) {
       router.refresh()
     },
     onError: (error) => {
-      toast.error(`Failed to update game: ${error.message}`)
+      toast.error(`Failed to update game: ${getErrorMessage(error)}`)
+      console.error('Error updating game:', error)
       setIsSubmitting(false)
     },
   })

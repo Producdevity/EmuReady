@@ -22,6 +22,7 @@ import { api } from '@/lib/api'
 import { type CustomFieldDefinition, type Prisma } from '@orm'
 import { type Maybe } from '@/types/utils'
 import { Button, Badge, useConfirmDialog } from '@/components/ui'
+import getErrorMessage from '@/utils/getErrorMessage'
 import CustomFieldSortableRow from './CustomFieldSortableRow'
 
 interface CustomFieldOptionUI {
@@ -79,7 +80,7 @@ function CustomFieldList(props: CustomFieldListProps) {
       },
       onError: (error) => {
         console.error('Error updating order:', error)
-        toast.error(`Error updating order: ${error.message}`)
+        toast.error(`Error updating order: ${getErrorMessage(error)}`)
         setOrderedFields(previousOrder)
       },
     })
@@ -143,7 +144,7 @@ function CustomFieldList(props: CustomFieldListProps) {
     },
     onError: (error) => {
       console.error('Error deleting custom field:', error)
-      toast.error(`Error: ${error.message}`)
+      toast.error(`Error deleting custom field: ${getErrorMessage(error)}`)
     },
   })
 
