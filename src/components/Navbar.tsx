@@ -54,10 +54,6 @@ function Navbar() {
               </p>
             </Link>
 
-            <p className="pl-8 sm:block text-sm text-red-400 font-medium">
-              [BETA] - This is a work in progress, all data is mock data for
-              testing purposes
-            </p>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 <Link href="/" className={getNavItemClass('/')}>

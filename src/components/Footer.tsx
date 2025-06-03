@@ -1,4 +1,9 @@
-import { ThemeSelect } from '@/components/ui'
+import {
+  ThemeSelect,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui'
 import GitHubIcon from '@/components/icons/GitHubIcon'
 
 function Footer() {
@@ -94,6 +99,18 @@ function Footer() {
         <div className="border-t border-gray-700 pt-8 text-center text-sm text-gray-400">
           &copy; {new Date().getFullYear()} EmuReady. All rights reserved.
         </div>
+      </div>
+      <div className="fixed bottom-5 right-5 ">
+        <Tooltip>
+          <TooltipTrigger>
+            <span className="sm:block text-sm text-red-400 font-medium opacity-70 border-red-400 bg-red-50 dark:bg-red-900 dark:text-red-300 dark:border-red-700 rounded-lg px-3 py-2 z-50">
+              [BETA]
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            All data is fake mock data, used for testing purposes.
+          </TooltipContent>
+        </Tooltip>
       </div>
     </footer>
   )
