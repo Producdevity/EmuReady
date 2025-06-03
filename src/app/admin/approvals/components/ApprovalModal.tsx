@@ -2,7 +2,7 @@ import { Modal, Button, Input } from '@/components/ui'
 import { ListingApprovalStatus } from '@orm'
 import { type RouterOutput } from '@/types/trpc'
 
-type PendingListing = RouterOutput['listings']['getPending'][number]
+type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 
 interface Props {
   showApprovalModal: boolean

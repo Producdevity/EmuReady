@@ -46,6 +46,8 @@ export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
 export const GetPendingListingsSchema = z
   .object({
     search: z.string().optional(),
+    page: z.number().default(1),
+    limit: z.number().default(20),
     sortField: z
       .enum([
         'game.title',

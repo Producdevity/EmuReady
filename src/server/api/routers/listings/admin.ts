@@ -19,7 +19,8 @@ export const adminRouter = createTRPCRouter({
   getPending: adminProcedure
     .input(GetPendingListingsSchema)
     .query(async ({ ctx, input }) => {
-      const { search, sortField, sortDirection } = input ?? {}
+      const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
+      const skip = (page - 1) * limit
 
       // Build where clause for search
       let where: Prisma.ListingWhereInput = {
@@ -27,14 +28,13 @@ export const adminRouter = createTRPCRouter({
       }
 
       if (search && search.trim() !== '') {
-        const searchTerm = search.trim()
         where = {
           ...where,
           OR: [
             {
               game: {
                 title: {
-                  contains: searchTerm,
+                  contains: search,
                   mode: 'insensitive',
                 },
               },
@@ -43,7 +43,7 @@ export const adminRouter = createTRPCRouter({
               game: {
                 system: {
                   name: {
-                    contains: searchTerm,
+                    contains: search,
                     mode: 'insensitive',
                   },
                 },
@@ -52,7 +52,7 @@ export const adminRouter = createTRPCRouter({
             {
               device: {
                 modelName: {
-                  contains: searchTerm,
+                  contains: search,
                   mode: 'insensitive',
                 },
               },
@@ -61,7 +61,7 @@ export const adminRouter = createTRPCRouter({
               device: {
                 brand: {
                   name: {
-                    contains: searchTerm,
+                    contains: search,
                     mode: 'insensitive',
                   },
                 },
@@ -70,7 +70,7 @@ export const adminRouter = createTRPCRouter({
             {
               emulator: {
                 name: {
-                  contains: searchTerm,
+                  contains: search,
                   mode: 'insensitive',
                 },
               },
@@ -78,7 +78,7 @@ export const adminRouter = createTRPCRouter({
             {
               author: {
                 name: {
-                  contains: searchTerm,
+                  contains: search,
                   mode: 'insensitive',
                 },
               },
@@ -87,38 +87,35 @@ export const adminRouter = createTRPCRouter({
         }
       }
 
-      // Build orderBy based on sortField and sortDirection
-      const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
+      // Build orderBy clause
+      let orderBy: Prisma.ListingOrderByWithRelationInput = {
+        createdAt: 'desc', // Default sorting
+      }
 
       if (sortField && sortDirection) {
         switch (sortField) {
           case 'game.title':
-            orderBy.push({ game: { title: sortDirection } })
+            orderBy = { game: { title: sortDirection } }
             break
           case 'game.system.name':
-            orderBy.push({ game: { system: { name: sortDirection } } })
+            orderBy = { game: { system: { name: sortDirection } } }
             break
           case 'device':
-            orderBy.push({ device: { modelName: sortDirection } })
+            orderBy = { device: { modelName: sortDirection } }
             break
           case 'emulator.name':
-            orderBy.push({ emulator: { name: sortDirection } })
+            orderBy = { emulator: { name: sortDirection } }
             break
           case 'author.name':
-            orderBy.push({ author: { name: sortDirection } })
+            orderBy = { author: { name: sortDirection } }
             break
           case 'createdAt':
-            orderBy.push({ createdAt: sortDirection })
+            orderBy = { createdAt: sortDirection }
             break
         }
       }
 
-      // Default ordering if no sort specified
-      if (!orderBy.length) {
-        orderBy.push({ createdAt: 'asc' })
-      }
-
-      return ctx.prisma.listing.findMany({
+      const listings = await ctx.prisma.listing.findMany({
         where,
         include: {
           game: { include: { system: true } },
@@ -128,7 +125,23 @@ export const adminRouter = createTRPCRouter({
           performance: true,
         },
         orderBy,
+        skip,
+        take: limit,
       })
+
+      const totalListings = await ctx.prisma.listing.count({
+        where,
+      })
+
+      return {
+        listings,
+        pagination: {
+          total: totalListings,
+          pages: Math.ceil(totalListings / limit),
+          currentPage: page,
+          limit,
+        },
+      }
     }),
 
   approve: adminProcedure
