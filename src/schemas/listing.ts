@@ -18,10 +18,10 @@ export const CreateListingSchema = z.object({
 })
 
 export const GetListingsSchema = z.object({
-  systemId: z.string().uuid().optional(),
-  deviceId: z.string().uuid().optional(),
-  emulatorId: z.string().uuid().optional(),
-  performanceId: z.number().optional(),
+  systemIds: z.array(z.string().uuid()).optional(),
+  deviceIds: z.array(z.string().uuid()).optional(),
+  emulatorIds: z.array(z.string().uuid()).optional(),
+  performanceIds: z.array(z.number()).optional(),
   searchTerm: z.string().optional(),
   page: z.number().default(1),
   limit: z.number().default(10),

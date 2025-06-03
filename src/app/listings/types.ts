@@ -96,10 +96,10 @@ export type SortField =
   | 'createdAt'
 
 export interface ListingsFilter {
-  systemId?: string
-  deviceId?: string
-  emulatorId?: string
-  performanceId?: number
+  systemIds?: string[]
+  deviceIds?: string[]
+  emulatorIds?: string[]
+  performanceIds?: number[]
   searchTerm?: string
   page: number
   limit: number

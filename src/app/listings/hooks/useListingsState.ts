@@ -2,20 +2,43 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { type SortDirection, type SortField } from '../types'
 
+function parseArrayParam(param: string | null): string[] {
+  if (!param) return []
+  try {
+    return JSON.parse(param)
+  } catch {
+    return param ? [param] : []
+  }
+}
+
+function parseNumberArrayParam(param: string | null): number[] {
+  if (!param) return []
+  try {
+    const parsed = JSON.parse(param)
+    return Array.isArray(parsed) ? parsed.map(Number).filter(Boolean) : []
+  } catch {
+    return param ? [Number(param)].filter(Boolean) : []
+  }
+}
+
 function useListingsState() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [systemId, setSystemId] = useState(searchParams.get('systemId') ?? '')
+  const [systemIds, setSystemIds] = useState<string[]>(
+    parseArrayParam(searchParams.get('systemIds')),
+  )
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const pageParam = Number(searchParams.get('page'))
   const [page, setPage] = useState(pageParam > 0 ? pageParam : 1)
-  const [deviceId, setDeviceId] = useState(searchParams.get('deviceId') ?? '')
-  const [emulatorId, setEmulatorId] = useState(
-    searchParams.get('emulatorId') ?? '',
+  const [deviceIds, setDeviceIds] = useState<string[]>(
+    parseArrayParam(searchParams.get('deviceIds')),
   )
-  const [performanceId, setPerformanceId] = useState(
-    searchParams.get('performanceId') ?? '',
+  const [emulatorIds, setEmulatorIds] = useState<string[]>(
+    parseArrayParam(searchParams.get('emulatorIds')),
+  )
+  const [performanceIds, setPerformanceIds] = useState<number[]>(
+    parseNumberArrayParam(searchParams.get('performanceIds')),
   )
   const [sortField, setSortField] = useState<SortField | null>(
     (searchParams.get('sortField') as SortField) ?? null,
@@ -25,13 +48,22 @@ function useListingsState() {
   )
 
   // Helper to update URL and state
-  const updateQuery = (params: Record<string, string | number | null>) => {
+  const updateQuery = (
+    params: Record<string, string | number | string[] | number[] | null>,
+  ) => {
     const newParams = new URLSearchParams(searchParams.toString())
     Object.entries(params).forEach(([key, value]) => {
       if (value === null || value === '' || value === undefined) {
         return newParams.delete(key)
       }
-      newParams.set(key, String(value))
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          return newParams.delete(key)
+        }
+        newParams.set(key, JSON.stringify(value))
+      } else {
+        newParams.set(key, String(value))
+      }
     })
     router.replace(`?${newParams.toString()}`)
   }
@@ -64,22 +96,22 @@ function useListingsState() {
 
   return {
     // State
-    systemId,
+    systemIds,
     search,
     page,
-    deviceId,
-    emulatorId,
-    performanceId,
+    deviceIds,
+    emulatorIds,
+    performanceIds,
     sortField,
     sortDirection,
 
     // Setters
-    setSystemId,
+    setSystemIds,
     setSearch,
     setPage,
-    setDeviceId,
-    setEmulatorId,
-    setPerformanceId,
+    setDeviceIds,
+    setEmulatorIds,
+    setPerformanceIds,
     setSortField,
     setSortDirection,
 

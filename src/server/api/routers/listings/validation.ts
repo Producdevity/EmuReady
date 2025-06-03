@@ -39,10 +39,8 @@ export async function validateCustomFields(
       (cfv) => cfv.customFieldDefinitionId === requiredField.id,
     )
 
-    if (!providedValue) {
-      AppError.missingRequiredField(requiredField.label)
-      return // This will never be reached, but helps TypeScript
-    }
+    if (!providedValue)
+      return AppError.missingRequiredField(requiredField.label)
 
     // Validate the value based on field type
     validateFieldValue(requiredField, providedValue.value ?? null)

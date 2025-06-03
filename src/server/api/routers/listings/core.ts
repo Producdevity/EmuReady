@@ -1,3 +1,4 @@
+import { keys } from 'remeda'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateListingSchema,
@@ -18,43 +19,37 @@ export const coreRouter = createTRPCRouter({
   get: publicProcedure
     .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
-      const {
-        systemId,
-        deviceId,
-        emulatorId,
-        performanceId,
-        searchTerm,
-        page,
-        limit,
-        sortField,
-        sortDirection,
-        approvalStatus,
-      } = input
-      const skip = (page - 1) * limit
+      const skip = (input.page - 1) * input.limit
 
       const gameFilter: Prisma.GameWhereInput = {}
-      if (systemId) {
-        gameFilter.systemId = systemId
+      if (input.systemIds && input.systemIds.length > 0) {
+        gameFilter.systemId = { in: input.systemIds }
       }
 
       const filters: Prisma.ListingWhereInput = {
-        ...(deviceId ? { deviceId } : {}),
-        ...(emulatorId ? { emulatorId } : {}),
-        ...(performanceId ? { performanceId } : {}),
-        ...(approvalStatus
-          ? { status: approvalStatus }
+        ...(input.deviceIds && input.deviceIds.length > 0
+          ? { deviceId: { in: input.deviceIds } }
+          : {}),
+        ...(input.emulatorIds && input.emulatorIds.length > 0
+          ? { emulatorId: { in: input.emulatorIds } }
+          : {}),
+        ...(input.performanceIds && input.performanceIds.length > 0
+          ? { performanceId: { in: input.performanceIds } }
+          : {}),
+        ...(input.approvalStatus
+          ? { status: input.approvalStatus }
           : { status: ListingApprovalStatus.APPROVED }),
       }
 
-      if (searchTerm) {
+      if (input.searchTerm) {
         filters.OR = [
-          Object.keys(gameFilter).length
+          keys(gameFilter).length
             ? {
                 game: {
                   is: {
                     ...gameFilter,
                     title: {
-                      contains: searchTerm,
+                      contains: input.searchTerm,
                       mode: Prisma.QueryMode.insensitive,
                     },
                   },
@@ -64,17 +59,20 @@ export const coreRouter = createTRPCRouter({
                 game: {
                   is: {
                     title: {
-                      contains: searchTerm,
+                      contains: input.searchTerm,
                       mode: Prisma.QueryMode.insensitive,
                     },
                   },
                 },
               },
           {
-            notes: { contains: searchTerm, mode: Prisma.QueryMode.insensitive },
+            notes: {
+              contains: input.searchTerm,
+              mode: Prisma.QueryMode.insensitive,
+            },
           },
         ]
-      } else if (Object.keys(gameFilter).length) {
+      } else if (keys(gameFilter).length) {
         filters.game = { is: gameFilter }
       }
 
@@ -83,36 +81,36 @@ export const coreRouter = createTRPCRouter({
       // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
 
-      if (sortField && sortDirection) {
-        switch (sortField) {
+      if (input.sortField && input.sortDirection) {
+        switch (input.sortField) {
           case 'game.title':
-            orderBy.push({ game: { title: sortDirection } })
+            orderBy.push({ game: { title: input.sortDirection } })
             break
           case 'game.system.name':
-            orderBy.push({ game: { system: { name: sortDirection } } })
+            orderBy.push({ game: { system: { name: input.sortDirection } } })
             break
           case 'device':
-            orderBy.push({ device: { brand: { name: sortDirection } } })
-            orderBy.push({ device: { modelName: sortDirection } })
+            orderBy.push({ device: { brand: { name: input.sortDirection } } })
+            orderBy.push({ device: { modelName: input.sortDirection } })
             break
           case 'emulator.name':
-            orderBy.push({ emulator: { name: sortDirection } })
+            orderBy.push({ emulator: { name: input.sortDirection } })
             break
           case 'performance.label':
-            orderBy.push({ performance: { label: sortDirection } })
+            orderBy.push({ performance: { label: input.sortDirection } })
             break
           case 'author.name':
-            orderBy.push({ author: { name: sortDirection } })
+            orderBy.push({ author: { name: input.sortDirection } })
             break
           case 'createdAt':
-            orderBy.push({ createdAt: sortDirection })
+            orderBy.push({ createdAt: input.sortDirection })
             break
           // 'successRate' will be handled after fetching the data
         }
       }
 
       // Default ordering if no sort specified or for secondary sort
-      if (!orderBy.length || sortField !== 'createdAt') {
+      if (!orderBy.length || input.sortField !== 'createdAt') {
         orderBy.push({ createdAt: 'desc' })
       }
 
@@ -134,7 +132,7 @@ export const coreRouter = createTRPCRouter({
         },
         orderBy,
         skip,
-        take: limit,
+        take: input.limit,
       })
 
       // For each listing calculate success rate
@@ -164,9 +162,9 @@ export const coreRouter = createTRPCRouter({
       )
 
       // Handle sorting by success rate since it's calculated after the database query
-      if (sortField === 'successRate' && sortDirection) {
+      if (input.sortField === 'successRate' && input.sortDirection) {
         listingsWithStats.sort((a, b) =>
-          sortDirection === 'asc'
+          input.sortDirection === 'asc'
             ? a.successRate - b.successRate
             : b.successRate - a.successRate,
         )
@@ -176,9 +174,9 @@ export const coreRouter = createTRPCRouter({
         listings: listingsWithStats,
         pagination: {
           total,
-          pages: Math.ceil(total / limit),
-          page,
-          limit,
+          pages: Math.ceil(total / input.limit),
+          page: input.page,
+          limit: input.limit,
         },
       }
     }),
@@ -186,10 +184,8 @@ export const coreRouter = createTRPCRouter({
   byId: publicProcedure
     .input(GetListingByIdSchema)
     .query(async ({ ctx, input }) => {
-      const { id } = input
-
       const listing = await ctx.prisma.listing.findUnique({
-        where: { id },
+        where: { id: input.id },
         include: {
           game: { include: { system: true } },
           device: { include: { brand: true } },
@@ -218,10 +214,7 @@ export const coreRouter = createTRPCRouter({
         },
       })
 
-      if (!listing) {
-        ResourceError.listing.notFound()
-        return // This will never be reached, but helps TypeScript
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       // Count upvotes
       const upVotes = await ctx.prisma.vote.count({

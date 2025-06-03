@@ -24,9 +24,7 @@ import {
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
-import ListingFilters, {
-  type SelectInputEvent,
-} from './components/ListingFilters'
+import ListingFilters from './components/ListingFilters'
 import {
   type ListingsFilter,
   type SortDirection,
@@ -68,12 +66,18 @@ function ListingsPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
-    systemId: listingsState.systemId || undefined,
-    deviceId: listingsState.deviceId || undefined,
-    emulatorId: listingsState.emulatorId || undefined,
-    performanceId: listingsState.performanceId
-      ? parseInt(listingsState.performanceId)
-      : undefined,
+    systemIds:
+      listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
+    deviceIds:
+      listingsState.deviceIds.length > 0 ? listingsState.deviceIds : undefined,
+    emulatorIds:
+      listingsState.emulatorIds.length > 0
+        ? listingsState.emulatorIds
+        : undefined,
+    performanceIds:
+      listingsState.performanceIds.length > 0
+        ? listingsState.performanceIds
+        : undefined,
     searchTerm: listingsState.search || undefined,
     page: listingsState.page,
     limit: 10,
@@ -91,34 +95,34 @@ function ListingsPage() {
     },
   })
 
-  const handleFilterChange = (ev: SelectInputEvent) => {
-    listingsState.setSystemId(ev.target.value)
+  const handleSystemChange = (values: string[]) => {
+    listingsState.setSystemIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ systemId: ev.target.value, page: 1 })
+    listingsState.updateQuery({ systemIds: values, page: 1 })
   }
 
-  const handleDeviceChange = (ev: SelectInputEvent) => {
-    listingsState.setDeviceId(ev.target.value)
+  const handleDeviceChange = (values: string[]) => {
+    listingsState.setDeviceIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ deviceId: ev.target.value, page: 1 })
+    listingsState.updateQuery({ deviceIds: values, page: 1 })
   }
 
-  const handleEmulatorChange = (ev: SelectInputEvent) => {
-    listingsState.setEmulatorId(ev.target.value)
+  const handleEmulatorChange = (values: string[]) => {
+    listingsState.setEmulatorIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ emulatorId: ev.target.value, page: 1 })
+    listingsState.updateQuery({ emulatorIds: values, page: 1 })
   }
 
-  const handlePerformanceChange = (ev: SelectInputEvent) => {
-    listingsState.setPerformanceId(ev.target.value)
+  const handlePerformanceChange = (values: number[]) => {
+    listingsState.setPerformanceIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ performanceId: ev.target.value, page: 1 })
+    listingsState.updateQuery({ performanceIds: values, page: 1 })
   }
 
-  const handleSearchChange = (ev: SelectInputEvent) => {
-    listingsState.setSearch(ev.target.value)
+  const handleSearchChange = (value: string) => {
+    listingsState.setSearch(value)
     listingsState.setPage(1)
-    listingsState.updateQuery({ search: ev.target.value, page: 1 })
+    listingsState.updateQuery({ search: value, page: 1 })
   }
 
   const handleSort = (field: string) => {
@@ -168,16 +172,16 @@ function ListingsPage() {
   return (
     <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
       <ListingFilters
-        systemId={listingsState.systemId}
-        deviceId={listingsState.deviceId}
-        emulatorId={listingsState.emulatorId}
-        performanceId={listingsState.performanceId}
+        systemIds={listingsState.systemIds}
+        deviceIds={listingsState.deviceIds}
+        emulatorIds={listingsState.emulatorIds}
+        performanceIds={listingsState.performanceIds}
         searchTerm={listingsState.search}
         systems={systemsQuery.data ?? []}
         devices={devicesQuery.data ?? []}
         emulators={emulatorsQuery.data ?? []}
         performanceScales={performanceScalesQuery.data ?? []}
-        onSystemChange={handleFilterChange}
+        onSystemChange={handleSystemChange}
         onDeviceChange={handleDeviceChange}
         onEmulatorChange={handleEmulatorChange}
         onPerformanceChange={handlePerformanceChange}
@@ -315,7 +319,7 @@ function ListingsPage() {
                             <SystemIcon
                               name={listing.game.system.name}
                               systemKey={listing.game.system.key}
-                              size="lg"
+                              size="md"
                             />
                             <span className="sr-only">
                               {listing.game.system?.name}
