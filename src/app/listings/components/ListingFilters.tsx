@@ -1,21 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { MultiSelect, Input } from '@/components/ui'
-import analytics from '@/lib/analytics'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ChevronLeft,
-  ChevronRight,
-  Gamepad,
-  Settings2,
-  Cpu,
+  Joystick,
   MonitorSmartphone,
+  Cpu,
+  Gamepad,
   Rocket,
   Search,
-  Joystick,
+  ChevronLeft,
   Filter,
+  Settings2,
 } from 'lucide-react'
+import { MultiSelect, Input } from '@/components/ui'
+import analytics from '@/lib/analytics'
 
 interface FiltersProps {
   systemIds: string[]
@@ -113,48 +112,47 @@ function ListingFilters(props: FiltersProps) {
     0,
   )
 
-  // Calculate responsive width for animation
-  const getResponsiveWidth = () => {
-    if (!isClient) return props.isCollapsed ? 80 : 320
-    return props.isCollapsed
-      ? window.innerWidth >= 768
-        ? 80
-        : 0
-      : window.innerWidth >= 768
-        ? 320
-        : '100%'
-  }
-
   return (
     <motion.div
       className="relative"
       initial={false}
-      animate={{ x: 0 }}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
     >
-      {/* Enhanced Toggle Button */}
+      {/* Redesigned Toggle Button with Morphing Icon */}
       <motion.button
         onClick={props.onToggleCollapse}
-        className="absolute -right-3 top-8 z-20 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 rounded-full p-2.5 shadow-xl md:flex hidden group"
+        className="absolute -right-4 top-6 z-20 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 rounded-full p-3 shadow-xl md:flex hidden group overflow-hidden"
         aria-label={props.isCollapsed ? 'Expand filters' : 'Collapse filters'}
         whileHover={{
-          scale: 1.15,
-          rotate: props.isCollapsed ? 0 : 180,
+          scale: 1.1,
           boxShadow: '0 20px 25px -5px rgba(59, 130, 246, 0.4)',
         }}
         whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
       >
-        <motion.div
-          animate={{ rotate: props.isCollapsed ? 0 : 180 }}
-          transition={{ duration: 0.4, ease: 'easeInOut' }}
-        >
+        {/* Morphing Icon */}
+        <AnimatePresence mode="wait">
           {props.isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-white" />
+            <motion.div
+              key="filter-icon"
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 90 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Filter className="w-5 h-5 text-white" />
+            </motion.div>
           ) : (
-            <ChevronLeft className="w-4 h-4 text-white" />
+            <motion.div
+              key="arrow-icon"
+              initial={{ scale: 0, rotate: 90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: -90 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronLeft className="w-5 h-5 text-white" />
+            </motion.div>
           )}
-        </motion.div>
+        </AnimatePresence>
 
         {/* Active Filter Count Badge */}
         <AnimatePresence>
@@ -163,7 +161,8 @@ function ListingFilters(props: FiltersProps) {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg"
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
             >
               {totalActiveFilters}
             </motion.div>
@@ -173,152 +172,205 @@ function ListingFilters(props: FiltersProps) {
 
       {/* Enhanced Sidebar */}
       <motion.aside
-        className={`
-          ${props.isCollapsed ? 'w-0 md:w-20' : 'w-full md:w-80'} 
-          bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 
-          flex-shrink-0 shadow-xl overflow-hidden relative
-        `}
+        className="bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 shadow-xl overflow-hidden relative"
+        initial={false}
         animate={{
-          width: getResponsiveWidth(),
-          borderRadius: props.isCollapsed ? '1rem' : '1.5rem',
+          width: props.isCollapsed ? (isClient ? (window.innerWidth >= 768 ? 80 : 0) : 80) : (isClient ? (window.innerWidth >= 768 ? 320 : '100%') : 320),
+          borderRadius: props.isCollapsed ? 20 : 24,
+          padding: props.isCollapsed ? 16 : 24,
         }}
         transition={{ duration: 0.4, ease: 'easeInOut' }}
-        style={{
-          padding: props.isCollapsed ? '0.5rem' : '1.5rem',
-        }}
       >
         <AnimatePresence mode="wait">
           {props.isCollapsed ? (
-            /* Enhanced Collapsed Icons */
+            /* Redesigned Collapsed State */
             <motion.div
               key="collapsed"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-              className="hidden md:flex flex-col items-center gap-3 pt-6"
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="hidden md:flex flex-col items-center gap-6 py-6"
             >
-              {/* Main Filter Icon */}
-              <motion.div
-                className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Filter className="w-6 h-6 text-white" />
-              </motion.div>
+              {/* Filter Category Icons with Badges */}
+              <div className="flex flex-col items-center gap-5 w-full">
+                <AnimatePresence>
+                  {filterCounts.systems > 0 && (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -20, opacity: 0, scale: 0.8 }}
+                      transition={{ delay: 0.05, type: "spring", stiffness: 300 }}
+                      className="relative group"
+                    >
+                      <motion.div
+                        className="p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-xl shadow-sm"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Joystick className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      </motion.div>
+                      <motion.div
+                        className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.1, type: "spring", stiffness: 400 }}
+                      >
+                        {filterCounts.systems}
+                      </motion.div>
+                    </motion.div>
+                  )}
 
-              {/* Individual Filter Icons with Counts */}
-              <div className="space-y-3">
-                {filterCounts.systems > 0 && (
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="relative group"
-                  >
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                      <Joystick className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                      {filterCounts.systems}
-                    </div>
-                  </motion.div>
-                )}
+                  {filterCounts.devices > 0 && (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -20, opacity: 0, scale: 0.8 }}
+                      transition={{ delay: 0.1, type: "spring", stiffness: 300 }}
+                      className="relative group"
+                    >
+                      <motion.div
+                        className="p-2.5 bg-green-100 dark:bg-green-900/30 rounded-xl shadow-sm"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <MonitorSmartphone className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      </motion.div>
+                      <motion.div
+                        className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.15, type: "spring", stiffness: 400 }}
+                      >
+                        {filterCounts.devices}
+                      </motion.div>
+                    </motion.div>
+                  )}
 
-                {filterCounts.devices > 0 && (
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.15 }}
-                    className="relative"
-                  >
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                      <MonitorSmartphone className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                      {filterCounts.devices}
-                    </div>
-                  </motion.div>
-                )}
+                  {filterCounts.socs > 0 && (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -20, opacity: 0, scale: 0.8 }}
+                      transition={{ delay: 0.15, type: "spring", stiffness: 300 }}
+                      className="relative group"
+                    >
+                      <motion.div
+                        className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl shadow-sm"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Cpu className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </motion.div>
+                      <motion.div
+                        className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
+                      >
+                        {filterCounts.socs}
+                      </motion.div>
+                    </motion.div>
+                  )}
 
-                {filterCounts.socs > 0 && (
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="relative"
-                  >
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <Cpu className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                      {filterCounts.socs}
-                    </div>
-                  </motion.div>
-                )}
+                  {filterCounts.emulators > 0 && (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -20, opacity: 0, scale: 0.8 }}
+                      transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+                      className="relative group"
+                    >
+                      <motion.div
+                        className="p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-xl shadow-sm"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Gamepad className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                      </motion.div>
+                      <motion.div
+                        className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.25, type: "spring", stiffness: 400 }}
+                      >
+                        {filterCounts.emulators}
+                      </motion.div>
+                    </motion.div>
+                  )}
 
-                {filterCounts.emulators > 0 && (
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.25 }}
-                    className="relative"
-                  >
-                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                      <Gamepad className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                      {filterCounts.emulators}
-                    </div>
-                  </motion.div>
-                )}
+                  {filterCounts.performance > 0 && (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -20, opacity: 0, scale: 0.8 }}
+                      transition={{ delay: 0.25, type: "spring", stiffness: 300 }}
+                      className="relative group"
+                    >
+                      <motion.div
+                        className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl shadow-sm"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Rocket className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      </motion.div>
+                      <motion.div
+                        className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.3, type: "spring", stiffness: 400 }}
+                      >
+                        {filterCounts.performance}
+                      </motion.div>
+                    </motion.div>
+                  )}
 
-                {filterCounts.performance > 0 && (
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="relative"
-                  >
-                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                      <Rocket className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                      {filterCounts.performance}
-                    </div>
-                  </motion.div>
-                )}
-
-                {filterCounts.search > 0 && (
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.35 }}
-                    className="relative"
-                  >
-                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                      <Search className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                      1
-                    </div>
-                  </motion.div>
-                )}
+                  {filterCounts.search > 0 && (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -20, opacity: 0, scale: 0.8 }}
+                      transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
+                      className="relative group"
+                    >
+                      <motion.div
+                        className="p-2.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl shadow-sm"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Search className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                      </motion.div>
+                      <motion.div
+                        className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.35, type: "spring", stiffness: 400 }}
+                      >
+                        1
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              {/* Clear All Button (Collapsed) */}
-              {hasActiveFilters && (
-                <motion.button
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  onClick={clearAllFilters}
-                  className="mt-4 p-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-lg transition-colors duration-200"
-                  title="Clear all filters"
-                >
-                  <Settings2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                </motion.button>
-              )}
+              {/* Clear All Button (Collapsed) - Only show if there are filters */}
+              <AnimatePresence>
+                {hasActiveFilters && (
+                  <motion.button
+                    initial={{ y: 20, opacity: 0, scale: 0.8 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 20, opacity: 0, scale: 0.8 }}
+                    transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                    onClick={clearAllFilters}
+                    className="mt-2 p-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                    title="Clear all filters"
+                    whileHover={{ scale: 1.05, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Settings2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </motion.div>
           ) : (
             /* Enhanced Full Content */
