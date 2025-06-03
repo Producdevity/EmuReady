@@ -6,23 +6,25 @@ import { Eye, CheckCircle, XCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
 import toast from '@/lib/toast'
 import storageKeys from '@/data/storageKeys'
-import { Button, Modal, Input, ColumnVisibilityControl } from '@/components/ui'
+import { Button, ColumnVisibilityControl } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import { ListingApprovalStatus } from '@orm'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
+import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import ApprovalModal from './components/ApprovalModal'
 
 type PendingListing = RouterOutput['listings']['getPending'][number]
 
 const APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
   { key: 'system', label: 'System', defaultVisible: true },
-  { key: 'author', label: 'Author', defaultVisible: true },
+  { key: 'author', label: 'Author', defaultVisible: false },
   { key: 'device', label: 'Device', defaultVisible: true },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
-  { key: 'submittedAt', label: 'Submitted', defaultVisible: true },
+  { key: 'submittedAt', label: 'Submitted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -124,9 +126,7 @@ function AdminApprovalsPage() {
       </p>
 
       {pendingListingsQuery.isLoading && (
-        <div className="text-center py-8">
-          <p>Loading pending listings...</p>
-        </div>
+        <LoadingSpinner text="Loading pending listings..." />
       )}
 
       {!pendingListingsQuery.isLoading &&
@@ -233,7 +233,7 @@ function AdminApprovalsPage() {
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="ghost"
                           onClick={() =>
                             openApprovalModal(
                               listing,
@@ -242,11 +242,11 @@ function AdminApprovalsPage() {
                           }
                           className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
                         >
-                          <CheckCircle className="mr-1 h-4 w-4" /> Approve
+                          <CheckCircle className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="ghost"
                           onClick={() =>
                             openApprovalModal(
                               listing,
@@ -255,7 +255,7 @@ function AdminApprovalsPage() {
                           }
                           className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
                         >
-                          <XCircle className="mr-1 h-4 w-4" /> Reject
+                          <XCircle className="h-4 w-4" />
                         </Button>
                         <Link
                           href={`/listings/${listing.id}`}
@@ -275,71 +275,18 @@ function AdminApprovalsPage() {
           </div>
         )}
 
-      {showApprovalModal && selectedListingForApproval && (
-        <Modal
-          isOpen={showApprovalModal}
-          onClose={closeApprovalModal}
-          title={`${approvalDecision === ListingApprovalStatus.APPROVED ? 'Approve' : 'Reject'} Listing: ${selectedListingForApproval.game.title}`}
-          size="lg"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              You are about to{' '}
-              <strong>
-                {approvalDecision === ListingApprovalStatus.APPROVED
-                  ? 'approve'
-                  : 'reject'}
-              </strong>{' '}
-              this listing. This action will move it to the processed listings
-              page.
-            </p>
-            {approvalDecision === ListingApprovalStatus.REJECTED && (
-              <div>
-                <label
-                  htmlFor="approvalNotes"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Rejection Notes (Optional)
-                </label>
-                <Input
-                  as="textarea"
-                  id="approvalNotes"
-                  value={approvalNotes}
-                  onChange={(e) => setApprovalNotes(e.target.value)}
-                  rows={4}
-                  placeholder="Reason for rejection..."
-                  className="w-full mt-1"
-                />
-              </div>
-            )}
-            <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700 mt-6">
-              <Button
-                variant="outline"
-                onClick={closeApprovalModal}
-                disabled={approveMutation.isPending || rejectMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant={
-                  approvalDecision === ListingApprovalStatus.APPROVED
-                    ? 'primary'
-                    : 'danger'
-                }
-                onClick={handleApprovalSubmit}
-                isLoading={
-                  approveMutation.isPending || rejectMutation.isPending
-                }
-                disabled={approveMutation.isPending || rejectMutation.isPending}
-              >
-                Confirm{' '}
-                {approvalDecision === ListingApprovalStatus.APPROVED
-                  ? 'Approval'
-                  : 'Rejection'}
-              </Button>
-            </div>
-          </div>
-        </Modal>
+      {showApprovalModal && selectedListingForApproval && approvalDecision && (
+        <ApprovalModal
+          showApprovalModal={showApprovalModal}
+          closeApprovalModal={closeApprovalModal}
+          selectedListingForApproval={selectedListingForApproval}
+          approvalDecision={approvalDecision}
+          approvalNotes={approvalNotes}
+          setApprovalNotes={setApprovalNotes}
+          handleApprovalSubmit={handleApprovalSubmit}
+          approveMutation={approveMutation}
+          rejectMutation={rejectMutation}
+        />
       )}
     </div>
   )
