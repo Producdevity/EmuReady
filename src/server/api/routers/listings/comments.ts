@@ -113,12 +113,10 @@ export const commentsRouter = createTRPCRouter({
   getSorted: publicProcedure
     .input(GetSortedCommentsSchema)
     .query(async ({ ctx, input }) => {
-      const { listingId, sortBy } = input
-
       // Build appropriate order by clause based on sort selection
       let orderBy: Prisma.CommentOrderByWithRelationInput
 
-      switch (sortBy) {
+      switch (input.sortBy) {
         case 'newest':
           orderBy = { createdAt: 'desc' }
           break
@@ -135,39 +133,19 @@ export const commentsRouter = createTRPCRouter({
       // Get all top-level comments
       const comments = await ctx.prisma.comment.findMany({
         where: {
-          listingId,
+          listingId: input.listingId,
           parentId: null, // Only get top-level comments
         },
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
-          },
+          user: { select: { id: true, name: true, profileImage: true } },
           replies: {
             include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  profileImage: true,
-                },
-              },
-              _count: {
-                select: {
-                  replies: true,
-                },
-              },
+              user: { select: { id: true, name: true, profileImage: true } },
+              _count: { select: { replies: true } },
             },
             orderBy: { createdAt: 'asc' },
           },
-          _count: {
-            select: {
-              replies: true,
-            },
-          },
+          _count: { select: { replies: true } },
         },
         orderBy,
       })
@@ -179,22 +157,17 @@ export const commentsRouter = createTRPCRouter({
         const votes = await ctx.prisma.commentVote.findMany({
           where: {
             userId: ctx.session.user.id,
-            comment: {
-              listingId,
-            },
+            comment: { listingId: input.listingId },
           },
-          select: {
-            commentId: true,
-            value: true,
-          },
+          select: { commentId: true, value: true },
         })
 
         // Create a lookup map of commentId -> vote value
         userCommentVotes = votes.reduce(
-          (acc, vote) => {
-            acc[vote.commentId] = vote.value
-            return acc
-          },
+          (acc, vote) => ({
+            ...acc,
+            [vote.commentId]: vote.value,
+          }),
           {} as Record<string, boolean>,
         )
       }
@@ -223,22 +196,13 @@ export const commentsRouter = createTRPCRouter({
   edit: protectedProcedure
     .input(EditCommentSchema)
     .mutation(async ({ ctx, input }) => {
-      const { commentId, content } = input
-
       const comment = await ctx.prisma.comment.findUnique({
-        where: { id: commentId },
+        where: { id: input.commentId },
         include: { user: { select: { id: true } } },
       })
+      if (!comment) return ResourceError.comment.notFound()
 
-      if (!comment) {
-        ResourceError.comment.notFound()
-        return // This will never be reached, but helps TypeScript
-      }
-
-      if (comment.deletedAt) {
-        ResourceError.comment.cannotEditDeleted()
-        return // This will never be reached, but helps TypeScript
-      }
+      if (comment.deletedAt) return ResourceError.comment.cannotEditDeleted()
 
       const canEdit = canEditComment(
         ctx.session.user.role,
@@ -251,20 +215,14 @@ export const commentsRouter = createTRPCRouter({
       }
 
       return ctx.prisma.comment.update({
-        where: { id: commentId },
+        where: { id: input.commentId },
         data: {
-          content,
+          content: input.content,
           isEdited: true,
           updatedAt: new Date(),
         },
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
-          },
+          user: { select: { id: true, name: true, profileImage: true } },
         },
       })
     }),
@@ -277,15 +235,9 @@ export const commentsRouter = createTRPCRouter({
         include: { user: { select: { id: true } } },
       })
 
-      if (!comment) {
-        ResourceError.comment.notFound()
-        return // This will never be reached, but helps TypeScript
-      }
+      if (!comment) return ResourceError.comment.notFound()
 
-      if (comment.deletedAt) {
-        ResourceError.comment.alreadyDeleted()
-        return // This will never be reached, but helps TypeScript
-      }
+      if (comment.deletedAt) return ResourceError.comment.alreadyDeleted()
 
       const canDelete = canDeleteComment(
         ctx.session.user.role,
@@ -319,12 +271,7 @@ export const commentsRouter = createTRPCRouter({
 
       // Check if user already voted on this comment
       const existingVote = await ctx.prisma.commentVote.findUnique({
-        where: {
-          userId_commentId: {
-            userId,
-            commentId,
-          },
-        },
+        where: { userId_commentId: { userId, commentId } },
       })
 
       // Start a transaction to handle both the vote and score update
@@ -336,12 +283,7 @@ export const commentsRouter = createTRPCRouter({
           // If vote is the same, remove the vote (toggle)
           if (existingVote.value === value) {
             await tx.commentVote.delete({
-              where: {
-                userId_commentId: {
-                  userId,
-                  commentId,
-                },
-              },
+              where: { userId_commentId: { userId, commentId } },
             })
 
             // Update score: if removing upvote, decrement score, if removing downvote, increment score
@@ -349,12 +291,7 @@ export const commentsRouter = createTRPCRouter({
             voteResult = { message: 'Vote removed' }
           } else {
             voteResult = await tx.commentVote.update({
-              where: {
-                userId_commentId: {
-                  userId,
-                  commentId,
-                },
-              },
+              where: { userId_commentId: { userId, commentId } },
               data: { value },
             })
 
@@ -363,11 +300,7 @@ export const commentsRouter = createTRPCRouter({
           }
         } else {
           voteResult = await tx.commentVote.create({
-            data: {
-              userId,
-              commentId,
-              value,
-            },
+            data: { userId, commentId, value },
           })
 
           // Update score: +1 for upvote, -1 for downvote
@@ -377,11 +310,7 @@ export const commentsRouter = createTRPCRouter({
         // Update the comment score
         await tx.comment.update({
           where: { id: commentId },
-          data: {
-            score: {
-              increment: scoreChange,
-            },
-          },
+          data: { score: { increment: scoreChange } },
         })
 
         return voteResult
