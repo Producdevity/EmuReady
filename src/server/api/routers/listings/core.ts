@@ -30,6 +30,9 @@ export const coreRouter = createTRPCRouter({
         ...(input.deviceIds && input.deviceIds.length > 0
           ? { deviceId: { in: input.deviceIds } }
           : {}),
+        ...(input.socIds && input.socIds.length > 0
+          ? { device: { socId: { in: input.socIds } } }
+          : {}),
         ...(input.emulatorIds && input.emulatorIds.length > 0
           ? { emulatorId: { in: input.emulatorIds } }
           : {}),
@@ -118,7 +121,7 @@ export const coreRouter = createTRPCRouter({
         where: filters,
         include: {
           game: { include: { system: true } },
-          device: { include: { brand: true } },
+          device: { include: { brand: true, soc: true } },
           emulator: true,
           performance: true,
           author: { select: { id: true, name: true, email: true } },
@@ -188,7 +191,7 @@ export const coreRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           game: { include: { system: true } },
-          device: { include: { brand: true } },
+          device: { include: { brand: true, soc: true } },
           emulator: true,
           performance: true,
           author: { select: { id: true, name: true, email: true } },

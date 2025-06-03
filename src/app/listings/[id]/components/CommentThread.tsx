@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import CommentForm from './CommentForm'
 import { api } from '@/lib/api'
 import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  PencilIcon,
-  TrashIcon,
-  ChevronRightIcon,
-  ChatBubbleLeftIcon,
-} from '@heroicons/react/24/outline'
+  MessageCircle,
+  Pencil,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
+} from 'lucide-react'
 import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
 import { useConfirmDialog } from '@/components/ui'
@@ -124,17 +124,9 @@ function CommentThread(props: Props) {
     // Get user role from Clerk's publicMetadata
     const userRole = user?.publicMetadata?.role as Role | undefined
 
-    const canEdit = canEditComment(
-      userRole,
-      comment.user.id,
-      user?.id,
-    )
+    const canEdit = canEditComment(userRole, comment.user.id, user?.id)
 
-    const canDelete = canDeleteComment(
-      userRole,
-      comment.user.id,
-      user?.id,
-    )
+    const canDelete = canDeleteComment(userRole, comment.user.id, user?.id)
 
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''
     const borderStyle =
@@ -191,7 +183,7 @@ function CommentThread(props: Props) {
                       onClick={() => setEditingCommentId(comment.id)}
                       className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                     >
-                      <PencilIcon className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" />
                     </button>
                   )}
                   {canDelete && (
@@ -199,7 +191,7 @@ function CommentThread(props: Props) {
                       onClick={() => handleDeleteComment(comment.id)}
                       className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -230,7 +222,7 @@ function CommentThread(props: Props) {
                         : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
-                    <ChevronUpIcon className="h-4 w-4" />
+                    <ChevronUp className="h-4 w-4" />
                   </button>
 
                   <span
@@ -253,7 +245,7 @@ function CommentThread(props: Props) {
                         : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
-                    <ChevronDownIcon className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4" />
                   </button>
                 </div>
 
@@ -268,7 +260,7 @@ function CommentThread(props: Props) {
                     }
                     className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center"
                   >
-                    <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
+                    <MessageCircle className="h-4 w-4 mr-1" />
                     <span>Reply</span>
                   </button>
 
@@ -279,9 +271,9 @@ function CommentThread(props: Props) {
                       className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center ml-2"
                     >
                       {expanded ? (
-                        <ChevronDownIcon className="h-4 w-4 mr-1" />
+                        <ChevronDown className="h-4 w-4 mr-1" />
                       ) : (
-                        <ChevronRightIcon className="h-4 w-4 mr-1" />
+                        <ChevronRight className="h-4 w-4 mr-1" />
                       )}
                       <span>
                         {expanded ? 'Hide' : 'Show'}{' '}

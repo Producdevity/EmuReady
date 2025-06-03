@@ -4,11 +4,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import {
-  ChevronDownIcon,
-  EyeIcon,
-  EyeSlashIcon,
-} from '@heroicons/react/24/outline'
+import { Eye, EyeClosed, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui'
 import {
   type ColumnDefinition,
@@ -60,9 +56,9 @@ function ColumnVisibilityControl(props: Props) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2"
       >
-        <EyeIcon className="h-4 w-4" />
+        <Eye className="h-4 w-4" />
         Columns ({displayCount})
-        <ChevronDownIcon
+        <ChevronDown
           className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </Button>
@@ -125,9 +121,9 @@ function ColumnVisibilityControl(props: Props) {
                 >
                   <div className="flex items-center gap-2">
                     {isVisible ? (
-                      <EyeIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
                     ) : (
-                      <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                      <EyeClosed className="h-4 w-4 text-gray-400" />
                     )}
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       {column.label}

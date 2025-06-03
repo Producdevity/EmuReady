@@ -9,8 +9,11 @@ import {
   Button,
   useConfirmDialog,
   ColumnVisibilityControl,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from '@/components/ui'
-import { Settings, Pencil } from 'lucide-react'
+import { Settings, Pencil, Trash2 } from 'lucide-react'
 import getErrorMessage from '@/utils/getErrorMessage'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
@@ -136,13 +139,20 @@ function AdminEmulatorsPage() {
                     >
                       Quick Edit
                     </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleDelete(emulator.id)}
-                    >
-                      Delete
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDelete(emulator.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        Delete Emulator
+                      </TooltipContent>
+                    </Tooltip>
                   </td>
                 )}
               </tr>

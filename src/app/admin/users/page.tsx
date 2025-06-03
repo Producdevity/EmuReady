@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, ShieldUser, Trash } from 'lucide-react'
+import { Search, ShieldUser, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { isEmpty } from 'remeda'
 import {
@@ -261,7 +261,7 @@ function AdminUsersPage() {
                       onClick={() => handleDelete(user.id)}
                       className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
                     >
-                      <Trash />
+                      <Trash2 />
                     </Button>
                   </td>
                 )}

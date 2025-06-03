@@ -14,21 +14,31 @@ import {
 
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
-    const { search, brandId, limit } = input ?? {}
+    const { search, brandId, socId, limit } = input ?? {}
 
     return ctx.prisma.device.findMany({
       where: {
         ...(brandId ? { brandId } : {}),
+        ...(socId ? { socId } : {}),
         ...(search
           ? {
               OR: [
                 { modelName: { contains: search, mode: 'insensitive' } },
                 { brand: { name: { contains: search, mode: 'insensitive' } } },
+                { soc: { name: { contains: search, mode: 'insensitive' } } },
+                {
+                  soc: {
+                    manufacturer: { contains: search, mode: 'insensitive' },
+                  },
+                },
               ],
             }
           : {}),
       },
-      include: { brand: true },
+      include: {
+        brand: true,
+        soc: true,
+      },
       take: limit,
       orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
     })
@@ -41,6 +51,7 @@ export const devicesRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           brand: true,
+          soc: true,
         },
       })
 
@@ -60,6 +71,17 @@ export const devicesRouter = createTRPCRouter({
 
       if (!brand) ResourceError.deviceBrand.notFound()
 
+      // Validate SoC if provided
+      if (input.socId) {
+        const soc = await ctx.prisma.soC.findUnique({
+          where: { id: input.socId },
+        })
+
+        if (!soc) {
+          throw new Error('SoC not found')
+        }
+      }
+
       const existingDevice = await ctx.prisma.device.findFirst({
         where: {
           brandId: input.brandId,
@@ -69,7 +91,13 @@ export const devicesRouter = createTRPCRouter({
 
       if (existingDevice) ResourceError.device.alreadyExists(input.modelName)
 
-      return ctx.prisma.device.create({ data: input, include: { brand: true } })
+      return ctx.prisma.device.create({
+        data: input,
+        include: {
+          brand: true,
+          soc: true,
+        },
+      })
     }),
 
   update: adminProcedure
@@ -89,6 +117,17 @@ export const devicesRouter = createTRPCRouter({
 
       if (!brand) ResourceError.deviceBrand.notFound()
 
+      // Validate SoC if provided
+      if (input.socId) {
+        const soc = await ctx.prisma.soC.findUnique({
+          where: { id: input.socId },
+        })
+
+        if (!soc) {
+          throw new Error('SoC not found')
+        }
+      }
+
       const existingDevice = await ctx.prisma.device.findFirst({
         where: {
           brandId: input.brandId,
@@ -105,7 +144,10 @@ export const devicesRouter = createTRPCRouter({
       return ctx.prisma.device.update({
         where: { id },
         data,
-        include: { brand: true },
+        include: {
+          brand: true,
+          soc: true,
+        },
       })
     }),
 

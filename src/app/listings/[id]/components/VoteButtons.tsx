@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import { motion } from 'framer-motion'
-import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/solid'
+import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
 import { type RouterInput } from '@/types/trpc'
 
@@ -101,7 +101,7 @@ function VoteButtons(props: Props) {
           }`}
           title={isAuthenticated ? 'Vote Up' : 'Login to vote'}
         >
-          <HandThumbUpIcon className="w-6 h-6" />
+          <ThumbsUp className="w-6 h-6" />
         </button>
 
         <div className="text-center">
@@ -123,7 +123,7 @@ function VoteButtons(props: Props) {
           }`}
           title={isAuthenticated ? 'Vote Down' : 'Login to vote'}
         >
-          <HandThumbDownIcon className="w-6 h-6" />
+          <ThumbsDown className="w-6 h-6" />
         </button>
       </div>
 

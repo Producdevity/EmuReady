@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Button, Input, RawgImageSelector } from '@/components/ui'
-import { PencilIcon } from '@heroicons/react/24/outline'
+import { Pencil } from 'lucide-react'
 import { sanitizeString } from '@/utils/validation'
 
 interface Props {
@@ -68,7 +68,7 @@ export default function GameEditForm({ gameData }: Props) {
   return (
     <div className="relative">
       <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
-        <PencilIcon className="h-4 w-4" />
+        <Pencil className="h-4 w-4" />
         Edit Game
       </Button>
 

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
-import { api } from '@/lib/api'
+import { ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { api } from '@/lib/api'
 import { Role } from '@orm'
+import toast from '@/lib/toast'
 import UserRoleButton from './UserRoleButton'
 import { type RouterInput } from '@/types/trpc'
-import toast from '@/lib/toast'
 import { hasPermission } from '@/utils/permissions'
 
 interface User {
@@ -69,7 +69,7 @@ function UserRoleModal(props: Props) {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-          <ShieldCheckIcon className="h-5 w-5 text-purple-500" />
+          <ShieldCheck className="h-5 w-5 text-purple-500" />
           Edit User Role
         </h2>
 

@@ -3,7 +3,7 @@
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { EyeIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Eye, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
@@ -48,6 +48,7 @@ function ListingsPage() {
   const listingsState = useListingsState()
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, false)
 
@@ -62,6 +63,7 @@ function ListingsPage() {
 
   const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.get.useQuery()
+  const socsQuery = api.socs.get.useQuery()
   const emulatorsQuery = api.emulators.get.useQuery()
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
@@ -70,6 +72,7 @@ function ListingsPage() {
       listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
     deviceIds:
       listingsState.deviceIds.length > 0 ? listingsState.deviceIds : undefined,
+    socIds: listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
     emulatorIds:
       listingsState.emulatorIds.length > 0
         ? listingsState.emulatorIds
@@ -105,6 +108,12 @@ function ListingsPage() {
     listingsState.setDeviceIds(values)
     listingsState.setPage(1)
     listingsState.updateQuery({ deviceIds: values, page: 1 })
+  }
+
+  const handleSocChange = (values: string[]) => {
+    listingsState.setSocIds(values)
+    listingsState.setPage(1)
+    listingsState.updateQuery({ socIds: values, page: 1 })
   }
 
   const handleEmulatorChange = (values: string[]) => {
@@ -174,18 +183,23 @@ function ListingsPage() {
       <ListingFilters
         systemIds={listingsState.systemIds}
         deviceIds={listingsState.deviceIds}
+        socIds={listingsState.socIds}
         emulatorIds={listingsState.emulatorIds}
         performanceIds={listingsState.performanceIds}
         searchTerm={listingsState.search}
         systems={systemsQuery.data ?? []}
         devices={devicesQuery.data ?? []}
+        socs={socsQuery.data ?? []}
         emulators={emulatorsQuery.data ?? []}
         performanceScales={performanceScalesQuery.data ?? []}
         onSystemChange={handleSystemChange}
         onDeviceChange={handleDeviceChange}
+        onSocChange={handleSocChange}
         onEmulatorChange={handleEmulatorChange}
         onPerformanceChange={handlePerformanceChange}
         onSearchChange={handleSearchChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       {/* Main Content - Listings */}
@@ -370,7 +384,7 @@ function ListingsPage() {
                             href={`/listings/${listing.id}`}
                             className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
                           >
-                            <EyeIcon className="w-4 h-4" /> View
+                            <Eye className="w-4 h-4" /> View
                           </Link>
 
                           {isAdmin && (
@@ -382,7 +396,7 @@ function ListingsPage() {
                                   : 'bg-red-600 text-white hover:bg-red-700'
                               }`}
                             >
-                              <TrashIcon className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                               {deleteConfirmId === listing.id
                                 ? 'Confirm'
                                 : 'Delete'}

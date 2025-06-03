@@ -6,6 +6,7 @@ import performanceScalesSeeder from './seeders/performanceScalesSeeder'
 import usersSeeder from './seeders/usersSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
+import socSeeder from './seeders/socSeeder'
 
 const prisma = new PrismaClient()
 
@@ -26,6 +27,7 @@ async function main() {
     await prisma.customFieldDefinition.deleteMany()
     await prisma.performanceScale.deleteMany()
     await prisma.device.deleteMany()
+    await prisma.soC.deleteMany()
     await prisma.emulator.deleteMany()
     await prisma.game.deleteMany()
     await prisma.system.deleteMany()
@@ -43,6 +45,7 @@ async function main() {
     await systemsSeeder(prisma)
     await usersSeeder(prisma)
     await emulatorsSeeder(prisma)
+    await socSeeder(prisma)
     await devicesSeeder(prisma)
     await gamesSeeder(prisma)
     await listingsSeeder(prisma)

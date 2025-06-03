@@ -1,7 +1,7 @@
 'use client'
 
 import { Input, SelectInput } from '@/components/ui'
-import { CpuChipIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { Joystick, Search } from 'lucide-react'
 import { type ChangeEvent, type SyntheticEvent } from 'react'
 
 interface Props {
@@ -16,7 +16,7 @@ function GameFilters(props: Props) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-8">
       <Input
-        leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+        leftIcon={<Search className="w-5 h-5" />}
         type="text"
         placeholder="Search games..."
         value={props.search}
@@ -27,7 +27,7 @@ function GameFilters(props: Props) {
       <SelectInput
         label="System"
         hideLabel
-        leftIcon={<CpuChipIcon className="w-5 h-5" />}
+        leftIcon={<Joystick className="w-5 h-5" />}
         value={props.systemId}
         onChange={props.onSystemChange}
         options={props.systems?.map(({ id, name }) => ({ id, name })) ?? []}

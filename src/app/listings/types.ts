@@ -98,6 +98,7 @@ export type SortField =
 export interface ListingsFilter {
   systemIds?: string[]
   deviceIds?: string[]
+  socIds?: string[]
   emulatorIds?: string[]
   performanceIds?: number[]
   searchTerm?: string

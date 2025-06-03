@@ -34,6 +34,9 @@ function useListingsState() {
   const [deviceIds, setDeviceIds] = useState<string[]>(
     parseArrayParam(searchParams.get('deviceIds')),
   )
+  const [socIds, setSocIds] = useState<string[]>(
+    parseArrayParam(searchParams.get('socIds')),
+  )
   const [emulatorIds, setEmulatorIds] = useState<string[]>(
     parseArrayParam(searchParams.get('emulatorIds')),
   )
@@ -100,6 +103,7 @@ function useListingsState() {
     search,
     page,
     deviceIds,
+    socIds,
     emulatorIds,
     performanceIds,
     sortField,
@@ -110,6 +114,7 @@ function useListingsState() {
     setSearch,
     setPage,
     setDeviceIds,
+    setSocIds,
     setEmulatorIds,
     setPerformanceIds,
     setSortField,

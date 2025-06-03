@@ -10,6 +10,7 @@ import {
   LoadingSpinner,
   ColumnVisibilityControl,
   AdminTableContainer,
+  Autocomplete,
 } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -17,10 +18,12 @@ import useColumnVisibility, {
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterInput } from '@/types/trpc'
+import { Pencil, Trash2 } from 'lucide-react'
 
 const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'brand', label: 'Brand', defaultVisible: true },
   { key: 'model', label: 'Model', defaultVisible: true },
+  { key: 'soc', label: 'SoC', defaultVisible: true },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -36,6 +39,7 @@ function AdminDevicesPage() {
   } = api.devices.get.useQuery()
   const { data: brands, isLoading: brandsLoading } =
     api.deviceBrands.get.useQuery()
+  const { data: socs, isLoading: socsLoading } = api.socs.get.useQuery()
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deleteDevice = api.devices.delete.useMutation()
@@ -44,6 +48,7 @@ function AdminDevicesPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [brandId, setBrandId] = useState('')
   const [modelName, setModelName] = useState('')
+  const [socId, setSocId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -51,10 +56,12 @@ function AdminDevicesPage() {
     id: string
     brand: { id: string; name: string }
     modelName: string
+    soc?: { id: string; name: string } | null
   }) => {
     setEditId(device?.id ?? null)
     setBrandId(device?.brand.id ?? '')
     setModelName(device?.modelName ?? '')
+    setSocId(device?.soc?.id ?? '')
     setModalOpen(true)
     setError('')
     setSuccess('')
@@ -64,6 +71,7 @@ function AdminDevicesPage() {
     setEditId(null)
     setBrandId('')
     setModelName('')
+    setSocId('')
   }
 
   const handleSubmit = async (ev: FormEvent) => {
@@ -71,18 +79,22 @@ function AdminDevicesPage() {
     setError('')
     setSuccess('')
     try {
+      const deviceData = {
+        brandId,
+        modelName,
+        socId: socId || undefined,
+      }
+
       if (editId) {
         await updateDevice.mutateAsync({
           id: editId,
-          brandId,
-          modelName,
+          ...deviceData,
         } satisfies RouterInput['devices']['update'])
         setSuccess('Device updated!')
       } else {
-        await createDevice.mutateAsync({
-          brandId,
-          modelName,
-        } satisfies RouterInput['devices']['create'])
+        await createDevice.mutateAsync(
+          deviceData satisfies RouterInput['devices']['create'],
+        )
         setSuccess('Device created!')
       }
       refetch()
@@ -90,6 +102,14 @@ function AdminDevicesPage() {
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save device.'))
     }
+  }
+
+  const handleBrandChange = (value: string | null) => {
+    setBrandId(value ?? '')
+  }
+
+  const handleSocChange = (value: string | null) => {
+    setSocId(value ?? '')
   }
 
   const handleDelete = async (id: string) => {
@@ -106,7 +126,7 @@ function AdminDevicesPage() {
   }
 
   const areBrandsAvailable = brands && brands.length > 0
-  const isLoading = devicesLoading || brandsLoading
+  const isLoading = devicesLoading || brandsLoading || socsLoading
 
   return (
     <div className="space-y-6">
@@ -155,6 +175,11 @@ function AdminDevicesPage() {
                   Model
                 </th>
               )}
+              {columnVisibility.isColumnVisible('soc') && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  SoC
+                </th>
+              )}
               {columnVisibility.isColumnVisible('actions') && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
@@ -165,7 +190,7 @@ function AdminDevicesPage() {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading && (
               <tr>
-                <td colSpan={3} className="text-center py-12">
+                <td colSpan={4} className="text-center py-12">
                   <LoadingSpinner size="lg" text="Loading..." />
                 </td>
               </tr>
@@ -185,17 +210,22 @@ function AdminDevicesPage() {
                     {dev.modelName}
                   </td>
                 )}
+                {columnVisibility.isColumnVisible('soc') && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {dev.soc?.name}
+                  </td>
+                )}
                 {columnVisibility.isColumnVisible('actions') && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
-                      <Button variant="secondary" onClick={() => openModal(dev)}>
-                        Edit
+                      <Button variant="primary" onClick={() => openModal(dev)}>
+                        <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="danger"
                         onClick={() => handleDelete(dev.id)}
                       >
-                        Delete
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </td>
@@ -204,7 +234,10 @@ function AdminDevicesPage() {
             ))}
             {devices?.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={4}
+                  className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                >
                   No devices found. Add your first device.
                 </td>
               </tr>
@@ -222,26 +255,33 @@ function AdminDevicesPage() {
               {editId ? 'Edit Device' : 'Add Device'}
             </h2>
             <label className="block mb-2 font-medium">Brand</label>
-            <Input
-              as="select"
+            <Autocomplete
               value={brandId}
-              onChange={(e) => setBrandId(e.target.value)}
-              required
+              onChange={handleBrandChange}
+              items={brands ?? []}
+              optionToValue={(brand) => brand.id}
+              optionToLabel={(brand) => brand.name}
+              placeholder="Select a brand..."
               className="mb-4 w-full"
-            >
-              <option value="">Select a brand...</option>
-              {brands?.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </Input>
+              filterKeys={['name']}
+            />
             <label className="block mb-2 font-medium">Model Name</label>
             <Input
               value={modelName}
               onChange={(e) => setModelName(e.target.value)}
               required
               className="mb-4 w-full"
+            />
+            <label className="block mb-2 font-medium">SoC (Optional)</label>
+            <Autocomplete
+              value={socId}
+              onChange={handleSocChange}
+              items={socs ?? []}
+              optionToValue={(soc) => soc.id}
+              optionToLabel={(soc) => `${soc.manufacturer} ${soc.name}`}
+              placeholder="Select a SoC..."
+              className="mb-4 w-full"
+              filterKeys={['name', 'manufacturer']}
             />
             {error && <div className="text-red-500 mb-2">{error}</div>}
             {success && <div className="text-green-600 mb-2">{success}</div>}

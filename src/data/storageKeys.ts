@@ -13,6 +13,7 @@ const storageKeys = {
     adminGames: `${PREFIX}admin_games_column_visibility`,
     adminPerformance: `${PREFIX}admin_performance_column_visibility`,
     adminProcessedListings: `${PREFIX}admin_processed_listings_column_visibility`,
+    adminSoCs: `${PREFIX}admin_socs_column_visibility`,
     adminSystems: `${PREFIX}admin_systems_column_visibility`,
     adminUsers: `${PREFIX}admin_users_column_visibility`,
   },

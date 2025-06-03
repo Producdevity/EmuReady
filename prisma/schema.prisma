@@ -52,11 +52,25 @@ model DeviceBrand {
   devices   Device[]
 }
 
+model SoC {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  manufacturer String
+  architecture String?  // e.g., "ARM64", "x86_64"
+  processNode  String?  // e.g., "5nm", "7nm"
+  cpuCores     Int?
+  gpuModel     String?
+  createdAt    DateTime @default(now())
+  devices      Device[]
+}
+
 model Device {
   id        String      @id @default(uuid())
   brandId   String
   modelName String
+  socId     String?
   brand     DeviceBrand @relation(fields: [brandId], references: [id])
+  soc       SoC?        @relation(fields: [socId], references: [id])
   listings  Listing[]
 
   @@unique([brandId, modelName])

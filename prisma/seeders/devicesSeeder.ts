@@ -3,75 +3,127 @@ import { type PrismaClient } from '@orm'
 type DeviceData = {
   brandName: string
   modelName: string
+  socName?: string
 }
 
 const devices: DeviceData[] = [
-  { brandName: 'ASUS', modelName: 'ROG Ally RC71L' },
-  { brandName: 'ASUS', modelName: 'ROG Ally RC71L-NH001W' },
-  { brandName: 'ASUS', modelName: 'ROG Phone 5' },
-  { brandName: 'ASUS', modelName: 'ROG Phone 6' },
-  { brandName: 'ASUS', modelName: 'ROG Phone 7' },
-  { brandName: 'AYANEO', modelName: 'Air Plus' },
-  { brandName: 'AYANEO', modelName: 'Air Pro' },
-  { brandName: 'AYANEO', modelName: 'Air' },
-  { brandName: 'AYANEO', modelName: 'Kun' },
-  { brandName: 'AYANEO', modelName: 'Next Advance' },
-  { brandName: 'AYANEO', modelName: 'Next Pro' },
-  { brandName: 'AYANEO', modelName: 'Next' },
-  { brandName: 'AYN', modelName: 'Odin 2 Max' },
-  { brandName: 'AYN', modelName: 'Odin 2 Mini' },
-  { brandName: 'AYN', modelName: 'Odin 2 Portal' },
-  { brandName: 'AYN', modelName: 'Odin 2' },
-  { brandName: 'AYN', modelName: 'Odin' },
-  { brandName: 'Anbernic', modelName: 'RG505' },
-  { brandName: 'GPD', modelName: 'Win 4' },
-  { brandName: 'GPD', modelName: 'Win Max 2' },
-  { brandName: 'GPD', modelName: 'XP Plus' },
-  { brandName: 'GPD', modelName: 'XP Plus' },
-  { brandName: 'GPD', modelName: 'XP' },
-  { brandName: 'Lenovo', modelName: 'Legion Go' },
-  { brandName: 'Lenovo', modelName: 'Legion Phone Duel 2' },
-  { brandName: 'Lenovo', modelName: 'Legion Phone Duel' },
-  { brandName: 'Logitech', modelName: 'G Cloud' },
-  { brandName: 'MSI', modelName: 'Claw' },
-  { brandName: 'OnePlus', modelName: '10 Pro' },
-  { brandName: 'OnePlus', modelName: '10T' },
-  { brandName: 'OnePlus', modelName: '11' },
-  { brandName: 'OnePlus', modelName: '11R' },
-  { brandName: 'OnePlus', modelName: '12' },
-  { brandName: 'OnePlus', modelName: '12R' },
-  { brandName: 'OnePlus', modelName: '13' },
-  { brandName: 'OnePlus', modelName: '13R' },
-  { brandName: 'OnePlus', modelName: '9 Pro' },
-  { brandName: 'OnePlus', modelName: 'Open' },
-  { brandName: 'Pimax', modelName: 'Portal' },
-  { brandName: 'Razer', modelName: 'Edge 5G' },
-  { brandName: 'Razer', modelName: 'Edge' },
-  { brandName: 'RedMagic', modelName: '10 Air' },
-  { brandName: 'RedMagic', modelName: '10 Pro' },
-  { brandName: 'RedMagic', modelName: '7' },
-  { brandName: 'RedMagic', modelName: '8 Pro' },
-  { brandName: 'RedMagic', modelName: '9 Pro' },
-  { brandName: 'Retroid', modelName: 'Pocket 3' },
-  { brandName: 'Retroid', modelName: 'Pocket 4 Pro' },
-  { brandName: 'Retroid', modelName: 'Pocket 4' },
-  { brandName: 'Retroid', modelName: 'Pocket 5' },
-  { brandName: 'Retroid', modelName: 'Pocket Classic' },
-  { brandName: 'Retroid', modelName: 'Pocket Flip 2' },
-  { brandName: 'Retroid', modelName: 'Pocket Flip' },
-  { brandName: 'Retroid', modelName: 'Pocket Mini V2' },
-  { brandName: 'Retroid', modelName: 'Pocket Mini' },
-  { brandName: 'Valve', modelName: 'Steam Deck' },
-  { brandName: 'Xiaomi', modelName: 'Black Shark 4' },
-  { brandName: 'Xiaomi', modelName: 'Black Shark 5 Pro' },
-  { brandName: 'Xiaomi', modelName: 'Black Shark 5' },
+  { brandName: 'ASUS', modelName: 'ROG Ally RC71L', socName: 'AMD Z1 Extreme' },
+  { brandName: 'ASUS', modelName: 'ROG Ally RC71L-NH001W', socName: 'AMD Z1' },
+  { brandName: 'ASUS', modelName: 'ROG Phone 5', socName: 'Snapdragon 888' },
+  {
+    brandName: 'ASUS',
+    modelName: 'ROG Phone 6',
+    socName: 'Snapdragon 8 Gen 1',
+  },
+  {
+    brandName: 'ASUS',
+    modelName: 'ROG Phone 7',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  { brandName: 'AYANEO', modelName: 'Air Plus', socName: 'AMD Z1 Extreme' },
+  { brandName: 'AYANEO', modelName: 'Air Pro', socName: 'AMD Z1 Extreme' },
+  { brandName: 'AYANEO', modelName: 'Air', socName: 'AMD Z1' },
+  { brandName: 'AYANEO', modelName: 'Kun', socName: 'AMD Z1 Extreme' },
+  { brandName: 'AYANEO', modelName: 'Next Advance', socName: 'AMD Z1 Extreme' },
+  { brandName: 'AYANEO', modelName: 'Next Pro', socName: 'AMD Z1 Extreme' },
+  { brandName: 'AYANEO', modelName: 'Next', socName: 'AMD Z1' },
+  { brandName: 'AYN', modelName: 'Odin 2 Max', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'AYN', modelName: 'Odin 2 Mini', socName: 'Snapdragon 8 Gen 2' },
+  {
+    brandName: 'AYN',
+    modelName: 'Odin 2 Portal',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  { brandName: 'AYN', modelName: 'Odin 2', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'AYN', modelName: 'Odin', socName: 'Snapdragon 865' },
+  { brandName: 'Anbernic', modelName: 'RG505', socName: 'Tiger T618' },
+  { brandName: 'GPD', modelName: 'Win 4', socName: 'AMD Z1 Extreme' },
+  { brandName: 'GPD', modelName: 'Win Max 2', socName: 'AMD Z1 Extreme' },
+  { brandName: 'GPD', modelName: 'XP Plus', socName: 'Dimensity 1200' },
+  { brandName: 'GPD', modelName: 'XP Plus', socName: 'Dimensity 1200' },
+  { brandName: 'GPD', modelName: 'XP', socName: 'Dimensity 1200' },
+  { brandName: 'Lenovo', modelName: 'Legion Go', socName: 'AMD Z1 Extreme' },
+  {
+    brandName: 'Lenovo',
+    modelName: 'Legion Phone Duel 2',
+    socName: 'Snapdragon 888',
+  },
+  {
+    brandName: 'Lenovo',
+    modelName: 'Legion Phone Duel',
+    socName: 'Snapdragon 865',
+  },
+  { brandName: 'Logitech', modelName: 'G Cloud', socName: 'Snapdragon 720G' },
+  { brandName: 'MSI', modelName: 'Claw', socName: 'Intel Core Ultra 7 155H' },
+  { brandName: 'OnePlus', modelName: '10 Pro', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'OnePlus', modelName: '10T', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'OnePlus', modelName: '11', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'OnePlus', modelName: '11R', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'OnePlus', modelName: '12', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'OnePlus', modelName: '12R', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'OnePlus', modelName: '13', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'OnePlus', modelName: '13R', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'OnePlus', modelName: '9 Pro', socName: 'Snapdragon 888' },
+  { brandName: 'OnePlus', modelName: 'Open', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'Pimax', modelName: 'Portal', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'Razer', modelName: 'Edge 5G', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'Razer', modelName: 'Edge', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'RedMagic', modelName: '10 Air', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'RedMagic', modelName: '10 Pro', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'RedMagic', modelName: '7', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'RedMagic', modelName: '8 Pro', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'RedMagic', modelName: '9 Pro', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'Retroid', modelName: 'Pocket 3', socName: 'Tiger T618' },
+  {
+    brandName: 'Retroid',
+    modelName: 'Pocket 4 Pro',
+    socName: 'Dimensity 1200',
+  },
+  { brandName: 'Retroid', modelName: 'Pocket 4', socName: 'Tiger T820' },
+  { brandName: 'Retroid', modelName: 'Pocket 5', socName: 'Tiger T820' },
+  {
+    brandName: 'Retroid',
+    modelName: 'Pocket Classic',
+    socName: 'Allwinner H700',
+  },
+  { brandName: 'Retroid', modelName: 'Pocket Flip 2', socName: 'Tiger T618' },
+  { brandName: 'Retroid', modelName: 'Pocket Flip', socName: 'Allwinner A133' },
+  {
+    brandName: 'Retroid',
+    modelName: 'Pocket Mini V2',
+    socName: 'Allwinner A133',
+  },
+  { brandName: 'Retroid', modelName: 'Pocket Mini', socName: 'Allwinner H700' },
+  { brandName: 'Valve', modelName: 'Steam Deck', socName: 'AMD Custom APU' },
+  {
+    brandName: 'Xiaomi',
+    modelName: 'Black Shark 4',
+    socName: 'Snapdragon 870',
+  },
+  {
+    brandName: 'Xiaomi',
+    modelName: 'Black Shark 5 Pro',
+    socName: 'Snapdragon 8 Gen 1',
+  },
+  {
+    brandName: 'Xiaomi',
+    modelName: 'Black Shark 5',
+    socName: 'Snapdragon 870',
+  },
 ]
 
 async function devicesSeeder(prisma: PrismaClient) {
   console.log('🌱 Seeding devices...')
 
-  // Track created brands
+  // Track created brands and get SoCs
   const brandMap = new Map<string, string>()
+  const socMap = new Map<string, string>()
+
+  // Load all SoCs into a map for quick lookup
+  const socs = await prisma.soC.findMany()
+  for (const soc of socs) {
+    socMap.set(soc.name, soc.id)
+  }
 
   for (const device of devices) {
     let brandId = brandMap.get(device.brandName)
@@ -88,7 +140,10 @@ async function devicesSeeder(prisma: PrismaClient) {
       brandMap.set(device.brandName, brandId)
     }
 
-    // Create the device with reference to brand if it doesn't exist
+    // Get SoC ID if specified
+    const socId = device.socName ? socMap.get(device.socName) : undefined
+
+    // Create the device with reference to brand and SoC if it doesn't exist
     await prisma.device.upsert({
       where: {
         brandId_modelName: {
@@ -96,10 +151,13 @@ async function devicesSeeder(prisma: PrismaClient) {
           modelName: device.modelName,
         },
       },
-      update: {},
+      update: {
+        socId: socId ?? null,
+      },
       create: {
         brandId,
         modelName: device.modelName,
+        socId: socId ?? null,
       },
     })
   }

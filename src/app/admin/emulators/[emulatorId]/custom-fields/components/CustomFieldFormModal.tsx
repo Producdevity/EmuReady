@@ -4,11 +4,11 @@ import { useEffect } from 'react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { PlusCircle, Trash2 } from 'lucide-react'
+import { Button, Input, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CustomFieldType } from '@orm'
 import toast from '@/lib/toast'
-import { Button, Input, SelectInput } from '@/components/ui'
-import { PlusCircle, Trash2 } from 'lucide-react'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 const customFieldOptionSchema = z.object({
@@ -52,25 +52,20 @@ type CustomFieldCreatePayload = {
   displayOrder: number
 }
 
-interface CustomFieldFormModalProps {
+interface Props {
   emulatorId: string
   fieldIdToEdit?: string | null
   isOpen: boolean
   onClose: () => void
 }
 
-function CustomFieldFormModal({
-  emulatorId,
-  fieldIdToEdit,
-  isOpen,
-  onClose,
-}: CustomFieldFormModalProps) {
+function CustomFieldFormModal(props: Props) {
   const utils = api.useUtils()
 
   const { data: fieldToEditData, isLoading: isLoadingFieldToEdit } =
     api.customFieldDefinitions.byId.useQuery(
-      { id: fieldIdToEdit! },
-      { enabled: !!fieldIdToEdit },
+      { id: props.fieldIdToEdit! },
+      { enabled: !!props.fieldIdToEdit },
     )
 
   const {
@@ -111,7 +106,7 @@ function CustomFieldFormModal({
         isRequired: fieldToEditData.isRequired,
         displayOrder: fieldToEditData.displayOrder,
       })
-    } else if (!fieldIdToEdit) {
+    } else if (!props.fieldIdToEdit) {
       reset({
         name: '',
         label: '',
@@ -121,12 +116,14 @@ function CustomFieldFormModal({
         displayOrder: 0,
       })
     }
-  }, [fieldToEditData, fieldIdToEdit, reset])
+  }, [fieldToEditData, props.fieldIdToEdit, reset])
 
   const createMutation = api.customFieldDefinitions.create.useMutation({
     onSuccess: () => {
-      utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId })
-      onClose()
+      utils.customFieldDefinitions.getByEmulator
+        .invalidate({ emulatorId: props.emulatorId })
+        .catch(console.error)
+      props.onClose()
     },
     onError: (error) => {
       console.error('Error creating custom field:', error)
@@ -138,11 +135,15 @@ function CustomFieldFormModal({
 
   const updateMutation = api.customFieldDefinitions.update.useMutation({
     onSuccess: () => {
-      utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId })
-      if (fieldIdToEdit) {
-        utils.customFieldDefinitions.byId.invalidate({ id: fieldIdToEdit })
+      utils.customFieldDefinitions.getByEmulator
+        .invalidate({ emulatorId: props.emulatorId })
+        .catch(console.error)
+      if (props.fieldIdToEdit) {
+        utils.customFieldDefinitions.byId
+          .invalidate({ id: props.fieldIdToEdit })
+          .catch(console.error)
       }
-      onClose()
+      props.onClose()
     },
     onError: (error) => {
       console.error('Error updating custom field:', error)
@@ -171,9 +172,9 @@ function CustomFieldFormModal({
       }
     }
 
-    if (fieldIdToEdit) {
+    if (props.fieldIdToEdit) {
       const updatePayload: CustomFieldUpdatePayload = {
-        id: fieldIdToEdit,
+        id: props.fieldIdToEdit,
         name: basePayload.name,
         label: basePayload.label,
         type: basePayload.type,
@@ -185,7 +186,7 @@ function CustomFieldFormModal({
     }
 
     const createPayload: CustomFieldCreatePayload = {
-      emulatorId,
+      emulatorId: props.emulatorId,
       name: basePayload.name,
       label: basePayload.label,
       type: basePayload.type,
@@ -196,8 +197,8 @@ function CustomFieldFormModal({
     createMutation.mutate(createPayload)
   }
 
-  if (!isOpen) return null
-  if (fieldIdToEdit && isLoadingFieldToEdit)
+  if (!props.isOpen) return null
+  if (props.fieldIdToEdit && isLoadingFieldToEdit)
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <p>Loading field data...</p>
@@ -213,7 +214,7 @@ function CustomFieldFormModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-4">
-          {fieldIdToEdit ? 'Edit' : 'Create'} Custom Field
+          {props.fieldIdToEdit ? 'Edit' : 'Create'} Custom Field
         </h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -393,7 +394,7 @@ function CustomFieldFormModal({
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={props.onClose}
               disabled={isSubmitting}
             >
               Cancel
@@ -404,7 +405,7 @@ function CustomFieldFormModal({
               isLoading={isSubmitting}
               disabled={isSubmitting}
             >
-              {fieldIdToEdit ? 'Update' : 'Create'} Field
+              {props.fieldIdToEdit ? 'Update' : 'Create'} Field
             </Button>
           </div>
         </form>

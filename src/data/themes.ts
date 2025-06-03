@@ -1,9 +1,5 @@
-import {
-  ComputerDesktopIcon,
-  MoonIcon,
-  SunIcon,
-} from '@heroicons/react/24/outline'
 import type { ComponentType } from 'react'
+import { Sun, Moon, SunMoon } from 'lucide-react'
 
 export type ThemeValue = 'system' | 'light' | 'dark'
 
@@ -17,19 +13,19 @@ export type ThemeOption = {
 const themes: ThemeOption[] = [
   {
     value: 'system',
-    icon: ComputerDesktopIcon,
+    icon: SunMoon,
     label: 'System',
     colorClass: 'text-gray-500 dark:text-gray-400',
   },
   {
     value: 'light',
-    icon: SunIcon,
+    icon: Sun,
     label: 'Light',
     colorClass: 'text-yellow-500',
   },
   {
     value: 'dark',
-    icon: MoonIcon,
+    icon: Moon,
     label: 'Dark',
     colorClass: 'text-blue-400',
   },

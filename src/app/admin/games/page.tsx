@@ -1,7 +1,6 @@
 'use client'
 
-import { CpuChipIcon } from '@heroicons/react/24/outline'
-import { useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { api } from '@/lib/api'
@@ -11,13 +10,13 @@ import {
   Input,
   LoadingSpinner,
   Badge,
-  SelectInput,
   SortableHeader,
   Pagination,
   ColumnVisibilityControl,
   AdminTableContainer,
+  Autocomplete,
 } from '@/components/ui'
-import { Pencil, Eye, Trash2, Plus, Search } from 'lucide-react'
+import { Pencil, Eye, Trash2, Plus, Search, Joystick } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -80,8 +79,8 @@ function AdminGamesPage() {
     deleteGame.mutate({ id: game.id } satisfies RouterInput['games']['delete'])
   }
 
-  const handleSystemChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    setSystemId(ev.target.value)
+  const handleSystemChange = (value: string | null) => {
+    setSystemId(value ?? '')
     table.setPage(1)
   }
 
@@ -119,13 +118,15 @@ function AdminGamesPage() {
               className="pl-10"
             />
           </div>
-          <SelectInput
-            label="System"
-            leftIcon={<CpuChipIcon className="w-5 h-5" />}
-            options={[{ id: '', name: 'All Systems' }, ...(systems ?? [])]}
+          <Autocomplete
             value={systemId}
             onChange={handleSystemChange}
-            hideLabel
+            items={[{ id: '', name: 'All Systems' }, ...(systems ?? [])]}
+            optionToValue={(system) => system.id}
+            optionToLabel={(system) => system.name}
+            leftIcon={<Joystick className="w-5 h-5" />}
+            placeholder="All Systems"
+            filterKeys={['name']}
           />
         </div>
 

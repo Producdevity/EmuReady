@@ -2,7 +2,7 @@
 
 import { useState, useRef, type ChangeEvent } from 'react'
 import Image from 'next/image'
-import { PhotoIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { CircleX, FileImage } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui'
 import getErrorMessage from '@/utils/getErrorMessage'
 import http from '@/rest/http'
@@ -121,7 +121,7 @@ function ImageUpload(props: Props) {
               className="absolute top-2 right-2 text-red-500 hover:text-red-700 bg-white dark:bg-gray-900 rounded-full p-1"
               aria-label="Remove image"
             >
-              <XCircleIcon className="w-6 h-6" />
+              <CircleX className="w-6 h-6" />
             </button>
           </div>
         ) : (
@@ -129,7 +129,7 @@ function ImageUpload(props: Props) {
             className="flex flex-col items-center justify-center h-40 cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
-            <PhotoIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+            <FileImage className="w-12 h-12 text-gray-400 dark:text-gray-500" />
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center">
               Drag and drop an image here, or click to browse
             </p>

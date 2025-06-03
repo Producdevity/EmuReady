@@ -6,10 +6,7 @@ import { SignUpButton } from '@clerk/nextjs'
 import getImageUrl from './games/utils/getImageUrl'
 import { SuccessRateBar, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
-import {
-  HandThumbUpIcon,
-  ChatBubbleLeftIcon,
-} from '@heroicons/react/24/outline'
+import { ThumbsUp, MessageCircle } from 'lucide-react'
 
 function Home() {
   const listingsQuery = api.listings.featured.useQuery()
@@ -195,11 +192,11 @@ function Home() {
                   </div>
                   <div className="flex items-center gap-4 mt-4 text-xs text-gray-500 dark:text-gray-400">
                     <span title="Votes" className="flex items-center gap-1">
-                      <HandThumbUpIcon className="inline w-4 h-4 text-blue-400" />
+                      <ThumbsUp className="inline w-4 h-4 text-blue-400" />
                       {listing._count?.votes ?? 0} votes
                     </span>
                     <span title="Comments" className="flex items-center gap-1">
-                      <ChatBubbleLeftIcon className="inline w-4 h-4 text-indigo-400" />
+                      <MessageCircle className="inline w-4 h-4 text-indigo-400" />
                       {listing._count?.comments ?? 0} comments
                     </span>
                   </div>

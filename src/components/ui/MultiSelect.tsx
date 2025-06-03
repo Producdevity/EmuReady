@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, type ReactNode } from 'react'
-import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ChevronDown, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Option {
   id: string
@@ -102,7 +103,7 @@ function MultiSelect(props: Props) {
   }
 
   return (
-    <div className={`relative ${props.className ?? ''}`}>
+    <div className={cn('relative', props.className)}>
       <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
         {props.label}
       </label>
@@ -114,12 +115,13 @@ function MultiSelect(props: Props) {
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-label={`${props.label} multi-select`}
-          className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 
-            border-gray-300 dark:border-gray-600 text-left 
-            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-            transition-all duration-200 
-            ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''}
-            hover:border-gray-400 dark:hover:border-gray-500`}
+          className={cn(
+            `w-full px-3 py-2 border rounded-lg bg-white 
+            dark:bg-gray-800 border-gray-300 dark:border-gray-600 
+            text-left focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+            transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500`,
+            isOpen ? 'ring-2 ring-blue-500 border-blue-500' : '',
+          )}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -159,10 +161,10 @@ function MultiSelect(props: Props) {
                     transition-all duration-200 cursor-pointer hover:scale-110"
                   aria-label="Clear all selections"
                 >
-                  <XMarkIcon className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </div>
               )}
-              <ChevronDownIcon
+              <ChevronDown
                 className={`w-4 h-4 text-gray-400 transition-transform duration-200 
                   ${isOpen ? 'rotate-180' : ''}`}
               />
@@ -196,11 +198,11 @@ function MultiSelect(props: Props) {
                     className="absolute right-1 top-1/2 -translate-y-1/2 p-1
                       text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                       hover:bg-gray-100 dark:hover:bg-gray-700 rounded
-                      transition-all duration-200 hover:scale-110
-                      animate-in fade-in-0 zoom-in-95 duration-150"
+                      transition-all duration-150 hover:scale-110
+                      animate-in fade-in-0 zoom-in-95"
                     aria-label="Clear search"
                   >
-                    <XMarkIcon className="w-3 h-3" />
+                    <X className="w-3 h-3" />
                   </button>
                 )}
               </div>
@@ -309,7 +311,7 @@ function MultiSelect(props: Props) {
                     focus:outline-none focus:ring-1 focus:ring-blue-400"
                   aria-label={`Remove ${option.name}`}
                 >
-                  <XMarkIcon className="w-3 h-3" />
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             ))}

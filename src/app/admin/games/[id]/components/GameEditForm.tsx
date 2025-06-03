@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api } from '@/lib/api'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, Autocomplete } from '@/components/ui'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
@@ -92,19 +92,15 @@ function GameEditForm(props: Props) {
         >
           System
         </label>
-        <select
-          id="systemId"
+        <Autocomplete
           value={watch('systemId')}
-          onChange={(e) => setValue('systemId', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        >
-          <option value="">Select a system</option>
-          {systems?.map((system) => (
-            <option key={system.id} value={system.id}>
-              {system.name}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => setValue('systemId', value ?? '')}
+          items={systems ?? []}
+          optionToValue={(system) => system.id}
+          optionToLabel={(system) => system.name}
+          placeholder="Select a system"
+          filterKeys={['name']}
+        />
         {errors.systemId && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
             {errors.systemId.message}
