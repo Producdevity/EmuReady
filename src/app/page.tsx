@@ -35,9 +35,8 @@ function Home() {
               Know before you load
             </h1>
             <p className="text-2xl md:text-3xl text-indigo-100 dark:text-indigo-200 mb-10 max-w-3xl mx-auto font-medium">
-              Find the perfect emulator for your Android device.
-              Community-driven compatibility reports that help you make informed
-              decisions.
+              Find the perfect emulator for your device. Community-driven
+              compatibility reports that help you make informed decisions.
             </p>
             <div className="flex justify-center space-x-6">
               <Link
@@ -78,9 +77,7 @@ function Home() {
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">25+</div>
-              <div className="text-gray-600 dark:text-gray-300">
-                Android Devices
-              </div>
+              <div className="text-gray-600 dark:text-gray-300">Devices</div>
             </div>
           </div>
         </section>
@@ -216,7 +213,7 @@ function Home() {
           <h2 className="text-2xl font-bold mb-4">Help Build the Community</h2>
           <p className="mb-6 max-w-2xl mx-auto">
             Submit your own compatibility reports and help others find the best
-            gaming experience on their Android devices.
+            gaming experience on their devices.
           </p>
           <SignUpButton>
             <span className="cursor-pointer bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all inline-block">

@@ -11,9 +11,14 @@ export const adminNav = [
   },
   { href: '/admin/brands', label: 'Brands', description: 'Manage brands.' },
   {
+    href: '/admin/socs',
+    label: 'SoCs',
+    description: 'Manage System on Chip specifications.',
+  },
+  {
     href: '/admin/devices',
     label: 'Devices',
-    description: 'Manage Android devices.',
+    description: 'Manage devices.',
   },
   {
     href: '/admin/emulators',

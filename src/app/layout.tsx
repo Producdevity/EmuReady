@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: '%s | EmuReady',
     default: 'EmuReady - Know before you load',
   },
-  description: 'Community-driven Android emulation compatibility hub',
+  description: 'Community-driven emulation compatibility hub',
 }
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
