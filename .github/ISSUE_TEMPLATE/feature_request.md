@@ -5,7 +5,7 @@ about: Suggest an idea or enhancement for EmuReady
 labels: enhancement
 ---
 
-## Is your feature request related to a problem? Please describe.
+## Description
 
 A clear and concise description of what the problem is. Ex: I'm always frustrated when [...]
 
@@ -13,7 +13,7 @@ A clear and concise description of what the problem is. Ex: I'm always frustrate
 
 A clear and concise description of what you want to happen.
 
-## Describe alternatives you've considered
+## Describe alternatives you've considered (optional)
 
 A clear and concise description of any alternative solutions or features you've considered.
 

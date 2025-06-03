@@ -19,5 +19,5 @@ Add any other context, code snippets, or screenshots that might help us answer y
 
 ## Checklist
 
-- [ ] I have checked the [documentation](../README.md) and [contributing guidelines](../CONTRIBUTING.md)
+- [ ] I have checked the [documentation](../../README.md) and [contributing guidelines](../../CONTRIBUTING.md)
 - [ ] I have searched for similar questions or issues
