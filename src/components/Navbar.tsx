@@ -82,9 +82,6 @@ function Navbar() {
                 <>
                   {user ? (
                     <div className="flex items-center space-x-3">
-                      <Link href="/profile" className={getNavItemClass('/profile')}>
-                        Profile
-                      </Link>
                       {userRole && hasPermission(userRole, Role.AUTHOR) && (
                         <Link
                           href="/listings/new"
@@ -94,14 +91,24 @@ function Navbar() {
                         </Link>
                       )}
                       {userRole && hasPermission(userRole, Role.ADMIN) && (
-                        <Link href="/admin" className={getNavItemClass('/admin')}>
+                        <Link
+                          href="/admin"
+                          className={getNavItemClass('/admin')}
+                        >
                           Admin
                         </Link>
                       )}
+                      <Link
+                        href="/profile"
+                        className={getNavItemClass('/profile')}
+                      >
+                        Profile
+                      </Link>
+
                       <UserButton
                         appearance={{
                           elements: {
-                            avatarBox: "h-8 w-8",
+                            avatarBox: 'h-8 w-8',
                           },
                         }}
                       />
@@ -207,7 +214,7 @@ function Navbar() {
                         <UserButton
                           appearance={{
                             elements: {
-                              avatarBox: "h-8 w-8",
+                              avatarBox: 'h-8 w-8',
                             },
                           }}
                         />
