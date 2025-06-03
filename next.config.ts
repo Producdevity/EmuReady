@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'media.rawg.io',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: '*.clerk.com',
         pathname: '/**',
       },
