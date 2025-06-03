@@ -156,3 +156,7 @@ ngrok http 3000
 Follow the same remaining steps as for Cloudflare Tunnel (subscribe to events, add the webhook secret to `.env.local`, etc.).
 
 > _Note_: ngrok URLs change each time you start a new tunnel unless you have a paid plan with reserved domains.
+
+---
+
+If you are having issues with Clerk webhooks, see the [Webhook Troubleshooting Guide](WEBHOOK_TROUBLESHOOTING.md).
