@@ -8,6 +8,7 @@ import { Role } from '@orm'
 import UserRoleButton from './UserRoleButton'
 import { type RouterInput } from '@/types/trpc'
 import toast from '@/lib/toast'
+import { hasPermission } from '@/utils/permissions'
 
 interface User {
   id: string
@@ -22,17 +23,29 @@ interface Props {
   onClose: () => void
 }
 
-function UserRoleModal({ user, isOpen, onClose }: Props) {
-  const [role, setRole] = useState<Exclude<Role, 'SUPER_ADMIN'>>(
-    user.role === Role.SUPER_ADMIN ? Role.ADMIN : user.role,
+function UserRoleModal(props: Props) {
+  // Get current user to check if they're SUPER_ADMIN
+  const { data: currentUser } = api.users.me.useQuery()
+  const utils = api.useUtils()
+
+  const isSuperAdmin = currentUser?.role
+    ? hasPermission(currentUser.role, Role.SUPER_ADMIN)
+    : false
+
+  const [role, setRole] = useState<Role>(
+    props.user.role === Role.SUPER_ADMIN && !isSuperAdmin
+      ? Role.ADMIN
+      : props.user.role,
   )
   const [isLoading, setIsLoading] = useState(false)
 
   const updateRoleMutation = api.users.updateRole.useMutation({
     onSuccess: () => {
       toast.success(`Role updated to ${role}`)
-      api.useUtils().users.getAll.invalidate().catch(console.error)
-      onClose()
+      // Refetch both the users list and current user data
+      utils.users.getAll.invalidate().catch(console.error)
+      utils.users.me.invalidate().catch(console.error)
+      props.onClose()
     },
     onError: (error) => {
       console.error('Error updating role:', error)
@@ -45,12 +58,12 @@ function UserRoleModal({ user, isOpen, onClose }: Props) {
     ev.preventDefault()
     setIsLoading(true)
     updateRoleMutation.mutate({
-      userId: user.id,
+      userId: props.user.id,
       role,
     } satisfies RouterInput['users']['updateRole'])
   }
 
-  if (!isOpen) return null
+  if (!props.isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -62,7 +75,8 @@ function UserRoleModal({ user, isOpen, onClose }: Props) {
 
         <div className="mb-4">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Update role for user: <strong>{user.name ?? user.email}</strong>
+            Update role for user:{' '}
+            <strong>{props.user.name ?? props.user.email}</strong>
           </p>
         </div>
 
@@ -88,10 +102,23 @@ function UserRoleModal({ user, isOpen, onClose }: Props) {
                 onClick={() => setRole(Role.ADMIN)}
               />
             </div>
-            {user.role === Role.SUPER_ADMIN && (
+            {isSuperAdmin && (
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                <div className="grid grid-cols-1 gap-2">
+                  <UserRoleButton
+                    role={Role.SUPER_ADMIN}
+                    currentRole={role}
+                    onClick={() => setRole(Role.SUPER_ADMIN)}
+                  />
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  Super Admin role can assign and revoke all permissions
+                </p>
+              </div>
+            )}
+            {!isSuperAdmin && props.user.role === Role.SUPER_ADMIN && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                Note: Super Admin role can only be assigned in the database
-                directly
+                Note: Only Super Admins can modify Super Admin roles
               </p>
             )}
           </div>
@@ -100,12 +127,19 @@ function UserRoleModal({ user, isOpen, onClose }: Props) {
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={props.onClose}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || role === user.role}>
+            <Button
+              type="submit"
+              disabled={
+                isLoading ||
+                role === props.user.role ||
+                (!isSuperAdmin && props.user.role === Role.SUPER_ADMIN)
+              }
+            >
               {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>

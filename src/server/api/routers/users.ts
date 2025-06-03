@@ -6,9 +6,9 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
-import { Role }                    from '@orm'
+import { Role } from '@orm'
 import { AppError, ResourceError } from '@/lib/errors'
-import { updateUserRole }          from '@/utils/roleSync'
+import { updateUserRole } from '@/utils/roleSync'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,
@@ -19,7 +19,6 @@ import {
 } from '@/schemas/user'
 
 export const usersRouter = createTRPCRouter({
-
   me: protectedProcedure.query(({ ctx }) => {
     if (!ctx.session?.user) return AppError.notAuthenticated()
 
@@ -306,13 +305,41 @@ export const usersRouter = createTRPCRouter({
     .input(UpdateUserRoleSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, role } = input
+      const currentUserRole = ctx.session.user.role
 
-      // Prevent self-demotion from ADMIN
+      // Get the target user's current role
+      const targetUser = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true, name: true, email: true },
+      })
+
+      if (!targetUser) {
+        return ResourceError.user.notFound()
+      }
+
+      // Prevent self-demotion from admin roles
       if (
         userId === ctx.session.user.id &&
-        !hasPermission(ctx.session.user.role, Role.ADMIN)
+        hasPermission(currentUserRole, Role.ADMIN) &&
+        !hasPermission(role, Role.ADMIN)
       ) {
         ResourceError.user.cannotDemoteSelf()
+      }
+
+      // Only SUPER_ADMIN can modify SUPER_ADMIN users
+      if (
+        targetUser.role === Role.SUPER_ADMIN &&
+        !hasPermission(currentUserRole, Role.SUPER_ADMIN)
+      ) {
+        throw new Error('Only Super Admins can modify Super Admin users')
+      }
+
+      // Only SUPER_ADMIN can assign SUPER_ADMIN role
+      if (
+        role === Role.SUPER_ADMIN &&
+        !hasPermission(currentUserRole, Role.SUPER_ADMIN)
+      ) {
+        throw new Error('Only Super Admins can assign Super Admin role')
       }
 
       // Use the role sync utility to update both database and Clerk

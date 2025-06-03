@@ -2,18 +2,21 @@
 
 import { useMemo } from 'react'
 import { Role } from '@orm'
+import { cn } from '@/lib/utils'
 
 interface Props {
-  role: Exclude<Role, 'SUPER_ADMIN'>
+  role: Role
   currentRole: string
   onClick: () => void
 }
 
-const roleColorMap: Record<Exclude<Role, 'SUPER_ADMIN'>, string> = {
+const roleColorMap: Record<Role, string> = {
   [Role.ADMIN]: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
   [Role.AUTHOR]:
     'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
   [Role.USER]: 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
+  [Role.SUPER_ADMIN]:
+    'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
 }
 
 function UserRoleButton(props: Props) {
@@ -22,21 +25,24 @@ function UserRoleButton(props: Props) {
     [props.currentRole, props.role],
   )
 
-  const colorClassNames = useMemo(() => {
-    if (!isActive)
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-
-    return roleColorMap[props.role] || roleColorMap[Role.USER]
-  }, [isActive, props.role])
+  const colorClassNames = useMemo(
+    () =>
+      isActive
+        ? roleColorMap[props.role] || roleColorMap[Role.USER]
+        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+    [isActive, props.role],
+  )
 
   return (
     <button
       type="button"
-      className={`py-2 px-3 rounded-md font-medium text-sm ${colorClassNames} ${
+      className={cn(
+        'py-2 px-3 rounded-md font-medium text-sm',
+        colorClassNames,
         isActive
           ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800'
-          : ''
-      }`}
+          : '',
+      )}
       onClick={props.onClick}
     >
       {props.role}
