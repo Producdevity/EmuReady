@@ -13,6 +13,7 @@ const prisma = new PrismaClient()
 async function main() {
   const args = process.argv.slice(2)
   const clearDb = args.includes('--clear')
+  const clearDbUsers = args.includes('--clear-users')
 
   if (clearDb) {
     console.warn('🗑️ Clearing database...')
@@ -32,7 +33,9 @@ async function main() {
     await prisma.game.deleteMany()
     await prisma.system.deleteMany()
     await prisma.deviceBrand.deleteMany()
-    await prisma.user.deleteMany()
+    if (clearDbUsers) {
+      await prisma.user.deleteMany()
+    }
 
     console.log('✅ Database cleared!')
   }
