@@ -9,6 +9,7 @@ import {
   Input,
   LoadingSpinner,
   ColumnVisibilityControl,
+  AdminTableContainer,
 } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -108,9 +109,13 @@ function AdminDevicesPage() {
   const isLoading = devicesLoading || brandsLoading
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Devices</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Manage Devices
+          </h1>
+        </div>
         <div className="flex items-center gap-3">
           <ColumnVisibilityControl
             columns={DEVICES_COLUMNS}
@@ -123,7 +128,7 @@ function AdminDevicesPage() {
       </div>
 
       {!isLoading && !areBrandsAvailable && (
-        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg">
+        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg">
           <p>
             You need to create at least one device brand before adding devices.{' '}
             <Link
@@ -136,31 +141,31 @@ function AdminDevicesPage() {
         </div>
       )}
 
-      <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-          <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+      <AdminTableContainer>
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               {columnVisibility.isColumnVisible('brand') && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Brand
                 </th>
               )}
               {columnVisibility.isColumnVisible('model') && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Model
                 </th>
               )}
               {columnVisibility.isColumnVisible('actions') && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading && (
               <tr>
-                <td colSpan={3} className="text-center py-8">
+                <td colSpan={3} className="text-center py-12">
                   <LoadingSpinner size="lg" text="Loading..." />
                 </td>
               </tr>
@@ -168,39 +173,45 @@ function AdminDevicesPage() {
             {devices?.map((dev) => (
               <tr
                 key={dev.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
               >
                 {columnVisibility.isColumnVisible('brand') && (
-                  <td className="px-4 py-2">{dev.brand.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {dev.brand.name}
+                  </td>
                 )}
                 {columnVisibility.isColumnVisible('model') && (
-                  <td className="px-4 py-2">{dev.modelName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {dev.modelName}
+                  </td>
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
-                  <td className="px-4 py-2 flex gap-2 justify-end">
-                    <Button variant="secondary" onClick={() => openModal(dev)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(dev.id)}
-                    >
-                      Delete
-                    </Button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <Button variant="secondary" onClick={() => openModal(dev)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleDelete(dev.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 )}
               </tr>
             ))}
             {devices?.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={3} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   No devices found. Add your first device.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </AdminTableContainer>
       {modalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">
           <form

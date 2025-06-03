@@ -10,6 +10,7 @@ import {
   SortableHeader,
   Badge,
   ColumnVisibilityControl,
+  AdminTableContainer,
 } from '@/components/ui'
 import getRoleBadgeColor from './utils/getRoleBadgeColor'
 import UserRoleModal from './components/UserRoleModal'
@@ -101,18 +102,20 @@ function AdminUsersPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-          Users Management
-        </h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Users Management
+          </h1>
+        </div>
         <ColumnVisibilityControl
           columns={USERS_COLUMNS}
           columnVisibility={columnVisibility}
         />
       </div>
 
-      <div className="mb-6">
+      <div>
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
@@ -124,7 +127,7 @@ function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg">
+      <AdminTableContainer>
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
@@ -266,7 +269,7 @@ function AdminUsersPage() {
             ))}
           </tbody>
         </table>
-      </div>
+      </AdminTableContainer>
 
       {selectedUser && (
         <UserRoleModal

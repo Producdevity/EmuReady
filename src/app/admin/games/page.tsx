@@ -15,6 +15,7 @@ import {
   SortableHeader,
   Pagination,
   ColumnVisibilityControl,
+  AdminTableContainer,
 } from '@/components/ui'
 import { Pencil, Eye, Trash2, Plus, Search } from 'lucide-react'
 import { useConfirmDialog } from '@/components/ui'
@@ -140,7 +141,7 @@ function AdminGamesPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <AdminTableContainer>
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
@@ -251,7 +252,7 @@ function AdminGamesPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </AdminTableContainer>
 
             {pagination && pagination.pages > 1 && (
               <div className="mt-6">
