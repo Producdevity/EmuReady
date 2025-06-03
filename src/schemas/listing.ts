@@ -69,6 +69,7 @@ export const GetProcessedSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
   filterStatus: z.nativeEnum(ListingApprovalStatus).optional(),
+  search: z.string().optional(),
 })
 
 export const OverrideApprovalStatusSchema = z.object({

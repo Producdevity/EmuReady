@@ -221,12 +221,52 @@ export const adminRouter = createTRPCRouter({
   getProcessed: superAdminProcedure
     .input(GetProcessedSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, filterStatus } = input
+      const { page, limit, filterStatus, search } = input
       const skip = (page - 1) * limit
 
-      const whereClause = {
-        NOT: { status: ListingApprovalStatus.PENDING }, // Exclude PENDING listings
+      const baseWhere: Prisma.ListingWhereInput = {
+        NOT: { status: ListingApprovalStatus.PENDING },
         ...(filterStatus && { status: filterStatus }),
+      }
+
+      const searchWhere: Prisma.ListingWhereInput = search
+        ? {
+            OR: [
+              {
+                game: {
+                  title: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                author: {
+                  name: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                processedNotes: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                notes: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }
+        : {}
+
+      const whereClause: Prisma.ListingWhereInput = {
+        ...baseWhere,
+        ...searchWhere,
       }
 
       const listings = await ctx.prisma.listing.findMany({
