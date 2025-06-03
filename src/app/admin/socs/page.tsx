@@ -9,6 +9,7 @@ import {
   LoadingSpinner,
   ColumnVisibilityControl,
   AdminTableContainer,
+  SortableHeader,
 } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -16,6 +17,9 @@ import useColumnVisibility, {
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterInput } from '@/types/trpc'
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+
+type SocSortField = 'name' | 'manufacturer' | 'devicesCount'
 
 const SOCS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },
@@ -29,6 +33,10 @@ const SOCS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminSoCsPage() {
+  const [search, setSearch] = useState('')
+  const [sortField, setSortField] = useState<SocSortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
+
   const columnVisibility = useColumnVisibility(SOCS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSoCs,
   })
@@ -37,7 +45,12 @@ function AdminSoCsPage() {
     data: socs,
     isLoading: socsLoading,
     refetch,
-  } = api.socs.get.useQuery()
+  } = api.socs.get.useQuery({
+    search: search || undefined,
+    sortField: sortField ?? undefined,
+    sortDirection: sortDirection ?? undefined,
+  })
+
   const createSoC = api.socs.create.useMutation()
   const updateSoC = api.socs.update.useMutation()
   const deleteSoC = api.socs.delete.useMutation()
@@ -52,6 +65,28 @@ function AdminSoCsPage() {
   const [gpuModel, setGpuModel] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const handleSort = (field: string) => {
+    const socField = field as SocSortField
+    let newSortDirection: 'asc' | 'desc' | null
+
+    if (sortField === socField) {
+      if (sortDirection === 'asc') {
+        newSortDirection = 'desc'
+      } else if (sortDirection === 'desc') {
+        setSortField(null)
+        setSortDirection(null)
+        return
+      } else {
+        newSortDirection = 'asc'
+      }
+    } else {
+      setSortField(socField)
+      newSortDirection = 'asc'
+    }
+
+    setSortDirection(newSortDirection)
+  }
 
   const openModal = (soc?: {
     id: string
@@ -130,6 +165,12 @@ function AdminSoCsPage() {
     }
   }
 
+  const clearFilters = () => {
+    setSearch('')
+    setSortField(null)
+    setSortDirection(null)
+  }
+
   const isLoading = socsLoading
 
   return (
@@ -152,133 +193,160 @@ function AdminSoCsPage() {
         </div>
       </div>
 
-      <AdminTableContainer>
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700/50">
-            <tr>
-              {columnVisibility.isColumnVisible('name') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Name
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('manufacturer') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Manufacturer
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('architecture') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Architecture
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('processNode') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Process Node
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('cpuCores') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  CPU Cores
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('gpuModel') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  GPU Model
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('devicesCount') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Devices
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('actions') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {isLoading && (
+      {/* Search Bar */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            type="text"
+            placeholder="Search SoCs by name, manufacturer, architecture..."
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            className="w-full"
+          />
+        </div>
+        {(search || sortField) && (
+          <Button variant="outline" onClick={clearFilters}>
+            Clear Filters
+          </Button>
+        )}
+      </div>
+
+      {isLoading && <LoadingSpinner text="Loading SoCs..." />}
+
+      {!isLoading && socs?.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-600 dark:text-gray-400">
+            {search ? 'No SoCs match your search criteria.' : 'No SoCs found.'}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && socs && socs.length > 0 && (
+        <AdminTableContainer>
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <td colSpan={8} className="text-center py-12">
-                  <LoadingSpinner size="lg" text="Loading..." />
-                </td>
-              </tr>
-            )}
-            {socs?.map((soc) => (
-              <tr
-                key={soc.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-              >
                 {columnVisibility.isColumnVisible('name') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                    {soc.name}
-                  </td>
+                  <SortableHeader
+                    label="Name"
+                    field="name"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('manufacturer') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {soc.manufacturer}
-                  </td>
+                  <SortableHeader
+                    label="Manufacturer"
+                    field="manufacturer"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('architecture') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {soc.architecture ?? '—'}
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Architecture
+                  </th>
                 )}
                 {columnVisibility.isColumnVisible('processNode') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {soc.processNode ?? '—'}
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Process Node
+                  </th>
                 )}
                 {columnVisibility.isColumnVisible('cpuCores') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {soc.cpuCores ?? '—'}
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    CPU Cores
+                  </th>
                 )}
                 {columnVisibility.isColumnVisible('gpuModel') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {soc.gpuModel ?? '—'}
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    GPU Model
+                  </th>
                 )}
                 {columnVisibility.isColumnVisible('devicesCount') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {soc._count.devices}
-                  </td>
+                  <SortableHeader
+                    label="Devices"
+                    field="devicesCount"
+                    currentSortField={sortField}
+                    currentSortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="secondary"
-                        onClick={() => openModal(soc)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => handleDelete(soc.id, soc.name)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
                 )}
               </tr>
-            ))}
-            {socs?.length === 0 && (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {socs.map((soc) => (
+                <tr
+                  key={soc.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                 >
-                  No SoCs found. Add your first SoC.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </AdminTableContainer>
+                  {columnVisibility.isColumnVisible('name') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {soc.name}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('manufacturer') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {soc.manufacturer}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('architecture') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {soc.architecture ?? '-'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('processNode') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {soc.processNode ?? '-'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('cpuCores') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {soc.cpuCores ?? '-'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('gpuModel') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {soc.gpuModel ?? '-'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('devicesCount') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {soc._count?.devices ?? 0}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => openModal(soc)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(soc.id, soc.name)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 inline-flex items-center ml-2"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </AdminTableContainer>
+      )}
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">

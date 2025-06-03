@@ -7,11 +7,13 @@ import Link from 'next/link'
 import { api } from '@/lib/api'
 import {
   Button,
+  Input,
   useConfirmDialog,
   ColumnVisibilityControl,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
+  LoadingSpinner,
 } from '@/components/ui'
 import { Settings, Pencil, Trash2 } from 'lucide-react'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -30,17 +32,24 @@ const EMULATORS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminEmulatorsPage() {
+  const [search, setSearch] = useState('')
+
   const columnVisibility = useColumnVisibility(EMULATORS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminEmulators,
   })
 
-  const { data: emulators, refetch } = api.emulators.get.useQuery()
+  const { data: emulators, isLoading, refetch } = api.emulators.get.useQuery()
   const deleteEmulator = api.emulators.delete.useMutation()
   const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [emulatorName, setEmulatorName] = useState('')
+
+  // Filter emulators based on search
+  const filteredEmulators = emulators?.filter((emulator) =>
+    emulator.name.toLowerCase().includes(search.toLowerCase())
+  ) ?? []
 
   const openModal = (emulator?: { id: string; name: string }) => {
     setEditId(emulator?.id ?? null)
@@ -74,10 +83,21 @@ function AdminEmulatorsPage() {
     }
   }
 
+  const clearFilters = () => {
+    setSearch('')
+  }
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Emulators</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Manage Emulators
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Manage emulator software for various gaming systems
+          </p>
+        </div>
         <div className="flex items-center gap-3">
           <ColumnVisibilityControl
             columns={EMULATORS_COLUMNS}
@@ -86,80 +106,112 @@ function AdminEmulatorsPage() {
           <Button onClick={() => openModal()}>Add Emulator</Button>
         </div>
       </div>
-      <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-          <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-            <tr>
-              {columnVisibility.isColumnVisible('name') && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                  Emulator Name
-                </th>
-              )}
-              {columnVisibility.isColumnVisible('actions') && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {emulators?.map((emulator) => (
-              <tr
-                key={emulator.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
+
+      {/* Search Bar */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            type="text"
+            placeholder="Search emulators by name..."
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            className="w-full"
+          />
+        </div>
+        {search && (
+          <Button variant="outline" onClick={clearFilters}>
+            Clear Filters
+          </Button>
+        )}
+      </div>
+
+      {isLoading && <LoadingSpinner text="Loading emulators..." />}
+
+      {!isLoading && filteredEmulators.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-600 dark:text-gray-400">
+            {search ? 'No emulators match your search criteria.' : 'No emulators found.'}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && filteredEmulators.length > 0 && (
+        <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+            <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+              <tr>
                 {columnVisibility.isColumnVisible('name') && (
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`/admin/emulators/${emulator.id}`}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                    >
-                      {emulator.name}
-                    </Link>
-                  </td>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Emulator Name
+                  </th>
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
-                  <td className="px-4 py-2 flex gap-2 justify-end">
-                    <Link
-                      href={`/admin/emulators/${emulator.id}/custom-fields`}
-                      className={actionButtonClasses}
-                    >
-                      <Settings className="mr-2 h-4 w-4" /> Custom Fields
-                    </Link>
-                    <Link
-                      href={`/admin/emulators/${emulator.id}`}
-                      className={actionButtonClasses}
-                    >
-                      <Pencil className="mr-2 h-4 w-4" /> Edit
-                    </Link>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => openModal(emulator)}
-                    >
-                      Quick Edit
-                    </Button>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleDelete(emulator.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        Delete Emulator
-                      </TooltipContent>
-                    </Tooltip>
-                  </td>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    Actions
+                  </th>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {filteredEmulators.map((emulator) => (
+                <tr
+                  key={emulator.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  {columnVisibility.isColumnVisible('name') && (
+                    <td className="px-4 py-2">
+                      <Link
+                        href={`/admin/emulators/${emulator.id}`}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                      >
+                        {emulator.name}
+                      </Link>
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-4 py-2 flex gap-2 justify-end">
+                      <Link
+                        href={`/admin/emulators/${emulator.id}/custom-fields`}
+                        className={actionButtonClasses}
+                      >
+                        <Settings className="mr-2 h-4 w-4" /> Custom Fields
+                      </Link>
+                      <Link
+                        href={`/admin/emulators/${emulator.id}`}
+                        className={actionButtonClasses}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                      </Link>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openModal(emulator)}
+                      >
+                        Quick Edit
+                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDelete(emulator.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          Delete Emulator
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {modalOpen && (
         <EmulatorModal
           editId={editId}

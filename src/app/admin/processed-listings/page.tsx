@@ -50,6 +50,7 @@ function ProcessedListingsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] =
     useState<ListingApprovalStatus | null>(null)
+  const [search, setSearch] = useState('')
   const itemsPerPage = 10
 
   const { data, isLoading, error, refetch } =
@@ -57,6 +58,7 @@ function ProcessedListingsPage() {
       page: currentPage,
       limit: itemsPerPage,
       filterStatus: filterStatus ?? undefined,
+      search: search || undefined,
     })
 
   const processedListings = data?.listings ?? []
@@ -117,6 +119,12 @@ function ProcessedListingsPage() {
     setCurrentPage(1)
   }
 
+  const clearFilters = () => {
+    setSearch('')
+    setFilterStatus(null)
+    setCurrentPage(1)
+  }
+
   if (error) {
     return (
       <div className="container mx-auto p-6 text-red-500">
@@ -141,13 +149,29 @@ function ProcessedListingsPage() {
         SUPER_ADMINs can override these decisions.
       </p>
 
-      <div className="mb-6 max-w-xs">
-        <SelectInput
-          label="Filter by Status"
-          options={statusOptions}
-          value={filterStatus ?? 'all'}
-          onChange={handleFilterChange}
-        />
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            type="text"
+            placeholder="Search by game name, author, or notes..."
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="max-w-xs">
+          <SelectInput
+            label="Filter by Status"
+            options={statusOptions}
+            value={filterStatus ?? 'all'}
+            onChange={handleFilterChange}
+          />
+        </div>
+        {(search || filterStatus) && (
+          <Button variant="outline" onClick={clearFilters}>
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       {isLoading && (
