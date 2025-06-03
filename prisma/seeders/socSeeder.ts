@@ -278,6 +278,14 @@ const socs: SoCData[] = [
     gpuModel: 'Mali-G615',
   },
   {
+    name: 'Dimensity 1080',
+    manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    processNode: '6nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G68',
+  },
+  {
     name: 'Dimensity 1200',
     manufacturer: 'MediaTek',
     architecture: 'ARM64',
@@ -438,7 +446,64 @@ const socs: SoCData[] = [
     gpuModel: 'Mali-G76 MC4',
   },
 
-  // AMD (for handheld gaming devices)
+  // Exynos
+  {
+    name: 'Exynos 2400',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 10,
+    gpuModel: 'Xclipse 940',
+  },
+  {
+    name: 'Exynos 2200',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Xclipse 920',
+  },
+  {
+    name: 'Exynos 2100',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '5nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G78',
+  },
+  {
+    name: 'Exynos 1480',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Xclipse 530',
+  },
+  {
+    name: 'Exynos 1380',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '5nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G68',
+  },
+  {
+    name: 'Exynos 1280',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '5nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G68',
+  },
+  {
+    name: 'Exynos 990',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '7nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G77',
+  },
+  // AMD
   {
     name: 'AMD Z1 Extreme',
     manufacturer: 'AMD',
@@ -495,8 +560,16 @@ const socs: SoCData[] = [
     cpuCores: 6,
     gpuModel: 'Radeon Vega 7',
   },
+  {
+    name: 'AMD Custom APU',
+    manufacturer: 'AMD',
+    architecture: 'x86_64',
+    processNode: '7nm',
+    cpuCores: 4,
+    gpuModel: 'RDNA 2',
+  },
 
-  // Apple (for reference/comparison)
+  // Apple
   {
     name: 'Apple A17 Pro',
     manufacturer: 'Apple',
@@ -522,7 +595,7 @@ const socs: SoCData[] = [
     gpuModel: 'Apple GPU',
   },
 
-  // NVIDIA (for handheld devices)
+  // NVIDIA
   {
     name: 'Tegra X1',
     manufacturer: 'NVIDIA',
@@ -532,7 +605,7 @@ const socs: SoCData[] = [
     gpuModel: 'Maxwell',
   },
 
-  // Unisoc (for budget devices)
+  // Unisoc
   {
     name: 'Tiger T820',
     manufacturer: 'Unisoc',
@@ -550,7 +623,7 @@ const socs: SoCData[] = [
     gpuModel: 'Mali-G52',
   },
 
-  // Allwinner (for retro handheld devices)
+  // Allwinner
   {
     name: 'Allwinner H700',
     manufacturer: 'Allwinner',
@@ -568,7 +641,7 @@ const socs: SoCData[] = [
     gpuModel: 'PowerVR GE8300',
   },
 
-  // Rockchip (for retro handheld devices)
+  // Rockchip
   {
     name: 'RK3566',
     manufacturer: 'Rockchip',
@@ -586,15 +659,7 @@ const socs: SoCData[] = [
     gpuModel: 'Mali-G610',
   },
 
-  // Additional SoCs for specific devices
-  {
-    name: 'Snapdragon 720G',
-    manufacturer: 'Qualcomm',
-    architecture: 'ARM64',
-    processNode: '8nm',
-    cpuCores: 8,
-    gpuModel: 'Adreno 618',
-  },
+  // Intel
   {
     name: 'Intel Core Ultra 7 155H',
     manufacturer: 'Intel',
@@ -602,14 +667,6 @@ const socs: SoCData[] = [
     processNode: '7nm',
     cpuCores: 16,
     gpuModel: 'Intel Arc',
-  },
-  {
-    name: 'AMD Custom APU',
-    manufacturer: 'AMD',
-    architecture: 'x86_64',
-    processNode: '7nm',
-    cpuCores: 4,
-    gpuModel: 'RDNA 2',
   },
 ]
 

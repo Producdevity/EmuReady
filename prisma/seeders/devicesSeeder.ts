@@ -156,6 +156,75 @@ const devices: DeviceData[] = [
     modelName: 'Black Shark 5',
     socName: 'Snapdragon 870',
   },
+
+  // Samsung
+  { brandName: 'Samsung', modelName: 'Galaxy S24', socName: 'Exynos 2400' },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy S24 Ultra',
+    socName: 'Snapdragon 8 Gen 3',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy S23',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  { brandName: 'Samsung', modelName: 'Galaxy S22', socName: 'Exynos 2200' },
+  { brandName: 'Samsung', modelName: 'Galaxy S21', socName: 'Exynos 2100' },
+  { brandName: 'Samsung', modelName: 'Galaxy S20', socName: 'Exynos 990' },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Fold5',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Fold4',
+    socName: 'Snapdragon 8+ Gen 1',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Fold3',
+    socName: 'Snapdragon 888',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Fold2',
+    socName: 'Snapdragon 865+',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Flip5',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Flip4',
+    socName: 'Snapdragon 8+ Gen 1',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Flip3',
+    socName: 'Snapdragon 888',
+  },
+  { brandName: 'Samsung', modelName: 'Galaxy A55 5G', socName: 'Exynos 1480' },
+  { brandName: 'Samsung', modelName: 'Galaxy A54 5G', socName: 'Exynos 1380' },
+  { brandName: 'Samsung', modelName: 'Galaxy A53 5G', socName: 'Exynos 1280' },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy A52s 5G',
+    socName: 'Snapdragon 778G',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy A52 5G',
+    socName: 'Snapdragon 750G',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy A34 5G',
+    socName: 'Dimensity 1080',
+  },
 ]
 
 async function devicesSeeder(prisma: PrismaClient) {
