@@ -1,0 +1,103 @@
+import { type CSSProperties, Fragment, type ReactNode } from 'react'
+import { GripVertical, Pencil, Trash2 } from 'lucide-react'
+import { CSS } from '@dnd-kit/utilities'
+import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
+import { Badge, Button } from '@/components/ui'
+import { useSortable } from '@dnd-kit/sortable'
+import { type Maybe } from '@/types/utils'
+
+interface Props {
+  field: CustomFieldDefinition
+  onEdit: (fieldId: string) => void
+  handleDelete: (fieldId: string) => void
+  isReorderMode: boolean
+  renderOptionsPreview: (optionsAsJson: Maybe<Prisma.JsonValue>) => ReactNode
+}
+
+function CustomFieldSortableRow(props: Props) {
+  const sortable = useSortable({ id: props.field.id })
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+    opacity: sortable.isDragging ? 0.8 : 1,
+    zIndex: sortable.isDragging ? 1 : 0,
+    position: 'relative' as const,
+  }
+
+  return (
+    <Fragment>
+      <tr
+        ref={sortable.setNodeRef}
+        style={style}
+        {...(props.isReorderMode ? sortable.attributes : {})}
+        {...(props.isReorderMode ? sortable.listeners : {})}
+      >
+        {props.isReorderMode && (
+          <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 cursor-grab">
+            <GripVertical className="h-5 w-5" />
+          </td>
+        )}
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+          {props.field.label}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          {props.field.name}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          <Badge
+            variant={
+              props.field.type === CustomFieldType.SELECT
+                ? 'primary'
+                : 'default'
+            }
+          >
+            {props.field.type}
+          </Badge>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          {props.field.isRequired ? (
+            <Badge variant="success">Yes</Badge>
+          ) : (
+            <Badge variant="default">No</Badge>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          {props.field.type === CustomFieldType.SELECT ? (
+            props.renderOptionsPreview(props.field.options)
+          ) : (
+            <span className="text-gray-500 italic">N/A</span>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          {props.field.displayOrder}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+          {!props.isReorderMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => props.onEdit(props.field.id)}
+                aria-label="Edit"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => props.handleDelete(props.field.id)}
+                aria-label="Delete"
+                className="text-red-500 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </td>
+      </tr>
+    </Fragment>
+  )
+}
+
+export default CustomFieldSortableRow

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, Fragment, type ReactNode } from 'react'
-import { Pencil, Trash2, GripVertical, X, Check, Undo } from 'lucide-react'
+import { useState, useEffect, type ReactNode } from 'react'
+import { GripVertical, X, Check, Undo } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -15,15 +15,14 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import toast from '@/lib/toast'
 import { api } from '@/lib/api'
-import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
+import { type CustomFieldDefinition, type Prisma } from '@orm'
 import { type Maybe } from '@/types/utils'
 import { Button, Badge, useConfirmDialog } from '@/components/ui'
+import CustomFieldSortableRow from './CustomFieldSortableRow'
 
 interface CustomFieldOptionUI {
   value: string
@@ -37,122 +36,17 @@ interface CustomFieldListProps {
   emulatorId: string
 }
 
-type SortableCustomField = CustomFieldDefinition
-
-function SortableRow({
-  field,
-  onEdit,
-  handleDelete,
-  isReorderMode,
-  renderOptionsPreview,
-}: {
-  field: SortableCustomField
-  onEdit: (fieldId: string) => void
-  handleDelete: (fieldId: string) => void
-  isReorderMode: boolean
-  renderOptionsPreview: (
-    optionsAsJson: Prisma.JsonValue | null | undefined,
-  ) => ReactNode
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: field.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.8 : 1,
-    zIndex: isDragging ? 1 : 0,
-    position: 'relative' as const,
-  }
-
-  return (
-    <Fragment>
-      <tr
-        ref={setNodeRef}
-        style={style}
-        {...(isReorderMode ? attributes : {})}
-        {...(isReorderMode ? listeners : {})}
-      >
-        {isReorderMode && (
-          <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 cursor-grab">
-            <GripVertical className="h-5 w-5" />
-          </td>
-        )}
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-          {field.label}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          {field.name}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          <Badge
-            variant={
-              field.type === CustomFieldType.SELECT ? 'primary' : 'default'
-            }
-          >
-            {field.type}
-          </Badge>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          {field.isRequired ? (
-            <Badge variant="success">Yes</Badge>
-          ) : (
-            <Badge variant="default">No</Badge>
-          )}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          {field.type === CustomFieldType.SELECT ? (
-            renderOptionsPreview(field.options)
-          ) : (
-            <span className="text-gray-500 italic">N/A</span>
-          )}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          {field.displayOrder}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-          {!isReorderMode && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(field.id)}
-                aria-label="Edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDelete(field.id)}
-                aria-label="Delete"
-                className="text-red-500 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </td>
-      </tr>
-    </Fragment>
-  )
-}
-
 function CustomFieldList(props: CustomFieldListProps) {
   const utils = api.useUtils()
   const confirm = useConfirmDialog()
   const [isReorderMode, setIsReorderMode] = useState(false)
-  const [orderedFields, setOrderedFields] = useState<SortableCustomField[]>(
+  const [orderedFields, setOrderedFields] = useState<CustomFieldDefinition[]>(
     () =>
       [...props.customFields].sort((a, b) => a.displayOrder - b.displayOrder),
   )
-  const [previousOrder, setPreviousOrder] = useState<SortableCustomField[]>([])
+  const [previousOrder, setPreviousOrder] = useState<CustomFieldDefinition[]>(
+    [],
+  )
   const [isDirty, setIsDirty] = useState(false)
 
   useEffect(() => {
@@ -398,7 +292,7 @@ function CustomFieldList(props: CustomFieldListProps) {
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {orderedFields.map((field) => (
-                <SortableRow
+                <CustomFieldSortableRow
                   key={field.id}
                   field={field}
                   onEdit={props.onEdit}
