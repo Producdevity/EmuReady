@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ShieldUser, Trash } from 'lucide-react'
 import { api } from '@/lib/api'
 import { isEmpty } from 'remeda'
 import {
@@ -244,18 +244,21 @@ function AdminUsersPage() {
                 {columnVisibility.isColumnVisible('actions') && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
+                      name="Change Role"
                       onClick={() => openRoleModal(user)}
                     >
-                      Change Role
+                      <ShieldUser />
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="ghost"
                       size="sm"
+                      name="Delete User"
                       onClick={() => handleDelete(user.id)}
+                      className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
                     >
-                      Delete
+                      <Trash />
                     </Button>
                   </td>
                 )}
