@@ -9,6 +9,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
 import { ThemeToggle } from '@/components/ui'
 import { Role } from '@orm'
+import LoadingIcon from '@/components/icons/LoadingIcon'
 
 function Navbar() {
   const { user, isLoaded } = useUser()
@@ -75,9 +76,8 @@ function Navbar() {
             <div className="ml-4 flex items-center md:ml-6 space-x-3">
               <ThemeToggle />
 
-              {/* Always show auth buttons while debugging */}
               {!isLoaded ? (
-                <div>Loading...</div>
+                <LoadingIcon />
               ) : (
                 <>
                   {user ? (
