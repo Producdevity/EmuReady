@@ -14,8 +14,31 @@ import {
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
-    const { search, manufacturer, limit, sortField, sortDirection } =
-      input ?? {}
+    const { 
+      search, 
+      limit = 20, 
+      offset = 0, 
+      page, 
+      sortField, 
+      sortDirection 
+    } = input ?? {}
+
+    // Calculate actual offset based on page or use provided offset
+    const actualOffset = page ? (page - 1) * limit : offset
+    const effectiveLimit = Math.min(limit, 100) // Cap at 100 items per page
+
+    // Build where clause for filtering
+    const where: Prisma.SoCWhereInput = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { manufacturer: { contains: search, mode: 'insensitive' } },
+            { architecture: { contains: search, mode: 'insensitive' } },
+            { processNode: { contains: search, mode: 'insensitive' } },
+            { gpuModel: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {}
 
     // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.SoCOrderByWithRelationInput[] = []
@@ -36,35 +59,33 @@ export const socsRouter = createTRPCRouter({
 
     // Default ordering if no sort specified
     if (!orderBy.length) {
-      orderBy.push({ name: 'asc' })
+      orderBy.push({ manufacturer: 'asc' }, { name: 'asc' })
     }
 
-    return ctx.prisma.soC.findMany({
-      where: {
-        ...(search
-          ? {
-              OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { manufacturer: { contains: search, mode: 'insensitive' } },
-                { architecture: { contains: search, mode: 'insensitive' } },
-                { gpuModel: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-        ...(manufacturer
-          ? { manufacturer: { contains: manufacturer, mode: 'insensitive' } }
-          : {}),
-      },
+    // Always run count query for consistent pagination
+    const total = await ctx.prisma.soC.count({ where })
+
+    // Get SoCs with pagination
+    const socs = await ctx.prisma.soC.findMany({
+      where,
       include: {
-        _count: {
-          select: {
-            devices: true,
-          },
-        },
+        _count: { select: { devices: true } },
       },
-      take: limit,
       orderBy,
+      skip: actualOffset,
+      take: effectiveLimit,
     })
+
+    return {
+      socs,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        page: page ?? Math.floor(actualOffset / limit) + 1,
+        offset: actualOffset,
+        limit: effectiveLimit,
+      },
+    }
   }),
 
   byId: publicProcedure

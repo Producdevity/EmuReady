@@ -23,8 +23,9 @@ export const SortDirection = z.enum(['asc', 'desc'])
 export const GetSoCsSchema = z
   .object({
     search: z.string().optional(),
-    manufacturer: z.string().optional(),
-    limit: z.number().int().positive().max(100).optional(),
+    limit: z.number().default(20),
+    offset: z.number().default(0),
+    page: z.number().optional(),
     sortField: SoCSortField.optional(),
     sortDirection: SortDirection.optional(),
   })
