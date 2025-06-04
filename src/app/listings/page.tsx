@@ -62,9 +62,9 @@ function ListingsPage() {
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
 
   const systemsQuery = api.systems.get.useQuery()
-  const devicesQuery = api.devices.get.useQuery()
-  const socsQuery = api.socs.get.useQuery()
-  const emulatorsQuery = api.emulators.get.useQuery()
+  const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
+  const socsQuery = api.socs.get.useQuery({ limit: 1000 })
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 1000 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
