@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Get headers
   const headerPayload = await headers()
   const svixId = headerPayload.get('svix-id')
   const svixTimestamp = headerPayload.get('svix-timestamp')
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing svix headers' }, { status: 400 })
   }
 
-  // Get body
   const payload = await request.text()
 
   // Verify webhook
