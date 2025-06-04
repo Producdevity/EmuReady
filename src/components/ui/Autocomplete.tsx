@@ -266,10 +266,10 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     inputRef.current?.focus()
   }
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (ev: KeyboardEvent<HTMLInputElement>) => {
     if (disabled) return
 
-    if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    if (!isOpen && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) {
       // Open dropdown and trigger search
       if (!loadItems && staticItems && staticItems.length > 0) {
         performSearch(inputValue).catch(console.error)
@@ -279,7 +279,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       return
     }
 
-    if (!isOpen && e.key !== 'Tab') {
+    if (!isOpen && ev.key !== 'Tab') {
       // If closed and user types more, trigger search
       if (inputValue.length >= minCharsToTrigger && !loadItems) {
         // for static items, re-filter
@@ -290,22 +290,22 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       }
     }
 
-    switch (e.key) {
+    switch (ev.key) {
       case 'ArrowDown':
-        e.preventDefault()
+        ev.preventDefault()
         setHighlightedIndex((prev) =>
           prev < suggestions.length - 1 ? prev + 1 : 0,
         )
         break
       case 'ArrowUp':
-        e.preventDefault()
+        ev.preventDefault()
         setHighlightedIndex((prev) =>
           prev > 0 ? prev - 1 : suggestions.length - 1,
         )
         break
       case 'Enter':
         if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
-          e.preventDefault()
+          ev.preventDefault()
           handleOptionClick(suggestions[highlightedIndex])
         }
         break
