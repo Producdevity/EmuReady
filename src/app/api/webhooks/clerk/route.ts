@@ -27,6 +27,8 @@ type ClerkWebhookEvent = {
 
 export async function POST(request: NextRequest) {
   console.log('🔗 Webhook received at:', new Date().toISOString())
+  console.log('🌍 Environment:', process.env.NODE_ENV)
+  console.log('📍 Request URL:', request.url)
 
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
 
@@ -48,6 +50,8 @@ export async function POST(request: NextRequest) {
     svixId: svixId ? 'present' : 'missing',
     svixTimestamp: svixTimestamp ? 'present' : 'missing',
     svixSignature: svixSignature ? 'present' : 'missing',
+    contentType: headerPayload.get('content-type'),
+    userAgent: headerPayload.get('user-agent'),
   })
 
   if (!svixId || !svixTimestamp || !svixSignature) {
@@ -58,6 +62,7 @@ export async function POST(request: NextRequest) {
   // Get body
   const payload = await request.text()
   console.log('📦 Webhook payload length:', payload.length)
+  console.log('📦 Webhook payload preview:', `${payload.substring(0, 200)}...`)
 
   // Verify webhook
   const webhook = new Webhook(WEBHOOK_SECRET)
@@ -71,8 +76,13 @@ export async function POST(request: NextRequest) {
     }) as ClerkWebhookEvent
     console.log('✅ Webhook signature verified successfully')
     console.log('📝 Event type:', event.type)
+    console.log('👤 User ID:', event.data.id)
   } catch (error) {
     console.error('❌ Webhook verification failed:', error)
+    console.error('🔍 Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
       { error: 'Invalid webhook signature' },
       { status: 400 },
@@ -102,6 +112,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('❌ Webhook handler error:', error)
+    console.error('🔍 Handler error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      cause: error instanceof Error ? error.cause : undefined,
+    })
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 },
