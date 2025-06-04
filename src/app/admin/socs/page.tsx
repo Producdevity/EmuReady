@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -17,7 +18,6 @@ import useColumnVisibility, {
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterInput } from '@/types/trpc'
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 type SocSortField = 'name' | 'manufacturer' | 'devicesCount'
 
@@ -35,7 +35,9 @@ const SOCS_COLUMNS: ColumnDefinition[] = [
 function AdminSoCsPage() {
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<SocSortField | null>(null)
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(
+    null,
+  )
 
   const columnVisibility = useColumnVisibility(SOCS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSoCs,
@@ -328,7 +330,7 @@ function AdminSoCsPage() {
                         onClick={() => openModal(soc)}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />
+                        <Pencil className="h-4 w-4 mr-1" />
                         Edit
                       </button>
                       <button
@@ -336,7 +338,7 @@ function AdminSoCsPage() {
                         onClick={() => handleDelete(soc.id, soc.name)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 inline-flex items-center ml-2"
                       >
-                        <TrashIcon className="h-4 w-4 mr-1" />
+                        <Trash2 className="h-4 w-4 mr-1" />
                         Delete
                       </button>
                     </td>
