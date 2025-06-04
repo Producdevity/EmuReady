@@ -2,7 +2,7 @@
 
 import { Controller } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
-import { HardDrive, Info } from 'lucide-react'
+import { MonitorSmartphone, Info } from 'lucide-react'
 import { type RouterInput } from '@/types/trpc'
 import { type Control } from 'react-hook-form'
 import { type Nullable } from '@/types/utils'
@@ -41,7 +41,7 @@ function DeviceSelector(props: Props) {
         render={({ field }) => (
           <Autocomplete<DeviceOption>
             label="Device"
-            leftIcon={<HardDrive className="w-5 h-5" />}
+            leftIcon={<MonitorSmartphone className="w-5 h-5" />}
             value={field.value}
             onChange={(value) => {
               field.onChange(value)
