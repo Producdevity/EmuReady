@@ -1,13 +1,13 @@
 'use client'
 
-import { CreateListingSchema } from '@/schemas/listing'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { type z } from 'zod'
+import { Zap, FileText } from 'lucide-react'
 import { api } from '@/lib/api'
-import { CustomFieldType, type CustomFieldDefinition } from '@orm'
+import { CustomFieldType } from '@orm'
 import {
   Input,
   Button,
@@ -15,109 +15,22 @@ import {
   type AutocompleteOptionBase,
   LoadingSpinner,
 } from '@/components/ui'
-import { Zap, FileText } from 'lucide-react'
 import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import CustomFieldRenderer from './components/CustomFieldRenderer'
 import FormValidationSummary from './components/FormValidationSummary'
-import GameSelector from './components/GameSelector'
-import EmulatorSelector from './components/EmulatorSelector'
-import DeviceSelector from './components/DeviceSelector'
+import GameSelector from './components/input-selectors/GameSelector'
+import EmulatorSelector from './components/input-selectors/EmulatorSelector'
+import DeviceSelector from './components/input-selectors/DeviceSelector'
+import listingFormSchema from './form-schemas/listingFormSchema'
+import createDynamicListingSchema, {
+  type CustomFieldOptionUI,
+  type CustomFieldDefinitionWithOptions,
+} from './form-schemas/createDynamicListingSchema'
 
 export type ListingFormValues = RouterInput['listings']['create']
-
-const listingFormSchema = CreateListingSchema.extend({
-  gameId: z.string().min(1, 'Game is required'),
-  deviceId: z.string().min(1, 'Device is required'),
-  emulatorId: z.string().min(1, 'Emulator is required'),
-  performanceId: z.coerce.number().min(1, 'Performance rating is required'),
-})
-
-// Dynamic schema builder for custom field validation with specific field errors
-function createDynamicListingSchema(
-  customFields: CustomFieldDefinitionWithOptions[],
-) {
-  if (customFields.length === 0) return listingFormSchema
-
-  // Create dynamic validation for each custom field
-  const customFieldValidation = z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
-    .optional()
-    .superRefine((values, ctx) => {
-      if (!values) return
-
-      customFields.forEach((field, index) => {
-        if (!field.isRequired) return
-
-        const fieldValue = values.find(
-          (cfv) => cfv.customFieldDefinitionId === field.id,
-        )
-
-        let isValid = true
-        const errorMessage = `${field.label} is required`
-
-        if (!fieldValue) {
-          isValid = false
-        } else {
-          // Validate based on field type
-          switch (field.type) {
-            case CustomFieldType.TEXT:
-            case CustomFieldType.TEXTAREA:
-            case CustomFieldType.URL:
-              if (
-                !fieldValue.value ||
-                (typeof fieldValue.value === 'string' &&
-                  fieldValue.value.trim() === '')
-              ) {
-                isValid = false
-              }
-              break
-            case CustomFieldType.SELECT:
-              if (!fieldValue.value || fieldValue.value === '') {
-                isValid = false
-              }
-              break
-            case CustomFieldType.BOOLEAN:
-              // Boolean fields are always valid (true or false)
-              isValid = true
-              break
-          }
-        }
-
-        if (!isValid) {
-          // Find the actual index in the values array for this field
-          const valueIndex = values.findIndex(
-            (v) => v.customFieldDefinitionId === field.id,
-          )
-          if (valueIndex >= 0) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: errorMessage,
-              path: [valueIndex, 'value'],
-            })
-          } else {
-            // If the field value doesn't exist, add it at the expected index
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: errorMessage,
-              path: [index, 'value'],
-            })
-          }
-        }
-      })
-    })
-
-  return listingFormSchema.extend({
-    customFieldValues: customFieldValidation,
-  })
-}
 
 interface GameOption extends AutocompleteOptionBase {
   id: string
@@ -149,15 +62,6 @@ interface DeviceOption extends AutocompleteOptionBase {
     name: string
     manufacturer: string
   }
-}
-
-interface CustomFieldOptionUI {
-  value: string
-  label: string
-}
-
-interface CustomFieldDefinitionWithOptions extends CustomFieldDefinition {
-  parsedOptions?: CustomFieldOptionUI[]
 }
 
 function AddListingPage() {

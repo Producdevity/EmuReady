@@ -26,15 +26,16 @@ export interface CustomFieldDefinitionWithOptions {
   parsedOptions?: CustomFieldOptionUI[]
 }
 
+export interface ValidationRules {
+  required: string | boolean
+  validate?: (value: unknown) => boolean | string
+}
+
 interface Props {
   fieldDef: CustomFieldDefinitionWithOptions
   index: number
   control: Control<ListingFormValues>
   errorMessage: string | undefined
-}
-export interface ValidationRules {
-  required: string | boolean
-  validate?: (value: unknown) => boolean | string
 }
 
 function CustomFieldRenderer(props: Props) {

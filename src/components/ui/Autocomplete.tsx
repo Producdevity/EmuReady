@@ -73,6 +73,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const [isLoading, setIsLoading] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const [hasInitialLoad, setHasInitialLoad] = useState(false)
+  const [isUserTyping, setIsUserTyping] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null) // Changed to ul
@@ -93,6 +94,9 @@ function Autocomplete<T extends AutocompleteOptionBase>({
 
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
+    // Don't override input value when user is actively typing
+    if (isUserTyping) return
+
     // If value is null or undefined, clear the input
     if (value == null) {
       setInputValue('')
@@ -122,7 +126,15 @@ function Autocomplete<T extends AutocompleteOptionBase>({
 
     // If we reach here and no item was found, but value is not null,
     // it might mean the item hasn't been loaded yet, so keep current input
-  }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems])
+  }, [
+    value,
+    staticItems,
+    optionToValue,
+    optionToLabel,
+    suggestions,
+    loadItems,
+    isUserTyping,
+  ])
 
   const performSearch = useCallback(
     async (query: string) => {
@@ -193,25 +205,18 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value
     setInputValue(newQuery)
+    setIsUserTyping(true)
 
-    // Only clear selection if we had a selection and user is typing something different
-    if (value != null && newQuery !== '') {
-      // Find the current selected item to compare
-      const currentSelectedItem =
-        staticItems?.find((item) => optionToValue(item) === value) ??
-        suggestions.find((item) => optionToValue(item) === value)
-
-      // Only clear if the typed text doesn't match the selected item's label
-      if (
-        !currentSelectedItem ||
-        optionToLabel(currentSelectedItem) !== newQuery
-      ) {
-        onChange(null) // Clear selection when user starts typing something different
-      }
+    // Clear the user typing flag after a delay to allow controlled updates
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
     }
+    debounceTimeoutRef.current = setTimeout(() => {
+      setIsUserTyping(false)
+    }, debounceTime + 100)
 
     if (newQuery.length === 0) {
-      // Clear selection when input is empty
+      // Clear selection when input is completely empty
       if (value != null) {
         onChange(null)
       }
@@ -224,6 +229,22 @@ function Autocomplete<T extends AutocompleteOptionBase>({
         setIsOpen(false)
       }
     } else {
+      // Check if we need to clear selection when typing something different
+      if (value != null) {
+        const currentSelectedItem =
+          staticItems?.find((item) => optionToValue(item) === value) ??
+          suggestions.find((item) => optionToValue(item) === value)
+
+        // Clear selection if the typed text doesn't match the selected item's label
+        if (
+          currentSelectedItem &&
+          optionToLabel(currentSelectedItem) !== newQuery
+        ) {
+          // Delay the onChange call slightly to avoid race condition with useEffect
+          setTimeout(() => onChange(null), 0)
+        }
+      }
+
       debouncedSearch(newQuery)
     }
   }
@@ -232,6 +253,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     const itemValue = optionToValue(item)
     const itemLabel = optionToLabel(item)
     setInputValue(itemLabel)
+    setIsUserTyping(false)
     onChange(itemValue)
     setIsOpen(false)
     // Don't clear suggestions immediately to allow useEffect to work
@@ -366,6 +388,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current)
       }
+      setIsUserTyping(false)
     }
   }, [])
 
