@@ -113,10 +113,7 @@ function ListingFilters(props: FiltersProps) {
   )
 
   return (
-    <motion.div
-      className="relative"
-      initial={false}
-    >
+    <motion.div className="relative" initial={false} style={{ zIndex: 10 }}>
       {/* Redesigned Toggle Button with Morphing Icon */}
       <motion.button
         onClick={props.onToggleCollapse}
@@ -162,7 +159,7 @@ function ListingFilters(props: FiltersProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg"
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             >
               {totalActiveFilters}
             </motion.div>
@@ -172,14 +169,25 @@ function ListingFilters(props: FiltersProps) {
 
       {/* Enhanced Sidebar */}
       <motion.aside
-        className="bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 shadow-xl overflow-hidden relative"
+        className="bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 shadow-xl relative"
         initial={false}
         animate={{
-          width: props.isCollapsed ? (isClient ? (window.innerWidth >= 768 ? 80 : 0) : 80) : (isClient ? (window.innerWidth >= 768 ? 320 : '100%') : 320),
+          width: props.isCollapsed
+            ? isClient
+              ? window.innerWidth >= 768
+                ? 80
+                : 0
+              : 80
+            : isClient
+              ? window.innerWidth >= 768
+                ? 320
+                : '100%'
+              : 320,
           borderRadius: props.isCollapsed ? 20 : 24,
           padding: props.isCollapsed ? 16 : 24,
         }}
         transition={{ duration: 0.4, ease: 'easeInOut' }}
+        style={{ zIndex: 10 }}
       >
         <AnimatePresence mode="wait">
           {props.isCollapsed ? (
@@ -200,7 +208,11 @@ function ListingFilters(props: FiltersProps) {
                       initial={{ x: -20, opacity: 0, scale: 0.8 }}
                       animate={{ x: 0, opacity: 1, scale: 1 }}
                       exit={{ x: -20, opacity: 0, scale: 0.8 }}
-                      transition={{ delay: 0.05, type: "spring", stiffness: 300 }}
+                      transition={{
+                        delay: 0.05,
+                        type: 'spring',
+                        stiffness: 300,
+                      }}
                       className="relative group"
                     >
                       <motion.div
@@ -214,7 +226,11 @@ function ListingFilters(props: FiltersProps) {
                         className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.1, type: "spring", stiffness: 400 }}
+                        transition={{
+                          delay: 0.1,
+                          type: 'spring',
+                          stiffness: 400,
+                        }}
                       >
                         {filterCounts.systems}
                       </motion.div>
@@ -226,7 +242,11 @@ function ListingFilters(props: FiltersProps) {
                       initial={{ x: -20, opacity: 0, scale: 0.8 }}
                       animate={{ x: 0, opacity: 1, scale: 1 }}
                       exit={{ x: -20, opacity: 0, scale: 0.8 }}
-                      transition={{ delay: 0.1, type: "spring", stiffness: 300 }}
+                      transition={{
+                        delay: 0.1,
+                        type: 'spring',
+                        stiffness: 300,
+                      }}
                       className="relative group"
                     >
                       <motion.div
@@ -240,7 +260,11 @@ function ListingFilters(props: FiltersProps) {
                         className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.15, type: "spring", stiffness: 400 }}
+                        transition={{
+                          delay: 0.15,
+                          type: 'spring',
+                          stiffness: 400,
+                        }}
                       >
                         {filterCounts.devices}
                       </motion.div>
@@ -252,7 +276,11 @@ function ListingFilters(props: FiltersProps) {
                       initial={{ x: -20, opacity: 0, scale: 0.8 }}
                       animate={{ x: 0, opacity: 1, scale: 1 }}
                       exit={{ x: -20, opacity: 0, scale: 0.8 }}
-                      transition={{ delay: 0.15, type: "spring", stiffness: 300 }}
+                      transition={{
+                        delay: 0.15,
+                        type: 'spring',
+                        stiffness: 300,
+                      }}
                       className="relative group"
                     >
                       <motion.div
@@ -266,7 +294,11 @@ function ListingFilters(props: FiltersProps) {
                         className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
+                        transition={{
+                          delay: 0.2,
+                          type: 'spring',
+                          stiffness: 400,
+                        }}
                       >
                         {filterCounts.socs}
                       </motion.div>
@@ -278,7 +310,11 @@ function ListingFilters(props: FiltersProps) {
                       initial={{ x: -20, opacity: 0, scale: 0.8 }}
                       animate={{ x: 0, opacity: 1, scale: 1 }}
                       exit={{ x: -20, opacity: 0, scale: 0.8 }}
-                      transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+                      transition={{
+                        delay: 0.2,
+                        type: 'spring',
+                        stiffness: 300,
+                      }}
                       className="relative group"
                     >
                       <motion.div
@@ -292,7 +328,11 @@ function ListingFilters(props: FiltersProps) {
                         className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.25, type: "spring", stiffness: 400 }}
+                        transition={{
+                          delay: 0.25,
+                          type: 'spring',
+                          stiffness: 400,
+                        }}
                       >
                         {filterCounts.emulators}
                       </motion.div>
@@ -304,7 +344,11 @@ function ListingFilters(props: FiltersProps) {
                       initial={{ x: -20, opacity: 0, scale: 0.8 }}
                       animate={{ x: 0, opacity: 1, scale: 1 }}
                       exit={{ x: -20, opacity: 0, scale: 0.8 }}
-                      transition={{ delay: 0.25, type: "spring", stiffness: 300 }}
+                      transition={{
+                        delay: 0.25,
+                        type: 'spring',
+                        stiffness: 300,
+                      }}
                       className="relative group"
                     >
                       <motion.div
@@ -318,7 +362,11 @@ function ListingFilters(props: FiltersProps) {
                         className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.3, type: "spring", stiffness: 400 }}
+                        transition={{
+                          delay: 0.3,
+                          type: 'spring',
+                          stiffness: 400,
+                        }}
                       >
                         {filterCounts.performance}
                       </motion.div>
@@ -330,7 +378,11 @@ function ListingFilters(props: FiltersProps) {
                       initial={{ x: -20, opacity: 0, scale: 0.8 }}
                       animate={{ x: 0, opacity: 1, scale: 1 }}
                       exit={{ x: -20, opacity: 0, scale: 0.8 }}
-                      transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
+                      transition={{
+                        delay: 0.3,
+                        type: 'spring',
+                        stiffness: 300,
+                      }}
                       className="relative group"
                     >
                       <motion.div
@@ -344,7 +396,11 @@ function ListingFilters(props: FiltersProps) {
                         className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.35, type: "spring", stiffness: 400 }}
+                        transition={{
+                          delay: 0.35,
+                          type: 'spring',
+                          stiffness: 400,
+                        }}
                       >
                         1
                       </motion.div>
@@ -360,7 +416,7 @@ function ListingFilters(props: FiltersProps) {
                     initial={{ y: 20, opacity: 0, scale: 0.8 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     exit={{ y: 20, opacity: 0, scale: 0.8 }}
-                    transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                    transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
                     onClick={clearAllFilters}
                     className="mt-2 p-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
                     title="Clear all filters"
@@ -409,6 +465,7 @@ function ListingFilters(props: FiltersProps) {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
+                style={{ position: 'relative', zIndex: 20 }}
               >
                 <MultiSelect
                   label="Systems"

@@ -24,8 +24,12 @@ interface Props {
 function MultiSelect(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>(
+    'bottom',
+  )
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   const filteredOptions = props.options.filter((option) =>
     option.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
@@ -47,6 +51,32 @@ function MultiSelect(props: Props) {
 
   const maxDisplayed = props.maxDisplayed ?? 2
   const showSelectedBadges = props.showSelectedBadges ?? true
+
+  // Calculate dropdown position based on available space
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - buttonRect.bottom
+      const spaceAbove = buttonRect.top
+
+      // Estimate dropdown height (max-height is 240px + padding)
+      const estimatedDropdownHeight = Math.min(
+        280,
+        filteredOptions.length * 40 + 100,
+      )
+
+      // Position upward if there's not enough space below but enough space above
+      if (
+        spaceBelow < estimatedDropdownHeight &&
+        spaceAbove > estimatedDropdownHeight
+      ) {
+        setDropdownPosition('top')
+      } else {
+        setDropdownPosition('bottom')
+      }
+    }
+  }, [isOpen, filteredOptions.length])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -122,6 +152,7 @@ function MultiSelect(props: Props) {
             transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500`,
             isOpen ? 'ring-2 ring-blue-500 border-blue-500' : '',
           )}
+          ref={buttonRef}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -174,9 +205,13 @@ function MultiSelect(props: Props) {
 
         {isOpen && (
           <div
-            className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800
+            className={`absolute z-50 w-full bg-white dark:bg-gray-800
               border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg
-              animate-in fade-in-0 zoom-in-95 duration-200"
+              animate-in fade-in-0 zoom-in-95 duration-200 ${
+                dropdownPosition === 'top'
+                  ? 'bottom-full mb-1'
+                  : 'top-full mt-1'
+              }`}
           >
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">
