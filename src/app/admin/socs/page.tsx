@@ -11,7 +11,9 @@ import {
   ColumnVisibilityControl,
   AdminTableContainer,
   SortableHeader,
+  Pagination,
 } from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
@@ -33,25 +35,26 @@ const SOCS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminSoCsPage() {
-  const [search, setSearch] = useState('')
-  const [sortField, setSortField] = useState<SocSortField | null>(null)
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(
-    null,
-  )
+  const table = useAdminTable<SocSortField>()
 
   const columnVisibility = useColumnVisibility(SOCS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSoCs,
   })
 
   const {
-    data: socs,
+    data,
     isLoading: socsLoading,
     refetch,
   } = api.socs.get.useQuery({
-    search: search || undefined,
-    sortField: sortField ?? undefined,
-    sortDirection: sortDirection ?? undefined,
+    search: table.search || undefined,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
+    page: table.page,
+    limit: table.limit,
   })
+
+  const socs = data?.socs ?? []
+  const pagination = data?.pagination
 
   const createSoC = api.socs.create.useMutation()
   const updateSoC = api.socs.update.useMutation()
@@ -67,28 +70,6 @@ function AdminSoCsPage() {
   const [gpuModel, setGpuModel] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  const handleSort = (field: string) => {
-    const socField = field as SocSortField
-    let newSortDirection: 'asc' | 'desc' | null
-
-    if (sortField === socField) {
-      if (sortDirection === 'asc') {
-        newSortDirection = 'desc'
-      } else if (sortDirection === 'desc') {
-        setSortField(null)
-        setSortDirection(null)
-        return
-      } else {
-        newSortDirection = 'asc'
-      }
-    } else {
-      setSortField(socField)
-      newSortDirection = 'asc'
-    }
-
-    setSortDirection(newSortDirection)
-  }
 
   const openModal = (soc?: {
     id: string
@@ -168,9 +149,7 @@ function AdminSoCsPage() {
   }
 
   const clearFilters = () => {
-    setSearch('')
-    setSortField(null)
-    setSortDirection(null)
+    table.resetFilters()
   }
 
   const isLoading = socsLoading
@@ -201,12 +180,12 @@ function AdminSoCsPage() {
           <Input
             type="text"
             placeholder="Search SoCs by name, manufacturer, architecture..."
-            value={search}
-            onChange={(ev) => setSearch(ev.target.value)}
+            value={table.search}
+            onChange={table.handleSearchChange}
             className="w-full"
           />
         </div>
-        {(search || sortField) && (
+        {(table.search || table.sortField) && (
           <Button variant="outline" onClick={clearFilters}>
             Clear Filters
           </Button>
@@ -215,15 +194,15 @@ function AdminSoCsPage() {
 
       {isLoading && <LoadingSpinner text="Loading SoCs..." />}
 
-      {!isLoading && socs?.length === 0 && (
+      {!isLoading && socs.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
-            {search ? 'No SoCs match your search criteria.' : 'No SoCs found.'}
+            {table.search ? 'No SoCs match your search criteria.' : 'No SoCs found.'}
           </p>
         </div>
       )}
 
-      {!isLoading && socs && socs.length > 0 && (
+      {!isLoading && socs.length > 0 && (
         <AdminTableContainer>
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -232,18 +211,18 @@ function AdminSoCsPage() {
                   <SortableHeader
                     label="Name"
                     field="name"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
                   />
                 )}
                 {columnVisibility.isColumnVisible('manufacturer') && (
                   <SortableHeader
                     label="Manufacturer"
                     field="manufacturer"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
                   />
                 )}
                 {columnVisibility.isColumnVisible('architecture') && (
@@ -270,9 +249,9 @@ function AdminSoCsPage() {
                   <SortableHeader
                     label="Devices"
                     field="devicesCount"
-                    currentSortField={sortField}
-                    currentSortDirection={sortDirection}
-                    onSort={handleSort}
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
                   />
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
@@ -348,6 +327,14 @@ function AdminSoCsPage() {
             </tbody>
           </table>
         </AdminTableContainer>
+      )}
+
+      {pagination && pagination.pages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          onPageChange={table.setPage}
+        />
       )}
 
       {modalOpen && (

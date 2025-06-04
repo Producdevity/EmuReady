@@ -150,7 +150,7 @@ function ProcessedListingsPage() {
       </p>
 
       <div className="mb-6 flex items-center gap-4">
-        <div className="flex-1 max-w-md">
+        <div className="flex-1">
           <Input
             type="text"
             placeholder="Search by game name, author, or notes..."
@@ -159,8 +159,9 @@ function ProcessedListingsPage() {
             className="w-full"
           />
         </div>
-        <div className="max-w-xs">
+        <div className="ml-auto max-w-xs">
           <SelectInput
+            hideLabel
             label="Filter by Status"
             options={statusOptions}
             value={filterStatus ?? 'all'}

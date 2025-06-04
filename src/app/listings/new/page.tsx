@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { type z } from 'zod'
-import { Zap, FileText } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { api } from '@/lib/api'
 import { CustomFieldType } from '@orm'
 import {
   Input,
   Button,
-  SelectInput,
   type AutocompleteOptionBase,
   LoadingSpinner,
 } from '@/components/ui'
@@ -24,6 +23,7 @@ import FormValidationSummary from './components/FormValidationSummary'
 import GameSelector from './components/input-selectors/GameSelector'
 import EmulatorSelector from './components/input-selectors/EmulatorSelector'
 import DeviceSelector from './components/input-selectors/DeviceSelector'
+import PerformanceSelector from './components/input-selectors/PerformanceSelector'
 import listingFormSchema from './form-schemas/listingFormSchema'
 import createDynamicListingSchema, {
   type CustomFieldOptionUI,
@@ -156,7 +156,7 @@ function AddListingPage() {
 
         // Get full emulator data with systems for filtering
         const emulatorsWithSystems = await Promise.all(
-          result.map(async (emulator) => {
+          result.emulators.map(async (emulator) => {
             try {
               const fullEmulator = await utils.emulators.byId.fetch({
                 id: emulator.id,
@@ -208,7 +208,8 @@ function AddListingPage() {
           search: query,
           limit: 50,
         })
-        return result
+        const devices = result.devices || []
+        return devices
           .filter((device) => device.soc !== null) // Filter out devices without SoCs
           .map((device) => ({
             id: device.id,
@@ -404,30 +405,11 @@ function AddListingPage() {
 
           {/* Performance Selection */}
           <div>
-            <Controller
-              name="performanceId"
+            <PerformanceSelector
               control={control}
-              render={({ field }) => (
-                <SelectInput
-                  label="Performance"
-                  leftIcon={<Zap className="w-5 h-5" />}
-                  options={
-                    performanceScalesData?.map((p) => ({
-                      id: String(p.id),
-                      name: p.label,
-                    })) ?? []
-                  }
-                  value={String(field.value ?? '')}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              )}
+              performanceScalesData={performanceScalesData}
+              errorMessage={String(formState.errors.performanceId?.message ?? '')}
             />
-            {formState.errors.performanceId && (
-              <p className="text-red-500 text-xs mt-1">
-                {String(formState.errors.performanceId.message ?? '')}
-              </p>
-            )}
-            {/*  TODO: show the description of the performance scale*/}
           </div>
 
           {/* Notes */}

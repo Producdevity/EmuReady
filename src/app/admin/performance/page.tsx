@@ -1,12 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { Search } from 'lucide-react'
 import { api } from '@/lib/api'
 import storageKeys from '@/data/storageKeys'
-import { ColumnVisibilityControl, Input, Button, LoadingSpinner } from '@/components/ui'
+import { 
+  ColumnVisibilityControl, 
+  Input, 
+  Button, 
+  LoadingSpinner,
+  SortableHeader,
+  AdminTableContainer 
+} from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+
+type PerformanceScaleSortField = 'label' | 'rank'
 
 const PERFORMANCE_COLUMNS: ColumnDefinition[] = [
   { key: 'id', label: 'ID', defaultVisible: true },
@@ -16,23 +26,17 @@ const PERFORMANCE_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminPerformancePage() {
-  const [search, setSearch] = useState('')
+  const table = useAdminTable<PerformanceScaleSortField>()
 
   const columnVisibility = useColumnVisibility(PERFORMANCE_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminPerformance,
   })
 
-  const { data: performanceScales, isLoading } = api.performanceScales.get.useQuery()
-
-  // Filter performance scales based on search
-  const filteredPerformanceScales = performanceScales?.filter((scale) =>
-    scale.label.toLowerCase().includes(search.toLowerCase()) ||
-    (scale.description && scale.description.toLowerCase().includes(search.toLowerCase()))
-  ) ?? []
-
-  const clearFilters = () => {
-    setSearch('')
-  }
+  const { data: performanceScales, isLoading } = api.performanceScales.get.useQuery({
+    search: table.search || undefined,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
+  })
 
   return (
     <div className="space-y-6">
@@ -54,16 +58,19 @@ function AdminPerformancePage() {
       {/* Search Bar */}
       <div className="flex items-center gap-4">
         <div className="flex-1 max-w-md">
-          <Input
-            type="text"
-            placeholder="Search performance scales by name or description..."
-            value={search}
-            onChange={(ev) => setSearch(ev.target.value)}
-            className="w-full"
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              type="text"
+              placeholder="Search performance scales by name or description..."
+              value={table.search}
+              onChange={table.handleSearchChange}
+              className="w-full pl-10"
+            />
+          </div>
         </div>
-        {search && (
-          <Button variant="outline" onClick={clearFilters}>
+        {table.search && (
+          <Button variant="outline" onClick={() => table.setSearch('')}>
             Clear Filters
           </Button>
         )}
@@ -71,16 +78,16 @@ function AdminPerformancePage() {
 
       {isLoading && <LoadingSpinner text="Loading performance scales..." />}
 
-      {!isLoading && filteredPerformanceScales.length === 0 && (
+      {!isLoading && (!performanceScales || performanceScales.length === 0) && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
-            {search ? 'No performance scales match your search criteria.' : 'No performance scales found.'}
+            {table.search ? 'No performance scales match your search criteria.' : 'No performance scales found.'}
           </p>
         </div>
       )}
 
-      {!isLoading && filteredPerformanceScales.length > 0 && (
-        <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg">
+      {!isLoading && performanceScales && performanceScales.length > 0 && (
+        <AdminTableContainer>
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
@@ -90,9 +97,13 @@ function AdminPerformancePage() {
                   </th>
                 )}
                 {columnVisibility.isColumnVisible('label') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Performance Level
-                  </th>
+                  <SortableHeader
+                    label="Performance Level"
+                    field="label"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('description') && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -100,14 +111,18 @@ function AdminPerformancePage() {
                   </th>
                 )}
                 {columnVisibility.isColumnVisible('rank') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Rank
-                  </th>
+                  <SortableHeader
+                    label="Rank"
+                    field="rank"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredPerformanceScales.map((scale) => (
+              {performanceScales.map((scale) => (
                 <tr
                   key={scale.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
@@ -136,7 +151,7 @@ function AdminPerformancePage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </AdminTableContainer>
       )}
     </div>
   )

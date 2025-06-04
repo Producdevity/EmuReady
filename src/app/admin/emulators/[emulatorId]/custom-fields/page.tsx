@@ -4,15 +4,17 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, Copy } from 'lucide-react'
 import CustomFieldList from './components/CustomFieldList'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
+import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 
 export default function EmulatorCustomFieldsPage() {
   const params = useParams()
   const emulatorId = params.emulatorId as string
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] = useState(false)
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
   const {
@@ -31,20 +33,32 @@ export default function EmulatorCustomFieldsPage() {
     { enabled: !!emulatorId },
   )
 
-  const handleOpenCreateModal = () => {
+  function handleOpenCreateModal() {
     setEditingFieldId(null)
     setIsFormModalOpen(true)
   }
 
-  const handleOpenEditModal = (fieldId: string) => {
+  function handleOpenEditModal(fieldId: string) {
     setEditingFieldId(fieldId)
     setIsFormModalOpen(true)
   }
 
-  const handleCloseModal = () => {
+  function handleCloseModal() {
     setIsFormModalOpen(false)
     setEditingFieldId(null)
-    refetchCustomFields() // Refetch when modal closes to see updates
+    refetchCustomFields()
+  }
+
+  function handleOpenApplyTemplatesModal() {
+    setIsApplyTemplatesModalOpen(true)
+  }
+
+  function handleCloseApplyTemplatesModal() {
+    setIsApplyTemplatesModalOpen(false)
+  }
+
+  function handleTemplateApplySuccess() {
+    refetchCustomFields()
   }
 
   if (isLoadingEmulator || isLoadingCustomFields) {
@@ -69,9 +83,14 @@ export default function EmulatorCustomFieldsPage() {
         <h1 className="text-3xl font-bold">
           Custom Fields for {emulator.name}
         </h1>
-        <Button onClick={handleOpenCreateModal}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
-        </Button>
+        <div className="flex space-x-3">
+          <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
+            <Copy className="mr-2 h-4 w-4" /> Apply Templates
+          </Button>
+          <Button onClick={handleOpenCreateModal}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
+          </Button>
+        </div>
       </div>
 
       {customFields && customFields.length > 0 ? (
@@ -82,9 +101,19 @@ export default function EmulatorCustomFieldsPage() {
           emulatorId={emulatorId}
         />
       ) : (
-        <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-          No custom fields defined for this emulator yet.
-        </p>
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
+            No custom fields defined for this emulator yet.
+          </p>
+          <div className="mt-4 flex justify-center space-x-3">
+            <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
+              <Copy className="mr-2 h-4 w-4" /> Apply Templates
+            </Button>
+            <Button onClick={handleOpenCreateModal}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
+            </Button>
+          </div>
+        </div>
       )}
 
       {isFormModalOpen && (
@@ -93,6 +122,15 @@ export default function EmulatorCustomFieldsPage() {
           fieldIdToEdit={editingFieldId}
           isOpen={isFormModalOpen}
           onClose={handleCloseModal}
+        />
+      )}
+
+      {isApplyTemplatesModalOpen && (
+        <ApplyTemplatesModal
+          emulatorId={emulatorId}
+          isOpen={isApplyTemplatesModalOpen}
+          onClose={handleCloseApplyTemplatesModal}
+          onSuccess={handleTemplateApplySuccess}
         />
       )}
     </div>

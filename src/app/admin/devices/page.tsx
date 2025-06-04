@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { isEmpty } from 'remeda'
 import Link from 'next/link'
+import { Search } from 'lucide-react'
 import { api } from '@/lib/api'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -9,9 +11,12 @@ import {
   Input,
   LoadingSpinner,
   ColumnVisibilityControl,
+  SortableHeader,
   AdminTableContainer,
   Autocomplete,
+  Pagination,
 } from '@/components/ui'
+import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
@@ -19,6 +24,8 @@ import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterInput } from '@/types/trpc'
 import { Pencil, Trash2 } from 'lucide-react'
+
+type DeviceSortField = 'brand' | 'modelName' | 'soc'
 
 const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'brand', label: 'Brand', defaultVisible: true },
@@ -28,18 +35,26 @@ const DEVICES_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminDevicesPage() {
+  const table = useAdminTable<DeviceSortField>()
   const columnVisibility = useColumnVisibility(DEVICES_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminDevices,
   })
 
   const {
-    data: devices,
+    data,
     isLoading: devicesLoading,
     refetch,
-  } = api.devices.get.useQuery()
+  } = api.devices.get.useQuery({
+    search: isEmpty(table.search) ? undefined : table.search,
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
+    page: table.page,
+    limit: table.limit,
+  })
   const { data: brands, isLoading: brandsLoading } =
     api.deviceBrands.get.useQuery()
-  const { data: socs, isLoading: socsLoading } = api.socs.get.useQuery()
+  const { data: socsData, isLoading: socsLoading } = api.socs.get.useQuery()
+  const socs = socsData?.socs ?? []
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deleteDevice = api.devices.delete.useMutation()
@@ -51,6 +66,9 @@ function AdminDevicesPage() {
   const [socId, setSocId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const devices = data?.devices ?? []
+  const pagination = data?.pagination
 
   const openModal = (device?: {
     id: string
@@ -161,24 +179,48 @@ function AdminDevicesPage() {
         </div>
       )}
 
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            placeholder="Search devices..."
+            value={table.search}
+            onChange={table.handleSearchChange}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <AdminTableContainer>
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               {columnVisibility.isColumnVisible('brand') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Brand
-                </th>
+                <SortableHeader
+                  label="Brand"
+                  field="brand"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
               )}
               {columnVisibility.isColumnVisible('model') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Model
-                </th>
+                <SortableHeader
+                  label="Model"
+                  field="modelName"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
               )}
               {columnVisibility.isColumnVisible('soc') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  SoC
-                </th>
+                <SortableHeader
+                  label="SoC"
+                  field="soc"
+                  currentSortField={table.sortField}
+                  currentSortDirection={table.sortDirection}
+                  onSort={table.handleSort}
+                />
               )}
               {columnVisibility.isColumnVisible('actions') && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -232,19 +274,28 @@ function AdminDevicesPage() {
                 )}
               </tr>
             ))}
-            {devices?.length === 0 && (
+            {!isLoading && devices.length === 0 && (
               <tr>
                 <td
                   colSpan={4}
                   className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                 >
-                  No devices found. Add your first device.
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {table.search ? 'No devices match your search criteria.' : 'No devices found.'}
+                  </p>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </AdminTableContainer>
+      {pagination && pagination.pages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          onPageChange={table.setPage}
+        />
+      )}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">
           <form
@@ -276,7 +327,7 @@ function AdminDevicesPage() {
             <Autocomplete
               value={socId}
               onChange={handleSocChange}
-              items={socs ?? []}
+              items={socs}
               optionToValue={(soc) => soc.id}
               optionToLabel={(soc) => `${soc.manufacturer} ${soc.name}`}
               placeholder="Select a SoC..."

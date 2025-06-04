@@ -188,9 +188,9 @@ function ListingsPage() {
         performanceIds={listingsState.performanceIds}
         searchTerm={listingsState.search}
         systems={systemsQuery.data ?? []}
-        devices={devicesQuery.data ?? []}
-        socs={socsQuery.data ?? []}
-        emulators={emulatorsQuery.data ?? []}
+        devices={devicesQuery.data?.devices ?? []}
+        socs={socsQuery.data?.socs ?? []}
+        emulators={emulatorsQuery.data?.emulators ?? []}
         performanceScales={performanceScalesQuery.data ?? []}
         onSystemChange={handleSystemChange}
         onDeviceChange={handleDeviceChange}
