@@ -203,7 +203,7 @@ function ListingsPage() {
       />
 
       {/* Main Content - Listings */}
-      <section className="flex-1 overflow-x-auto py-6 px-4">
+      <section className="flex-1 overflow-x-auto py-6 px-4 md:pl-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Game Listings

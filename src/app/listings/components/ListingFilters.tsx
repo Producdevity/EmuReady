@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Filter,
   Settings2,
+  CircleX,
 } from 'lucide-react'
 import { MultiSelect, Input } from '@/components/ui'
 import analytics from '@/lib/analytics'
@@ -116,7 +117,7 @@ function ListingFilters(props: FiltersProps) {
     <motion.div className="relative" initial={false} style={{ zIndex: 10 }}>
       <motion.button
         onClick={props.onToggleCollapse}
-        className="absolute -right-8 top-6 z-30 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 rounded-full p-3 shadow-xl md:flex hidden group"
+        className="absolute -right-4 top-2 z-30 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 rounded-full p-2 shadow-xl md:flex hidden group"
         aria-label={props.isCollapsed ? 'Expand filters' : 'Collapse filters'}
         whileHover={{
           scale: 1.1,
@@ -135,7 +136,7 @@ function ListingFilters(props: FiltersProps) {
               exit={{ scale: 0, rotate: 90 }}
               transition={{ duration: 0.3 }}
             >
-              <Filter className="w-5 h-5 text-white" />
+              <Filter className="w-4 h-4 text-white" />
             </motion.div>
           ) : (
             <motion.div
@@ -145,7 +146,7 @@ function ListingFilters(props: FiltersProps) {
               exit={{ scale: 0, rotate: -90 }}
               transition={{ duration: 0.3 }}
             >
-              <ChevronLeft className="w-5 h-5 text-white" />
+              <ChevronLeft className="w-4 h-4 text-white" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -157,7 +158,7 @@ function ListingFilters(props: FiltersProps) {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg z-50"
+              className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4.5 h-4.5 flex items-center justify-center font-bold shadow-lg z-50"
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             >
               {totalActiveFilters}
@@ -186,7 +187,9 @@ function ListingFilters(props: FiltersProps) {
         transition={{ duration: 0.4, ease: 'easeInOut' }}
         style={{ zIndex: 10, overflow: 'visible' }}
       >
-        <div className={`${props.isCollapsed ? 'p-4' : 'p-6'} transition-all duration-400`}>
+        <div
+          className={`${props.isCollapsed ? 'p-4' : 'p-6'} transition-all duration-400`}
+        >
           <AnimatePresence mode="wait">
             {props.isCollapsed ? (
               <motion.div
@@ -195,11 +198,14 @@ function ListingFilters(props: FiltersProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="hidden md:flex flex-col items-center gap-4 py-4"
+                className="hidden md:flex flex-col items-center gap-4 py-4 mt-4"
                 style={{ overflow: 'visible' }}
               >
                 {/* Filter Category Icons with Badges */}
-                <div className="flex flex-col items-center gap-4 w-full" style={{ overflow: 'visible' }}>
+                <div
+                  className="flex flex-col items-center gap-4 w-full"
+                  style={{ overflow: 'visible' }}
+                >
                   <AnimatePresence>
                     {filterCounts.systems > 0 && (
                       <motion.div
@@ -425,7 +431,7 @@ function ListingFilters(props: FiltersProps) {
                     whileTap={{ scale: 0.95 }}
                     title="Clear all filters"
                   >
-                    <Settings2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    <CircleX className="w-4 h-4 text-red-600 dark:text-red-400" />
                   </motion.button>
                 )}
               </motion.div>
