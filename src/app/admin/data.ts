@@ -40,12 +40,17 @@ export const adminNav = [
 export const superAdminNav = [
   {
     href: '/admin/users',
-    label: 'Users Management',
-    description: 'Manage users, roles, and permissions.',
+    label: 'Users',
+    description: 'Manage user accounts.',
   },
   {
     href: '/admin/processed-listings',
     label: 'Processed Listings',
-    description: 'Manage processed listings.',
+    description: 'View all processed listings.',
+  },
+  {
+    href: '/admin/custom-field-templates',
+    label: 'Field Templates',
+    description: 'Manage custom field templates.',
   },
 ]

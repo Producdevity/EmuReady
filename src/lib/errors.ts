@@ -249,6 +249,14 @@ export class ResourceError {
       ),
   }
 
+  static customFieldTemplate = {
+    notFound: () => AppError.notFound('Custom field template'),
+    alreadyExists: (name: string) =>
+      AppError.conflict(
+        `A custom field template with name "${name}" already exists`,
+      ),
+  }
+
   static performanceScale = {
     notFound: () => AppError.notFound('Performance scale'),
     labelExists: (label: string) =>

@@ -49,7 +49,7 @@ const emulators: EmulatorData[] = [
     ],
   },
   { name: 'Ryujinx', supportedSystemNames: ['Nintendo Switch'] },
-  { name: 'ShadPS4', supportedSystemNames: ['Sony PlayStation 3'] },
+  { name: 'ShadPS4', supportedSystemNames: ['Sony PlayStation 4'] },
   { name: 'Sudachi', supportedSystemNames: ['Nintendo Switch'] },
   { name: 'Vita3K', supportedSystemNames: ['Sony PlayStation Vita'] },
   {

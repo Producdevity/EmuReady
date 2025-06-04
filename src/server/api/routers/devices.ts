@@ -1,3 +1,4 @@
+import type { Prisma } from '@orm'
 import {
   createTRPCRouter,
   publicProcedure,
@@ -14,34 +15,88 @@ import {
 
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
-    const { search, brandId, socId, limit } = input ?? {}
+    const { 
+      search, 
+      brandId, 
+      socId, 
+      limit = 20, 
+      offset = 0, 
+      page, 
+      sortField, 
+      sortDirection 
+    } = input ?? {}
 
-    return ctx.prisma.device.findMany({
-      where: {
-        ...(brandId ? { brandId } : {}),
-        ...(socId ? { socId } : {}),
-        ...(search
-          ? {
-              OR: [
-                { modelName: { contains: search, mode: 'insensitive' } },
-                { brand: { name: { contains: search, mode: 'insensitive' } } },
-                { soc: { name: { contains: search, mode: 'insensitive' } } },
-                {
-                  soc: {
-                    manufacturer: { contains: search, mode: 'insensitive' },
-                  },
+    // Calculate actual offset based on page or use provided offset
+    const actualOffset = page ? (page - 1) * limit : offset
+    const effectiveLimit = Math.min(limit, 100) // Cap at 100 items per page
+
+    // Build where clause for filtering
+    const where: Prisma.DeviceWhereInput = {
+      ...(brandId ? { brandId } : {}),
+      ...(socId ? { socId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { modelName: { contains: search, mode: 'insensitive' } },
+              { brand: { name: { contains: search, mode: 'insensitive' } } },
+              { soc: { name: { contains: search, mode: 'insensitive' } } },
+              {
+                soc: {
+                  manufacturer: { contains: search, mode: 'insensitive' },
                 },
-              ],
-            }
-          : {}),
-      },
+              },
+            ],
+          }
+        : {}),
+    }
+
+    // Build orderBy based on sortField and sortDirection
+    const orderBy: Prisma.DeviceOrderByWithRelationInput[] = []
+
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'brand':
+          orderBy.push({ brand: { name: sortDirection } })
+          break
+        case 'modelName':
+          orderBy.push({ modelName: sortDirection })
+          break
+        case 'soc':
+          orderBy.push({ soc: { name: sortDirection } })
+          break
+      }
+    }
+
+    // Default ordering if no sort specified
+    if (!orderBy.length) {
+      orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
+    }
+
+    // Always run count query for consistent pagination
+    const total = await ctx.prisma.device.count({ where })
+
+    // Get devices with pagination
+    const devices = await ctx.prisma.device.findMany({
+      where,
       include: {
         brand: true,
         soc: true,
       },
-      take: limit,
-      orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+      orderBy,
+      skip: actualOffset,
+      take: effectiveLimit,
     })
+
+    return {
+      devices,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        page: page ?? Math.floor(actualOffset / limit) + 1,
+        offset: actualOffset,
+        limit: effectiveLimit,
+      },
+    }
   }),
 
   byId: publicProcedure

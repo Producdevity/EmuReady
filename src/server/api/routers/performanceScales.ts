@@ -5,6 +5,7 @@ import {
 } from '@/server/api/trpc'
 import { ResourceError } from '@/lib/errors'
 import {
+  GetPerformanceScalesSchema,
   GetPerformanceScaleByIdSchema,
   CreatePerformanceScaleSchema,
   UpdatePerformanceScaleSchema,
@@ -12,9 +13,37 @@ import {
 } from '@/schemas/performanceScale'
 
 export const performanceScalesRouter = createTRPCRouter({
-  get: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'desc' } })
-  }),
+  get: publicProcedure
+    .input(GetPerformanceScalesSchema)
+    .query(async ({ ctx, input }) => {
+      const { search, sortField, sortDirection } = input ?? {}
+
+      // Build orderBy based on sortField and sortDirection
+      let orderBy: { label?: 'asc' | 'desc'; rank?: 'asc' | 'desc' } = { rank: 'desc' }
+      
+      if (sortField && sortDirection) {
+        switch (sortField) {
+          case 'label':
+            orderBy = { label: sortDirection }
+            break
+          case 'rank':
+            orderBy = { rank: sortDirection }
+            break
+        }
+      }
+
+      return ctx.prisma.performanceScale.findMany({
+        where: search
+          ? {
+              OR: [
+                { label: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : undefined,
+        orderBy,
+      })
+    }),
 
   byId: publicProcedure
     .input(GetPerformanceScaleByIdSchema)

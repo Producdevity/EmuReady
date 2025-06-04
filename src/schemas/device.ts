@@ -1,11 +1,18 @@
 import { z } from 'zod'
+import { SortDirection } from '@/schemas/soc'
+
+export const DeviceSortField = z.enum(['brand', 'modelName', 'soc'])
 
 export const GetDevicesSchema = z
   .object({
     search: z.string().optional(),
     brandId: z.string().uuid().optional(),
     socId: z.string().uuid().optional(),
-    limit: z.number().default(50),
+    limit: z.number().default(20),
+    offset: z.number().default(0),
+    page: z.number().optional(),
+    sortField: DeviceSortField.optional(),
+    sortDirection: SortDirection.optional(),
   })
   .optional()
 

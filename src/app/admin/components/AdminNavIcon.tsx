@@ -8,6 +8,7 @@ import {
   Play,
   Smartphone,
   Users,
+  Layout,
 } from 'lucide-react'
 
 const getAdminNavIcon = (href: string, className: string) => {
@@ -21,6 +22,8 @@ const getAdminNavIcon = (href: string, className: string) => {
   if (href.includes('/users')) return <Users className={className} />
   if (href.includes('/processed-listings'))
     return <FileText className={className} />
+  if (href.includes('/custom-field-templates'))
+    return <Layout className={className} />
   return <Monitor className={className} />
 }
 

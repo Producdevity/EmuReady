@@ -1,3 +1,4 @@
+import type { Prisma } from '@orm'
 import {
   createTRPCRouter,
   publicProcedure,
@@ -18,17 +19,59 @@ export const emulatorsRouter = createTRPCRouter({
   get: publicProcedure
     .input(GetEmulatorsSchema)
     .query(async ({ ctx, input }) => {
-      const { search } = input ?? {}
+      const { 
+        search, 
+        limit = 20, 
+        offset = 0, 
+        page, 
+        sortField, 
+        sortDirection 
+      } = input ?? {}
 
-      return ctx.prisma.emulator.findMany({
-        where: search
-          ? { name: { contains: search, mode: 'insensitive' } }
-          : undefined,
+      // Calculate actual offset based on page or use provided offset
+      const actualOffset = page ? (page - 1) * limit : offset
+      const effectiveLimit = Math.min(limit, 100) // Cap at 100 items per page
+
+      // Build where clause for filtering
+      const where: Prisma.EmulatorWhereInput | undefined = search
+        ? { name: { contains: search, mode: 'insensitive' } }
+        : undefined
+
+      // Build orderBy based on sortField and sortDirection
+      let orderBy: { name: 'asc' | 'desc' } = { name: 'asc' }
+      
+      if (sortField && sortDirection) {
+        switch (sortField) {
+          case 'name':
+            orderBy = { name: sortDirection }
+            break
+        }
+      }
+
+      // Always run count query for consistent pagination
+      const total = await ctx.prisma.emulator.count({ where })
+
+      // Get emulators with pagination
+      const emulators = await ctx.prisma.emulator.findMany({
+        where,
         include: {
           _count: { select: { listings: true } },
         },
-        orderBy: { name: 'asc' },
+        orderBy,
+        skip: actualOffset,
+        take: effectiveLimit,
       })
+
+      return {
+        emulators,
+        pagination: {
+          total,
+          pages: Math.ceil(total / limit),
+          page: page ?? Math.floor(actualOffset / limit) + 1,
+          offset: actualOffset,
+          limit: effectiveLimit,
+        },
+      }
     }),
 
   byId: publicProcedure

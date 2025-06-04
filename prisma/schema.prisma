@@ -113,6 +113,32 @@ model CustomFieldDefinition {
   @@index([emulatorId])
 }
 
+model CustomFieldTemplate {
+  id          String                     @id @default(uuid())
+  name        String                     @unique
+  description String?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+  fields      CustomFieldTemplateField[]
+}
+
+model CustomFieldTemplateField {
+  id           String              @id @default(uuid())
+  templateId   String
+  name         String              // Internal name, e.g., "driver_version"
+  label        String              // UI display label, e.g., "Driver Version"
+  type         CustomFieldType
+  options      Json?               // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
+  isRequired   Boolean             @default(false)
+  displayOrder Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  template     CustomFieldTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, name])
+  @@index([templateId])
+}
+
 model Emulator {
   id                    String                  @id @default(uuid())
   name                  String                  @unique
