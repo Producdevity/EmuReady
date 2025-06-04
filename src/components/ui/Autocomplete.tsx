@@ -1,14 +1,14 @@
 'use client'
 
 import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  type ReactNode,
   type ChangeEvent,
   type FocusEvent,
   type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
 } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -74,6 +74,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const [isUserTyping, setIsUserTyping] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null) // Changed to ul
@@ -113,16 +114,12 @@ function Autocomplete<T extends AutocompleteOptionBase>({
       }
     }
 
-    // For loadItems, check suggestions first, then try to find in all available data
-    if (loadItems) {
-      const selectedItem = suggestions.find(
-        (item) => optionToValue(item) === value,
-      )
-      if (selectedItem) {
-        setInputValue(optionToLabel(selectedItem))
-        return
-      }
-    }
+    if (!loadItems) return
+
+    const selectedItem = suggestions.find(
+      (item) => optionToValue(item) === value,
+    )
+    if (selectedItem) return setInputValue(optionToLabel(selectedItem))
 
     // If we reach here and no item was found, but value is not null,
     // it might mean the item hasn't been loaded yet, so keep current input
@@ -152,17 +149,19 @@ function Autocomplete<T extends AutocompleteOptionBase>({
 
       setIsLoading(true)
       setIsOpen(true) // Open dropdown immediately when loading starts
+
       try {
+        let newSuggestions: T[] = []
+
         if (loadItems) {
-          const newSuggestions = await loadItems(query)
-          setSuggestions(newSuggestions)
+          newSuggestions = await loadItems(query)
         } else if (staticItems) {
           if (query.length === 0) {
             // Show all items when query is empty for static items
-            setSuggestions(staticItems)
+            newSuggestions = staticItems
           } else {
             const lowerQuery = query.toLowerCase()
-            const filtered = staticItems.filter((item) => {
+            newSuggestions = staticItems.filter((item) => {
               if (filterKeys.length > 0) {
                 return filterKeys.some((key) => {
                   const val = item[key]
@@ -176,14 +175,20 @@ function Autocomplete<T extends AutocompleteOptionBase>({
                 return optionToLabel(item).toLowerCase().includes(lowerQuery)
               }
             })
-            setSuggestions(filtered)
           }
         }
+
+        // Update suggestions and loading state together to prevent race condition
+        setSuggestions(newSuggestions)
+        setIsLoading(false)
+        setHasSearched(true)
       } catch (error) {
         console.error('Error fetching/filtering suggestions:', error)
         setSuggestions([])
+        setIsLoading(false)
+        setHasSearched(true)
       }
-      setIsLoading(false)
+
       setIsOpen(true)
       setHighlightedIndex(-1)
     },
@@ -392,10 +397,11 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     }
   }, [])
 
-  // Improved logic for showing messages
+  // Improved logic for showing messages - prevent race condition by checking hasSearched
   const showNoResults =
     isOpen &&
     !isLoading &&
+    hasSearched &&
     suggestions.length === 0 &&
     inputValue.length >= minCharsToTrigger &&
     (staticItems == null || staticItems.length === 0 || inputValue.length > 0)
