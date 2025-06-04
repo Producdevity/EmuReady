@@ -39,13 +39,38 @@ export const coreRouter = createTRPCRouter({
         ...(input.performanceIds && input.performanceIds.length > 0
           ? { performanceId: { in: input.performanceIds } }
           : {}),
-        ...(input.approvalStatus
-          ? { status: input.approvalStatus }
-          : { status: ListingApprovalStatus.APPROVED }),
       }
 
+      // Status filtering: show approved listings for everyone, plus pending listings for the current user
+      let statusFilter: Prisma.ListingWhereInput
+      if (input.approvalStatus) {
+        statusFilter = { status: input.approvalStatus }
+      } else {
+        // Default behavior: show approved listings + user's own pending listings
+        if (ctx.session) {
+          statusFilter = {
+            OR: [
+              { status: ListingApprovalStatus.APPROVED },
+              { 
+                status: ListingApprovalStatus.PENDING,
+                authorId: ctx.session.user.id 
+              }
+            ]
+          }
+        } else {
+          statusFilter = { status: ListingApprovalStatus.APPROVED }
+        }
+      }
+
+      // Combine all filters using AND logic
+      const combinedFilters: Prisma.ListingWhereInput = {
+        ...filters,
+        ...statusFilter,
+      }
+
+      // Add search filters if provided
       if (input.searchTerm) {
-        filters.OR = [
+        const searchFilters: Prisma.ListingWhereInput[] = [
           keys(gameFilter).length
             ? {
                 game: {
@@ -75,11 +100,21 @@ export const coreRouter = createTRPCRouter({
             },
           },
         ]
+
+        // Combine status filter with search filters
+        combinedFilters.AND = [
+          statusFilter,
+          { OR: searchFilters }
+        ]
+        
+        // Remove the duplicate status filters from the root level
+        delete combinedFilters.status
+        delete combinedFilters.OR
       } else if (keys(gameFilter).length) {
-        filters.game = { is: gameFilter }
+        combinedFilters.game = { is: gameFilter }
       }
 
-      const total = await ctx.prisma.listing.count({ where: filters })
+      const total = await ctx.prisma.listing.count({ where: combinedFilters })
 
       // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
@@ -118,7 +153,7 @@ export const coreRouter = createTRPCRouter({
       }
 
       const listings = await ctx.prisma.listing.findMany({
-        where: filters,
+        where: combinedFilters,
         include: {
           game: { include: { system: true } },
           device: { include: { brand: true, soc: true } },

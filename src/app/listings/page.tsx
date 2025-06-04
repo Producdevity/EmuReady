@@ -3,7 +3,7 @@
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { Eye, Trash2 } from 'lucide-react'
+import { Eye, Trash2, Clock } from 'lucide-react'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ListingApprovalStatus } from '@orm'
@@ -20,6 +20,9 @@ import {
   Button,
   useConfirmDialog,
   ColumnVisibilityControl,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -86,7 +89,6 @@ function ListingsPage() {
     limit: 10,
     sortField: listingsState.sortField ?? undefined,
     sortDirection: listingsState.sortDirection ?? undefined,
-    approvalStatus: ListingApprovalStatus.APPROVED,
   }
 
   const listingsQuery = api.listings.get.useQuery(filterParams)
@@ -316,12 +318,22 @@ function ListingsPage() {
                   >
                     {columnVisibility.isColumnVisible('game') && (
                       <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                        <Link
-                          href={`/games/${listing.game.id}`}
-                          className="hover:text-blue-600 dark:hover:text-blue-400"
-                        >
-                          {listing.game.title}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/games/${listing.game.id}`}
+                            className="hover:text-blue-600 dark:hover:text-blue-400"
+                          >
+                            {listing.game.title}
+                          </Link>
+                          {listing.status === ListingApprovalStatus.PENDING && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>Under Review</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('system') && (
