@@ -114,7 +114,6 @@ function ListingFilters(props: FiltersProps) {
 
   return (
     <motion.div className="relative" initial={false} style={{ zIndex: 10 }}>
-      {/* Redesigned Toggle Button with Morphing Icon */}
       <motion.button
         onClick={props.onToggleCollapse}
         className="absolute -right-4 top-6 z-20 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 rounded-full p-3 shadow-xl md:flex hidden group overflow-hidden"
@@ -126,7 +125,6 @@ function ListingFilters(props: FiltersProps) {
         whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
       >
-        {/* Morphing Icon */}
         <AnimatePresence mode="wait">
           {props.isCollapsed ? (
             <motion.div
@@ -167,7 +165,6 @@ function ListingFilters(props: FiltersProps) {
         </AnimatePresence>
       </motion.button>
 
-      {/* Enhanced Sidebar */}
       <motion.aside
         className="bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 shadow-xl relative"
         initial={false}
@@ -191,7 +188,6 @@ function ListingFilters(props: FiltersProps) {
       >
         <AnimatePresence mode="wait">
           {props.isCollapsed ? (
-            /* Redesigned Collapsed State */
             <motion.div
               key="collapsed"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -429,7 +425,6 @@ function ListingFilters(props: FiltersProps) {
               </AnimatePresence>
             </motion.div>
           ) : (
-            /* Enhanced Full Content */
             <motion.div
               key="expanded"
               initial={{ opacity: 0, x: -20 }}
@@ -543,7 +538,7 @@ function ListingFilters(props: FiltersProps) {
                 </div>
               </motion.div>
 
-              {/* Enhanced Active Filters Summary */}
+              {/* Active Filters Summary */}
               <AnimatePresence>
                 {hasActiveFilters && (
                   <motion.div
