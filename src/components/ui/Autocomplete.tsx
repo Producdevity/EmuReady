@@ -58,12 +58,12 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   optionToIcon,
   customOptionRenderer,
   filterKeys = [], // Default to empty array, implying label search or specific logic
-  placeholder = 'Type to search...',
+  placeholder,
   label,
   leftIcon,
   rightIcon,
-  disabled = false,
-  className = '',
+  disabled,
+  className,
   minCharsToTrigger = 0,
   debounceTime = 300,
 }: AutocompleteProps<T>) {
@@ -439,7 +439,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
             leftIcon ? 'pl-10' : '',
             rightIcon || isLoading ? 'pr-10' : '',
           )}
-          placeholder={placeholder}
+          placeholder={placeholder ?? 'Type to search...'}
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
