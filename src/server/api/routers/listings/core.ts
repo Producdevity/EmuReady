@@ -367,6 +367,29 @@ export const coreRouter = createTRPCRouter({
     return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } })
   }),
 
+  statistics: publicProcedure.query(async ({ ctx }) => {
+    const [
+      listingsCount,
+      gamesCount,
+      emulatorsCount,
+      devicesCount,
+    ] = await Promise.all([
+      ctx.prisma.listing.count({
+        where: { status: ListingApprovalStatus.APPROVED },
+      }),
+      ctx.prisma.game.count(),
+      ctx.prisma.emulator.count(),
+      ctx.prisma.device.count(),
+    ])
+
+    return {
+      listings: listingsCount,
+      games: gamesCount,
+      emulators: emulatorsCount,
+      devices: devicesCount,
+    }
+  }),
+
   featured: publicProcedure.query(async ({ ctx }) => {
     const listings = await ctx.prisma.listing.findMany({
       where: { status: ListingApprovalStatus.APPROVED },

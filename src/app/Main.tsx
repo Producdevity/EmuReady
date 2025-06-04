@@ -2,6 +2,7 @@
 
 import { type PropsWithChildren, type ErrorInfo } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { usePathname } from 'next/navigation'
 import { ErrorFallback } from '@/components/ui'
 
 const handleError = (error: Error, info: ErrorInfo) => {
@@ -10,8 +11,11 @@ const handleError = (error: Error, info: ErrorInfo) => {
 }
 
 function Main(props: PropsWithChildren) {
+  const pathname = usePathname()
+  const isHomePage = pathname === '/'
+
   return (
-    <main className="flex-1 flex flex-col">
+    <main className={`flex-1 flex flex-col ${isHomePage ? '' : 'pt-20'}`}>
       <ErrorBoundary
         FallbackComponent={ErrorFallback}
         onReset={(details) => {
