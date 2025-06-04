@@ -32,6 +32,7 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   optionToValue: (option: T) => string // Function to get the value from an option (e.g., option.id)
   optionToLabel: (option: T) => string // Function to get the display label from an option (e.g., option.label)
   optionToIcon?: (option: T) => ReactNode // Optional: Function to get an icon for an option
+  customOptionRenderer?: (option: T, isHighlighted: boolean) => ReactNode // Optional: Custom renderer for options
 
   filterKeys?: (keyof T)[] // Keys to use for client-side fuzzy filtering (if items is provided)
 
@@ -55,6 +56,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   optionToValue,
   optionToLabel,
   optionToIcon,
+  customOptionRenderer,
   filterKeys = [], // Default to empty array, implying label search or specific logic
   placeholder = 'Type to search...',
   label,
@@ -191,19 +193,23 @@ function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value
     setInputValue(newQuery)
-    
+
     // Only clear selection if we had a selection and user is typing something different
     if (value != null && newQuery !== '') {
       // Find the current selected item to compare
-      const currentSelectedItem = staticItems?.find(item => optionToValue(item) === value) ??
-                                  suggestions.find(item => optionToValue(item) === value)
-      
+      const currentSelectedItem =
+        staticItems?.find((item) => optionToValue(item) === value) ??
+        suggestions.find((item) => optionToValue(item) === value)
+
       // Only clear if the typed text doesn't match the selected item's label
-      if (!currentSelectedItem || optionToLabel(currentSelectedItem) !== newQuery) {
+      if (
+        !currentSelectedItem ||
+        optionToLabel(currentSelectedItem) !== newQuery
+      ) {
         onChange(null) // Clear selection when user starts typing something different
       }
     }
-    
+
     if (newQuery.length === 0) {
       // Clear selection when input is empty
       if (value != null) {
@@ -481,17 +487,16 @@ function Autocomplete<T extends AutocompleteOptionBase>({
             {!isLoading &&
               suggestions.map((item, idx) => {
                 const itemValue = optionToValue(item)
-                const itemLabel = optionToLabel(item)
-                const itemIcon = optionToIcon ? optionToIcon(item) : undefined
+                const isHighlighted = idx === highlightedIndex
                 return (
                   <li
                     key={itemValue}
                     id={`option-${itemValue}`}
                     role="option"
-                    aria-selected={idx === highlightedIndex}
+                    aria-selected={isHighlighted}
                     className={cn(
                       'flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl',
-                      idx === highlightedIndex
+                      isHighlighted
                         ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
                         : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
                     )}
@@ -501,10 +506,18 @@ function Autocomplete<T extends AutocompleteOptionBase>({
                     }}
                     onMouseEnter={() => setHighlightedIndex(idx)}
                   >
-                    {itemIcon && (
-                      <span className="mr-2 flex-shrink-0">{itemIcon}</span>
+                    {customOptionRenderer ? (
+                      customOptionRenderer(item, isHighlighted)
+                    ) : (
+                      <>
+                        {optionToIcon && (
+                          <span className="mr-2 flex-shrink-0">
+                            {optionToIcon(item)}
+                          </span>
+                        )}
+                        <span className="flex-grow">{optionToLabel(item)}</span>
+                      </>
                     )}
-                    <span className="flex-grow">{itemLabel}</span>
                   </li>
                 )
               })}

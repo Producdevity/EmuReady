@@ -15,7 +15,7 @@ import {
   type AutocompleteOptionBase,
   LoadingSpinner,
 } from '@/components/ui'
-import { HardDrive, Zap, FileText } from 'lucide-react'
+import { Zap, FileText } from 'lucide-react'
 import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
 import { type RouterInput } from '@/types/trpc'
@@ -24,6 +24,7 @@ import CustomFieldRenderer from './components/CustomFieldRenderer'
 import FormValidationSummary from './components/FormValidationSummary'
 import GameSelector from './components/GameSelector'
 import EmulatorSelector from './components/EmulatorSelector'
+import DeviceSelector from './components/DeviceSelector'
 
 export type ListingFormValues = RouterInput['listings']['create']
 
@@ -136,6 +137,20 @@ interface EmulatorOption extends AutocompleteOptionBase {
   }>
 }
 
+interface DeviceOption extends AutocompleteOptionBase {
+  id: string
+  modelName: string
+  brand: {
+    id: string
+    name: string
+  }
+  soc: {
+    id: string
+    name: string
+    manufacturer: string
+  }
+}
+
 interface CustomFieldOptionUI {
   value: string
   label: string
@@ -156,7 +171,11 @@ function AddListingPage() {
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
+  const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
+  const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(
+    null,
+  )
   const [availableEmulators, setAvailableEmulators] = useState<
     EmulatorOption[]
   >([])
@@ -185,7 +204,6 @@ function AddListingPage() {
   const selectedGameId = watch('gameId')
 
   // Data fetching for Autocomplete options
-  const { data: devicesData } = api.devices.get.useQuery({ limit: 1000 })
   const { data: performanceScalesData } =
     api.listings.performanceScales.useQuery()
   const { data: customFieldDefinitionsData, isLoading: isLoadingCustomFields } =
@@ -275,6 +293,35 @@ function AddListingPage() {
       }
     },
     [utils.emulators.get, utils.emulators.byId, selectedGame],
+  )
+
+  const loadDeviceItems = useCallback(
+    async (query: string): Promise<DeviceOption[]> => {
+      setDeviceSearchTerm(query)
+      if (query.length < 2) return Promise.resolve([])
+      try {
+        const result = await utils.devices.get.fetch({
+          search: query,
+          limit: 50,
+        })
+        return result
+          .filter((device) => device.soc !== null) // Filter out devices without SoCs
+          .map((device) => ({
+            id: device.id,
+            modelName: device.modelName,
+            brand: device.brand,
+            soc: {
+              id: device.soc!.id,
+              name: device.soc!.name,
+              manufacturer: device.soc!.manufacturer,
+            },
+          }))
+      } catch (error) {
+        console.error('Error fetching devices:', error)
+        return []
+      }
+    },
+    [utils.devices.get],
   )
 
   // Handle pre-selected game from URL parameter
@@ -425,29 +472,14 @@ function AddListingPage() {
 
           {/* Device Selection */}
           <div>
-            <Controller
-              name="deviceId"
+            <DeviceSelector
               control={control}
-              render={({ field }) => (
-                <SelectInput
-                  label="Device"
-                  leftIcon={<HardDrive className="w-5 h-5" />}
-                  options={
-                    devicesData?.map((d) => ({
-                      id: d.id,
-                      name: `${d.brand.name} ${d.modelName}`,
-                    })) ?? []
-                  }
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value)}
-                />
-              )}
+              selectedDevice={selectedDevice}
+              errorMessage={String(formState.errors.deviceId?.message ?? '')}
+              loadDeviceItems={loadDeviceItems}
+              onDeviceSelect={setSelectedDevice}
+              deviceSearchTerm={deviceSearchTerm}
             />
-            {formState.errors.deviceId && (
-              <p className="text-red-500 text-xs mt-1">
-                {String(formState.errors.deviceId.message ?? '')}
-              </p>
-            )}
           </div>
 
           {/* Emulator Selection */}

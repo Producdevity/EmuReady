@@ -209,6 +209,7 @@ function ListingFilters(props: FiltersProps) {
                   <AnimatePresence>
                     {filterCounts.systems > 0 && (
                       <motion.div
+                        key="systems-filter"
                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
@@ -244,6 +245,7 @@ function ListingFilters(props: FiltersProps) {
 
                     {filterCounts.devices > 0 && (
                       <motion.div
+                        key="devices-filter"
                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
@@ -279,6 +281,7 @@ function ListingFilters(props: FiltersProps) {
 
                     {filterCounts.socs > 0 && (
                       <motion.div
+                        key="socs-filter"
                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
@@ -314,6 +317,7 @@ function ListingFilters(props: FiltersProps) {
 
                     {filterCounts.emulators > 0 && (
                       <motion.div
+                        key="emulators-filter"
                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
@@ -349,6 +353,7 @@ function ListingFilters(props: FiltersProps) {
 
                     {filterCounts.performance > 0 && (
                       <motion.div
+                        key="performance-filter"
                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
@@ -384,6 +389,7 @@ function ListingFilters(props: FiltersProps) {
 
                     {filterCounts.search > 0 && (
                       <motion.div
+                        key="search-filter"
                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
@@ -422,6 +428,7 @@ function ListingFilters(props: FiltersProps) {
                 {/* Collapsed Clear All Button */}
                 {hasActiveFilters && (
                   <motion.button
+                    key="clear-all-button"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
@@ -554,6 +561,7 @@ function ListingFilters(props: FiltersProps) {
                 <AnimatePresence>
                   {hasActiveFilters && (
                     <motion.div
+                      key="active-filters-summary"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 20 }}
@@ -577,6 +585,7 @@ function ListingFilters(props: FiltersProps) {
                       <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         {props.systemIds.length > 0 && (
                           <motion.div
+                            key="summary-systems"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.1 }}
@@ -588,6 +597,7 @@ function ListingFilters(props: FiltersProps) {
                         )}
                         {props.deviceIds.length > 0 && (
                           <motion.div
+                            key="summary-devices"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.15 }}
@@ -599,6 +609,7 @@ function ListingFilters(props: FiltersProps) {
                         )}
                         {props.socIds.length > 0 && (
                           <motion.div
+                            key="summary-socs"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.2 }}
@@ -610,6 +621,7 @@ function ListingFilters(props: FiltersProps) {
                         )}
                         {props.emulatorIds.length > 0 && (
                           <motion.div
+                            key="summary-emulators"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.25 }}
@@ -621,6 +633,7 @@ function ListingFilters(props: FiltersProps) {
                         )}
                         {props.performanceIds.length > 0 && (
                           <motion.div
+                            key="summary-performance"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.3 }}
@@ -632,6 +645,7 @@ function ListingFilters(props: FiltersProps) {
                         )}
                         {props.searchTerm && (
                           <motion.div
+                            key="summary-search"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.35 }}
