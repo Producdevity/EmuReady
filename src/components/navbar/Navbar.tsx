@@ -245,11 +245,7 @@ function Navbar() {
                   )}
                   <div className="px-4 py-3">
                     <UserButton
-                      appearance={{
-                        elements: {
-                          avatarBox: 'h-10 w-10',
-                        },
-                      }}
+                      appearance={{ elements: { avatarBox: 'h-10 w-10' } }}
                     />
                   </div>
                 </div>
