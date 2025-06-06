@@ -3,13 +3,14 @@
 import { hasPermission } from '@/utils/permissions'
 import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
 import { ThemeToggle } from '@/components/ui'
 import { Role } from '@orm'
 import LoadingIcon from '@/components/icons/LoadingIcon'
+import LogoIcon from '@/components/icons/LogoIcon'
+import { navbarItems } from './data'
 
 function Navbar() {
   const { user, isLoaded } = useUser()
@@ -66,18 +67,9 @@ function Navbar() {
         <div className="flex h-18 items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center space-x-4">
-            <Link 
-              href="/" 
-              className="flex items-center space-x-3 group"
-            >
+            <Link href="/" className="flex items-center space-x-3 group">
               <div className="relative">
-                <Image
-                  src="/logo/EmuReady_icon_logo.png"
-                  alt="EmuReady Logo"
-                  width={44}
-                  height={44}
-                  className="h-11 w-11 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
-                />
+                <LogoIcon />
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
               </div>
               <div>
@@ -94,15 +86,15 @@ function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-2">
             <div className="flex items-center space-x-1 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl p-1.5 backdrop-blur-sm">
-              <Link href="/" className={getNavItemClass('/')}>
-                <span className="relative z-10">Home</span>
-              </Link>
-              <Link href="/listings" className={getNavItemClass('/listings')}>
-                <span className="relative z-10">Listings</span>
-              </Link>
-              <Link href="/games" className={getNavItemClass('/games')}>
-                <span className="relative z-10">Games</span>
-              </Link>
+              {navbarItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={getNavItemClass(item.href)}
+                >
+                  <span className="relative z-10">{item.label}</span>
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -144,8 +136,10 @@ function Navbar() {
                       <UserButton
                         appearance={{
                           elements: {
-                            avatarBox: 'h-9 w-9 ring-2 ring-blue-500/20 hover:ring-blue-500/40 transition-all duration-300',
-                            userButtonPopoverCard: 'shadow-2xl border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl',
+                            avatarBox:
+                              'h-9 w-9 ring-2 ring-blue-500/20 hover:ring-blue-500/40 transition-all duration-300',
+                            userButtonPopoverCard:
+                              'shadow-2xl border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl',
                           },
                         }}
                       />
@@ -180,12 +174,16 @@ function Navbar() {
               <div className="relative w-6 h-6">
                 <Menu
                   className={`absolute inset-0 w-6 h-6 transition-all duration-300 ${
-                    mobileMenuOpen ? 'opacity-0 rotate-180' : 'opacity-100 rotate-0'
+                    mobileMenuOpen
+                      ? 'opacity-0 rotate-180'
+                      : 'opacity-100 rotate-0'
                   }`}
                 />
                 <X
                   className={`absolute inset-0 w-6 h-6 transition-all duration-300 ${
-                    mobileMenuOpen ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-180'
+                    mobileMenuOpen
+                      ? 'opacity-100 rotate-0'
+                      : 'opacity-0 -rotate-180'
                   }`}
                 />
               </div>
@@ -203,27 +201,16 @@ function Navbar() {
         }`}
       >
         <div className="px-4 pt-4 pb-6 space-y-2">
-          <Link
-            href="/"
-            className={getMobileNavItemClass('/')}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            href="/listings"
-            className={getMobileNavItemClass('/listings')}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Listings
-          </Link>
-          <Link
-            href="/games"
-            className={getMobileNavItemClass('/games')}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Games
-          </Link>
+          {navbarItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={getMobileNavItemClass(item.href)}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
 
           {!isLoaded ? (
             <div className="px-4 py-3 text-gray-500">Loading...</div>
