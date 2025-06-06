@@ -19,31 +19,25 @@ export const emulatorsRouter = createTRPCRouter({
   get: publicProcedure
     .input(GetEmulatorsSchema)
     .query(async ({ ctx, input }) => {
-      const { 
-        search, 
-        limit = 20, 
-        offset = 0, 
-        page, 
-        sortField, 
-        sortDirection 
-      } = input ?? {}
+      const limit = input?.limit ?? 20
+      const offset = input?.offset ?? 0
 
       // Calculate actual offset based on page or use provided offset
-      const actualOffset = page ? (page - 1) * limit : offset
+      const actualOffset = input?.page ? (input.page - 1) * limit : offset
       const effectiveLimit = Math.min(limit, 100) // Cap at 100 items per page
 
       // Build where clause for filtering
-      const where: Prisma.EmulatorWhereInput | undefined = search
-        ? { name: { contains: search, mode: 'insensitive' } }
+      const where: Prisma.EmulatorWhereInput | undefined = input?.search
+        ? { name: { contains: input.search, mode: 'insensitive' } }
         : undefined
 
       // Build orderBy based on sortField and sortDirection
       let orderBy: { name: 'asc' | 'desc' } = { name: 'asc' }
-      
-      if (sortField && sortDirection) {
-        switch (sortField) {
+
+      if (input?.sortField && input?.sortDirection) {
+        switch (input.sortField) {
           case 'name':
-            orderBy = { name: sortDirection }
+            orderBy = { name: input.sortDirection }
             break
         }
       }
@@ -67,7 +61,7 @@ export const emulatorsRouter = createTRPCRouter({
         pagination: {
           total,
           pages: Math.ceil(total / limit),
-          page: page ?? Math.floor(actualOffset / limit) + 1,
+          page: input?.page ?? Math.floor(actualOffset / limit) + 1,
           offset: actualOffset,
           limit: effectiveLimit,
         },
