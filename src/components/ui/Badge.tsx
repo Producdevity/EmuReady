@@ -41,7 +41,7 @@ function Badge(props: Props) {
   return (
     <span
       className={`
-        inline-flex items-center justify-center font-medium
+        inline-flex items-center justify-center font-medium text-center
         ${props.pill ? 'rounded-full' : 'rounded'}
         ${variantClasses[variant]}
         ${sizeClasses[size]}
