@@ -9,7 +9,7 @@ const eslintConfig = [
     extends: ['next/core-web-vitals', 'next/typescript'],
     parser: '@typescript-eslint/parser',
     parserOptions: {
-      project: './tsconfig.json', // Path to your TypeScript config
+      project: './tsconfig.json',
       ecmaVersion: 2020,
       sourceType: 'module',
       ecmaFeatures: {
