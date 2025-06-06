@@ -7,15 +7,15 @@ labels: question
 
 ## Question
 
-Please describe your question or what you need help with.
+<!-- Please describe your question or what you need help with. -->
 
 ## What have you tried?
 
-List any documentation, issues, or resources you have already checked.
+<!-- List any documentation, issues, or resources you have already checked. -->
 
 ## Relevant context
 
-Add any other context, code snippets, or screenshots that might help us answer your question.
+<!-- Add any other context, code snippets, or screenshots that might help us answer your question. -->
 
 ## Checklist
 

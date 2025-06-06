@@ -7,19 +7,19 @@ labels: emulator-request
 
 ## Emulator Name
 
-What is the name of the emulator you would like us to add?
+<!-- What is the name of the emulator you would like us to add? -->
 
 ## Download or Project Link
 
-Provide a link to the official website, GitHub repo, or trusted download source for this emulator.
+<!-- Provide a link to the official website, GitHub repo, or trusted download source for this emulator. -->
 
 ## Supported Systems
 
-List the system(s) this emulator supports (e.g. Nintendo Switch, PlayStation 2, etc).
+<!-- List the system(s) this emulator supports (e.g. Nintendo Switch, PlayStation 2, etc). -->
 
 ## Additional Notes (Optional)
 
-Add anything else we should know, like platform support (Windows, Linux, macOS, Android, iOS, etc), open-source status, or features worth mentioning.
+<!-- Add anything else we should know, like platform support (Windows, Linux, macOS, Android, iOS, etc), open-source status, or features worth mentioning. -->
 
 ## Checklist
 
