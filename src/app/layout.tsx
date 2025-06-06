@@ -9,7 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import Providers from '@/components/Providers'
-import Navbar from '@/components/Navbar'
+import Navbar from '@/components/navbar/Navbar'
 import Footer from '@/components/Footer'
 import Main from './Main'
 
