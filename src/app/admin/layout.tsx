@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
 import { LoadingSpinner } from '@/components/ui'
-import { adminNav, superAdminNav } from './data'
+import { adminNavItems, superAdminNavItems } from './data'
 import { api } from '@/lib/api'
 import { ChevronLeft } from 'lucide-react'
 import AdminNavbar from './components/AdminNavbar'
@@ -83,13 +83,12 @@ function AdminLayout(props: PropsWithChildren) {
           </div>
         </div>
 
-        {/* Navigation */}
         <AdminNavbar
           isCollapsed={isCollapsed}
           isSuperAdmin={isSuperAdmin}
           pathname={pathname}
-          adminNav={adminNav}
-          superAdminNav={superAdminNav}
+          adminNavItems={adminNavItems}
+          superAdminNavItems={superAdminNavItems}
         />
       </aside>
 

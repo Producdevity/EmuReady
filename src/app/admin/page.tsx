@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
 import { prisma } from '@/server/db'
-import { adminNav, superAdminNav } from './data'
+import { adminNavItems, superAdminNavItems } from './data'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
@@ -13,21 +13,20 @@ export const metadata: Metadata = {
 
 async function AdminDashboardPage() {
   const { userId } = await auth()
-  
-  if (!userId) {
-    redirect('/sign-in')
-  }
+
+  if (!userId) return redirect('/sign-in')
 
   // Check user role for admin access
+  // TODO: Replace prisma.user.findUnique with your user fetching logic
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
     select: { role: true },
   })
-  
+
   if (!user || !hasPermission(user.role, Role.ADMIN)) {
     redirect('/')
   }
-  
+
   const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
 
   return (
@@ -40,7 +39,7 @@ async function AdminDashboardPage() {
         new listings from this dashboard.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {adminNav.map((item) => (
+        {adminNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -56,7 +55,7 @@ async function AdminDashboardPage() {
         ))}
 
         {isSuperAdmin &&
-          superAdminNav.map((item) => (
+          superAdminNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

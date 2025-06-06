@@ -13,14 +13,14 @@ interface Props {
   isCollapsed: boolean
   isSuperAdmin: boolean
   pathname: string
-  adminNav: AdminNavItem[]
-  superAdminNav: AdminNavItem[]
+  adminNavItems: AdminNavItem[]
+  superAdminNavItems: AdminNavItem[]
 }
 
 function AdminNavbar(props: Props) {
   return (
     <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-      {props.adminNav.map((item) => {
+      {props.adminNavItems.map((item) => {
         const linkElement = (
           <Link
             key={item.href}
@@ -70,7 +70,7 @@ function AdminNavbar(props: Props) {
               </p>
             </div>
           </div>
-          {props.superAdminNav.map((item) => {
+          {props.superAdminNavItems.map((item) => {
             const linkElement = (
               <Link
                 key={item.href}

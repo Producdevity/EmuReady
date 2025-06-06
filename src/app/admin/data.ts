@@ -1,4 +1,10 @@
-export const adminNav = [
+interface NavItem {
+  href: string
+  label: string
+  description: string
+}
+
+export const adminNavItems: NavItem[] = [
   {
     href: '/admin/systems',
     label: 'Systems',
@@ -37,7 +43,7 @@ export const adminNav = [
   },
 ]
 
-export const superAdminNav = [
+export const superAdminNavItems: NavItem[] = [
   {
     href: '/admin/users',
     label: 'Users',
