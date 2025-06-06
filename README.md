@@ -7,22 +7,20 @@ Visit our website: [https://emuready.com](https://emuready.com)
 ---
 
 **Home Page Screenshot**
-![dark emuready com_](https://github.com/user-attachments/assets/9a7077fd-a9b1-4a1c-8a81-8f9beed25581)
-![light emuready com_](https://github.com/user-attachments/assets/df612c7c-4b9d-481b-ae92-175b2b6afb0b)
+
+<img src="https://github.com/user-attachments/assets/9a7077fd-a9b1-4a1c-8a81-8f9beed25581" width="48%">&nbsp;&nbsp;&nbsp;<img src="https://github.com/user-attachments/assets/df612c7c-4b9d-481b-ae92-175b2b6afb0b" width="48%">
 
 ---
 
 **Compatibility Listings Page Screenshot**
 
-![dark emuready com_listings](https://github.com/user-attachments/assets/400c48d4-6340-4a60-8d86-f996a35f1bf4)
-![light emuready com_listings](https://github.com/user-attachments/assets/4ca1c1de-3616-4c25-81b9-ad80f8a69458)
+<img src="https://github.com/user-attachments/assets/400c48d4-6340-4a60-8d86-f996a35f1bf4" width="48%">&nbsp;&nbsp;&nbsp;<img src="https://github.com/user-attachments/assets/4ca1c1de-3616-4c25-81b9-ad80f8a69458" width="48%">
 
 ---
 
 **Games Page Screenshot**
 
-![dark emuready com_games](https://github.com/user-attachments/assets/b036de53-18ed-4bf4-8117-5cd36e87ee31)
-![light emuready com_games](https://github.com/user-attachments/assets/9fbe12c4-3387-4e1d-986a-df80761134e3)
+<img src="https://github.com/user-attachments/assets/b036de53-18ed-4bf4-8117-5cd36e87ee31" width="48%">&nbsp;&nbsp;&nbsp;<img src="https://github.com/user-attachments/assets/9fbe12c4-3387-4e1d-986a-df80761134e3" width="48%">
 
 ---
 
