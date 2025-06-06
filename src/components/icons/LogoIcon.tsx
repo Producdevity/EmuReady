@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 
 interface Props {
   className?: string
+  animation?: boolean
 }
 
 function LogoIcon(props: Props) {
@@ -13,7 +14,10 @@ function LogoIcon(props: Props) {
       width={48}
       height={48}
       className={cn(
-        'w-12 h-auto rounded-md shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3',
+        'w-12 h-auto rounded-md shadow-lg',
+        props.animation
+          ? 'transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3'
+          : '',
         props.className,
       )}
     />

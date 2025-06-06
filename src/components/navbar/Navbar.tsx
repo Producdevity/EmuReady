@@ -69,7 +69,7 @@ function Navbar() {
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-3 group">
               <div className="relative">
-                <LogoIcon />
+                <LogoIcon animation />
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
               </div>
               <div>
