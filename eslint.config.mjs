@@ -5,6 +5,56 @@ const compat = new FlatCompat({
 })
 
 const eslintConfig = [
+  {
+    ignores: [
+      // Next.js build output and cache
+      '.next/',
+      'out/',
+
+      // Node modules
+      'node_modules/',
+
+      // Build and distribution directories
+      'dist/',
+      'build/',
+
+      // Prisma generated client code
+      'prisma/generated/**',
+
+      // Test coverage reports
+      'coverage/',
+
+      // Test output directories
+      'test-results/',
+      'playwright-report/',
+      'blob-report/',
+
+      // IDE and editor directories
+      '.claude/',
+      '.cursor/',
+      '.vscode/',
+      '.idea/',
+
+      // Vercel deployment files
+      '.vercel/',
+
+      // Log files
+      '*.log',
+      'npm-debug.log*',
+      'yarn-debug.log*',
+      'yarn-error.log*',
+      '.pnpm-debug.log*',
+
+      // OS generated files
+      '.DS_Store',
+      '*.pem',
+
+      // TypeScript build info
+      '*.tsbuildinfo',
+      'next-env.d.ts',
+    ],
+  },
+
   ...compat.config({
     extends: ['next/core-web-vitals', 'next/typescript'],
     parser: '@typescript-eslint/parser',
@@ -33,9 +83,8 @@ const eslintConfig = [
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
     },
   }),
-  {
-    ignores: ['prisma/generated/**'],
-  },
+
+  // Test files specific configuration
   {
     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
     rules: {
