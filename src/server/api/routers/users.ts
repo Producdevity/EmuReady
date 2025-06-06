@@ -90,6 +90,17 @@ export const usersRouter = createTRPCRouter({
             performance: { select: { label: true } },
           },
         },
+        submittedGames: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            submittedAt: true,
+            approvedAt: true,
+            system: { select: { id: true, name: true } },
+          },
+          orderBy: { submittedAt: 'desc' },
+        },
         votes: {
           select: {
             id: true,
@@ -99,9 +110,7 @@ export const usersRouter = createTRPCRouter({
                 id: true,
                 device: {
                   select: {
-                    brand: {
-                      select: { id: true, name: true },
-                    },
+                    brand: { select: { id: true, name: true } },
                     modelName: true,
                   },
                 },
@@ -115,9 +124,7 @@ export const usersRouter = createTRPCRouter({
       },
     })
 
-    if (!user) ResourceError.user.notFound()
-
-    return user
+    return user ?? ResourceError.user.notFound()
   }),
 
   getUserById: publicProcedure
@@ -184,10 +191,7 @@ export const usersRouter = createTRPCRouter({
 
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-        },
+        select: { id: true, email: true },
       })
 
       if (!user) return ResourceError.user.notFound()
@@ -231,18 +235,8 @@ export const usersRouter = createTRPCRouter({
         const searchTerm = search.trim()
         where = {
           OR: [
-            {
-              name: {
-                contains: searchTerm,
-                mode: 'insensitive',
-              },
-            },
-            {
-              email: {
-                contains: searchTerm,
-                mode: 'insensitive',
-              },
-            },
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { email: { contains: searchTerm, mode: 'insensitive' } },
           ],
         }
       }
@@ -289,13 +283,7 @@ export const usersRouter = createTRPCRouter({
           email: true,
           role: true,
           createdAt: true,
-          _count: {
-            select: {
-              listings: true,
-              votes: true,
-              comments: true,
-            },
-          },
+          _count: { select: { listings: true, votes: true, comments: true } },
         },
         orderBy,
       })
@@ -313,9 +301,7 @@ export const usersRouter = createTRPCRouter({
         select: { id: true, role: true, name: true, email: true },
       })
 
-      if (!targetUser) {
-        return ResourceError.user.notFound()
-      }
+      if (!targetUser) return ResourceError.user.notFound()
 
       // Prevent self-demotion from admin roles
       if (
