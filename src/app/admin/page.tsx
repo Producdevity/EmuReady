@@ -15,9 +15,7 @@ async function AdminDashboardPage() {
 
   if (!user) return redirect('/sign-in')
 
-  if (!hasPermission(user.role, Role.ADMIN)) {
-    redirect('/')
-  }
+  if (!hasPermission(user.role, Role.ADMIN)) return redirect('/')
 
   const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
 
