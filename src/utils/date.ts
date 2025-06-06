@@ -11,8 +11,13 @@ const localeMap: Record<string, Locale> = {
 }
 
 function getLocale(): Locale {
-  const lang = first(navigator?.language?.split('-')) ?? 'en'
-  return localeMap[lang] ?? localeMap.en
+  // Check if we're in browser environment
+  if (typeof window !== 'undefined' && navigator?.language) {
+    const lang = first(navigator.language.split('-')) ?? 'en'
+    return localeMap[lang] ?? localeMap.en
+  }
+  // Server fallback
+  return localeMap.en
 }
 
 export function formatDate(dateString: Date | string) {

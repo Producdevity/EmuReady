@@ -7,6 +7,7 @@ import { hasPermission } from '@/utils/permissions'
 import { prisma } from '@/server/db'
 import { Role } from '@orm'
 import { AppError } from '@/lib/errors'
+import { type Nullable } from '@/types/utils'
 
 type User = {
   id: string
@@ -20,7 +21,7 @@ type Session = {
 }
 
 type CreateContextOptions = {
-  session: Session | null
+  session: Nullable<Session>
 }
 
 export const createInnerTRPCContext = (opts: CreateContextOptions) => {
@@ -33,7 +34,7 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
 export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
   const { userId } = await auth()
 
-  let session: Session | null = null
+  let session: Nullable<Session> = null
 
   if (userId) {
     // Find user in database - they should exist due to webhook sync
@@ -60,11 +61,17 @@ export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
       // User not found in database - this shouldn't happen with webhooks
       // In development, this is common when webhooks aren't set up
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`🔧 Dev mode: User with clerkId ${userId} not found in database.`)
-        console.warn('   Either run the seeder (npx prisma db seed) or set up webhooks for auto-sync.')
+        console.warn(
+          `🔧 Dev mode: User with clerkId ${userId} not found in database.`,
+        )
+        console.warn(
+          '   Either run the seeder (npx prisma db seed) or set up webhooks for auto-sync.',
+        )
         console.warn('   See DEVELOPMENT_SETUP.md for details.')
       } else {
-        console.warn(`User with clerkId ${userId} not found in database. Check webhook configuration.`)
+        console.warn(
+          `User with clerkId ${userId} not found in database. Check webhook configuration.`,
+        )
       }
     }
   }

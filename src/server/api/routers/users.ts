@@ -8,7 +8,7 @@ import {
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { AppError, ResourceError } from '@/lib/errors'
-import { updateUserRole } from '@/utils/roleSync'
+import { updateUserRole } from '@/server/utils/roleSync'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,

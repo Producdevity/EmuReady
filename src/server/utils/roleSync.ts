@@ -6,10 +6,13 @@ import { prisma } from '@/server/db'
  * Syncs a user's role from database to Clerk publicMetadata
  * Database is the source of truth for roles
  */
-export async function syncRoleToClerk(userId: string, role: Role): Promise<void> {
+export async function syncRoleToClerk(
+  userId: string,
+  role: Role,
+): Promise<void> {
   try {
     const clerk = await clerkClient()
-    
+
     // Get current user from database to get clerkId
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -22,9 +25,7 @@ export async function syncRoleToClerk(userId: string, role: Role): Promise<void>
 
     // Update Clerk publicMetadata with the role
     await clerk.users.updateUserMetadata(user.clerkId, {
-      publicMetadata: {
-        role: role,
-      },
+      publicMetadata: { role },
     })
 
     console.log(`Synced role ${role} to Clerk for user ${user.clerkId}`)
@@ -37,7 +38,10 @@ export async function syncRoleToClerk(userId: string, role: Role): Promise<void>
 /**
  * Updates a user's role in the database and syncs to Clerk
  */
-export async function updateUserRole(userId: string, newRole: Role): Promise<void> {
+export async function updateUserRole(
+  userId: string,
+  newRole: Role,
+): Promise<void> {
   try {
     // Update role in database first (source of truth)
     await prisma.user.update({
@@ -66,7 +70,7 @@ export async function syncAllRolesToClerk(): Promise<void> {
     console.log(`Syncing ${users.length} user roles to Clerk...`)
 
     const clerk = await clerkClient()
-    
+
     for (const user of users) {
       try {
         await clerk.users.updateUserMetadata(user.clerkId, {
@@ -85,4 +89,4 @@ export async function syncAllRolesToClerk(): Promise<void> {
     console.error('Failed to sync all roles to Clerk:', error)
     throw error
   }
-} 
+}

@@ -1,10 +1,9 @@
 import { type Metadata } from 'next'
 import Link from 'next/link'
-import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
-import { prisma } from '@/server/db'
+import { getCurrentUser } from '@/server/utils/auth'
 import { adminNavItems, superAdminNavItems } from './data'
 
 export const metadata: Metadata = {
@@ -12,18 +11,11 @@ export const metadata: Metadata = {
 }
 
 async function AdminDashboardPage() {
-  const { userId } = await auth()
+  const user = await getCurrentUser()
 
-  if (!userId) return redirect('/sign-in')
+  if (!user) return redirect('/sign-in')
 
-  // Check user role for admin access
-  // TODO: Replace prisma.user.findUnique with your user fetching logic
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    select: { role: true },
-  })
-
-  if (!user || !hasPermission(user.role, Role.ADMIN)) {
+  if (!hasPermission(user.role, Role.ADMIN)) {
     redirect('/')
   }
 
