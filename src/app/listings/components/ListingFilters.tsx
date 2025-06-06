@@ -499,6 +499,7 @@ function ListingFilters(props: FiltersProps) {
                     options={props.devices.map((device) => ({
                       id: device.id,
                       name: `${device.brand.name} ${device.modelName}`,
+                      badgeName: device.modelName,
                     }))}
                     placeholder="All devices"
                     maxDisplayed={1}
@@ -512,6 +513,7 @@ function ListingFilters(props: FiltersProps) {
                     options={props.socs.map((soc) => ({
                       id: soc.id,
                       name: `${soc.manufacturer} ${soc.name}`,
+                      badgeName: soc.name,
                     }))}
                     placeholder="All SoCs"
                     maxDisplayed={1}

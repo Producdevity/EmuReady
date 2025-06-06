@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 interface Option {
   id: string
   name: string
+  badgeName?: string
 }
 
 interface Props {
@@ -333,11 +334,9 @@ function MultiSelect(props: Props) {
                   animate-in slide-in-from-bottom-2 fade-in-0
                   hover:bg-blue-200 dark:hover:bg-blue-900/50
                   transition-all duration-200 hover:scale-105 hover:shadow-sm"
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                }}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <span className="truncate max-w-32">{option.name}</span>
+                <span className="truncate max-w-32">{option.badgeName ?? option.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveOption(option.id)}
