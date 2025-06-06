@@ -2,14 +2,14 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'EmuReady - Android Emulation Community',
+    name: 'EmuReady - Know before you load',
     short_name: 'EmuReady',
     description:
-      'Discover and share Android emulation setups, performance data, and game compatibility information',
+      'Discover and share emulation setups, performance data, and game compatibility information',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',
-    theme_color: '#000000',
+    theme_color: '#353535',
     icons: [
       {
         src: '/favicon/android-chrome-192x192.png',
