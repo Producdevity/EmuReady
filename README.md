@@ -6,15 +6,23 @@ Visit our website: [https://emuready.com](https://emuready.com)
 
 ---
 
+**Home Page Screenshot**
+![dark emuready com_](https://github.com/user-attachments/assets/9a7077fd-a9b1-4a1c-8a81-8f9beed25581)
+![light emuready com_](https://github.com/user-attachments/assets/df612c7c-4b9d-481b-ae92-175b2b6afb0b)
+
+---
+
 **Compatibility Listings Page Screenshot**
 
-<img width="1666" alt="screenshot compatibility listings page EmuReady.com" src="https://github.com/user-attachments/assets/2b1b3d17-3070-4f1c-bc3f-5fbfb41f9608" />
+![dark emuready com_listings](https://github.com/user-attachments/assets/400c48d4-6340-4a60-8d86-f996a35f1bf4)
+![light emuready com_listings](https://github.com/user-attachments/assets/4ca1c1de-3616-4c25-81b9-ad80f8a69458)
 
 ---
 
 **Games Page Screenshot**
 
-<img width="1663" alt="screenshot games page EmuReady.com" src="https://github.com/user-attachments/assets/5dfe8c9b-d977-464f-b853-8d23066c3410" />
+![dark emuready com_games](https://github.com/user-attachments/assets/b036de53-18ed-4bf4-8117-5cd36e87ee31)
+![light emuready com_games](https://github.com/user-attachments/assets/9fbe12c4-3387-4e1d-986a-df80761134e3)
 
 ---
 
