@@ -110,7 +110,7 @@ function Navbar() {
               <>
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    {userRole && hasPermission(userRole, Role.AUTHOR) && (
+                    {userRole && hasPermission(userRole, Role.USER) && (
                       <Link
                         href="/listings/new"
                         className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-105"
