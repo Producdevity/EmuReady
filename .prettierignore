@@ -1,6 +1,37 @@
-/prisma/generated
-/docs
-/public
-/test-results
+
+# Test coverage reports
+/coverage
+
+# Node.js dependencies
 /node_modules
-/tests-examples
+
+# Test files
+/test-results
+
+# Documentation files
+/docs
+
+# Temporary files
+/temp
+
+# Configuration files
+/.eslintignore
+/.prettierignore
+
+# IDE and editor directories
+/.idea
+/.vscode
+/.claude
+/.cursor
+
+# Build directories
+/dist
+/build
+/public
+/prisma/generated
+
+# Logs
+/logs
+
+# Other ignored files
+/.DS_Store
