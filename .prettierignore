@@ -1,2 +1,6 @@
-prisma/generated
-site.webmanifest
+/prisma/generated
+/docs
+/public
+/test-results
+/node_modules
+/tests-examples
