@@ -15,7 +15,11 @@ export const adminNavItems: NavItem[] = [
     label: 'Games',
     description: 'Manage games and view related data.',
   },
-  { href: '/admin/brands', label: 'Brands', description: 'Manage brands.' },
+  {
+    href: '/admin/brands',
+    label: 'Brands',
+    description: 'Manage device brands.',
+  },
   {
     href: '/admin/socs',
     label: 'SoCs',
