@@ -19,11 +19,11 @@ List the system(s) this emulator supports (e.g. Nintendo Switch, PlayStation 2, 
 
 ## Additional Notes (Optional)
 
-Add anything else we should know, like platform support (Windows, Android, etc), open-source status, or features worth mentioning.
+Add anything else we should know, like platform support (Windows, Linux, macOS, Android, iOS, etc), open-source status, or features worth mentioning.
 
 ## Checklist
 
-- [ ] I have confirmed this emulator works on Android
+- [ ] I have confirmed this emulator works on the target platform
 - [ ] I have confirmed this emulator is not already listed on EmuReady
 - [ ] I have provided an official or reliable link to the emulator
 - [ ] I have listed all the systems the emulator supports
