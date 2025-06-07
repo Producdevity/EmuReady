@@ -2,10 +2,13 @@
 
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import { Button, Input, RawgImageSelector } from '@/components/ui'
 import { Pencil } from 'lucide-react'
 import { sanitizeString } from '@/utils/validation'
+import { hasPermission } from '@/utils/permissions'
+import { ApprovalStatus, Role } from '@orm'
 
 interface Props {
   gameData: {
@@ -13,6 +16,8 @@ interface Props {
     title: string
     systemId: string
     imageUrl?: string | null
+    status?: string
+    submittedBy?: string | null
     system?: {
       id: string
       name: string
@@ -27,8 +32,33 @@ export default function GameEditForm({ gameData }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { user } = useUser()
 
-  const updateGame = api.games.update.useMutation({
+  // Get user data to determine permissions
+  const { data: userData } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user,
+  })
+
+  // Determine if user is admin or owner of pending game
+  const isAdmin = hasPermission(userData?.role, Role.ADMIN)
+  const isOwnerOfPendingGame =
+    userData &&
+    gameData.submittedBy === userData.id &&
+    gameData.status === ApprovalStatus.PENDING
+
+  // Use appropriate mutation based on permissions
+  const updateGameAdmin = api.games.update.useMutation({
+    onSuccess: () => {
+      setOpen(false)
+      router.refresh()
+    },
+    onError: (err) => {
+      setError(err.message)
+      setIsLoading(false)
+    },
+  })
+
+  const updateGameUser = api.games.updateOwnPendingGame.useMutation({
     onSuccess: () => {
       setOpen(false)
       router.refresh()
@@ -53,12 +83,22 @@ export default function GameEditForm({ gameData }: Props) {
       return
     }
 
-    updateGame.mutate({
+    const updateData = {
       id: gameData.id,
       title: sanitizedTitle,
       systemId: gameData.systemId,
       imageUrl: imageUrl || undefined,
-    })
+    }
+
+    // Use appropriate mutation based on user permissions
+    if (isAdmin) {
+      updateGameAdmin.mutate(updateData)
+    } else if (isOwnerOfPendingGame) {
+      updateGameUser.mutate(updateData)
+    } else {
+      setError('You do not have permission to edit this game')
+      setIsLoading(false)
+    }
   }
 
   const handleImageSelect = (url: string) => {

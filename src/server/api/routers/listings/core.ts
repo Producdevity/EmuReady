@@ -1,5 +1,5 @@
 import { keys } from 'remeda'
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   CreateListingSchema,
   CreateVoteSchema,
@@ -12,7 +12,8 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
-import { ListingApprovalStatus, Prisma } from '@orm'
+import { ApprovalStatus, Prisma, Role } from '@orm'
+import { hasPermission } from '@/utils/permissions'
 import { validateCustomFields } from './validation'
 
 export const coreRouter = createTRPCRouter({
@@ -24,6 +25,23 @@ export const coreRouter = createTRPCRouter({
       const gameFilter: Prisma.GameWhereInput = {}
       if (input.systemIds && input.systemIds.length > 0) {
         gameFilter.systemId = { in: input.systemIds }
+      }
+
+      // Game approval status filtering - similar to listing status filtering
+      if (hasPermission(ctx.session?.user?.role, Role.ADMIN)) {
+        // Admins can see listings for all games
+      } else if (ctx.session?.user?.id) {
+        // Authenticated users see listings for approved games + their own pending games
+        gameFilter.OR = [
+          { status: ApprovalStatus.APPROVED },
+          {
+            status: ApprovalStatus.PENDING,
+            submittedBy: ctx.session.user.id,
+          },
+        ]
+      } else {
+        // Public users only see listings for approved games
+        gameFilter.status = ApprovalStatus.APPROVED
       }
 
       const filters: Prisma.ListingWhereInput = {
@@ -50,15 +68,15 @@ export const coreRouter = createTRPCRouter({
         if (ctx.session) {
           statusFilter = {
             OR: [
-              { status: ListingApprovalStatus.APPROVED },
-              { 
-                status: ListingApprovalStatus.PENDING,
-                authorId: ctx.session.user.id 
-              }
-            ]
+              { status: ApprovalStatus.APPROVED },
+              {
+                status: ApprovalStatus.PENDING,
+                authorId: ctx.session.user.id,
+              },
+            ],
           }
         } else {
-          statusFilter = { status: ListingApprovalStatus.APPROVED }
+          statusFilter = { status: ApprovalStatus.APPROVED }
         }
       }
 
@@ -102,11 +120,8 @@ export const coreRouter = createTRPCRouter({
         ]
 
         // Combine status filter with search filters
-        combinedFilters.AND = [
-          statusFilter,
-          { OR: searchFilters }
-        ]
-        
+        combinedFilters.AND = [statusFilter, { OR: searchFilters }]
+
         // Remove the duplicate status filters from the root level
         delete combinedFilters.status
         delete combinedFilters.OR
@@ -295,20 +310,6 @@ export const coreRouter = createTRPCRouter({
       // TODO: consider logging this error
       if (!userExists) return ResourceError.user.notInDatabase(authorId)
 
-      const existingListing = await ctx.prisma.listing.findFirst({
-        where: {
-          gameId,
-          deviceId,
-          emulatorId,
-        },
-      })
-
-      if (existingListing) {
-        AppError.conflict(
-          'A listing for this game, device, and emulator combination already exists',
-        )
-      }
-
       return ctx.prisma.$transaction(async (tx) => {
         // Validate custom fields
         await validateCustomFields(tx, emulatorId, customFieldValues)
@@ -321,7 +322,7 @@ export const coreRouter = createTRPCRouter({
             performanceId,
             notes,
             authorId: authorId,
-            status: ListingApprovalStatus.PENDING,
+            status: ApprovalStatus.PENDING,
           },
         })
 
@@ -347,11 +348,10 @@ export const coreRouter = createTRPCRouter({
   vote: protectedProcedure
     .input(CreateVoteSchema)
     .mutation(async ({ ctx, input }) => {
-      const { listingId, value } = input
       const userId = ctx.session.user.id
 
       const listing = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
+        where: { id: input.listingId },
       })
 
       if (!listing) return ResourceError.listing.notFound()
@@ -365,37 +365,29 @@ export const coreRouter = createTRPCRouter({
 
       // Check if user already voted
       const existingVote = await ctx.prisma.vote.findUnique({
-        where: { userId_listingId: { userId, listingId } },
+        where: { userId_listingId: { userId, listingId: input.listingId } },
       })
 
-      if (existingVote) {
-        // If value is the same, remove the vote (toggle)
-        if (existingVote.value === value) {
-          await ctx.prisma.vote.delete({
-            where: {
-              userId_listingId: {
-                userId,
-                listingId,
-              },
-            },
-          })
-          return { message: 'Vote removed' }
-        }
-
-        // Otherwise update the existing vote
-        return ctx.prisma.vote.update({
-          where: {
-            userId_listingId: {
-              userId,
-              listingId,
-            },
-          },
-          data: { value },
+      if (!existingVote) {
+        // Create new vote
+        return ctx.prisma.vote.create({
+          data: { value: input.value, userId, listingId: input.listingId },
         })
       }
 
-      // Create new vote
-      return ctx.prisma.vote.create({ data: { value, userId, listingId } })
+      // If value is the same, remove the vote (toggle)
+      if (existingVote.value === input.value) {
+        await ctx.prisma.vote.delete({
+          where: { userId_listingId: { userId, listingId: input.listingId } },
+        })
+        return { message: 'Vote removed' }
+      }
+
+      // Otherwise update the existing vote
+      return ctx.prisma.vote.update({
+        where: { userId_listingId: { userId, listingId: input.listingId } },
+        data: { value: input.value },
+      })
     }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) => {
@@ -403,19 +395,17 @@ export const coreRouter = createTRPCRouter({
   }),
 
   statistics: publicProcedure.query(async ({ ctx }) => {
-    const [
-      listingsCount,
-      gamesCount,
-      emulatorsCount,
-      devicesCount,
-    ] = await Promise.all([
-      ctx.prisma.listing.count({
-        where: { status: ListingApprovalStatus.APPROVED },
-      }),
-      ctx.prisma.game.count(),
-      ctx.prisma.emulator.count(),
-      ctx.prisma.device.count(),
-    ])
+    const [listingsCount, gamesCount, emulatorsCount, devicesCount] =
+      await Promise.all([
+        ctx.prisma.listing.count({
+          where: { status: ApprovalStatus.APPROVED },
+        }),
+        ctx.prisma.game.count({
+          where: { status: ApprovalStatus.APPROVED },
+        }),
+        ctx.prisma.emulator.count(),
+        ctx.prisma.device.count(),
+      ])
 
     return {
       listings: listingsCount,
@@ -427,7 +417,10 @@ export const coreRouter = createTRPCRouter({
 
   featured: publicProcedure.query(async ({ ctx }) => {
     const listings = await ctx.prisma.listing.findMany({
-      where: { status: ListingApprovalStatus.APPROVED },
+      where: {
+        status: ApprovalStatus.APPROVED,
+        game: { status: ApprovalStatus.APPROVED },
+      },
       orderBy: { createdAt: 'desc' },
       take: 3,
       include: {

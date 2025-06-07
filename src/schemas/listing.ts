@@ -1,4 +1,4 @@
-import { ListingApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm'
 import { z } from 'zod'
 
 export const CreateListingSchema = z.object({
@@ -39,7 +39,7 @@ export const GetListingsSchema = z.object({
     ])
     .optional(),
   sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  approvalStatus: z.nativeEnum(ListingApprovalStatus).optional(),
+  approvalStatus: z.nativeEnum(ApprovalStatus).optional(),
 })
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
@@ -68,13 +68,13 @@ export const DeleteListingSchema = z.object({ id: z.string().uuid() })
 export const GetProcessedSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
-  filterStatus: z.nativeEnum(ListingApprovalStatus).optional(),
+  filterStatus: z.nativeEnum(ApprovalStatus).optional(),
   search: z.string().optional(),
 })
 
 export const OverrideApprovalStatusSchema = z.object({
   listingId: z.string().uuid(),
-  newStatus: z.nativeEnum(ListingApprovalStatus), // PENDING, APPROVED, or REJECTED
+  newStatus: z.nativeEnum(ApprovalStatus), // PENDING, APPROVED, or REJECTED
   overrideNotes: z.string().optional(),
 })
 

@@ -1,13 +1,16 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui'
+import { ApprovalStatusBadge } from '@/components/ui'
 import getImageUrl from '@/app/games/utils/getImageUrl'
-import type { Game } from '@orm'
+import { type Game, ApprovalStatus } from '@orm'
 
 interface Props {
   game: Game & {
     system?: { name: string } | null
     _count: { listings: number }
+    status?: string
+    submittedBy?: string | null
   }
 }
 
@@ -32,14 +35,18 @@ function GameCard(props: Props) {
         <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white truncate">
           {props.game.title}
         </h2>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <Badge variant="default">
             {props.game.system?.name ?? 'Unknown System'}
           </Badge>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {props.game._count.listings}{' '}
-            {props.game._count.listings === 1 ? 'listing' : 'listings'}
-          </span>
+          {props.game.status &&
+            props.game.status !== ApprovalStatus.APPROVED && (
+              <ApprovalStatusBadge status={props.game.status} type="game" />
+            )}
+        </div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          {props.game._count.listings}{' '}
+          {props.game._count.listings === 1 ? 'listing' : 'listings'}
         </div>
       </div>
     </Link>

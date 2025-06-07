@@ -1,9 +1,4 @@
-import {
-  Role,
-  ListingApprovalStatus,
-  GameApprovalStatus,
-  type PrismaClient,
-} from '@orm'
+import { Role, ApprovalStatus, type PrismaClient } from '@orm'
 
 // Helper function to get random element from array
 function getRandomElement<T>(array: T[]): T {
@@ -267,8 +262,8 @@ async function listingsSeeder(prisma: PrismaClient) {
             notes,
             authorId: author.id,
             status: isApproved
-              ? ListingApprovalStatus.APPROVED
-              : ListingApprovalStatus.PENDING,
+              ? ApprovalStatus.APPROVED
+              : ApprovalStatus.PENDING,
             processedAt,
             processedNotes,
             processedByUserId: processor?.id,
@@ -290,7 +285,7 @@ async function listingsSeeder(prisma: PrismaClient) {
         totalCommentsCreated += commentsAfter - commentsBefore
 
         console.log(
-          `  ✅ Created ${isApproved ? GameApprovalStatus.APPROVED : GameApprovalStatus.PENDING} listing: ${game.title} (${selectedEmulator.name}) - ${selectedPerformance.label}`,
+          `  ✅ Created ${isApproved ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING} listing: ${game.title} (${selectedEmulator.name}) - ${selectedPerformance.label}`,
         )
       } catch (error) {
         console.error(

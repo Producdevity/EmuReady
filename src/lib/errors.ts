@@ -218,6 +218,8 @@ export class ResourceError {
       AppError.conflict(
         `A game titled "${title}" already exists for the system "${systemName}"`,
       ),
+    alreadyProcessed: () =>
+      AppError.badRequest('Game has already been processed'),
   }
 
   static emulator = {

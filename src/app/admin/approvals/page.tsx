@@ -11,13 +11,14 @@ import {
   Button,
   ColumnVisibilityControl,
   AdminTableContainer,
+  AdminNotificationBanner,
   SortableHeader,
   Pagination,
 } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
-import { ListingApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
@@ -66,12 +67,14 @@ function AdminApprovalsPage() {
     search: isEmpty(table.search) ? undefined : table.search,
   })
 
+  const gameStatsQuery = api.games.getGameStats.useQuery()
+
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [selectedListingForApproval, setSelectedListingForApproval] =
     useState<PendingListing | null>(null)
   const [approvalNotes, setApprovalNotes] = useState('')
   const [approvalDecision, setApprovalDecision] =
-    useState<ListingApprovalStatus | null>(null)
+    useState<ApprovalStatus | null>(null)
 
   const utils = api.useUtils()
   const approveMutation = api.listings.approveListing.useMutation({
@@ -104,7 +107,7 @@ function AdminApprovalsPage() {
 
   const openApprovalModal = (
     listing: PendingListing,
-    decision: ListingApprovalStatus,
+    decision: ApprovalStatus,
   ) => {
     setSelectedListingForApproval(listing)
     setApprovalDecision(decision)
@@ -121,11 +124,11 @@ function AdminApprovalsPage() {
 
   const handleApprovalSubmit = () => {
     if (selectedListingForApproval && approvalDecision) {
-      if (approvalDecision === ListingApprovalStatus.APPROVED) {
+      if (approvalDecision === ApprovalStatus.APPROVED) {
         approveMutation.mutate({
           listingId: selectedListingForApproval.id,
         } satisfies RouterInput['listings']['approveListing'])
-      } else if (approvalDecision === ListingApprovalStatus.REJECTED) {
+      } else if (approvalDecision === ApprovalStatus.REJECTED) {
         rejectMutation.mutate({
           listingId: selectedListingForApproval.id,
           notes: approvalNotes || undefined,
@@ -175,6 +178,16 @@ function AdminApprovalsPage() {
           />
         </div>
       </div>
+
+      {gameStatsQuery.data && gameStatsQuery.data.pending > 0 && (
+        <AdminNotificationBanner
+          type="warning"
+          title="Pending Games Awaiting Approval"
+          message={`There ${gameStatsQuery.data.pending === 1 ? 'is' : 'are'} ${gameStatsQuery.data.pending} game${gameStatsQuery.data.pending === 1 ? '' : 's'} waiting for admin approval.`}
+          actionLabel="Review Games"
+          actionUrl="/admin/games/approvals"
+        />
+      )}
 
       {pendingListingsQuery.isLoading && (
         <LoadingSpinner text="Loading pending listings..." />
@@ -325,7 +338,7 @@ function AdminApprovalsPage() {
                             onClick={() =>
                               openApprovalModal(
                                 listing,
-                                ListingApprovalStatus.APPROVED,
+                                ApprovalStatus.APPROVED,
                               )
                             }
                             className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
@@ -338,7 +351,7 @@ function AdminApprovalsPage() {
                             onClick={() =>
                               openApprovalModal(
                                 listing,
-                                ListingApprovalStatus.REJECTED,
+                                ApprovalStatus.REJECTED,
                               )
                             }
                             className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"

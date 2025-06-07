@@ -1,24 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { Badge } from '@/components/ui'
+import { Badge, PerformanceBadge } from '@/components/ui'
+import { getApprovalStatusVariant } from '@/utils/badgeColors'
 import { formatTimeAgo } from '@/utils/date'
 import { type Prisma } from '@orm'
 
 type GameWithRelations = Prisma.GameGetPayload<{
   include: {
-    system: {
-      include: {
-        emulators: true
-      }
-    }
+    system: { include: { emulators: true } }
     listings: {
       include: {
-        device: {
-          include: {
-            brand: true
-          }
-        }
+        device: { include: { brand: true } }
         emulator: true
         performance: true
         author: {
@@ -28,11 +21,7 @@ type GameWithRelations = Prisma.GameGetPayload<{
             email: true
           }
         }
-        _count: {
-          select: {
-            comments: true
-          }
-        }
+        _count: { select: { comments: true } }
       }
     }
   }
@@ -94,33 +83,16 @@ function GameRelatedData(props: Props) {
                     {listing.emulator.name}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge
-                      variant={
-                        listing.performance.label === 'Perfect'
-                          ? 'success'
-                          : listing.performance.label === 'Great'
-                            ? 'info'
-                            : listing.performance.label === 'Playable'
-                              ? 'warning'
-                              : 'danger'
-                      }
-                    >
-                      {listing.performance.label}
-                    </Badge>
+                    <PerformanceBadge
+                      rank={listing.performance.rank}
+                      label={listing.performance.label}
+                    />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {listing.author?.name ?? 'Unknown'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge
-                      variant={
-                        listing.status === 'APPROVED'
-                          ? 'success'
-                          : listing.status === 'PENDING'
-                            ? 'warning'
-                            : 'danger'
-                      }
-                    >
+                    <Badge variant={getApprovalStatusVariant(listing.status)}>
                       {listing.status}
                     </Badge>
                   </td>

@@ -39,6 +39,7 @@ interface GameOption extends AutocompleteOptionBase {
     id: string
     name: string
   }
+  status?: string
 }
 
 interface EmulatorOption extends AutocompleteOptionBase {
@@ -134,6 +135,7 @@ function AddListingPage() {
             id: g.id,
             title: g.title,
             system: g.system,
+            status: g.status,
           })) ?? []
         )
       } catch (error) {
@@ -355,7 +357,7 @@ function AddListingPage() {
 
   return (
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full md:max-w-3xl lg:mx-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
           Create New Listing
         </h1>
@@ -408,7 +410,9 @@ function AddListingPage() {
             <PerformanceSelector
               control={control}
               performanceScalesData={performanceScalesData}
-              errorMessage={String(formState.errors.performanceId?.message ?? '')}
+              errorMessage={String(
+                formState.errors.performanceId?.message ?? '',
+              )}
             />
           </div>
 

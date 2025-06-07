@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Eye, Trash2, Clock } from 'lucide-react'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
-import { Role, ListingApprovalStatus } from '@orm'
+import { Role, ApprovalStatus } from '@orm'
 import storageKeys from '@/data/storageKeys'
 import SystemIcon from '@/components/icons/SystemIcon'
 import useLocalStorage from '@/hooks/useLocalStorage'
@@ -325,7 +325,7 @@ function ListingsPage() {
                           >
                             {listing.game.title}
                           </Link>
-                          {listing.status === ListingApprovalStatus.PENDING && (
+                          {listing.status === ApprovalStatus.PENDING && (
                             <Tooltip>
                               <TooltipTrigger>
                                 <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />

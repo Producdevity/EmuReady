@@ -24,7 +24,7 @@ enum CustomFieldType {
   SELECT
 }
 
-enum ListingApprovalStatus {
+enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
@@ -41,6 +41,8 @@ model User {
   comments       Comment[]
   listings       Listing[]
   processedListings Listing[] @relation("ListingsProcessedByAdmin")
+  submittedGames Game[]        @relation("GamesSubmittedByUser")
+  approvedGames  Game[]        @relation("GamesApprovedByAdmin")
   votes          Vote[]
   commentVotes   CommentVote[]
 }
@@ -85,14 +87,27 @@ model System {
 }
 
 model Game {
-  id       String    @id @default(uuid())
-  title    String
-  systemId String
-  imageUrl String?
-  system   System    @relation(fields: [systemId], references: [id])
-  listings Listing[]
+  id          String         @id @default(uuid())
+  title       String
+  systemId    String
+  imageUrl    String?
+  status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
+  submittedBy String?                     // null for existing games, userId for new submissions
+  submittedAt DateTime?
+  approvedBy  String?
+  approvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  system      System         @relation(fields: [systemId], references: [id])
+  listings    Listing[]
+  submitter   User?          @relation("GamesSubmittedByUser", fields: [submittedBy], references: [id])
+  approver    User?          @relation("GamesApprovedByAdmin", fields: [approvedBy], references: [id])
 
   @@unique([title, systemId])
+  @@index([status])
+  @@index([submittedBy])
+  @@index([submittedAt])
+  @@index([status, submittedAt])
+  @@index([systemId, status])
 }
 
 model CustomFieldDefinition {
@@ -164,11 +179,11 @@ model Listing {
   notes           String?
   authorId        String
   createdAt       DateTime               @default(now())
-  status          ListingApprovalStatus  @default(PENDING)
+  status          ApprovalStatus  @default(PENDING)
   processedAt     DateTime?
   processedNotes  String?
   processedByUserId String?
-  
+
   author          User                   @relation(fields: [authorId], references: [id])
   processedByUser User?                  @relation("ListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
   performance     PerformanceScale       @relation(fields: [performanceId], references: [id])

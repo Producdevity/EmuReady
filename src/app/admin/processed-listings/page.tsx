@@ -1,5 +1,6 @@
 'use client'
 
+import { getApprovalStatusColor } from '@/utils/badgeColors'
 import { useState, type ChangeEvent } from 'react'
 import { api } from '@/lib/api'
 import { Eye, CheckCircle, XCircle, Undo, ExternalLink } from 'lucide-react'
@@ -17,10 +18,9 @@ import {
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
-import { ListingApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
-import getStatusBadgeColor from './utils/getStatusBadgeColor'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 
 type ProcessedListing =
@@ -28,9 +28,9 @@ type ProcessedListing =
 
 const statusOptions = [
   { id: 'all' as const, name: 'All Processed' },
-  { id: ListingApprovalStatus.APPROVED, name: 'Approved' },
-  { id: ListingApprovalStatus.PENDING, name: 'Pending' },
-  { id: ListingApprovalStatus.REJECTED, name: 'Rejected' },
+  { id: ApprovalStatus.APPROVED, name: 'Approved' },
+  { id: ApprovalStatus.PENDING, name: 'Pending' },
+  { id: ApprovalStatus.REJECTED, name: 'Rejected' },
 ]
 
 const PROCESSED_LISTINGS_COLUMNS: ColumnDefinition[] = [
@@ -48,8 +48,7 @@ function ProcessedListingsPage() {
   })
 
   const [currentPage, setCurrentPage] = useState(1)
-  const [filterStatus, setFilterStatus] =
-    useState<ListingApprovalStatus | null>(null)
+  const [filterStatus, setFilterStatus] = useState<ApprovalStatus | null>(null)
   const [search, setSearch] = useState('')
   const itemsPerPage = 10
 
@@ -69,7 +68,7 @@ function ProcessedListingsPage() {
     useState<ProcessedListing | null>(null)
   const [overrideNotes, setOverrideNotes] = useState('')
   const [newStatusForOverride, setNewStatusForOverride] =
-    useState<ListingApprovalStatus | null>(null)
+    useState<ApprovalStatus | null>(null)
 
   const utils = api.useUtils()
   const overrideMutation = api.listings.overrideApprovalStatus.useMutation({
@@ -88,7 +87,7 @@ function ProcessedListingsPage() {
 
   const openOverrideModal = (
     listing: ProcessedListing,
-    targetStatus: ListingApprovalStatus,
+    targetStatus: ApprovalStatus,
   ) => {
     setSelectedListingForOverride(listing)
     setNewStatusForOverride(targetStatus)
@@ -114,7 +113,7 @@ function ProcessedListingsPage() {
   }
 
   const handleFilterChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    const value = ev.target.value as ListingApprovalStatus | 'all'
+    const value = ev.target.value as ApprovalStatus | 'all'
     setFilterStatus(value === 'all' ? null : value)
     setCurrentPage(1)
   }
@@ -254,7 +253,7 @@ function ProcessedListingsPage() {
                     {columnVisibility.isColumnVisible('status') && (
                       <td className="px-4 py-4 whitespace-nowrap text-sm">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(listing.status)}`}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getApprovalStatusColor(listing.status)}`}
                         >
                           {listing.status}
                         </span>
@@ -281,14 +280,14 @@ function ProcessedListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-1">
-                        {listing.status === ListingApprovalStatus.APPROVED && (
+                        {listing.status === ApprovalStatus.APPROVED && (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() =>
                               openOverrideModal(
                                 listing,
-                                ListingApprovalStatus.REJECTED,
+                                ApprovalStatus.REJECTED,
                               )
                             }
                             title="Override to Rejected"
@@ -297,14 +296,14 @@ function ProcessedListingsPage() {
                             <XCircle className="mr-1 h-4 w-4" /> Reject
                           </Button>
                         )}
-                        {listing.status === ListingApprovalStatus.REJECTED && (
+                        {listing.status === ApprovalStatus.REJECTED && (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() =>
                               openOverrideModal(
                                 listing,
-                                ListingApprovalStatus.APPROVED,
+                                ApprovalStatus.APPROVED,
                               )
                             }
                             title="Override to Approved"
@@ -317,10 +316,7 @@ function ProcessedListingsPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() =>
-                            openOverrideModal(
-                              listing,
-                              ListingApprovalStatus.PENDING,
-                            )
+                            openOverrideModal(listing, ApprovalStatus.PENDING)
                           }
                           title="Revert to Pending"
                           className="text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -365,14 +361,14 @@ function ProcessedListingsPage() {
             <p className="text-sm text-gray-700 dark:text-gray-300">
               Current Status:{' '}
               <strong
-                className={`${getStatusBadgeColor(selectedListingForOverride.status)} px-1.5 py-0.5 rounded-md text-xs`}
+                className={`${getApprovalStatusColor(selectedListingForOverride.status)} px-1.5 py-0.5 rounded-md text-xs`}
               >
                 {selectedListingForOverride.status}
               </strong>
               <br />
               New Status:{' '}
               <strong
-                className={`${getStatusBadgeColor(newStatusForOverride!)} px-1.5 py-0.5 rounded-md text-xs`}
+                className={`${getApprovalStatusColor(newStatusForOverride)} px-1.5 py-0.5 rounded-md text-xs`}
               >
                 {newStatusForOverride}
               </strong>
@@ -388,7 +384,7 @@ function ProcessedListingsPage() {
                 as="textarea"
                 id="overrideNotes"
                 value={overrideNotes}
-                onChange={(e) => setOverrideNotes(e.target.value)}
+                onChange={(ev) => setOverrideNotes(ev.target.value)}
                 rows={4}
                 placeholder={`Notes for changing status to ${newStatusForOverride}...`}
                 className="w-full mt-1"
@@ -404,7 +400,7 @@ function ProcessedListingsPage() {
               </Button>
               <Button
                 variant={
-                  newStatusForOverride === ListingApprovalStatus.REJECTED
+                  newStatusForOverride === ApprovalStatus.REJECTED
                     ? 'danger'
                     : 'primary'
                 }

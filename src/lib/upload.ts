@@ -26,11 +26,11 @@ export interface UploadConfig {
 }
 
 // Predefined upload configurations
-export const UPLOAD_CONFIGS = {
+export const UPLOAD_CONFIGS: Record<string, UploadConfig> = {
   games: {
     directory: 'games',
     filenamePrefix: 'game',
-    requiredRole: Role.AUTHOR,
+    requiredRole: Role.USER,
   },
   profiles: {
     directory: 'profiles',
@@ -41,12 +41,17 @@ export const UPLOAD_CONFIGS = {
 
 export type UploadType = keyof typeof UPLOAD_CONFIGS
 
+// Sanitize userId to prevent path traversal and filesystem issues
+function sanitizeUserId(userId: string): string {
+  return userId.replace(/[^a-zA-Z0-9_-]/g, '_')
+}
+
 // Validation functions
 export function isValidImage(file: File): boolean {
+  if (!file) return false
+
   // Check MIME type first
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return false
-  }
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) return false
 
   // Then verify extension
   const fileExtension = file.name.split('.').pop()?.toLowerCase() ?? ''
@@ -64,23 +69,25 @@ export function getFileExtension(filename: string): string {
     : 'jpg'
 }
 
+type PermissionCheckResult =
+  | { success: true }
+  | { success: false; error: string; status: number }
+
 // Permission checking
 export async function checkUploadPermissions(
   userId: string,
   config: UploadConfig,
-): Promise<
-  { success: true } | { success: false; error: string; status: number }
-> {
-  if (!config.requiredRole) {
-    return { success: true }
-  }
+): Promise<PermissionCheckResult> {
+  if (!config.requiredRole) return { success: true }
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
     select: { role: true },
   })
 
-  if (!user || !hasPermission(user.role, config.requiredRole)) {
+  if (!user) return { success: false, error: 'User not found', status: 404 }
+
+  if (!hasPermission(user.role, config.requiredRole)) {
     return {
       success: false,
       error: 'Insufficient permissions',
@@ -91,20 +98,23 @@ export async function checkUploadPermissions(
   return { success: true }
 }
 
+type UploadFileResult =
+  | { success: true; imageUrl: string }
+  | { success: false; error: string }
+
 // File upload logic
 export async function uploadFile(
   file: File,
   userId: string,
   config: UploadConfig,
-): Promise<
-  { success: true; imageUrl: string } | { success: false; error: string }
-> {
+): Promise<UploadFileResult> {
   try {
     // Generate unique filename
     const fileExtension = getFileExtension(file.name)
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 10)
-    const fileName = `${config.filenamePrefix}-${userId}-${timestamp}-${randomString}.${fileExtension}`
+    const sanitizedUserId = sanitizeUserId(userId)
+    const fileName = `${config.filenamePrefix}-${sanitizedUserId}-${timestamp}-${randomString}.${fileExtension}`
 
     // Create directory if it doesn't exist
     const publicDir = join(process.cwd(), 'public')
@@ -140,26 +150,20 @@ export async function uploadFile(
   }
 }
 
+type HandleFileUploadResult =
+  | { success: true; imageUrl: string }
+  | { success: false; error: string; status: number }
+
 // Main upload handler
 export async function handleFileUpload(
   formData: FormData,
   userId: string,
   uploadType: UploadType,
-): Promise<
-  | { success: true; imageUrl: string }
-  | { success: false; error: string; status: number }
-> {
+): Promise<HandleFileUploadResult> {
   const config = UPLOAD_CONFIGS[uploadType]
   const file = formData.get('file') as File | null
 
-  // Validate file exists
-  if (!file) {
-    return {
-      success: false,
-      error: 'No file uploaded',
-      status: 400,
-    }
-  }
+  if (!file) return { success: false, error: 'No file uploaded', status: 400 }
 
   // Validate file type
   if (!isValidImage(file)) {
@@ -181,9 +185,7 @@ export async function handleFileUpload(
 
   // Check permissions
   const permissionCheck = await checkUploadPermissions(userId, config)
-  if (!permissionCheck.success) {
-    return permissionCheck
-  }
+  if (!permissionCheck.success) return permissionCheck
 
   // Upload file
   const uploadResult = await uploadFile(file, userId, config)

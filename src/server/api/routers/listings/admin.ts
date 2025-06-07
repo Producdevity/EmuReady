@@ -1,5 +1,5 @@
 import type { Prisma } from '@orm'
-import { ListingApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm'
 import { ResourceError } from '@/lib/errors'
 import {
   ApproveListingSchema,
@@ -19,12 +19,18 @@ export const adminRouter = createTRPCRouter({
   getPending: adminProcedure
     .input(GetPendingListingsSchema)
     .query(async ({ ctx, input }) => {
-      const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
+      const {
+        search,
+        page = 1,
+        limit = 20,
+        sortField,
+        sortDirection,
+      } = input ?? {}
       const skip = (page - 1) * limit
 
       // Build where clause for search
       let where: Prisma.ListingWhereInput = {
-        status: ListingApprovalStatus.PENDING,
+        status: ApprovalStatus.PENDING,
       }
 
       if (search && search.trim() !== '') {
@@ -165,7 +171,7 @@ export const adminRouter = createTRPCRouter({
 
       if (
         !listingToApprove ||
-        listingToApprove.status !== ListingApprovalStatus.PENDING
+        listingToApprove.status !== ApprovalStatus.PENDING
       ) {
         ResourceError.listing.notPending()
       }
@@ -173,7 +179,7 @@ export const adminRouter = createTRPCRouter({
       return ctx.prisma.listing.update({
         where: { id: listingId },
         data: {
-          status: ListingApprovalStatus.APPROVED,
+          status: ApprovalStatus.APPROVED,
           processedByUserId: adminUserId,
           processedAt: new Date(),
           processedNotes: null,
@@ -202,7 +208,7 @@ export const adminRouter = createTRPCRouter({
 
       if (
         !listingToReject ||
-        listingToReject.status !== ListingApprovalStatus.PENDING
+        listingToReject.status !== ApprovalStatus.PENDING
       ) {
         ResourceError.listing.notPending()
       }
@@ -210,7 +216,7 @@ export const adminRouter = createTRPCRouter({
       return ctx.prisma.listing.update({
         where: { id: listingId },
         data: {
-          status: ListingApprovalStatus.REJECTED,
+          status: ApprovalStatus.REJECTED,
           processedByUserId: adminUserId,
           processedAt: new Date(),
           processedNotes: notes,
@@ -225,7 +231,7 @@ export const adminRouter = createTRPCRouter({
       const skip = (page - 1) * limit
 
       const baseWhere: Prisma.ListingWhereInput = {
-        NOT: { status: ListingApprovalStatus.PENDING },
+        NOT: { status: ApprovalStatus.PENDING },
         ...(filterStatus && { status: filterStatus }),
       }
 

@@ -1,4 +1,4 @@
-import { GameApprovalStatus, type PrismaClient } from '@orm'
+import { ApprovalStatus, type PrismaClient } from '@orm'
 
 type GameData = {
   title: string
@@ -662,17 +662,21 @@ async function gamesSeeder(prisma: PrismaClient) {
     }
 
     await prisma.game.upsert({
-      where: {
-        title_systemId: {
-          title: game.title,
-          systemId,
-        },
+      where: { title_systemId: { title: game.title, systemId } },
+      update: {
+        imageUrl: game.imageUrl,
+        status: ApprovalStatus.APPROVED,
+        approvedAt: new Date(),
       },
-      update: { imageUrl: game.imageUrl },
       create: {
         title: game.title,
         imageUrl: game.imageUrl,
         systemId,
+        status: ApprovalStatus.APPROVED,
+        submittedAt: null,
+        submittedBy: null,
+        approvedAt: new Date(),
+        approvedBy: null,
       },
     })
   }

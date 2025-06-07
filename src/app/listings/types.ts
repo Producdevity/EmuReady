@@ -1,4 +1,4 @@
-import { type ListingApprovalStatus } from '@orm'
+import { type ApprovalStatus } from '@orm'
 
 /**
  * Type definitions for the listings page and related components
@@ -106,5 +106,5 @@ export interface ListingsFilter {
   limit: number
   sortField?: SortField
   sortDirection?: SortDirection
-  approvalStatus?: ListingApprovalStatus
+  approvalStatus?: ApprovalStatus
 }

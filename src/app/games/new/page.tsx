@@ -1,9 +1,10 @@
 'use client'
 
+import { hasPermission } from '@/utils/permissions'
 import { useUser } from '@clerk/nextjs'
+import { Role } from '@orm'
 import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Role } from '@orm'
 import { api } from '@/lib/api'
 import {
   LoadingSpinner,
@@ -12,7 +13,6 @@ import {
   Autocomplete,
   Input,
 } from '@/components/ui'
-import { hasPermission } from '@/utils/permissions'
 import getErrorMessage from '@/utils/getErrorMessage'
 import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
 
@@ -35,10 +35,9 @@ function AddGamePage() {
   const createGame = api.games.create.useMutation()
 
   // Get user role from database using TRPC
-  const { data: userData, isLoading: isUserDataLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user }
-  )
+  const userQuery = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user,
+  })
 
   // Get the selected system's name based on systemId
   const selectedSystem = systemId
@@ -54,18 +53,18 @@ function AddGamePage() {
     return () => clearTimeout(timer)
   }, [success, error])
 
-  if (!isLoaded || isUserDataLoading) return <LoadingSpinner />
+  if (!isLoaded || userQuery.isLoading) return <LoadingSpinner />
 
-  // Get user role from database
-  const userRole = userData?.role as Role | undefined
-
-  if (!user || !userData || (userRole && !hasPermission(userRole, Role.AUTHOR))) {
+  if (!user || !userQuery.data) {
     return (
       <div className="p-8 text-center">
-        You do not have permission to add games.
+        You need to be logged in to add games.
       </div>
     )
   }
+
+  // Check if user is admin for determining approval status
+  const isAdmin = hasPermission(userQuery.data.role, Role.ADMIN)
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -82,7 +81,15 @@ function AddGamePage() {
         imageUrl: imageUrl || undefined,
       })
 
-      router.push(`/games/${result.id}`)
+      if (isAdmin) {
+        setSuccess('Game added successfully!')
+        setTimeout(() => router.push(`/games/${result.id}`), 1500)
+      } else {
+        setSuccess(
+          'Game submitted for approval! You can now create listings for this game while it awaits admin approval.',
+        )
+        setTimeout(() => router.push(`/games/${result.id}`), 3000)
+      }
     } catch (err) {
       console.error(err)
       setError(getErrorMessage(err, 'Failed to add game.'))
@@ -90,10 +97,22 @@ function AddGamePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
+    <div className="w-full md:w-3xl mx-auto my-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
         Add New Game
       </h1>
+
+      {!isAdmin && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            <strong>Note:</strong> Games submitted by users require admin
+            approval before becoming visible to other users. You can create
+            listings for your submitted games immediately while they await
+            approval.
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">

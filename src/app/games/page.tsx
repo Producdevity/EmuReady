@@ -17,17 +17,17 @@ function GamesPage() {
   const [systemId, setSystemId] = useState('')
   const limit = 12
 
-  const { data: systems } = api.systems.get.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
 
-  const { data, isLoading } = api.games.get.useQuery({
+  const gamesQuery = api.games.get.useQuery({
     search: search || undefined,
     systemId: systemId || undefined,
     limit,
     offset: (page - 1) * limit,
   })
 
-  const games = data?.games ?? []
-  const pagination = data?.pagination
+  const games = gamesQuery.data?.games ?? []
+  const pagination = gamesQuery.data?.pagination
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
     setSearch(ev.target.value)
@@ -58,12 +58,12 @@ function GamesPage() {
         <GameFilters
           search={search}
           systemId={systemId}
-          systems={systems}
+          systems={systemsQuery.data}
           onSearchChange={handleSearchChange}
           onSystemChange={handleSystemChange}
         />
 
-        {isLoading ? (
+        {gamesQuery.isLoading ? (
           <LoadingSpinner text="Loading games..." />
         ) : (
           <>

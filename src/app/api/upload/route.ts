@@ -14,7 +14,7 @@ function isImage(file: File) {
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized access' },
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       where: { clerkId: userId },
       select: { role: true },
     })
-    
-    if (!user || !hasPermission(user.role, Role.AUTHOR)) {
+
+    if (!user || !hasPermission(user.role, Role.USER)) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 },

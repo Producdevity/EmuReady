@@ -2,6 +2,7 @@ interface NavItem {
   href: string
   label: string
   description: string
+  count?: number
 }
 
 export const adminNavItems: NavItem[] = [
@@ -14,6 +15,11 @@ export const adminNavItems: NavItem[] = [
     href: '/admin/games',
     label: 'Games',
     description: 'Manage games and view related data.',
+  },
+  {
+    href: '/admin/games/approvals',
+    label: 'Game Approvals',
+    description: 'Review and approve submitted games.',
   },
   {
     href: '/admin/brands',

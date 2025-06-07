@@ -1,6 +1,7 @@
 'use client'
 
 import { type PropsWithChildren } from 'react'
+import { cn } from '@/lib/utils'
 
 type BadgeSize = 'sm' | 'md' | 'lg'
 export type BadgeVariant =
@@ -40,13 +41,13 @@ function Badge(props: Props) {
 
   return (
     <span
-      className={`
-        inline-flex items-center justify-center font-medium text-center
-        ${props.pill ? 'rounded-full' : 'rounded'}
-        ${variantClasses[variant]}
-        ${sizeClasses[size]}
-        ${props.className ?? ''}
-      `}
+      className={cn(
+        'inline-flex items-center justify-center font-medium text-center',
+        props.pill ? 'rounded-full' : 'rounded',
+        variantClasses[variant],
+        sizeClasses[size],
+        props.className,
+      )}
     >
       {props.children}
     </span>

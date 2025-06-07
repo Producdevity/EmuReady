@@ -1,5 +1,6 @@
 'use client'
 
+import { getRoleVariant } from '@/utils/badgeColors'
 import { useState } from 'react'
 import { Search, ShieldUser, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -12,7 +13,6 @@ import {
   ColumnVisibilityControl,
   AdminTableContainer,
 } from '@/components/ui'
-import getRoleBadgeColor from './utils/getRoleBadgeColor'
 import UserRoleModal from './components/UserRoleModal'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
@@ -219,7 +219,7 @@ function AdminUsersPage() {
                 )}
                 {columnVisibility.isColumnVisible('role') && (
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getRoleBadgeColor(user.role)}>
+                    <Badge variant={getRoleVariant(user.role)}>
                       {user.role}
                     </Badge>
                   </td>

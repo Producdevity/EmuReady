@@ -1,5 +1,5 @@
 import { Modal, Button, Input } from '@/components/ui'
-import { ListingApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm'
 import { type RouterOutput } from '@/types/trpc'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
@@ -8,7 +8,7 @@ interface Props {
   showApprovalModal: boolean
   closeApprovalModal: () => void
   selectedListingForApproval: PendingListing
-  approvalDecision: ListingApprovalStatus
+  approvalDecision: ApprovalStatus
   approvalNotes: string
   setApprovalNotes: (notes: string) => void
   handleApprovalSubmit: () => void
@@ -21,20 +21,20 @@ function ApprovalModal(props: Props) {
     <Modal
       isOpen={props.showApprovalModal}
       onClose={props.closeApprovalModal}
-      title={`${props.approvalDecision === ListingApprovalStatus.APPROVED ? 'Approve' : 'Reject'} Listing: ${props.selectedListingForApproval.game.title}`}
+      title={`${props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'} Listing: ${props.selectedListingForApproval.game.title}`}
       size="lg"
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-700 dark:text-gray-300">
           You are about to{' '}
           <strong>
-            {props.approvalDecision === ListingApprovalStatus.APPROVED
+            {props.approvalDecision === ApprovalStatus.APPROVED
               ? 'approve'
               : 'reject'}
           </strong>{' '}
           this listing. This action will move it to the processed listings page.
         </p>
-        {props.approvalDecision === ListingApprovalStatus.REJECTED && (
+        {props.approvalDecision === ApprovalStatus.REJECTED && (
           <div>
             <label
               htmlFor="approvalNotes"
@@ -65,7 +65,7 @@ function ApprovalModal(props: Props) {
           </Button>
           <Button
             variant={
-              props.approvalDecision === ListingApprovalStatus.APPROVED
+              props.approvalDecision === ApprovalStatus.APPROVED
                 ? 'primary'
                 : 'danger'
             }
@@ -78,7 +78,7 @@ function ApprovalModal(props: Props) {
             }
           >
             Confirm{' '}
-            {props.approvalDecision === ListingApprovalStatus.APPROVED
+            {props.approvalDecision === ApprovalStatus.APPROVED
               ? 'Approval'
               : 'Rejection'}
           </Button>

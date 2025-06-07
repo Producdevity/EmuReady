@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ListingApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm'
 import {
   CreateListingSchema,
   GetListingsSchema,
@@ -138,7 +138,7 @@ describe('Listing Schemas', () => {
         limit: 20,
         sortField: 'game.title',
         sortDirection: 'asc',
-        approvalStatus: ListingApprovalStatus.APPROVED,
+        approvalStatus: ApprovalStatus.APPROVED,
       }
 
       const result = GetListingsSchema.safeParse(validData)
@@ -185,7 +185,7 @@ describe('Listing Schemas', () => {
     })
 
     it('should validate approvalStatus enum values', () => {
-      Object.values(ListingApprovalStatus).forEach((status) => {
+      Object.values(ApprovalStatus).forEach((status) => {
         const result = GetListingsSchema.safeParse({ approvalStatus: status })
         expect(result.success).toBe(true)
       })
@@ -314,7 +314,7 @@ describe('Listing Schemas', () => {
     it('should validate valid override data', () => {
       const validData = {
         listingId: '123e4567-e89b-12d3-a456-426614174000',
-        newStatus: ListingApprovalStatus.APPROVED,
+        newStatus: ApprovalStatus.APPROVED,
         overrideNotes: 'Override reason',
       }
 
@@ -325,13 +325,13 @@ describe('Listing Schemas', () => {
     it('should allow optional override notes', () => {
       const result = OverrideApprovalStatusSchema.safeParse({
         listingId: '123e4567-e89b-12d3-a456-426614174000',
-        newStatus: ListingApprovalStatus.REJECTED,
+        newStatus: ApprovalStatus.REJECTED,
       })
       expect(result.success).toBe(true)
     })
 
     it('should validate all approval status values', () => {
-      Object.values(ListingApprovalStatus).forEach((status) => {
+      Object.values(ApprovalStatus).forEach((status) => {
         const result = OverrideApprovalStatusSchema.safeParse({
           listingId: '123e4567-e89b-12d3-a456-426614174000',
           newStatus: status,
@@ -365,7 +365,7 @@ describe('Listing Schemas', () => {
       const validData = {
         page: 2,
         limit: 20,
-        filterStatus: ListingApprovalStatus.APPROVED,
+        filterStatus: ApprovalStatus.APPROVED,
       }
 
       const result = GetProcessedSchema.safeParse(validData)

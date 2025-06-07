@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Role } from '@orm'
+import { ApprovalStatus, Role } from '@orm'
 import { Badge, LoadingSpinner, OptimizedImage } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
 import getImageUrl from '@/app/games/utils/getImageUrl'
@@ -17,9 +17,20 @@ function GameDetailsPage() {
   const { user } = useUser()
   const gameQuery = api.games.byId.useQuery({ id: params.id as string })
 
-  // Get user role from Clerk's publicMetadata
-  const userRole = user?.publicMetadata?.role as Role | undefined
-  const canEdit = userRole ? hasPermission(userRole, Role.ADMIN) : false
+  // Get user data from database
+  const { data: userData } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user,
+  })
+
+  // Check edit permissions
+  const isAdmin = hasPermission(userData?.role, Role.ADMIN)
+  const isOwnerOfPendingGame =
+    userData &&
+    gameQuery.data &&
+    gameQuery.data.submittedBy === userData.id &&
+    gameQuery.data.status === ApprovalStatus.PENDING
+
+  const canEdit = isAdmin || isOwnerOfPendingGame
 
   if (gameQuery.isLoading) return <LoadingSpinner text="Loading game data..." />
 

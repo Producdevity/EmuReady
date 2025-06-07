@@ -6,8 +6,7 @@ export default clerkMiddleware((auth, req: NextRequest) => {
   if (req.nextUrl.pathname.startsWith('/api/webhooks/')) {
     return
   }
-  
-  // Apply Clerk middleware for all other routes
+
   return
 })
 

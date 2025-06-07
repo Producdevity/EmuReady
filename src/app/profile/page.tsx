@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { ProfileUpload } from '@/components/ui'
+import { ProfileUpload, ApprovalStatusBadge } from '@/components/ui'
 import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
 import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfilePageError from './components/ProfilePageError'
@@ -190,38 +190,97 @@ function ProfilePage() {
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Your Activity
             </h2>
-            <div className="space-y-4">
-              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                {profile.listings.length > 0 ? (
-                  <div className="flex flex-col gap-4">
-                    {profile.listings.map((listing) => (
-                      <div key={listing.id} className="flex flex-row gap-4">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                          <Link href={`/listings/${listing.id}`}>
-                            {listing.game?.title}
-                          </Link>
-                        </h3>
-                        <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(listing.createdAt)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-row gap-4">
-                    <p className="text-gray-600 dark:text-gray-300">
-                      You have not submitted any listings yet.
-                    </p>
-                    <div className="align-right ml-auto">
+            <div className="space-y-6">
+              {/* Submitted Games Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+                  Submitted Games
+                </h3>
+                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+                  {profile.submittedGames &&
+                  profile.submittedGames.length > 0 ? (
+                    <div className="space-y-3">
+                      {profile.submittedGames.map((game) => (
+                        <div
+                          key={game.id}
+                          className="flex items-center justify-between p-3 rounded border border-gray-100 dark:border-gray-600"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <Link
+                                href={`/games/${game.id}`}
+                                className="text-lg font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                {game.title}
+                              </Link>
+                              <ApprovalStatusBadge
+                                status={game.status}
+                                type="game"
+                              />
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              {game.system.name} • Submitted{' '}
+                              {formatDate(game.submittedAt!)}
+                              {game.approvedAt &&
+                                ` • Approved ${formatDate(game.approvedAt)}`}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 dark:text-gray-300">
+                        You haven&apos;t submitted any games yet.
+                      </p>
                       <Link
-                        href="/listings/new"
+                        href="/games/new"
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                       >
-                        Create Listing
+                        Submit Game
                       </Link>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              </div>
+
+              {/* Listings Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+                  Listings
+                </h3>
+                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+                  {profile.listings.length > 0 ? (
+                    <div className="flex flex-col gap-4">
+                      {profile.listings.map((listing) => (
+                        <div key={listing.id} className="flex flex-row gap-4">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            <Link href={`/listings/${listing.id}`}>
+                              {listing.game?.title}
+                            </Link>
+                          </h3>
+                          <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(listing.createdAt)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-row gap-4">
+                      <p className="text-gray-600 dark:text-gray-300">
+                        You have not submitted any listings yet.
+                      </p>
+                      <div className="align-right ml-auto">
+                        <Link
+                          href="/listings/new"
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                        >
+                          Create Listing
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
