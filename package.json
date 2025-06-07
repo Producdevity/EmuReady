@@ -1,6 +1,6 @@
 {
   "name": "emuready",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -23,6 +23,13 @@
     "prepare-deploy": "npm run format && npm run lint && npm run typecheck && npm run test && npm run build",
     "vercel:build": "prisma migrate deploy && next build",
     "vercel:build:fresh": "prisma migrate deploy && prisma db seed && next build",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:create": "prisma migrate dev --create-only",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:studio": "prisma studio",
+    "db:generate": "prisma generate",
     "prepare": "husky"
   },
   "prisma": {
