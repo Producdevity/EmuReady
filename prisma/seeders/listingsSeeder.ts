@@ -1,4 +1,9 @@
-import { Role, ListingApprovalStatus, type PrismaClient } from '@orm'
+import {
+  Role,
+  ListingApprovalStatus,
+  GameApprovalStatus,
+  type PrismaClient,
+} from '@orm'
 
 // Helper function to get random element from array
 function getRandomElement<T>(array: T[]): T {
@@ -78,7 +83,7 @@ const sampleComments = [
   'Did you try adjusting the graphics settings?',
   'What driver version are you using?',
   'This helped me get the game running perfectly!',
-  'I\'m getting different results, might be device specific.',
+  "I'm getting different results, might be device specific.",
   'Great detailed report, thanks for sharing.',
   'Any tips for improving performance?',
   'Works even better with the latest emulator update.',
@@ -98,10 +103,10 @@ async function createVotesAndComments(
   // Add some random votes (60% upvotes, 40% downvotes)
   const votersCount = Math.floor(Math.random() * 8) + 2 // 2-9 voters
   const voters = getRandomElements(users, votersCount)
-  
+
   for (const voter of voters) {
     const isUpvote = Math.random() > 0.4 // 60% chance of upvote
-    
+
     await prisma.vote.create({
       data: {
         value: isUpvote,
@@ -115,10 +120,10 @@ async function createVotesAndComments(
   if (Math.random() < 0.3) {
     const commenterCount = Math.floor(Math.random() * 3) + 1 // 1-3 comments
     const commenters = getRandomElements(users, commenterCount)
-    
+
     for (const commenter of commenters) {
       const content = getRandomElement(sampleComments)
-      
+
       await prisma.comment.create({
         data: {
           content,
@@ -136,10 +141,10 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   // Get all required data
   const users = await prisma.user.findMany()
-  const adminUsers = users.filter(user => 
-    user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN
+  const adminUsers = users.filter(
+    (user) => user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN,
   )
-  
+
   if (adminUsers.length === 0) {
     console.warn('No admin/super admin users found, skipping listings seeding')
     return
@@ -159,7 +164,9 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   const performanceScales = await prisma.performanceScale.findMany()
 
-  console.log(`📊 Found ${devices.length} devices, ${games.length} games, ${emulators.length} emulators`)
+  console.log(
+    `📊 Found ${devices.length} devices, ${games.length} games, ${emulators.length} emulators`,
+  )
 
   let totalListingsCreated = 0
   let totalVotesCreated = 0
@@ -167,17 +174,21 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   // Create 2 listings per device
   for (const device of devices) {
-    console.log(`Creating listings for ${device.brand.name} ${device.modelName}...`)
-    
+    console.log(
+      `Creating listings for ${device.brand.name} ${device.modelName}...`,
+    )
+
     // Find compatible games (games that have emulators supporting their system)
-    const compatibleGames = games.filter(game => 
-      emulators.some(emulator => 
-        emulator.systems.some(system => system.id === game.systemId)
-      )
+    const compatibleGames = games.filter((game) =>
+      emulators.some((emulator) =>
+        emulator.systems.some((system) => system.id === game.systemId),
+      ),
     )
 
     if (compatibleGames.length < 2) {
-      console.warn(`Not enough compatible games for ${device.brand.name} ${device.modelName}, skipping`)
+      console.warn(
+        `Not enough compatible games for ${device.brand.name} ${device.modelName}, skipping`,
+      )
       continue
     }
 
@@ -186,37 +197,47 @@ async function listingsSeeder(prisma: PrismaClient) {
 
     for (let i = 0; i < selectedGames.length; i++) {
       const game = selectedGames[i]
-      
+
       // Find compatible emulators for this game's system
-      const compatibleEmulators = emulators.filter(emulator =>
-        emulator.systems.some(system => system.id === game.systemId)
+      const compatibleEmulators = emulators.filter((emulator) =>
+        emulator.systems.some((system) => system.id === game.systemId),
       )
 
       if (compatibleEmulators.length === 0) {
-        console.warn(`No compatible emulators for ${game.title} on ${game.system.name}`)
+        console.warn(
+          `No compatible emulators for ${game.title} on ${game.system.name}`,
+        )
         continue
       }
 
       const selectedEmulator = getRandomElement(compatibleEmulators)
       const selectedPerformance = getRandomElement(performanceScales)
       const author = getRandomElement(users)
-      
+
       // Get sample notes for this performance level
-      const notesForLevel = sampleNotes[selectedPerformance.label as keyof typeof sampleNotes]
+      const notesForLevel =
+        sampleNotes[selectedPerformance.label as keyof typeof sampleNotes]
       const notes = getRandomElement(notesForLevel)
 
       // First listing per device: PENDING
       // Second listing per device: APPROVED
       const isApproved = i === 1
       const processor = isApproved ? getRandomElement(adminUsers) : null
-      
-      const processedAt = isApproved 
-        ? new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) // Random date in last 30 days
+
+      const processedAt = isApproved
+        ? new Date(
+            Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000,
+          ) // Random date in last 30 days
         : null
 
-      const processedNotes = isApproved && Math.random() > 0.7 
-        ? ['Verified and approved.', 'Looks good, approved!', 'Testing confirmed, approved.'][Math.floor(Math.random() * 3)]
-        : null
+      const processedNotes =
+        isApproved && Math.random() > 0.7
+          ? [
+              'Verified and approved.',
+              'Looks good, approved!',
+              'Testing confirmed, approved.',
+            ][Math.floor(Math.random() * 3)]
+          : null
 
       try {
         // Check if this combination already exists
@@ -231,7 +252,9 @@ async function listingsSeeder(prisma: PrismaClient) {
         })
 
         if (existingListing) {
-          console.log(`Listing already exists for ${game.title} on ${device.brand.name} ${device.modelName} with ${selectedEmulator.name}`)
+          console.log(
+            `Listing already exists for ${game.title} on ${device.brand.name} ${device.modelName} with ${selectedEmulator.name}`,
+          )
           continue
         }
 
@@ -243,7 +266,9 @@ async function listingsSeeder(prisma: PrismaClient) {
             performanceId: selectedPerformance.id,
             notes,
             authorId: author.id,
-            status: isApproved ? ListingApprovalStatus.APPROVED : ListingApprovalStatus.PENDING,
+            status: isApproved
+              ? ListingApprovalStatus.APPROVED
+              : ListingApprovalStatus.PENDING,
             processedAt,
             processedNotes,
             processedByUserId: processor?.id,
@@ -255,18 +280,23 @@ async function listingsSeeder(prisma: PrismaClient) {
         // Add votes and comments to this listing
         const votesBefore = await prisma.vote.count()
         const commentsBefore = await prisma.comment.count()
-        
+
         await createVotesAndComments(prisma, listing.id, users)
-        
+
         const votesAfter = await prisma.vote.count()
         const commentsAfter = await prisma.comment.count()
-        
-        totalVotesCreated += (votesAfter - votesBefore)
-        totalCommentsCreated += (commentsAfter - commentsBefore)
 
-        console.log(`  ✅ Created ${isApproved ? 'APPROVED' : 'PENDING'} listing: ${game.title} (${selectedEmulator.name}) - ${selectedPerformance.label}`)
+        totalVotesCreated += votesAfter - votesBefore
+        totalCommentsCreated += commentsAfter - commentsBefore
+
+        console.log(
+          `  ✅ Created ${isApproved ? GameApprovalStatus.APPROVED : GameApprovalStatus.PENDING} listing: ${game.title} (${selectedEmulator.name}) - ${selectedPerformance.label}`,
+        )
       } catch (error) {
-        console.error(`  ❌ Failed to create listing for ${game.title} on ${device.brand.name} ${device.modelName}:`, error)
+        console.error(
+          `  ❌ Failed to create listing for ${game.title} on ${device.brand.name} ${device.modelName}:`,
+          error,
+        )
       }
     }
   }
