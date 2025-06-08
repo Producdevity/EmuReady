@@ -6,6 +6,7 @@
 
 # Test files
 /test-results
+/tests/.auth
 
 # Documentation files
 /docs
