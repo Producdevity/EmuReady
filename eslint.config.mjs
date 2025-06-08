@@ -22,10 +22,12 @@ const eslintConfig = [
       'prisma/generated/**',
 
       // Test coverage reports
-      'coverage/',
 
-      // Test output directories
+
+      // Test output/coverage directories
+      'coverage/',
       'test-results/',
+      'tests/.auth',
       'playwright-report/',
       'blob-report/',
 
