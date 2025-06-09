@@ -1,11 +1,12 @@
 'use client'
 
-import { Role } from '@orm'
 import { useUser } from '@clerk/nextjs'
 import { useState, type SyntheticEvent, type ChangeEvent } from 'react'
 import Link from 'next/link'
+import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import { api } from '@/lib/api'
+import { Role } from '@orm'
 import GameFilters from './components/GameFilters'
 import GameCard from './components/GameCard'
 import { hasPermission } from '@/utils/permissions'
@@ -83,8 +84,7 @@ function GamesPage() {
           </>
         )}
 
-        {/* Pagination */}
-        {pagination?.pages && pagination.pages > 1 && (
+        {isDefined(pagination?.pages) && pagination.pages > 1 && (
           <Pagination
             currentPage={page}
             totalPages={pagination.pages}
