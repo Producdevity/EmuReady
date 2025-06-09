@@ -10,7 +10,7 @@ interface Props {
   isOpen: boolean
   onClose: () => void
   selectedGame: Game | null
-  onShowConfirmation: (gameId: string, action: 'approve' | 'reject') => void
+  onShowConfirmation: (gameId: string, action: ProcessingAction) => void
   isProcessing: boolean
   processingAction: Nullable<ProcessingAction>
 }
