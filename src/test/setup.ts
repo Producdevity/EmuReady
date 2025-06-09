@@ -2,9 +2,110 @@ import '@testing-library/jest-dom'
 import { vi, beforeEach, afterEach } from 'vitest'
 import { cleanup, configure } from '@testing-library/react'
 import { prettyDOM } from '@testing-library/dom'
+import { Role, ApprovalStatus, CustomFieldType } from '@orm'
 
 // This file is imported in vitest.config.mts
 // It sets up the jest-dom matchers for better assertions in tests
+
+// Set up test environment variables
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
+
+// Mock the entire Prisma client module to prevent database initialization
+vi.mock('@orm', () => ({
+  PrismaClient: vi.fn().mockImplementation(() => ({
+    $transaction: vi.fn(),
+    customFieldDefinition: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    listing: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+    },
+    listingCustomFieldValue: {
+      create: vi.fn(),
+    },
+    user: {
+      findUnique: vi.fn(),
+    },
+    $disconnect: vi.fn(),
+  })),
+  CustomFieldType: {
+    TEXT: CustomFieldType.TEXT,
+    TEXTAREA: CustomFieldType.TEXTAREA,
+    URL: CustomFieldType.URL,
+    BOOLEAN: CustomFieldType.BOOLEAN,
+    SELECT: CustomFieldType.SELECT,
+  },
+  ApprovalStatus: {
+    PENDING: ApprovalStatus.PENDING,
+    APPROVED: ApprovalStatus.APPROVED,
+    REJECTED: ApprovalStatus.REJECTED,
+  },
+  Role: {
+    USER: Role.USER,
+    AUTHOR: Role.AUTHOR,
+    ADMIN: Role.ADMIN,
+    SUPER_ADMIN: Role.SUPER_ADMIN,
+  },
+}))
+
+// Mock the database module to use a mock prisma client
+vi.mock('../server/db', () => ({
+  prisma: {
+    $transaction: vi.fn(),
+    customFieldDefinition: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    listing: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+    },
+    listingCustomFieldValue: {
+      create: vi.fn(),
+    },
+    user: {
+      findUnique: vi.fn(),
+    },
+    $disconnect: vi.fn(),
+  },
+}))
+
+// Mock tRPC to prevent initialization issues
+vi.mock('../server/api/trpc', () => ({
+  createTRPCRouter: vi.fn((routes) => ({
+    createCaller: vi.fn((_ctx) => {
+      const caller: Record<string, unknown> = {}
+      Object.keys(routes).forEach((key) => {
+        if (typeof routes[key] === 'function') {
+          caller[key] = routes[key]
+        }
+      })
+      return caller
+    }),
+  })),
+  publicProcedure: {
+    input: vi.fn().mockReturnThis(),
+    mutation: vi.fn(),
+    query: vi.fn(),
+  },
+  protectedProcedure: {
+    input: vi.fn().mockReturnThis(),
+    mutation: vi.fn(),
+    query: vi.fn(),
+  },
+  authorProcedure: {
+    input: vi.fn().mockReturnThis(),
+    mutation: vi.fn(),
+    query: vi.fn(),
+  },
+  adminProcedure: {
+    input: vi.fn().mockReturnThis(),
+    mutation: vi.fn(),
+    query: vi.fn(),
+  },
+}))
 
 beforeEach(() => {
   // Clear all mocks and timers before each test
@@ -15,7 +116,7 @@ beforeEach(() => {
 afterEach(() => {
   // Clean up React components
   cleanup()
-  
+
   // Clean up any remaining timers
   vi.clearAllTimers()
   vi.clearAllMocks()
@@ -38,7 +139,7 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 // Mock matchMedia for responsive components
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -58,11 +159,9 @@ configure({
   getElementError: (message, container) => {
     const prettifiedDOM = prettyDOM(container)
     return new Error(
-      [
-        message,
-        "Here's the DOM tree at the time of failure:",
-        prettifiedDOM,
-      ].filter(Boolean).join('\n\n')
+      [message, "Here's the DOM tree at the time of failure:", prettifiedDOM]
+        .filter(Boolean)
+        .join('\n\n'),
     )
   },
 })

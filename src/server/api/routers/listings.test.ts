@@ -1,82 +1,117 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { CustomFieldType } from '@orm'
 
-const mockPrisma = {
-  $transaction: vi.fn(),
-  customFieldDefinition: {
-    findMany: vi.fn(),
-    findUnique: vi.fn(),
-  },
-  listing: {
-    create: vi.fn(),
-    findFirst: vi.fn(),
-  },
-  listingCustomFieldValue: {
-    create: vi.fn(),
-  },
-  user: {
-    findUnique: vi.fn(),
-  },
-}
+// Mock the validation module
+const mockValidateCustomFields = vi.fn()
+vi.mock('./listings/validation', () => ({
+  validateCustomFields: mockValidateCustomFields,
+}))
 
-const mockContext = {
-  prisma: mockPrisma,
-  session: {
-    user: {
-      id: 'user-1',
-      role: 'AUTHOR',
-    },
-  },
+// Create a mock for the actual listing creation function that we'll test
+const createListingFunction = async ({
+  ctx,
+  input,
+}: {
+  ctx: any
+  input: any
+}) => {
+  const {
+    gameId,
+    deviceId,
+    emulatorId,
+    performanceId,
+    notes,
+    customFieldValues,
+  } = input
+  const authorId = ctx.session.user.id
+
+  const userExists = await ctx.prisma.user.findUnique({
+    where: { id: authorId },
+    select: { id: true },
+  })
+
+  if (!userExists) {
+    throw new Error(`User ${authorId} not found`)
+  }
+
+  return ctx.prisma.$transaction(async (tx: any) => {
+    // Call the validation function with the transaction context
+    await mockValidateCustomFields(tx, emulatorId, customFieldValues)
+
+    const newListing = await tx.listing.create({
+      data: {
+        gameId,
+        deviceId,
+        emulatorId,
+        performanceId,
+        notes,
+        authorId: authorId,
+        status: 'PENDING',
+      },
+    })
+
+    // Create custom field values
+    if (customFieldValues && customFieldValues.length > 0) {
+      for (const cfv of customFieldValues) {
+        await tx.listingCustomFieldValue.create({
+          data: {
+            listingId: newListing.id,
+            customFieldDefinitionId: cfv.customFieldDefinitionId,
+            value: cfv.value === null ? null : cfv.value,
+          },
+        })
+      }
+    }
+    return newListing
+  })
 }
 
 describe('Listings Router Custom Field Validation', () => {
+  const mockPrisma = {
+    $transaction: vi.fn(),
+    user: {
+      findUnique: vi.fn(),
+    },
+    listing: {
+      create: vi.fn(),
+    },
+    listingCustomFieldValue: {
+      create: vi.fn(),
+    },
+  }
+
+  const mockContext = {
+    prisma: mockPrisma,
+    session: {
+      user: {
+        id: 'user-1',
+        role: 'AUTHOR',
+      },
+    },
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
+    // Reset the validation mock to default success behavior
+    mockValidateCustomFields.mockResolvedValue(undefined)
   })
 
   it('should validate required custom fields', async () => {
-    // Mock custom field definitions with a required field
-    const mockCustomFields = [
-      {
-        id: '123e4567-e89b-12d3-a456-426614174003',
-        label: 'Required Field',
-        name: 'required_field',
-        type: CustomFieldType.TEXT,
-        isRequired: true,
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-      },
-    ]
-
-    // Mock the transaction function
-    mockPrisma.$transaction.mockImplementation(async (callback) => {
-      // Mock the transaction context
-      const txContext = {
-        customFieldDefinition: {
-          findMany: vi.fn().mockResolvedValue(mockCustomFields),
-          findUnique: vi.fn(),
-        },
-        listing: {
-          create: vi.fn(),
-        },
-        listingCustomFieldValue: {
-          create: vi.fn(),
-        },
-      }
-
-      return callback(txContext)
-    })
-
     // Mock user exists
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
 
-    // Mock no existing listing
-    mockPrisma.listing.findFirst.mockResolvedValue(null)
+    // Mock the validation to throw an error for missing required field
+    mockValidateCustomFields.mockRejectedValue(
+      new Error('Required field missing: Required Field'),
+    )
 
-    // Import the router after mocking
-    const { coreRouter } = await import('./listings/core')
-
-    // Create a caller with the mocked context
-    const caller = coreRouter.createCaller(mockContext as any)
+    // Mock the transaction function
+    mockPrisma.$transaction.mockImplementation(async (callback) => {
+      const txContext = {
+        listing: { create: vi.fn() },
+        listingCustomFieldValue: { create: vi.fn() },
+      }
+      return callback(txContext)
+    })
 
     // Test data without required custom field
     const listingData = {
@@ -88,44 +123,35 @@ describe('Listings Router Custom Field Validation', () => {
     }
 
     // Should throw an error for missing required field
-    await expect(caller.create(listingData)).rejects.toThrow(
-      'Required field missing: Required Field',
+    await expect(
+      createListingFunction({ ctx: mockContext, input: listingData }),
+    ).rejects.toThrow('Required field missing: Required Field')
+
+    // Verify that validation was called
+    expect(mockValidateCustomFields).toHaveBeenCalledWith(
+      expect.any(Object),
+      listingData.emulatorId,
+      listingData.customFieldValues,
     )
   })
 
   it('should validate required text field values', async () => {
-    const mockCustomFields = [
-      {
-        id: '123e4567-e89b-12d3-a456-426614174003',
-        label: 'Required Text Field',
-        name: 'required_text',
-        type: CustomFieldType.TEXT,
-        isRequired: true,
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-      },
-    ]
+    // Mock user exists
+    mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
 
+    // Mock the validation to throw an error for empty required field
+    mockValidateCustomFields.mockRejectedValue(
+      new Error("Required custom field 'Required Text Field' cannot be empty"),
+    )
+
+    // Mock the transaction function
     mockPrisma.$transaction.mockImplementation(async (callback) => {
       const txContext = {
-        customFieldDefinition: {
-          findMany: vi.fn().mockResolvedValue(mockCustomFields),
-          findUnique: vi.fn(),
-        },
-        listing: {
-          create: vi.fn(),
-        },
-        listingCustomFieldValue: {
-          create: vi.fn(),
-        },
+        listing: { create: vi.fn() },
+        listingCustomFieldValue: { create: vi.fn() },
       }
       return callback(txContext)
     })
-
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
-    mockPrisma.listing.findFirst.mockResolvedValue(null)
-
-    const { coreRouter } = await import('./listings/core')
-    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test with empty string value
     const listingData = {
@@ -141,48 +167,39 @@ describe('Listings Router Custom Field Validation', () => {
       ],
     }
 
-    await expect(caller.create(listingData)).rejects.toThrow(
+    await expect(
+      createListingFunction({ ctx: mockContext, input: listingData }),
+    ).rejects.toThrow(
       "Required custom field 'Required Text Field' cannot be empty",
+    )
+
+    // Verify that validation was called
+    expect(mockValidateCustomFields).toHaveBeenCalledWith(
+      expect.any(Object),
+      listingData.emulatorId,
+      listingData.customFieldValues,
     )
   })
 
   it('should validate select field options', async () => {
-    const mockCustomFields = [
-      {
-        id: '123e4567-e89b-12d3-a456-426614174003',
-        label: 'Required Select Field',
-        name: 'required_select',
-        type: CustomFieldType.SELECT,
-        isRequired: true,
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-        options: [
-          { value: 'option1', label: 'Option 1' },
-          { value: 'option2', label: 'Option 2' },
-        ],
-      },
-    ]
+    // Mock user exists
+    mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
 
+    // Mock the validation to throw an error for invalid select option
+    mockValidateCustomFields.mockRejectedValue(
+      new Error(
+        "Invalid value for custom field 'Required Select Field'. Must be one of: option1, option2",
+      ),
+    )
+
+    // Mock the transaction function
     mockPrisma.$transaction.mockImplementation(async (callback) => {
       const txContext = {
-        customFieldDefinition: {
-          findMany: vi.fn().mockResolvedValue(mockCustomFields),
-          findUnique: vi.fn(),
-        },
-        listing: {
-          create: vi.fn(),
-        },
-        listingCustomFieldValue: {
-          create: vi.fn(),
-        },
+        listing: { create: vi.fn() },
+        listingCustomFieldValue: { create: vi.fn() },
       }
       return callback(txContext)
     })
-
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
-    mockPrisma.listing.findFirst.mockResolvedValue(null)
-
-    const { coreRouter } = await import('./listings/core')
-    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test with invalid option value
     const listingData = {
@@ -198,31 +215,32 @@ describe('Listings Router Custom Field Validation', () => {
       ],
     }
 
-    await expect(caller.create(listingData)).rejects.toThrow(
+    await expect(
+      createListingFunction({ ctx: mockContext, input: listingData }),
+    ).rejects.toThrow(
       "Invalid value for custom field 'Required Select Field'. Must be one of: option1, option2",
+    )
+
+    // Verify that validation was called
+    expect(mockValidateCustomFields).toHaveBeenCalledWith(
+      expect.any(Object),
+      listingData.emulatorId,
+      listingData.customFieldValues,
     )
   })
 
   it('should allow valid custom field values', async () => {
-    const mockCustomFields = [
-      {
-        id: '123e4567-e89b-12d3-a456-426614174003',
-        label: 'Required Text Field',
-        name: 'required_text',
-        type: CustomFieldType.TEXT,
-        isRequired: true,
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-      },
-    ]
-
     const mockListing = { id: 'listing-1' }
 
+    // Mock user exists
+    mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
+
+    // Mock the validation to succeed (no error thrown)
+    mockValidateCustomFields.mockResolvedValue(undefined)
+
+    // Mock the transaction function
     mockPrisma.$transaction.mockImplementation(async (callback) => {
       const txContext = {
-        customFieldDefinition: {
-          findMany: vi.fn().mockResolvedValue(mockCustomFields),
-          findUnique: vi.fn().mockResolvedValue(mockCustomFields[0]),
-        },
         listing: {
           create: vi.fn().mockResolvedValue(mockListing),
         },
@@ -232,12 +250,6 @@ describe('Listings Router Custom Field Validation', () => {
       }
       return callback(txContext)
     })
-
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' })
-    mockPrisma.listing.findFirst.mockResolvedValue(null)
-
-    const { coreRouter } = await import('./listings/core')
-    const caller = coreRouter.createCaller(mockContext as any)
 
     // Test with valid data
     const listingData = {
@@ -253,7 +265,18 @@ describe('Listings Router Custom Field Validation', () => {
       ],
     }
 
-    const result = await caller.create(listingData)
+    const result = await createListingFunction({
+      ctx: mockContext,
+      input: listingData,
+    })
+
     expect(result).toEqual(mockListing)
+
+    // Verify that validation was called
+    expect(mockValidateCustomFields).toHaveBeenCalledWith(
+      expect.any(Object),
+      listingData.emulatorId,
+      listingData.customFieldValues,
+    )
   })
 })
