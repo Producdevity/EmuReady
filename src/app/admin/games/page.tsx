@@ -19,6 +19,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
+  SelectInput,
 } from '@/components/ui'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -113,6 +114,22 @@ function AdminGamesPage() {
     table.setPage(1)
   }
 
+  // Prepare options for SelectInput components
+  const systemOptions = [
+    { id: '', name: 'All Systems' },
+    ...(systemsQuery.data?.map((system) => ({
+      id: system.id,
+      name: system.name,
+    })) ?? []),
+  ]
+
+  const statusOptions = [
+    { id: '', name: 'All Status' },
+    { id: ApprovalStatus.APPROVED, name: 'Approved' },
+    { id: ApprovalStatus.PENDING, name: 'Pending' },
+    { id: ApprovalStatus.REJECTED, name: 'Rejected' },
+  ]
+
   if (gamesQuery.isLoading) return <LoadingSpinner />
 
   return (
@@ -185,30 +202,23 @@ function AdminGamesPage() {
             />
           </div>
           <div className="flex gap-2">
-            <select
+            <SelectInput
+              label="System Filter"
+              hideLabel={true}
               value={systemId}
               onChange={(ev) => handleSystemChange(ev.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">All Systems</option>
-              {systemsQuery.data?.map((system) => (
-                <option key={system.id} value={system.id}>
-                  {system.name}
-                </option>
-              ))}
-            </select>
-            <select
+              options={systemOptions}
+            />
+            <SelectInput
+              label="Status Filter"
+              hideLabel={true}
               value={statusFilter ?? ''}
               onChange={(ev) => handleStatusFilterChange(ev.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">All Status</option>
-              <option value={ApprovalStatus.APPROVED}>Approved</option>
-              <option value={ApprovalStatus.PENDING}>Pending</option>
-              <option value={ApprovalStatus.REJECTED}>Rejected</option>
-            </select>
+              options={statusOptions}
+            />
             <Button
               variant="outline"
+              className="h-full"
               onClick={() => {
                 table.setSearch('')
                 setSystemId('')
