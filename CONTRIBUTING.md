@@ -242,11 +242,34 @@ We recommend writing tests for new features and bug fixes. Run existing tests wi
 npm test
 ```
 
-#### End-to-End Tests (TODO)
+#### End-to-End Tests
+
+> This is still a work in progress, but we have a basic setup for E2E tests using Playwright.
+> Not all tests are green yet, but we are working on improving coverage.
+
+For comprehensive E2E testing setup and guidelines, see our [E2E Testing Setup Guide](docs/E2E_TESTING_SETUP.md).
+
+Quick commands:
 
 ```bash
+# Interactive test runner with UI (recommended for development)
 npm run test:e2e
+
+# Run tests with visible browsers
+npm run test:e2e:headed
+
+# Headless mode for CI
+npm run test:e2e:headless
+
+# Debug mode
+npm run test:e2e:debug
 ```
+
+**Important**: E2E tests require:
+
+- Local development server running (`npm run dev`)
+- Proper Clerk authentication configuration
+- Playwright browsers installed (`npx playwright install`)
 
 ---
 
