@@ -1,8 +1,8 @@
 'use client'
 
-import { ApprovalStatus } from '@orm'
 import { useState } from 'react'
-import { api } from '@/lib/api'
+import { Eye, CheckCircle, XCircle } from 'lucide-react'
+import Link from 'next/link'
 import {
   LoadingSpinner,
   Button,
@@ -13,10 +13,21 @@ import {
   Modal,
   AdminTableContainer,
 } from '@/components/ui'
+import { api } from '@/lib/api'
+import toast from '@/lib/toast'
+import { ApprovalStatus } from '@orm'
 import { formatDate } from '@/utils/date'
-import Link from 'next/link'
-import { toast } from 'react-hot-toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type Nullable } from '@/types/utils'
+
+type ProcessingAction = 'approve' | 'reject'
+
+interface ConfirmationModalState {
+  isOpen: boolean
+  gameId: string | null
+  action: Nullable<ProcessingAction>
+  gameTitle: string
+}
 
 function GameApprovalsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -27,20 +38,15 @@ function GameApprovalsPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [processingAction, setProcessingAction] = useState<
-    'approve' | 'reject' | null
-  >(null)
-  const [confirmationModal, setConfirmationModal] = useState<{
-    isOpen: boolean
-    gameId: string | null
-    action: 'approve' | 'reject' | null
-    gameTitle: string
-  }>({
-    isOpen: false,
-    gameId: null,
-    action: null,
-    gameTitle: '',
-  })
+  const [processingAction, setProcessingAction] =
+    useState<Nullable<ProcessingAction>>(null)
+  const [confirmationModal, setConfirmationModal] =
+    useState<ConfirmationModalState>({
+      isOpen: false,
+      gameId: null,
+      action: null,
+      gameTitle: '',
+    })
 
   const itemsPerPage = 20
 
@@ -63,7 +69,7 @@ function GameApprovalsPage() {
   const approveGameMutation = api.games.approveGame.useMutation({
     onSuccess: (data) => {
       toast.success(`Game ${data.status.toLowerCase()} successfully!`)
-      refetch()
+      refetch().catch(console.error)
       setIsModalOpen(false)
       setSelectedGameId(null)
       setProcessingAction(null)
@@ -85,7 +91,7 @@ function GameApprovalsPage() {
     setCurrentPage(1)
   }
 
-  const showConfirmation = (gameId: string, action: 'approve' | 'reject') => {
+  const showConfirmation = (gameId: string, action: ProcessingAction) => {
     const game = pendingGamesData?.games.find((g) => g.id === gameId)
     if (game) {
       setConfirmationModal({
@@ -296,14 +302,8 @@ function GameApprovalsPage() {
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => openGameModal(game.id)}
-                          >
-                            Details
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="primary"
+                            variant="ghost"
+                            className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
                             onClick={() => showConfirmation(game.id, 'approve')}
                             disabled={
                               processingAction === 'approve' &&
@@ -314,11 +314,12 @@ function GameApprovalsPage() {
                               selectedGameId === game.id
                             }
                           >
-                            Approve
+                            <CheckCircle className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
-                            variant="danger"
+                            variant="ghost"
+                            className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
                             onClick={() => showConfirmation(game.id, 'reject')}
                             disabled={
                               processingAction === 'reject' &&
@@ -329,7 +330,16 @@ function GameApprovalsPage() {
                               selectedGameId === game.id
                             }
                           >
-                            Reject
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 p-1.5 inline-flex items-center"
+                            onClick={() => openGameModal(game.id)}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
@@ -400,15 +410,6 @@ function GameApprovalsPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsModalOpen(false)
-                  setSelectedGameId(null)
-                }}
-              >
-                Close
-              </Button>
               <Button
                 variant="primary"
                 onClick={() => showConfirmation(selectedGame.id, 'approve')}
