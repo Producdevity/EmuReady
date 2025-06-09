@@ -1,0 +1,3 @@
+# This file exists to preserve the tests/.auth directory structure in git
+# Playwright stores authentication state files here during test runs
+# The actual auth files (*.json) are ignored by .gitignore for security 
