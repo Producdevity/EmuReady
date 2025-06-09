@@ -19,8 +19,10 @@ import { ApprovalStatus } from '@orm'
 import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type Nullable } from '@/types/utils'
+import useAdminTable from '@/hooks/useAdminTable'
 
 type ProcessingAction = 'approve' | 'reject'
+type GameSortField = 'title' | 'submittedAt' | 'system.name'
 
 interface ConfirmationModalState {
   isOpen: boolean
@@ -30,12 +32,6 @@ interface ConfirmationModalState {
 }
 
 function GameApprovalsPage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [sortField, setSortField] = useState<
-    'title' | 'submittedAt' | 'system.name'
-  >('submittedAt')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [processingAction, setProcessingAction] =
@@ -48,18 +44,21 @@ function GameApprovalsPage() {
       gameTitle: '',
     })
 
-  const itemsPerPage = 20
+  const table = useAdminTable<GameSortField>({
+    defaultLimit: 20,
+    defaultSortField: 'submittedAt',
+    defaultSortDirection: 'desc',
+  })
 
-  // Query for pending games
   const {
     data: pendingGamesData,
     isLoading,
     refetch,
   } = api.games.getPendingGames.useQuery({
-    limit: itemsPerPage,
-    page: currentPage,
-    sortField,
-    sortDirection,
+    limit: table.limit,
+    page: table.page,
+    sortField: table.sortField ?? 'submittedAt',
+    sortDirection: table.sortDirection ?? 'desc',
   })
 
   // Query for game stats
@@ -79,17 +78,6 @@ function GameApprovalsPage() {
       setProcessingAction(null)
     },
   })
-
-  const handleSort = (field: string) => {
-    const validField = field as typeof sortField
-    if (validField === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(validField)
-      setSortDirection('desc')
-    }
-    setCurrentPage(1)
-  }
 
   const showConfirmation = (gameId: string, action: ProcessingAction) => {
     const game = pendingGamesData?.games.find((g) => g.id === gameId)
@@ -137,16 +125,7 @@ function GameApprovalsPage() {
     ? pendingGamesData?.games.find((game) => game.id === selectedGameId)
     : null
 
-  const filteredGames =
-    pendingGamesData?.games.filter(
-      (game) =>
-        searchTerm === '' ||
-        game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        game.system.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (game.submitter?.name?.toLowerCase() ?? '').includes(
-          searchTerm.toLowerCase(),
-        ),
-    ) ?? []
+  const filteredGames = pendingGamesData?.games ?? []
 
   if (isLoading) return <LoadingSpinner />
 
@@ -198,17 +177,18 @@ function GameApprovalsPage() {
           <div className="flex-1">
             <Input
               placeholder="Search games, systems, or submitters..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={table.search}
+              onChange={(e) => table.setSearch(e.target.value)}
               className="w-full"
             />
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
+              className="h-full"
               onClick={() => {
-                setSearchTerm('')
-                setCurrentPage(1)
+                table.setSearch('')
+                table.setPage(1)
               }}
             >
               Clear
@@ -222,7 +202,7 @@ function GameApprovalsPage() {
         {filteredGames.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {searchTerm
+              {table.search
                 ? 'No games found matching your search.'
                 : 'No pending games to review.'}
             </p>
@@ -236,17 +216,17 @@ function GameApprovalsPage() {
                     <SortableHeader
                       label="Game Title"
                       field="title"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
-                      onSort={handleSort}
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
                       className="px-6 py-3 text-left"
                     />
                     <SortableHeader
                       label="System"
                       field="system.name"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
-                      onSort={handleSort}
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
                       className="px-6 py-3 text-left"
                     />
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -255,9 +235,9 @@ function GameApprovalsPage() {
                     <SortableHeader
                       label="Submitted"
                       field="submittedAt"
-                      currentSortField={sortField}
-                      currentSortDirection={sortDirection}
-                      onSort={handleSort}
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
                       className="px-6 py-3 text-left"
                     />
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -349,13 +329,12 @@ function GameApprovalsPage() {
               </table>
             </div>
 
-            {/* Pagination */}
             {pendingGamesData && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                 <Pagination
-                  currentPage={currentPage}
+                  currentPage={table.page}
                   totalPages={pendingGamesData.pagination.pages}
-                  onPageChange={setCurrentPage}
+                  onPageChange={table.setPage}
                 />
               </div>
             )}
