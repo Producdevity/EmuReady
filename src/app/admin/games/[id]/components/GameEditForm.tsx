@@ -28,13 +28,20 @@ interface Props {
 function GameEditForm(props: Props) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const utils = api.useUtils()
 
-  const { data: systems } = api.systems.get.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
 
   const updateGame = api.games.update.useMutation({
     onSuccess: () => {
       toast.success('Game updated successfully')
-      router.refresh()
+      utils.games.byId
+        .invalidate({ id: props.game.id })
+        .catch((error) => {
+          console.error('Error invalidating game cache:', error)
+          router.refresh()
+        })
+        .then(() => setIsSubmitting(false))
     },
     onError: (error) => {
       toast.error(`Failed to update game: ${getErrorMessage(error)}`)
@@ -43,27 +50,19 @@ function GameEditForm(props: Props) {
     },
   })
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<UpdateGameInput>({
-    resolver: zodResolver(updateGameSchema),
-    defaultValues: {
-      title: props.game.title,
-      systemId: props.game.systemId,
-      imageUrl: props.game.imageUrl ?? '',
-    },
-  })
+  const { register, handleSubmit, formState, setValue, watch } =
+    useForm<UpdateGameInput>({
+      resolver: zodResolver(updateGameSchema),
+      defaultValues: {
+        title: props.game.title,
+        systemId: props.game.systemId,
+        imageUrl: props.game.imageUrl ?? '',
+      },
+    })
 
   const onSubmit = (data: UpdateGameInput) => {
     setIsSubmitting(true)
-    updateGame.mutate({
-      id: props.game.id,
-      ...data,
-    })
+    updateGame.mutate({ id: props.game.id, ...data })
   }
 
   return (
@@ -80,9 +79,9 @@ function GameEditForm(props: Props) {
           {...register('title')}
           placeholder="Enter game title"
         />
-        {errors.title && (
+        {formState.errors.title && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {errors.title.message}
+            {formState.errors.title.message}
           </p>
         )}
       </div>
@@ -97,15 +96,15 @@ function GameEditForm(props: Props) {
         <Autocomplete
           value={watch('systemId')}
           onChange={(value) => setValue('systemId', value ?? '')}
-          items={systems ?? []}
+          items={systemsQuery.data ?? []}
           optionToValue={(system) => system.id}
           optionToLabel={(system) => system.name}
           placeholder="Select a system"
           filterKeys={['name']}
         />
-        {errors.systemId && (
+        {formState.errors.systemId && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {errors.systemId.message}
+            {formState.errors.systemId.message}
           </p>
         )}
       </div>
@@ -122,9 +121,9 @@ function GameEditForm(props: Props) {
           {...register('imageUrl')}
           placeholder="https://example.com/game-image.jpg"
         />
-        {errors.imageUrl && (
+        {formState.errors.imageUrl && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {errors.imageUrl.message}
+            {formState.errors.imageUrl.message}
           </p>
         )}
       </div>

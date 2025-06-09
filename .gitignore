@@ -43,6 +43,8 @@ yarn-error.log*
 .env.production.local
 .env.staging
 .env.staging.local
+.env.test
+.env.test.local
 
 prisma/generated
 
@@ -59,6 +61,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/tests/.auth/*.json
 
 # IDE
 .vscode

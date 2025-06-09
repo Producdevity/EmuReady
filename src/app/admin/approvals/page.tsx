@@ -335,26 +335,26 @@ function AdminApprovalsPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
                             onClick={() =>
                               openApprovalModal(
                                 listing,
                                 ApprovalStatus.APPROVED,
                               )
                             }
-                            className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
+                            className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
                             onClick={() =>
                               openApprovalModal(
                                 listing,
                                 ApprovalStatus.REJECTED,
                               )
                             }
-                            className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>

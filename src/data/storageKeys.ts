@@ -3,6 +3,7 @@ const PREFIX = process.env.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX ?? '@EmuReady_'
 const storageKeys = {
   theme: `${PREFIX}theme`,
   showSystemIcons: `${PREFIX}show_system_icons`,
+  betaWarningDismissed: `${PREFIX}beta_warning_dismissed`,
   columnVisibility: {
     listings: `${PREFIX}listings_column_visibility`,
     games: `${PREFIX}games_column_visibility`,

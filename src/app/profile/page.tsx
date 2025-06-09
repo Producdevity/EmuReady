@@ -10,7 +10,7 @@ import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
 import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfilePageError from './components/ProfilePageError'
 import { type RouterInput } from '@/types/trpc'
-import { toast } from 'react-hot-toast'
+import toast from '@/lib/toast'
 import { type Role } from '@orm'
 import getErrorMessage from '@/utils/getErrorMessage'
 
@@ -19,12 +19,10 @@ function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
 
-  // Always call these hooks, regardless of user state
   const utils = api.useUtils()
-  const { data: profile, isLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user },
-  )
+  const userQuery = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user,
+  })
 
   const updateProfile = api.users.update.useMutation({
     onMutate: async (newData) => {
@@ -37,7 +35,8 @@ function ProfilePage() {
     },
     onError: (error) => {
       // Revert optimistic update on error
-      setProfileImage(profile?.profileImage ?? null)
+      setProfileImage(userQuery.data?.profileImage ?? null)
+      console.error('Error updating profile:', error)
       toast.error(`Failed to update profile: ${getErrorMessage(error)}`)
     },
   })
@@ -49,11 +48,11 @@ function ProfilePage() {
     } satisfies RouterInput['users']['update'])
   }
 
-  if (!isLoaded || (isLoading && user)) return <ProfilePageLoader />
+  if (!isLoaded || (userQuery.isLoading && user)) return <ProfilePageLoader />
 
   if (!user) return <ProfilePageUnauthenticated />
 
-  if (!profile) return <ProfilePageError />
+  if (!userQuery.data) return <ProfilePageError />
 
   // Get user role from Clerk's publicMetadata
   const userRole = user.publicMetadata?.role as Role | undefined
@@ -78,7 +77,7 @@ function ProfilePage() {
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/3 flex flex-col items-center">
                 <ProfileUpload
-                  currentImage={profileImage ?? profile.profileImage}
+                  currentImage={profileImage ?? userQuery.data.profileImage}
                   onUploadSuccess={handleImageUpload}
                 />
               </div>
@@ -197,10 +196,10 @@ function ProfilePage() {
                   Submitted Games
                 </h3>
                 <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                  {profile.submittedGames &&
-                  profile.submittedGames.length > 0 ? (
+                  {userQuery.data?.submittedGames &&
+                  userQuery.data.submittedGames.length > 0 ? (
                     <div className="space-y-3">
-                      {profile.submittedGames.map((game) => (
+                      {userQuery.data.submittedGames.map((game) => (
                         <div
                           key={game.id}
                           className="flex items-center justify-between p-3 rounded border border-gray-100 dark:border-gray-600"
@@ -250,9 +249,9 @@ function ProfilePage() {
                   Listings
                 </h3>
                 <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                  {profile.listings.length > 0 ? (
+                  {userQuery.data.listings.length > 0 ? (
                     <div className="flex flex-col gap-4">
-                      {profile.listings.map((listing) => (
+                      {userQuery.data.listings.map((listing) => (
                         <div key={listing.id} className="flex flex-row gap-4">
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             <Link href={`/listings/${listing.id}`}>

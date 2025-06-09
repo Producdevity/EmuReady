@@ -8,6 +8,7 @@ import { Inter } from 'next/font/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import BetaWarningModal from '@/components/BetaWarningModal'
 import Providers from '@/components/Providers'
 import Navbar from '@/components/navbar/Navbar'
 import Footer from '@/components/Footer'
@@ -47,6 +48,7 @@ export default function RootLayout(props: PropsWithChildren) {
         <body className={inter.className}>
           <Providers>
             <Toaster richColors closeButton />
+            <BetaWarningModal />
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Navbar />
               <Main>{props.children}</Main>
