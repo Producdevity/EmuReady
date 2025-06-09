@@ -2,7 +2,6 @@ import '@testing-library/jest-dom'
 import { vi, beforeEach, afterEach } from 'vitest'
 import { cleanup, configure } from '@testing-library/react'
 import { prettyDOM } from '@testing-library/dom'
-import { Role, ApprovalStatus, CustomFieldType } from '@orm'
 
 // This file is imported in vitest.config.mts
 // It sets up the jest-dom matchers for better assertions in tests
@@ -31,22 +30,22 @@ vi.mock('@orm', () => ({
     $disconnect: vi.fn(),
   })),
   CustomFieldType: {
-    TEXT: CustomFieldType.TEXT,
-    TEXTAREA: CustomFieldType.TEXTAREA,
-    URL: CustomFieldType.URL,
-    BOOLEAN: CustomFieldType.BOOLEAN,
-    SELECT: CustomFieldType.SELECT,
+    TEXT: 'TEXT',
+    TEXTAREA: 'TEXTAREA',
+    URL: 'URL',
+    BOOLEAN: 'BOOLEAN',
+    SELECT: 'SELECT',
   },
   ApprovalStatus: {
-    PENDING: ApprovalStatus.PENDING,
-    APPROVED: ApprovalStatus.APPROVED,
-    REJECTED: ApprovalStatus.REJECTED,
+    PENDING: 'PENDING',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
   },
   Role: {
-    USER: Role.USER,
-    AUTHOR: Role.AUTHOR,
-    ADMIN: Role.ADMIN,
-    SUPER_ADMIN: Role.SUPER_ADMIN,
+    USER: 'USER',
+    AUTHOR: 'AUTHOR',
+    ADMIN: 'ADMIN',
+    SUPER_ADMIN: 'SUPER_ADMIN',
   },
 }))
 
