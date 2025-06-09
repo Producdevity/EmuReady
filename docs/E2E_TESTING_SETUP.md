@@ -454,6 +454,20 @@ For CI environments, ensure:
 npx playwright test --reporter=html --output-dir=test-results
 ```
 
+### Flowchart of Authentication Process
+
+```mermaid
+flowchart TD
+    A[Test starts] --> B[Check if authFile exists]
+    B -->|No| C[Use TEST_USER_EMAIL/PASSWORD to login to Clerk]
+    C --> D[Save session to authFile]
+    B -->|Yes| E[Load saved session from authFile]
+    D --> F[Run test with authenticated user]
+    E --> F
+```
+
+
+
 ## Getting Help
 
 - Check existing test files for examples
