@@ -83,6 +83,9 @@ vi.mock('../server/api/trpc', () => ({
       })
       return caller
     }),
+    _def: {
+      procedures: routes,
+    },
   })),
   publicProcedure: {
     input: vi.fn().mockReturnThis(),
@@ -103,6 +106,75 @@ vi.mock('../server/api/trpc', () => ({
     input: vi.fn().mockReturnThis(),
     mutation: vi.fn(),
     query: vi.fn(),
+  },
+  superAdminProcedure: {
+    input: vi.fn().mockReturnThis(),
+    mutation: vi.fn(),
+    query: vi.fn(),
+  },
+  createInnerTRPCContext: vi.fn((opts) => ({
+    session: opts?.session ?? null,
+    prisma: {
+      user: {
+        findUnique: vi.fn(),
+      },
+      game: {
+        create: vi.fn(),
+        findFirst: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        findMany: vi.fn(),
+        count: vi.fn(),
+      },
+      listing: {
+        findMany: vi.fn(),
+      },
+    },
+  })),
+}))
+
+// Mock the app router with the expected structure
+vi.mock('../server/api/root', () => ({
+  appRouter: {
+    createCaller: vi.fn(() => ({
+      games: {
+        create: vi
+          .fn()
+          .mockResolvedValue({
+            id: 'mock-id',
+            status: 'PENDING',
+            submittedBy: 'user-id',
+          }),
+        get: vi.fn().mockResolvedValue([]),
+        update: vi
+          .fn()
+          .mockResolvedValue({ id: 'mock-id', title: 'Updated Game' }),
+        delete: vi.fn().mockResolvedValue({}),
+        updateOwnPendingGame: vi
+          .fn()
+          .mockResolvedValue({ id: 'mock-id', title: 'Updated Game' }),
+        approveGame: vi
+          .fn()
+          .mockResolvedValue({
+            id: 'mock-id',
+            status: 'APPROVED',
+            approvedBy: 'admin-id',
+          }),
+        getGameStats: vi
+          .fn()
+          .mockResolvedValue({
+            pending: 5,
+            approved: 20,
+            rejected: 2,
+            total: 27,
+          }),
+      },
+      listings: {
+        create: vi.fn().mockResolvedValue({ id: 'mock-listing-id' }),
+        get: vi.fn().mockResolvedValue([]),
+      },
+    })),
   },
 }))
 
