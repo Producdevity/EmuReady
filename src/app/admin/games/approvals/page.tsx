@@ -10,9 +10,10 @@ import {
   ApprovalStatusBadge,
   Pagination,
   SortableHeader,
-  Modal,
   AdminTableContainer,
 } from '@/components/ui'
+import GameDetailsModal from './components/GameDetailsModal'
+import ConfirmationModal from './components/ConfirmationModal'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { ApprovalStatus } from '@orm'
@@ -21,7 +22,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { type Nullable } from '@/types/utils'
 import useAdminTable from '@/hooks/useAdminTable'
 
-type ProcessingAction = 'approve' | 'reject'
+export type ProcessingAction = 'approve' | 'reject'
 type GameSortField = 'title' | 'submittedAt' | 'system.name'
 
 interface ConfirmationModalState {
@@ -122,7 +123,8 @@ function GameApprovalsPage() {
   }
 
   const selectedGame = selectedGameId
-    ? pendingGamesData?.games.find((game) => game.id === selectedGameId)
+    ? (pendingGamesData?.games.find((game) => game.id === selectedGameId) ??
+      null)
     : null
 
   const filteredGames = pendingGamesData?.games ?? []
@@ -343,75 +345,20 @@ function GameApprovalsPage() {
       </AdminTableContainer>
 
       {/* Game Details Modal */}
-      <Modal
+      <GameDetailsModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false)
           setSelectedGameId(null)
         }}
-        title="Game Details"
-      >
-        {selectedGame && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {selectedGame.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedGame.system.name}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Submitter
-                </label>
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  {selectedGame.submitter?.name ?? 'Unknown'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Submitted Date
-                </label>
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  {formatDate(selectedGame.submittedAt!)}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Current Status
-              </label>
-              <ApprovalStatusBadge status={selectedGame.status} type="game" />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="primary"
-                onClick={() => showConfirmation(selectedGame.id, 'approve')}
-                disabled={approveGameMutation.isPending}
-                isLoading={processingAction === 'approve'}
-              >
-                Approve
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => showConfirmation(selectedGame.id, 'reject')}
-                disabled={approveGameMutation.isPending}
-                isLoading={processingAction === 'reject'}
-              >
-                Reject
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+        selectedGame={selectedGame}
+        onShowConfirmation={showConfirmation}
+        isProcessing={approveGameMutation.isPending}
+        processingAction={processingAction}
+      />
 
       {/* Confirmation Modal */}
-      <Modal
+      <ConfirmationModal
         isOpen={confirmationModal.isOpen}
         onClose={() =>
           setConfirmationModal({
@@ -421,54 +368,11 @@ function GameApprovalsPage() {
             gameTitle: '',
           })
         }
-        title={`Confirm ${confirmationModal.action === 'approve' ? 'Approval' : 'Rejection'}`}
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700 dark:text-gray-300">
-            Are you sure you want to {confirmationModal.action} the game{' '}
-            <strong>&ldquo;{confirmationModal.gameTitle}&rdquo;</strong>?
-          </p>
-
-          {confirmationModal.action === 'reject' && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
-              <p className="text-sm text-red-800 dark:text-red-200">
-                Rejecting this game will prevent it from being visible to users
-                and cannot be undone easily.
-              </p>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() =>
-                setConfirmationModal({
-                  isOpen: false,
-                  gameId: null,
-                  action: null,
-                  gameTitle: '',
-                })
-              }
-              disabled={approveGameMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant={
-                confirmationModal.action === 'approve' ? 'primary' : 'danger'
-              }
-              onClick={handleConfirmAction}
-              disabled={approveGameMutation.isPending}
-              isLoading={approveGameMutation.isPending}
-            >
-              Confirm{' '}
-              {confirmationModal.action === 'approve'
-                ? 'Approval'
-                : 'Rejection'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        action={confirmationModal.action}
+        gameTitle={confirmationModal.gameTitle}
+        onConfirm={handleConfirmAction}
+        isProcessing={approveGameMutation.isPending}
+      />
     </div>
   )
 }
