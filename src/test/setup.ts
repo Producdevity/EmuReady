@@ -139,40 +139,17 @@ vi.mock('../server/api/root', () => ({
   appRouter: {
     createCaller: vi.fn(() => ({
       games: {
-        create: vi
-          .fn()
-          .mockResolvedValue({
-            id: 'mock-id',
-            status: 'PENDING',
-            submittedBy: 'user-id',
-          }),
-        get: vi.fn().mockResolvedValue([]),
-        update: vi
-          .fn()
-          .mockResolvedValue({ id: 'mock-id', title: 'Updated Game' }),
-        delete: vi.fn().mockResolvedValue({}),
-        updateOwnPendingGame: vi
-          .fn()
-          .mockResolvedValue({ id: 'mock-id', title: 'Updated Game' }),
-        approveGame: vi
-          .fn()
-          .mockResolvedValue({
-            id: 'mock-id',
-            status: 'APPROVED',
-            approvedBy: 'admin-id',
-          }),
-        getGameStats: vi
-          .fn()
-          .mockResolvedValue({
-            pending: 5,
-            approved: 20,
-            rejected: 2,
-            total: 27,
-          }),
+        create: vi.fn(),
+        get: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        updateOwnPendingGame: vi.fn(),
+        approveGame: vi.fn(),
+        getGameStats: vi.fn(),
       },
       listings: {
-        create: vi.fn().mockResolvedValue({ id: 'mock-listing-id' }),
-        get: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        get: vi.fn(),
       },
     })),
   },
