@@ -37,7 +37,7 @@ export const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
 
         fancy:
-          'px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105',
+          'px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold shadow-lg transition-all duration-200 transform hover:scale-105',
 
         // Legacy variants mapped to modern design tokens
         primary:
@@ -69,6 +69,7 @@ interface LegacyProps {
   size?: ButtonSize
   isLoading?: boolean
   isFullWidth?: boolean
+  rounded?: boolean
 }
 
 type ButtonProps = ComponentProps<'button'> &
@@ -84,6 +85,7 @@ function Button({
   asChild = false,
   isLoading = false,
   isFullWidth = false,
+  rounded,
   children,
   disabled,
   ...props
@@ -98,6 +100,7 @@ function Button({
       data-slot="button"
       className={cn(
         buttonVariants({ variant, size: mappedSize, className }),
+        rounded && 'rounded-xl',
         isFullWidth && 'w-full',
         (isLoading || disabled) && 'cursor-not-allowed',
         'transition-all duration-200 ease-in-out',
