@@ -71,7 +71,6 @@
     "react-dom": "^19.0.0",
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.56.4",
-    "react-hot-toast": "^2.5.2",
     "remeda": "^2.22.1",
     "sonner": "^2.0.3",
     "superjson": "^2.2.2",
