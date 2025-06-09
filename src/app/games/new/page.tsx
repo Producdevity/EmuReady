@@ -15,6 +15,7 @@ import {
 } from '@/components/ui'
 import getErrorMessage from '@/utils/getErrorMessage'
 import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
+import NotSignedInMessage from './components/NotSignedInMessage'
 
 // Define the System type for Autocomplete
 interface SystemOption extends AutocompleteOptionBase {
@@ -55,15 +56,8 @@ function AddGamePage() {
 
   if (!isLoaded || userQuery.isLoading) return <LoadingSpinner />
 
-  if (!user || !userQuery.data) {
-    return (
-      <div className="p-8 text-center">
-        You need to be logged in to add games.
-      </div>
-    )
-  }
+  if (!user || !userQuery.data) return <NotSignedInMessage />
 
-  // Check if user is admin for determining approval status
   const isAdmin = hasPermission(userQuery.data.role, Role.ADMIN)
 
   const handleSubmit = async (ev: FormEvent) => {
