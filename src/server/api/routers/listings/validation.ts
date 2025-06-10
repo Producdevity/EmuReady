@@ -34,38 +34,47 @@ export async function validateCustomFields(
     (field: CustomFieldDefinition) => field.isRequired,
   )
 
-  for (const requiredField of requiredFields) {
+  // Check if any required field is missing or invalid
+  const missingField = requiredFields.find((requiredField) => {
     const providedValue = customFieldValues?.find(
       (cfv) => cfv.customFieldDefinitionId === requiredField.id,
     )
 
-    if (!providedValue)
-      return AppError.missingRequiredField(requiredField.label)
+    if (!providedValue) return true // Field is missing
 
     // Validate the value based on field type
-    validateFieldValue(requiredField, providedValue.value ?? null)
-  }
+    try {
+      validateFieldValue(requiredField, providedValue.value ?? null)
+      return false // Field is valid
+    } catch {
+      return true // Field is invalid
+    }
+  })
+
+  if (missingField) return AppError.missingRequiredField(missingField.label)
 
   // Validate all provided custom field values
   if (customFieldValues) {
-    for (const cfv of customFieldValues) {
-      const fieldDef = await tx.customFieldDefinition.findUnique({
-        where: { id: cfv.customFieldDefinitionId },
-      })
+    // Use Promise.all for parallel validation when we need async operations
+    await Promise.all(
+      customFieldValues.map(async (cfv) => {
+        const fieldDef = await tx.customFieldDefinition.findUnique({
+          where: { id: cfv.customFieldDefinitionId },
+        })
 
-      if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
-        ResourceError.customField.invalidForEmulator(
-          cfv.customFieldDefinitionId,
-          emulatorId,
-        )
-        return // This will never be reached, but helps TypeScript
-      }
+        if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
+          return ResourceError.customField.invalidForEmulator(
+            cfv.customFieldDefinitionId,
+            emulatorId,
+          )
+        }
 
-      // Validate non-required fields if they have values
-      if (!fieldDef.isRequired && cfv.value) {
-        validateFieldValue(fieldDef, cfv.value)
-      }
-    }
+        // Validate non-required fields if they have values
+        if (!fieldDef.isRequired && cfv.value) {
+          validateFieldValue(fieldDef, cfv.value)
+        }
+      }),
+    )
   }
 }
 
@@ -81,19 +90,17 @@ function validateFieldValue(
         fieldDef.isRequired &&
         (!value || (typeof value === 'string' && value.trim() === ''))
       ) {
-        AppError.badRequest(
+        return AppError.badRequest(
           `Required custom field '${fieldDef.label}' cannot be empty`,
         )
-        return // This will never be reached, but helps TypeScript
       }
       break
 
     case CustomFieldType.SELECT:
       if (fieldDef.isRequired && (!value || value === '')) {
-        AppError.badRequest(
+        return AppError.badRequest(
           `Required custom field '${fieldDef.label}' must have a selected value`,
         )
-        return // This will never be reached, but helps TypeScript
       }
 
       // Validate that the selected value is one of the valid options
@@ -102,10 +109,9 @@ function validateFieldValue(
           fieldDef.options as Array<{ value: string; label: string }>
         ).map((opt) => opt.value)
         if (!validValues.includes(String(value))) {
-          AppError.badRequest(
+          return AppError.badRequest(
             `Invalid value for custom field '${fieldDef.label}'. Must be one of: ${validValues.join(', ')}`,
           )
-          return // This will never be reached, but helps TypeScript
         }
       }
       break
