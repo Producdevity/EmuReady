@@ -21,13 +21,12 @@ function GamesPage() {
   const { user } = useUser()
   const searchParams = useSearchParams()
 
-  // Initialize state from URL parameters, ensuring we don't use string "undefined"
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [systemId, setSystemId] = useState('')
   const limit = 12
 
-  // Initialize from URL parameters on mount
+  // Initialize state from URL parameters, ensuring we don't use string "undefined"
   useEffect(() => {
     const urlSearch = searchParams.get('search')
     const urlSystemId = searchParams.get('systemId')
