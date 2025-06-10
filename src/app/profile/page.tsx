@@ -1,14 +1,17 @@
 'use client'
 
-import { formatDate } from '@/utils/date'
 import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { ProfileUpload, ApprovalStatusBadge } from '@/components/ui'
-import ProfilePageLoader from '@/app/profile/components/ProfilePageLoader'
+import {
+  ProfileUpload,
+  ApprovalStatusBadge,
+  PageLoading,
+} from '@/components/ui'
 import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfilePageError from './components/ProfilePageError'
+import { formatDate } from '@/utils/date'
 import { type RouterInput } from '@/types/trpc'
 import toast from '@/lib/toast'
 import { type Role } from '@orm'
@@ -48,7 +51,7 @@ function ProfilePage() {
     } satisfies RouterInput['users']['update'])
   }
 
-  if (!isLoaded || (userQuery.isLoading && user)) return <ProfilePageLoader />
+  if (!isLoaded || (userQuery.isLoading && user)) return <PageLoading />
 
   if (!user) return <ProfilePageUnauthenticated />
 
