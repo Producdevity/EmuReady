@@ -31,8 +31,10 @@ interface Props {
 }
 
 function CustomFieldTemplateList(props: Props) {
-  const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set())
-  
+  const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(
+    new Set(),
+  )
+
   const deleteTemplateMutation = api.customFieldTemplates.delete.useMutation({
     onSuccess: () => {
       props.onDeleteSuccess()
@@ -45,7 +47,7 @@ function CustomFieldTemplateList(props: Props) {
 
   function handleDelete(templateId: string, templateName: string) {
     const confirmed = confirm(
-      `Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`
+      `Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`,
     )
     if (confirmed) {
       deleteTemplateMutation.mutate({ id: templateId })
@@ -76,8 +78,9 @@ function CustomFieldTemplateList(props: Props) {
   function getOptionsDisplay(options: JsonValue): string {
     if (!options || !Array.isArray(options)) return ''
     return options
-      .filter((opt): opt is { label: string } => 
-        typeof opt === 'object' && opt !== null && 'label' in opt
+      .filter(
+        (opt): opt is { label: string } =>
+          typeof opt === 'object' && opt !== null && 'label' in opt,
       )
       .map((opt) => opt.label)
       .join(', ')
@@ -97,7 +100,8 @@ function CustomFieldTemplateList(props: Props) {
                   </p>
                 )}
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                  {template.fields.length} field{template.fields.length !== 1 ? 's' : ''}
+                  {template.fields.length} field
+                  {template.fields.length !== 1 ? 's' : ''}
                   {' • '}
                   Created {template.createdAt.toLocaleDateString()}
                 </p>
@@ -131,7 +135,7 @@ function CustomFieldTemplateList(props: Props) {
               </div>
             </div>
           </div>
-          
+
           {expandedTemplates.has(template.id) && (
             <div className="border-t pt-4">
               <div className="space-y-3">
@@ -146,16 +150,19 @@ function CustomFieldTemplateList(props: Props) {
                         className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                       >
                         <div className="flex-1">
-                          <div className="font-medium text-sm">{field.label}</div>
+                          <div className="font-medium text-sm">
+                            {field.label}
+                          </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {field.name} • {getFieldTypeDisplayName(field.type)}
                             {field.isRequired && ' • Required'}
                           </div>
-                          {field.type === CustomFieldType.SELECT && field.options && (
-                            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              Options: {getOptionsDisplay(field.options)}
-                            </div>
-                          )}
+                          {field.type === CustomFieldType.SELECT &&
+                            field.options && (
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                Options: {getOptionsDisplay(field.options)}
+                              </div>
+                            )}
                         </div>
                       </div>
                     ))}
@@ -174,4 +181,4 @@ function CustomFieldTemplateList(props: Props) {
   )
 }
 
-export default CustomFieldTemplateList 
+export default CustomFieldTemplateList

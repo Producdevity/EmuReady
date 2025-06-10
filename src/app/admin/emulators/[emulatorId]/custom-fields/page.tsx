@@ -14,7 +14,8 @@ export default function EmulatorCustomFieldsPage() {
   const emulatorId = params.emulatorId as string
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
-  const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] = useState(false)
+  const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] =
+    useState(false)
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
   const {

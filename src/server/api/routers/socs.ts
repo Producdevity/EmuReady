@@ -14,13 +14,13 @@ import {
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
-    const { 
-      search, 
-      limit = 20, 
-      offset = 0, 
-      page, 
-      sortField, 
-      sortDirection 
+    const {
+      search,
+      limit = 20,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
     } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset

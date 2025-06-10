@@ -197,7 +197,9 @@ function AdminSoCsPage() {
       {!isLoading && socs.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
-            {table.search ? 'No SoCs match your search criteria.' : 'No SoCs found.'}
+            {table.search
+              ? 'No SoCs match your search criteria.'
+              : 'No SoCs found.'}
           </p>
         </div>
       )}

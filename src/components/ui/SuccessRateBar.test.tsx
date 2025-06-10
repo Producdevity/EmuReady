@@ -102,9 +102,7 @@ describe('SuccessRateBar', () => {
     const progressContainer = container.querySelector('.w-full.h-2.bg-gray-200')
     expect(progressContainer).toBeInTheDocument()
 
-    const progressBar = progressContainer?.querySelector(
-      '.h-2.rounded-full',
-    )
+    const progressBar = progressContainer?.querySelector('.h-2.rounded-full')
     expect(progressBar).toBeInTheDocument()
   })
 })

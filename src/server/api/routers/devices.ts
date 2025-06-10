@@ -15,15 +15,15 @@ import {
 
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
-    const { 
-      search, 
-      brandId, 
-      socId, 
-      limit = 20, 
-      offset = 0, 
-      page, 
-      sortField, 
-      sortDirection 
+    const {
+      search,
+      brandId,
+      socId,
+      limit = 20,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
     } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
@@ -72,16 +72,12 @@ export const devicesRouter = createTRPCRouter({
       orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
     }
 
-    // Always run count query for consistent pagination
     const total = await ctx.prisma.device.count({ where })
 
     // Get devices with pagination
     const devices = await ctx.prisma.device.findMany({
       where,
-      include: {
-        brand: true,
-        soc: true,
-      },
+      include: { brand: true, soc: true },
       orderBy,
       skip: actualOffset,
       take: effectiveLimit,
@@ -104,17 +100,10 @@ export const devicesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const device = await ctx.prisma.device.findUnique({
         where: { id: input.id },
-        include: {
-          brand: true,
-          soc: true,
-        },
+        include: { brand: true, soc: true },
       })
 
-      if (!device) {
-        ResourceError.device.notFound()
-      }
-
-      return device
+      return device ?? ResourceError.device.notFound()
     }),
 
   create: adminProcedure
@@ -124,7 +113,7 @@ export const devicesRouter = createTRPCRouter({
         where: { id: input.brandId },
       })
 
-      if (!brand) ResourceError.deviceBrand.notFound()
+      if (!brand) return ResourceError.deviceBrand.notFound()
 
       // Validate SoC if provided
       if (input.socId) {
@@ -144,7 +133,8 @@ export const devicesRouter = createTRPCRouter({
         },
       })
 
-      if (existingDevice) ResourceError.device.alreadyExists(input.modelName)
+      if (existingDevice)
+        return ResourceError.device.alreadyExists(input.modelName)
 
       return ctx.prisma.device.create({
         data: input,
@@ -186,10 +176,7 @@ export const devicesRouter = createTRPCRouter({
       const existingDevice = await ctx.prisma.device.findFirst({
         where: {
           brandId: input.brandId,
-          modelName: {
-            equals: input.modelName,
-            mode: 'insensitive',
-          },
+          modelName: { equals: input.modelName, mode: 'insensitive' },
           id: { not: id },
         },
       })
@@ -199,10 +186,7 @@ export const devicesRouter = createTRPCRouter({
       return ctx.prisma.device.update({
         where: { id },
         data,
-        include: {
-          brand: true,
-          soc: true,
-        },
+        include: { brand: true, soc: true },
       })
     }),
 

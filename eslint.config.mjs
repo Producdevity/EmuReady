@@ -23,7 +23,6 @@ const eslintConfig = [
 
       // Test coverage reports
 
-
       // Test output/coverage directories
       'coverage/',
       'test-results/',
