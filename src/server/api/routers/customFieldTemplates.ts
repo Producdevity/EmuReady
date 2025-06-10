@@ -27,7 +27,7 @@ type TemplateField = {
 }
 
 function validateTemplateFields(fields: TemplateField[]) {
-  for (const field of fields) {
+  fields.forEach((field) => {
     if (field.type === CustomFieldType.SELECT) {
       if (!field.options || field.options.length === 0) {
         ValidationError.requiresOptions('SELECT')
@@ -35,7 +35,7 @@ function validateTemplateFields(fields: TemplateField[]) {
     } else if (field.options && field.options.length > 0) {
       ValidationError.optionsNotAllowed(field.type)
     }
-  }
+  })
 
   const fieldNames = fields.map((field) => field.name)
   const uniqueFieldNames = new Set(fieldNames)
@@ -49,20 +49,29 @@ function createFieldData(field: TemplateField, index: number) {
     name: field.name,
     label: field.label,
     type: field.type,
-    options: field.type === CustomFieldType.SELECT ? field.options ?? Prisma.DbNull : Prisma.DbNull,
+    options:
+      field.type === CustomFieldType.SELECT
+        ? (field.options ?? Prisma.DbNull)
+        : Prisma.DbNull,
     isRequired: field.isRequired ?? false,
     displayOrder: field.displayOrder ?? index,
   }
 }
 
 async function requireSuperAdminPermission(ctx: TRPCContext) {
-  if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+  if (
+    !ctx.session?.user?.role ||
+    !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)
+  ) {
     AppError.insufficientPermissions('SUPER_ADMIN')
   }
 }
 
 async function requireAdminPermission(ctx: TRPCContext) {
-  if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.ADMIN)) {
+  if (
+    !ctx.session?.user?.role ||
+    !hasPermission(ctx.session.user.role, Role.ADMIN)
+  ) {
     AppError.insufficientPermissions('ADMIN')
   }
 }
@@ -85,7 +94,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
     .input(CreateCustomFieldTemplateSchema)
     .mutation(async ({ ctx, input }) => {
       await requireSuperAdminPermission(ctx)
-      
+
       validateTemplateFields(input.fields)
 
       return ctx.prisma.customFieldTemplate.create({
@@ -177,7 +186,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
 
       const existingFieldNames = new Set(existingFields.map((f) => f.name))
       const allTemplateFields = templates.flatMap((template) => template.fields)
-      
+
       const templateFieldNames = allTemplateFields.map((field) => field.name)
       const uniqueTemplateFieldNames = new Set(templateFieldNames)
       if (templateFieldNames.length !== uniqueTemplateFieldNames.size) {
@@ -185,16 +194,18 @@ export const customFieldTemplateRouter = createTRPCRouter({
       }
 
       const fieldsToCreate = allTemplateFields.filter(
-        (field) => !existingFieldNames.has(field.name)
+        (field) => !existingFieldNames.has(field.name),
       )
 
       if (fieldsToCreate.length === 0) {
-        throw new Error('All fields from the selected templates already exist for this emulator')
+        throw new Error(
+          'All fields from the selected templates already exist for this emulator',
+        )
       }
 
       const maxDisplayOrder = existingFields.reduce(
         (max, field) => Math.max(max, field.displayOrder),
-        -1
+        -1,
       )
 
       const createdFields = await Promise.all(
@@ -205,12 +216,15 @@ export const customFieldTemplateRouter = createTRPCRouter({
               name: field.name,
               label: field.label,
               type: field.type,
-              options: field.type === CustomFieldType.SELECT ? field.options ?? Prisma.DbNull : Prisma.DbNull,
+              options:
+                field.type === CustomFieldType.SELECT
+                  ? (field.options ?? Prisma.DbNull)
+                  : Prisma.DbNull,
               isRequired: field.isRequired,
               displayOrder: maxDisplayOrder + index + 1,
             },
-          })
-        )
+          }),
+        ),
       )
 
       return {
@@ -219,4 +233,4 @@ export const customFieldTemplateRouter = createTRPCRouter({
         templateNames: templates.map((t) => t.name),
       }
     }),
-}) 
+})
