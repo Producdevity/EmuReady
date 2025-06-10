@@ -3,11 +3,10 @@
 import { useUser } from '@clerk/nextjs'
 import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ApprovalStatus, Role } from '@orm'
-import { Badge, LoadingSpinner, OptimizedImage } from '@/components/ui'
+import { Badge, LoadingSpinner } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
-import getImageUrl from '@/app/games/utils/getImageUrl'
+import GameBoxartImage from './components/GameBoxartImage'
 import { hasPermission } from '@/utils/permissions'
 import { api } from '@/lib/api'
 import { ChevronLeft } from 'lucide-react'
@@ -17,17 +16,16 @@ function GameDetailsPage() {
   const { user } = useUser()
   const gameQuery = api.games.byId.useQuery({ id: params.id as string })
 
-  // Get user data from database
-  const { data: userData } = api.users.getProfile.useQuery(undefined, {
+  const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
 
   // Check edit permissions
-  const isAdmin = hasPermission(userData?.role, Role.ADMIN)
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
   const isOwnerOfPendingGame =
-    userData &&
+    userQuery.data &&
     gameQuery.data &&
-    gameQuery.data.submittedBy === userData.id &&
+    gameQuery.data.submittedBy === userQuery.data.id &&
     gameQuery.data.status === ApprovalStatus.PENDING
 
   const canEdit = isAdmin || isOwnerOfPendingGame
@@ -51,33 +49,11 @@ function GameDetailsPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
-            <div className="w-full md:w-1/4 flex-shrink-0">
-              {gameQuery.data.imageUrl ? (
-                <OptimizedImage
-                  src={getImageUrl(
-                    gameQuery.data.imageUrl,
-                    gameQuery.data.title,
-                  )}
-                  alt={gameQuery.data.title}
-                  width={300}
-                  height={400}
-                  className="w-full max-h-96 rounded-lg shadow-md"
-                  imageClassName="w-full max-h-96"
-                  objectFit="contain"
-                  fallbackSrc="/placeholder/game.svg"
-                  priority
-                />
-              ) : (
-                <Image
-                  src="/placeholder/game.svg"
-                  alt="No image available"
-                  className="w-full h-auto rounded-lg shadow-md"
-                  width={300}
-                  height={400}
-                  unoptimized
-                />
-              )}
-            </div>
+            <GameBoxartImage
+              boxartUrl={gameQuery.data.boxartUrl}
+              imageUrl={gameQuery.data.imageUrl}
+              title={gameQuery.data.title}
+            />
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
