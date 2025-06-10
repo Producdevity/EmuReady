@@ -196,29 +196,46 @@ describe('useDebouncedValue', () => {
       expect(result.current).toEqual(updatedArray)
     })
 
-    it('should work with null and undefined', () => {
+    it('should handle null and undefined values', () => {
       const { result, rerender } = renderHook(
-        ({ value, delay }) => useDebouncedValue(value, delay),
+        ({
+          value,
+          delay,
+        }: {
+          value: string | null | undefined
+          delay: number
+        }) => useDebouncedValue(value, delay),
         {
-          initialProps: { value: 'initial', delay: 300 },
+          initialProps: {
+            value: 'initial' as string | null | undefined,
+            delay: 300,
+          },
         },
       )
 
-      rerender({ value: null, delay: 300 })
+      expect(result.current).toBe('initial')
+
+      act(() => {
+        rerender({ value: null, delay: 300 })
+      })
+
+      expect(result.current).toBe('initial') // Should still be initial, not debounced yet
 
       act(() => {
         vi.advanceTimersByTime(300)
       })
 
-      expect(result.current).toBeNull()
+      expect(result.current).toBe(null)
 
-      rerender({ value: undefined, delay: 300 })
+      act(() => {
+        rerender({ value: undefined, delay: 300 })
+      })
 
       act(() => {
         vi.advanceTimersByTime(300)
       })
 
-      expect(result.current).toBeUndefined()
+      expect(result.current).toBe(undefined)
     })
   })
 

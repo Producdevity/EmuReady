@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ApprovalStatus, Role } from '@orm'
-import { Badge, LoadingSpinner } from '@/components/ui'
+import { Badge, LoadingSpinner, PerformanceBadge } from '@/components/ui'
 import GameEditForm from './components/GameEditForm'
 import GameBoxartImage from './components/GameBoxartImage'
 import { hasPermission } from '@/utils/permissions'
@@ -20,7 +20,6 @@ function GameDetailsPage() {
     enabled: !!user,
   })
 
-  // Check edit permissions
   const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
   const isOwnerOfPendingGame =
     userQuery.data &&
@@ -129,19 +128,10 @@ function GameDetailsPage() {
                         {listing.emulator?.name || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge
-                          variant={
-                            listing.performance?.label === 'Perfect'
-                              ? 'success'
-                              : listing.performance?.label === 'Great'
-                                ? 'info'
-                                : listing.performance?.label === 'Playable'
-                                  ? 'warning'
-                                  : 'danger'
-                          }
-                        >
-                          {listing.performance?.label || 'N/A'}
-                        </Badge>
+                        <PerformanceBadge
+                          rank={listing.performance.rank}
+                          label={listing.performance.label}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {listing.author?.name ?? 'Anonymous'}

@@ -25,7 +25,7 @@ interface Props {
   }
 }
 
-export default function GameEditForm({ gameData }: Props) {
+function GameEditForm({ gameData }: Props) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(gameData.title)
   const [imageUrl, setImageUrl] = useState(gameData.imageUrl ?? '')
@@ -187,3 +187,5 @@ export default function GameEditForm({ gameData }: Props) {
     </div>
   )
 }
+
+export default GameEditForm

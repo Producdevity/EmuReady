@@ -1,3 +1,4 @@
+import axios, { type AxiosResponse } from 'axios'
 import type {
   RawgGameResponse,
   RawgGameDetails,
@@ -5,6 +6,7 @@ import type {
   GameImageOption,
 } from '@/types/rawg'
 import { isValidImageUrl } from '@/lib/rawg-utils'
+import scoreGameMatch from '@/server/utils/scoreGameMatch'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 export class RawgError extends Error {
@@ -32,35 +34,36 @@ async function makeRequest<T>(
   endpoint: string,
   params: Record<string, string> = {},
 ): Promise<T> {
-  const url = new URL(`${RAWG_BASE_URL}${endpoint}`)
-  url.searchParams.set('key', getApiKey())
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) url.searchParams.set(key, value)
-  })
-
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        'User-Agent': 'EmuReady/1.0',
+    const response: AxiosResponse<T> = await axios.get(
+      `${RAWG_BASE_URL}${endpoint}`,
+      {
+        params: {
+          key: getApiKey(),
+          ...params,
+        },
+        headers: {
+          'User-Agent': 'EmuReady/1.0',
+        },
       },
-    })
+    )
 
-    if (!response.ok) {
-      const payload = await response.text().catch(() => '')
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status
+      const statusText = error.response?.statusText ?? 'Unknown error'
+      const payload = error.response?.data
+        ? JSON.stringify(error.response.data)
+        : ''
+
       throw new RawgError(
-        `RAWG API error: ${response.status} ${response.statusText} – ${payload}`,
-        response.status,
+        `RAWG API error: ${status} ${statusText} – ${payload}`,
+        status,
         endpoint,
       )
     }
 
-    const data = await response.json()
-    return data as T
-  } catch (error) {
-    if (error instanceof RawgError) {
-      throw error
-    }
     throw new RawgError(
       `Failed to fetch from RAWG API: ${getErrorMessage(error)}`,
       undefined,
@@ -70,59 +73,6 @@ async function makeRequest<T>(
 }
 
 // TODO: benchmark this scoring algorithm, it may need adjustments
-function scoreGameMatch(gameName: string, searchQuery: string): number {
-  const normalizedGameName = gameName.toLowerCase().trim()
-  const normalizedQuery = searchQuery.toLowerCase().trim()
-
-  // Exact match gets highest score
-  if (normalizedGameName === normalizedQuery) return 1000
-
-  // Game name starts with query gets very high score
-  if (normalizedGameName.startsWith(normalizedQuery)) return 900
-
-  // Split into words for more sophisticated matching
-  const queryWords = normalizedQuery
-    .split(/\s+/)
-    .filter((word) => word.length > 0)
-  const gameWords = normalizedGameName
-    .split(/\s+/)
-    .filter((word) => word.length > 0)
-
-  // Check if all query words are present in the game name (in any order)
-  const matchingWords = queryWords.filter((queryWord) =>
-    gameWords.some((gameWord) => gameWord.includes(queryWord)),
-  )
-
-  if (matchingWords.length === queryWords.length) {
-    // All words match - check if they're in order
-    let lastIndex = -1
-    let inOrder = true
-
-    for (const queryWord of queryWords) {
-      const foundIndex = gameWords.findIndex(
-        (gameWord, index) => index > lastIndex && gameWord.includes(queryWord),
-      )
-
-      if (foundIndex <= lastIndex) {
-        inOrder = false
-        break
-      }
-      lastIndex = foundIndex
-    }
-
-    return inOrder ? 800 : 750
-  }
-
-  // Partial matches - score based on percentage of matching words
-  if (matchingWords.length > 0) {
-    const matchRatio = matchingWords.length / queryWords.length
-    return 500 + matchRatio * 200
-  }
-
-  // No significant match - return 0 to preserve original RAWG ordering
-  return 0
-}
-
 export async function searchGames(
   query: string,
   page = 1,
@@ -202,7 +152,7 @@ export async function getGameImages(
         id: `bg-${gameId}`,
         url: gameDetails.background_image,
         type: 'background',
-        source: 'rawg',
+        source: 'rawg' as const,
         gameId,
         gameName,
       })
@@ -216,7 +166,7 @@ export async function getGameImages(
           id: `screenshot-${gameId}-${index}`,
           url: screenshot.image,
           type: 'screenshot',
-          source: 'rawg',
+          source: 'rawg' as const,
           gameId,
           gameName,
           width: screenshot.width,
