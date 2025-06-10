@@ -1,3 +1,7 @@
+/**
+ * Generates a safe placeholder image URL with a sanitized title.
+ * @param title - The title to include in the placeholder image text.
+ */
 function getSafePlaceholderImageUrl(title?: string | null): string {
   // Ensure string, remove non-printable ASCII, remove percent signs and other potentially harmful characters
   const safeTitle = String(title ?? '')
