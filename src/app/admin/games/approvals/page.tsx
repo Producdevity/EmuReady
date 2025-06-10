@@ -63,7 +63,7 @@ function GameApprovalsPage() {
   })
 
   // Query for game stats
-  const { data: gameStats } = api.games.getGameStats.useQuery()
+  const { data: gameStats } = api.games.getStats.useQuery()
 
   // Mutation for approving/rejecting games
   const approveGameMutation = api.games.approveGame.useMutation({

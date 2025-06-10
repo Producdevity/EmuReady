@@ -67,7 +67,7 @@ function AdminApprovalsPage() {
     search: isEmpty(table.search) ? undefined : table.search,
   })
 
-  const gameStatsQuery = api.games.getGameStats.useQuery()
+  const gameStatsQuery = api.games.getStats.useQuery()
 
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [selectedListingForApproval, setSelectedListingForApproval] =
