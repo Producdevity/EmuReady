@@ -27,6 +27,7 @@ class MemoryCache<T> {
   private cache = new Map<string, CacheEntry<T>>()
   private readonly options: Required<CacheOptions>
   private cleanupTimer: NodeJS.Timeout | null = null
+  private entryCounter = 0 // Add counter for unique timestamps
   private stats: CacheStats = {
     hits: 0,
     misses: 0,
@@ -62,8 +63,8 @@ class MemoryCache<T> {
       return undefined
     }
 
-    // Update last accessed time for LRU
-    entry.lastAccessed = now
+    // Update last accessed time for LRU with unique ordering
+    entry.lastAccessed = now + this.entryCounter++ * 0.001
     this.stats.hits++
     return entry.value
   }
@@ -75,18 +76,20 @@ class MemoryCache<T> {
     const entry: CacheEntry<T> = {
       value,
       expires: now + ttl,
-      lastAccessed: now,
+      lastAccessed: now + this.entryCounter++ * 0.001, // Add microsecond precision
     }
 
+    const isExistingKey = this.cache.has(key)
+
     // If we're at capacity and this is a new key, evict LRU
-    if (!this.cache.has(key) && this.cache.size >= this.options.maxSize) {
+    if (!isExistingKey && this.cache.size >= this.options.maxSize) {
       this.evictLRU()
     }
 
-    const isNewEntry = !this.cache.has(key)
     this.cache.set(key, entry)
 
-    if (isNewEntry) {
+    // Update stats only for new keys
+    if (!isExistingKey) {
       this.stats.size++
     }
   }
@@ -108,13 +111,22 @@ class MemoryCache<T> {
     const regex = new RegExp(pattern.replace(/\*/g, '.*'))
     let deletedCount = 0
 
+    // Collect keys to delete first to avoid modifying during iteration
+    const keysToDelete: string[] = []
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
-        this.cache.delete(key)
-        deletedCount++
-        this.stats.size--
+        keysToDelete.push(key)
       }
     }
+
+    // Delete the collected keys
+    for (const key of keysToDelete) {
+      this.cache.delete(key)
+      deletedCount++
+    }
+
+    // Update stats.size to match actual cache size
+    this.stats.size = this.cache.size
 
     return deletedCount
   }
@@ -149,6 +161,7 @@ class MemoryCache<T> {
     if (oldestKey) {
       this.cache.delete(oldestKey)
       this.stats.evictions++
+      this.stats.size--
     }
   }
 
