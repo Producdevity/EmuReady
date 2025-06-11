@@ -9,6 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import BetaWarningModal from '@/components/BetaWarningModal'
+import KofiWidget from '@/components/ui/KofiWidget'
 import Providers from '@/components/Providers'
 import Navbar from '@/components/navbar/Navbar'
 import Footer from '@/components/footer/Footer'
@@ -57,6 +58,7 @@ export default function RootLayout(props: PropsWithChildren) {
           </Providers>
           <Analytics />
           <SpeedInsights />
+          <KofiWidget />
         </body>
         {/* TODO: show annoying cookie banner? */}
         {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
