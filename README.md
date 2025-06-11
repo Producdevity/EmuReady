@@ -28,6 +28,7 @@ Visit our website: [https://emuready.com](https://emuready.com)
 
 EmuReady helps users share and discover emulation compatibility information across different hardware and software configurations. Users can contribute compatibility reports, vote on listings, and discuss specific game/device/emulator combinations.
 
+![CI](https://github.com/Producdevity/emuready/workflows/CI/badge.svg)
 ![License](https://img.shields.io/github/license/Producdevity/emuready?cacheSeconds=1)
 ![Stars](https://img.shields.io/github/stars/Producdevity/emuready?cacheSeconds=1)
 ![Forks](https://img.shields.io/github/forks/Producdevity/emuready?cacheSeconds=1)
