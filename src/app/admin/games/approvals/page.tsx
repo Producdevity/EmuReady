@@ -37,6 +37,7 @@ function GameApprovalsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [processingAction, setProcessingAction] =
     useState<Nullable<ProcessingAction>>(null)
+  const [processingGameId, setProcessingGameId] = useState<string | null>(null)
   const [confirmationModal, setConfirmationModal] =
     useState<ConfirmationModalState>({
       isOpen: false,
@@ -73,10 +74,12 @@ function GameApprovalsPage() {
       setIsModalOpen(false)
       setSelectedGameId(null)
       setProcessingAction(null)
+      setProcessingGameId(null)
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to process game'))
       setProcessingAction(null)
+      setProcessingGameId(null)
     },
   })
 
@@ -96,6 +99,7 @@ function GameApprovalsPage() {
     if (!confirmationModal.gameId || !confirmationModal.action) return
 
     setProcessingAction(confirmationModal.action)
+    setProcessingGameId(confirmationModal.gameId)
     setConfirmationModal({
       isOpen: false,
       gameId: null,
@@ -289,11 +293,11 @@ function GameApprovalsPage() {
                             onClick={() => showConfirmation(game.id, 'approve')}
                             disabled={
                               processingAction === 'approve' &&
-                              selectedGameId === game.id
+                              processingGameId === game.id
                             }
                             isLoading={
                               processingAction === 'approve' &&
-                              selectedGameId === game.id
+                              processingGameId === game.id
                             }
                           >
                             <CheckCircle className="h-4 w-4" />
@@ -305,11 +309,11 @@ function GameApprovalsPage() {
                             onClick={() => showConfirmation(game.id, 'reject')}
                             disabled={
                               processingAction === 'reject' &&
-                              selectedGameId === game.id
+                              processingGameId === game.id
                             }
                             isLoading={
                               processingAction === 'reject' &&
-                              selectedGameId === game.id
+                              processingGameId === game.id
                             }
                           >
                             <XCircle className="h-4 w-4" />

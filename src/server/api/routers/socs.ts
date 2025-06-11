@@ -80,8 +80,8 @@ export const socsRouter = createTRPCRouter({
       socs,
       pagination: {
         total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
+        pages: Math.ceil(total / effectiveLimit),
+        page: page ?? Math.floor(actualOffset / effectiveLimit) + 1,
         offset: actualOffset,
         limit: effectiveLimit,
       },

@@ -50,7 +50,12 @@ async function systemsSeeder(prisma: PrismaClient) {
   for (const system of systems) {
     await prisma.system.upsert({
       where: { name: system.name },
-      update: { key: system.key, tgdbPlatformId: system.tgdbPlatformId },
+      update: {
+        ...(system.key ? { key: system.key } : {}),
+        ...(system.tgdbPlatformId !== undefined
+          ? { tgdbPlatformId: system.tgdbPlatformId }
+          : {}),
+      },
       create: system,
     })
   }

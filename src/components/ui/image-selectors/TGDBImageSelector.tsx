@@ -103,7 +103,10 @@ function TGDBImageSelector(props: Props) {
 
   const handleSearch = () => {
     if (searchTerm.trim().length >= 2) {
-      searchQuery.refetch().catch(console.error)
+      searchQuery.refetch().catch((error) => {
+        console.error('Search error:', error)
+        props.onError?.(`Failed to search for images: ${error.message}`)
+      })
     }
   }
 
@@ -313,10 +316,9 @@ function TGDBImageSelector(props: Props) {
           {allImages.length > 0 && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
-                {allImages.map((image, index) => (
-                  // Note: Using index as fallback key since backend now generates unique IDs with timestamps
+                {allImages.map((image) => (
                   <div
-                    key={`${image.id}-${index}`}
+                    key={image.id}
                     onClick={() => handleImageSelect(image)}
                     className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 hover:shadow-xl group ${
                       selectedImage?.id === image.id

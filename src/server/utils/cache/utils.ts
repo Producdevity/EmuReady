@@ -18,7 +18,12 @@ export function createCacheKey(
     if (param === null || param === undefined) {
       parts.push('null')
     } else if (typeof param === 'object') {
-      parts.push(JSON.stringify(param))
+      parts.push(
+        JSON.stringify(
+          param,
+          Object.keys(param as Record<string, unknown>).sort(),
+        ),
+      )
     } else {
       parts.push(String(param))
     }

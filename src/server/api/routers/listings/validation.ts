@@ -58,9 +58,9 @@ export async function validateCustomFields(
     // Use Promise.all for parallel validation when we need async operations
     await Promise.all(
       customFieldValues.map(async (cfv) => {
-        const fieldDef = await tx.customFieldDefinition.findUnique({
-          where: { id: cfv.customFieldDefinitionId },
-        })
+        const fieldDef = customFieldDefinitions.find(
+          (d) => d.id === cfv.customFieldDefinitionId,
+        )
 
         if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
           return ResourceError.customField.invalidForEmulator(

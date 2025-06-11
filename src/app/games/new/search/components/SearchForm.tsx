@@ -38,8 +38,8 @@ function SearchForm(props: SearchFormProps) {
   }
 
   const handleKeyPress = (ev: KeyboardEvent) => {
-    ev.preventDefault()
     if (ev.key !== 'Enter') return
+    ev.preventDefault()
     if (!searchQuery.trim()) return
 
     props.onSearch(

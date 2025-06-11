@@ -132,7 +132,7 @@ function GameEditForm(props: Props) {
           Boxart Image URL (optional)
         </label>
         <Input
-          id="imageUrl"
+          id="boxartUrl"
           {...register('boxartUrl')}
           placeholder="https://example.com/game-image.jpg"
         />

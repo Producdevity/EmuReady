@@ -108,7 +108,11 @@ class MemoryCache<T> {
   }
 
   invalidatePattern(pattern: string): number {
-    const regex = new RegExp(pattern.replace(/\*/g, '.*'))
+    // Escape special regex characters except for our wildcard *
+    const escapedPattern = pattern
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\\\*/g, '.*')
+    const regex = new RegExp(`^${escapedPattern}$`)
     let deletedCount = 0
 
     // Collect keys to delete first to avoid modifying during iteration

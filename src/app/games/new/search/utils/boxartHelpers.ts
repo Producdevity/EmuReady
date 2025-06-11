@@ -16,7 +16,8 @@ export function extractBoxartUrl(
   const boxart = boxartImages[0]
   if (!boxart) return null
 
-  const baseUrl = searchResponse.include?.boxart?.base_url?.thumb
+  let baseUrl = searchResponse.include?.boxart?.base_url?.thumb
+  if (baseUrl && !baseUrl.endsWith('/')) baseUrl += '/'
   if (!baseUrl) return null
 
   return `${baseUrl}${boxart.filename}`
@@ -26,7 +27,7 @@ export function extractBoxartUrl(
  * Gets display-friendly platform name, handling edge cases
  */
 export function formatPlatformName(platforms: string[]): string {
-  if (!platforms || platforms.length === 0) return 'Unknown Platform'
+  if (platforms.length === 0) return 'Unknown Platform'
 
   // If multiple platforms, show the first one + count
   return platforms.length > 1

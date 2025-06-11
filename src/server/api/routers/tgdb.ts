@@ -1,5 +1,6 @@
 import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
 import * as tgdb from '@/server/tgdb'
+import { type GameImageOption } from '@/types/tgdb'
 import {
   SearchGameImagesSchema,
   SearchGamesSchema,
@@ -17,7 +18,7 @@ export const tgdbRouter = createTRPCRouter({
       )
 
       // Convert Map to a plain object for serialization
-      const serializedResult: Record<string, unknown[]> = {}
+      const serializedResult: Record<string, GameImageOption[]> = {}
       result.forEach((images, gameId) => {
         serializedResult[gameId.toString()] = images
       })

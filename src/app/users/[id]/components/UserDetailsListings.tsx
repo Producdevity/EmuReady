@@ -21,12 +21,12 @@ function UserDetailsListings(props: Props) {
             <div className="flex flex-col gap-4">
               {props.listings.map((listing: UserListing) => (
                 <div key={listing.id} className="flex flex-row gap-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">
                     <Link href={`/listings/${listing.id}`}>
                       {listing.game?.title} on {listing.device?.brand.name}{' '}
                       {listing.device?.modelName}
                     </Link>
-                  </h3>
+                  </h4>
                   <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(listing.createdAt)}
                   </p>

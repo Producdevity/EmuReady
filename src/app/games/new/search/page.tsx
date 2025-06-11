@@ -138,12 +138,7 @@ function GameSearchPage() {
           tgdbGameId: game.id, // Store the TGDB game ID
         }
 
-        const newGame = await new Promise<{ id: string }>((resolve, reject) => {
-          createGame.mutate(gameData, {
-            onSuccess: (data) => resolve(data),
-            onError: reject,
-          })
-        })
+        const newGame = await createGame.mutateAsync(gameData)
 
         // Show success message and redirect
         if (isAdmin) {
@@ -164,32 +159,44 @@ function GameSearchPage() {
 
         // Handle duplicate game error with user-friendly message
         const errorMessage = getErrorMessage(error, 'Failed to add game')
-        if (
-          errorMessage.includes('already exists') &&
-          error &&
-          typeof error === 'object' &&
-          'cause' in error
-        ) {
-          const cause = error.cause as Record<string, unknown>
+
+        // Check for duplicate game error by message content
+        if (errorMessage.includes('already exists')) {
+          // Try to extract cause information if it exists
           if (
-            cause.existingGameId &&
-            cause.existingGameTitle &&
-            cause.systemName
+            error &&
+            typeof error === 'object' &&
+            'cause' in error &&
+            error.cause &&
+            typeof error.cause === 'object'
           ) {
-            toast.error(
-              `Game already exists: "${cause.existingGameTitle}" on ${cause.systemName}`,
-              {
-                duration: 10000,
-                action: {
-                  label: 'View Game',
-                  onClick: () => router.push(`/games/${cause.existingGameId}`),
+            const cause = error.cause as Record<string, unknown>
+            if (
+              cause.existingGameId &&
+              cause.existingGameTitle &&
+              cause.systemName
+            ) {
+              toast.error(
+                `Game already exists: "${cause.existingGameTitle}" on ${cause.systemName}`,
+                {
+                  duration: 10000,
+                  action: {
+                    label: 'View Game',
+                    onClick: () =>
+                      router.push(`/games/${cause.existingGameId}`),
+                  },
                 },
-              },
-            )
-            return
+              )
+              return
+            }
           }
+
+          // Fallback for duplicate errors without cause info
+          toast.error(errorMessage, { duration: 8000 })
+          return
         }
 
+        // Handle all other errors
         toast.error(errorMessage)
       } finally {
         setIsSelecting(false)

@@ -1,16 +1,16 @@
 import type { GameImageOption } from '@/types/tgdb'
 
-export function getImageDisplayName(image: GameImageOption): string {
-  const typeDisplayNames: Record<string, string> = {
-    boxart: 'Box Art',
-    fanart: 'Fan Art',
-    banner: 'Banner',
-    screenshot: 'Screenshot',
-    clearlogo: 'Clear Logo',
-    titlescreen: 'Title Screen',
-  }
+const TYPE_DISPLAY_NAMES: Record<string, string> = {
+  boxart: 'Box Art',
+  fanart: 'Fan Art',
+  banner: 'Banner',
+  screenshot: 'Screenshot',
+  clearlogo: 'Clear Logo',
+  titlescreen: 'Title Screen',
+}
 
-  const typeName = typeDisplayNames[image.type] || image.type
+export function getImageDisplayName(image: GameImageOption): string {
+  const typeName = TYPE_DISPLAY_NAMES[image.type] || image.type
   return `${typeName} - ${image.gameName}`
 }
 
@@ -27,14 +27,7 @@ export function isValidImageUrl(url: string): boolean {
 }
 
 export function getImageTypeDisplayName(type: string): string {
-  const typeDisplayNames: Record<string, string> = {
-    boxart: 'Box Art',
-    fanart: 'Fan Art',
-    banner: 'Banner',
-    screenshot: 'Screenshot',
-    clearlogo: 'Clear Logo',
-    titlescreen: 'Title Screen',
-  }
-
-  return typeDisplayNames[type] || type.charAt(0).toUpperCase() + type.slice(1)
+  return (
+    TYPE_DISPLAY_NAMES[type] || type.charAt(0).toUpperCase() + type.slice(1)
+  )
 }

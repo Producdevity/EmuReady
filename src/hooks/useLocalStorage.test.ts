@@ -28,6 +28,8 @@ vi.mock('@/lib/toast', () => ({
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
+  configurable: true,
+  writable: true,
 })
 
 describe('useLocalStorage', () => {

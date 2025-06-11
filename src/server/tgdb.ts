@@ -31,7 +31,7 @@ export class TGDBError extends Error {
 const TGDB_BASE_URL = 'https://api.thegamesdb.net'
 
 function getApiKey(): string {
-  const apiKey = process.env.THE_GAMES_DB_API_KEY ?? ''
+  const apiKey = process.env.THE_GAMES_DB_API_KEY
   if (!apiKey) {
     throw new Error('THE_GAMES_DB_API_KEY environment variable is required')
   }

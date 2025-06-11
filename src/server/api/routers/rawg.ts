@@ -48,7 +48,7 @@ export const rawgRouter = createTRPCRouter({
           ]),
         )
       } catch (error) {
-        return error instanceof RawgError
+        throw error instanceof RawgError
           ? AppError.internalError(`RAWG API error: ${error.message}`)
           : AppError.internalError('Failed to search game images')
       }
@@ -60,7 +60,7 @@ export const rawgRouter = createTRPCRouter({
       try {
         return await searchGames(input.query, input.page, input.pageSize)
       } catch (error) {
-        return error instanceof RawgError
+        throw error instanceof RawgError
           ? AppError.internalError(`RAWG API error: ${error.message}`)
           : AppError.internalError('Failed to search games')
       }
@@ -72,7 +72,7 @@ export const rawgRouter = createTRPCRouter({
       try {
         return await getGameImages(input.gameId, input.gameName)
       } catch (error) {
-        return error instanceof RawgError
+        throw error instanceof RawgError
           ? AppError.internalError(`RAWG API error: ${error.message}`)
           : AppError.internalError('Failed to get game images')
       }

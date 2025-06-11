@@ -18,6 +18,7 @@ import Link from 'next/link'
 interface SystemOption extends AutocompleteOptionBase {
   id: string
   name: string
+  tgdbPlatformId: number | null
 }
 
 function AddGamePage() {

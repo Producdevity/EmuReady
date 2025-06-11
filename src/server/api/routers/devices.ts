@@ -133,8 +133,9 @@ export const devicesRouter = createTRPCRouter({
         },
       })
 
-      if (existingDevice)
+      if (existingDevice) {
         return ResourceError.device.alreadyExists(input.modelName)
+      }
 
       return ctx.prisma.device.create({
         data: input,
@@ -154,13 +155,13 @@ export const devicesRouter = createTRPCRouter({
         where: { id },
       })
 
-      if (!device) ResourceError.device.notFound()
+      if (!device) return ResourceError.device.notFound()
 
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.brandId },
       })
 
-      if (!brand) ResourceError.deviceBrand.notFound()
+      if (!brand) return ResourceError.deviceBrand.notFound()
 
       // Validate SoC if provided
       if (input.socId) {
@@ -181,7 +182,8 @@ export const devicesRouter = createTRPCRouter({
         },
       })
 
-      if (existingDevice) ResourceError.device.alreadyExists(input.modelName)
+      if (existingDevice)
+        return ResourceError.device.alreadyExists(input.modelName)
 
       return ctx.prisma.device.update({
         where: { id },
@@ -198,7 +200,7 @@ export const devicesRouter = createTRPCRouter({
         where: { deviceId: input.id },
       })
 
-      if (listingsCount > 0) ResourceError.device.inUse(listingsCount)
+      if (listingsCount > 0) return ResourceError.device.inUse(listingsCount)
 
       return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
