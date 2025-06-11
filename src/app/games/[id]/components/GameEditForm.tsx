@@ -176,8 +176,12 @@ function GameEditForm({ gameData }: Props) {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Changes'}
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                >
+                  Save Changes
                 </Button>
               </div>
             </form>
