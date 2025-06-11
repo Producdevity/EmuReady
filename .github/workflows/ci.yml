@@ -30,13 +30,12 @@ jobs:
       DATABASE_DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
       NODE_ENV: "test"
       CI: "true"
-      # Required for basic functionality - use placeholder values for CI
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder"
-      CLERK_SECRET_KEY: "sk_test_placeholder"
-      CLERK_WEBHOOK_SECRET: "whsec_placeholder"
-      RAWG_API_KEY: "placeholder"
-      THE_GAMES_DB_API_KEY: "placeholder"  
-      NEXT_PUBLIC_GA_ID: "placeholder"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+      RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+      THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
+      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
 
     steps:
       - name: Checkout code
