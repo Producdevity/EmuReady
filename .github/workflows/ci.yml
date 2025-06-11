@@ -26,8 +26,8 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
+      DATABASE_DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
       NODE_ENV: "test"
       CI: "true"
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}

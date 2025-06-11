@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useUser } from '@clerk/nextjs'
 import { notFound, useParams } from 'next/navigation'
 import Link from 'next/link'
