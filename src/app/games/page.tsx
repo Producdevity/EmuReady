@@ -3,6 +3,7 @@
 import {
   useState,
   useEffect,
+  Suspense,
   type SyntheticEvent,
   type ChangeEvent,
 } from 'react'
@@ -133,4 +134,10 @@ function GamesPage() {
   )
 }
 
-export default GamesPage
+export default function Page() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading page..." />}>
+      <GamesPage />
+    </Suspense>
+  )
+}
