@@ -35,7 +35,11 @@ jobs:
       CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
       RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
       THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
+      IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}
+      NEXT_PUBLIC_IGDB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_IGDB_CLIENT_ID }}
       NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
+      NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
       - name: Checkout code
