@@ -162,6 +162,11 @@ describe('useLocalStorage', () => {
 
   describe('error handling', () => {
     it('should handle JSON parse errors gracefully', () => {
+      // Mock console.error to suppress expected error logs
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
       // Set invalid JSON in localStorage
       localStorageMock.setItem('test-key', 'invalid-json{')
 
@@ -172,9 +177,17 @@ describe('useLocalStorage', () => {
       // Should fall back to initial value
       const [value] = result.current
       expect(value).toBe('fallback')
+
+      // Restore console.error
+      consoleErrorSpy.mockRestore()
     })
 
     it('should handle localStorage setItem errors', () => {
+      // Mock console.warn to suppress expected error logs
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {})
+
       // Create a proper spy that can be restored
       const originalSetItem = localStorageMock.setItem
       const setItemSpy = vi.spyOn(localStorageMock, 'setItem')
@@ -196,9 +209,15 @@ describe('useLocalStorage', () => {
       // Restore the original implementation
       setItemSpy.mockRestore()
       localStorageMock.setItem = originalSetItem
+      consoleWarnSpy.mockRestore()
     })
 
     it('should handle localStorage getItem errors during hydration', () => {
+      // Mock console.error to suppress expected error logs
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
       // Create a proper spy that can be restored
       const originalGetItem = localStorageMock.getItem
       const getItemSpy = vi.spyOn(localStorageMock, 'getItem')
@@ -217,6 +236,7 @@ describe('useLocalStorage', () => {
       // Restore the original implementation
       getItemSpy.mockRestore()
       localStorageMock.getItem = originalGetItem
+      consoleErrorSpy.mockRestore()
     })
   })
 
@@ -260,6 +280,11 @@ describe('useLocalStorage', () => {
 
   describe('SSR compatibility', () => {
     it('should handle server-side rendering', () => {
+      // Mock console.error to suppress expected error logs
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
       // Test behavior when hook initializes without localStorage access
       const originalLocalStorage = global.localStorage
       delete (global as any).localStorage
@@ -273,6 +298,7 @@ describe('useLocalStorage', () => {
 
       // Restore localStorage
       global.localStorage = originalLocalStorage
+      consoleErrorSpy.mockRestore()
     })
   })
 
@@ -296,6 +322,11 @@ describe('useLocalStorage', () => {
     })
 
     it('should handle hydration with corrupted localStorage data', () => {
+      // Mock console.error to suppress expected error logs
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
       // Clear any existing mocks
       vi.clearAllMocks()
       localStorageMock.clear()
@@ -310,6 +341,8 @@ describe('useLocalStorage', () => {
 
       const [value] = result.current
       expect(value).toBe('fallback-value')
+
+      consoleErrorSpy.mockRestore()
     })
   })
 

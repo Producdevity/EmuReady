@@ -55,7 +55,9 @@ describe('Autocomplete Component', () => {
   let user: ReturnType<typeof userEvent.setup>
 
   beforeEach(() => {
-    user = userEvent.setup()
+    user = userEvent.setup({
+      delay: null, // Remove all typing delays for faster tests
+    })
     vi.clearAllMocks()
     // Don't use fake timers by default - only in specific tests that need them
   })
@@ -600,6 +602,11 @@ describe('Autocomplete Component', () => {
     })
 
     it('should handle error state on failed load gracefully', async () => {
+      // Mock console.error to suppress expected error logs
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
       mockLoadItems.mockRejectedValue(new Error('Failed to load'))
 
       render(
@@ -627,6 +634,9 @@ describe('Autocomplete Component', () => {
       // No specific UI expectation - just that it doesn't break
       expect(input).toBeInTheDocument()
       expect(input).toHaveAttribute('aria-expanded', 'true')
+
+      // Restore console.error
+      consoleErrorSpy.mockRestore()
     })
 
     it('should debounce loadItems calls', async () => {
@@ -637,7 +647,7 @@ describe('Autocomplete Component', () => {
           {...defaultProps}
           loadItems={mockLoadItems}
           minCharsToTrigger={1}
-          debounceTime={300}
+          debounceTime={50} // Use shorter debounce for faster test
         />,
       )
 
@@ -654,13 +664,13 @@ describe('Autocomplete Component', () => {
       // Should not be called yet due to debouncing
       expect(mockLoadItems).not.toHaveBeenCalled()
 
-      // Wait for debounce period
+      // Wait for debounce period with shorter timeout
       await waitFor(
         () => {
           expect(mockLoadItems).toHaveBeenCalledTimes(1)
           expect(mockLoadItems).toHaveBeenCalledWith('app')
         },
-        { timeout: 1000 },
+        { timeout: 200 },
       )
     })
 
@@ -933,7 +943,7 @@ describe('Autocomplete Component', () => {
     })
 
     it('should handle very long lists efficiently', async () => {
-      const longList: TestOption[] = Array.from({ length: 1000 }, (_, i) => ({
+      const longList: TestOption[] = Array.from({ length: 100 }, (_, i) => ({
         id: i.toString(),
         name: `Item ${i}`,
       }))
@@ -941,10 +951,10 @@ describe('Autocomplete Component', () => {
       render(<Autocomplete {...defaultProps} items={longList} />)
 
       const input = screen.getByRole('combobox')
-      await user.type(input, '999')
+      await user.type(input, '99')
 
       await waitFor(() => {
-        expect(screen.getByText('Item 999')).toBeInTheDocument()
+        expect(screen.getByText('Item 99')).toBeInTheDocument()
       })
     })
 

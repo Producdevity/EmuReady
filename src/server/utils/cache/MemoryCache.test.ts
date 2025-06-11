@@ -3,17 +3,22 @@ import MemoryCache from './MemoryCache'
 
 describe('MemoryCache', () => {
   let cache: MemoryCache<string>
+  let consoleDebugSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
+    // Mock console.debug to suppress cache cleanup messages
+    consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+
     cache = new MemoryCache<string>({
-      ttl: 1000, // 1 second
+      ttl: 50, // 50ms - much faster for tests
       maxSize: 3,
-      cleanupInterval: 100, // 100ms for testing
+      cleanupInterval: 25, // 25ms - faster cleanup
     })
   })
 
   afterEach(() => {
     cache.destroy()
+    consoleDebugSpy.mockRestore()
   })
 
   describe('basic operations', () => {
@@ -51,17 +56,17 @@ describe('MemoryCache', () => {
       cache.set('key1', 'value1')
       expect(cache.get('key1')).toBe('value1')
 
-      // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 1100))
+      // Wait for expiration (now much faster - 60ms)
+      await new Promise((resolve) => setTimeout(resolve, 60))
 
       expect(cache.get('key1')).toBeUndefined()
     })
 
     it('should support custom TTL per entry', async () => {
-      cache.set('short', 'value1', 100) // 100ms TTL
-      cache.set('long', 'value2', 2000) // 2s TTL
+      cache.set('short', 'value1', 10) // 10ms TTL
+      cache.set('long', 'value2', 100) // 100ms TTL
 
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 15))
 
       expect(cache.get('short')).toBeUndefined()
       expect(cache.get('long')).toBe('value2')
@@ -178,14 +183,14 @@ describe('MemoryCache', () => {
 
   describe('cleanup and memory management', () => {
     it('should automatically cleanup expired entries', async () => {
-      cache.set('temp1', 'value1', 50) // 50ms TTL
-      cache.set('temp2', 'value2', 50) // 50ms TTL
-      cache.set('permanent', 'value3', 5000) // 5s TTL
+      cache.set('temp1', 'value1', 10) // 10ms TTL
+      cache.set('temp2', 'value2', 10) // 10ms TTL
+      cache.set('permanent', 'value3', 200) // 200ms TTL
 
       expect(cache.getSize()).toBe(3)
 
-      // Wait for cleanup to run (cleanupInterval: 100ms)
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Wait for cleanup to run (cleanupInterval: 25ms, entries expire after 10ms)
+      await new Promise((resolve) => setTimeout(resolve, 35))
 
       expect(cache.getSize()).toBe(1)
       expect(cache.get('permanent')).toBe('value3')
