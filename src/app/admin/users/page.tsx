@@ -2,9 +2,10 @@
 
 import { getRoleVariant } from '@/utils/badgeColors'
 import { useState } from 'react'
-import { Search, ShieldUser, Trash2 } from 'lucide-react'
+import { Search, ShieldUser, Trash2, User } from 'lucide-react'
 import { api } from '@/lib/api'
 import { isEmpty } from 'remeda'
+import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Button,
   Input,
@@ -12,8 +13,11 @@ import {
   Badge,
   ColumnVisibilityControl,
   AdminTableContainer,
+  LoadingSpinner,
 } from '@/components/ui'
+import LoadingIcon from '@/components/icons/LoadingIcon'
 import UserRoleModal from './components/UserRoleModal'
+import UserDetailsModal from './components/UserDetailsModal'
 import { useConfirmDialog } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
@@ -54,20 +58,29 @@ const USERS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminUsersPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const table = useAdminTable<UserSortField>()
   const columnVisibility = useColumnVisibility(USERS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminUsers,
   })
 
-  const { data: users, refetch } = api.users.getAll.useQuery({
-    search: isEmpty(table.search) ? undefined : table.search,
+  // Modal state from URL
+  const userIdFromUrl = searchParams.get('userId')
+  const [selectedUserForRole, setSelectedUserForRole] =
+    useState<UserForModal | null>(null)
+
+  const {
+    data: users,
+    isLoading,
+    refetch,
+  } = api.users.getAll.useQuery({
+    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
   const deleteUser = api.users.delete.useMutation()
   const confirm = useConfirmDialog()
-
-  const [selectedUser, setSelectedUser] = useState<UserForModal | null>(null)
 
   const handleDelete = async (userId: string) => {
     const confirmed = await confirm({
@@ -89,7 +102,7 @@ function AdminUsersPage() {
   }
 
   const openRoleModal = (user: User) => {
-    setSelectedUser({
+    setSelectedUserForRole({
       id: user.id,
       name: user.name,
       email: user.email,
@@ -98,7 +111,20 @@ function AdminUsersPage() {
   }
 
   const closeRoleModal = () => {
-    setSelectedUser(null)
+    setSelectedUserForRole(null)
+  }
+
+  const openUserDetailsModal = (userId: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('userId', userId)
+    router.push(`?${params.toString()}`, { scroll: false })
+  }
+
+  const closeUserDetailsModal = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('userId')
+    const newUrl = params.toString() ? `?${params.toString()}` : '/admin/users'
+    router.push(newUrl, { scroll: false })
   }
 
   return (
@@ -118,166 +144,210 @@ function AdminUsersPage() {
       <div>
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          {table.isSearching && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <LoadingIcon className="text-gray-400 h-4 w-4" />
+            </div>
+          )}
           <Input
             placeholder="Search users..."
             value={table.search}
             onChange={table.handleSearchChange}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
         </div>
       </div>
 
       <AdminTableContainer>
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700/50">
-            <tr>
-              {columnVisibility.isColumnVisible('name') && (
-                <SortableHeader
-                  label="Name"
-                  field="name"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('email') && (
-                <SortableHeader
-                  label="Email"
-                  field="email"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('role') && (
-                <SortableHeader
-                  label="Role"
-                  field="role"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('createdAt') && (
-                <SortableHeader
-                  label="Joined"
-                  field="createdAt"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('listingsCount') && (
-                <SortableHeader
-                  label="Listings"
-                  field="listingsCount"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('votesCount') && (
-                <SortableHeader
-                  label="Votes"
-                  field="votesCount"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('commentsCount') && (
-                <SortableHeader
-                  label="Comments"
-                  field="commentsCount"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('actions') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {users?.map((user) => (
-              <tr
-                key={user.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-              >
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <tr>
                 {columnVisibility.isColumnVisible('name') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {user.name ?? 'N/A'}
-                  </td>
+                  <SortableHeader
+                    label="Name"
+                    field="name"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('email') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {user.email}
-                  </td>
+                  <SortableHeader
+                    label="Email"
+                    field="email"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('role') && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getRoleVariant(user.role)}>
-                      {user.role}
-                    </Badge>
-                  </td>
+                  <SortableHeader
+                    label="Role"
+                    field="role"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('createdAt') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
+                  <SortableHeader
+                    label="Joined"
+                    field="createdAt"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('listingsCount') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {user._count.listings}
-                  </td>
+                  <SortableHeader
+                    label="Listings"
+                    field="listingsCount"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('votesCount') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {user._count.votes}
-                  </td>
+                  <SortableHeader
+                    label="Votes"
+                    field="votesCount"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('commentsCount') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {user._count.comments}
-                  </td>
+                  <SortableHeader
+                    label="Comments"
+                    field="commentsCount"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      name="Change Role"
-                      onClick={() => openRoleModal(user)}
-                    >
-                      <ShieldUser />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      name="Delete User"
-                      onClick={() => handleDelete(user.id)}
-                      className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
-                    >
-                      <Trash2 />
-                    </Button>
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {users?.map((user) => (
+                <tr
+                  key={user.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                >
+                  {columnVisibility.isColumnVisible('name') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => openUserDetailsModal(user.id)}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 font-medium"
+                      >
+                        {user.name ?? 'N/A'}
+                      </button>
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('email') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {user.email}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('role') && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant={getRoleVariant(user.role)}>
+                        {user.role}
+                      </Badge>
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('createdAt') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('listingsCount') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {user._count.listings}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('votesCount') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {user._count.votes}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('commentsCount') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {user._count.comments}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        name="View Details"
+                        onClick={() => openUserDetailsModal(user.id)}
+                      >
+                        <User />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        name="Change Role"
+                        onClick={() => openRoleModal(user)}
+                      >
+                        <ShieldUser />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        name="Delete User"
+                        onClick={() => handleDelete(user.id)}
+                        className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+
+              {users && users.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columnVisibility.visibleColumns.size}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    No users found
+                    {table.debouncedSearch
+                      ? ` matching "${table.debouncedSearch}"`
+                      : ''}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </AdminTableContainer>
 
-      {selectedUser && (
+      {/* Role Modal */}
+      {selectedUserForRole && (
         <UserRoleModal
-          user={selectedUser}
+          user={selectedUserForRole}
           isOpen={true}
           onClose={closeRoleModal}
         />
       )}
+
+      {/* User Details Modal */}
+      <UserDetailsModal
+        userId={userIdFromUrl}
+        isOpen={!!userIdFromUrl}
+        onClose={closeUserDetailsModal}
+      />
     </div>
   )
 }

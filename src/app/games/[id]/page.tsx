@@ -48,11 +48,7 @@ function GameDetailsPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
-            <GameBoxartImage
-              boxartUrl={gameQuery.data.boxartUrl}
-              imageUrl={gameQuery.data.imageUrl}
-              title={gameQuery.data.title}
-            />
+            <GameBoxartImage game={gameQuery.data} />
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>

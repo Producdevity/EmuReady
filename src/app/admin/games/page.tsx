@@ -28,6 +28,7 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import useAdminTable from '@/hooks/useAdminTable'
+import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { formatDate } from '@/utils/date'
 import { ApprovalStatus } from '@orm'
 import { type Nullable } from '@/types/utils'
@@ -319,21 +320,13 @@ function AdminGamesPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-16 w-16 flex justify-center items-center">
-                              {game.imageUrl ? (
-                                <Image
-                                  src={game.imageUrl}
-                                  alt={game.title}
-                                  width={64}
-                                  height={64}
-                                  className="rounded-md object-cover"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    No img
-                                  </span>
-                                </div>
-                              )}
+                              <Image
+                                src={getGameImageUrl(game)}
+                                alt={game.title}
+                                width={64}
+                                height={64}
+                                className="rounded-md object-cover"
+                              />
                             </div>
                             <div className="ml-4">
                               {game.title.length > 30 ? (

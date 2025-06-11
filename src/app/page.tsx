@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { SignUpButton } from '@clerk/nextjs'
-import getImageUrl from './games/utils/getImageUrl'
+import getImageUrl from '@/utils/getImageUrl'
 import {
   SuccessRateBar,
   LoadingSpinner,

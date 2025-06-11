@@ -11,7 +11,7 @@ import { Toaster } from 'sonner'
 import BetaWarningModal from '@/components/BetaWarningModal'
 import Providers from '@/components/Providers'
 import Navbar from '@/components/navbar/Navbar'
-import Footer from '@/components/Footer'
+import Footer from '@/components/footer/Footer'
 import Main from './Main'
 
 const inter = Inter({ subsets: ['latin'] })

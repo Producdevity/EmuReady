@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import Image from 'next/image'
-import { LoadingSpinner } from '@/components/ui'
+import LoadingSpinner from './LoadingSpinner'
 
 type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 
