@@ -11,7 +11,7 @@ function getImageUrl(url: string | null, title?: string): string {
     return `/api/proxy-image?url=${encodeURIComponent(url)}` // use proxy
   }
 
-  return getSafePlaceholderImageUrl(title) // Invalid URL format, use placeholder
+  return getSafePlaceholderImageUrl(title ?? null) // Invalid URL format, use placeholder
 }
 
 export default getImageUrl

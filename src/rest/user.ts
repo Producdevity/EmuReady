@@ -13,11 +13,11 @@ export async function uploadProfileImage(file: File): Promise<string> {
   if (res.status !== 200) {
     throw new Error(res.data?.error ?? 'Image upload failed')
   }
-  
+
   // Extract imageUrl from the response object
   if (!res.data?.imageUrl) {
     throw new Error('Invalid response: missing imageUrl')
   }
-  
+
   return res.data.imageUrl
 }

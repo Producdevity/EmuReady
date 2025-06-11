@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { Button, Input, Modal } from '@/components/ui'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
@@ -36,16 +36,16 @@ function CustomFieldTemplateFormModal(props: Props) {
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { data: existingTemplate, isLoading } = api.customFieldTemplates.getById.useQuery(
+  const customFieldTemplateQuery = api.customFieldTemplates.getById.useQuery(
     { id: props.templateIdToEdit! },
-    { enabled: !!props.templateIdToEdit }
+    { enabled: !!props.templateIdToEdit },
   )
 
   const utils = api.useUtils()
 
   const createMutation = api.customFieldTemplates.create.useMutation({
     onSuccess: () => {
-      utils.customFieldTemplates.getAll.invalidate()
+      utils.customFieldTemplates.getAll.invalidate().catch(console.error)
       resetForm()
       props.onClose()
     },
@@ -57,7 +57,7 @@ function CustomFieldTemplateFormModal(props: Props) {
 
   const updateMutation = api.customFieldTemplates.update.useMutation({
     onSuccess: () => {
-      utils.customFieldTemplates.getAll.invalidate()
+      utils.customFieldTemplates.getAll.invalidate().catch(console.error)
       resetForm()
       props.onClose()
     },
@@ -82,22 +82,21 @@ function CustomFieldTemplateFormModal(props: Props) {
   }, [props.isOpen, props.templateIdToEdit])
 
   useEffect(() => {
-    if (existingTemplate) {
-      setTemplateName(existingTemplate.name)
-      setTemplateDescription(existingTemplate.description ?? '')
-      setFields(
-        existingTemplate.fields.map((field) => ({
-          name: field.name,
-          label: field.label,
-          type: field.type,
-          options: (field.options as { value: string; label: string }[]) || [],
-          isRequired: field.isRequired,
-          displayOrder: field.displayOrder,
-        }))
-      )
-    }
+    if (!customFieldTemplateQuery.data) return setErrors({})
+    setTemplateName(customFieldTemplateQuery.data.name)
+    setTemplateDescription(customFieldTemplateQuery.data.description ?? '')
+    setFields(
+      customFieldTemplateQuery.data.fields.map((field) => ({
+        name: field.name,
+        label: field.label,
+        type: field.type,
+        options: (field.options as { value: string; label: string }[]) || [],
+        isRequired: field.isRequired,
+        displayOrder: field.displayOrder,
+      })),
+    )
     setErrors({})
-  }, [existingTemplate])
+  }, [customFieldTemplateQuery.data])
 
   function validateForm() {
     const newErrors: { [key: string]: string } = {}
@@ -109,7 +108,8 @@ function CustomFieldTemplateFormModal(props: Props) {
     }
 
     if (templateDescription.length > 500) {
-      newErrors.templateDescription = 'Description must be 500 characters or less'
+      newErrors.templateDescription =
+        'Description must be 500 characters or less'
     }
 
     if (fields.length === 0) {
@@ -123,9 +123,11 @@ function CustomFieldTemplateFormModal(props: Props) {
       if (!field.name.trim()) {
         newErrors[`field-${index}-name`] = 'Field name is required'
       } else if (field.name.length > 50) {
-        newErrors[`field-${index}-name`] = 'Field name must be 50 characters or less'
+        newErrors[`field-${index}-name`] =
+          'Field name must be 50 characters or less'
       } else if (!/^[a-z0-9_]+$/.test(field.name)) {
-        newErrors[`field-${index}-name`] = 'Field name must be lowercase alphanumeric with underscores only'
+        newErrors[`field-${index}-name`] =
+          'Field name must be lowercase alphanumeric with underscores only'
       } else if (fieldNames.has(field.name)) {
         newErrors[`field-${index}-name`] = 'Field names must be unique'
       } else {
@@ -135,25 +137,31 @@ function CustomFieldTemplateFormModal(props: Props) {
       if (!field.label.trim()) {
         newErrors[`field-${index}-label`] = 'Field label is required'
       } else if (field.label.length > 100) {
-        newErrors[`field-${index}-label`] = 'Field label must be 100 characters or less'
+        newErrors[`field-${index}-label`] =
+          'Field label must be 100 characters or less'
       }
 
       if (field.type === CustomFieldType.SELECT) {
         if (field.options.length === 0) {
-          newErrors[`field-${index}-options`] = 'Dropdown fields must have at least one option'
+          newErrors[`field-${index}-options`] =
+            'Dropdown fields must have at least one option'
         } else if (field.options.length > 50) {
           newErrors[`field-${index}-options`] = 'Maximum 50 options allowed'
         } else {
           field.options.forEach((option, optionIndex) => {
             if (!option.value.trim()) {
-              newErrors[`field-${index}-option-${optionIndex}-value`] = 'Option value is required'
+              newErrors[`field-${index}-option-${optionIndex}-value`] =
+                'Option value is required'
             } else if (option.value.length > 50) {
-              newErrors[`field-${index}-option-${optionIndex}-value`] = 'Option value must be 50 characters or less'
+              newErrors[`field-${index}-option-${optionIndex}-value`] =
+                'Option value must be 50 characters or less'
             }
             if (!option.label.trim()) {
-              newErrors[`field-${index}-option-${optionIndex}-label`] = 'Option label is required'
+              newErrors[`field-${index}-option-${optionIndex}-label`] =
+                'Option label is required'
             } else if (option.label.length > 100) {
-              newErrors[`field-${index}-option-${optionIndex}-label`] = 'Option label must be 100 characters or less'
+              newErrors[`field-${index}-option-${optionIndex}-label`] =
+                'Option label must be 100 characters or less'
             }
           })
         }
@@ -164,12 +172,10 @@ function CustomFieldTemplateFormModal(props: Props) {
     return Object.keys(newErrors).length === 0
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    
-    if (!validateForm() || isSubmitting) {
-      return
-    }
+  function handleSubmit(ev: FormEvent) {
+    ev.preventDefault()
+
+    if (!validateForm() || isSubmitting) return
 
     setIsSubmitting(true)
     setErrors({})
@@ -181,7 +187,12 @@ function CustomFieldTemplateFormModal(props: Props) {
         name: field.name.trim().toLowerCase(),
         label: field.label.trim(),
         type: field.type,
-        options: field.type === CustomFieldType.SELECT ? field.options.filter(opt => opt.value.trim() && opt.label.trim()) : undefined,
+        options:
+          field.type === CustomFieldType.SELECT
+            ? field.options.filter(
+                (opt) => opt.value.trim() && opt.label.trim(),
+              )
+            : undefined,
         isRequired: field.isRequired,
         displayOrder: index,
       })),
@@ -219,7 +230,7 @@ function CustomFieldTemplateFormModal(props: Props) {
   function removeField(index: number) {
     setFields(fields.filter((_, i) => i !== index))
     const newErrors = { ...errors }
-    Object.keys(newErrors).forEach(key => {
+    Object.keys(newErrors).forEach((key) => {
       if (key.startsWith(`field-${index}-`)) {
         delete newErrors[key]
       }
@@ -234,15 +245,18 @@ function CustomFieldTemplateFormModal(props: Props) {
           ? {
               ...field,
               ...updates,
-              options: updates.type === CustomFieldType.SELECT ? (updates.options ?? field.options) : [],
+              options:
+                updates.type === CustomFieldType.SELECT
+                  ? (updates.options ?? field.options)
+                  : [],
             }
-          : field
-      )
+          : field,
+      ),
     )
 
     if (updates.type && updates.type !== CustomFieldType.SELECT) {
       const newErrors = { ...errors }
-      Object.keys(newErrors).forEach(key => {
+      Object.keys(newErrors).forEach((key) => {
         if (key.startsWith(`field-${index}-option`)) {
           delete newErrors[key]
         }
@@ -266,9 +280,9 @@ function CustomFieldTemplateFormModal(props: Props) {
       updateField(fieldIndex, {
         options: field.options.filter((_, i) => i !== optionIndex),
       })
-      
+
       const newErrors = { ...errors }
-      Object.keys(newErrors).forEach(key => {
+      Object.keys(newErrors).forEach((key) => {
         if (key.startsWith(`field-${fieldIndex}-option-${optionIndex}-`)) {
           delete newErrors[key]
         }
@@ -280,13 +294,13 @@ function CustomFieldTemplateFormModal(props: Props) {
   function updateFieldOption(
     fieldIndex: number,
     optionIndex: number,
-    updates: Partial<{ value: string; label: string }>
+    updates: Partial<{ value: string; label: string }>,
   ) {
     const field = fields[fieldIndex]
     if (field) {
       updateField(fieldIndex, {
         options: field.options.map((option, i) =>
-          i === optionIndex ? { ...option, ...updates } : option
+          i === optionIndex ? { ...option, ...updates } : option,
         ),
       })
     }
@@ -301,20 +315,26 @@ function CustomFieldTemplateFormModal(props: Props) {
       title={props.templateIdToEdit ? 'Edit Template' : 'Create Template'}
       size="lg"
     >
-      {isLoading ? (
+      {customFieldTemplateQuery.isLoading ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           {errors.general && (
-            <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded" role="alert">
+            <div
+              className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded"
+              role="alert"
+            >
               {errors.general}
             </div>
           )}
 
           <div>
-            <label htmlFor="templateName" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="templateName"
+              className="block text-sm font-medium mb-2"
+            >
               Template Name <span className="text-red-500">*</span>
             </label>
             <Input
@@ -324,19 +344,30 @@ function CustomFieldTemplateFormModal(props: Props) {
               onChange={(e) => setTemplateName(e.target.value)}
               placeholder="e.g., X86 Emulator Fields"
               maxLength={100}
-              className={errors.templateName ? 'border-red-300 dark:border-red-600' : ''}
+              className={
+                errors.templateName ? 'border-red-300 dark:border-red-600' : ''
+              }
               aria-invalid={!!errors.templateName}
-              aria-describedby={errors.templateName ? 'templateName-error' : undefined}
+              aria-describedby={
+                errors.templateName ? 'templateName-error' : undefined
+              }
             />
             {errors.templateName && (
-              <p id="templateName-error" className="text-red-500 text-xs mt-1" role="alert">
+              <p
+                id="templateName-error"
+                className="text-red-500 text-xs mt-1"
+                role="alert"
+              >
                 {errors.templateName}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="templateDescription" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="templateDescription"
+              className="block text-sm font-medium mb-2"
+            >
               Description (Optional)
             </label>
             <Input
@@ -347,12 +378,24 @@ function CustomFieldTemplateFormModal(props: Props) {
               placeholder="Describe what this template is for..."
               rows={3}
               maxLength={500}
-              className={errors.templateDescription ? 'border-red-300 dark:border-red-600' : ''}
+              className={
+                errors.templateDescription
+                  ? 'border-red-300 dark:border-red-600'
+                  : ''
+              }
               aria-invalid={!!errors.templateDescription}
-              aria-describedby={errors.templateDescription ? 'templateDescription-error' : undefined}
+              aria-describedby={
+                errors.templateDescription
+                  ? 'templateDescription-error'
+                  : undefined
+              }
             />
             {errors.templateDescription && (
-              <p id="templateDescription-error" className="text-red-500 text-xs mt-1" role="alert">
+              <p
+                id="templateDescription-error"
+                className="text-red-500 text-xs mt-1"
+                role="alert"
+              >
                 {errors.templateDescription}
               </p>
             )}
@@ -363,9 +406,9 @@ function CustomFieldTemplateFormModal(props: Props) {
               <h3 className="text-lg font-medium">
                 Template Fields <span className="text-red-500">*</span>
               </h3>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={addField}
                 disabled={fields.length >= 50}
               >
@@ -375,16 +418,23 @@ function CustomFieldTemplateFormModal(props: Props) {
             </div>
 
             {errors.fields && (
-              <div className="text-red-600 text-sm mb-4" role="alert">{errors.fields}</div>
+              <div className="text-red-600 text-sm mb-4" role="alert">
+                {errors.fields}
+              </div>
             )}
 
             <div className="space-y-6">
               {fields.map((field, fieldIndex) => (
-                <div key={fieldIndex} className="border p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <div
+                  key={fieldIndex}
+                  className="border p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
+                >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center">
                       <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="font-medium">Field {fieldIndex + 1}</span>
+                      <span className="font-medium">
+                        Field {fieldIndex + 1}
+                      </span>
                     </div>
                     <Button
                       type="button"
@@ -404,13 +454,21 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.name}
-                        onChange={(e) => updateField(fieldIndex, { name: e.target.value })}
+                        onChange={(e) =>
+                          updateField(fieldIndex, { name: e.target.value })
+                        }
                         placeholder="e.g., driver_version"
                         maxLength={50}
-                        className={errors[`field-${fieldIndex}-name`] ? 'border-red-300 dark:border-red-600' : ''}
+                        className={
+                          errors[`field-${fieldIndex}-name`]
+                            ? 'border-red-300 dark:border-red-600'
+                            : ''
+                        }
                       />
                       {errors[`field-${fieldIndex}-name`] && (
-                        <p className="text-red-500 text-xs mt-1">{errors[`field-${fieldIndex}-name`]}</p>
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors[`field-${fieldIndex}-name`]}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -420,24 +478,38 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.label}
-                        onChange={(e) => updateField(fieldIndex, { label: e.target.value })}
+                        onChange={(e) =>
+                          updateField(fieldIndex, { label: e.target.value })
+                        }
                         placeholder="e.g., Driver Version"
                         maxLength={100}
-                        className={errors[`field-${fieldIndex}-label`] ? 'border-red-300 dark:border-red-600' : ''}
+                        className={
+                          errors[`field-${fieldIndex}-label`]
+                            ? 'border-red-300 dark:border-red-600'
+                            : ''
+                        }
                       />
                       {errors[`field-${fieldIndex}-label`] && (
-                        <p className="text-red-500 text-xs mt-1">{errors[`field-${fieldIndex}-label`]}</p>
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors[`field-${fieldIndex}-label`]}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Field Type</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Field Type
+                      </label>
                       <Input
                         as="select"
                         value={field.type}
-                        onChange={(e) => updateField(fieldIndex, { type: e.target.value as CustomFieldType })}
+                        onChange={(e) =>
+                          updateField(fieldIndex, {
+                            type: e.target.value as CustomFieldType,
+                          })
+                        }
                       >
                         {FIELD_TYPES.map((type) => (
                           <option key={type.value} value={type.value}>
@@ -451,7 +523,11 @@ function CustomFieldTemplateFormModal(props: Props) {
                         <input
                           type="checkbox"
                           checked={field.isRequired}
-                          onChange={(e) => updateField(fieldIndex, { isRequired: e.target.checked })}
+                          onChange={(e) =>
+                            updateField(fieldIndex, {
+                              isRequired: e.target.checked,
+                            })
+                          }
                           className="mr-2"
                         />
                         Required field
@@ -476,7 +552,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                           Add Option
                         </Button>
                       </div>
-                      
+
                       {errors[`field-${fieldIndex}-options`] && (
                         <div className="text-red-600 text-sm mb-2">
                           {errors[`field-${fieldIndex}-options`]}
@@ -491,14 +567,30 @@ function CustomFieldTemplateFormModal(props: Props) {
                                 type="text"
                                 value={option.value}
                                 onChange={(e) =>
-                                  updateFieldOption(fieldIndex, optionIndex, { value: e.target.value })
+                                  updateFieldOption(fieldIndex, optionIndex, {
+                                    value: e.target.value,
+                                  })
                                 }
                                 placeholder="Value"
                                 maxLength={50}
-                                className={errors[`field-${fieldIndex}-option-${optionIndex}-value`] ? 'border-red-300 dark:border-red-600' : ''}
+                                className={
+                                  errors[
+                                    `field-${fieldIndex}-option-${optionIndex}-value`
+                                  ]
+                                    ? 'border-red-300 dark:border-red-600'
+                                    : ''
+                                }
                               />
-                              {errors[`field-${fieldIndex}-option-${optionIndex}-value`] && (
-                                <p className="text-red-500 text-xs mt-1">{errors[`field-${fieldIndex}-option-${optionIndex}-value`]}</p>
+                              {errors[
+                                `field-${fieldIndex}-option-${optionIndex}-value`
+                              ] && (
+                                <p className="text-red-500 text-xs mt-1">
+                                  {
+                                    errors[
+                                      `field-${fieldIndex}-option-${optionIndex}-value`
+                                    ]
+                                  }
+                                </p>
                               )}
                             </div>
                             <div className="flex-1">
@@ -506,21 +598,39 @@ function CustomFieldTemplateFormModal(props: Props) {
                                 type="text"
                                 value={option.label}
                                 onChange={(e) =>
-                                  updateFieldOption(fieldIndex, optionIndex, { label: e.target.value })
+                                  updateFieldOption(fieldIndex, optionIndex, {
+                                    label: e.target.value,
+                                  })
                                 }
                                 placeholder="Label"
                                 maxLength={100}
-                                className={errors[`field-${fieldIndex}-option-${optionIndex}-label`] ? 'border-red-300 dark:border-red-600' : ''}
+                                className={
+                                  errors[
+                                    `field-${fieldIndex}-option-${optionIndex}-label`
+                                  ]
+                                    ? 'border-red-300 dark:border-red-600'
+                                    : ''
+                                }
                               />
-                              {errors[`field-${fieldIndex}-option-${optionIndex}-label`] && (
-                                <p className="text-red-500 text-xs mt-1">{errors[`field-${fieldIndex}-option-${optionIndex}-label`]}</p>
+                              {errors[
+                                `field-${fieldIndex}-option-${optionIndex}-label`
+                              ] && (
+                                <p className="text-red-500 text-xs mt-1">
+                                  {
+                                    errors[
+                                      `field-${fieldIndex}-option-${optionIndex}-label`
+                                    ]
+                                  }
+                                </p>
                               )}
                             </div>
                             <Button
                               type="button"
                               variant="destructive"
                               size="sm"
-                              onClick={() => removeOptionFromField(fieldIndex, optionIndex)}
+                              onClick={() =>
+                                removeOptionFromField(fieldIndex, optionIndex)
+                              }
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -535,14 +645,23 @@ function CustomFieldTemplateFormModal(props: Props) {
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={props.onClose} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={props.onClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || isLoading}
+              disabled={isSubmitting || customFieldTemplateQuery.isLoading}
             >
-              {isSubmitting ? 'Saving...' : props.templateIdToEdit ? 'Update Template' : 'Create Template'}
+              {isSubmitting
+                ? 'Saving...'
+                : props.templateIdToEdit
+                  ? 'Update Template'
+                  : 'Create Template'}
             </Button>
           </div>
         </form>
@@ -551,4 +670,4 @@ function CustomFieldTemplateFormModal(props: Props) {
   )
 }
 
-export default CustomFieldTemplateFormModal 
+export default CustomFieldTemplateFormModal

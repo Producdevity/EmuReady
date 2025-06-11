@@ -3,13 +3,13 @@
 import { Search } from 'lucide-react'
 import { api } from '@/lib/api'
 import storageKeys from '@/data/storageKeys'
-import { 
-  ColumnVisibilityControl, 
-  Input, 
-  Button, 
+import {
+  ColumnVisibilityControl,
+  Input,
+  Button,
   LoadingSpinner,
   SortableHeader,
-  AdminTableContainer 
+  AdminTableContainer,
 } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -32,11 +32,12 @@ function AdminPerformancePage() {
     storageKey: storageKeys.columnVisibility.adminPerformance,
   })
 
-  const { data: performanceScales, isLoading } = api.performanceScales.get.useQuery({
-    search: table.search || undefined,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
-  })
+  const { data: performanceScales, isLoading } =
+    api.performanceScales.get.useQuery({
+      search: table.search || undefined,
+      sortField: table.sortField ?? undefined,
+      sortDirection: table.sortDirection ?? undefined,
+    })
 
   return (
     <div className="space-y-6">
@@ -81,7 +82,9 @@ function AdminPerformancePage() {
       {!isLoading && (!performanceScales || performanceScales.length === 0) && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
-            {table.search ? 'No performance scales match your search criteria.' : 'No performance scales found.'}
+            {table.search
+              ? 'No performance scales match your search criteria.'
+              : 'No performance scales found.'}
           </p>
         </div>
       )}

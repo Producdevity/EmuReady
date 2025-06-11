@@ -4,20 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { api } from '@/lib/api'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import updateGameSchema from '../form-schemas/updateGameSchema'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
-
-const updateGameSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  systemId: z.string().uuid('Please select a system'),
-  imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-})
 
 type UpdateGameInput = Omit<RouterInput['games']['update'], 'id'>
 
@@ -57,6 +51,8 @@ function GameEditForm(props: Props) {
         title: props.game.title,
         systemId: props.game.systemId,
         imageUrl: props.game.imageUrl ?? '',
+        boxartUrl: props.game.boxartUrl ?? '',
+        bannerUrl: props.game.bannerUrl ?? '',
       },
     })
 
@@ -124,6 +120,44 @@ function GameEditForm(props: Props) {
         {formState.errors.imageUrl && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
             {formState.errors.imageUrl.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="boxartUrl"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Boxart Image URL (optional)
+        </label>
+        <Input
+          id="boxartUrl"
+          {...register('boxartUrl')}
+          placeholder="https://example.com/game-image.jpg"
+        />
+        {formState.errors.boxartUrl && (
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {formState.errors.boxartUrl.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="bannerUrl"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Banner image URL (optional)
+        </label>
+        <Input
+          id="bannerUrl"
+          {...register('bannerUrl')}
+          placeholder="https://example.com/game-image.jpg"
+        />
+        {formState.errors.bannerUrl && (
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {formState.errors.bannerUrl.message}
           </p>
         )}
       </div>

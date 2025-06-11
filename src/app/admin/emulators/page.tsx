@@ -140,7 +140,9 @@ function AdminEmulatorsPage() {
       {!isLoading && emulators.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
-            {table.search ? 'No emulators match your search criteria.' : 'No emulators found.'}
+            {table.search
+              ? 'No emulators match your search criteria.'
+              : 'No emulators found.'}
           </p>
         </div>
       )}
@@ -201,14 +203,10 @@ function AdminEmulatorsPage() {
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('systemCount') && (
-                    <td className="px-4 py-2">
-                      0
-                    </td>
+                    <td className="px-4 py-2">0</td>
                   )}
                   {columnVisibility.isColumnVisible('listingCount') && (
-                    <td className="px-4 py-2">
-                      {emulator._count.listings}
-                    </td>
+                    <td className="px-4 py-2">{emulator._count.listings}</td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-4 py-2 flex gap-2 justify-end">

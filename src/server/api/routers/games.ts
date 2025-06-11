@@ -1,6 +1,7 @@
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   ApproveGameSchema,
+  CheckExistingByTgdbIdsSchema,
   CreateGameSchema,
   DeleteGameSchema,
   GetGameByIdSchema,
@@ -16,44 +17,88 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
+
 import type { Prisma } from '@orm'
 import { ApprovalStatus, Role } from '@orm'
 import { hasPermission } from '@/utils/permissions'
 
-// Simple in-memory cache for game statistics
-interface GameStatsCache {
-  data: {
-    pending: number
-    approved: number
-    rejected: number
-    total: number
-  } | null
-  timestamp: number
-}
+import { gameStatsCache } from '@/server/utils/cache'
 
-const gameStatsCache: GameStatsCache = {
-  data: null,
-  timestamp: 0,
-}
+const GAME_STATS_CACHE_KEY = 'game-stats'
 
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+// Helper function to validate game conflicts
+async function validateGameConflicts(
+  prisma: Prisma.TransactionClient,
+  id: string,
+  data: { title?: string; systemId?: string },
+  existingGame: { title: string; systemId: string; system: { name: string } },
+) {
+  // If changing system, check for title conflicts
+  if (data.systemId && data.systemId !== existingGame.systemId) {
+    const systemConflict = await prisma.game.findFirst({
+      where: {
+        title: data.title ?? existingGame.title,
+        systemId: data.systemId,
+        NOT: { id },
+      },
+      include: { system: true },
+    })
 
-function getCachedGameStats() {
-  const now = Date.now()
-  if (gameStatsCache.data && now - gameStatsCache.timestamp < CACHE_TTL) {
-    return gameStatsCache.data
+    if (systemConflict) {
+      ResourceError.game.alreadyExists(
+        data.title ?? existingGame.title,
+        systemConflict.system.name,
+      )
+    }
   }
-  return null
+
+  // If changing title, check for conflicts within the same system
+  if (data.title && data.title !== existingGame.title) {
+    const titleConflict = await prisma.game.findFirst({
+      where: {
+        title: data.title,
+        systemId: data.systemId ?? existingGame.systemId,
+        NOT: { id },
+      },
+    })
+
+    if (titleConflict) {
+      ResourceError.game.alreadyExists(data.title, existingGame.system.name)
+    }
+  }
 }
 
-function setCachedGameStats(stats: GameStatsCache['data']) {
-  gameStatsCache.data = stats
-  gameStatsCache.timestamp = Date.now()
-}
-
-function invalidateGameStatsCache() {
-  gameStatsCache.data = null
-  gameStatsCache.timestamp = 0
+// Helper function to perform the game update
+async function performGameUpdate(
+  prisma: Prisma.TransactionClient,
+  id: string,
+  data: Omit<typeof UpdateGameSchema._type, 'id'>,
+  existingGame: { title: string; system: { name: string } },
+) {
+  try {
+    return await prisma.game.update({
+      where: { id },
+      data,
+      include: {
+        system: true,
+        submitter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
+  } catch (error) {
+    if (isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)) {
+      ResourceError.game.alreadyExists(
+        data.title ?? existingGame.title,
+        existingGame.system.name,
+      )
+    }
+    throw error
+  }
 }
 
 export const gamesRouter = createTRPCRouter({
@@ -188,6 +233,9 @@ export const gamesRouter = createTRPCRouter({
         title: true,
         systemId: true,
         imageUrl: true,
+        boxartUrl: true,
+        bannerUrl: true,
+        tgdbGameId: true,
         status: true,
         submittedBy: true,
         submittedAt: true,
@@ -198,11 +246,7 @@ export const gamesRouter = createTRPCRouter({
         submitter: hasPermission(ctx.session?.user?.role, Role.ADMIN)
           ? { select: { id: true, name: true, email: true } }
           : false,
-        _count: {
-          select: {
-            listings: true,
-          },
-        },
+        _count: { select: { listings: true } },
       },
       orderBy,
       skip: actualOffset,
@@ -224,19 +268,25 @@ export const gamesRouter = createTRPCRouter({
   }),
 
   getStats: adminProcedure.query(async ({ ctx }) => {
-    const [total, approved, pending, rejected] = await Promise.all([
-      ctx.prisma.game.count(),
-      ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
+    const cached = gameStatsCache.get(GAME_STATS_CACHE_KEY)
+    if (cached) return cached
+
+    const [pending, approved, rejected] = await Promise.all([
       ctx.prisma.game.count({ where: { status: ApprovalStatus.PENDING } }),
+      ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
       ctx.prisma.game.count({ where: { status: ApprovalStatus.REJECTED } }),
     ])
 
-    return {
-      total,
-      approved,
+    const stats = {
       pending,
+      approved,
       rejected,
+      total: pending + approved + rejected,
     }
+
+    gameStatsCache.set(GAME_STATS_CACHE_KEY, stats)
+
+    return stats
   }),
 
   byId: publicProcedure
@@ -245,44 +295,58 @@ export const gamesRouter = createTRPCRouter({
       const game = await ctx.prisma.game.findUnique({
         where: { id: input.id },
         include: {
-          system: {
-            include: {
-              emulators: true,
-            },
-          },
+          system: { include: { emulators: true } },
           listings: {
             include: {
-              device: {
-                include: {
-                  brand: true,
-                },
-              },
+              device: { include: { brand: true } },
               emulator: true,
               performance: true,
-              author: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-              _count: {
-                select: {
-                  votes: true,
-                  comments: true,
-                },
-              },
+              author: { select: { id: true, name: true, email: true } },
+              _count: { select: { votes: true, comments: true } },
             },
-            orderBy: {
-              createdAt: 'desc',
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      })
+
+      return game ?? ResourceError.game.notFound()
+    }),
+
+  checkExistingByTgdbIds: publicProcedure
+    .input(CheckExistingByTgdbIdsSchema)
+    .query(async ({ ctx, input }) => {
+      const existingGames = await ctx.prisma.game.findMany({
+        where: {
+          tgdbGameId: {
+            in: input.tgdbGameIds,
+          },
+        },
+        select: {
+          id: true,
+          tgdbGameId: true,
+          title: true,
+          system: {
+            select: {
+              name: true,
             },
           },
         },
       })
 
-      if (!game) ResourceError.game.notFound()
-
-      return game
+      // Return a map for easy lookup
+      return existingGames.reduce(
+        (acc, game) => {
+          if (game.tgdbGameId) {
+            acc[game.tgdbGameId] = {
+              id: game.id,
+              title: game.title,
+              systemName: game.system.name,
+            }
+          }
+          return acc
+        },
+        {} as Record<number, { id: string; title: string; systemName: string }>,
+      )
     }),
 
   create: protectedProcedure
@@ -303,7 +367,17 @@ export const gamesRouter = createTRPCRouter({
       })
 
       if (existingGame) {
-        ResourceError.game.alreadyExists(input.title, system!.name)
+        // Use AppError.conflict with cause for duplicate game error
+        const error = AppError.conflict(
+          `A game titled "${input.title}" already exists for the system "${system!.name}"`,
+        )
+        // Add cause information for frontend duplicate handling
+        ;(error as Error & { cause?: Record<string, unknown> }).cause = {
+          existingGameId: existingGame.id,
+          existingGameTitle: existingGame.title,
+          systemName: system!.name,
+        }
+        throw error
       }
 
       const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
@@ -333,7 +407,7 @@ export const gamesRouter = createTRPCRouter({
         })
 
         // Invalidate cache when new game is created
-        invalidateGameStatsCache()
+        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
         return result
       } catch (error) {
@@ -359,69 +433,9 @@ export const gamesRouter = createTRPCRouter({
 
       if (!existingGame) ResourceError.game.notFound()
 
-      // If changing system, check for title conflicts
-      if (data.systemId && data.systemId !== existingGame!.systemId) {
-        const systemConflict = await ctx.prisma.game.findFirst({
-          where: {
-            title: data.title || existingGame!.title,
-            systemId: data.systemId,
-            NOT: { id },
-          },
-          include: { system: true },
-        })
+      await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
-        if (systemConflict) {
-          ResourceError.game.alreadyExists(
-            data.title || existingGame!.title,
-            systemConflict.system.name,
-          )
-        }
-      }
-
-      // If changing title, check for conflicts within the same system
-      if (data.title && data.title !== existingGame!.title) {
-        const titleConflict = await ctx.prisma.game.findFirst({
-          where: {
-            title: data.title,
-            systemId: data.systemId || existingGame!.systemId,
-            NOT: { id },
-          },
-        })
-
-        if (titleConflict) {
-          ResourceError.game.alreadyExists(
-            data.title,
-            existingGame!.system.name,
-          )
-        }
-      }
-
-      try {
-        return await ctx.prisma.game.update({
-          where: { id },
-          data,
-          include: {
-            system: true,
-            submitter: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        })
-      } catch (error) {
-        if (
-          isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
-        ) {
-          ResourceError.game.alreadyExists(
-            data.title || existingGame!.title,
-            existingGame!.system.name,
-          )
-        }
-        throw error
-      }
+      return await performGameUpdate(ctx.prisma, id, data, existingGame!)
     }),
 
   updateOwnPendingGame: protectedProcedure
@@ -446,69 +460,9 @@ export const gamesRouter = createTRPCRouter({
         AppError.forbidden('You can only edit pending games')
       }
 
-      // If changing system, check for title conflicts
-      if (data.systemId && data.systemId !== existingGame!.systemId) {
-        const systemConflict = await ctx.prisma.game.findFirst({
-          where: {
-            title: data.title || existingGame!.title,
-            systemId: data.systemId,
-            NOT: { id },
-          },
-          include: { system: true },
-        })
+      await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
-        if (systemConflict) {
-          ResourceError.game.alreadyExists(
-            data.title || existingGame!.title,
-            systemConflict.system.name,
-          )
-        }
-      }
-
-      // If changing title, check for conflicts within the same system
-      if (data.title && data.title !== existingGame!.title) {
-        const titleConflict = await ctx.prisma.game.findFirst({
-          where: {
-            title: data.title,
-            systemId: data.systemId || existingGame!.systemId,
-            NOT: { id },
-          },
-        })
-
-        if (titleConflict) {
-          ResourceError.game.alreadyExists(
-            data.title,
-            existingGame!.system.name,
-          )
-        }
-      }
-
-      try {
-        return await ctx.prisma.game.update({
-          where: { id },
-          data,
-          include: {
-            system: true,
-            submitter: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        })
-      } catch (error) {
-        if (
-          isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
-        ) {
-          ResourceError.game.alreadyExists(
-            data.title || existingGame!.title,
-            existingGame!.system.name,
-          )
-        }
-        throw error
-      }
+      return await performGameUpdate(ctx.prisma, id, data, existingGame!)
     }),
 
   delete: adminProcedure
@@ -533,7 +487,7 @@ export const gamesRouter = createTRPCRouter({
         })
 
         // Invalidate cache when game is deleted
-        invalidateGameStatsCache()
+        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
         return result
       } catch (error) {
@@ -652,39 +606,8 @@ export const gamesRouter = createTRPCRouter({
       )
 
       // Invalidate cache when game status changes
-      invalidateGameStatsCache()
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
       return result
     }),
-
-  getGameStats: adminProcedure.query(async ({ ctx }) => {
-    // Check cache first
-    const cached = getCachedGameStats()
-    if (cached) return cached
-
-    // Fetch fresh data
-    const pendingCount = await ctx.prisma.game.count({
-      where: { status: ApprovalStatus.PENDING },
-    })
-
-    const approvedCount = await ctx.prisma.game.count({
-      where: { status: ApprovalStatus.APPROVED },
-    })
-
-    const rejectedCount = await ctx.prisma.game.count({
-      where: { status: ApprovalStatus.REJECTED },
-    })
-
-    const stats = {
-      pending: pendingCount,
-      approved: approvedCount,
-      rejected: rejectedCount,
-      total: pendingCount + approvedCount + rejectedCount,
-    }
-
-    // Cache the result
-    setCachedGameStats(stats)
-
-    return stats
-  }),
 })

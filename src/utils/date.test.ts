@@ -1,5 +1,10 @@
 import { vi, describe, it, beforeEach, afterEach, expect } from 'vitest'
-import { formatDate, formatDateTime, formatTimeAgo } from '@/utils/date'
+import {
+  formatDate,
+  formatDateTime,
+  formatTimeAgo,
+  formatYear,
+} from '@/utils/date'
 
 describe('formatDate', () => {
   it('should format Date objects correctly', () => {
@@ -92,5 +97,21 @@ describe('formatTimeAgo', () => {
     expect(formatTimeAgo(new Date('2025-05-24T12:00:00Z'))).toMatch(
       /less than a minute ago|in less than a minute/,
     )
+  })
+})
+
+describe('formatYear', () => {
+  it('should format Date objects to year', () => {
+    const date = new Date('2023-05-15T12:00:00Z')
+    expect(formatYear(date)).toBe('2023')
+  })
+
+  it('should format date strings to year', () => {
+    expect(formatYear('2023-05-15T12:00:00Z')).toBe('2023')
+  })
+
+  it('should handle different date formats', () => {
+    expect(formatYear('2023/01/01')).toBe('2023')
+    expect(formatYear('2023-12-31')).toBe('2023')
   })
 })

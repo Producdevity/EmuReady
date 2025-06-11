@@ -13,6 +13,9 @@ interface Props {
 }
 
 function GameCard(props: Props) {
+  const imageUrl =
+    props.game.bannerUrl ?? props.game.imageUrl ?? props.game.boxartUrl ?? null
+
   return (
     <Link
       key={props.game.id}
@@ -21,7 +24,7 @@ function GameCard(props: Props) {
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
         <Image
-          src={getImageUrl(props.game.imageUrl, props.game.title)}
+          src={getImageUrl(imageUrl, props.game.title)}
           alt={props.game.title}
           fill
           className="object-cover"

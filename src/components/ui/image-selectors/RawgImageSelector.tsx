@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, type KeyboardEvent } from 'react'
+import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
 import { api } from '@/lib/api'
 import {
@@ -15,7 +16,7 @@ import { type GameImageOption } from '@/types/rawg'
 import getImageUrl from '@/app/games/utils/getImageUrl'
 import { getImageDisplayName } from '@/lib/rawg-utils'
 
-interface RawgImageSelectorProps {
+interface Props {
   gameTitle?: string
   systemName?: string
   selectedImageUrl?: string
@@ -24,7 +25,7 @@ interface RawgImageSelectorProps {
   className?: string
 }
 
-function RawgImageSelector(props: RawgImageSelectorProps) {
+function RawgImageSelector(props: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(
     null,
@@ -37,9 +38,9 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
 
   // Create a combined search query that includes the game title and system name if available
   const getSearchQuery = () => {
-    if (!searchTerm) return ''
+    if (!debouncedSearchTerm) return ''
 
-    const query = searchTerm.trim()
+    const query = debouncedSearchTerm.trim()
 
     // If system name is provided, append it to improve search accuracy
     if (props.systemName) {
@@ -52,38 +53,32 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
     return query
   }
 
+  // Debounced search to avoid API spam
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
+
+  // Extract callbacks to avoid props dependency issues
+  const onImageSelect = props.onImageSelect
+  const onError = props.onError
+
   const searchQuery = api.rawg.searchGameImages.useQuery(
     {
       query: getSearchQuery(),
       includeScreenshots,
     },
     {
-      enabled: !useCustomUrl && searchTerm.length >= 2,
+      enabled: !useCustomUrl && debouncedSearchTerm.length >= 2,
       staleTime: 5 * 60 * 1000,
     },
   )
 
-  // Use refs to avoid dependency issues with functions
-  const onImageSelectRef = useRef(props.onImageSelect)
-  const onErrorRef = useRef(props.onError)
-  const prevGameTitleRef = useRef(props.gameTitle)
-
-  // Update refs when props change
+  // Update search term when gameTitle prop changes
   useEffect(() => {
-    onImageSelectRef.current = props.onImageSelect
-  }, [props.onImageSelect])
-
-  useEffect(() => {
-    onErrorRef.current = props.onError
-  }, [props.onError])
-
-  useEffect(() => {
-    if (props.gameTitle && props.gameTitle !== prevGameTitleRef.current) {
+    if (props.gameTitle && props.gameTitle !== searchTerm) {
       setSearchTerm(props.gameTitle)
-      prevGameTitleRef.current = props.gameTitle
     }
-  }, [props.gameTitle])
+  }, [props.gameTitle, searchTerm])
 
+  // Handle search results and auto-select first image
   useEffect(() => {
     if (searchQuery.data && !useCustomUrl) {
       const images: GameImageOption[] = []
@@ -97,10 +92,17 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
       if (images.length > 0 && !selectedImage) {
         const firstImage = images[0]
         setSelectedImage(firstImage)
-        onImageSelectRef.current(firstImage.url)
+        onImageSelect(firstImage.url)
       }
     }
-  }, [searchQuery.data, selectedImage, useCustomUrl])
+  }, [searchQuery.data, selectedImage, useCustomUrl, onImageSelect])
+
+  // Handle search errors
+  useEffect(() => {
+    if (searchQuery.error && onError) {
+      onError(searchQuery.error.message || 'Failed to search for images')
+    }
+  }, [searchQuery.error, onError])
 
   const handleSearch = () => {
     if (searchTerm.trim().length >= 2) {
@@ -110,7 +112,7 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
 
   const handleImageSelect = (image: GameImageOption) => {
     setSelectedImage(image)
-    onImageSelectRef.current(image.url)
+    onImageSelect(image.url)
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,26 +181,16 @@ function RawgImageSelector(props: RawgImageSelectorProps) {
       }
 
       setSelectedImage(customImage)
-      onImageSelectRef.current(customImage.url)
+      onImageSelect(customImage.url)
     }
   }
 
-  const handleCustomUrlKeyPress = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
+  const handleCustomUrlKeyPress = (ev: KeyboardEvent<HTMLInputElement>) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault()
       applyCustomUrl()
     }
   }
-
-  useEffect(() => {
-    if (searchQuery.error) {
-      onErrorRef.current?.(
-        searchQuery.error.message || 'Failed to search for images',
-      )
-    }
-  }, [searchQuery.error])
 
   return (
     <div className={props.className}>

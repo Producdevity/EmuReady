@@ -9,7 +9,9 @@ import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormMo
 
 function CustomFieldTemplatesPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
-  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
+    null,
+  )
 
   const {
     data: templates,
@@ -60,7 +62,8 @@ function CustomFieldTemplatesPage() {
             Custom Field Templates
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Create reusable templates for custom fields that can be applied to multiple emulators
+            Create reusable templates for custom fields that can be applied to
+            multiple emulators
           </p>
         </div>
         <Button onClick={handleOpenCreateModal}>
@@ -97,4 +100,4 @@ function CustomFieldTemplatesPage() {
   )
 }
 
-export default CustomFieldTemplatesPage 
+export default CustomFieldTemplatesPage

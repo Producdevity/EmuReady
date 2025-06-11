@@ -6,21 +6,19 @@ import { Role } from '@orm'
 import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import {
-  LoadingSpinner,
-  Button,
-  RawgImageSelector,
-  Autocomplete,
-  Input,
-} from '@/components/ui'
+import { LoadingSpinner, Button, Autocomplete, Input } from '@/components/ui'
+import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
 import getErrorMessage from '@/utils/getErrorMessage'
 import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
 import NotSignedInMessage from './components/NotSignedInMessage'
+import { Search, Edit } from 'lucide-react'
+import Link from 'next/link'
 
 // Define the System type for Autocomplete
 interface SystemOption extends AutocompleteOptionBase {
   id: string
   name: string
+  tgdbPlatformId: number | null
 }
 
 function AddGamePage() {
@@ -36,7 +34,7 @@ function AddGamePage() {
   const createGame = api.games.create.useMutation()
 
   // Get user role from database using TRPC
-  const userQuery = api.users.getProfile.useQuery(undefined, {
+  const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
 
@@ -96,6 +94,55 @@ function AddGamePage() {
         Add New Game
       </h1>
 
+      {/* Method Selection */}
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+          Choose Method:
+        </h2>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Edit className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium text-blue-800 dark:text-blue-200">
+                Manual Entry
+              </span>
+              <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
+                CURRENT
+              </span>
+            </div>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+              Type the game title manually. Good for quick entry or games not in
+              TGDB.
+            </p>
+          </div>
+
+          <div className="flex-1 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Search className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <span className="font-medium text-green-800 dark:text-green-200">
+                Search TGDB
+              </span>
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                RECOMMENDED
+              </span>
+            </div>
+            <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+              Search TheGamesDB for accurate game names and images. Prevents
+              duplicates and typos.
+            </p>
+            <Link href="/games/new/search">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-green-700 border-green-300 hover:bg-green-100"
+              >
+                Try Search Method
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {!isAdmin && (
         <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -136,9 +183,10 @@ function AddGamePage() {
           />
         </div>
 
-        <RawgImageSelector
+        <ImageSelectorSwitcher
           gameTitle={title}
           systemName={selectedSystem?.name}
+          tgdbPlatformId={selectedSystem?.tgdbPlatformId ?? undefined}
           selectedImageUrl={imageUrl}
           onImageSelect={setImageUrl}
           onError={setError}
