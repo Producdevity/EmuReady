@@ -2,14 +2,16 @@ name: CI
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [master]
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    concurrency: ci-${{ github.ref }}
+    concurrency:
+      group: ci-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     services:
       postgres:
         image: postgres:15
@@ -26,20 +28,20 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
-      DATABASE_DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
-      NODE_ENV: "test"
-      CI: "true"
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/emuready_test'
+      DATABASE_DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/emuready_test'
+      NODE_ENV: 'test'
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+      IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_IGDB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_IGDB_CLIENT_ID }}
+      NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
       RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
       THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
-      IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}
-      NEXT_PUBLIC_IGDB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_IGDB_CLIENT_ID }}
-      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
-      NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
-      NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
       - name: Checkout code
@@ -48,7 +50,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.12.0
           cache: npm
 
       - name: Install dependencies
