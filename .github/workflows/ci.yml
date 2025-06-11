@@ -65,6 +65,16 @@ jobs:
       - name: Unit tests
         run: npm run test:ci
 
+      - name: Debug environment variables
+        run: |
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:0:10}..."
+          echo "Length: ${#NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
+          if [ -z "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
+            echo "❌ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is empty!"
+          else
+            echo "✅ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is set"
+          fi
+
       - name: Build
         run: npm run build
 

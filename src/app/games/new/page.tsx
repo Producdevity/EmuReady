@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { hasPermission } from '@/utils/permissions'
 import { useUser } from '@clerk/nextjs'
 import { Role } from '@orm'
