@@ -1,8 +1,24 @@
+import { useState } from 'react'
 import { Modal, Button, ApprovalStatusBadge } from '@/components/ui'
-import { formatDate } from '@/utils/date'
+import { formatDate, formatTimeAgo } from '@/utils/date'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
 import { type Nullable } from '@/types/utils'
 import { type RouterOutput } from '@/types/trpc'
+import {
+  CheckCircle,
+  XCircle,
+  Calendar,
+  User,
+  Database,
+  Image as ImageIcon,
+  ExternalLink,
+  Copy,
+  Eye,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 type Game = RouterOutput['games']['getPendingGames']['games'][number]
 
@@ -16,72 +32,349 @@ interface Props {
 }
 
 function GameDetailsModal(props: Props) {
+  const router = useRouter()
+  const [activeImageTab, setActiveImageTab] = useState<
+    'boxart' | 'banner' | 'main'
+  >('boxart')
+  const [imageError, setImageError] = useState<Record<string, boolean>>({})
+
+  if (!props.selectedGame) return null
+
+  const game = props.selectedGame
+
+  const handleImageError = (imageType: string) => {
+    setImageError((prev) => ({ ...prev, [imageType]: true }))
+  }
+
+  const getDisplayImage = () => {
+    switch (activeImageTab) {
+      case 'boxart':
+        return game.boxartUrl && !imageError.boxart ? game.boxartUrl : null
+      case 'banner':
+        return game.bannerUrl && !imageError.banner ? game.bannerUrl : null
+      case 'main':
+        return game.imageUrl && !imageError.main ? game.imageUrl : null
+      default:
+        return null
+    }
+  }
+
+  const hasAnyImage = Boolean(
+    (game.boxartUrl && !imageError.boxart) ??
+      (game.bannerUrl && !imageError.banner) ??
+      (game.imageUrl && !imageError.main),
+  )
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
+
+  const navigateToUserModal = (userId: string) => {
+    // Close current modal first
+    props.onClose()
+    // Navigate to admin users page with user modal open
+    router.push(`/admin/users?userId=${userId}`)
+  }
+
   return (
-    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Game Details">
-      {props.selectedGame && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {props.selectedGame.title}
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {props.selectedGame.system.name}
+    <Modal
+      isOpen={props.isOpen}
+      onClose={props.onClose}
+      title=""
+      className="max-w-4xl"
+    >
+      <div className="relative">
+        {/* Header with Hero Image */}
+        <div className="relative h-48 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-t-lg overflow-hidden">
+          {hasAnyImage && (
+            <div className="absolute inset-0 bg-black/20">
+              <Image
+                src={getDisplayImage() ?? ''}
+                alt={game.title}
+                fill
+                className="object-cover opacity-30"
+                onError={() => handleImageError(activeImageTab)}
+              />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+          {/* Game Title Overlay */}
+          <div className="absolute bottom-4 left-6 right-6">
+            <div className="flex items-center gap-3 mb-2">
+              <ApprovalStatusBadge status={game.status} />
+              {game.tgdbGameId && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-black/30 rounded-full text-xs text-white">
+                  <Database className="w-3 h-3" />
+                  TGDB ID: {game.tgdbGameId}
+                </div>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
+              {game.title}
+            </h1>
+            <p className="text-blue-100 font-medium drop-shadow">
+              {game.system.name}
             </p>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Submitter
-              </label>
-              <p className="text-sm text-gray-900 dark:text-gray-100">
-                {props.selectedGame.submitter?.name ?? 'Unknown'}
-              </p>
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Image Gallery */}
+          {hasAnyImage && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <ImageIcon className="w-5 h-5" />
+                Game Images
+              </h3>
+
+              {/* Image Tabs */}
+              <div className="flex gap-2">
+                {game.boxartUrl && !imageError.boxart && (
+                  <button
+                    onClick={() => setActiveImageTab('boxart')}
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
+                      activeImageTab === 'boxart'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+                    )}
+                  >
+                    Box Art
+                  </button>
+                )}
+                {game.bannerUrl && !imageError.banner && (
+                  <button
+                    onClick={() => setActiveImageTab('banner')}
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
+                      activeImageTab === 'banner'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+                    )}
+                  >
+                    Banner
+                  </button>
+                )}
+                {game.imageUrl && !imageError.main && (
+                  <button
+                    onClick={() => setActiveImageTab('main')}
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
+                      activeImageTab === 'main'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+                    )}
+                  >
+                    Main Image
+                  </button>
+                )}
+              </div>
+
+              {/* Image Display */}
+              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
+                <Image
+                  src={getDisplayImage() ?? ''}
+                  alt={`${game.title} - ${activeImageTab}`}
+                  width={800}
+                  height={256}
+                  className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105"
+                  onError={() => handleImageError(activeImageTab)}
+                />
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button
+                    onClick={() =>
+                      window.open(getDisplayImage() ?? '', '_blank')
+                    }
+                    className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
+                    title="View full size"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Submitted Date
-              </label>
-              <p className="text-sm text-gray-900 dark:text-gray-100">
-                {formatDate(props.selectedGame.submittedAt!)}
-              </p>
+          )}
+
+          {/* Details Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Submission Info */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Submission Details
+              </h3>
+
+              <div className="space-y-3">
+                {/* Submitter */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  {game.submitter?.profileImage && (
+                    <Image
+                      src={game.submitter.profileImage}
+                      alt={game.submitter.name ?? 'Submitter'}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {game.submitter?.id ? (
+                      <button
+                        onClick={() => navigateToUserModal(game.submitter!.id)}
+                        className="text-left w-full text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                        title="View user details"
+                      >
+                        {game.submitter.name ?? 'Unknown User'}
+                      </button>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {game.submitter?.name ?? 'Unknown User'}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {game.submitter?.email}
+                    </p>
+                  </div>
+                  {game.submitter?.id && (
+                    <button
+                      onClick={() => copyToClipboard(game.submitter!.id)}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                      title="Copy User ID"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Submission Date */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Submitted
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {formatDate(game.submittedAt!)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatTimeAgo(game.submittedAt!)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* System & Technical Info */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Technical Details
+              </h3>
+
+              <div className="space-y-3">
+                {/* System Info */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Platform
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {game.system.name}
+                  </p>
+                  {game.system.key && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Key: {game.system.key}
+                    </p>
+                  )}
+                  {game.system.tgdbPlatformId && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      TGDB Platform ID: {game.system.tgdbPlatformId}
+                    </p>
+                  )}
+                </div>
+
+                {/* Game IDs */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Identifiers
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Game ID:
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <code className="text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                          {game.id.slice(0, 8)}...
+                        </code>
+                        <button
+                          onClick={() => copyToClipboard(game.id)}
+                          className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          title="Copy Game ID"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    {game.tgdbGameId && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          TGDB ID:
+                        </span>
+                        <span className="text-xs text-gray-900 dark:text-white font-mono">
+                          {game.tgdbGameId}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Current Status
-            </label>
-            <ApprovalStatusBadge
-              status={props.selectedGame.status}
-              type="game"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="primary"
-              onClick={() =>
-                props.onShowConfirmation(props.selectedGame!.id, 'approve')
-              }
-              disabled={props.isProcessing}
-              isLoading={props.processingAction === 'approve'}
+          {/* Quick Actions Bar */}
+          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <Link
+              href={`/games/${game.id}`}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
             >
-              Approve
+              <Eye className="w-4 h-4" />
+              View Public Page
+            </Link>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="outline"
+              onClick={props.onClose}
+              className="min-w-[100px]"
+            >
+              Close
             </Button>
             <Button
               variant="danger"
-              onClick={() =>
-                props.onShowConfirmation(props.selectedGame!.id, 'reject')
-              }
+              onClick={() => props.onShowConfirmation(game.id, 'reject')}
               disabled={props.isProcessing}
               isLoading={props.processingAction === 'reject'}
+              className="min-w-[100px] transition-all duration-200 hover:scale-105"
             >
+              <XCircle className="w-4 h-4 mr-2" />
               Reject
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => props.onShowConfirmation(game.id, 'approve')}
+              disabled={props.isProcessing}
+              isLoading={props.processingAction === 'approve'}
+              className="min-w-[100px] transition-all duration-200 hover:scale-105"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Approve
             </Button>
           </div>
         </div>
-      )}
+      </div>
     </Modal>
   )
 }

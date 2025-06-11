@@ -25,13 +25,14 @@ interface Props {
   }
 }
 
-function GameEditForm({ gameData }: Props) {
+function GameEditForm(props: Props) {
   const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState(gameData.title)
-  const [imageUrl, setImageUrl] = useState(gameData.imageUrl ?? '')
+  const [title, setTitle] = useState(props.gameData.title)
+  const [imageUrl, setImageUrl] = useState(props.gameData.imageUrl ?? '')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const utils = api.useUtils()
   const { user } = useUser()
 
   // Get user data to determine permissions
@@ -43,14 +44,17 @@ function GameEditForm({ gameData }: Props) {
   const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
   const isOwnerOfPendingGame =
     userQuery.data &&
-    gameData.submittedBy === userQuery.data.id &&
-    gameData.status === ApprovalStatus.PENDING
+    props.gameData.submittedBy === userQuery.data.id &&
+    props.gameData.status === ApprovalStatus.PENDING
 
   // Use appropriate mutation based on permissions
   const updateGameAdmin = api.games.update.useMutation({
     onSuccess: () => {
       setOpen(false)
-      router.refresh()
+      utils.games.byId.invalidate({ id: props.gameData.id }).catch((error) => {
+        console.error('Error invalidating game cache:', error)
+        router.refresh()
+      })
     },
     onError: (err) => {
       setError(err.message)
@@ -61,7 +65,10 @@ function GameEditForm({ gameData }: Props) {
   const updateGameUser = api.games.updateOwnPendingGame.useMutation({
     onSuccess: () => {
       setOpen(false)
-      router.refresh()
+      utils.games.byId.invalidate({ id: props.gameData.id }).catch((error) => {
+        console.error('Error invalidating game cache:', error)
+        router.refresh()
+      })
     },
     onError: (err) => {
       setError(err.message)
@@ -84,9 +91,9 @@ function GameEditForm({ gameData }: Props) {
     }
 
     const updateData = {
-      id: gameData.id,
+      id: props.gameData.id,
       title: sanitizedTitle,
-      systemId: gameData.systemId,
+      systemId: props.gameData.systemId,
       imageUrl: imageUrl || undefined,
     }
 
@@ -145,7 +152,7 @@ function GameEditForm({ gameData }: Props) {
               <div className="space-y-2">
                 <RawgImageSelector
                   gameTitle={title}
-                  systemName={gameData.system?.name}
+                  systemName={props.gameData.system?.name}
                   selectedImageUrl={imageUrl}
                   onImageSelect={handleImageSelect}
                   onError={setError}
@@ -155,7 +162,7 @@ function GameEditForm({ gameData }: Props) {
               <div className="space-y-2">
                 <label className="block text-sm font-medium">System</label>
                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
-                  {gameData.system?.name ?? 'Unknown System'}
+                  {props.gameData.system?.name ?? 'Unknown System'}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   System cannot be changed. Create a new game entry if needed.
@@ -176,8 +183,12 @@ function GameEditForm({ gameData }: Props) {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Changes'}
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                >
+                  Save Changes
                 </Button>
               </div>
             </form>

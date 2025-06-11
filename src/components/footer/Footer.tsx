@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui'
 import GitHubIcon from '@/components/icons/GitHubIcon'
+import KofiFooterButton from '@/components/footer/KofiFooterButton'
 
 function Footer() {
   return (
@@ -45,6 +46,8 @@ function Footer() {
                 >
                   <GitHubIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </a>
+
+                <KofiFooterButton />
 
                 <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
                   <ThemeSelect />

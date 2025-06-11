@@ -145,3 +145,7 @@
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
+.dark [id^='kofi-widget'] {
+  color-scheme: light !important;
+}

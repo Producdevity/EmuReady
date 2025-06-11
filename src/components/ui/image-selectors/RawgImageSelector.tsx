@@ -13,7 +13,7 @@ import {
   Toggle,
 } from '@/components/ui'
 import { type GameImageOption } from '@/types/rawg'
-import getImageUrl from '@/app/games/utils/getImageUrl'
+import getImageUrl from '@/utils/getImageUrl'
 import { getImageDisplayName } from '@/lib/rawg-utils'
 
 interface Props {

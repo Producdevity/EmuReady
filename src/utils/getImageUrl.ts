@@ -1,6 +1,7 @@
 import getSafePlaceholderImageUrl from './getSafePlaceholderImageUrl'
+import { type Nullable } from '@/types/utils'
 
-function getImageUrl(url: string | null, title?: string): string {
+function getImageUrl(url: Nullable<string>, title?: string): string {
   if (!url) return getSafePlaceholderImageUrl(title)
 
   if (url.startsWith('/') && !url.startsWith('//')) {

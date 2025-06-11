@@ -21,7 +21,7 @@ export default defineConfig({
     },
     testTimeout: 15000,
     hookTimeout: 10000,
-    reporters: ['verbose'],
+    reporters: process.env.CI ? ['basic'] : ['default'],
     silent: false,
   },
 })

@@ -215,10 +215,7 @@ function ProfilePage() {
                               >
                                 {game.title}
                               </Link>
-                              <ApprovalStatusBadge
-                                status={game.status}
-                                type="game"
-                              />
+                              <ApprovalStatusBadge status={game.status} />
                             </div>
                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                               {game.system.name} • Submitted{' '}

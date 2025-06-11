@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui'
 import { ApprovalStatusBadge } from '@/components/ui'
-import getImageUrl from '@/app/games/utils/getImageUrl'
+import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { type Game, ApprovalStatus } from '@orm'
 
 interface Props {
@@ -13,9 +13,6 @@ interface Props {
 }
 
 function GameCard(props: Props) {
-  const imageUrl =
-    props.game.bannerUrl ?? props.game.imageUrl ?? props.game.boxartUrl ?? null
-
   return (
     <Link
       key={props.game.id}
@@ -24,7 +21,7 @@ function GameCard(props: Props) {
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
         <Image
-          src={getImageUrl(imageUrl, props.game.title)}
+          src={getGameImageUrl(props.game)}
           alt={props.game.title}
           fill
           className="object-cover"
@@ -42,7 +39,7 @@ function GameCard(props: Props) {
           </Badge>
           {props.game.status &&
             props.game.status !== ApprovalStatus.APPROVED && (
-              <ApprovalStatusBadge status={props.game.status} type="game" />
+              <ApprovalStatusBadge status={props.game.status} />
             )}
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">

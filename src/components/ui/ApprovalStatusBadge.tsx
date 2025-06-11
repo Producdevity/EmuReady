@@ -1,51 +1,65 @@
+import Badge from '@/components/ui/Badge'
+import { getApprovalStatusVariant } from '@/utils/badgeColors'
 import { ApprovalStatus } from '@orm'
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  HelpCircle,
+  type LucideIcon,
+} from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
-interface ApprovalStatusBadgeProps {
+type Status = {
+  icon: LucideIcon
+  colorClass: string
+  tooltip: string
+}
+
+const statusMap: Record<ApprovalStatus | 'UNKNOWN', Status> = {
+  [ApprovalStatus.APPROVED]: {
+    icon: CheckCircle,
+    colorClass: 'text-green-600 dark:text-green-400',
+    tooltip: 'Approved',
+  },
+  [ApprovalStatus.REJECTED]: {
+    icon: XCircle,
+    colorClass: 'text-red-600 dark:text-red-400',
+    tooltip: 'Rejected',
+  },
+  [ApprovalStatus.PENDING]: {
+    icon: Clock,
+    colorClass: 'text-amber-600 dark:text-amber-400',
+    tooltip: 'Under Review',
+  },
+  UNKNOWN: {
+    icon: HelpCircle,
+    colorClass: 'text-gray-600 dark:text-gray-400',
+    tooltip: 'Unknown Status',
+  },
+}
+
+interface Props {
   status: ApprovalStatus
-  type?: 'listing' | 'game'
   className?: string
 }
 
-function getStatusConfig(
-  status: ApprovalStatus,
-  type: 'listing' | 'game' = 'listing',
-) {
-  switch (status) {
-    case ApprovalStatus.APPROVED:
-      return {
-        variant:
-          'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100',
-        label: 'Approved',
-      }
-    case ApprovalStatus.REJECTED:
-      return {
-        variant: 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100',
-        label: 'Rejected',
-      }
-    case ApprovalStatus.PENDING:
-      return {
-        variant:
-          'bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100',
-        label: type === 'game' ? 'Pending Approval' : 'Pending',
-      }
-    default:
-      return {
-        variant:
-          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
-        label: 'Unknown',
-      }
-  }
-}
-
-function ApprovalStatusBadge(props: ApprovalStatusBadgeProps) {
-  const config = getStatusConfig(props.status, props.type)
+function ApprovalStatusBadge(props: Props) {
+  const statusConfig = statusMap[props.status] || statusMap.UNKNOWN
+  const IconComponent = statusConfig.icon
 
   return (
-    <span
-      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${config.variant} ${props.className ?? ''}`}
-    >
-      {config.label}
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={cn('inline-flex cursor-pointer', props.className)}>
+          <Badge pill variant={getApprovalStatusVariant(props.status)}>
+            <IconComponent className={cn('w-4 h-4', statusConfig.colorClass)} />
+          </Badge>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>{statusConfig.tooltip}</TooltipContent>
+    </Tooltip>
   )
 }
 

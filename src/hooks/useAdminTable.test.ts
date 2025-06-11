@@ -1,8 +1,30 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import useAdminTable from './useAdminTable'
 
+// Mock Next.js navigation hooks
+const mockPush = vi.fn()
+const mockReplace = vi.fn()
+const mockSearchParams = new URLSearchParams()
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: mockReplace,
+  }),
+  useSearchParams: () => mockSearchParams,
+}))
+
 describe('useAdminTable', () => {
+  beforeEach(() => {
+    // Clear all mocks before each test
+    vi.clearAllMocks()
+    // Reset search params
+    mockSearchParams.forEach((_, key) => {
+      mockSearchParams.delete(key)
+    })
+  })
+
   describe('initialization', () => {
     it('should initialize with default values', () => {
       const { result } = renderHook(() => useAdminTable())
@@ -165,11 +187,12 @@ describe('useAdminTable', () => {
     it('should reset all filters to default values', () => {
       const { result } = renderHook(() => useAdminTable<'name'>())
 
+      // Set up initial state (set page last since setSortField resets page to 1)
       act(() => {
         result.current.setSearch('test search')
-        result.current.setPage(5)
         result.current.setSortField('name')
         result.current.setSortDirection('desc')
+        result.current.setPage(5) // Set page after sort to avoid reset
       })
 
       expect(result.current.search).toBe('test search')

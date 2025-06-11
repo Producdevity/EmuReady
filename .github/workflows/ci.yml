@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ci-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: emuready_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/emuready_test'
+      DATABASE_DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/emuready_test'
+      NODE_ENV: 'test'
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+      IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_IGDB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_IGDB_CLIENT_ID }}
+      NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
+      RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+      THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Clean build cache
+        run: npm run clean
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+
+      - name: Lint & type-check
+        run: npm run check
+
+      - name: Unit tests
+        run: npm run test:ci
+
+      - name: Build
+        run: npm run build
+
+      # - name: Install Playwright browsers
+      #   run: npx playwright install --with-deps
+      #   if: false
+
+      # - name: E2E tests (enable when ready)
+      #   run: npm run test:e2e:ci
+      #   if: false

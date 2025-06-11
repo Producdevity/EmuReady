@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Badge, PerformanceBadge } from '@/components/ui'
-import { getApprovalStatusVariant } from '@/utils/badgeColors'
+import { PerformanceBadge } from '@/components/ui'
 import { formatTimeAgo } from '@/utils/date'
 import { type Prisma } from '@orm'
+import ApprovalStatusBadge from '../../../../../components/ui/ApprovalStatusBadge'
 
 type GameWithRelations = Prisma.GameGetPayload<{
   include: {
@@ -92,9 +92,7 @@ function GameRelatedData(props: Props) {
                     {listing.author?.name ?? 'Unknown'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant={getApprovalStatusVariant(listing.status)}>
-                      {listing.status}
-                    </Badge>
+                    <ApprovalStatusBadge status={listing.status} />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatTimeAgo(listing.createdAt)}
