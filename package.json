@@ -14,7 +14,7 @@
     "check": "npm run lint && npm run typecheck",
     "postinstall": "prisma generate",
     "analyze": "ANALYZE=true next build",
-    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache && rm -rf .eslintcache && rm -rf tsconfig.tsbuildinfo",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:ci": "vitest run",

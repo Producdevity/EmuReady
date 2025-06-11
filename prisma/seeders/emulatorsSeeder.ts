@@ -42,6 +42,7 @@ const emulators: EmulatorData[] = [
   {
     name: 'RetroArch',
     supportedSystemNames: [
+      'Microsoft Windows',
       'Nintendo 64',
       'Nintendo DS',
       'Sony PlayStation Portable',

@@ -9,10 +9,6 @@ interface Props {
   game: Game & {
     system?: { name: string } | null
     _count: { listings: number }
-    status?: string
-    submittedBy?: string | null
-    boxartUrl?: string | null
-    bannerUrl?: string | null
   }
 }
 
