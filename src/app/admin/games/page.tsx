@@ -380,10 +380,7 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('status') && (
                         <td className="px-6 py-4">
-                          <ApprovalStatusBadge
-                            status={game.status}
-                            type="game"
-                          />
+                          <ApprovalStatusBadge status={game.status} />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('submitter') && (

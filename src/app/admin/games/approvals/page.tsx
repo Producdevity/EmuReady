@@ -282,7 +282,7 @@ function GameApprovalsPage() {
                         {formatDate(game.submittedAt!)}
                       </td>
                       <td className="px-6 py-4">
-                        <ApprovalStatusBadge status={game.status} type="game" />
+                        <ApprovalStatusBadge status={game.status} />
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">

@@ -42,7 +42,7 @@ function GameCard(props: Props) {
           </Badge>
           {props.game.status &&
             props.game.status !== ApprovalStatus.APPROVED && (
-              <ApprovalStatusBadge status={props.game.status} type="game" />
+              <ApprovalStatusBadge status={props.game.status} />
             )}
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">

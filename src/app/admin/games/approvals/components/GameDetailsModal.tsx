@@ -52,10 +52,7 @@ function GameDetailsModal(props: Props) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Current Status
             </label>
-            <ApprovalStatusBadge
-              status={props.selectedGame.status}
-              type="game"
-            />
+            <ApprovalStatusBadge status={props.selectedGame.status} />
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
