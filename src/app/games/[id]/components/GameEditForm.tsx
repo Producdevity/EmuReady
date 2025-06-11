@@ -25,7 +25,7 @@ interface Props {
   }
 }
 
-export default function GameEditForm({ gameData }: Props) {
+function GameEditForm({ gameData }: Props) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(gameData.title)
   const [imageUrl, setImageUrl] = useState(gameData.imageUrl ?? '')
@@ -35,15 +35,15 @@ export default function GameEditForm({ gameData }: Props) {
   const { user } = useUser()
 
   // Get user data to determine permissions
-  const { data: userData } = api.users.getProfile.useQuery(undefined, {
+  const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
 
   // Determine if user is admin or owner of pending game
-  const isAdmin = hasPermission(userData?.role, Role.ADMIN)
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
   const isOwnerOfPendingGame =
-    userData &&
-    gameData.submittedBy === userData.id &&
+    userQuery.data &&
+    gameData.submittedBy === userQuery.data.id &&
     gameData.status === ApprovalStatus.PENDING
 
   // Use appropriate mutation based on permissions
@@ -187,3 +187,5 @@ export default function GameEditForm({ gameData }: Props) {
     </div>
   )
 }
+
+export default GameEditForm

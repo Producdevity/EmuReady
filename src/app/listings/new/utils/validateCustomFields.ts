@@ -25,39 +25,33 @@ function validateCustomFields(
   if (parsedCustomFields.length === 0) return true
 
   const requiredFields = parsedCustomFields.filter((field) => field.isRequired)
-  const missingFields: string[] = []
 
-  for (const field of requiredFields) {
-    const fieldValue = data.customFieldValues?.find(
-      (cfv) => cfv.customFieldDefinitionId === field.id,
-    )
+  const missingFields = requiredFields
+    .filter((field) => {
+      const fieldValue = data.customFieldValues?.find(
+        (cfv) => cfv.customFieldDefinitionId === field.id,
+      )
 
-    if (!fieldValue) {
-      missingFields.push(field.label)
-      continue
-    }
+      if (!fieldValue) return true
 
-    // Check if value is empty based on field type
-    switch (field.type) {
-      case CustomFieldType.TEXT:
-      case CustomFieldType.TEXTAREA:
-      case CustomFieldType.URL:
-        if (
-          !fieldValue.value ||
-          (typeof fieldValue.value === 'string' &&
-            fieldValue.value.trim() === '')
-        ) {
-          missingFields.push(field.label)
-        }
-        break
-      case CustomFieldType.SELECT:
-        if (!fieldValue.value || fieldValue.value === '') {
-          missingFields.push(field.label)
-        }
-        break
-      // BOOLEAN fields are always valid (true or false)
-    }
-  }
+      // Check if value is empty based on field type
+      switch (field.type) {
+        case CustomFieldType.TEXT:
+        case CustomFieldType.TEXTAREA:
+        case CustomFieldType.URL:
+          return (
+            !fieldValue.value ||
+            (typeof fieldValue.value === 'string' &&
+              fieldValue.value.trim() === '')
+          )
+        case CustomFieldType.SELECT:
+          return !fieldValue.value || fieldValue.value === ''
+        // BOOLEAN fields are always valid (true or false)
+        default:
+          return false
+      }
+    })
+    .map((field) => field.label)
 
   if (missingFields.length > 0) {
     // Provide user-friendly toast message

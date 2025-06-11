@@ -11,6 +11,7 @@ import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
 import { customFieldTemplateRouter } from './routers/customFieldTemplates'
 import { performanceScalesRouter } from './routers/performanceScales'
 import { rawgRouter } from './routers/rawg'
+import { tgdbRouter } from './routers/tgdb'
 
 export const appRouter = createTRPCRouter({
   listings: listingsRouter,
@@ -25,6 +26,7 @@ export const appRouter = createTRPCRouter({
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,
   rawg: rawgRouter,
+  tgdb: tgdbRouter,
 })
 
 export type AppRouter = typeof appRouter

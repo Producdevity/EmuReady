@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const SearchGameImagesSchema = z.object({
-  query: z.string().min(1, 'Search query is required'),
+  query: z.string().min(2),
   includeScreenshots: z.boolean().optional().default(false),
 })
 

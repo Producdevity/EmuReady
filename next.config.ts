@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
         hostname: '*.clerk.accounts.dev',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.thegamesdb.net',
+        pathname: '/**',
+      },
     ],
   },
 
@@ -38,7 +43,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://va.vercel-scripts.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live",
               "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com",
-              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com",
+              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com https://cdn.thegamesdb.net https://www.googletagmanager.com https://*.google-analytics.com",
               "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com data:",
               "connect-src 'self' https://*.google-analytics.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://challenges.cloudflare.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live",
               "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live",

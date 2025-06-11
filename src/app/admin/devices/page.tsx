@@ -281,7 +281,9 @@ function AdminDevicesPage() {
                   className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                 >
                   <p className="text-gray-600 dark:text-gray-400">
-                    {table.search ? 'No devices match your search criteria.' : 'No devices found.'}
+                    {table.search
+                      ? 'No devices match your search criteria.'
+                      : 'No devices found.'}
                   </p>
                 </td>
               </tr>

@@ -79,18 +79,22 @@ model Device {
 }
 
 model System {
-  id        String  @id @default(uuid())
-  name      String  @unique
-  key       String? @unique
-  games     Game[]
-  emulators Emulator[]
+  id             String  @id @default(uuid())
+  name           String  @unique
+  key            String? @unique
+  tgdbPlatformId Int?    // TheGamesDB platform ID for image searching
+  games          Game[]
+  emulators      Emulator[]
 }
 
 model Game {
   id          String         @id @default(uuid())
   title       String
   systemId    String
-  imageUrl    String?
+  imageUrl    String?        // Fallback image URL
+  boxartUrl   String?        // TGDB boxart image URL
+  bannerUrl   String?        // TGDB banner image URL
+  tgdbGameId  Int?           // TheGamesDB game ID for reliable duplicate detection
   status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
   submittedBy String?                     // null for existing games, userId for new submissions
   submittedAt DateTime?
@@ -108,6 +112,7 @@ model Game {
   @@index([submittedAt])
   @@index([status, submittedAt])
   @@index([systemId, status])
+  @@index([tgdbGameId])
 }
 
 model CustomFieldDefinition {

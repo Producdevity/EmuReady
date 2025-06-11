@@ -1,8 +1,15 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
-import { useState, type SyntheticEvent, type ChangeEvent } from 'react'
+import {
+  useState,
+  useEffect,
+  Suspense,
+  type SyntheticEvent,
+  type ChangeEvent,
+} from 'react'
 import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
+import { useSearchParams } from 'next/navigation'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -13,15 +20,37 @@ import { hasPermission } from '@/utils/permissions'
 
 function GamesPage() {
   const { user } = useUser()
+  const searchParams = useSearchParams()
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [systemId, setSystemId] = useState('')
   const limit = 12
 
+  // Initialize state from URL parameters, ensuring we don't use string "undefined"
+  useEffect(() => {
+    const urlSearch = searchParams.get('search')
+    const urlSystemId = searchParams.get('systemId')
+    const urlPage = searchParams.get('page')
+
+    if (urlSearch && urlSearch !== 'undefined') {
+      setSearch(urlSearch)
+    }
+    if (urlSystemId && urlSystemId !== 'undefined') {
+      setSystemId(urlSystemId)
+    }
+    if (urlPage && urlPage !== 'undefined') {
+      const pageNum = parseInt(urlPage, 10)
+      if (!isNaN(pageNum) && pageNum > 0) {
+        setPage(pageNum)
+      }
+    }
+  }, [searchParams])
+
   const systemsQuery = api.systems.get.useQuery()
 
   const gamesQuery = api.games.get.useQuery({
-    search: search || undefined,
+    search: search.trim() || undefined,
     systemId: systemId || undefined,
     limit,
     offset: (page - 1) * limit,
@@ -105,4 +134,10 @@ function GamesPage() {
   )
 }
 
-export default GamesPage
+export default function Page() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading page..." />}>
+      <GamesPage />
+    </Suspense>
+  )
+}

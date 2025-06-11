@@ -4,7 +4,7 @@ import { SortDirection } from '@/schemas/soc'
 export const EmulatorSortField = z.enum(['name'])
 
 export const GetEmulatorsSchema = z
-  .object({ 
+  .object({
     search: z.string().optional(),
     limit: z.number().default(20),
     offset: z.number().default(0),

@@ -12,4 +12,4 @@ export function isValidImageUrl(url: string): boolean {
 export function getImageDisplayName(image: GameImageOption): string {
   const typeLabel = image.type === 'background' ? 'Cover' : 'Screenshot'
   return `${typeLabel} - ${image.gameName}`
-} 
+}

@@ -336,7 +336,9 @@ function MultiSelect(props: Props) {
                   transition-all duration-200 hover:scale-105 hover:shadow-sm"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <span className="truncate max-w-32">{option.badgeName ?? option.name}</span>
+                <span className="truncate max-w-32">
+                  {option.badgeName ?? option.name}
+                </span>
                 <button
                   type="button"
                   onClick={() => handleRemoveOption(option.id)}

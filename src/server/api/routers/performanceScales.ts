@@ -19,8 +19,10 @@ export const performanceScalesRouter = createTRPCRouter({
       const { search, sortField, sortDirection } = input ?? {}
 
       // Build orderBy based on sortField and sortDirection
-      let orderBy: { label?: 'asc' | 'desc'; rank?: 'asc' | 'desc' } = { rank: 'desc' }
-      
+      let orderBy: { label?: 'asc' | 'desc'; rank?: 'asc' | 'desc' } = {
+        rank: 'desc',
+      }
+
       if (sortField && sortDirection) {
         switch (sortField) {
           case 'label':

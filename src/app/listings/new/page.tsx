@@ -504,20 +504,9 @@ function AddListingPage() {
   )
 }
 
-function LoadingFallback() {
+export default function Page() {
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto text-center">
-        <LoadingSpinner size="lg" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading form...</p>
-      </div>
-    </div>
-  )
-}
-
-export default function NewListingPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={<LoadingSpinner text="Loading page..." />}>
       <AddListingPage />
     </Suspense>
   )

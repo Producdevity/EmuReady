@@ -303,12 +303,12 @@ describe('validateCustomFields', () => {
       customFieldValues: [], // Missing required field
     }
 
-    // Call validate which should fail 
+    // Call validate which should fail
     const result = validateCustomFields(data, customFields)
 
     // Should return false for validation failure
     expect(result).toBe(false)
-    
+
     // The function internally handles the scroll timeout
     // We can't easily test the DOM scroll behavior in jsdom
     // so we just verify the validation logic works correctly

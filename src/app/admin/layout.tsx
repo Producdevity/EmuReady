@@ -15,10 +15,10 @@ import AdminNavbar from './components/AdminNavbar'
 function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, isLoaded } = useUser()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { user, isLoaded } = useUser()
 
-  const userQuery = api.users.getProfile.useQuery(undefined, {
+  const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
 

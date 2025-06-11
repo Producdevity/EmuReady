@@ -12,9 +12,9 @@ const handler = async (req: NextRequest) => {
     router: appRouter,
     createContext: async () => {
       const { userId } = await auth()
-      
+
       let session = null
-      
+
       if (userId) {
         // Fetch user data from database using clerkId
         const user = await prisma.user.findUnique({
@@ -38,7 +38,7 @@ const handler = async (req: NextRequest) => {
           }
         }
       }
-      
+
       return createInnerTRPCContext({ session })
     },
     onError:
