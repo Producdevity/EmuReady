@@ -289,4 +289,12 @@ export class ResourceError {
     cannotEditDeleted: () =>
       AppError.badRequest('Cannot edit a deleted comment'),
   }
+
+  static userDevicePreference = {
+    notFound: () => AppError.notFound('Device'),
+    alreadyExists: () =>
+      AppError.conflict('Device is already in your preferences'),
+    notInPreferences: () =>
+      AppError.badRequest('Device not found in your preferences'),
+  }
 }

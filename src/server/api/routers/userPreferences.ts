@@ -1,4 +1,3 @@
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { ResourceError } from '@/lib/errors'
 import {
   UpdateUserPreferencesSchema,
@@ -6,6 +5,8 @@ import {
   RemoveDevicePreferenceSchema,
   BulkUpdateDevicePreferencesSchema,
 } from '@/schemas/userPreferences'
+import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { sanitizeBio } from '@/utils/sanitization'
 
 export const userPreferencesRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -13,7 +14,9 @@ export const userPreferencesRouter = createTRPCRouter({
       where: { id: ctx.session.user.id },
       select: {
         id: true,
+        bio: true,
         defaultToUserDevices: true,
+        defaultToUserSocs: true,
         notifyOnNewListings: true,
         devicePreferences: {
           select: {
@@ -29,12 +32,17 @@ export const userPreferencesRouter = createTRPCRouter({
             },
           },
         },
+        socPreferences: {
+          select: {
+            id: true,
+            socId: true,
+            soc: { select: { id: true, name: true, manufacturer: true } },
+          },
+        },
       },
     })
 
-    if (!user) return ResourceError.user.notFound()
-
-    return user
+    return user ?? ResourceError.user.notFound()
   }),
 
   update: protectedProcedure
@@ -46,15 +54,35 @@ export const userPreferencesRouter = createTRPCRouter({
 
       if (!user) return ResourceError.user.notFound()
 
+      // Sanitize bio if provided
+      const updateData: {
+        defaultToUserDevices?: boolean
+        defaultToUserSocs?: boolean
+        notifyOnNewListings?: boolean
+        bio?: string
+      } = {}
+
+      if (input.defaultToUserDevices !== undefined) {
+        updateData.defaultToUserDevices = input.defaultToUserDevices
+      }
+      if (input.defaultToUserSocs !== undefined) {
+        updateData.defaultToUserSocs = input.defaultToUserSocs
+      }
+      if (input.notifyOnNewListings !== undefined) {
+        updateData.notifyOnNewListings = input.notifyOnNewListings
+      }
+      if (input.bio !== undefined) {
+        updateData.bio = sanitizeBio(input.bio)
+      }
+
       return ctx.prisma.user.update({
         where: { id: user.id },
-        data: {
-          defaultToUserDevices: input.defaultToUserDevices,
-          notifyOnNewListings: input.notifyOnNewListings,
-        },
+        data: updateData,
         select: {
           id: true,
+          bio: true,
           defaultToUserDevices: true,
+          defaultToUserSocs: true,
           notifyOnNewListings: true,
         },
       })
@@ -87,9 +115,8 @@ export const userPreferencesRouter = createTRPCRouter({
           },
         })
 
-      if (existingPreference) {
-        throw new Error('Device is already in your preferences')
-      }
+      if (existingPreference)
+        return ResourceError.userDevicePreference.alreadyExists()
 
       return ctx.prisma.userDevicePreference.create({
         data: { userId: user.id, deviceId: input.deviceId },
@@ -113,7 +140,7 @@ export const userPreferencesRouter = createTRPCRouter({
       })
 
       if (!preference) {
-        throw new Error('Device not found in your preferences')
+        return ResourceError.userDevicePreference.notInPreferences()
       }
 
       await ctx.prisma.userDevicePreference.delete({
@@ -138,7 +165,7 @@ export const userPreferencesRouter = createTRPCRouter({
       })
 
       if (devices.length !== input.deviceIds.length) {
-        throw new Error('One or more devices not found')
+        return ResourceError.userDevicePreference.notFound()
       }
 
       // Remove existing preferences
@@ -159,14 +186,7 @@ export const userPreferencesRouter = createTRPCRouter({
       // Return updated preferences
       return ctx.prisma.userDevicePreference.findMany({
         where: { userId: user.id },
-        include: {
-          device: {
-            include: {
-              brand: true,
-              soc: true,
-            },
-          },
-        },
+        include: { device: { include: { brand: true, soc: true } } },
       })
     }),
 })

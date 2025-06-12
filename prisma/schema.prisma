@@ -35,11 +35,13 @@ model User {
   clerkId              String      @unique
   email                String      @unique
   name                 String?
+  bio                  String?
   profileImage         String?
   role                 Role        @default(USER)
   createdAt            DateTime    @default(now())
   // User preferences
   defaultToUserDevices Boolean     @default(false)
+  defaultToUserSocs    Boolean     @default(false)
   notifyOnNewListings  Boolean     @default(true)
   // Relations
   comments             Comment[]
@@ -48,8 +50,13 @@ model User {
   submittedGames       Game[]      @relation("GamesSubmittedByUser")
   approvedGames        Game[]      @relation("GamesApprovedByAdmin")
   votes                Vote[]
-  commentVotes         CommentVote[]
-  devicePreferences    UserDevicePreference[]
+  commentVotes                CommentVote[]
+  devicePreferences           UserDevicePreference[]
+  socPreferences              UserSocPreference[]
+  notifications               Notification[]
+  notificationPreferences     NotificationPreference[]
+  listingNotificationPrefs    ListingNotificationPreference[]
+  triggeredNotificationEvents NotificationEvent[]
 }
 
 model UserDevicePreference {
@@ -63,6 +70,21 @@ model UserDevicePreference {
 
   @@unique([userId, deviceId])
   @@index([userId])
+}
+
+model UserSocPreference {
+  id     String @id @default(cuid())
+  userId String
+  socId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  soc  SoC  @relation(fields: [socId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, socId])
+  @@map("user_soc_preferences")
 }
 
 model DeviceBrand {
@@ -82,6 +104,7 @@ model SoC {
   gpuModel     String?
   createdAt    DateTime @default(now())
   devices      Device[]
+  userPreferences UserSocPreference[]
 }
 
 model Device {
@@ -215,9 +238,10 @@ model Listing {
   emulator        Emulator               @relation(fields: [emulatorId], references: [id])
   game            Game                   @relation(fields: [gameId], references: [id])
   device          Device                 @relation(fields: [deviceId], references: [id])
-  comments        Comment[]
-  votes           Vote[]
-  customFieldValues ListingCustomFieldValue[]
+  comments              Comment[]
+  votes                 Vote[]
+  customFieldValues     ListingCustomFieldValue[]
+  notificationPrefs     ListingNotificationPreference[]
 
   @@unique([gameId, deviceId, emulatorId])
   @@index([processedByUserId])
@@ -278,4 +302,133 @@ model ListingCustomFieldValue {
   @@unique([listingId, customFieldDefinitionId])
   @@index([listingId])
   @@index([customFieldDefinitionId])
+}
+
+// Notification System Models
+model Notification {
+  id              String                 @id @default(cuid())
+  userId          String
+  type            NotificationType
+  category        NotificationCategory
+  title           String                 @db.VarChar(255)
+  message         String                 @db.Text
+  actionUrl       String?
+  metadata        Json?
+  isRead          Boolean                @default(false)
+  deliveryChannel DeliveryChannel        @default(IN_APP)
+  deliveryStatus  NotificationDeliveryStatus @default(PENDING)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  inAppEnabled Boolean          @default(true)
+  emailEnabled Boolean          @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@map("notification_preferences")
+}
+
+model ListingNotificationPreference {
+  id        String  @id @default(cuid())
+  userId    String
+  listingId String
+  isEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@map("listing_notification_preferences")
+}
+
+model NotificationEvent {
+  id           String    @id @default(cuid())
+  eventType    String
+  entityType   String
+  entityId     String
+  triggeredBy  String?
+  payload      Json?
+  processedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  triggeredByUser User? @relation(fields: [triggeredBy], references: [id], onDelete: SetNull)
+
+  @@index([eventType, createdAt])
+  @@index([entityType, entityId])
+  @@map("notification_events")
+}
+
+// Notification Enums
+enum NotificationType {
+  // Engagement notifications
+  LISTING_COMMENT
+  LISTING_VOTE_UP
+  LISTING_VOTE_DOWN
+  COMMENT_REPLY
+  USER_MENTION
+
+  // Content notifications
+  NEW_DEVICE_LISTING
+  NEW_SOC_LISTING
+  GAME_ADDED
+  EMULATOR_UPDATED
+
+  // System notifications
+  MAINTENANCE_NOTICE
+  FEATURE_ANNOUNCEMENT
+  POLICY_UPDATE
+
+  // Moderation notifications
+  LISTING_APPROVED
+  LISTING_REJECTED
+  CONTENT_FLAGGED
+  ACCOUNT_WARNING
+
+  @@map("notification_type")
+}
+
+enum NotificationCategory {
+  ENGAGEMENT
+  CONTENT
+  SYSTEM
+  MODERATION
+
+  @@map("notification_category")
+}
+
+enum DeliveryChannel {
+  IN_APP
+  EMAIL
+  BOTH
+
+  @@map("delivery_channel")
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+
+  @@map("notification_delivery_status")
 }
