@@ -1,9 +1,3 @@
-import type { Prisma } from '@orm'
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from '@/server/api/trpc'
 import { ResourceError } from '@/lib/errors'
 import {
   GetDeviceBrandsSchema,
@@ -12,6 +6,12 @@ import {
   UpdateDeviceBrandSchema,
   DeleteDeviceBrandSchema,
 } from '@/schemas/deviceBrand'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+} from '@/server/api/trpc'
+import type { Prisma } from '@orm'
 
 export const deviceBrandsRouter = createTRPCRouter({
   get: publicProcedure

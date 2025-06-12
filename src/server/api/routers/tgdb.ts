@@ -1,12 +1,12 @@
-import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
-import * as tgdb from '@/server/tgdb'
-import { type GameImageOption } from '@/types/tgdb'
 import {
   SearchGameImagesSchema,
   SearchGamesSchema,
   GetGameImagesSchema,
   GetGameImageUrlsSchema,
 } from '@/schemas/tgdb'
+import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
+import * as tgdb from '@/server/tgdb'
+import { type GameImageOption } from '@/types/tgdb'
 
 export const tgdbRouter = createTRPCRouter({
   searchGameImages: publicProcedure

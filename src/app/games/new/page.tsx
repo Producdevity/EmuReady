@@ -1,20 +1,20 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { hasPermission } from '@/utils/permissions'
 import { useUser } from '@clerk/nextjs'
-import { Role } from '@orm'
-import { useState, useEffect, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
-import { api } from '@/lib/api'
-import { LoadingSpinner, Button, Autocomplete, Input } from '@/components/ui'
-import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
-import getErrorMessage from '@/utils/getErrorMessage'
-import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
-import NotSignedInMessage from './components/NotSignedInMessage'
 import { Search, Edit } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, type FormEvent } from 'react'
+import { LoadingSpinner, Button, Autocomplete, Input } from '@/components/ui'
+import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
+import { api } from '@/lib/api'
+import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
+import NotSignedInMessage from './components/NotSignedInMessage'
+import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
+
+export const dynamic = 'force-dynamic'
 
 // Define the System type for Autocomplete
 interface SystemOption extends AutocompleteOptionBase {
