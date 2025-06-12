@@ -7,6 +7,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui'
 
+const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
+
 function Footer() {
   return (
     <footer className="relative overflow-hidden">
@@ -70,7 +72,7 @@ function Footer() {
                     aria-label="EmuReady Documentation"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
                   >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     About
                   </a>
                 </li>
@@ -82,7 +84,7 @@ function Footer() {
                     aria-label="EmuReady Support"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
                   >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Support
                   </a>
                 </li>
@@ -92,7 +94,7 @@ function Footer() {
             {/* Community Section */}
             <div className="group">
               <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg flex items-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full"></span>
+                <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full" />
                 Community
               </h4>
               <ul className="space-y-4">
@@ -104,7 +106,7 @@ function Footer() {
                     aria-label="Contribute to EmuReady"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
                   >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Contribute
                   </a>
                 </li>
@@ -116,7 +118,7 @@ function Footer() {
                     aria-label="Add your Emulator"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
                   >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Add Your Emulator
                   </a>
                 </li>
@@ -128,10 +130,24 @@ function Footer() {
                     aria-label="EmuReady GitHub"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
                   >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     GitHub
                   </a>
                 </li>
+                {discordUrl && (
+                  <li>
+                    <a
+                      href={discordUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="EmuReady Discord"
+                      className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
+                    >
+                      <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
+                      Discord
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
           </div>
@@ -143,7 +159,7 @@ function Footer() {
                 &copy; {new Date().getFullYear()} EmuReady. All rights reserved.
               </p>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
                   Built with ❤️ for the emulation community
                 </span>
