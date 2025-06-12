@@ -1,8 +1,3 @@
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from '@/server/api/trpc'
 import { ResourceError } from '@/lib/errors'
 import {
   GetPerformanceScalesSchema,
@@ -11,6 +6,11 @@ import {
   UpdatePerformanceScaleSchema,
   DeletePerformanceScaleSchema,
 } from '@/schemas/performanceScale'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+} from '@/server/api/trpc'
 
 export const performanceScalesRouter = createTRPCRouter({
   get: publicProcedure

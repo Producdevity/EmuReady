@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect, type KeyboardEvent } from 'react'
-import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
-import { api } from '@/lib/api'
+import { useState, useEffect, type KeyboardEvent } from 'react'
 import {
   Button,
   LoadingSpinner,
@@ -12,8 +10,10 @@ import {
   Input,
   Toggle,
 } from '@/components/ui'
-import { type GameImageOption } from '@/types/tgdb'
+import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { api } from '@/lib/api'
 import { getImageDisplayName, getImageTypeDisplayName } from '@/lib/tgdb-utils'
+import { type GameImageOption } from '@/types/tgdb'
 
 interface Props {
   gameTitle?: string

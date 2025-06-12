@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Smartphone, Search, X, Loader2 } from 'lucide-react'
+import { useState, useMemo } from 'react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'

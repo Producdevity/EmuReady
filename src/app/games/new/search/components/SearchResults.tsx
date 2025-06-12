@@ -1,8 +1,8 @@
 'use client'
 
-import SearchResultsCard from '@/app/games/new/search/components/SearchResultsCard'
 import { motion } from 'framer-motion'
 import { ImageIcon } from 'lucide-react'
+import SearchResultsCard from '@/app/games/new/search/components/SearchResultsCard'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 interface SearchResultsProps {

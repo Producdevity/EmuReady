@@ -1,5 +1,5 @@
-import useLocalStorage from '@/hooks/useLocalStorage'
 import storageKeys from '@/data/storageKeys'
+import useLocalStorage from '@/hooks/useLocalStorage'
 
 function useEmulatorLogos() {
   const [showEmulatorLogos, setShowEmulatorLogos, isHydrated] = useLocalStorage(

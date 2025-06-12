@@ -1,16 +1,11 @@
 'use client'
 
-import NoListingsFound from '@/app/listings/components/NoListingsFound'
-import { Suspense, useState } from 'react'
-import Link from 'next/link'
 import { Eye, Trash2, Clock } from 'lucide-react'
-import { api } from '@/lib/api'
-import { hasPermission } from '@/utils/permissions'
-import { Role, ApprovalStatus } from '@orm'
-import storageKeys from '@/data/storageKeys'
+import Link from 'next/link'
+import { Suspense, useState } from 'react'
+import NoListingsFound from '@/app/listings/components/NoListingsFound'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
-import useLocalStorage from '@/hooks/useLocalStorage'
-import useListingsState from './hooks/useListingsState'
 import {
   PerformanceBadge,
   Pagination,
@@ -24,19 +19,24 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui'
+import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+import useEmulatorLogos from '@/hooks/useEmulatorLogos'
+import useLocalStorage from '@/hooks/useLocalStorage'
+import { api } from '@/lib/api'
+import { type RouterInput } from '@/types/trpc'
+import { hasPermission } from '@/utils/permissions'
+import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
+import useListingsState from './hooks/useListingsState'
 import {
   type ListingsFilter,
   type SortDirection,
   type SortField,
 } from './types'
-import { type RouterInput } from '@/types/trpc'
-import useEmulatorLogos from '@/hooks/useEmulatorLogos'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 
 const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -227,6 +227,9 @@ function ListingsPage() {
         onSearchChange={handleSearchChange}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        userPreferences={userPreferencesQuery.data}
+        shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
+        userDeviceIds={userDeviceIds}
       />
 
       {/* Main Content - Listings */}
@@ -236,12 +239,6 @@ function ListingsPage() {
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Game Listings
             </h1>
-            {shouldUseUserDeviceFilter && (
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                Filtered by your preferred devices ({userDeviceIds.length}{' '}
-                devices)
-              </p>
-            )}
           </div>
           <div className="flex items-center gap-3">
             <DisplayToggleButton

@@ -1,7 +1,7 @@
 import { createTRPCRouter } from '@/server/api/trpc'
-import { coreRouter } from './listings/core'
-import { commentsRouter } from './listings/comments'
 import { adminRouter } from './listings/admin'
+import { commentsRouter } from './listings/comments'
+import { coreRouter } from './listings/core'
 
 export const listingsRouter = createTRPCRouter({
   // Core listing operations

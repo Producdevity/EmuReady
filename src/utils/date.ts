@@ -1,6 +1,6 @@
-import { first } from 'remeda'
-import { de, enUS, es, fr, nl, type Locale } from 'date-fns/locale'
 import { format, formatDistanceToNow } from 'date-fns'
+import { de, enUS, es, fr, nl, type Locale } from 'date-fns/locale'
+import { first } from 'remeda'
 
 const localeMap: Record<string, Locale> = {
   de: de,

@@ -1,11 +1,10 @@
+import { sendGAEvent } from '@next/third-parties/google'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import analytics from './analytics'
 
 vi.mock('@next/third-parties/google', () => ({
   sendGAEvent: vi.fn(),
 }))
-
-import { sendGAEvent } from '@next/third-parties/google'
 
 describe('analytics', () => {
   beforeEach(() => {

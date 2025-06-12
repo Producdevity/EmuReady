@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import sanitizeForClient from './sanitizeForClient'
 import { Role } from '@orm'
+import sanitizeForClient from './sanitizeForClient'
 
 describe('sanitizeForClient', () => {
   it('should handle primitive values', () => {

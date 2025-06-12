@@ -1,5 +1,3 @@
-import { type Prisma } from '@orm'
-import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateCommentSchema,
@@ -14,6 +12,8 @@ import {
   publicProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
+import { canDeleteComment, canEditComment } from '@/utils/permissions'
+import { type Prisma } from '@orm'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure

@@ -1,5 +1,5 @@
-import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server'
 import { type AppRouter } from '@/server/api/root'
+import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server'
 
 /**
  * Inference helper for outputs

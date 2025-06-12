@@ -1,10 +1,10 @@
-import { type CSSProperties, Fragment, type ReactNode } from 'react'
-import { GripVertical, Pencil, Trash2 } from 'lucide-react'
-import { CSS } from '@dnd-kit/utilities'
-import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
-import { Badge, Button } from '@/components/ui'
 import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical, Pencil, Trash2 } from 'lucide-react'
+import { type CSSProperties, Fragment, type ReactNode } from 'react'
+import { Badge, Button } from '@/components/ui'
 import { type Maybe } from '@/types/utils'
+import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
 
 interface Props {
   field: CustomFieldDefinition

@@ -1,10 +1,10 @@
 'use client'
 
 import Image from 'next/image'
-import { isArray, isString } from 'remeda'
 import { useParams } from 'next/navigation'
-import { api } from '@/lib/api'
+import { isArray, isString } from 'remeda'
 import { PageLoading } from '@/components/ui'
+import { api } from '@/lib/api'
 import UserDetailsContributions from './components/UserDetailsContributions'
 import UserDetailsListings from './components/UserDetailsListings'
 import UserDetailsPageError from './components/UserDetailsPageError'

@@ -1,13 +1,13 @@
 'use client'
 
+import { type Control } from 'react-hook-form'
+import { isEmpty, isString } from 'remeda'
+import CustomFieldTypeBoolean from '@/app/listings/new/components/custom-fields/CustomFieldTypeBoolean'
 import CustomFieldTypeSelect from '@/app/listings/new/components/custom-fields/CustomFieldTypeSelect'
 import CustomFieldTypeText from '@/app/listings/new/components/custom-fields/CustomFieldTypeText'
 import CustomFieldTypeTextArea from '@/app/listings/new/components/custom-fields/CustomFieldTypeTextArea'
-import CustomFieldTypeBoolean from '@/app/listings/new/components/custom-fields/CustomFieldTypeBoolean'
-import { type Control } from 'react-hook-form'
-import { isEmpty, isString } from 'remeda'
-import { CustomFieldType } from '@orm'
 import { type RouterInput } from '@/types/trpc'
+import { CustomFieldType } from '@orm'
 import getCustomFieldTypeIcon from '../utils/getCustomFieldTypeIcon'
 
 type ListingFormValues = RouterInput['listings']['create']

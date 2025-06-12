@@ -1,8 +1,8 @@
 'use client'
 
-import useMounted from '@/hooks/useMounted'
 import { useTheme } from 'next-themes'
 import themes from '@/data/themes'
+import useMounted from '@/hooks/useMounted'
 
 interface Props {
   className?: string

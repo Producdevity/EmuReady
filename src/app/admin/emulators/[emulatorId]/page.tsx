@@ -1,9 +1,10 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
-import { api } from '@/lib/api'
-import { Button } from '@/components/ui'
 import { ArrowLeft } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { Button } from '@/components/ui'
+import { api } from '@/lib/api'
+import EmulatorEditForm from './components/EmulatorEditForm'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
 
 function EditEmulatorPage() {
@@ -80,6 +81,14 @@ function EditEmulatorPage() {
       </h1>
 
       <div className="space-y-10">
+        {/* Section for Emulator Details */}
+        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
+            Emulator Details
+          </h2>
+          <EmulatorEditForm emulator={emulator} />
+        </section>
+
         {/* Section for Supported Systems */}
         <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
@@ -92,15 +101,6 @@ function EditEmulatorPage() {
           />
         </section>
 
-        {/* Placeholder for future sections like editing emulator name. */}
-        {/*
-        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
-            Emulator Details
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">Edit name, etc. here...</p>
-        </section>
-        */}
         <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
             Custom Fields

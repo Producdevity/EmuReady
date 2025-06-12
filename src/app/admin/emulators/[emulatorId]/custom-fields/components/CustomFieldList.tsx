@@ -1,7 +1,5 @@
 'use client'
 
-import { useState, useEffect, type ReactNode } from 'react'
-import { GripVertical, X, Check, Undo } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -17,12 +15,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import toast from '@/lib/toast'
-import { api } from '@/lib/api'
-import { type CustomFieldDefinition, type Prisma } from '@orm'
-import { type Maybe } from '@/types/utils'
+import { GripVertical, X, Check, Undo } from 'lucide-react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { Button, Badge, useConfirmDialog } from '@/components/ui'
+import { api } from '@/lib/api'
+import toast from '@/lib/toast'
+import { type Maybe } from '@/types/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type CustomFieldDefinition, type Prisma } from '@orm'
 import CustomFieldSortableRow from './CustomFieldSortableRow'
 
 interface CustomFieldOptionUI {

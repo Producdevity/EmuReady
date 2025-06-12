@@ -1,9 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui'
 import { ArrowLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui'
 
 function SearchHeader() {
   const router = useRouter()

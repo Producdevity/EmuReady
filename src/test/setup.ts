@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
-import { vi, beforeEach, afterEach } from 'vitest'
-import { cleanup, configure } from '@testing-library/react'
 import { prettyDOM } from '@testing-library/dom'
+import { cleanup, configure } from '@testing-library/react'
+import { vi, beforeEach, afterEach } from 'vitest'
 
 // This file is imported in vitest.config.mts
 // It sets up the jest-dom matchers for better assertions in tests

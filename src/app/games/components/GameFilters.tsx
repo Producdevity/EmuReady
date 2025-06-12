@@ -1,8 +1,8 @@
 'use client'
 
-import { Input, SelectInput } from '@/components/ui'
 import { Joystick, Search } from 'lucide-react'
 import { type ChangeEvent, type SyntheticEvent } from 'react'
+import { Input, SelectInput } from '@/components/ui'
 
 interface Props {
   search: string

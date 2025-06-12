@@ -1,5 +1,5 @@
-import getSafePlaceholderImageUrl from './getSafePlaceholderImageUrl'
 import { type Nullable } from '@/types/utils'
+import getSafePlaceholderImageUrl from './getSafePlaceholderImageUrl'
 
 function getImageUrl(url: Nullable<string>, title?: string): string {
   if (!url) return getSafePlaceholderImageUrl(title)

@@ -1,9 +1,3 @@
-import { useState } from 'react'
-import { Modal, Button, ApprovalStatusBadge } from '@/components/ui'
-import { formatDate, formatTimeAgo } from '@/utils/date'
-import { type ProcessingAction } from '@/app/admin/games/approvals/page'
-import { type Nullable } from '@/types/utils'
-import { type RouterOutput } from '@/types/trpc'
 import {
   CheckCircle,
   XCircle,
@@ -15,10 +9,16 @@ import {
   Copy,
   Eye,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import Link from 'next/link'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { type ProcessingAction } from '@/app/admin/games/approvals/page'
+import { Modal, Button, ApprovalStatusBadge } from '@/components/ui'
+import { cn } from '@/lib/utils'
+import { type RouterOutput } from '@/types/trpc'
+import { type Nullable } from '@/types/utils'
+import { formatDate, formatTimeAgo } from '@/utils/date'
 
 type Game = RouterOutput['games']['getPendingGames']['games'][number]
 

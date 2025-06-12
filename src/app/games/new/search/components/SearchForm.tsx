@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Button, Input, Autocomplete } from '@/components/ui'
 import { Search, Info } from 'lucide-react'
+import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { Button, Input, Autocomplete } from '@/components/ui'
 import { api } from '@/lib/api'
 import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
 

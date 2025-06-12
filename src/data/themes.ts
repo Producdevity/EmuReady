@@ -1,5 +1,5 @@
-import type { ComponentType } from 'react'
 import { Sun, Moon, SunMoon } from 'lucide-react'
+import type { ComponentType } from 'react'
 
 export type ThemeValue = 'system' | 'light' | 'dark'
 

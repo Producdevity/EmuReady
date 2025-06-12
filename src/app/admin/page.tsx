@@ -1,9 +1,9 @@
 import { type Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Role } from '@orm'
-import { hasPermission } from '@/utils/permissions'
 import { getCurrentUser } from '@/server/utils/auth'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import { adminNavItems, superAdminNavItems } from './data'
 
 export const metadata: Metadata = {

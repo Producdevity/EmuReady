@@ -1,11 +1,11 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { join } from 'path'
+import { auth } from '@clerk/nextjs/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/server/db'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 function isImage(file: File) {
   return file.type.startsWith('image/')

@@ -1,3 +1,9 @@
+import { AppError } from '@/lib/errors'
+import {
+  SearchGameImagesSchema,
+  SearchGamesSchema,
+  GetGameImagesSchema,
+} from '@/schemas/rawg'
 import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
 import {
   searchGameImages,
@@ -5,12 +11,6 @@ import {
   getGameImages,
   RawgError,
 } from '@/server/rawg'
-import { AppError } from '@/lib/errors'
-import {
-  SearchGameImagesSchema,
-  SearchGamesSchema,
-  GetGameImagesSchema,
-} from '@/schemas/rawg'
 import type { GameImageOption } from '@/types/rawg'
 
 export const rawgRouter = createTRPCRouter({

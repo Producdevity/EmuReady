@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, type ChangeEvent } from 'react'
 import Image from 'next/image'
+import { useState, useRef, type ChangeEvent } from 'react'
 import { uploadProfileImage } from '@/rest/user'
 import getErrorMessage from '@/utils/getErrorMessage'
 

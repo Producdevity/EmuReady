@@ -1,5 +1,3 @@
-import type { Prisma } from '@orm'
-import { ApprovalStatus } from '@orm'
 import { ResourceError } from '@/lib/errors'
 import {
   ApproveListingSchema,
@@ -14,6 +12,8 @@ import {
   adminProcedure,
   superAdminProcedure,
 } from '@/server/api/trpc'
+import { ApprovalStatus } from '@orm'
+import type { Prisma } from '@orm'
 
 export const adminRouter = createTRPCRouter({
   getPending: adminProcedure

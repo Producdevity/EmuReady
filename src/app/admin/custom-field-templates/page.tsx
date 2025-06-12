@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { api } from '@/lib/api'
-import { Button, LoadingSpinner } from '@/components/ui'
 import { PlusCircle } from 'lucide-react'
-import CustomFieldTemplateList from './components/CustomFieldTemplateList'
+import { useState } from 'react'
+import { Button, LoadingSpinner } from '@/components/ui'
+import { api } from '@/lib/api'
 import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormModal'
+import CustomFieldTemplateList from './components/CustomFieldTemplateList'
 
 function CustomFieldTemplatesPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Database, Zap } from 'lucide-react'
+import { useState } from 'react'
+import { Toggle } from '@/components/ui'
 import RawgImageSelector from './RawgImageSelector'
 import TGDBImageSelector from './TGDBImageSelector'
-import { Toggle } from '@/components/ui'
 
 interface Props {
   gameTitle?: string
@@ -58,7 +58,7 @@ function ImageSelectorSwitcher(props: Props) {
     <div className={props.className}>
       {/* Service Selector */}
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-orange-500" />
@@ -86,7 +86,7 @@ function ImageSelectorSwitcher(props: Props) {
             </div>
           </div>
 
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
             {selectedService === imageServiceMap.rawg
               ? 'Using RAWG.io for game images'
               : 'Using TheGamesDB for game images'}

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
-import { api } from '@/lib/api'
-import { Button, Input, Modal } from '@/components/ui'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
+import { useState, useEffect, type FormEvent } from 'react'
+import { Button, Input, Modal } from '@/components/ui'
+import { api } from '@/lib/api'
 import { CustomFieldType } from '@orm'
 
 interface TemplateField {

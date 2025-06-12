@@ -1,10 +1,10 @@
 'use client'
 
 import { notFound, useParams } from 'next/navigation'
-import { api } from '@/lib/api'
 import { LoadingSpinner } from '@/components/ui'
-import ListingDetailsClient from './components/ListingDetailsClient'
+import { api } from '@/lib/api'
 import sanitizeForClient from '@/utils/sanitizeForClient'
+import ListingDetailsClient from './components/ListingDetailsClient'
 
 function ListingDetailsPage() {
   const params = useParams()

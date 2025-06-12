@@ -1,5 +1,5 @@
-import { type Role } from '@orm'
 import { pipe, map, split, capitalize, toLowerCase, join } from 'remeda'
+import { type Role } from '@orm'
 
 /**
  * Formats a user role by replacing underscores with spaces,

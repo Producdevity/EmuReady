@@ -1,15 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import Image from 'next/image'
 import { SignUpButton } from '@clerk/nextjs'
-import getImageUrl from '@/utils/getImageUrl'
-import {
-  SuccessRateBar,
-  LoadingSpinner,
-  PerformanceBadge,
-} from '@/components/ui'
-import { api } from '@/lib/api'
 import {
   ThumbsUp,
   MessageCircle,
@@ -20,6 +11,15 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import {
+  SuccessRateBar,
+  LoadingSpinner,
+  PerformanceBadge,
+} from '@/components/ui'
+import { api } from '@/lib/api'
+import getImageUrl from '@/utils/getImageUrl'
 
 function Home() {
   const listingsQuery = api.listings.featured.useQuery()

@@ -1,6 +1,6 @@
-import type { RouterOutput } from '@/types/trpc'
-import { formatDate } from '@/utils/date'
 import Link from 'next/link'
+import { formatDate } from '@/utils/date'
+import type { RouterOutput } from '@/types/trpc'
 
 type UserProfile = RouterOutput['users']['getUserById']
 type UserListing = NonNullable<UserProfile>['listings'][0]

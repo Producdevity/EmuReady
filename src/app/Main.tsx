@@ -1,8 +1,8 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { type PropsWithChildren, type ErrorInfo } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { usePathname } from 'next/navigation'
 import { ErrorFallback } from '@/components/ui'
 
 const handleError = (error: Error, info: ErrorInfo) => {

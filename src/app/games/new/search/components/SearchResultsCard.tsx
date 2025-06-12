@@ -1,10 +1,10 @@
-import { memo } from 'react'
 import { motion } from 'framer-motion'
-import { Button, OptimizedImage } from '@/components/ui'
 import { Eye, ImageIcon, Plus, CheckCircle, ExternalLink } from 'lucide-react'
+import { memo } from 'react'
+import { Button, OptimizedImage } from '@/components/ui'
 import { formatYear } from '@/utils/date'
-import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 import { extractBoxartUrl, formatPlatformName } from '../utils/boxartHelpers'
+import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 interface Props {
   game: TGDBGame

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { CustomFieldType } from '@orm'
 import { type RouterInput } from '@/types/trpc'
+import { CustomFieldType } from '@orm'
 import validateCustomFields from './validateCustomFields'
 
 // Mock toast

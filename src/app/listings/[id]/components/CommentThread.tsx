@@ -1,10 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
-import CommentForm from './CommentForm'
-import { api } from '@/lib/api'
 import {
   MessageCircle,
   Pencil,
@@ -13,11 +10,14 @@ import {
   ChevronUp,
   ChevronRight,
 } from 'lucide-react'
+import { useState } from 'react'
+import { useConfirmDialog } from '@/components/ui'
+import { api } from '@/lib/api'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
-import { useConfirmDialog } from '@/components/ui'
-import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { type Role } from '@orm'
+import CommentForm from './CommentForm'
 
 type CommentsData = RouterOutput['listings']['getSortedComments']
 type TopLevelComment = CommentsData['comments'][number]

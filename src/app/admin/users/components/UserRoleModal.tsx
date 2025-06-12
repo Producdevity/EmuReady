@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
 import { ShieldCheck } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui'
 import { api } from '@/lib/api'
-import { Role } from '@orm'
 import toast from '@/lib/toast'
-import UserRoleButton from './UserRoleButton'
 import { type RouterInput } from '@/types/trpc'
-import { hasPermission } from '@/utils/permissions'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
+import UserRoleButton from './UserRoleButton'
 
 interface User {
   id: string

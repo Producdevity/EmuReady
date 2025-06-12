@@ -1,5 +1,5 @@
-import { ApprovalStatus } from '@orm'
 import { z } from 'zod'
+import { ApprovalStatus } from '@orm'
 
 export const CreateListingSchema = z.object({
   gameId: z.string().uuid(),

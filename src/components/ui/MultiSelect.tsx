@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { ChevronDown, X } from 'lucide-react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 interface Option {

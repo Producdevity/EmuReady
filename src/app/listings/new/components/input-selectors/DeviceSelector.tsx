@@ -1,10 +1,10 @@
 'use client'
 
-import { Controller } from 'react-hook-form'
-import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { MonitorSmartphone, Info } from 'lucide-react'
-import { type RouterInput } from '@/types/trpc'
+import { Controller } from 'react-hook-form'
 import { type Control } from 'react-hook-form'
+import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
+import { type RouterInput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 
 type ListingFormValues = RouterInput['listings']['create']

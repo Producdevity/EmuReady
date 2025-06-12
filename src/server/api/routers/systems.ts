@@ -1,9 +1,3 @@
-import type { Prisma } from '@orm'
-import {
-  adminProcedure,
-  createTRPCRouter,
-  publicProcedure,
-} from '@/server/api/trpc'
 import { ResourceError } from '@/lib/errors'
 import {
   GetSystemsSchema,
@@ -12,6 +6,12 @@ import {
   UpdateSystemSchema,
   DeleteSystemSchema,
 } from '@/schemas/system'
+import {
+  adminProcedure,
+  createTRPCRouter,
+  publicProcedure,
+} from '@/server/api/trpc'
+import type { Prisma } from '@orm'
 
 export const systemsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {

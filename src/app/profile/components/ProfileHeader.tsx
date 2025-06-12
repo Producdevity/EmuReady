@@ -1,13 +1,13 @@
 'use client'
 
+import { type useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import { Edit, Shield, Calendar, User as UserIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { type RouterOutput } from '@/types/trpc'
 import { formatMonthYear } from '@/utils/date'
 import { formatUserRole } from '@/utils/format'
 import { type Role } from '@orm'
-import { type useUser } from '@clerk/nextjs'
-import { type RouterOutput } from '@/types/trpc'
 import ProfileUpload from './ProfileUpload'
 
 const roleBadgeColorMap: Record<Role | 'UNKNOWN', string> = {

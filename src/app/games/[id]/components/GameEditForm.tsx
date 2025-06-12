@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
-import { api } from '@/lib/api'
-import { Button, Input, RawgImageSelector } from '@/components/ui'
 import { Pencil } from 'lucide-react'
-import { sanitizeString } from '@/utils/validation'
+import { useRouter } from 'next/navigation'
+import { useState, type FormEvent } from 'react'
+import { Button, Input } from '@/components/ui'
+import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
+import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
+import { sanitizeString } from '@/utils/validation'
 import { ApprovalStatus, Role } from '@orm'
 
 interface Props {
@@ -121,7 +122,7 @@ function GameEditForm(props: Props) {
 
       {open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-xl w-full">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Game</h2>
               <Button
@@ -150,7 +151,7 @@ function GameEditForm(props: Props) {
               </div>
 
               <div className="space-y-2">
-                <RawgImageSelector
+                <ImageSelectorSwitcher
                   gameTitle={title}
                   systemName={props.gameData.system?.name}
                   selectedImageUrl={imageUrl}

@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Badge } from '@/components/ui'
-import { ApprovalStatusBadge } from '@/components/ui'
+import { Badge, ApprovalStatusBadge } from '@/components/ui'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { type Game, ApprovalStatus } from '@orm'
 

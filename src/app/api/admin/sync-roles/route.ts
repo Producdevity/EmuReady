@@ -1,9 +1,9 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/server/db'
 import { syncAllRolesToClerk } from '@/server/utils/roleSync'
 import { Role } from '@orm'
+import type { NextRequest } from 'next/server'
 
 export async function POST(_request: NextRequest) {
   try {

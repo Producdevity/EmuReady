@@ -1,6 +1,6 @@
+import { auth } from '@clerk/nextjs/server'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { type NextRequest } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { appRouter } from '@/server/api/root'
 import { createInnerTRPCContext } from '@/server/api/trpc'
 import { prisma } from '@/server/db'

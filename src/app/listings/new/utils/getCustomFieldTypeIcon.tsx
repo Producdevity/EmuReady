@@ -1,4 +1,3 @@
-import { CustomFieldType } from '@orm'
 import {
   CaseSensitive,
   CheckSquare,
@@ -6,6 +5,7 @@ import {
   LinkIcon,
   ListChecks,
 } from 'lucide-react'
+import { CustomFieldType } from '@orm'
 import type { ReactNode } from 'react'
 
 const iconMap: Record<CustomFieldType, ReactNode> = {

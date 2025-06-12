@@ -1,6 +1,6 @@
 import { Modal, Button, Input } from '@/components/ui'
-import { ApprovalStatus } from '@orm'
 import { type RouterOutput } from '@/types/trpc'
+import { ApprovalStatus } from '@orm'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 

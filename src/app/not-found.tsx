@@ -1,10 +1,10 @@
 'use client'
 
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
+import { House, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
-import { House, ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {
   const router = useRouter()

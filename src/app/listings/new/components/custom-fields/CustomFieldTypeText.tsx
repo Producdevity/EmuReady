@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react'
-import { cn } from '@/lib/utils'
 import { Controller, type Control } from 'react-hook-form'
 import {
   type ValidationRules,
@@ -7,6 +6,7 @@ import {
 } from '@/app/listings/new/components/CustomFieldRenderer'
 import { type ListingFormValues } from '@/app/listings/new/page'
 import { Input } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface Props {
   fieldDef: CustomFieldDefinitionWithOptions

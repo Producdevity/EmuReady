@@ -1,5 +1,5 @@
-import { Role } from '@orm'
 import { z } from 'zod'
+import { Role } from '@orm'
 
 export const UserSortField = z.enum([
   'name',
@@ -33,6 +33,7 @@ export const UpdateUserSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   profileImage: z.string().url().optional(),
+  bio: z.string().max(500).optional(),
 })
 
 export const UpdateUserRoleSchema = z.object({

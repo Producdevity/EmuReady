@@ -1,5 +1,8 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import {
   useState,
   useEffect,
@@ -7,16 +10,13 @@ import {
   type SyntheticEvent,
   type ChangeEvent,
 } from 'react'
-import Link from 'next/link'
-import { useUser } from '@clerk/nextjs'
-import { useSearchParams } from 'next/navigation'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import { api } from '@/lib/api'
-import { Role } from '@orm'
-import GameFilters from './components/GameFilters'
-import GameCard from './components/GameCard'
 import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
+import GameCard from './components/GameCard'
+import GameFilters from './components/GameFilters'
 
 function GamesPage() {
   const { user } = useUser()

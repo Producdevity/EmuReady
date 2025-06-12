@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect, type KeyboardEvent } from 'react'
-import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
-import { api } from '@/lib/api'
+import { useState, useEffect, type KeyboardEvent } from 'react'
 import {
   Button,
   LoadingSpinner,
@@ -12,9 +10,11 @@ import {
   Input,
   Toggle,
 } from '@/components/ui'
+import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { api } from '@/lib/api'
+import { getImageDisplayName } from '@/lib/rawg-utils'
 import { type GameImageOption } from '@/types/rawg'
 import getImageUrl from '@/utils/getImageUrl'
-import { getImageDisplayName } from '@/lib/rawg-utils'
 
 interface Props {
   gameTitle?: string

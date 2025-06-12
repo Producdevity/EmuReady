@@ -1,12 +1,12 @@
 'use client'
 
-import { Controller } from 'react-hook-form'
-import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { Gamepad2, AlertCircle } from 'lucide-react'
+import { Controller } from 'react-hook-form'
+import { type Control, type UseFormSetValue } from 'react-hook-form'
 import GitHubIcon from '@/components/icons/GitHubIcon'
+import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
-import { type Control, type UseFormSetValue } from 'react-hook-form'
 
 type ListingFormValues = RouterInput['listings']['create']
 

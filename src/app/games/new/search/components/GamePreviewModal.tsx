@@ -1,10 +1,10 @@
 'use client'
 
-import { Modal, Button, OptimizedImage } from '@/components/ui'
 import { Calendar, Monitor, Users, Plus, ImageIcon } from 'lucide-react'
+import { Modal, Button, OptimizedImage } from '@/components/ui'
 import { formatYear } from '@/utils/date'
-import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 import { extractBoxartUrl } from '../utils/boxartHelpers'
+import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 interface GamePreviewModalProps {
   game: TGDBGame | null

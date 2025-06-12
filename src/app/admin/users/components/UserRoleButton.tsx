@@ -1,8 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Role } from '@orm'
 import { cn } from '@/lib/utils'
+import { Role } from '@orm'
 
 interface Props {
   role: Role

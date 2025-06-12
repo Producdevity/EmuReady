@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { Eye, CheckCircle, XCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 import {
   LoadingSpinner,
   Button,
@@ -12,15 +12,15 @@ import {
   SortableHeader,
   AdminTableContainer,
 } from '@/components/ui'
-import GameDetailsModal from './components/GameDetailsModal'
-import ConfirmationModal from './components/ConfirmationModal'
+import useAdminTable from '@/hooks/useAdminTable'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { ApprovalStatus } from '@orm'
+import { type Nullable } from '@/types/utils'
 import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { type Nullable } from '@/types/utils'
-import useAdminTable from '@/hooks/useAdminTable'
+import { ApprovalStatus } from '@orm'
+import ConfirmationModal from './components/ConfirmationModal'
+import GameDetailsModal from './components/GameDetailsModal'
 
 export type ProcessingAction = 'approve' | 'reject'
 type GameSortField = 'title' | 'submittedAt' | 'system.name'

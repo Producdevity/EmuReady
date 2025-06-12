@@ -1,12 +1,12 @@
 'use client'
 
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Card, Badge } from '@/components/ui'
-import VoteButtons from './VoteButtons'
-import CommentThread from './CommentThread'
 import { api } from '@/lib/api'
+import CommentThread from './CommentThread'
+import VoteButtons from './VoteButtons'
 
 export interface Listing {
   id: string

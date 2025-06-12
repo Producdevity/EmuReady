@@ -1,13 +1,13 @@
-import superjson from 'superjson'
-import { ZodError } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { initTRPC } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
-import { hasPermission } from '@/utils/permissions'
-import { prisma } from '@/server/db'
-import { Role } from '@orm'
+import superjson from 'superjson'
+import { ZodError } from 'zod'
 import { AppError } from '@/lib/errors'
+import { prisma } from '@/server/db'
 import { type Nullable } from '@/types/utils'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 type User = {
   id: string

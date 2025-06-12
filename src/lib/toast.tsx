@@ -1,6 +1,6 @@
+import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { type ExternalToast, toast as sonnerToast } from 'sonner'
-import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react'
 
 const DEFAULT_TOAST_OPTIONS: ExternalToast = {
   duration: 3000,

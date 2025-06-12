@@ -1,6 +1,3 @@
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
-import { prisma } from '@/server/db'
-import { CustomFieldType, Prisma, Role } from '@orm'
 import { AppError, ResourceError, ValidationError } from '@/lib/errors'
 import {
   CreateCustomFieldDefinitionSchema,
@@ -10,7 +7,10 @@ import {
   DeleteCustomFieldDefinitionSchema,
   UpdateCustomFieldDefinitionOrderSchema,
 } from '@/schemas/customFieldDefinition'
+import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { prisma } from '@/server/db'
 import { hasPermission } from '@/utils/permissions'
+import { CustomFieldType, Prisma, Role } from '@orm'
 
 type CustomFieldOptionArray = {
   value: string

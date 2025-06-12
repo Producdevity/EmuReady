@@ -1,5 +1,5 @@
-import type { BadgeVariant } from '@/components/ui/Badge'
 import { ApprovalStatus, Role } from '@orm'
+import type { BadgeVariant } from '@/components/ui/Badge'
 
 const approvalStatusVariantsMap: Record<ApprovalStatus, BadgeVariant> = {
   [ApprovalStatus.APPROVED]: 'success',

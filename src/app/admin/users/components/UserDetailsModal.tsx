@@ -1,7 +1,3 @@
-import { Modal, Button, Badge, LoadingSpinner } from '@/components/ui'
-import toast from '@/lib/toast'
-import { formatDate, formatTimeAgo } from '@/utils/date'
-import { getRoleVariant } from '@/utils/badgeColors'
 import {
   User,
   ShieldUser,
@@ -12,12 +8,16 @@ import {
   Copy,
   ExternalLink,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import Link from 'next/link'
-import { api } from '@/lib/api'
-import getErrorMessage from '@/utils/getErrorMessage'
-import { type Nullable } from '@/types/utils'
 import Image from 'next/image'
+import Link from 'next/link'
+import { Modal, Button, Badge, LoadingSpinner } from '@/components/ui'
+import { api } from '@/lib/api'
+import toast from '@/lib/toast'
+import { cn } from '@/lib/utils'
+import { type Nullable } from '@/types/utils'
+import { getRoleVariant } from '@/utils/badgeColors'
+import { formatDate, formatTimeAgo } from '@/utils/date'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 interface Props {
   userId: string | null

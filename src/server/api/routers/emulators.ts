@@ -1,10 +1,3 @@
-import type { Prisma } from '@orm'
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-  superAdminProcedure,
-} from '@/server/api/trpc'
 import { ResourceError, AppError } from '@/lib/errors'
 import {
   GetEmulatorsSchema,
@@ -14,6 +7,13 @@ import {
   DeleteEmulatorSchema,
   UpdateSupportedSystemsSchema,
 } from '@/schemas/emulator'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+  superAdminProcedure,
+} from '@/server/api/trpc'
+import type { Prisma } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
   get: publicProcedure
@@ -104,21 +104,27 @@ export const emulatorsRouter = createTRPCRouter({
   update: adminProcedure
     .input(UpdateEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, name } = input
-
-      const emulator = await ctx.prisma.emulator.findUnique({ where: { id } })
+      const emulator = await ctx.prisma.emulator.findUnique({
+        where: { id: input.id },
+      })
 
       if (!emulator) return ResourceError.emulator.notFound()
 
-      if (name !== emulator.name) {
+      if (input.name !== emulator.name) {
         const existing = await ctx.prisma.emulator.findUnique({
-          where: { name },
+          where: { name: input.name },
         })
 
-        if (existing) ResourceError.emulator.alreadyExists(name)
+        if (existing) ResourceError.emulator.alreadyExists(input.name)
       }
 
-      return ctx.prisma.emulator.update({ where: { id }, data: { name } })
+      return ctx.prisma.emulator.update({
+        where: { id: input.id },
+        data: {
+          name: input.name,
+          logo: input.logo || null,
+        },
+      })
     }),
 
   delete: adminProcedure

@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { api } from '@/lib/api'
 import { Button, Modal } from '@/components/ui'
-import { CustomFieldType } from '@orm'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { CustomFieldType } from '@orm'
 
 interface Props {
   emulatorId: string

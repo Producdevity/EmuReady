@@ -1,8 +1,8 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 import { handleFileUpload } from '@/lib/upload'
 import getErrorMessage from '@/utils/getErrorMessage'
+import type { NextRequest } from 'next/server'
 
 // Set route to be dynamic to prevent caching
 export const dynamic = 'force-dynamic'

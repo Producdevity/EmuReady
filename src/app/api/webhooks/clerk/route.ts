@@ -1,9 +1,9 @@
 import { headers } from 'next/headers'
-import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { Webhook } from 'svix'
 import { prisma } from '@/server/db'
 import { Role } from '@orm'
+import type { NextRequest } from 'next/server'
 
 type ClerkWebhookEvent = {
   type: string

@@ -1,15 +1,15 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { notFound, useParams } from 'next/navigation'
-import Link from 'next/link'
-import { ApprovalStatus, Role } from '@orm'
-import { Badge, LoadingSpinner, PerformanceBadge } from '@/components/ui'
-import GameEditForm from './components/GameEditForm'
-import GameBoxartImage from './components/GameBoxartImage'
-import { hasPermission } from '@/utils/permissions'
-import { api } from '@/lib/api'
 import { ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
+import { notFound, useParams } from 'next/navigation'
+import { Badge, LoadingSpinner, PerformanceBadge } from '@/components/ui'
+import { api } from '@/lib/api'
+import { hasPermission } from '@/utils/permissions'
+import { ApprovalStatus, Role } from '@orm'
+import GameBoxartImage from './components/GameBoxartImage'
+import GameEditForm from './components/GameEditForm'
 
 function GameDetailsPage() {
   const params = useParams()

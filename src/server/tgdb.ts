@@ -1,12 +1,5 @@
 import axios, { type AxiosResponse } from 'axios'
-import type {
-  TGDBGamesByNameResponse,
-  TGDBGamesImagesResponse,
-  TGDBPlatformsResponse,
-  GameImageOption,
-} from '@/types/tgdb'
 import { isValidImageUrl } from '@/lib/tgdb-utils'
-import getErrorMessage from '@/utils/getErrorMessage'
 import {
   tgdbGamesCache,
   tgdbImagesCache,
@@ -16,6 +9,13 @@ import {
   createCacheKey,
 } from '@/server/utils/cache'
 import scoreGameMatch from '@/server/utils/scoreGameMatch'
+import getErrorMessage from '@/utils/getErrorMessage'
+import type {
+  TGDBGamesByNameResponse,
+  TGDBGamesImagesResponse,
+  TGDBPlatformsResponse,
+  GameImageOption,
+} from '@/types/tgdb'
 
 export class TGDBError extends Error {
   constructor(
@@ -349,15 +349,16 @@ function createBoxartImages(
 
   return boxartData
     .filter((boxart) => boxart.filename)
-    .map((boxart) => ({
+    .map((boxart, index) => ({
       filename: boxart.filename,
       url: `${gamesResponse.include!.boxart!.base_url.original}${boxart.filename}`,
       resolution: boxart.resolution,
       id: boxart.id,
+      index, // Add index to ensure uniqueness
     }))
     .filter((boxart) => isValidImageUrl(boxart.url))
     .map((boxart) => ({
-      id: `tgdb-${game.id}-boxart-${boxart.id}-${Date.now()}`,
+      id: `tgdb-${game.id}-boxart-${boxart.id}-${boxart.index}`,
       url: boxart.url,
       type: 'boxart' as const,
       source: 'tgdb' as const,
@@ -386,13 +387,14 @@ function createOtherImages(
 
   return gameImagesData
     .filter((image) => image.filename)
-    .map((image) => ({
+    .map((image, index) => ({
       ...image,
       url: `${imagesResponse.data.base_url!.original}${image.filename}`,
+      index, // Add index to ensure uniqueness
     }))
     .filter((image) => isValidImageUrl(image.url))
     .map((image) => ({
-      id: `tgdb-${game.id}-${image.type}-${image.id}-${Date.now()}`,
+      id: `tgdb-${game.id}-${image.type}-${image.id}-${image.index}`,
       url: image.url,
       type: image.type as GameImageOption['type'],
       source: 'tgdb' as const,

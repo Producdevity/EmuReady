@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import { Search, Settings, Pencil, Trash2 } from 'lucide-react'
-import { api } from '@/lib/api'
-import storageKeys from '@/data/storageKeys'
+import Link from 'next/link'
+import { useState } from 'react'
+import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
   Button,
   Input,
@@ -13,18 +14,17 @@ import {
   Pagination,
   useConfirmDialog,
 } from '@/components/ui'
+import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
+import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterInput } from '@/types/trpc'
-import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
-import Link from 'next/link'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 const actionButtonClasses =
   'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
@@ -218,11 +218,7 @@ function AdminEmulatorsPage() {
                           showLogo={
                             isEmulatorLogosHydrated && showEmulatorLogos
                           }
-                          size="sm"
                         />
-                        {(!showEmulatorLogos || !emulator.logo) && (
-                          <span>{emulator.name}</span>
-                        )}
                       </Link>
                     </td>
                   )}

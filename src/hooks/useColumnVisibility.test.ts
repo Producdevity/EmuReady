@@ -1,3 +1,4 @@
+import { renderHook, act } from '@testing-library/react'
 import {
   describe,
   it,
@@ -7,7 +8,6 @@ import {
   vi,
   type MockInstance,
 } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from './useColumnVisibility'

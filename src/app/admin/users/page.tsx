@@ -1,11 +1,10 @@
 'use client'
 
-import { getRoleVariant } from '@/utils/badgeColors'
-import { useState } from 'react'
 import { Search, ShieldUser, Trash2, User } from 'lucide-react'
-import { api } from '@/lib/api'
-import { isEmpty } from 'remeda'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { isEmpty } from 'remeda'
+import LoadingIcon from '@/components/icons/LoadingIcon'
 import {
   Button,
   Input,
@@ -14,20 +13,21 @@ import {
   ColumnVisibilityControl,
   AdminTableContainer,
   LoadingSpinner,
+  useConfirmDialog,
 } from '@/components/ui'
-import LoadingIcon from '@/components/icons/LoadingIcon'
-import UserRoleModal from './components/UserRoleModal'
-import UserDetailsModal from './components/UserDetailsModal'
-import { useConfirmDialog } from '@/components/ui'
-import useAdminTable from '@/hooks/useAdminTable'
-import { type RouterOutput, type RouterInput } from '@/types/trpc'
-import { type Role } from '@orm'
-import toast from '@/lib/toast'
 import storageKeys from '@/data/storageKeys'
+import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+import { api } from '@/lib/api'
+import toast from '@/lib/toast'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
+import { getRoleVariant } from '@/utils/badgeColors'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type Role } from '@orm'
+import UserDetailsModal from './components/UserDetailsModal'
+import UserRoleModal from './components/UserRoleModal'
 
 type User = RouterOutput['users']['getAll'][number]
 type UserSortField =

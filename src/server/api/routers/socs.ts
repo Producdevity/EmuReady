@@ -1,9 +1,3 @@
-import type { Prisma } from '@orm'
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from '@/server/api/trpc'
 import {
   GetSoCsSchema,
   GetSoCByIdSchema,
@@ -11,6 +5,12 @@ import {
   UpdateSoCSchema,
   DeleteSoCSchema,
 } from '@/schemas/soc'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+} from '@/server/api/trpc'
+import type { Prisma } from '@orm'
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {

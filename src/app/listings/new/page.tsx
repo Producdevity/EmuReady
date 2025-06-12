@@ -1,34 +1,34 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { type z } from 'zod'
 import { FileText } from 'lucide-react'
-import { api } from '@/lib/api'
-import { CustomFieldType } from '@orm'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useForm } from 'react-hook-form'
+import { type z } from 'zod'
 import {
   Input,
   Button,
   type AutocompleteOptionBase,
   LoadingSpinner,
 } from '@/components/ui'
-import toast from '@/lib/toast'
 import useMounted from '@/hooks/useMounted'
+import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { CustomFieldType } from '@orm'
 import CustomFieldRenderer from './components/CustomFieldRenderer'
 import FormValidationSummary from './components/FormValidationSummary'
-import GameSelector from './components/input-selectors/GameSelector'
-import EmulatorSelector from './components/input-selectors/EmulatorSelector'
 import DeviceSelector from './components/input-selectors/DeviceSelector'
+import EmulatorSelector from './components/input-selectors/EmulatorSelector'
+import GameSelector from './components/input-selectors/GameSelector'
 import PerformanceSelector from './components/input-selectors/PerformanceSelector'
-import listingFormSchema from './form-schemas/listingFormSchema'
 import createDynamicListingSchema, {
   type CustomFieldOptionUI,
   type CustomFieldDefinitionWithOptions,
 } from './form-schemas/createDynamicListingSchema'
+import listingFormSchema from './form-schemas/listingFormSchema'
 
 export type ListingFormValues = RouterInput['listings']['create']
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback } from 'react'
 import { useTheme } from 'next-themes'
+import { useCallback } from 'react'
 import themes, { type ThemeValue, type ThemeOption } from '@/data/themes'
 import useMounted from '@/hooks/useMounted'
 import { cn } from '@/lib/utils'

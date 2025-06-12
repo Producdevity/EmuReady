@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { isDefined } from 'remeda'
-import { cn } from '@/lib/utils'
-import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import AdminNavIcon from '@/app/admin/components/AdminNavIcon'
+import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface AdminNavItem {
   href: string

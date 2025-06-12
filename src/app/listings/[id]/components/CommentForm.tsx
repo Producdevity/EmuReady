@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { api } from '@/lib/api'
 import Link from 'next/link'
-import { sanitizeString } from '@/utils/validation'
+import { useState, type FormEvent } from 'react'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
+import { sanitizeString } from '@/utils/validation'
 
 interface Props {
   listingId: string

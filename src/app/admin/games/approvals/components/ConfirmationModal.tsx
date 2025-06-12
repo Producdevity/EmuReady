@@ -1,5 +1,5 @@
-import { Modal, Button } from '@/components/ui'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
+import { Modal, Button } from '@/components/ui'
 import { type Nullable } from '@/types/utils'
 
 interface Props {

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { api } from '@/lib/api'
 import { motion } from 'framer-motion'
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
+import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
 
 interface Props {

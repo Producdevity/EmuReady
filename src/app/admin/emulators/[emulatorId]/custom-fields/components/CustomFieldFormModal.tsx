@@ -1,15 +1,15 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { PlusCircle, Trash2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { PlusCircle, Trash2 } from 'lucide-react'
 import { Button, Input, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
-import { CustomFieldType } from '@orm'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { CustomFieldType } from '@orm'
 
 const customFieldOptionSchema = z.object({
   value: z.string().min(1, 'Value is required'),

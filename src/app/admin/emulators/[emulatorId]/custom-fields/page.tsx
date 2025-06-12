@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useParams } from 'next/navigation'
-import { api } from '@/lib/api'
-import { Button } from '@/components/ui'
 import { PlusCircle, Copy } from 'lucide-react'
-import CustomFieldList from './components/CustomFieldList'
-import CustomFieldFormModal from './components/CustomFieldFormModal'
+import { useParams } from 'next/navigation'
+import { useState } from 'react'
+import { Button } from '@/components/ui'
+import { api } from '@/lib/api'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
+import CustomFieldFormModal from './components/CustomFieldFormModal'
+import CustomFieldList from './components/CustomFieldList'
 
 export default function EmulatorCustomFieldsPage() {
   const params = useParams()

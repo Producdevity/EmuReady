@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
-import CustomFieldTypeSelect from './CustomFieldTypeSelect'
-import { CustomFieldType } from '@orm'
+import { describe, it, expect, vi } from 'vitest'
 import { type ListingFormValues } from '@/app/listings/new/page'
+import { CustomFieldType } from '@orm'
+import CustomFieldTypeSelect from './CustomFieldTypeSelect'
 
 vi.mock('@/components/ui', () => ({
   SelectInput: ({ label, options, value, onChange, leftIcon }: any) => (

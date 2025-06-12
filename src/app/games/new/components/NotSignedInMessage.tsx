@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui'
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
+import { Button } from '@/components/ui'
 
 function NotSignedInMessage() {
   return (

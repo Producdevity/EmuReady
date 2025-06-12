@@ -1,5 +1,5 @@
-import { NextResponse, type NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { handleFileUpload } from '@/lib/upload'
 import getErrorMessage from '@/utils/getErrorMessage'
 

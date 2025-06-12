@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import {
   searchGames,
@@ -11,7 +12,6 @@ import type {
   RawgGameDetails,
   RawgScreenshotsResponse,
 } from '@/types/rawg'
-import axios from 'axios'
 
 vi.mock('axios', () => ({
   default: {
