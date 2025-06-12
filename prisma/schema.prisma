@@ -31,20 +31,38 @@ enum ApprovalStatus {
 }
 
 model User {
-  id             String            @id @default(uuid())
-  clerkId        String            @unique
-  email          String            @unique
-  name           String?
-  profileImage   String?
-  role           Role              @default(USER)
-  createdAt      DateTime          @default(now())
-  comments       Comment[]
-  listings       Listing[]
-  processedListings Listing[] @relation("ListingsProcessedByAdmin")
-  submittedGames Game[]        @relation("GamesSubmittedByUser")
-  approvedGames  Game[]        @relation("GamesApprovedByAdmin")
-  votes          Vote[]
-  commentVotes   CommentVote[]
+  id                   String      @id @default(uuid())
+  clerkId              String      @unique
+  email                String      @unique
+  name                 String?
+  profileImage         String?
+  role                 Role        @default(USER)
+  createdAt            DateTime    @default(now())
+  // User preferences
+  defaultToUserDevices Boolean     @default(false)
+  notifyOnNewListings  Boolean     @default(true)
+  // Relations
+  comments             Comment[]
+  listings             Listing[]
+  processedListings    Listing[]   @relation("ListingsProcessedByAdmin")
+  submittedGames       Game[]      @relation("GamesSubmittedByUser")
+  approvedGames        Game[]      @relation("GamesApprovedByAdmin")
+  votes                Vote[]
+  commentVotes         CommentVote[]
+  devicePreferences    UserDevicePreference[]
+}
+
+model UserDevicePreference {
+  id        String @id  @default(uuid())
+  userId    String
+  deviceId  String
+  createdAt DateTime    @default(now())
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device    Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
 }
 
 model DeviceBrand {
@@ -74,6 +92,7 @@ model Device {
   brand     DeviceBrand @relation(fields: [brandId], references: [id])
   soc       SoC?        @relation(fields: [socId], references: [id])
   listings  Listing[]
+  userPreferences UserDevicePreference[]
 
   @@unique([brandId, modelName])
 }
@@ -162,6 +181,7 @@ model CustomFieldTemplateField {
 model Emulator {
   id                    String                  @id @default(uuid())
   name                  String                  @unique
+  logo                  String?                 // Logo filename (e.g., "aethersx2.png")
   listings              Listing[]
   customFieldDefinitions CustomFieldDefinition[]
   systems               System[]

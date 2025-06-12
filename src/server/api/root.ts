@@ -7,6 +7,7 @@ import { gamesRouter } from './routers/games'
 import { systemsRouter } from './routers/systems'
 import { emulatorsRouter } from './routers/emulators'
 import { usersRouter } from './routers/users'
+import { userPreferencesRouter } from './routers/userPreferences'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
 import { customFieldTemplateRouter } from './routers/customFieldTemplates'
 import { performanceScalesRouter } from './routers/performanceScales'
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   systems: systemsRouter,
   emulators: emulatorsRouter,
   users: usersRouter,
+  userPreferences: userPreferencesRouter,
   customFieldDefinitions: customFieldDefinitionRouter,
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,

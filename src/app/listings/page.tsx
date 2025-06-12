@@ -34,6 +34,9 @@ import {
   type SortField,
 } from './types'
 import { type RouterInput } from '@/types/trpc'
+import useEmulatorLogos from '@/hooks/useEmulatorLogos'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 
 const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -55,14 +58,32 @@ function ListingsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, false)
 
+  const {
+    showEmulatorLogos,
+    toggleEmulatorLogos,
+    isHydrated: isEmulatorLogosHydrated,
+  } = useEmulatorLogos()
+
   const columnVisibility = useColumnVisibility(LISTINGS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.listings,
   })
 
   const userQuery = api.users.me.useQuery()
+  const userPreferencesQuery = api.userPreferences.get.useQuery()
 
   const userRole = userQuery?.data?.role as Role | undefined
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
+
+  // Get user's preferred device IDs if defaultToUserDevices is enabled
+  const userDeviceIds = userPreferencesQuery.data?.defaultToUserDevices
+    ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
+    : []
+
+  // Apply user device filter if enabled and no manual device filter is set
+  const shouldUseUserDeviceFilter =
+    userPreferencesQuery.data?.defaultToUserDevices &&
+    listingsState.deviceIds.length === 0 &&
+    userDeviceIds.length > 0
 
   const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
@@ -74,7 +95,11 @@ function ListingsPage() {
     systemIds:
       listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
     deviceIds:
-      listingsState.deviceIds.length > 0 ? listingsState.deviceIds : undefined,
+      listingsState.deviceIds.length > 0
+        ? listingsState.deviceIds
+        : shouldUseUserDeviceFilter
+          ? userDeviceIds
+          : undefined,
     socIds: listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
     emulatorIds:
       listingsState.emulatorIds.length > 0
@@ -207,22 +232,32 @@ function ListingsPage() {
       {/* Main Content - Listings */}
       <section className="flex-1 overflow-x-auto py-6 px-4 md:pl-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            Game Listings
-          </h1>
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Game Listings
+            </h1>
+            {shouldUseUserDeviceFilter && (
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                Filtered by your preferred devices ({userDeviceIds.length}{' '}
+                devices)
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={() => setShowSystemIcons(!showSystemIcons)}
-            >
-              {isSystemIconsHydrated
-                ? showSystemIcons
-                  ? 'Show System Names'
-                  : 'Show System Icons'
-                : '...'}
-            </Button>
+            <DisplayToggleButton
+              showLogos={showSystemIcons}
+              onToggle={() => setShowSystemIcons(!showSystemIcons)}
+              isHydrated={isSystemIconsHydrated}
+              logoLabel="Show System Icons"
+              nameLabel="Show System Names"
+            />
+            <DisplayToggleButton
+              showLogos={showEmulatorLogos}
+              onToggle={toggleEmulatorLogos}
+              isHydrated={isEmulatorLogosHydrated}
+              logoLabel="Show Emulator Logos"
+              nameLabel="Show Emulator Names"
+            />
             <ColumnVisibilityControl
               columns={LISTINGS_COLUMNS}
               columnVisibility={columnVisibility}
@@ -365,7 +400,18 @@ function ListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.emulator?.name ?? 'N/A'}
+                        {listing.emulator ? (
+                          <EmulatorIcon
+                            name={listing.emulator.name}
+                            logo={listing.emulator.logo}
+                            showLogo={
+                              isEmulatorLogosHydrated && showEmulatorLogos
+                            }
+                            size="sm"
+                          />
+                        ) : (
+                          'N/A'
+                        )}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('performance') && (

@@ -8,6 +8,10 @@
 /test-results
 /tests/.auth
 
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+
 # Documentation files
 /docs
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Search, Settings, Pencil, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -11,19 +11,20 @@ import {
   ColumnVisibilityControl,
   SortableHeader,
   Pagination,
+  useConfirmDialog,
 } from '@/components/ui'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type RouterInput } from '@/types/trpc'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import Link from 'next/link'
-import { useConfirmDialog } from '@/components/ui'
-import { Search } from 'lucide-react'
-import { Settings } from 'lucide-react'
+import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
 
 const actionButtonClasses =
   'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
@@ -44,8 +45,14 @@ function AdminEmulatorsPage() {
     storageKey: storageKeys.columnVisibility.adminEmulators,
   })
 
+  const {
+    showEmulatorLogos,
+    toggleEmulatorLogos,
+    isHydrated: isEmulatorLogosHydrated,
+  } = useEmulatorLogos()
+
   const { data, isLoading, refetch } = api.emulators.get.useQuery({
-    search: table.search || undefined,
+    search: table.search ?? undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     page: table.page,
@@ -106,6 +113,13 @@ function AdminEmulatorsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <DisplayToggleButton
+            showLogos={showEmulatorLogos}
+            onToggle={toggleEmulatorLogos}
+            isHydrated={isEmulatorLogosHydrated}
+            logoLabel="Show Emulator Logos"
+            nameLabel="Show Emulator Names"
+          />
           <ColumnVisibilityControl
             columns={EMULATORS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -196,9 +210,19 @@ function AdminEmulatorsPage() {
                     <td className="px-4 py-2">
                       <Link
                         href={`/admin/emulators/${emulator.id}`}
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
                       >
-                        {emulator.name}
+                        <EmulatorIcon
+                          name={emulator.name}
+                          logo={emulator.logo}
+                          showLogo={
+                            isEmulatorLogosHydrated && showEmulatorLogos
+                          }
+                          size="sm"
+                        />
+                        {(!showEmulatorLogos || !emulator.logo) && (
+                          <span>{emulator.name}</span>
+                        )}
                       </Link>
                     </td>
                   )}

@@ -29,6 +29,15 @@ export function formatDate(dateString: Date | string) {
 }
 
 /**
+ * Formats a date to show the month and year
+ * @param date - Date object
+ */
+export function formatMonthYear(date: Date | string) {
+  const locale = getLocale()
+  return format(new Date(date), 'MMMM yyyy', { locale })
+}
+
+/**
  * Formats a date to show the full date and time
  * @param date - Date object or string
  */

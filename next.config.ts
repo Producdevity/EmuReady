@@ -41,6 +41,27 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    optimizePackageImports: [
+      '@clerk/nextjs',
+      '@tanstack/react-query',
+      'date-fns',
+      'framer-motion',
+      'lucide-react',
+    ],
+    optimizeCss: true,
+  },
+
+  serverExternalPackages: ['@prisma/client'],
+
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
 
   async headers() {
     return [

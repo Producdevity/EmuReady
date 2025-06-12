@@ -5,12 +5,12 @@ import Image from 'next/image'
 import { uploadProfileImage } from '@/rest/user'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface ProfileUploadProps {
+interface Props {
   currentImage?: string | null
   onUploadSuccess?: (imageUrl: string) => void
 }
 
-function ProfileUpload(props: ProfileUploadProps) {
+function ProfileUpload(props: Props) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
