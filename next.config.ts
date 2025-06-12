@@ -54,15 +54,6 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ['@prisma/client'],
 
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
-
   async headers() {
     return [
       {
