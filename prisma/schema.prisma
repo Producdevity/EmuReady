@@ -181,6 +181,7 @@ model CustomFieldTemplateField {
 model Emulator {
   id                    String                  @id @default(uuid())
   name                  String                  @unique
+  logo                  String?                 // Logo filename (e.g., "aethersx2.png")
   listings              Listing[]
   customFieldDefinitions CustomFieldDefinition[]
   systems               System[]

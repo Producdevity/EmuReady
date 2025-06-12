@@ -89,7 +89,10 @@ export const usersRouter = createTRPCRouter({
             emulator: { select: { name: true } },
             performance: { select: { label: true } },
           },
+          orderBy: { createdAt: 'desc' },
+          take: 10, // Limit to 10 most recent listings
         },
+        // Limit submitted games to recent ones
         submittedGames: {
           select: {
             id: true,
@@ -100,7 +103,9 @@ export const usersRouter = createTRPCRouter({
             system: { select: { id: true, name: true } },
           },
           orderBy: { submittedAt: 'desc' },
+          take: 10, // Limit to 10 most recent submissions
         },
+        // Limit votes (no ordering available since no timestamp)
         votes: {
           select: {
             id: true,
@@ -119,6 +124,14 @@ export const usersRouter = createTRPCRouter({
                 performance: { select: { label: true } },
               },
             },
+          },
+          take: 10, // Limit to 10 most recent votes
+        },
+        _count: {
+          select: {
+            listings: true,
+            submittedGames: true,
+            votes: true,
           },
         },
       },

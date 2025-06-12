@@ -27,6 +27,9 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 import { LoadingSpinner } from '@/components/ui'
 import ApprovalModal from './components/ApprovalModal'
 import SystemIcon from '@/components/icons/SystemIcon'
+import useEmulatorLogos from '@/hooks/useEmulatorLogos'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 type ApprovalSortField =
@@ -58,6 +61,12 @@ function AdminApprovalsPage() {
 
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, false)
+
+  const {
+    showEmulatorLogos,
+    toggleEmulatorLogos,
+    isHydrated: isEmulatorLogosHydrated,
+  } = useEmulatorLogos()
 
   const pendingListingsQuery = api.listings.getPending.useQuery({
     page: table.page,
@@ -160,18 +169,20 @@ function AdminApprovalsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={() => setShowSystemIcons(!showSystemIcons)}
-          >
-            {isSystemIconsHydrated
-              ? showSystemIcons
-                ? 'Show System Names'
-                : 'Show System Icons'
-              : '...'}
-          </Button>
+          <DisplayToggleButton
+            showLogos={showSystemIcons}
+            onToggle={() => setShowSystemIcons(!showSystemIcons)}
+            isHydrated={isSystemIconsHydrated}
+            logoLabel="Show System Icons"
+            nameLabel="Show System Names"
+          />
+          <DisplayToggleButton
+            showLogos={showEmulatorLogos}
+            onToggle={toggleEmulatorLogos}
+            isHydrated={isEmulatorLogosHydrated}
+            logoLabel="Show Emulator Logos"
+            nameLabel="Show Emulator Names"
+          />
           <ColumnVisibilityControl
             columns={APPROVALS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -318,7 +329,14 @@ function AdminApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {listing.emulator.name}
+                        <EmulatorIcon
+                          name={listing.emulator.name}
+                          logo={listing.emulator.logo}
+                          showLogo={
+                            isEmulatorLogosHydrated && showEmulatorLogos
+                          }
+                          size="sm"
+                        />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('submittedAt') && (

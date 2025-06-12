@@ -10,7 +10,7 @@ const globalForPrisma = globalThis as unknown as {
 let prisma: PrismaClient
 
 if (process.env.NODE_ENV === 'production') {
-  // In production, create a new client
+  // In production, create a new client with optimized settings
   prisma = new PrismaClient({
     log: ['error'],
     datasources: {
@@ -20,9 +20,14 @@ if (process.env.NODE_ENV === 'production') {
     },
   })
 } else {
-  // In development, reuse the client across hot reloads
+  // In development, reuse the client across hot reloads with minimal logging
   globalForPrisma.prisma ??= new PrismaClient({
-    log: ['query', 'error', 'warn'],
+    // Only log errors in development to improve performance
+    // Set PRISMA_DEBUG=true to enable query logging for debugging
+    log:
+      process.env.PRISMA_DEBUG === 'true'
+        ? ['query', 'error', 'warn']
+        : ['error'],
     datasources: {
       db: {
         url: process.env.DATABASE_URL,

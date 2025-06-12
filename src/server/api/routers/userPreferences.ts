@@ -1,6 +1,11 @@
-import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
-import { TRPCError } from '@trpc/server'
+import { ResourceError } from '@/lib/errors'
+import {
+  UpdateUserPreferencesSchema,
+  AddDevicePreferenceSchema,
+  RemoveDevicePreferenceSchema,
+  BulkUpdateDevicePreferencesSchema,
+} from '@/schemas/userPreferences'
 
 export const userPreferencesRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -11,41 +16,35 @@ export const userPreferencesRouter = createTRPCRouter({
         defaultToUserDevices: true,
         notifyOnNewListings: true,
         devicePreferences: {
-          include: { device: { include: { brand: true, soc: true } } },
+          select: {
+            id: true,
+            deviceId: true,
+            device: {
+              select: {
+                id: true,
+                modelName: true,
+                brand: { select: { id: true, name: true } },
+                soc: { select: { id: true, name: true, manufacturer: true } },
+              },
+            },
+          },
         },
       },
     })
 
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      })
-    }
+    if (!user) return ResourceError.user.notFound()
 
     return user
   }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        defaultToUserDevices: z.boolean().optional(),
-        notifyOnNewListings: z.boolean().optional(),
-      }),
-    )
-    .mutation(async function (opts) {
-      const { ctx, input } = opts
-
+    .input(UpdateUserPreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: ctx.session.user.id },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) return ResourceError.user.notFound()
 
       return ctx.prisma.user.update({
         where: { id: user.id },
@@ -62,36 +61,20 @@ export const userPreferencesRouter = createTRPCRouter({
     }),
 
   addDevice: protectedProcedure
-    .input(
-      z.object({
-        deviceId: z.string(),
-      }),
-    )
-    .mutation(async function (opts) {
-      const { ctx, input } = opts
-
+    .input(AddDevicePreferenceSchema)
+    .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: ctx.session.user.id },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) return ResourceError.user.notFound()
 
       // Check if device exists
       const device = await ctx.prisma.device.findUnique({
         where: { id: input.deviceId },
       })
 
-      if (!device) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device not found',
-        })
-      }
+      if (!device) return ResourceError.device.notFound()
 
       // Check if preference already exists
       const existingPreference =
@@ -105,10 +88,7 @@ export const userPreferencesRouter = createTRPCRouter({
         })
 
       if (existingPreference) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'Device is already in your preferences',
-        })
+        throw new Error('Device is already in your preferences')
       }
 
       return ctx.prisma.userDevicePreference.create({
@@ -118,24 +98,13 @@ export const userPreferencesRouter = createTRPCRouter({
     }),
 
   removeDevice: protectedProcedure
-    .input(
-      z.object({
-        deviceId: z.string(),
-      }),
-    )
-    .mutation(async function (opts) {
-      const { ctx, input } = opts
-
+    .input(RemoveDevicePreferenceSchema)
+    .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: ctx.session.user.id },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) return ResourceError.user.notFound()
 
       const preference = await ctx.prisma.userDevicePreference.findUnique({
         where: {
@@ -144,10 +113,7 @@ export const userPreferencesRouter = createTRPCRouter({
       })
 
       if (!preference) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Device not found in your preferences',
-        })
+        throw new Error('Device not found in your preferences')
       }
 
       await ctx.prisma.userDevicePreference.delete({
@@ -158,24 +124,13 @@ export const userPreferencesRouter = createTRPCRouter({
     }),
 
   bulkUpdateDevices: protectedProcedure
-    .input(
-      z.object({
-        deviceIds: z.array(z.string()),
-      }),
-    )
-    .mutation(async function (opts) {
-      const { ctx, input } = opts
-
+    .input(BulkUpdateDevicePreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: ctx.session.user.id },
       })
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        })
-      }
+      if (!user) return ResourceError.user.notFound()
 
       // Validate all devices exist
       const devices = await ctx.prisma.device.findMany({
@@ -183,10 +138,7 @@ export const userPreferencesRouter = createTRPCRouter({
       })
 
       if (devices.length !== input.deviceIds.length) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'One or more devices not found',
-        })
+        throw new Error('One or more devices not found')
       }
 
       // Remove existing preferences
