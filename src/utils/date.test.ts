@@ -2,6 +2,7 @@ import { vi, describe, it, beforeEach, afterEach, expect } from 'vitest'
 import {
   formatDate,
   formatDateTime,
+  formatMonthYear,
   formatTimeAgo,
   formatYear,
 } from '@/utils/date'
@@ -19,6 +20,27 @@ describe('formatDate', () => {
   it('should handle different date formats', () => {
     expect(formatDate('2023/01/01')).toMatch(/Jan 1, 2023/)
     expect(formatDate('2023-12-31')).toMatch(/Dec 31, 2023/)
+  })
+})
+
+describe('formatMonthYear', () => {
+  it('should format Date objects to month and year', () => {
+    const date = new Date('2023-05-15T12:00:00Z')
+    expect(formatMonthYear(date)).toBe('May 2023')
+  })
+
+  it('should format date strings to month and year', () => {
+    expect(formatMonthYear('2023-05-15T12:00:00Z')).toBe('May 2023')
+  })
+
+  it('should handle different date formats', () => {
+    expect(formatMonthYear('2023/01/01')).toBe('January 2023')
+    expect(formatMonthYear('2023-12-31')).toBe('December 2023')
+  })
+
+  it('should handle Date objects', () => {
+    const date = new Date('2023-05-15T12:00:00Z')
+    expect(formatMonthYear(date)).toBe('May 2023')
   })
 })
 
