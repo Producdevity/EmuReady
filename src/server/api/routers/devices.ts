@@ -1,9 +1,3 @@
-import type { Prisma } from '@orm'
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from '@/server/api/trpc'
 import { ResourceError } from '@/lib/errors'
 import {
   GetDevicesSchema,
@@ -12,6 +6,12 @@ import {
   UpdateDeviceSchema,
   DeleteDeviceSchema,
 } from '@/schemas/device'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+} from '@/server/api/trpc'
+import type { Prisma } from '@orm'
 
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {

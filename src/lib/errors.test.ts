@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { TRPCError } from '@trpc/server'
+import { describe, it, expect } from 'vitest'
 import { AppError, ResourceError, ValidationError, ERROR_CODES } from './errors'
 
 describe('Error Handling System', () => {
