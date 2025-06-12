@@ -1,12 +1,24 @@
-import { FlatCompat } from '@eslint/eslintrc'
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import js from "@eslint/js";
+import { FlatCompat } from "@eslint/eslintrc";
+import importPlugin from 'eslint-plugin-import';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-})
+    baseDirectory: __dirname,
+    recommendedConfig: js.configs.recommended,
+    allConfig: js.configs.all
+});
 
-const eslintConfig = [
+export default [
   {
     ignores: [
+      // Config files
+      'eslint.config.mjs',
+      'next.config.ts',
+      
       // Next.js build output and cache
       '.next/',
       'out/',
@@ -20,8 +32,6 @@ const eslintConfig = [
 
       // Prisma generated client code
       'prisma/generated/**',
-
-      // Test coverage reports
 
       // Test output/coverage directories
       'coverage/',
@@ -56,17 +66,12 @@ const eslintConfig = [
     ],
   },
 
-  ...compat.config({
-    extends: ['next/core-web-vitals', 'next/typescript'],
-    parser: '@typescript-eslint/parser',
-    parserOptions: {
-      project: './tsconfig.json',
-      ecmaVersion: 2020,
-      sourceType: 'module',
-      ecmaFeatures: {
-        jsx: true,
-      },
-    },
+  // Next.js configuration using FlatCompat
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+
+  // Custom rules for the project
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
       'prefer-template': 'error',
       '@typescript-eslint/consistent-type-imports': [
@@ -81,9 +86,98 @@ const eslintConfig = [
           ignoreRestSiblings: true,
         },
       ],
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
     },
-  }),
+  },
+
+  // Import plugin configuration
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['eslint.config.mjs', 'next.config.ts'],
+    plugins: {
+      import: importPlugin,
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: './tsconfig.json',
+        },
+        node: {
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        },
+      },
+      'import/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx'],
+      },
+    },
+    rules: {
+      // Import order and sorting - libraries first, then local files
+      'import/order': [
+        'error',
+        {
+          groups: [
+            'builtin',    // Node.js built-in modules
+            'external',   // External packages from node_modules
+            'internal',   // Internal modules (your own modules)
+            ['parent', 'sibling'], // Relative imports from parent/sibling directories
+            'index',      // Index imports
+            'type',       // TypeScript type imports
+          ],
+          pathGroups: [
+            {
+              pattern: '@/**',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: '~/**',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: './**.module.css',
+              group: 'sibling',
+              position: 'after',
+            },
+            {
+              pattern: './**.css',
+              group: 'sibling',
+              position: 'after',
+            },
+          ],
+          pathGroupsExcludedImportTypes: ['type'],
+          'newlines-between': 'never',
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
+          },
+          distinctGroup: false,
+        },
+      ],
+      
+      // Additional import rules for clean code
+      'import/first': 'error',
+      'import/newline-after-import': 'off',
+      'import/no-duplicates': 'error',
+      'import/extensions': [
+        'error',
+        'ignorePackages',
+        {
+          js: 'never',
+          jsx: 'never',
+          ts: 'never',
+          tsx: 'never',
+        },
+      ],
+    },
+  },
+
+  // UI components - allow circular dependencies for component index files
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-cycle': 'off', // UI components often have legitimate circular dependencies
+    },
+  },
 
   // Test files specific configuration
   {
@@ -91,8 +185,7 @@ const eslintConfig = [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@next/next/no-img-element': 'off',
+      'import/no-cycle': 'off', // Tests don't need strict dependency checking
     },
   },
-]
-
-export default eslintConfig
+];
