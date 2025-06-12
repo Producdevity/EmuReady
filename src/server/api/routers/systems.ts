@@ -38,17 +38,9 @@ export const systemsRouter = createTRPCRouter({
 
     return await ctx.prisma.system.findMany({
       where: search
-        ? {
-            name: { contains: search, mode: 'insensitive' },
-          }
+        ? { name: { contains: search, mode: 'insensitive' } }
         : undefined,
-      include: {
-        _count: {
-          select: {
-            games: true,
-          },
-        },
-      },
+      include: { _count: { select: { games: true } } },
       orderBy,
     })
   }),
@@ -59,22 +51,12 @@ export const systemsRouter = createTRPCRouter({
       const system = await ctx.prisma.system.findUnique({
         where: { id: input.id },
         include: {
-          games: {
-            orderBy: {
-              title: 'asc',
-            },
-          },
-          _count: {
-            select: {
-              games: true,
-            },
-          },
+          games: { orderBy: { title: 'asc' } },
+          _count: { select: { games: true } },
         },
       })
 
-      if (!system) {
-        ResourceError.system.notFound()
-      }
+      if (!system) return ResourceError.system.notFound()
 
       return system
     }),

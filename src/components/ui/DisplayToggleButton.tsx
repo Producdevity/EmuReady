@@ -1,5 +1,5 @@
-import Button from '@/components/ui/Button'
 import { ImageIcon, Type } from 'lucide-react'
+import Button from '@/components/ui/Button'
 
 interface Props {
   showLogos: boolean

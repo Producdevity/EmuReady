@@ -3,9 +3,9 @@
  */
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Eye, EyeClosed, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Eye, EyeClosed, ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui'
 import {
   type ColumnDefinition,

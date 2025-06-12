@@ -1,8 +1,8 @@
-import { type Maybe } from '@/types/utils'
 import { cn } from '@/lib/utils'
+import { type Maybe } from '@/types/utils'
 import getSystemIcon from './systems/getSystemIcon'
 
-type Size = Exclude<Props['size'], undefined>
+type Size = NonNullable<Props['size']>
 
 const sizeClasses: Record<Size, string> = {
   sm: 'w-8 h-8',

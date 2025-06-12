@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { type inferRouterOutputs } from '@trpc/server'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Joystick,
@@ -13,9 +13,16 @@ import {
   Filter,
   Settings2,
   CircleX,
+  User,
 } from 'lucide-react'
-import { MultiSelect, Input } from '@/components/ui'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { MultiSelect, Input, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
+import { type AppRouter } from '@/server/api/root'
+
+type RouterOutput = inferRouterOutputs<AppRouter>
+type UserPreferences = RouterOutput['userPreferences']['get']
 
 interface FiltersProps {
   systemIds: string[]
@@ -42,6 +49,9 @@ interface FiltersProps {
   onSearchChange: (value: string) => void
   isCollapsed: boolean
   onToggleCollapse: () => void
+  userPreferences: UserPreferences | null | undefined
+  shouldUseUserDeviceFilter: boolean | undefined
+  userDeviceIds: string[]
 }
 
 function ListingFilters(props: FiltersProps) {
@@ -504,6 +514,43 @@ function ListingFilters(props: FiltersProps) {
                     placeholder="All devices"
                     maxDisplayed={1}
                   />
+
+                  {/* User Device Filter Indicator */}
+                  {props.shouldUseUserDeviceFilter && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Filtered by your devices
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                        Showing results for {props.userDeviceIds.length} of your
+                        preferred devices
+                      </p>
+                      <div className="flex gap-2">
+                        <Link
+                          href="/profile?tab=devices"
+                          className="inline-flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <Settings2 className="w-3 h-3" />
+                          Manage devices
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => props.onDeviceChange([])}
+                          className="text-xs h-7 px-2"
+                        >
+                          Show all devices
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
 
                   <MultiSelect
                     label="SoCs"

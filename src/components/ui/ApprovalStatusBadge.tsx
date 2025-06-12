@@ -1,6 +1,3 @@
-import Badge from '@/components/ui/Badge'
-import { getApprovalStatusVariant } from '@/utils/badgeColors'
-import { ApprovalStatus } from '@orm'
 import {
   CheckCircle,
   Clock,
@@ -9,7 +6,10 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
+import Badge from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
+import { getApprovalStatusVariant } from '@/utils/badgeColors'
+import { ApprovalStatus } from '@orm'
 
 type Status = {
   icon: LucideIcon

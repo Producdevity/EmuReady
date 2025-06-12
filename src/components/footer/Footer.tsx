@@ -1,11 +1,11 @@
+import KofiFooterButton from '@/components/footer/KofiFooterButton'
+import GitHubIcon from '@/components/icons/GitHubIcon'
 import {
   ThemeSelect,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui'
-import GitHubIcon from '@/components/icons/GitHubIcon'
-import KofiFooterButton from '@/components/footer/KofiFooterButton'
 
 function Footer() {
   return (

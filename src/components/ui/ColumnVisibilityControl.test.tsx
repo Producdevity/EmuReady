@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import ColumnVisibilityControl from './ColumnVisibilityControl'
+import { describe, it, expect, vi } from 'vitest'
 import {
   type ColumnDefinition,
   type UseColumnVisibilityReturn,
 } from '@/hooks/useColumnVisibility'
+import ColumnVisibilityControl from './ColumnVisibilityControl'
 
 describe('ColumnVisibilityControl', () => {
   const mockColumns: ColumnDefinition[] = [

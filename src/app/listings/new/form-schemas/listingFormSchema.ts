@@ -1,5 +1,5 @@
-import { CreateListingSchema } from '@/schemas/listing'
 import { z } from 'zod'
+import { CreateListingSchema } from '@/schemas/listing'
 
 const listingFormSchema = CreateListingSchema.extend({
   gameId: z.string().min(1, 'Game is required'),

@@ -1,15 +1,15 @@
 'use client'
 
-import { hasPermission } from '@/utils/permissions'
-import { useState, useCallback, useEffect } from 'react'
+import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
-import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
-import { ThemeToggle } from '@/components/ui'
-import { Role } from '@orm'
+import { useState, useCallback, useEffect } from 'react'
 import LoadingIcon from '@/components/icons/LoadingIcon'
 import LogoIcon from '@/components/icons/LogoIcon'
+import { ThemeToggle } from '@/components/ui'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import { navbarItems } from './data'
 
 function Navbar() {

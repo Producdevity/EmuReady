@@ -1,14 +1,4 @@
-import type { Prisma } from '@orm'
-import {
-  adminProcedure,
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from '@/server/api/trpc'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
 import { AppError, ResourceError } from '@/lib/errors'
-import { updateUserRole } from '@/server/utils/roleSync'
 import {
   RegisterUserSchema,
   GetUserByIdSchema,
@@ -17,6 +7,17 @@ import {
   UpdateUserRoleSchema,
   DeleteUserSchema,
 } from '@/schemas/user'
+import {
+  adminProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from '@/server/api/trpc'
+import { updateUserRole } from '@/server/utils/roleSync'
+import { hasPermission } from '@/utils/permissions'
+import { sanitizeBio } from '@/utils/sanitization'
+import { Role } from '@orm'
+import type { Prisma } from '@orm'
 
 export const usersRouter = createTRPCRouter({
   me: protectedProcedure.query(({ ctx }) => {
@@ -72,6 +73,7 @@ export const usersRouter = createTRPCRouter({
         id: true,
         name: true,
         email: true,
+        bio: true,
         profileImage: true,
         role: true,
         createdAt: true,
@@ -199,7 +201,7 @@ export const usersRouter = createTRPCRouter({
   update: protectedProcedure
     .input(UpdateUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const { name, email, profileImage } = input
+      const { name, email, profileImage, bio } = input
       const userId = ctx.session.user.id
 
       const user = await ctx.prisma.user.findUnique({
@@ -224,11 +226,13 @@ export const usersRouter = createTRPCRouter({
           ...(name && { name }),
           ...(email && { email }),
           ...(profileImage && { profileImage }),
+          ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
         },
         select: {
           id: true,
           name: true,
           email: true,
+          bio: true,
           profileImage: true,
           role: true,
         },
@@ -347,12 +351,7 @@ export const usersRouter = createTRPCRouter({
       // Return updated user data
       return await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-        },
+        select: { id: true, name: true, email: true, role: true },
       })
     }),
 

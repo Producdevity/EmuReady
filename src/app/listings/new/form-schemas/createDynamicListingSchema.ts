@@ -1,7 +1,7 @@
+import { isString } from 'remeda'
+import { z } from 'zod'
 import { CustomFieldType, type CustomFieldDefinition } from '@orm'
 import listingFormSchema from './listingFormSchema'
-import { z } from 'zod'
-import { isString } from 'remeda'
 
 export interface CustomFieldOptionUI {
   value: string

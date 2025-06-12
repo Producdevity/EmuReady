@@ -1,6 +1,6 @@
-import { type Maybe, type Nullable } from '@/types/utils'
 import { type ReactElement } from 'react'
 import { isString } from 'remeda'
+import { type Maybe, type Nullable } from '@/types/utils'
 import MicrosoftWindowsIcon from './MicrosoftWindowsIcon'
 import MicrosoftXbox360Icon from './MicrosoftXbox360Icon'
 import MicrosoftXboxIcon from './MicrosoftXboxIcon'
