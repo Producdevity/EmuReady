@@ -1,5 +1,5 @@
 import Button from '@/components/ui/Button'
-import { Image, Type } from 'lucide-react'
+import { ImageIcon, Type } from 'lucide-react'
 
 interface Props {
   showLogos: boolean
@@ -24,7 +24,7 @@ function DisplayToggleButton(props: Props) {
         </>
       ) : (
         <>
-          <Image className="w-4 h-4" />
+          <ImageIcon className="w-4 h-4" />
           {props.isHydrated ? props.logoLabel : '...'}
         </>
       )}
