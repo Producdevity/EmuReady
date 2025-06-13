@@ -121,9 +121,9 @@ function GameEditForm(props: Props) {
       </Button>
 
       {open && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-xl w-full">
-            <div className="flex justify-between items-center mb-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg flex flex-col max-w-xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h2 className="text-xl font-bold">Edit Game</h2>
               <Button
                 variant="ghost"
@@ -135,64 +135,66 @@ function GameEditForm(props: Props) {
               </Button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="title" className="block text-sm font-medium">
-                  Title
-                </label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(ev) => setTitle(ev.target.value)}
-                  placeholder="Game title"
-                  required
-                  maxLength={100}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <ImageSelectorSwitcher
-                  gameTitle={title}
-                  systemName={props.gameData.system?.name}
-                  selectedImageUrl={imageUrl}
-                  onImageSelect={handleImageSelect}
-                  onError={setError}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">System</label>
-                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
-                  {props.gameData.system?.name ?? 'Unknown System'}
+            <div className="p-6 overflow-y-auto flex-grow min-h-0">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="title" className="block text-sm font-medium">
+                    Title
+                  </label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(ev) => setTitle(ev.target.value)}
+                    placeholder="Game title"
+                    required
+                    maxLength={100}
+                  />
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  System cannot be changed. Create a new game entry if needed.
-                </p>
-              </div>
 
-              {error && (
-                <div className="text-red-600 dark:text-red-400 text-sm">
-                  {error}
+                <div className="space-y-2">
+                  <ImageSelectorSwitcher
+                    gameTitle={title}
+                    systemName={props.gameData.system?.name}
+                    selectedImageUrl={imageUrl}
+                    onImageSelect={handleImageSelect}
+                    onError={setError}
+                  />
                 </div>
-              )}
 
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  isLoading={isLoading}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </form>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">System</label>
+                  <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
+                    {props.gameData.system?.name ?? 'Unknown System'}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    System cannot be changed. Create a new game entry if needed.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="text-red-600 dark:text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
