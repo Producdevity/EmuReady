@@ -75,6 +75,7 @@ function GameDetailsModal(props: Props) {
     // Navigate to admin users page with user modal open
     router.push(`/admin/users?userId=${userId}`)
   }
+  const displayImage = getDisplayImage()
 
   return (
     <Modal
@@ -175,15 +176,17 @@ function GameDetailsModal(props: Props) {
 
               {/* Image Display */}
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
-                <Image
-                  src={getDisplayImage() ?? ''}
-                  alt={`${game.title} - ${activeImageTab}`}
-                  width={800}
-                  height={256}
-                  className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105"
-                  onError={() => handleImageError(activeImageTab)}
-                  unoptimized
-                />
+                {displayImage && (
+                  <Image
+                    src={getDisplayImage() ?? ''}
+                    alt={`${game.title} - ${activeImageTab}`}
+                    width={800}
+                    height={256}
+                    className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105"
+                    onError={() => handleImageError(activeImageTab)}
+                    unoptimized
+                  />
+                )}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={() =>
