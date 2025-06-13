@@ -53,7 +53,7 @@ function AdminEmulatorsPage() {
     isHydrated: isEmulatorLogosHydrated,
   } = useEmulatorLogos()
 
-  const { data, isLoading, refetch } = api.emulators.get.useQuery({
+  const emulatorsQuery = api.emulators.get.useQuery({
     search: table.search ?? undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
@@ -61,8 +61,8 @@ function AdminEmulatorsPage() {
     limit: table.limit,
   })
 
-  const emulators = data?.emulators ?? []
-  const pagination = data?.pagination
+  const emulators = emulatorsQuery.data?.emulators ?? []
+  const pagination = emulatorsQuery.data?.pagination
 
   const deleteEmulator = api.emulators.delete.useMutation()
   const confirm = useConfirmDialog()
@@ -96,7 +96,7 @@ function AdminEmulatorsPage() {
       await deleteEmulator.mutateAsync({
         id,
       } satisfies RouterInput['emulators']['delete'])
-      refetch().catch(console.error)
+      emulatorsQuery.refetch().catch(console.error)
       toast.success('Emulator deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete emulator: ${getErrorMessage(err)}`)
@@ -151,9 +151,11 @@ function AdminEmulatorsPage() {
         )}
       </div>
 
-      {isLoading && <LoadingSpinner text="Loading emulators..." />}
+      {emulatorsQuery.isLoading && (
+        <LoadingSpinner text="Loading emulators..." />
+      )}
 
-      {!isLoading && emulators.length === 0 && (
+      {!emulatorsQuery.isLoading && emulators.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
             {table.search
@@ -163,7 +165,7 @@ function AdminEmulatorsPage() {
         </div>
       )}
 
-      {!isLoading && emulators.length > 0 && (
+      {!emulatorsQuery.isLoading && emulators.length > 0 && (
         <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
             <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
@@ -225,7 +227,7 @@ function AdminEmulatorsPage() {
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('systemCount') && (
-                    <td className="px-4 py-2">0</td>
+                    <td className="px-4 py-2">{emulator._count.systems}</td>
                   )}
                   {columnVisibility.isColumnVisible('listingCount') && (
                     <td className="px-4 py-2">{emulator._count.listings}</td>
@@ -278,7 +280,7 @@ function AdminEmulatorsPage() {
           emulatorName={emulatorName}
           onClose={closeModal}
           onSuccess={() => {
-            refetch().catch(console.error)
+            emulatorsQuery.refetch().catch(console.error)
             closeModal()
           }}
         />

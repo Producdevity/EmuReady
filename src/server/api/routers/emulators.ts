@@ -48,7 +48,7 @@ export const emulatorsRouter = createTRPCRouter({
       // Get emulators with pagination
       const emulators = await ctx.prisma.emulator.findMany({
         where,
-        include: { _count: { select: { listings: true } } },
+        include: { _count: { select: { listings: true, systems: true } } },
         orderBy,
         skip: actualOffset,
         take: effectiveLimit,
