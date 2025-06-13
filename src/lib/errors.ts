@@ -2,6 +2,8 @@
  * @documentation /docs/ERROR_HANDLING.md
  */
 import { TRPCError } from '@trpc/server'
+import { formatUserRole } from '@/utils/format'
+import { type Role } from '@orm'
 
 // Define error types as constants for better type safety
 export const ERROR_CODES = {
@@ -64,9 +66,10 @@ export class AppError {
     })
   }
 
-  static insufficientPermissions(requiredRole?: string): never {
-    const message = requiredRole
-      ? `You need ${requiredRole} permissions to perform this action`
+  static insufficientPermissions(requiredRole?: Role): never {
+    const formattedRole = requiredRole ? formatUserRole(requiredRole) : null
+    const message = formattedRole
+      ? `You need ${formattedRole} permissions to perform this action`
       : ERROR_MESSAGES.INSUFFICIENT_PERMISSIONS
 
     throw new TRPCError({ code: ERROR_CODES.FORBIDDEN, message })

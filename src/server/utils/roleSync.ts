@@ -28,7 +28,7 @@ export async function syncRoleToClerk(
       publicMetadata: { role },
     })
 
-    console.log(`Synced role ${role} to Clerk for user ${user.clerkId}`)
+    console.info(`Synced role ${role} to Clerk for user ${user.clerkId}`)
   } catch (error) {
     console.error('Failed to sync role to Clerk:', error)
     throw error
@@ -67,7 +67,7 @@ export async function syncAllRolesToClerk(): Promise<void> {
       select: { id: true, clerkId: true, role: true },
     })
 
-    console.log(`Syncing ${users.length} user roles to Clerk...`)
+    console.info(`Syncing ${users.length} user roles to Clerk...`)
 
     const clerk = await clerkClient()
 
@@ -78,13 +78,13 @@ export async function syncAllRolesToClerk(): Promise<void> {
             role: user.role,
           },
         })
-        console.log(`Synced role ${user.role} for user ${user.clerkId}`)
+        console.info(`Synced role ${user.role} for user ${user.clerkId}`)
       } catch (error) {
         console.error(`Failed to sync role for user ${user.clerkId}:`, error)
       }
     }
 
-    console.log('Finished syncing all roles to Clerk')
+    console.info('Finished syncing all roles to Clerk')
   } catch (error) {
     console.error('Failed to sync all roles to Clerk:', error)
     throw error

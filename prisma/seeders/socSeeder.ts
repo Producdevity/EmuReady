@@ -792,7 +792,7 @@ const socs: SoCData[] = [
 ]
 
 async function socSeeder(prisma: PrismaClient) {
-  console.log('�� Seeding SoCs...')
+  console.info('🌱 Seeding SoCs...')
 
   for (const soc of socs) {
     await prisma.soC.upsert({
@@ -802,7 +802,7 @@ async function socSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('✅ SoCs seeded successfully')
+  console.info('✅ SoCs seeded successfully')
 }
 
 export default socSeeder

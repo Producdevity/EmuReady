@@ -48,9 +48,7 @@ export const emulatorsRouter = createTRPCRouter({
       // Get emulators with pagination
       const emulators = await ctx.prisma.emulator.findMany({
         where,
-        include: {
-          _count: { select: { listings: true } },
-        },
+        include: { _count: { select: { listings: true } } },
         orderBy,
         skip: actualOffset,
         take: effectiveLimit,
@@ -75,18 +73,12 @@ export const emulatorsRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           systems: true,
-          customFieldDefinitions: {
-            orderBy: {
-              displayOrder: 'asc',
-            },
-          },
+          customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
           _count: { select: { listings: true } },
         },
       })
 
-      if (!emulator) ResourceError.emulator.notFound()
-
-      return emulator
+      return emulator ?? ResourceError.emulator.notFound()
     }),
 
   create: adminProcedure
@@ -96,7 +88,7 @@ export const emulatorsRouter = createTRPCRouter({
         where: { name: input.name },
       })
 
-      if (emulator) ResourceError.emulator.alreadyExists(input.name)
+      if (emulator) return ResourceError.emulator.alreadyExists(input.name)
 
       return ctx.prisma.emulator.create({ data: input })
     }),
@@ -115,7 +107,7 @@ export const emulatorsRouter = createTRPCRouter({
           where: { name: input.name },
         })
 
-        if (existing) ResourceError.emulator.alreadyExists(input.name)
+        if (existing) return ResourceError.emulator.alreadyExists(input.name)
       }
 
       return ctx.prisma.emulator.update({
@@ -159,7 +151,7 @@ export const emulatorsRouter = createTRPCRouter({
         const invalidIds = input.systemIds.filter(
           (id) => !foundSystemIds.has(id),
         )
-        AppError.badRequest(
+        return AppError.badRequest(
           `One or more system IDs are invalid: ${invalidIds.join(', ')}.`,
         )
       }

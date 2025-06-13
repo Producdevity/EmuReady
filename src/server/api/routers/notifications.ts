@@ -1,43 +1,17 @@
-import { z } from 'zod'
+import { AppError } from '@/lib/errors'
+import {
+  GetNotificationsSchema,
+  UpdateNotificationPreferenceSchema,
+  UpdateListingNotificationPreferenceSchema,
+  CreateSystemNotificationSchema,
+  MarkAsReadSchema,
+  DeleteNotificationSchema,
+  GetListingPreferencesSchema,
+} from '@/schemas/notification'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
-
-const GetNotificationsSchema = z.object({
-  limit: z.number().min(1).max(100).default(20),
-  offset: z.number().min(0).default(0),
-  isRead: z.boolean().optional(),
-  category: z
-    .enum(['ENGAGEMENT', 'CONTENT', 'SYSTEM', 'MODERATION'])
-    .optional(),
-})
-
-const UpdateNotificationPreferenceSchema = z.object({
-  type: z.enum([
-    'LISTING_COMMENT',
-    'LISTING_VOTE_UP',
-    'LISTING_VOTE_DOWN',
-    'COMMENT_REPLY',
-    'USER_MENTION',
-    'NEW_DEVICE_LISTING',
-    'NEW_SOC_LISTING',
-    'GAME_ADDED',
-    'EMULATOR_UPDATED',
-    'MAINTENANCE_NOTICE',
-    'FEATURE_ANNOUNCEMENT',
-    'POLICY_UPDATE',
-    'LISTING_APPROVED',
-    'LISTING_REJECTED',
-    'CONTENT_FLAGGED',
-    'ACCOUNT_WARNING',
-  ]),
-  inAppEnabled: z.boolean().optional(),
-  emailEnabled: z.boolean().optional(),
-})
-
-const UpdateListingNotificationPreferenceSchema = z.object({
-  listingId: z.string(),
-  isEnabled: z.boolean(),
-})
+import { hasPermission } from '@/utils/permissions'
+import { Role, NotificationCategory, DeliveryChannel } from '@orm'
 
 export const notificationsRouter = createTRPCRouter({
   get: protectedProcedure
@@ -54,7 +28,7 @@ export const notificationsRouter = createTRPCRouter({
   }),
 
   markAsRead: protectedProcedure
-    .input(z.object({ notificationId: z.string() }))
+    .input(MarkAsReadSchema)
     .mutation(async ({ ctx, input }) => {
       await notificationService.markAsRead(
         input.notificationId,
@@ -69,7 +43,7 @@ export const notificationsRouter = createTRPCRouter({
   }),
 
   delete: protectedProcedure
-    .input(z.object({ notificationId: z.string() }))
+    .input(DeleteNotificationSchema)
     .mutation(async ({ ctx, input }) => {
       await notificationService.deleteNotification(
         input.notificationId,
@@ -103,7 +77,7 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   getListingPreferences: protectedProcedure
-    .input(z.object({ listingId: z.string() }))
+    .input(GetListingPreferencesSchema)
     .query(async ({ ctx, input }) => {
       const preference =
         await ctx.prisma.listingNotificationPreference.findUnique({
@@ -132,26 +106,11 @@ export const notificationsRouter = createTRPCRouter({
 
   // Admin endpoints for system notifications
   createSystemNotification: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().max(255),
-        message: z.string(),
-        actionUrl: z.string().optional(),
-        type: z.enum([
-          'MAINTENANCE_NOTICE',
-          'FEATURE_ANNOUNCEMENT',
-          'POLICY_UPDATE',
-        ]),
-        metadata: z.record(z.unknown()).optional(),
-      }),
-    )
+    .input(CreateSystemNotificationSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
-      if (
-        ctx.session.user.role !== 'ADMIN' &&
-        ctx.session.user.role !== 'SUPER_ADMIN'
-      ) {
-        throw new Error('Insufficient permissions')
+      if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+        return AppError.insufficientPermissions()
       }
 
       // Get all users
@@ -165,12 +124,12 @@ export const notificationsRouter = createTRPCRouter({
         const notificationId = await notificationService.createNotification({
           userId: user.id,
           type: input.type,
-          category: 'SYSTEM',
+          category: NotificationCategory.SYSTEM,
           title: input.title,
           message: input.message,
           actionUrl: input.actionUrl,
           metadata: input.metadata,
-          deliveryChannel: 'IN_APP',
+          deliveryChannel: DeliveryChannel.IN_APP,
         })
         notificationIds.push(notificationId)
       }
@@ -181,9 +140,7 @@ export const notificationsRouter = createTRPCRouter({
   // Analytics endpoints
   getNotificationStats: protectedProcedure.query(async ({ ctx }) => {
     const [total, unread, byCategory] = await Promise.all([
-      ctx.prisma.notification.count({
-        where: { userId: ctx.session.user.id },
-      }),
+      ctx.prisma.notification.count({ where: { userId: ctx.session.user.id } }),
       ctx.prisma.notification.count({
         where: {
           userId: ctx.session.user.id,

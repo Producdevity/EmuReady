@@ -45,7 +45,7 @@ const systems: SystemData[] = [
 ]
 
 async function systemsSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding systems...')
+  console.info('🌱 Seeding systems...')
 
   for (const system of systems) {
     await prisma.system.upsert({
@@ -60,7 +60,7 @@ async function systemsSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('✅ Systems seeded successfully')
+  console.info('✅ Systems seeded successfully')
 }
 
 export default systemsSeeder

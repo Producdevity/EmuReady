@@ -211,7 +211,7 @@ const emulators: EmulatorData[] = [
 ]
 
 async function emulatorsSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding emulators...')
+  console.info('🌱 Seeding emulators...')
 
   for (const emuData of emulators) {
     const { name, supportedSystemNames } = emuData
@@ -219,9 +219,7 @@ async function emulatorsSeeder(prisma: PrismaClient) {
 
     if (supportedSystemNames && supportedSystemNames.length > 0) {
       const systemsToConnect = await prisma.system.findMany({
-        where: {
-          name: { in: supportedSystemNames },
-        },
+        where: { name: { in: supportedSystemNames } },
         select: { id: true },
       })
 
@@ -248,7 +246,7 @@ async function emulatorsSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('✅ Emulators seeded successfully')
+  console.info('✅ Emulators seeded successfully')
 }
 
 export default emulatorsSeeder

@@ -287,6 +287,9 @@ Having trouble? View this email in your browser: ${baseUrl}
     }
   }
 
+  /**
+   * Tests the email service connection by sending a test email.
+   */
   async testConnection(): Promise<boolean> {
     try {
       // Send a test email to verify configuration
@@ -312,7 +315,9 @@ Having trouble? View this email in your browser: ${baseUrl}
   }
 }
 
-// Email service factory
+/**
+ * Creates an instance of the EmailService based on environment variables.
+ */
 export function createEmailService(): EmailService | null {
   const provider = process.env.EMAIL_PROVIDER as EmailConfig['provider']
   const apiKey = process.env.EMAIL_API_KEY
@@ -321,7 +326,7 @@ export function createEmailService(): EmailService | null {
 
   if (!provider || !apiKey || !fromEmail) {
     console.warn(
-      'Email service not configured. Email notifications will be disabled.',
+      '⚠️ Email service not configured. Email notifications will be disabled.',
     )
     return null
   }

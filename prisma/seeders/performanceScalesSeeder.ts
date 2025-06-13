@@ -30,7 +30,7 @@ const performanceScales: PerformanceScaleData[] = [
 ]
 
 async function performanceScalesSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding performance scales...')
+  console.info('🌱 Seeding performance scales...')
 
   for (const scale of performanceScales) {
     await prisma.performanceScale.upsert({
@@ -40,7 +40,7 @@ async function performanceScalesSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('✅ Performance scales seeded successfully')
+  console.info('✅ Performance scales seeded successfully')
 }
 
 export default performanceScalesSeeder

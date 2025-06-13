@@ -334,7 +334,7 @@ export const usersRouter = createTRPCRouter({
         targetUser.role === Role.SUPER_ADMIN &&
         !hasPermission(currentUserRole, Role.SUPER_ADMIN)
       ) {
-        throw new Error('Only Super Admins can modify Super Admin users')
+        AppError.insufficientPermissions(Role.SUPER_ADMIN)
       }
 
       // Only SUPER_ADMIN can assign SUPER_ADMIN role
@@ -342,7 +342,7 @@ export const usersRouter = createTRPCRouter({
         role === Role.SUPER_ADMIN &&
         !hasPermission(currentUserRole, Role.SUPER_ADMIN)
       ) {
-        throw new Error('Only Super Admins can assign Super Admin role')
+        AppError.insufficientPermissions(Role.SUPER_ADMIN)
       }
 
       // Use the role sync utility to update both database and Clerk

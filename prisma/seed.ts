@@ -1,12 +1,12 @@
 import { PrismaClient } from '@orm'
 import devicesSeeder from './seeders/devicesSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
-import systemsSeeder from './seeders/systemsSeeder'
-import performanceScalesSeeder from './seeders/performanceScalesSeeder'
-import usersSeeder from './seeders/usersSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
+import performanceScalesSeeder from './seeders/performanceScalesSeeder'
 import socSeeder from './seeders/socSeeder'
+import systemsSeeder from './seeders/systemsSeeder'
+import usersSeeder from './seeders/usersSeeder'
 
 const prisma = new PrismaClient()
 
@@ -37,10 +37,10 @@ async function main() {
       await prisma.user.deleteMany()
     }
 
-    console.log('✅ Database cleared!')
+    console.info('✅ Database cleared!')
   }
 
-  console.log('🌱 Starting database seed...')
+  console.info('🌱 Starting database seed...')
 
   try {
     // Seed in order of dependencies
@@ -53,7 +53,7 @@ async function main() {
     await gamesSeeder(prisma)
     await listingsSeeder(prisma)
 
-    console.log('✅ Database seeded successfully!')
+    console.info('✅ Database seeded successfully!')
   } catch (error) {
     console.error('❌ Error seeding database:', error)
     throw error

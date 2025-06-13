@@ -149,7 +149,7 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
   }
 
   if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-    AppError.insufficientPermissions('ADMIN')
+    AppError.insufficientPermissions(Role.ADMIN)
   }
 
   return next({

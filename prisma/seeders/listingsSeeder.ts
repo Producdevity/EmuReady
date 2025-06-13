@@ -132,7 +132,7 @@ async function createVotesAndComments(
 }
 
 async function listingsSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding listings with comprehensive test data...')
+  console.info('🌱 Seeding listings with comprehensive test data...')
 
   // Get all required data
   const users = await prisma.user.findMany()
@@ -159,7 +159,7 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   const performanceScales = await prisma.performanceScale.findMany()
 
-  console.log(
+  console.info(
     `📊 Found ${devices.length} devices, ${games.length} games, ${emulators.length} emulators`,
   )
 
@@ -169,7 +169,7 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   // Create 2 listings per device
   for (const device of devices) {
-    console.log(
+    console.info(
       `Creating listings for ${device.brand.name} ${device.modelName}...`,
     )
 
@@ -247,7 +247,7 @@ async function listingsSeeder(prisma: PrismaClient) {
         })
 
         if (existingListing) {
-          console.log(
+          console.info(
             `Listing already exists for ${game.title} on ${device.brand.name} ${device.modelName} with ${selectedEmulator.name}`,
           )
           continue
@@ -284,7 +284,7 @@ async function listingsSeeder(prisma: PrismaClient) {
         totalVotesCreated += votesAfter - votesBefore
         totalCommentsCreated += commentsAfter - commentsBefore
 
-        console.log(
+        console.info(
           `  ✅ Created ${isApproved ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING} listing: ${game.title} (${selectedEmulator.name}) - ${selectedPerformance.label}`,
         )
       } catch (error) {
@@ -296,12 +296,12 @@ async function listingsSeeder(prisma: PrismaClient) {
     }
   }
 
-  console.log('✅ Listings seeding completed!')
-  console.log(`📈 Statistics:`)
-  console.log(`   📝 ${totalListingsCreated} listings created`)
-  console.log(`   👍 ${totalVotesCreated} votes added`)
-  console.log(`   💬 ${totalCommentsCreated} comments added`)
-  console.log(`   ✅ ~50% of listings are auto-approved for testing`)
+  console.info('✅ Listings seeding completed!')
+  console.info(`📈 Statistics:`)
+  console.info(`   📝 ${totalListingsCreated} listings created`)
+  console.info(`   👍 ${totalVotesCreated} votes added`)
+  console.info(`   💬 ${totalCommentsCreated} comments added`)
+  console.info(`   ✅ ~50% of listings are auto-approved for testing`)
 }
 
 export default listingsSeeder

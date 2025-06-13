@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { type NextRequest } from 'next/server'
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
       select: { role: true },
     })
 
-    if (user?.role !== 'ADMIN') {
+    if (!hasPermission(user?.role, Role.ADMIN)) {
       return new Response('Forbidden', { status: 403 })
     }
 

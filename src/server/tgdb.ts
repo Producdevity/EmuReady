@@ -111,7 +111,6 @@ export async function searchGames(
   // Add platform filter if platform ID is provided
   if (tgdbPlatformId) {
     params['filter[platform]'] = tgdbPlatformId.toString()
-    console.log('TGDB Platform Filter:', { tgdbPlatformId })
   }
 
   const response = await makeRequest<TGDBGamesByNameResponse>(
@@ -343,9 +342,7 @@ function createBoxartImages(
   const gameIdStr = game.id.toString()
   const boxartData = gamesResponse.include?.boxart?.data[gameIdStr]
 
-  if (!boxartData || !gamesResponse.include?.boxart?.base_url) {
-    return []
-  }
+  if (!boxartData || !gamesResponse.include?.boxart?.base_url) return []
 
   return boxartData
     .filter((boxart) => boxart.filename)
@@ -373,7 +370,11 @@ function createBoxartImages(
     }))
 }
 
-// Helper function to create other image types from images endpoint
+/**
+ * Creates other image types (fanart, banner, etc.) from TGDB images response.
+ * @param game - The game object from TGDB search response.
+ * @param imagesResponse - The full images response from TGDB.
+ */
 function createOtherImages(
   game: TGDBGamesByNameResponse['data']['games'][0],
   imagesResponse: TGDBGamesImagesResponse,
@@ -381,30 +382,28 @@ function createOtherImages(
   const gameIdStr = game.id.toString()
   const gameImagesData = imagesResponse.data.images[gameIdStr] ?? []
 
-  if (!imagesResponse.data.base_url) {
-    return []
-  }
-
-  return gameImagesData
-    .filter((image) => image.filename)
-    .map((image, index) => ({
-      ...image,
-      url: `${imagesResponse.data.base_url!.original}${image.filename}`,
-      index, // Add index to ensure uniqueness
-    }))
-    .filter((image) => isValidImageUrl(image.url))
-    .map((image) => ({
-      id: `tgdb-${game.id}-${image.type}-${image.id}-${image.index}`,
-      url: image.url,
-      type: image.type as GameImageOption['type'],
-      source: 'tgdb' as const,
-      gameId: game.id,
-      gameName: game.game_title,
-      width: image.resolution
-        ? parseInt(image.resolution.split('x')[0])
-        : undefined,
-      height: image.resolution
-        ? parseInt(image.resolution.split('x')[1])
-        : undefined,
-    }))
+  return imagesResponse.data.base_url
+    ? gameImagesData
+        .filter((image) => image.filename)
+        .map((image, index) => ({
+          ...image,
+          url: `${imagesResponse.data.base_url!.original}${image.filename}`,
+          index, // Add index to ensure uniqueness
+        }))
+        .filter((image) => isValidImageUrl(image.url))
+        .map((image) => ({
+          id: `tgdb-${game.id}-${image.type}-${image.id}-${image.index}`,
+          url: image.url,
+          type: image.type as GameImageOption['type'],
+          source: 'tgdb' as const,
+          gameId: game.id,
+          gameName: game.game_title,
+          width: image.resolution
+            ? parseInt(image.resolution.split('x')[0])
+            : undefined,
+          height: image.resolution
+            ? parseInt(image.resolution.split('x')[1])
+            : undefined,
+        }))
+    : []
 }

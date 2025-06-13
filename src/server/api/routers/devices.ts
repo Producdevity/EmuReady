@@ -1,4 +1,4 @@
-import { ResourceError } from '@/lib/errors'
+import { ResourceError, AppError } from '@/lib/errors'
 import {
   GetDevicesSchema,
   GetDeviceByIdSchema,
@@ -121,9 +121,7 @@ export const devicesRouter = createTRPCRouter({
           where: { id: input.socId },
         })
 
-        if (!soc) {
-          throw new Error('SoC not found')
-        }
+        if (!soc) return AppError.notFound('SoC')
       }
 
       const existingDevice = await ctx.prisma.device.findFirst({
@@ -139,10 +137,7 @@ export const devicesRouter = createTRPCRouter({
 
       return ctx.prisma.device.create({
         data: input,
-        include: {
-          brand: true,
-          soc: true,
-        },
+        include: { brand: true, soc: true },
       })
     }),
 
@@ -169,9 +164,7 @@ export const devicesRouter = createTRPCRouter({
           where: { id: input.socId },
         })
 
-        if (!soc) {
-          throw new Error('SoC not found')
-        }
+        if (!soc) return AppError.notFound('SoC')
       }
 
       const existingDevice = await ctx.prisma.device.findFirst({
@@ -182,8 +175,9 @@ export const devicesRouter = createTRPCRouter({
         },
       })
 
-      if (existingDevice)
+      if (existingDevice) {
         return ResourceError.device.alreadyExists(input.modelName)
+      }
 
       return ctx.prisma.device.update({
         where: { id },

@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         await handleUserDeleted(event.data)
         break
       default:
-        console.log(`⚠️ Unhandled webhook event: ${event.type}`)
+        console.info(`⚠️ Unhandled webhook event: ${event.type}`)
     }
 
     return NextResponse.json({ success: true })

@@ -991,7 +991,7 @@ const pendingGames: GameData[] = [
 ]
 
 async function gamesSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding games...')
+  console.info('🌱 Seeding games...')
 
   // Get all systems first
   const systems = await prisma.system.findMany()
@@ -1037,7 +1037,7 @@ async function gamesSeeder(prisma: PrismaClient) {
   }
 
   // Process approved games
-  console.log(`📝 Processing ${games.length} approved games...`)
+  console.info(`📝 Processing ${games.length} approved games...`)
   for (const game of games) {
     const systemId = systemMap.get(game.systemName)
     if (!systemId) {
@@ -1078,7 +1078,7 @@ async function gamesSeeder(prisma: PrismaClient) {
   }
 
   // Process pending games
-  console.log(`📝 Processing ${pendingGames.length} pending games...`)
+  console.info(`📝 Processing ${pendingGames.length} pending games...`)
   for (const game of pendingGames) {
     const systemId = systemMap.get(game.systemName)
     if (!systemId) {
@@ -1114,12 +1114,12 @@ async function gamesSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('✅ Games seeded successfully')
-  console.log(`📊 Summary:`)
-  console.log(`   ✅ ${games.length} approved games processed`)
-  console.log(`   ⏳ ${pendingGames.length} pending games processed`)
-  console.log(`   👥 Using ${seededUsers.length} seeded users as submitters`)
-  console.log(`   👨‍💼 Using ${adminUsers.length} admin users as approvers`)
+  console.info('✅ Games seeded successfully')
+  console.info(`📊 Summary:`)
+  console.info(`   ✅ ${games.length} approved games processed`)
+  console.info(`   ⏳ ${pendingGames.length} pending games processed`)
+  console.info(`   👥 Using ${seededUsers.length} seeded users as submitters`)
+  console.info(`   👨‍💼 Using ${adminUsers.length} admin users as approvers`)
 }
 
 export default gamesSeeder

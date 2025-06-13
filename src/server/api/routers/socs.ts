@@ -1,3 +1,4 @@
+import { AppError } from '@/lib/errors'
 import {
   GetSoCsSchema,
   GetSoCByIdSchema,
@@ -103,7 +104,7 @@ export const socsRouter = createTRPCRouter({
       })
 
       if (!soc) {
-        throw new Error('SoC not found')
+        AppError.notFound('SoC')
       }
 
       return soc
@@ -117,7 +118,7 @@ export const socsRouter = createTRPCRouter({
       })
 
       if (existingSoC) {
-        throw new Error(`SoC with name "${input.name}" already exists`)
+        AppError.alreadyExists('SoC', `name "${input.name}"`)
       }
 
       return ctx.prisma.soC.create({
@@ -142,7 +143,7 @@ export const socsRouter = createTRPCRouter({
       })
 
       if (!existingSoC) {
-        throw new Error('SoC not found')
+        AppError.notFound('SoC')
       }
 
       // Check if name is being updated to a name that already exists
@@ -152,7 +153,7 @@ export const socsRouter = createTRPCRouter({
         })
 
         if (socWithSameName) {
-          throw new Error(`SoC with name "${updateData.name}" already exists`)
+          AppError.alreadyExists('SoC', `name "${updateData.name}"`)
         }
       }
 
@@ -184,11 +185,11 @@ export const socsRouter = createTRPCRouter({
       })
 
       if (!existingSoC) {
-        throw new Error('SoC not found')
+        AppError.notFound('SoC')
       }
 
       if (existingSoC._count.devices > 0) {
-        throw new Error(
+        AppError.conflict(
           `Cannot delete SoC "${existingSoC.name}" because it is used by ${existingSoC._count.devices} device(s). Please remove the SoC from all devices first.`,
         )
       }

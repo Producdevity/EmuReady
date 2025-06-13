@@ -30,7 +30,7 @@ function validateTemplateFields(fields: TemplateField[]) {
   fields.forEach((field) => {
     if (field.type === CustomFieldType.SELECT) {
       if (!field.options || field.options.length === 0) {
-        ValidationError.requiresOptions('SELECT')
+        ValidationError.requiresOptions(field.type)
       }
     } else if (field.options && field.options.length > 0) {
       ValidationError.optionsNotAllowed(field.type)
@@ -40,7 +40,7 @@ function validateTemplateFields(fields: TemplateField[]) {
   const fieldNames = fields.map((field) => field.name)
   const uniqueFieldNames = new Set(fieldNames)
   if (fieldNames.length !== uniqueFieldNames.size) {
-    throw new Error('Field names must be unique within a template')
+    AppError.badRequest('Field names must be unique within a template')
   }
 }
 
@@ -63,7 +63,7 @@ async function requireSuperAdminPermission(ctx: TRPCContext) {
     !ctx.session?.user?.role ||
     !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)
   ) {
-    AppError.insufficientPermissions('SUPER_ADMIN')
+    AppError.insufficientPermissions(Role.SUPER_ADMIN)
   }
 }
 
@@ -72,7 +72,7 @@ async function requireAdminPermission(ctx: TRPCContext) {
     !ctx.session?.user?.role ||
     !hasPermission(ctx.session.user.role, Role.ADMIN)
   ) {
-    AppError.insufficientPermissions('ADMIN')
+    AppError.insufficientPermissions(Role.ADMIN)
   }
 }
 
@@ -177,7 +177,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
       })
 
       if (templates.length !== input.templateIds.length) {
-        throw new Error('One or more templates not found')
+        AppError.notFound('One or more templates')
       }
 
       const existingFields = await ctx.prisma.customFieldDefinition.findMany({
@@ -190,7 +190,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
       const templateFieldNames = allTemplateFields.map((field) => field.name)
       const uniqueTemplateFieldNames = new Set(templateFieldNames)
       if (templateFieldNames.length !== uniqueTemplateFieldNames.size) {
-        throw new Error('Templates contain duplicate field names')
+        AppError.badRequest('Templates contain duplicate field names')
       }
 
       const fieldsToCreate = allTemplateFields.filter(
@@ -198,7 +198,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
       )
 
       if (fieldsToCreate.length === 0) {
-        throw new Error(
+        AppError.badRequest(
           'All fields from the selected templates already exist for this emulator',
         )
       }

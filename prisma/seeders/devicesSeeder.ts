@@ -228,7 +228,7 @@ const devices: DeviceData[] = [
 ]
 
 async function devicesSeeder(prisma: PrismaClient) {
-  console.log('🌱 Seeding devices...')
+  console.info('🌱 Seeding devices...')
 
   // Track created brands and get SoCs
   const brandMap = new Map<string, string>()
@@ -277,7 +277,7 @@ async function devicesSeeder(prisma: PrismaClient) {
     })
   }
 
-  console.log('✅ Devices seeded successfully')
+  console.info('✅ Devices seeded successfully')
 }
 
 export default devicesSeeder

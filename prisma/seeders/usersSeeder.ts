@@ -1,5 +1,5 @@
-import { type PrismaClient, Role } from '@orm'
 import { clerkClient } from '@clerk/nextjs/server'
+import { type PrismaClient, Role } from '@orm'
 
 type UserData = {
   email: string
@@ -49,7 +49,7 @@ const users: UserData[] = [
 const DEFAULT_SEED_PASSWORD = 'DevPassword123!'
 
 async function cleanupExistingUsers(prisma: PrismaClient) {
-  console.log('🧹 Cleaning up existing seed users...')
+  console.info('🧹 Cleaning up existing seed users...')
 
   const clerk = await clerkClient()
 
@@ -63,18 +63,18 @@ async function cleanupExistingUsers(prisma: PrismaClient) {
       if (existingClerkUsers.totalCount > 0) {
         const clerkUser = existingClerkUsers.data[0]
         await clerk.users.deleteUser(clerkUser.id)
-        console.log(`🗑️  Deleted Clerk user: ${userData.email}`)
+        console.info(`🗑️  Deleted Clerk user: ${userData.email}`)
       }
 
       // Delete from database
       await prisma.user.deleteMany({ where: { email: userData.email } })
-      console.log(`🗑️  Deleted database user: ${userData.email}`)
+      console.info(`🗑️  Deleted database user: ${userData.email}`)
     } catch {
-      console.log(`⚠️  Could not delete ${userData.email}: user may not exist`)
+      console.info(`⚠️  Could not delete ${userData.email}: user may not exist`)
     }
   }
 
-  console.log('✅ Cleanup completed')
+  console.info('✅ Cleanup completed')
 }
 
 async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
@@ -82,9 +82,9 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
     await cleanupExistingUsers(prisma)
   }
 
-  console.log('🌱 Seeding users...')
-  console.log('📝 Creating users in both Clerk and database for development.')
-  console.log(
+  console.info('🌱 Seeding users...')
+  console.info('📝 Creating users in both Clerk and database for development.')
+  console.info(
     `🔑 Default password for all seed users: ${DEFAULT_SEED_PASSWORD}`,
   )
 
@@ -98,12 +98,12 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
       })
 
       if (existingUser) {
-        console.log(`✓ User ${userData.email} already exists in database`)
+        console.info(`✓ User ${userData.email} already exists in database`)
         continue
       }
 
       // Create user in Clerk first
-      console.log(`Creating Clerk user: ${userData.email}`)
+      console.info(`Creating Clerk user: ${userData.email}`)
       const clerkUser = await clerk.users.createUser({
         emailAddress: [userData.email],
         username: userData.username,
@@ -127,7 +127,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
         },
       })
 
-      console.log(
+      console.info(
         `✅ Created user: ${userData.email} (clerkId: ${clerkUser.id})`,
       )
     } catch (error: unknown) {
@@ -136,7 +136,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
       }
 
       if (clerkError?.errors?.[0]?.code === 'form_identifier_exists') {
-        console.log(`⚠️  User ${userData.email} already exists in Clerk`)
+        console.warn(`⚠️  User ${userData.email} already exists in Clerk`)
 
         // Try to find the Clerk user and create database record
         try {
@@ -165,7 +165,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
               },
             })
 
-            console.log(`✅ Synced existing user: ${userData.email}`)
+            console.info(`✅ Synced existing user: ${userData.email}`)
           }
         } catch (syncError) {
           console.error(
@@ -179,14 +179,14 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
     }
   }
 
-  console.log('✅ Users seeding completed')
-  console.log(
+  console.info('✅ Users seeding completed')
+  console.info(
     '📝 You can now log in with any of these accounts using the default password.',
   )
-  console.log(
+  console.warn(
     '⚠️  Note: Make sure your webhooks are configured for production environments.',
   )
-  console.log(
+  console.info(
     '   See DEVELOPMENT_SETUP.md for webhook configuration instructions.',
   )
 }
