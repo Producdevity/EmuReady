@@ -1,8 +1,10 @@
 'use client'
 
-import { CheckCircle, XCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Search } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
+import { isEmpty } from 'remeda'
 import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   LoadingSpinner,
@@ -12,13 +14,22 @@ import {
   Pagination,
   SortableHeader,
   AdminTableContainer,
+  ColumnVisibilityControl,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
+import useColumnVisibility, {
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type Nullable } from '@/types/utils'
 import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
+import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { ApprovalStatus } from '@orm'
 import ConfirmationModal from './components/ConfirmationModal'
 import GameDetailsModal from './components/GameDetailsModal'
@@ -32,6 +43,15 @@ interface ConfirmationModalState {
   action: Nullable<ProcessingAction>
   gameTitle: string
 }
+
+const GAME_APPROVALS_COLUMNS: ColumnDefinition[] = [
+  { key: 'game', label: 'Game', defaultVisible: true },
+  { key: 'system', label: 'System', defaultVisible: true },
+  { key: 'submitter', label: 'Submitter', defaultVisible: true },
+  { key: 'submittedAt', label: 'Submitted', defaultVisible: true },
+  { key: 'status', label: 'Status', defaultVisible: true },
+  { key: 'actions', label: 'Actions', alwaysVisible: true },
+]
 
 function GameApprovalsPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
@@ -53,6 +73,10 @@ function GameApprovalsPage() {
     defaultSortDirection: 'desc',
   })
 
+  const columnVisibility = useColumnVisibility(GAME_APPROVALS_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminGameApprovals,
+  })
+
   const {
     data: pendingGamesData,
     isLoading,
@@ -62,6 +86,7 @@ function GameApprovalsPage() {
     page: table.page,
     sortField: table.sortField ?? 'submittedAt',
     sortDirection: table.sortDirection ?? 'desc',
+    search: isEmpty(table.search) ? undefined : table.search,
   })
 
   // Query for game stats
@@ -148,46 +173,55 @@ function GameApprovalsPage() {
           </p>
         </div>
 
-        {gameStats && (
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {gameStats.pending}
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={GAME_APPROVALS_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          {gameStats && (
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {gameStats.pending}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Pending
+                </div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Pending
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {gameStats.approved}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Approved
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {gameStats.rejected}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Rejected
+                </div>
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {gameStats.approved}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Approved
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {gameStats.rejected}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Rejected
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <Input
-              placeholder="Search games, systems, or submitters..."
-              value={table.search}
-              onChange={(e) => table.setSearch(e.target.value)}
-              className="w-full"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                placeholder="Search games, systems, or submitters..."
+                value={table.search}
+                onChange={(e) => table.setSearch(e.target.value)}
+                className="w-full pl-10"
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -220,39 +254,51 @@ function GameApprovalsPage() {
               <table className="min-w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <SortableHeader
-                      label="Game Title"
-                      field="title"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
-                    <SortableHeader
-                      label="System"
-                      field="system.name"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Submitter
-                    </th>
-                    <SortableHeader
-                      label="Submitted"
-                      field="submittedAt"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {columnVisibility.isColumnVisible('game') && (
+                      <SortableHeader
+                        label="Game"
+                        field="title"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                        className="px-6 py-3 text-left"
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('system') && (
+                      <SortableHeader
+                        label="System"
+                        field="system.name"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                        className="px-6 py-3 text-left"
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('submitter') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Submitter
+                      </th>
+                    )}
+                    {columnVisibility.isColumnVisible('submittedAt') && (
+                      <SortableHeader
+                        label="Submitted"
+                        field="submittedAt"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                        className="px-6 py-3 text-left"
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('status') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -261,70 +307,126 @@ function GameApprovalsPage() {
                       key={game.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div>
-                            <Link
-                              href={`/games/${game.id}`}
-                              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {game.title}
-                            </Link>
+                      {columnVisibility.isColumnVisible('game') && (
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-16 w-16 flex justify-center items-center">
+                              <Image
+                                src={getGameImageUrl(game)}
+                                alt={game.title}
+                                width={64}
+                                height={64}
+                                className="rounded-md object-cover"
+                                unoptimized
+                              />
+                            </div>
+                            <div className="ml-4">
+                              {game.title.length > 30 ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div>
+                                      <Link
+                                        href={`/games/${game.id}`}
+                                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                      >
+                                        {game.title.substring(0, 30)}...
+                                      </Link>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    {game.title}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Link
+                                  href={`/games/${game.id}`}
+                                  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                  {game.title}
+                                </Link>
+                              )}
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    ID: {game.id.substring(0, 8)}
+                                    {game.id.length > 8 && '...'}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                  ID: {game.id}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {game.system.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {game.submitter?.name ?? 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {formatDate(game.submittedAt!)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <ApprovalStatusBadge status={game.status} />
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
-                            onClick={() => showConfirmation(game.id, 'approve')}
-                            disabled={
-                              processingAction === 'approve' &&
-                              processingGameId === game.id
-                            }
-                            isLoading={
-                              processingAction === 'approve' &&
-                              processingGameId === game.id
-                            }
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
-                            onClick={() => showConfirmation(game.id, 'reject')}
-                            disabled={
-                              processingAction === 'reject' &&
-                              processingGameId === game.id
-                            }
-                            isLoading={
-                              processingAction === 'reject' &&
-                              processingGameId === game.id
-                            }
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                          <ViewButton
-                            onClick={() => openGameModal(game.id)}
-                            title="View Details"
-                          />
-                        </div>
-                      </td>
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('system') && (
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          {game.system.name}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('submitter') && (
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          {game.submitter?.name ?? 'Unknown'}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('submittedAt') && (
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          {formatDate(game.submittedAt!)}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('status') && (
+                        <td className="px-6 py-4">
+                          <ApprovalStatusBadge status={game.status} />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('actions') && (
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
+                              onClick={() =>
+                                showConfirmation(game.id, 'approve')
+                              }
+                              disabled={
+                                processingAction === 'approve' &&
+                                processingGameId === game.id
+                              }
+                              isLoading={
+                                processingAction === 'approve' &&
+                                processingGameId === game.id
+                              }
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
+                              onClick={() =>
+                                showConfirmation(game.id, 'reject')
+                              }
+                              disabled={
+                                processingAction === 'reject' &&
+                                processingGameId === game.id
+                              }
+                              isLoading={
+                                processingAction === 'reject' &&
+                                processingGameId === game.id
+                              }
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                            <ViewButton
+                              onClick={() => openGameModal(game.id)}
+                              title="View Details"
+                            />
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

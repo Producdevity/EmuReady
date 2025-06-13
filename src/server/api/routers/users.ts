@@ -243,7 +243,14 @@ export const usersRouter = createTRPCRouter({
   getAll: adminProcedure
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
-      const { search, sortField, sortDirection } = input ?? {}
+      const {
+        search,
+        sortField,
+        sortDirection,
+        page = 1,
+        limit = 20,
+      } = input ?? {}
+      const skip = (page - 1) * limit
 
       // Build where clause for search
       let where: Prisma.UserWhereInput = {}
@@ -292,19 +299,55 @@ export const usersRouter = createTRPCRouter({
         orderBy.push({ createdAt: 'desc' })
       }
 
-      return await ctx.prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          _count: { select: { listings: true, votes: true, comments: true } },
+      const [users, totalUsers] = await Promise.all([
+        ctx.prisma.user.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            createdAt: true,
+            _count: { select: { listings: true, votes: true, comments: true } },
+          },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        ctx.prisma.user.count({ where }),
+      ])
+
+      return {
+        users,
+        pagination: {
+          total: totalUsers,
+          pages: Math.ceil(totalUsers / limit),
+          page,
+          limit,
         },
-        orderBy,
-      })
+      }
     }),
+
+  getStats: adminProcedure.query(async ({ ctx }) => {
+    const [total, userCount, authorCount, adminCount, superAdminCount] =
+      await Promise.all([
+        ctx.prisma.user.count(),
+        ctx.prisma.user.count({ where: { role: 'USER' } }),
+        ctx.prisma.user.count({ where: { role: 'AUTHOR' } }),
+        ctx.prisma.user.count({ where: { role: 'ADMIN' } }),
+        ctx.prisma.user.count({ where: { role: 'SUPER_ADMIN' } }),
+      ])
+
+    return {
+      total,
+      byRole: {
+        user: userCount,
+        author: authorCount,
+        admin: adminCount,
+        superAdmin: superAdminCount,
+      },
+    }
+  }),
 
   updateRole: adminProcedure
     .input(UpdateUserRoleSchema)

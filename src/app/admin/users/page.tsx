@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
-import LoadingIcon from '@/components/icons/LoadingIcon'
 import {
   Button,
   Input,
@@ -14,6 +13,7 @@ import {
   ColumnVisibilityControl,
   AdminTableContainer,
   LoadingSpinner,
+  Pagination,
   useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
@@ -30,7 +30,7 @@ import { type Role } from '@orm'
 import UserDetailsModal from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
 
-type AdminUser = RouterOutput['users']['getAll'][number]
+type AdminUser = RouterOutput['users']['getAll']['users'][number]
 type UserSortField =
   | 'name'
   | 'email'
@@ -72,14 +72,21 @@ function AdminUsersPage() {
     useState<UserForModal | null>(null)
 
   const {
-    data: users,
+    data: usersData,
     isLoading,
     refetch,
   } = api.users.getAll.useQuery({
-    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
+    search: isEmpty(table.search) ? undefined : table.search,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
+    page: table.page,
+    limit: table.limit,
   })
+
+  const { data: userStats } = api.users.getStats.useQuery()
+
+  const users = usersData?.users ?? []
+  const pagination = usersData?.pagination
   const deleteUser = api.users.delete.useMutation()
   const confirm = useConfirmDialog()
 
@@ -135,27 +142,72 @@ function AdminUsersPage() {
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
             Users Management
           </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage user accounts and roles
+          </p>
         </div>
-        <ColumnVisibilityControl
-          columns={USERS_COLUMNS}
-          columnVisibility={columnVisibility}
-        />
-      </div>
-
-      <div>
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          {table.isSearching && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <LoadingIcon className="text-gray-400 h-4 w-4" />
+        <div className="flex items-center gap-3">
+          <ColumnVisibilityControl
+            columns={USERS_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+          {userStats && (
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {userStats.total}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Users
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {userStats.byRole.admin + userStats.byRole.superAdmin}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Admins
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {userStats.byRole.author}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Authors
+                </div>
+              </div>
             </div>
           )}
-          <Input
-            placeholder="Search users..."
-            value={table.search}
-            onChange={table.handleSearchChange}
-            className="pl-10 pr-10"
-          />
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                placeholder="Search users by name or email..."
+                value={table.search}
+                onChange={(e) => table.setSearch(e.target.value)}
+                className="w-full pl-10"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="h-full"
+              onClick={() => {
+                table.setSearch('')
+                table.setPage(1)
+              }}
+            >
+              Clear
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -313,21 +365,35 @@ function AdminUsersPage() {
                 </tr>
               ))}
 
-              {users && users.length === 0 && (
+              {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={columnVisibility.visibleColumns.size}
+                    colSpan={8}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
-                    No users found
-                    {table.debouncedSearch
-                      ? ` matching "${table.debouncedSearch}"`
-                      : ''}
+                    <div className="flex flex-col items-center">
+                      <User className="h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-lg">
+                        {table.search
+                          ? 'No users found matching your search.'
+                          : 'No users found.'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        )}
+
+        {pagination && pagination.pages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <Pagination
+              currentPage={table.page}
+              totalPages={pagination.pages}
+              onPageChange={table.setPage}
+            />
+          </div>
         )}
       </AdminTableContainer>
 

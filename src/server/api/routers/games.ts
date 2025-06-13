@@ -505,6 +505,7 @@ export const gamesRouter = createTRPCRouter({
     .input(GetPendingGamesSchema)
     .query(async ({ ctx, input }) => {
       const {
+        search,
         limit = 20,
         offset = 0,
         page,
@@ -516,6 +517,14 @@ export const gamesRouter = createTRPCRouter({
 
       const where: Prisma.GameWhereInput = {
         status: ApprovalStatus.PENDING,
+      }
+
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { system: { name: { contains: search, mode: 'insensitive' } } },
+          { submitter: { name: { contains: search, mode: 'insensitive' } } },
+        ]
       }
 
       // Build orderBy
