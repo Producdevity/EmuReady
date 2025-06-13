@@ -91,7 +91,7 @@ function GameDetailsModal(props: Props) {
           {hasAnyImage && (
             <div className="absolute inset-0 bg-black/20">
               <Image
-                src={getDisplayImage() ?? ''}
+                src={displayImage ?? ''}
                 alt={game.title}
                 fill
                 className="object-cover opacity-30"
@@ -179,7 +179,7 @@ function GameDetailsModal(props: Props) {
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
                 {displayImage && (
                   <Image
-                    src={getDisplayImage() ?? ''}
+                    src={displayImage ?? ''}
                     alt={`${game.title} - ${activeImageTab}`}
                     width={800}
                     height={256}
