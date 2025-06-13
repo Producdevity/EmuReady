@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import { formatDate, formatTimeAgo } from '@/utils/date'
+import getImageUrl from '@/utils/getImageUrl'
 
 type Game = RouterOutput['games']['getPendingGames']['games'][number]
 
@@ -75,7 +76,7 @@ function GameDetailsModal(props: Props) {
     // Navigate to admin users page with user modal open
     router.push(`/admin/users?userId=${userId}`)
   }
-  const displayImage = getDisplayImage()
+  const displayImage = getImageUrl(getDisplayImage(), props.selectedGame.title)
 
   return (
     <Modal

@@ -7,6 +7,7 @@ import AdminImageSelectorSwitcher from '@/components/ui/image-selectors/AdminIma
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
+import getImageUrl from '@/utils/getImageUrl'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role, type Game } from '@orm'
@@ -79,7 +80,10 @@ function GameBoxartImage(props: Props) {
   }
 
   const getCurrentImageUrl = () => {
-    return getFieldValue(activeImageType) || getGameImageUrl(props.game)
+    return (
+      getImageUrl(getFieldValue(activeImageType), props.game.title) ||
+      getGameImageUrl(props.game)
+    )
   }
 
   const availableImageTypes: ImageField[] = [
