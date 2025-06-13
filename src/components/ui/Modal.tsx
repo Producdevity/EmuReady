@@ -60,7 +60,7 @@ function Modal({ onClose, ...props }: Props) {
     >
       <div
         className={cn(
-          'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden w-full transform transition-all duration-300 ease-out animate-slide-up',
+          'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden w-full max-h-[90vh] transform transition-all duration-300 ease-out animate-slide-up',
           sizeClasses[size],
           props.className,
         )}
@@ -68,7 +68,7 @@ function Modal({ onClose, ...props }: Props) {
       >
         {/* Header */}
         {(!!props.title || !hideCloseButton) && (
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             {props.title && (
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
                 {props.title}
@@ -87,7 +87,7 @@ function Modal({ onClose, ...props }: Props) {
         )}
 
         {/* Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-grow min-h-0">
           {props.children}
         </div>
       </div>
