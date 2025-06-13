@@ -77,6 +77,13 @@ function GameDetailsModal(props: Props) {
       (props.selectedGame.imageUrl && !imageError.main),
   )
 
+  const hasOnlyOneImage =
+    [
+      props.selectedGame.boxartUrl && !imageError.boxart,
+      props.selectedGame.bannerUrl && !imageError.banner,
+      props.selectedGame.imageUrl && !imageError.main,
+    ].filter(Boolean).length === 1
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard
       .writeText(text)
@@ -146,51 +153,53 @@ function GameDetailsModal(props: Props) {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <ImageIcon className="w-5 h-5" />
-                Game Images
+                {hasOnlyOneImage ? 'Game Image' : 'Game Images'}
               </h3>
 
               {/* Image Tabs */}
-              <div className="flex gap-2">
-                {props.selectedGame.boxartUrl && !imageError.boxart && (
-                  <button
-                    onClick={() => setActiveImageTab('boxart')}
-                    className={cn(
-                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
-                      activeImageTab === 'boxart'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
-                    )}
-                  >
-                    Box Art
-                  </button>
-                )}
-                {props.selectedGame.bannerUrl && !imageError.banner && (
-                  <button
-                    onClick={() => setActiveImageTab('banner')}
-                    className={cn(
-                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
-                      activeImageTab === 'banner'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
-                    )}
-                  >
-                    Banner
-                  </button>
-                )}
-                {props.selectedGame.imageUrl && !imageError.main && (
-                  <button
-                    onClick={() => setActiveImageTab('main')}
-                    className={cn(
-                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
-                      activeImageTab === 'main'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
-                    )}
-                  >
-                    Main Image
-                  </button>
-                )}
-              </div>
+              {hasOnlyOneImage && (
+                <div className="flex gap-2">
+                  {props.selectedGame.boxartUrl && !imageError.boxart && (
+                    <button
+                      onClick={() => setActiveImageTab('boxart')}
+                      className={cn(
+                        'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
+                        activeImageTab === 'boxart'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+                      )}
+                    >
+                      Box Art
+                    </button>
+                  )}
+                  {props.selectedGame.bannerUrl && !imageError.banner && (
+                    <button
+                      onClick={() => setActiveImageTab('banner')}
+                      className={cn(
+                        'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
+                        activeImageTab === 'banner'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+                      )}
+                    >
+                      Banner
+                    </button>
+                  )}
+                  {props.selectedGame.imageUrl && !imageError.main && (
+                    <button
+                      onClick={() => setActiveImageTab('main')}
+                      className={cn(
+                        'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
+                        activeImageTab === 'main'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+                      )}
+                    >
+                      Main Image
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Image Display */}
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
@@ -315,13 +324,14 @@ function GameDetailsModal(props: Props) {
                     {props.selectedGame.system.name}
                   </p>
                   {props.selectedGame.system.key && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Key: {props.selectedGame.system.key}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+                      <span className="font-bold">Key: </span>
+                      {props.selectedGame.system.key}
                     </p>
                   )}
                   {props.selectedGame.system.tgdbPlatformId && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      TGDB Platform ID:{' '}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      <span className="font-bold">TGDB Platform ID: </span>
                       {props.selectedGame.system.tgdbPlatformId}
                     </p>
                   )}
@@ -358,9 +368,11 @@ function GameDetailsModal(props: Props) {
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           TGDB ID:
                         </span>
-                        <span className="text-xs text-gray-900 dark:text-white font-mono ml-4">
-                          {props.selectedGame.tgdbGameId}
-                        </span>
+                        <div className="flex items-center gap-1 ml-4">
+                          <code className="text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                            {props.selectedGame.tgdbGameId}
+                          </code>
+                        </div>
                       </div>
                     )}
                   </div>
