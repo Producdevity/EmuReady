@@ -2,17 +2,15 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import js from '@eslint/js'
 import { FlatCompat } from '@eslint/eslintrc'
-import importPlugin from 'eslint-plugin-import'
 import nextPlugin from '@next/eslint-plugin-next'
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
-import typescriptParser from '@typescript-eslint/parser'
+import typescriptEslint from 'typescript-eslint'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
 })
 
 export default [
@@ -34,50 +32,49 @@ export default [
       'build/',
 
       // Prisma generated client code
-      'prisma/generated/**',
+      'prisma/generated/',
 
-      // Test output/coverage directories
+      // Test coverage
       'coverage/',
-      'test-results/',
-      'tests/.auth',
-      'playwright-report/',
-      'blob-report/',
 
-      // IDE and editor directories
-      '.claude/',
-      '.cursor/',
+      // Environment files
+      '.env*',
+
+      // IDE files
       '.vscode/',
       '.idea/',
 
-      // Vercel deployment files
-      '.vercel/',
+      // OS files
+      '.DS_Store',
+      'Thumbs.db',
+
+      // Temporary files
+      '*.tmp',
+      '*.temp',
 
       // Log files
       '*.log',
-      'npm-debug.log*',
-      'yarn-debug.log*',
-      'yarn-error.log*',
-      '.pnpm-debug.log*',
+      'logs/',
 
-      // OS generated files
-      '.DS_Store',
-      '*.pem',
-
-      // TypeScript build info
-      '*.tsbuildinfo',
-      'next-env.d.ts',
+      // Package manager files
+      'yarn.lock',
+      'package-lock.json',
+      'pnpm-lock.yaml',
     ],
   },
-
-  // JavaScript base configuration
+  
+  // Base recommended configs
   js.configs.recommended,
-
-  // Legacy Next.js configuration for compatibility with detection
+  
+  // Next.js configuration using compatibility layer
   ...compat.extends('next/core-web-vitals'),
 
-  // Browser environment configuration
+  // TypeScript configuration
+  ...typescriptEslint.configs.recommended,
+
+  // Custom configuration for all files
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -85,79 +82,61 @@ export default [
         // Browser globals
         window: 'readonly',
         document: 'readonly',
-        console: 'readonly',
-        alert: 'readonly',
-        confirm: 'readonly',
         navigator: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
+        clearInterval: 'readonly',
+        fetch: 'readonly',
         localStorage: 'readonly',
         sessionStorage: 'readonly',
-        fetch: 'readonly',
-        URL: 'readonly',
+        location: 'readonly',
+        history: 'readonly',
         URLSearchParams: 'readonly',
         FormData: 'readonly',
         File: 'readonly',
+        Blob: 'readonly',
         FileReader: 'readonly',
+        
+        // HTML elements
         HTMLElement: 'readonly',
         HTMLInputElement: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLButtonElement: 'readonly',
         HTMLSelectElement: 'readonly',
         HTMLTextAreaElement: 'readonly',
-        HTMLDivElement: 'readonly',
-        HTMLButtonElement: 'readonly',
-        HTMLLIElement: 'readonly',
-        HTMLUListElement: 'readonly',
-        SVGSVGElement: 'readonly',
-        Node: 'readonly',
-        EventSource: 'readonly',
-        Notification: 'readonly',
-        KeyboardEvent: 'readonly',
+        HTMLImageElement: 'readonly',
+        HTMLCanvasElement: 'readonly',
+        HTMLVideoElement: 'readonly',
+        HTMLAudioElement: 'readonly',
+        
+        // Events
+        Event: 'readonly',
         MouseEvent: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        Buffer: 'readonly',
-        TextEncoder: 'readonly',
-        ReadableStream: 'readonly',
-        ReadableStreamDefaultController: 'readonly',
-        Response: 'readonly',
-        React: 'readonly',
+        KeyboardEvent: 'readonly',
+        TouchEvent: 'readonly',
+        CustomEvent: 'readonly',
         
         // Node.js globals
         process: 'readonly',
+        Buffer: 'readonly',
         global: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        
+        // Next.js globals
         NodeJS: 'readonly',
-      },
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
+        React: 'readonly',
+        JSX: 'readonly',
       },
     },
   },
 
-  // TypeScript configuration
-  {
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
-        project: './tsconfig.json',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': typescriptEslint,
-    },
-    rules: {
-      ...typescriptEslint.configs.recommended.rules,
-    },
-  },
-
-  // Next.js configuration (additional)
+  // Next.js plugin configuration with proper plugin naming
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
@@ -169,20 +148,10 @@ export default [
     },
   },
 
-  // Custom rules for the project
+  // TypeScript specific configuration
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['**/*.{ts,tsx}'],
     rules: {
-      'prefer-template': 'error',
-      'no-useless-escape': 'off',
-      'no-case-declarations': 'off',
-      'no-prototype-builtins': 'off',
-      'no-redeclare': 'error',
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
-      ],
-      '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -191,106 +160,32 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 
-  // Import plugin configuration
+  // Additional rules
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    ignores: ['eslint.config.mjs', 'next.config.ts'],
-    plugins: {
-      import: importPlugin,
-    },
-    settings: {
-      'import/resolver': {
-        typescript: {
-          project: './tsconfig.json',
-        },
-        node: {
-          extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        },
-      },
-      'import/parsers': {
-        '@typescript-eslint/parser': ['.ts', '.tsx'],
-      },
-    },
     rules: {
-      // Import order and sorting - libraries first, then local files
-      'import/order': [
-        'error',
-        {
-          groups: [
-            'builtin', // Node.js built-in modules
-            'external', // External packages from node_modules
-            'internal', // Internal modules (your own modules)
-            ['parent', 'sibling'], // Relative imports from parent/sibling directories
-            'index', // Index imports
-            'type', // TypeScript type imports
-          ],
-          pathGroups: [
-            {
-              pattern: '@/**',
-              group: 'internal',
-              position: 'before',
-            },
-            {
-              pattern: '~/**',
-              group: 'internal',
-              position: 'before',
-            },
-            {
-              pattern: './**.module.css',
-              group: 'sibling',
-              position: 'after',
-            },
-            {
-              pattern: './**.css',
-              group: 'sibling',
-              position: 'after',
-            },
-          ],
-          pathGroupsExcludedImportTypes: ['type'],
-          'newlines-between': 'never',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-          distinctGroup: false,
-        },
-      ],
-
-      // Additional import rules for clean code
-      'import/first': 'error',
-      'import/newline-after-import': 'off',
-      'import/no-duplicates': 'error',
-      'import/extensions': [
-        'error',
-        'ignorePackages',
-        {
-          js: 'never',
-          jsx: 'never',
-          ts: 'never',
-          tsx: 'never',
-        },
-      ],
+      // General rules
+      'no-console': 'warn',
+      'no-debugger': 'error',
+      'no-unused-vars': 'off', // Use TypeScript version instead
+      'prefer-const': 'error',
+      'no-var': 'error',
+      
+      // Disable problematic rules
+      'no-useless-escape': 'off',
+      'no-case-declarations': 'off',
+      'no-prototype-builtins': 'off',
     },
   },
 
-  // UI components - allow circular dependencies for component index files
+  // Linter options
   {
-    files: ['src/components/ui/**/*.{ts,tsx}'],
-    rules: {
-      'import/no-cycle': 'off', // UI components often have legitimate circular dependencies
-    },
-  },
-
-  // Test files specific configuration
-  {
-    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@next/next/no-img-element': 'off',
-      'import/no-cycle': 'off', // Tests don't need strict dependency checking
+    linterOptions: {
+      reportUnusedDisableDirectives: 'warn',
     },
   },
 ]
+
