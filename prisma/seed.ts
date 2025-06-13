@@ -1,4 +1,5 @@
 import { PrismaClient } from '@orm'
+import clearTestDataSeeder from './seeders/clearTestDataSeeder'
 import devicesSeeder from './seeders/devicesSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
@@ -10,32 +11,51 @@ import usersSeeder from './seeders/usersSeeder'
 
 const prisma = new PrismaClient()
 
+async function clearDb() {
+  console.warn('🗑️ Clearing database...')
+  console.warn('I hope you know what you are doing 😅')
+
+  // Clear all data in the correct order (children before parents)
+  await prisma.vote.deleteMany()
+  await prisma.commentVote.deleteMany()
+  await prisma.comment.deleteMany()
+  await prisma.listingCustomFieldValue.deleteMany()
+  await prisma.listing.deleteMany()
+  await prisma.customFieldDefinition.deleteMany()
+  await prisma.performanceScale.deleteMany()
+  await prisma.device.deleteMany()
+  await prisma.soC.deleteMany()
+  await prisma.emulator.deleteMany()
+  await prisma.game.deleteMany()
+  await prisma.system.deleteMany()
+  await prisma.deviceBrand.deleteMany()
+}
+
 async function main() {
   const args = process.argv.slice(2)
-  const clearDb = args.includes('--clear')
-  const clearDbUsers = args.includes('--clear-users')
+  const clearDbArg = args.includes('--clear')
+  const clearDbTestDataArg = args.includes('--clear-test-data')
 
-  if (clearDb) {
+  if (clearDbTestDataArg) {
+    console.info('🧹 Clearing test data only...')
+    try {
+      await clearTestDataSeeder(prisma)
+      console.info('✅ Test data cleared successfully!')
+    } catch (error) {
+      console.error('❌ Error clearing test data:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
+  if (clearDbArg) {
     console.warn('🗑️ Clearing database...')
     console.warn('I hope you know what you are doing 😅')
 
     // Clear all data in the correct order (children before parents)
-    await prisma.vote.deleteMany()
-    await prisma.commentVote.deleteMany()
-    await prisma.comment.deleteMany()
-    await prisma.listingCustomFieldValue.deleteMany()
-    await prisma.listing.deleteMany()
-    await prisma.customFieldDefinition.deleteMany()
-    await prisma.performanceScale.deleteMany()
-    await prisma.device.deleteMany()
-    await prisma.soC.deleteMany()
-    await prisma.emulator.deleteMany()
-    await prisma.game.deleteMany()
-    await prisma.system.deleteMany()
-    await prisma.deviceBrand.deleteMany()
-    if (clearDbUsers) {
-      await prisma.user.deleteMany()
-    }
+    await clearDb()
 
     console.info('✅ Database cleared!')
   }
