@@ -22,4 +22,5 @@ export const listingsRouter = createTRPCRouter({
   getProcessed: adminRouter.getProcessed,
   overrideApprovalStatus: adminRouter.overrideStatus,
   delete: adminRouter.delete,
+  getStats: adminRouter.getStats,
 })

@@ -30,6 +30,14 @@ function AdminLayout(props: PropsWithChildren) {
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
   })
 
+  // Get pending listings count for admin navigation
+  const listingStatsQuery = api.listings.getStats.useQuery(undefined, {
+    enabled:
+      !!userQuery.data &&
+      hasPermission(userQuery.data.role as Role, Role.ADMIN),
+    refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
+  })
+
   const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   useEffect(() => {
@@ -58,11 +66,15 @@ function AdminLayout(props: PropsWithChildren) {
   if (!hasPermission(userQuery.data?.role, Role.ADMIN)) return null
 
   // Create navigation items with counts
-  const adminNavItemsWithCounts = adminNavItems.map((item) =>
-    item.href === '/admin/games/approvals' && gameStatsQuery.data
-      ? { ...item, count: gameStatsQuery.data.pending }
-      : item,
-  )
+  const adminNavItemsWithCounts = adminNavItems.map((item) => {
+    if (item.href === '/admin/games/approvals' && gameStatsQuery.data) {
+      return { ...item, count: gameStatsQuery.data.pending }
+    }
+    if (item.href === '/admin/approvals' && listingStatsQuery.data) {
+      return { ...item, count: listingStatsQuery.data.pending }
+    }
+    return item
+  })
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">

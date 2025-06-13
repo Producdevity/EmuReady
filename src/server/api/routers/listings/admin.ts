@@ -41,57 +41,25 @@ export const adminRouter = createTRPCRouter({
         where = {
           ...where,
           OR: [
+            { game: { title: { contains: search, mode: 'insensitive' } } },
             {
               game: {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
+                system: { name: { contains: search, mode: 'insensitive' } },
               },
             },
             {
-              game: {
-                system: {
-                  name: {
-                    contains: search,
-                    mode: 'insensitive',
-                  },
-                },
-              },
+              device: { modelName: { contains: search, mode: 'insensitive' } },
             },
             {
               device: {
-                modelName: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
+                brand: { name: { contains: search, mode: 'insensitive' } },
               },
             },
             {
-              device: {
-                brand: {
-                  name: {
-                    contains: search,
-                    mode: 'insensitive',
-                  },
-                },
-              },
+              emulator: { name: { contains: search, mode: 'insensitive' } },
             },
             {
-              emulator: {
-                name: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            },
-            {
-              author: {
-                name: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
+              author: { name: { contains: search, mode: 'insensitive' } },
             },
           ],
         }
@@ -139,9 +107,7 @@ export const adminRouter = createTRPCRouter({
         take: limit,
       })
 
-      const totalListings = await ctx.prisma.listing.count({
-        where,
-      })
+      const totalListings = await ctx.prisma.listing.count({ where })
 
       return {
         listings,
@@ -165,9 +131,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: adminUserId },
         select: { id: true },
       })
-      if (!adminUserExists) {
-        ResourceError.user.notInDatabase(adminUserId)
-      }
+      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
       const listingToApprove = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
@@ -177,7 +141,7 @@ export const adminRouter = createTRPCRouter({
         !listingToApprove ||
         listingToApprove.status !== ApprovalStatus.PENDING
       ) {
-        ResourceError.listing.notPending()
+        return ResourceError.listing.notPending()
       }
 
       const updatedListing = await ctx.prisma.listing.update({
@@ -217,9 +181,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: adminUserId },
         select: { id: true },
       })
-      if (!adminUserExists) {
-        ResourceError.user.notInDatabase(adminUserId)
-      }
+      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
       const listingToReject = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
@@ -229,7 +191,7 @@ export const adminRouter = createTRPCRouter({
         !listingToReject ||
         listingToReject.status !== ApprovalStatus.PENDING
       ) {
-        ResourceError.listing.notPending()
+        return ResourceError.listing.notPending()
       }
 
       const updatedListing = await ctx.prisma.listing.update({
@@ -272,34 +234,10 @@ export const adminRouter = createTRPCRouter({
       const searchWhere: Prisma.ListingWhereInput = search
         ? {
             OR: [
-              {
-                game: {
-                  title: {
-                    contains: search,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-              {
-                author: {
-                  name: {
-                    contains: search,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-              {
-                processedNotes: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                notes: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
+              { game: { title: { contains: search, mode: 'insensitive' } } },
+              { author: { name: { contains: search, mode: 'insensitive' } } },
+              { processedNotes: { contains: search, mode: 'insensitive' } },
+              { notes: { contains: search, mode: 'insensitive' } },
             ],
           }
         : {}
@@ -351,10 +289,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: listingId },
       })
 
-      if (!listingToOverride) {
-        ResourceError.listing.notFound()
-        return // This will never be reached, but helps TypeScript
-      }
+      if (!listingToOverride) return ResourceError.listing.notFound()
 
       const updatedListing = await ctx.prisma.listing.update({
         where: { id: listingId },
@@ -384,19 +319,33 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  delete: adminProcedure
+  delete: superAdminProcedure
     .input(DeleteListingSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id } = input
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        select: { id: true, game: { select: { title: true } } },
+      })
 
-      const listing = await ctx.prisma.listing.findUnique({ where: { id } })
+      if (!listing) return ResourceError.listing.notFound()
 
-      if (!listing) {
-        ResourceError.listing.notFound()
-      }
+      await ctx.prisma.listing.delete({ where: { id: input.id } })
 
-      await ctx.prisma.listing.delete({ where: { id } })
-
-      return { success: true }
+      return { success: true, message: 'Listing deleted successfully' }
     }),
+
+  getStats: adminProcedure.query(async ({ ctx }) => {
+    const [pending, approved, rejected] = await Promise.all([
+      ctx.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
+      ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
+      ctx.prisma.listing.count({ where: { status: ApprovalStatus.REJECTED } }),
+    ])
+
+    return {
+      pending,
+      approved,
+      rejected,
+      total: pending + approved + rejected,
+    }
+  }),
 })
