@@ -59,7 +59,7 @@ function ConfirmDialogProvider(props: PropsWithChildren) {
     <ConfirmDialogContext.Provider value={confirm}>
       {props.children}
       <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent title={options.title ?? 'Are you sure?'}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {options.title ?? 'Are you sure?'}
