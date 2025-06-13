@@ -26,7 +26,7 @@ const imageServiceMap: Record<ImageService, ImageService> = {
 
 function ImageSelectorSwitcher(props: Props) {
   const [selectedService, setSelectedService] = useState<ImageService>(
-    imageServiceMap.rawg,
+    imageServiceMap.tgdb,
   )
 
   const slideVariants = {

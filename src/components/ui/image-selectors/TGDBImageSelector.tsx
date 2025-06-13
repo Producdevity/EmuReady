@@ -420,6 +420,7 @@ function TGDBImageSelector(props: Props) {
           onClose={closePreview}
           title={previewImage.gameName}
           size="lg"
+          isNested={true}
         >
           <div className="space-y-4">
             <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">

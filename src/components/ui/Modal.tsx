@@ -12,11 +12,13 @@ interface Props {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
   hideCloseButton?: boolean
+  isNested?: boolean
 }
 
 function Modal({ onClose, ...props }: Props) {
   const size = props.size ?? 'md'
   const hideCloseButton = props.hideCloseButton ?? false
+  const isNested = props.isNested ?? false
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -41,10 +43,20 @@ function Modal({ onClose, ...props }: Props) {
     xl: 'max-w-xl',
   }
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Only close if the click is directly on the backdrop, not bubbling from child elements
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
+      className={cn(
+        'fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in',
+        isNested ? 'z-[60]' : 'z-50',
+      )}
+      onClick={handleBackdropClick}
     >
       <div
         className={cn(
