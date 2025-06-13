@@ -52,7 +52,10 @@ function GameEditForm(props: Props) {
   const updateGameAdmin = api.games.update.useMutation({
     onSuccess: () => {
       setOpen(false)
-      utils.games.byId.invalidate({ id: props.gameData.id }).catch((error) => {
+      Promise.all([
+        utils.games.byId.invalidate({ id: props.gameData.id }),
+        utils.games.get.invalidate(),
+      ]).catch((error) => {
         console.error('Error invalidating game cache:', error)
         router.refresh()
       })
@@ -66,7 +69,10 @@ function GameEditForm(props: Props) {
   const updateGameUser = api.games.updateOwnPendingGame.useMutation({
     onSuccess: () => {
       setOpen(false)
-      utils.games.byId.invalidate({ id: props.gameData.id }).catch((error) => {
+      Promise.all([
+        utils.games.byId.invalidate({ id: props.gameData.id }),
+        utils.games.get.invalidate(),
+      ]).catch((error) => {
         console.error('Error invalidating game cache:', error)
         router.refresh()
       })
