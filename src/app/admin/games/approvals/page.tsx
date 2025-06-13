@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
+import SystemIcon from '@/components/icons/SystemIcon'
 import {
   LoadingSpinner,
   Button,
@@ -19,11 +20,13 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui'
+import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type Nullable } from '@/types/utils'
@@ -76,6 +79,9 @@ function GameApprovalsPage() {
   const columnVisibility = useColumnVisibility(GAME_APPROVALS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminGameApprovals,
   })
+
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
+    useLocalStorage(storageKeys.showSystemIcons, false)
 
   const {
     data: pendingGamesData,
@@ -174,6 +180,13 @@ function GameApprovalsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <DisplayToggleButton
+            showLogos={showSystemIcons}
+            onToggle={() => setShowSystemIcons(!showSystemIcons)}
+            isHydrated={isSystemIconsHydrated}
+            logoLabel="Show System Icons"
+            nameLabel="Show System Names"
+          />
           <ColumnVisibilityControl
             columns={GAME_APPROVALS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -363,7 +376,22 @@ function GameApprovalsPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game.system.name}
+                          {isSystemIconsHydrated &&
+                          showSystemIcons &&
+                          game.system?.key ? (
+                            <div className="flex items-center gap-2">
+                              <SystemIcon
+                                name={game.system.name}
+                                systemKey={game.system.key}
+                                size="sm"
+                              />
+                              <span className="sr-only">
+                                {game.system.name}
+                              </span>
+                            </div>
+                          ) : (
+                            game.system.name
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('submitter') && (
