@@ -35,6 +35,8 @@ async function main() {
   const args = process.argv.slice(2)
   const clearDbArg = args.includes('--clear')
   const clearDbTestDataArg = args.includes('--clear-test-data')
+  const seedSocsOnly = args.includes('--socs-only')
+  const seedDevicesOnly = args.includes('--devices-only')
 
   if (clearDbTestDataArg) {
     console.info('🧹 Clearing test data only...')
@@ -43,6 +45,34 @@ async function main() {
       console.info('✅ Test data cleared successfully!')
     } catch (error) {
       console.error('❌ Error clearing test data:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
+  if (seedSocsOnly) {
+    console.info('🌱 Seeding SoCs only...')
+    try {
+      await socSeeder(prisma)
+      console.info('✅ SoCs seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding SoCs:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
+  if (seedDevicesOnly) {
+    console.info('🌱 Seeding devices only...')
+    try {
+      await devicesSeeder(prisma)
+      console.info('✅ Devices seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding devices:', error)
       throw error
     } finally {
       await prisma.$disconnect()
