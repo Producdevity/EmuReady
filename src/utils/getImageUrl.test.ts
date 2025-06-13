@@ -58,7 +58,7 @@ describe('getImageUrl', () => {
 
   it('handles protocol-relative URLs correctly', () => {
     const protocolRelativeUrl = '//example.com/image.jpg'
-    const result = getImageUrl(protocolRelativeUrl)
+    const result = getImageUrl(protocolRelativeUrl, null, { useProxy: true })
 
     expect(getSafePlaceholderImageUrl).toHaveBeenCalled()
     expect(result).toBe('/placeholder-image-for-unknown')
