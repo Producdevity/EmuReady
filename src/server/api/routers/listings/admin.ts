@@ -16,8 +16,11 @@ import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import { listingStatsCache } from '@/server/utils/cache/instances'
 import { ApprovalStatus } from '@orm'
 import type { Prisma } from '@orm'
+
+const LISTING_STATS_CACHE_KEY = 'listing-stats'
 
 export const adminRouter = createTRPCRouter({
   getPending: adminProcedure
@@ -167,6 +170,9 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
+      // Invalidate listing stats cache
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
       return updatedListing
     }),
 
@@ -216,6 +222,9 @@ export const adminRouter = createTRPCRouter({
           rejectionReason: notes,
         },
       })
+
+      // Invalidate listing stats cache
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       return updatedListing
     }),
@@ -316,6 +325,9 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
+      // Invalidate listing stats cache
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
       return updatedListing
     }),
 
@@ -330,6 +342,9 @@ export const adminRouter = createTRPCRouter({
       if (!listing) return ResourceError.listing.notFound()
 
       await ctx.prisma.listing.delete({ where: { id: input.id } })
+
+      // Invalidate listing stats cache
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       return { success: true, message: 'Listing deleted successfully' }
     }),

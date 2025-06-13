@@ -22,6 +22,17 @@ export const gameStatsCache = new MemoryCache<{
   maxSize: 100, // Small cache for stats
 })
 
+// Listing statistics cache
+export const listingStatsCache = new MemoryCache<{
+  pending: number
+  approved: number
+  rejected: number
+  total: number
+}>({
+  ttl: 5 * 60 * 1000, // 5 minutes
+  maxSize: 100, // Small cache for stats
+})
+
 // TGDB-specific caches with proper typing
 export const tgdbGamesCache = new MemoryCache<TGDBGamesByNameResponse>({
   ttl: 10 * 60 * 1000, // 10 minutes for TGDB responses
