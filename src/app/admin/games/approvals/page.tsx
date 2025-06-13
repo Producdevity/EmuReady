@@ -362,8 +362,8 @@ function GameApprovalsPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    ID: {game.id.substring(0, 8)}
-                                    {game.id.length > 8 && '...'}
+                                    ID: {game.id.substring(0, 20)}
+                                    {game.id.length > 20 && '...'}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">
