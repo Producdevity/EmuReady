@@ -52,6 +52,8 @@ interface FiltersProps {
   userPreferences: UserPreferences | null | undefined
   shouldUseUserDeviceFilter: boolean | undefined
   userDeviceIds: string[]
+  shouldUseUserSocFilter: boolean | undefined
+  userSocIds: string[]
 }
 
 function ListingFilters(props: FiltersProps) {
@@ -565,6 +567,43 @@ function ListingFilters(props: FiltersProps) {
                     placeholder="All SoCs"
                     maxDisplayed={1}
                   />
+
+                  {/* User SoC Filter Indicator */}
+                  {props.shouldUseUserSocFilter && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <User className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                          Filtered by your SoCs
+                        </span>
+                      </div>
+                      <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
+                        Showing results for {props.userSocIds.length} of your
+                        preferred SoCs
+                      </p>
+                      <div className="flex gap-2">
+                        <Link
+                          href="/profile?tab=socs"
+                          className="inline-flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <Settings2 className="w-3 h-3" />
+                          Manage SoCs
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => props.onSocChange([])}
+                          className="text-xs h-7 px-2"
+                        >
+                          Show all SoCs
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
 
                   <MultiSelect
                     label="Emulators"

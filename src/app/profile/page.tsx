@@ -167,7 +167,7 @@ function ProfilePage() {
   }
 
   function handleDevicePreferenceChange(
-    key: 'defaultToUserDevices' | 'notifyOnNewListings',
+    key: 'defaultToUserDevices' | 'defaultToUserSocs' | 'notifyOnNewListings',
     value: boolean,
   ) {
     updatePreferences.mutate({
@@ -377,6 +377,19 @@ function ProfilePage() {
                           }
                           label="Filter listings by my devices"
                           description="When enabled, listings will be filtered to show only your selected devices by default"
+                        />
+                      </div>
+                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+                        <AnimatedToggle
+                          checked={preferences?.defaultToUserSocs ?? false}
+                          onChange={(checked) =>
+                            handleDevicePreferenceChange(
+                              'defaultToUserSocs',
+                              checked,
+                            )
+                          }
+                          label="Filter listings by my SoCs"
+                          description="When enabled, listings will be filtered to show only your selected SoCs by default"
                         />
                       </div>
                     </div>

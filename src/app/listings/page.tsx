@@ -79,11 +79,22 @@ function ListingsPage() {
     ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
     : []
 
+  // Get user's preferred SoC IDs if defaultToUserSocs is enabled
+  const userSocIds = userPreferencesQuery.data?.defaultToUserSocs
+    ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
+    : []
+
   // Apply user device filter if enabled and no manual device filter is set
   const shouldUseUserDeviceFilter =
     userPreferencesQuery.data?.defaultToUserDevices &&
     listingsState.deviceIds.length === 0 &&
     userDeviceIds.length > 0
+
+  // Apply user SoC filter if enabled and no manual SoC filter is set
+  const shouldUseUserSocFilter =
+    userPreferencesQuery.data?.defaultToUserSocs &&
+    listingsState.socIds.length === 0 &&
+    userSocIds.length > 0
 
   const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
@@ -100,7 +111,12 @@ function ListingsPage() {
         : shouldUseUserDeviceFilter
           ? userDeviceIds
           : undefined,
-    socIds: listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
+    socIds:
+      listingsState.socIds.length > 0
+        ? listingsState.socIds
+        : shouldUseUserSocFilter
+          ? userSocIds
+          : undefined,
     emulatorIds:
       listingsState.emulatorIds.length > 0
         ? listingsState.emulatorIds
@@ -230,6 +246,8 @@ function ListingsPage() {
         userPreferences={userPreferencesQuery.data}
         shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
         userDeviceIds={userDeviceIds}
+        shouldUseUserSocFilter={shouldUseUserSocFilter}
+        userSocIds={userSocIds}
       />
 
       {/* Main Content - Listings */}
