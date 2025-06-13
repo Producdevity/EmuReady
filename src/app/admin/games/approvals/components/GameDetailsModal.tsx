@@ -94,6 +94,7 @@ function GameDetailsModal(props: Props) {
                 fill
                 className="object-cover opacity-30"
                 onError={() => handleImageError(activeImageTab)}
+                unoptimized
               />
             </div>
           )}
@@ -181,6 +182,7 @@ function GameDetailsModal(props: Props) {
                   height={256}
                   className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105"
                   onError={() => handleImageError(activeImageTab)}
+                  unoptimized
                 />
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
@@ -216,6 +218,7 @@ function GameDetailsModal(props: Props) {
                       width={32}
                       height={32}
                       className="w-8 h-8 rounded-full object-cover"
+                      unoptimized
                     />
                   )}
                   <div className="flex-1 min-w-0">

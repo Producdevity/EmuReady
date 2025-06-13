@@ -328,6 +328,7 @@ function AdminGamesPage() {
                                 width={64}
                                 height={64}
                                 className="rounded-md object-cover"
+                                unoptimized
                               />
                             </div>
                             <div className="ml-4">

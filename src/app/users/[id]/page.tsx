@@ -43,6 +43,7 @@ function UserDetailsPage() {
                     fill
                     sizes="(max-width: 768px) 100vw, 128px"
                     className="object-cover"
+                    unoptimized
                   />
                 </div>
               </div>
