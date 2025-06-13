@@ -77,6 +77,7 @@ function ProfileUpload(props: Props) {
           fill
           sizes="(max-width: 768px) 100vw, 128px"
           className="object-cover"
+          unoptimized
         />
         {isUploading && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">

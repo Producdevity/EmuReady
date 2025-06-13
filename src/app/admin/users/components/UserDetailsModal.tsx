@@ -82,6 +82,7 @@ function UserDetailsModal(props: Props) {
                     width={64}
                     height={64}
                     className="w-16 h-16 rounded-full border-4 border-white/20 object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-full border-4 border-white/20 bg-white/10 flex items-center justify-center">

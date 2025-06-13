@@ -273,6 +273,7 @@ function AdminImageSelectorSwitcher(props: Props) {
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
                         }}
+                        unoptimized
                       />
                       <p className="text-sm font-mono text-gray-600 dark:text-gray-400 break-all">
                         {props.selectedImageUrl}

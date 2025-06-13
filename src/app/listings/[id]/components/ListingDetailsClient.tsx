@@ -187,6 +187,7 @@ function ListingDetailsClient(props: Props) {
                     fill
                     sizes="64px"
                     className="object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-indigo-700 dark:text-indigo-200">
