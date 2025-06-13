@@ -60,7 +60,7 @@ function EmulatorIcon(props: Props) {
           filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
         }}
         priority={false}
-        unoptimized={false}
+        unoptimized
       />
     </div>
   )

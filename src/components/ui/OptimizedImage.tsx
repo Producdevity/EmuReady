@@ -59,6 +59,7 @@ function OptimizedImage(props: Props) {
         quality={props.quality ?? 85}
         onLoad={() => setIsLoading(false)}
         onError={handleError}
+        unoptimized // temporarily disable Next.js image optimization because MONEYYYYY
       />
     </div>
   )
