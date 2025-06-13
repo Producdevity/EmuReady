@@ -23,8 +23,9 @@ import { formatDate, formatTimeAgo } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
 
 type Game = RouterOutput['games']['getPendingGames']['games'][number]
+type ImageTabType = 'boxart' | 'banner' | 'main'
 
-function getInitialImageTab(game: Game | null) {
+function getInitialImageTab(game: Game | null): ImageTabType {
   if (game?.boxartUrl) return 'boxart'
   if (game?.bannerUrl) return 'banner'
   return 'main'
@@ -41,9 +42,9 @@ interface Props {
 
 function GameDetailsModal(props: Props) {
   const router = useRouter()
-  const [activeImageTab, setActiveImageTab] = useState<
-    'boxart' | 'banner' | 'main'
-  >(getInitialImageTab(props.selectedGame))
+  const [activeImageTab, setActiveImageTab] = useState<ImageTabType>(
+    getInitialImageTab(props.selectedGame),
+  )
   const [imageError, setImageError] = useState<Record<string, boolean>>({})
 
   if (!props.selectedGame) return null
@@ -95,6 +96,7 @@ function GameDetailsModal(props: Props) {
   }
 
   const navigateToUserModal = (userId: string) => {
+    // Close current modal first
     props.onClose()
     // Navigate to admin users page with user modal open
     router.push(`/admin/users?userId=${userId}`)
