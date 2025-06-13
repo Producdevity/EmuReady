@@ -223,7 +223,7 @@ function AdminApprovalsPage() {
       )}
 
       {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
