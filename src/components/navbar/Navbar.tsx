@@ -102,7 +102,7 @@ function Navbar() {
           {/* Right Section */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            <NotificationCenter />
+            {user && <NotificationCenter />}
 
             {!isLoaded ? (
               <div className="flex items-center justify-center w-8 h-8">
