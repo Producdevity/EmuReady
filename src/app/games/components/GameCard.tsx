@@ -26,6 +26,7 @@ function GameCard(props: Props) {
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           priority={false}
+          unoptimized
         />
       </div>
       <div className="p-6">
