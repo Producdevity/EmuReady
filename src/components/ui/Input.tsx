@@ -33,62 +33,64 @@ const Input = forwardRef<HTMLElement, Props>(
       'w-full outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent'
 
     return (
-      <div
-        className={cn(
-          'relative flex items-center bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-200',
-          className,
-        )}
-      >
-        {leftIcon && (
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-            {leftIcon}
-          </span>
-        )}
-        {as === 'input' && (
-          <input
-            ref={ref as Ref<HTMLInputElement>}
-            type="text"
-            className={cn(
-              commonInputStyling,
-              'py-2 px-3',
-              leftIcon ? 'pl-10' : '',
-              rightIcon ? 'pr-10' : '',
-            )}
-            {...props}
-          />
-        )}
-        {as === 'select' && (
-          <select
-            ref={ref as Ref<HTMLSelectElement>}
-            className={cn(
-              commonInputStyling,
-              'appearance-none',
-              'py-2 px-3',
-              leftIcon ? 'pl-10' : '',
-              rightIcon ? 'pr-10' : '',
-            )}
-            {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
-          >
-            {children}
-          </select>
-        )}
-        {as === 'textarea' && (
-          <textarea
-            ref={ref as Ref<HTMLTextAreaElement>}
-            className={cn(
-              commonInputStyling,
-              'py-2 px-3',
-              leftIcon ? 'pl-10' : '',
-              rightIcon ? 'pr-10' : '',
-            )}
-            {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
-          />
-        )}
-        {rightIcon && (
-          <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500">
-            {rightIcon}
-          </span>
-        )}
+      <div className="relative">
+        <div
+          className={cn(
+            'relative flex items-center bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-200',
+            className,
+          )}
+        >
+          {leftIcon && (
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+              {leftIcon}
+            </span>
+          )}
+          {as === 'input' && (
+            <input
+              ref={ref as Ref<HTMLInputElement>}
+              type="text"
+              className={cn(
+                commonInputStyling,
+                'py-2 px-3',
+                leftIcon ? 'pl-10' : '',
+                rightIcon ? 'pr-10' : '',
+              )}
+              {...props}
+            />
+          )}
+          {as === 'select' && (
+            <select
+              ref={ref as Ref<HTMLSelectElement>}
+              className={cn(
+                commonInputStyling,
+                'appearance-none',
+                'py-2 px-3',
+                leftIcon ? 'pl-10' : '',
+                rightIcon ? 'pr-10' : '',
+              )}
+              {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
+            >
+              {children}
+            </select>
+          )}
+          {as === 'textarea' && (
+            <textarea
+              ref={ref as Ref<HTMLTextAreaElement>}
+              className={cn(
+                commonInputStyling,
+                'py-2 px-3',
+                leftIcon ? 'pl-10' : '',
+                rightIcon ? 'pr-10' : '',
+              )}
+              {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            />
+          )}
+          {rightIcon && (
+            <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500">
+              {rightIcon}
+            </span>
+          )}
+        </div>
       </div>
     )
   },

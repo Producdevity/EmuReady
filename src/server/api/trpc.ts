@@ -5,7 +5,7 @@ import superjson from 'superjson'
 import { ZodError } from 'zod'
 import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
-import { type Nullable } from '@/types/utils'
+import { initializeNotificationService } from '@/server/notifications/init'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
@@ -20,11 +20,13 @@ type Session = {
   user: User
 }
 
+type Nullable<T> = T | null
+
 type CreateContextOptions = {
   session: Nullable<Session>
 }
 
-export const createInnerTRPCContext = (opts: CreateContextOptions) => {
+const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     session: opts.session,
     prisma,
@@ -75,6 +77,9 @@ export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
       }
     }
   }
+
+  // Initialize notification service
+  initializeNotificationService()
 
   return createInnerTRPCContext({ session })
 }

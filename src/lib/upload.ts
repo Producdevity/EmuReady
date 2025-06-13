@@ -1,8 +1,9 @@
-import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
-import { Role } from '@orm'
-import { hasPermission } from '@/utils/permissions'
+import { join } from 'path'
 import { prisma } from '@/server/db'
+import { IMAGE_EXTENSIONS, type ImageExtension } from '@/utils/imageValidation'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 // File size limit in bytes (5MB)
 export const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -15,7 +16,7 @@ export const ALLOWED_MIME_TYPES = [
   'image/webp',
 ]
 
-export const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+export const ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS
 
 // Upload configuration types
 export interface UploadConfig {
@@ -55,17 +56,17 @@ export function isValidImage(file: File): boolean {
 
   // Then verify extension
   const fileExtension = file.name.split('.').pop()?.toLowerCase() ?? ''
-  return ALLOWED_EXTENSIONS.includes(fileExtension)
+  return ALLOWED_EXTENSIONS.includes(fileExtension as ImageExtension)
 }
 
 export function validateFileSize(file: File): boolean {
   return file.size <= MAX_FILE_SIZE
 }
 
-export function getFileExtension(filename: string): string {
+export function getFileExtension(filename: string): ImageExtension {
   const originalExtension = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
-  return ALLOWED_EXTENSIONS.includes(originalExtension)
-    ? originalExtension
+  return ALLOWED_EXTENSIONS.includes(originalExtension as ImageExtension)
+    ? (originalExtension as ImageExtension)
     : 'jpg'
 }
 

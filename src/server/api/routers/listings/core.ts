@@ -12,6 +12,10 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import {
+  notificationEventEmitter,
+  NOTIFICATION_EVENTS,
+} from '@/server/notifications/eventEmitter'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, Role } from '@orm'
 import { validateCustomFields } from './validation'
@@ -341,6 +345,24 @@ export const coreRouter = createTRPCRouter({
             })
           }
         }
+
+        // Emit notification event
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_CREATED,
+          entityType: 'listing',
+          entityId: newListing.id,
+          triggeredBy: authorId,
+          payload: {
+            listingId: newListing.id,
+            gameId: gameId,
+            deviceId: deviceId,
+            emulatorId: emulatorId,
+            performanceId: performanceId,
+            notes: notes,
+            customFieldValues: customFieldValues,
+          },
+        })
+
         return newListing
       })
     }),
@@ -370,9 +392,24 @@ export const coreRouter = createTRPCRouter({
 
       if (!existingVote) {
         // Create new vote
-        return ctx.prisma.vote.create({
+        const vote = await ctx.prisma.vote.create({
           data: { value: input.value, userId, listingId: input.listingId },
         })
+
+        // Emit notification event for new vote
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+          entityType: 'listing',
+          entityId: input.listingId,
+          triggeredBy: userId,
+          payload: {
+            listingId: input.listingId,
+            voteId: vote.id,
+            voteValue: input.value,
+          },
+        })
+
+        return vote
       }
 
       // If value is the same, remove the vote (toggle)
@@ -384,10 +421,25 @@ export const coreRouter = createTRPCRouter({
       }
 
       // Otherwise update the existing vote
-      return ctx.prisma.vote.update({
+      const updatedVote = await ctx.prisma.vote.update({
         where: { userId_listingId: { userId, listingId: input.listingId } },
         data: { value: input.value },
       })
+
+      // Emit notification event for vote update
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+        entityType: 'listing',
+        entityId: input.listingId,
+        triggeredBy: userId,
+        payload: {
+          listingId: input.listingId,
+          voteId: updatedVote.id,
+          voteValue: input.value,
+        },
+      })
+
+      return updatedVote
     }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) => {

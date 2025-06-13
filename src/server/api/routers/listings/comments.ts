@@ -12,6 +12,10 @@ import {
   publicProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
+import {
+  notificationEventEmitter,
+  NOTIFICATION_EVENTS,
+} from '@/server/notifications/eventEmitter'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { type Prisma } from '@orm'
 
@@ -51,7 +55,7 @@ export const commentsRouter = createTRPCRouter({
         ResourceError.user.notInDatabase(userId)
       }
 
-      return ctx.prisma.comment.create({
+      const comment = await ctx.prisma.comment.create({
         data: {
           content,
           userId,
@@ -67,6 +71,24 @@ export const commentsRouter = createTRPCRouter({
           },
         },
       })
+
+      // Emit notification event
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: parentId
+          ? NOTIFICATION_EVENTS.COMMENT_REPLIED
+          : NOTIFICATION_EVENTS.LISTING_COMMENTED,
+        entityType: 'listing',
+        entityId: listingId,
+        triggeredBy: userId,
+        payload: {
+          listingId,
+          commentId: comment.id,
+          parentId,
+          commentText: content,
+        },
+      })
+
+      return comment
     }),
 
   get: publicProcedure
@@ -214,7 +236,7 @@ export const commentsRouter = createTRPCRouter({
         AppError.forbidden('You do not have permission to edit this comment')
       }
 
-      return ctx.prisma.comment.update({
+      const updatedComment = await ctx.prisma.comment.update({
         where: { id: input.commentId },
         data: {
           content: input.content,
@@ -225,6 +247,21 @@ export const commentsRouter = createTRPCRouter({
           user: { select: { id: true, name: true, profileImage: true } },
         },
       })
+
+      // Emit notification event
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.LISTING_COMMENTED,
+        entityType: 'listing',
+        entityId: updatedComment.listingId,
+        triggeredBy: ctx.session.user.id,
+        payload: {
+          listingId: updatedComment.listingId,
+          commentId: updatedComment.id,
+          commentText: input.content,
+        },
+      })
+
+      return updatedComment
     }),
 
   delete: protectedProcedure
@@ -249,10 +286,24 @@ export const commentsRouter = createTRPCRouter({
         AppError.forbidden('You do not have permission to delete this comment')
       }
 
-      return ctx.prisma.comment.update({
+      const deletedComment = await ctx.prisma.comment.update({
         where: { id: input.commentId },
         data: { deletedAt: new Date() },
       })
+
+      // Emit notification event
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.COMMENT_DELETED,
+        entityType: 'comment',
+        entityId: deletedComment.id,
+        triggeredBy: ctx.session.user.id,
+        payload: {
+          listingId: deletedComment.listingId,
+          commentId: deletedComment.id,
+        },
+      })
+
+      return deletedComment
     }),
 
   vote: protectedProcedure
@@ -312,6 +363,23 @@ export const commentsRouter = createTRPCRouter({
           where: { id: commentId },
           data: { score: { increment: scoreChange } },
         })
+
+        // Emit notification event
+        if (comment) {
+          notificationEventEmitter.emitNotificationEvent({
+            eventType: value
+              ? NOTIFICATION_EVENTS.COMMENT_VOTED
+              : NOTIFICATION_EVENTS.COMMENT_VOTED,
+            entityType: 'comment',
+            entityId: comment.id,
+            triggeredBy: ctx.session.user.id,
+            payload: {
+              listingId: comment.listingId,
+              commentId: comment.id,
+              voteValue: value,
+            },
+          })
+        }
 
         return voteResult
       })

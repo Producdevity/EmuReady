@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { api } from '@/lib/api'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { Button, Input, Autocomplete } from '@/components/ui'
+import AdminImageSelectorSwitcher from '@/components/ui/image-selectors/AdminImageSelectorSwitcher'
+import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -106,15 +107,22 @@ function GameEditForm(props: Props) {
       </div>
 
       <div>
-        <label
-          htmlFor="imageUrl"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Image URL (optional)
-        </label>
-        <Input
-          id="imageUrl"
-          {...register('imageUrl')}
+        <AdminImageSelectorSwitcher
+          label="Game Image (optional)"
+          gameTitle={watch('title')}
+          systemName={
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))
+              ?.name
+          }
+          tgdbPlatformId={
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))
+              ?.tgdbPlatformId || undefined
+          }
+          selectedImageUrl={watch('imageUrl')}
+          onImageSelect={(url) =>
+            setValue('imageUrl', url, { shouldValidate: true })
+          }
+          onError={(error) => console.error('Image selection error:', error)}
           placeholder="https://example.com/game-image.jpg"
         />
         {formState.errors.imageUrl && (
@@ -125,16 +133,23 @@ function GameEditForm(props: Props) {
       </div>
 
       <div>
-        <label
-          htmlFor="boxartUrl"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Boxart Image URL (optional)
-        </label>
-        <Input
-          id="boxartUrl"
-          {...register('boxartUrl')}
-          placeholder="https://example.com/game-image.jpg"
+        <AdminImageSelectorSwitcher
+          label="Boxart Image (optional)"
+          gameTitle={watch('title')}
+          systemName={
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))
+              ?.name
+          }
+          tgdbPlatformId={
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))
+              ?.tgdbPlatformId || undefined
+          }
+          selectedImageUrl={watch('boxartUrl')}
+          onImageSelect={(url) =>
+            setValue('boxartUrl', url, { shouldValidate: true })
+          }
+          onError={(error) => console.error('Boxart selection error:', error)}
+          placeholder="https://example.com/boxart-image.jpg"
         />
         {formState.errors.boxartUrl && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -144,16 +159,23 @@ function GameEditForm(props: Props) {
       </div>
 
       <div>
-        <label
-          htmlFor="bannerUrl"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Banner image URL (optional)
-        </label>
-        <Input
-          id="bannerUrl"
-          {...register('bannerUrl')}
-          placeholder="https://example.com/game-image.jpg"
+        <AdminImageSelectorSwitcher
+          label="Banner Image (optional)"
+          gameTitle={watch('title')}
+          systemName={
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))
+              ?.name
+          }
+          tgdbPlatformId={
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))
+              ?.tgdbPlatformId || undefined
+          }
+          selectedImageUrl={watch('bannerUrl')}
+          onImageSelect={(url) =>
+            setValue('bannerUrl', url, { shouldValidate: true })
+          }
+          onError={(error) => console.error('Banner selection error:', error)}
+          placeholder="https://example.com/banner-image.jpg"
         />
         {formState.errors.bannerUrl && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">

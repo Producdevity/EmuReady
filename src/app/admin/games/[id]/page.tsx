@@ -3,7 +3,7 @@
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, useParams } from 'next/navigation'
-import { Button, LoadingSpinner } from '@/components/ui'
+import { Button, PageLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import GameEditForm from './components/GameEditForm'
 import GameRelatedData from './components/GameRelatedData'
@@ -14,17 +14,9 @@ function AdminGameEditPage() {
 
   const { data: game, isLoading, error } = api.games.byId.useQuery({ id })
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <LoadingSpinner text="Loading game data..." />
-      </div>
-    )
-  }
+  if (isLoading) return <PageLoading />
 
-  if (error || !game) {
-    notFound()
-  }
+  if (error || !game) return notFound()
 
   return (
     <div className="space-y-6">

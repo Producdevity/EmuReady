@@ -72,7 +72,7 @@ interface LegacyProps {
   rounded?: boolean
 }
 
-type ButtonProps = ComponentProps<'button'> &
+export type ButtonProps = ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> &
   LegacyProps & {
     asChild?: boolean
@@ -110,10 +110,14 @@ function Button({
     >
       <span className="flex items-center gap-2">
         {isLoading ? (
-          <>
+          variant === 'ghost' ? (
             <LoadingIcon />
-            <span>Loading...</span>
-          </>
+          ) : (
+            <>
+              <LoadingIcon />
+              <span>Loading...</span>
+            </>
+          )
         ) : (
           children
         )}

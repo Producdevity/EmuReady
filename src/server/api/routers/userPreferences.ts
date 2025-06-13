@@ -4,6 +4,7 @@ import {
   AddDevicePreferenceSchema,
   RemoveDevicePreferenceSchema,
   BulkUpdateDevicePreferencesSchema,
+  BulkUpdateSocPreferencesSchema,
 } from '@/schemas/userPreferences'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { sanitizeBio } from '@/utils/sanitization'
@@ -187,6 +188,46 @@ export const userPreferencesRouter = createTRPCRouter({
       return ctx.prisma.userDevicePreference.findMany({
         where: { userId: user.id },
         include: { device: { include: { brand: true, soc: true } } },
+      })
+    }),
+
+  bulkUpdateSocs: protectedProcedure
+    .input(BulkUpdateSocPreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      // Validate all SOCs exist
+      const socs = await ctx.prisma.soC.findMany({
+        where: { id: { in: input.socIds } },
+      })
+
+      if (socs.length !== input.socIds.length) {
+        return ResourceError.userSocPreference.notFound()
+      }
+
+      // Remove existing preferences
+      await ctx.prisma.userSocPreference.deleteMany({
+        where: { userId: user.id },
+      })
+
+      // Add new preferences
+      if (input.socIds.length > 0) {
+        await ctx.prisma.userSocPreference.createMany({
+          data: input.socIds.map((socId) => ({
+            userId: user.id,
+            socId,
+          })),
+        })
+      }
+
+      // Return updated preferences
+      return ctx.prisma.userSocPreference.findMany({
+        where: { userId: user.id },
+        include: { soc: true },
       })
     }),
 })

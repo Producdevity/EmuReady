@@ -10,29 +10,35 @@ const sizeClasses: Record<Size, string> = {
   lg: 'w-14 h-14',
 }
 
+const fontSizeClasses: Record<Size, string> = {
+  sm: 'text-xs font-medium',
+  md: 'text-sm font-medium',
+  lg: 'text-base font-medium',
+}
+
 interface Props {
   logo: Maybe<string>
   name: string
   className?: string
+  textClassName?: string
   size?: Size
+  fontSize?: Size
   showLogo?: boolean
 }
 
 function EmulatorIcon(props: Props) {
   const sizeClass = props.size ? sizeClasses[props.size] : sizeClasses.md
 
-  // If showLogo is false or no logo is available, show the name
   if (!props.showLogo || !props.logo) {
     return (
-      <div
+      <span
         className={cn(
-          'flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300',
-          sizeClass,
-          props.className,
+          fontSizeClasses[props.fontSize ?? 'md'],
+          props.textClassName,
         )}
       >
         {props.name}
-      </div>
+      </span>
     )
   }
 
@@ -46,13 +52,15 @@ function EmulatorIcon(props: Props) {
     >
       <Image
         src={`/assets/emulators/${props.logo}`}
-        alt={props.name}
+        alt={`${props.name} emulator logo`}
         width={32}
         height={32}
         className="w-full h-full object-contain"
         style={{
           filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
         }}
+        priority={false}
+        unoptimized={false}
       />
     </div>
   )

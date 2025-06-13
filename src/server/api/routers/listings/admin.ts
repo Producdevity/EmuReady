@@ -12,6 +12,10 @@ import {
   adminProcedure,
   superAdminProcedure,
 } from '@/server/api/trpc'
+import {
+  notificationEventEmitter,
+  NOTIFICATION_EVENTS,
+} from '@/server/notifications/eventEmitter'
 import { ApprovalStatus } from '@orm'
 import type { Prisma } from '@orm'
 
@@ -176,7 +180,7 @@ export const adminRouter = createTRPCRouter({
         ResourceError.listing.notPending()
       }
 
-      return ctx.prisma.listing.update({
+      const updatedListing = await ctx.prisma.listing.update({
         where: { id: listingId },
         data: {
           status: ApprovalStatus.APPROVED,
@@ -185,6 +189,21 @@ export const adminRouter = createTRPCRouter({
           processedNotes: null,
         },
       })
+
+      // Emit notification event
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
+        entityType: 'listing',
+        entityId: listingId,
+        triggeredBy: adminUserId,
+        payload: {
+          listingId,
+          approvedBy: adminUserId,
+          approvedAt: updatedListing.processedAt,
+        },
+      })
+
+      return updatedListing
     }),
 
   reject: adminProcedure
@@ -213,7 +232,7 @@ export const adminRouter = createTRPCRouter({
         ResourceError.listing.notPending()
       }
 
-      return ctx.prisma.listing.update({
+      const updatedListing = await ctx.prisma.listing.update({
         where: { id: listingId },
         data: {
           status: ApprovalStatus.REJECTED,
@@ -222,6 +241,21 @@ export const adminRouter = createTRPCRouter({
           processedNotes: notes,
         },
       })
+
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
+        entityType: 'listing',
+        entityId: listingId,
+        triggeredBy: adminUserId,
+        payload: {
+          listingId,
+          rejectedBy: adminUserId,
+          rejectedAt: updatedListing.processedAt,
+          rejectionReason: notes,
+        },
+      })
+
+      return updatedListing
     }),
 
   getProcessed: superAdminProcedure
@@ -322,7 +356,7 @@ export const adminRouter = createTRPCRouter({
         return // This will never be reached, but helps TypeScript
       }
 
-      return ctx.prisma.listing.update({
+      const updatedListing = await ctx.prisma.listing.update({
         where: { id: listingId },
         data: {
           status: newStatus,
@@ -331,6 +365,23 @@ export const adminRouter = createTRPCRouter({
           processedNotes: overrideNotes ?? listingToOverride.processedNotes, // Keep old notes if no new ones
         },
       })
+
+      // Emit notification event
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.LISTING_STATUS_OVERRIDDEN,
+        entityType: 'listing',
+        entityId: listingId,
+        triggeredBy: superAdminUserId,
+        payload: {
+          listingId,
+          overriddenBy: superAdminUserId,
+          newStatus,
+          overriddenAt: updatedListing.processedAt,
+          overrideNotes: overrideNotes,
+        },
+      })
+
+      return updatedListing
     }),
 
   delete: adminProcedure

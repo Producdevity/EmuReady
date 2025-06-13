@@ -1,34 +1,8 @@
-import { Pencil } from 'lucide-react'
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui'
+import { Eye } from 'lucide-react'
+import TableButton, { type TableButtonWrapperProps } from './TableButton'
 
-interface Props {
-  onClick: () => void
-  entityName?: string
-}
-
-function ViewButton(props: Props) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-gray-600 border-gray-400 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-500 dark:hover:bg-gray-700/20"
-          onClick={props.onClick}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        {props.entityName ? `Edit ${props.entityName}` : 'Edit'}
-      </TooltipContent>
-    </Tooltip>
-  )
+function ViewButton(props: TableButtonWrapperProps) {
+  return <TableButton {...props} icon={Eye} color="purple" />
 }
 
 export default ViewButton

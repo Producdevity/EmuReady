@@ -2,7 +2,6 @@ import { auth } from '@clerk/nextjs/server'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
-import { createInnerTRPCContext } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 
 const handler = async (req: NextRequest) => {
@@ -39,7 +38,7 @@ const handler = async (req: NextRequest) => {
         }
       }
 
-      return createInnerTRPCContext({ session })
+      return { session, prisma }
     },
     onError:
       process.env.NODE_ENV === 'development'

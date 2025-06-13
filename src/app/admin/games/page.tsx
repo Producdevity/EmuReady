@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
+import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
+import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
@@ -391,18 +393,16 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button size="sm" variant="outline" asChild>
-                              <Link href={`/admin/games/${game.id}`}>Edit</Link>
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
+                            <EditButton
+                              href={`/admin/games/${game.id}`}
+                              title="Edit Game"
+                            />
+                            <DeleteButton
                               onClick={() => handleDelete(game)}
-                              disabled={deleteGame.isPending}
+                              title="Delete Game"
                               isLoading={deleteGame.isPending}
-                            >
-                              Delete
-                            </Button>
+                              disabled={deleteGame.isPending}
+                            />
                           </div>
                         </td>
                       )}

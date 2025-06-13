@@ -1,8 +1,10 @@
 'use client'
 
 import { Search } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
+import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
@@ -19,6 +21,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import SystemModal from './components/SystemModal'
 
 type SystemSortField = 'name' | 'gamesCount'
 
@@ -39,53 +42,28 @@ function AdminSystemsPage() {
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
-  const createSystem = api.systems.create.useMutation()
-  const updateSystem = api.systems.update.useMutation()
   const deleteSystem = api.systems.delete.useMutation()
   const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [systemName, setSystemName] = useState('')
 
   const openModal = (system?: { id: string; name: string }) => {
     setEditId(system?.id ?? null)
-    setName(system?.name ?? '')
+    setSystemName(system?.name ?? '')
     setModalOpen(true)
-    setError('')
-    setSuccess('')
   }
 
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
-    setName('')
+    setSystemName('')
   }
 
-  const handleSubmit = async (ev: FormEvent) => {
-    ev.preventDefault()
-    setError('')
-    setSuccess('')
-    try {
-      if (editId) {
-        await updateSystem.mutateAsync({
-          id: editId,
-          name,
-        } satisfies RouterInput['systems']['update'])
-        setSuccess('System updated!')
-      } else {
-        await createSystem.mutateAsync({
-          name,
-        } satisfies RouterInput['systems']['create'])
-        setSuccess('System created!')
-      }
-      refetch().catch(console.error)
-      closeModal()
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save system.'))
-    }
+  const handleModalSuccess = () => {
+    refetch().catch(console.error)
+    closeModal()
   }
 
   const handleDelete = async (id: string) => {
@@ -180,18 +158,16 @@ function AdminSystemsPage() {
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-4 py-2 flex gap-2 justify-end">
-                      <Button
-                        variant="secondary"
+                      <EditButton
+                        title="Edit System"
                         onClick={() => openModal(system)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
+                      />
+                      <DeleteButton
+                        title="Delete System"
                         onClick={() => handleDelete(system.id)}
-                      >
-                        Delete
-                      </Button>
+                        isLoading={deleteSystem.isPending}
+                        disabled={deleteSystem.isPending}
+                      />
                     </td>
                   )}
                 </tr>
@@ -200,39 +176,14 @@ function AdminSystemsPage() {
           </tbody>
         </table>
       </div>
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">
-          <form
-            className="bg-white dark:bg-gray-900 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 relative"
-            onSubmit={handleSubmit}
-          >
-            <h2 className="text-2xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
-              {editId ? 'Edit System' : 'Add System'}
-            </h2>
-            <label className="block mb-2 font-medium">Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="mb-4 w-full"
-            />
-            {error && <div className="text-red-500 mb-2">{error}</div>}
-            {success && <div className="text-green-600 mb-2">{success}</div>}
-            <div className="flex gap-2 justify-end mt-6">
-              <Button type="button" variant="secondary" onClick={closeModal}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                isLoading={createSystem.isPending || updateSystem.isPending}
-                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-              >
-                {editId ? 'Save' : 'Create'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
+
+      <SystemModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        editId={editId}
+        systemName={systemName}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

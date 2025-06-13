@@ -1,8 +1,9 @@
 'use client'
 
-import { Eye, CheckCircle, XCircle } from 'lucide-react'
+import { CheckCircle, XCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   LoadingSpinner,
   Button,
@@ -318,15 +319,10 @@ function GameApprovalsPage() {
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 p-1.5 inline-flex items-center"
+                          <ViewButton
                             onClick={() => openGameModal(game.id)}
                             title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          />
                         </div>
                       </td>
                     </tr>

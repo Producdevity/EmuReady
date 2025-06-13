@@ -291,10 +291,16 @@ export class ResourceError {
   }
 
   static userDevicePreference = {
-    notFound: () => AppError.notFound('Device'),
-    alreadyExists: () =>
-      AppError.conflict('Device is already in your preferences'),
+    notFound: () => AppError.notFound('User device preference'),
+    alreadyExists: () => AppError.alreadyExists('Device preference'),
     notInPreferences: () =>
-      AppError.badRequest('Device not found in your preferences'),
+      AppError.notFound('Device not found in user preferences'),
+  }
+
+  static userSocPreference = {
+    notFound: () => AppError.notFound('User SOC preference'),
+    alreadyExists: () => AppError.alreadyExists('SOC preference'),
+    notInPreferences: () =>
+      AppError.notFound('SOC not found in user preferences'),
   }
 }

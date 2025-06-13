@@ -1,8 +1,10 @@
 'use client'
 
 import { Search } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
+import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
@@ -20,6 +22,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import BrandModal from './components/BrandModal'
 
 type DeviceBrandSortField = 'name' | 'devicesCount'
 
@@ -40,53 +43,28 @@ function AdminBrandsPage() {
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
-  const createBrand = api.deviceBrands.create.useMutation()
-  const updateBrand = api.deviceBrands.update.useMutation()
   const deleteBrand = api.deviceBrands.delete.useMutation()
   const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [brandName, setBrandName] = useState('')
 
   const openModal = (brand?: { id: string; name: string }) => {
     setEditId(brand?.id ?? null)
-    setName(brand?.name ?? '')
+    setBrandName(brand?.name ?? '')
     setModalOpen(true)
-    setError('')
-    setSuccess('')
   }
 
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
-    setName('')
+    setBrandName('')
   }
 
-  const handleSubmit = async (ev: FormEvent) => {
-    ev.preventDefault()
-    setError('')
-    setSuccess('')
-    try {
-      if (editId) {
-        await updateBrand.mutateAsync({
-          id: editId,
-          name,
-        } satisfies RouterInput['deviceBrands']['update'])
-        setSuccess('Brand updated!')
-      } else {
-        await createBrand.mutateAsync({
-          name,
-        } satisfies RouterInput['deviceBrands']['create'])
-        setSuccess('Brand created!')
-      }
-      refetch().catch(console.error)
-      closeModal()
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save brand.'))
-    }
+  const handleModalSuccess = () => {
+    refetch().catch(console.error)
+    closeModal()
   }
 
   const handleDelete = async (id: string) => {
@@ -185,18 +163,16 @@ function AdminBrandsPage() {
                 {columnVisibility.isColumnVisible('actions') && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="secondary"
+                      <EditButton
                         onClick={() => openModal(brand)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
+                        title="Edit Brand"
+                      />
+                      <DeleteButton
                         onClick={() => handleDelete(brand.id)}
-                      >
-                        Delete
-                      </Button>
+                        title="Delete Brand"
+                        isLoading={deleteBrand.isPending}
+                        disabled={deleteBrand.isPending}
+                      />
                     </div>
                   </td>
                 )}
@@ -215,39 +191,13 @@ function AdminBrandsPage() {
           </tbody>
         </table>
       </AdminTableContainer>
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">
-          <form
-            className="bg-white dark:bg-gray-900 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 relative"
-            onSubmit={handleSubmit}
-          >
-            <h2 className="text-2xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
-              {editId ? 'Edit Brand' : 'Add Brand'}
-            </h2>
-            <label className="block mb-2 font-medium">Brand Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="mb-4 w-full"
-            />
-            {error && <div className="text-red-500 mb-2">{error}</div>}
-            {success && <div className="text-green-600 mb-2">{success}</div>}
-            <div className="flex gap-2 justify-end mt-6">
-              <Button type="button" variant="secondary" onClick={closeModal}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                isLoading={createBrand.isPending || updateBrand.isPending}
-                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-              >
-                {editId ? 'Save' : 'Create'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
+      <BrandModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        editId={editId}
+        brandName={brandName}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

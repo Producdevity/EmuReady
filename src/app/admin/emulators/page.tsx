@@ -1,8 +1,10 @@
 'use client'
 
-import { Search, Settings, Pencil, Trash2 } from 'lucide-react'
+import { Search, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
+import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
@@ -236,12 +238,10 @@ function AdminEmulatorsPage() {
                       >
                         <Settings className="mr-2 h-4 w-4" /> Custom Fields
                       </Link>
-                      <Link
+                      <EditButton
                         href={`/admin/emulators/${emulator.id}`}
-                        className={actionButtonClasses}
-                      >
-                        <Pencil className="mr-2 h-4 w-4" /> Edit
-                      </Link>
+                        title="Edit Emulator"
+                      />
                       <Button
                         variant="secondary"
                         size="sm"
@@ -249,14 +249,12 @@ function AdminEmulatorsPage() {
                       >
                         Quick Edit
                       </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
+                      <DeleteButton
                         onClick={() => handleDelete(emulator.id)}
                         title="Delete Emulator"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        isLoading={deleteEmulator.isPending}
+                        disabled={deleteEmulator.isPending}
+                      />
                     </td>
                   )}
                 </tr>

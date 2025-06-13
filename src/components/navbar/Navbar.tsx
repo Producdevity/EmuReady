@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useCallback, useEffect } from 'react'
 import LoadingIcon from '@/components/icons/LoadingIcon'
 import LogoIcon from '@/components/icons/LogoIcon'
+import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -101,6 +102,7 @@ function Navbar() {
           {/* Right Section */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
+            <NotificationCenter />
 
             {!isLoaded ? (
               <div className="flex items-center justify-center w-8 h-8">
@@ -166,6 +168,7 @@ function Navbar() {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-3">
             <ThemeToggle />
+            <NotificationCenter />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="inline-flex items-center justify-center p-2.5 rounded-xl text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-300"

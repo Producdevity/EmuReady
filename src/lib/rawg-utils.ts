@@ -1,12 +1,8 @@
+import { isValidImageUrl as validateImageUrl } from '@/utils/imageValidation'
 import type { GameImageOption } from '@/types/rawg'
 
 export function isValidImageUrl(url: string): boolean {
-  try {
-    new URL(url)
-    return /\.(jpg|jpeg|png|webp|gif)$/i.test(url)
-  } catch {
-    return false
-  }
+  return validateImageUrl(url)
 }
 
 export function getImageDisplayName(image: GameImageOption): string {

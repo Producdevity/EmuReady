@@ -1,15 +1,19 @@
 'use client'
 
-import { Pencil, Trash2 } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { Search } from 'lucide-react'
+import { useState } from 'react'
+import { isEmpty } from 'remeda'
+import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
+import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
-  LoadingSpinner,
+  SortableHeader,
   ColumnVisibilityControl,
   AdminTableContainer,
-  SortableHeader,
   Pagination,
+  LoadingSpinner,
+  useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
@@ -20,56 +24,52 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import SocModal from './components/SocModal'
 
 type SocSortField = 'name' | 'manufacturer' | 'devicesCount'
 
 const SOCS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },
   { key: 'manufacturer', label: 'Manufacturer', defaultVisible: true },
-  { key: 'architecture', label: 'Architecture', defaultVisible: true },
-  { key: 'processNode', label: 'Process Node', defaultVisible: true },
-  { key: 'cpuCores', label: 'CPU Cores', defaultVisible: true },
-  { key: 'gpuModel', label: 'GPU Model', defaultVisible: true },
+  { key: 'architecture', label: 'Architecture', defaultVisible: false },
+  { key: 'processNode', label: 'Process Node', defaultVisible: false },
+  { key: 'cpuCores', label: 'CPU Cores', defaultVisible: false },
+  { key: 'gpuModel', label: 'GPU Model', defaultVisible: false },
   { key: 'devicesCount', label: 'Devices', defaultVisible: true },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
 function AdminSoCsPage() {
   const table = useAdminTable<SocSortField>()
-
+  const confirm = useConfirmDialog()
   const columnVisibility = useColumnVisibility(SOCS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSoCs,
   })
 
-  const {
-    data,
-    isLoading: socsLoading,
-    refetch,
-  } = api.socs.get.useQuery({
-    search: table.search || undefined,
+  const socQuery = api.socs.get.useQuery({
+    search: isEmpty(table.search) ? undefined : table.search,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     page: table.page,
     limit: table.limit,
   })
-
-  const socs = data?.socs ?? []
-  const pagination = data?.pagination
-
-  const createSoC = api.socs.create.useMutation()
-  const updateSoC = api.socs.update.useMutation()
   const deleteSoC = api.socs.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [manufacturer, setManufacturer] = useState('')
-  const [architecture, setArchitecture] = useState('')
-  const [processNode, setProcessNode] = useState('')
-  const [cpuCores, setCpuCores] = useState('')
-  const [gpuModel, setGpuModel] = useState('')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [socData, setSocData] = useState<{
+    id: string
+    name: string
+    manufacturer: string
+    architecture: string | null
+    processNode: string | null
+    cpuCores: number | null
+    gpuModel: string | null
+  } | null>(null)
+
+  const socs = socQuery.data?.socs ?? []
+  const pagination = socQuery.data?.pagination
+  const isLoading = socQuery.isLoading
 
   const openModal = (soc?: {
     id: string
@@ -81,89 +81,50 @@ function AdminSoCsPage() {
     gpuModel: string | null
   }) => {
     setEditId(soc?.id ?? null)
-    setName(soc?.name ?? '')
-    setManufacturer(soc?.manufacturer ?? '')
-    setArchitecture(soc?.architecture ?? '')
-    setProcessNode(soc?.processNode ?? '')
-    setCpuCores(soc?.cpuCores?.toString() ?? '')
-    setGpuModel(soc?.gpuModel ?? '')
+    setSocData(soc ?? null)
     setModalOpen(true)
-    setError('')
-    setSuccess('')
   }
 
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
-    setName('')
-    setManufacturer('')
-    setArchitecture('')
-    setProcessNode('')
-    setCpuCores('')
-    setGpuModel('')
+    setSocData(null)
   }
 
-  const handleSubmit = async (ev: FormEvent) => {
-    ev.preventDefault()
-    setError('')
-    setSuccess('')
-    try {
-      const data = {
-        name,
-        manufacturer,
-        architecture: architecture || undefined,
-        processNode: processNode || undefined,
-        cpuCores: cpuCores ? parseInt(cpuCores, 10) : undefined,
-        gpuModel: gpuModel || undefined,
-      }
-
-      if (editId) {
-        await updateSoC.mutateAsync({
-          id: editId,
-          ...data,
-        } satisfies RouterInput['socs']['update'])
-        setSuccess('SoC updated!')
-      } else {
-        await createSoC.mutateAsync(
-          data satisfies RouterInput['socs']['create'],
-        )
-        setSuccess('SoC created!')
-      }
-      refetch().catch(console.error)
-      closeModal()
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save SoC.'))
-    }
+  const handleModalSuccess = () => {
+    socQuery.refetch().catch(console.error)
+    closeModal()
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete SoC "${name}"?`)) return
+    const confirmed = await confirm({
+      title: 'Delete SoC',
+      description: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+    })
+
+    if (!confirmed) return
+
     try {
       await deleteSoC.mutateAsync({
         id,
       } satisfies RouterInput['socs']['delete'])
-      refetch().catch(console.error)
+      socQuery.refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete SoC: ${getErrorMessage(err)}`)
     }
   }
 
   const clearFilters = () => {
-    table.resetFilters()
+    table.setSearch('')
   }
-
-  const isLoading = socsLoading
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Manage SoCs
+            System on Chips (SoCs)
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            System on Chip specifications for devices
-          </p>
         </div>
         <div className="flex items-center gap-3">
           <ColumnVisibilityControl
@@ -174,25 +135,26 @@ function AdminSoCsPage() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
-            type="text"
-            placeholder="Search SoCs by name, manufacturer, architecture..."
+            placeholder="Search SoCs..."
             value={table.search}
             onChange={table.handleSearchChange}
-            className="w-full"
+            className="pl-10"
           />
         </div>
-        {(table.search || table.sortField) && (
-          <Button variant="outline" onClick={clearFilters}>
-            Clear Filters
-          </Button>
-        )}
+        <Button variant="outline" onClick={clearFilters}>
+          Clear Filters
+        </Button>
       </div>
 
-      {isLoading && <LoadingSpinner text="Loading SoCs..." />}
+      {isLoading && (
+        <div className="flex justify-center py-8">
+          <LoadingSpinner text="Loading SoCs..." />
+        </div>
+      )}
 
       {!isLoading && socs.length === 0 && (
         <div className="text-center py-12">
@@ -306,22 +268,16 @@ function AdminSoCsPage() {
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button
-                        type="button"
+                      <EditButton
                         onClick={() => openModal(soc)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center"
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        Edit
-                      </button>
-                      <button
-                        type="button"
+                        title="Edit SoC"
+                      />
+                      <DeleteButton
                         onClick={() => handleDelete(soc.id, soc.name)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 inline-flex items-center ml-2"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </button>
+                        title="Delete SoC"
+                        isLoading={deleteSoC.isPending}
+                        disabled={deleteSoC.isPending}
+                      />
                     </td>
                   )}
                 </tr>
@@ -339,103 +295,13 @@ function AdminSoCsPage() {
         />
       )}
 
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-all">
-          <form
-            className="bg-white dark:bg-gray-900 rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-800 relative max-h-[90vh] overflow-y-auto"
-            onSubmit={handleSubmit}
-          >
-            <h2 className="text-2xl font-extrabold mb-6 text-gray-900 dark:text-white tracking-tight">
-              {editId ? 'Edit SoC' : 'Add SoC'}
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block mb-2 font-medium">Name *</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full"
-                  placeholder="e.g., Snapdragon 8 Gen 3"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="block mb-2 font-medium">Manufacturer *</label>
-                <Input
-                  value={manufacturer}
-                  onChange={(e) => setManufacturer(e.target.value)}
-                  required
-                  className="w-full"
-                  placeholder="e.g., Qualcomm"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-medium">Architecture</label>
-                <Input
-                  value={architecture}
-                  onChange={(e) => setArchitecture(e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., ARM64"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-medium">Process Node</label>
-                <Input
-                  value={processNode}
-                  onChange={(e) => setProcessNode(e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., 4nm"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-medium">CPU Cores</label>
-                <Input
-                  type="number"
-                  value={cpuCores}
-                  onChange={(e) => setCpuCores(e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., 8"
-                  min="1"
-                  max="64"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-medium">GPU Model</label>
-                <Input
-                  value={gpuModel}
-                  onChange={(e) => setGpuModel(e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., Adreno 750"
-                />
-              </div>
-            </div>
-
-            {error && <div className="text-red-500 mb-2 mt-4">{error}</div>}
-            {success && (
-              <div className="text-green-600 mb-2 mt-4">{success}</div>
-            )}
-
-            <div className="flex gap-2 justify-end mt-6">
-              <Button type="button" variant="secondary" onClick={closeModal}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                isLoading={createSoC.isPending || updateSoC.isPending}
-                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
-              >
-                {editId ? 'Save' : 'Create'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
+      <SocModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        editId={editId}
+        socData={socData}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

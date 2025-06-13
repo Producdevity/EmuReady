@@ -1,9 +1,10 @@
 'use client'
 
-import { Search, ShieldUser, Trash2, User } from 'lucide-react'
+import { Search, ShieldUser, User } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import LoadingIcon from '@/components/icons/LoadingIcon'
 import {
   Button,
@@ -29,7 +30,7 @@ import { type Role } from '@orm'
 import UserDetailsModal from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
 
-type User = RouterOutput['users']['getAll'][number]
+type AdminUser = RouterOutput['users']['getAll'][number]
 type UserSortField =
   | 'name'
   | 'email'
@@ -101,7 +102,7 @@ function AdminUsersPage() {
     }
   }
 
-  const openRoleModal = (user: User) => {
+  const openRoleModal = (user: AdminUser) => {
     setSelectedUserForRole({
       id: user.id,
       name: user.name,
@@ -301,15 +302,12 @@ function AdminUsersPage() {
                       >
                         <ShieldUser />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        name="Delete User"
+                      <DeleteButton
                         onClick={() => handleDelete(user.id)}
-                        className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
-                      >
-                        <Trash2 />
-                      </Button>
+                        title="Delete User"
+                        isLoading={deleteUser.isPending}
+                        disabled={deleteUser.isPending}
+                      />
                     </td>
                   )}
                 </tr>
