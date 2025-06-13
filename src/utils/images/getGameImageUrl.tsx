@@ -7,12 +7,8 @@ import { type Game } from '@orm'
  */
 function getGameImageUrl(game: Game): string {
   const displayImageUrl = game.boxartUrl ?? game.bannerUrl ?? game.imageUrl
-  const isTrustedHost =
-    displayImageUrl?.includes('media.rawg.io') ||
-    displayImageUrl?.includes('placehold.co') ||
-    displayImageUrl?.includes('cdn.thegamesdb.net')
 
-  return getImageUrl(displayImageUrl, game.title, { useProxy: !isTrustedHost })
+  return getImageUrl(displayImageUrl, game.title)
 }
 
 export default getGameImageUrl
