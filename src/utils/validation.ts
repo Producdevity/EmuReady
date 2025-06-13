@@ -18,7 +18,7 @@ export function isUuid(value: string): boolean {
 export function sanitizeString(input: string): string {
   return String(input || '')
     .trim()
-    .replace(/[<>(){}[\]\\\/\=+]/g, '') // Remove potentially dangerous characters
+    .replace(/[<>(){}[\]\\\/=+]/g, '') // Remove potentially dangerous characters
 }
 
 /**
