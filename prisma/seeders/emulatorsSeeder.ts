@@ -127,72 +127,7 @@ const emulators: EmulatorData[] = [
     logo: 'vita3k.png',
   },
   {
-    name: 'Winlator Afeimod Glibc',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Afeimod Proot',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Ajay Glibc',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Ajay Proot',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Cmod Bionic',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Cmod Glibc',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Cmod Proot',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Frost Glibc',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Frost Proot',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Official Glibc',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Official Proot',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator Official',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator WinMali',
-    supportedSystemNames: ['Microsoft Windows'],
-    logo: 'winlator.png',
-  },
-  {
-    name: 'Winlator longjunyu',
+    name: 'Winlator',
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'winlator.png',
   },
