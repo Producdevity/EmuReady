@@ -95,7 +95,6 @@ function GameDetailsModal(props: Props) {
   }
 
   const navigateToUserModal = (userId: string) => {
-    // Close current modal first
     props.onClose()
     // Navigate to admin users page with user modal open
     router.push(`/admin/users?userId=${userId}`)
@@ -106,7 +105,7 @@ function GameDetailsModal(props: Props) {
     <Modal
       isOpen={props.isOpen}
       onClose={props.onClose}
-      title=""
+      title="Game Details"
       className="max-w-4xl"
     >
       <div className="relative">
