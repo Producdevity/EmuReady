@@ -34,6 +34,7 @@ function KofiFooterButton() {
                 'transition-all duration-300',
                 isHovered ? 'scale-110 brightness-110' : '',
               )}
+              unoptimized
             />
           </div>
 

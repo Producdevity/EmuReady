@@ -20,6 +20,7 @@ function LogoIcon(props: Props) {
           : '',
         props.className,
       )}
+      unoptimized
     />
   )
 }

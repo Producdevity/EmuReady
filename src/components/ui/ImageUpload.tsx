@@ -114,6 +114,7 @@ function ImageUpload(props: Props) {
               width={240}
               height={180}
               style={{ objectFit: 'contain' }}
+              unoptimized
             />
             <button
               type="button"
