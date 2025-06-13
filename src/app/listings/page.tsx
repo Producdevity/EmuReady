@@ -395,7 +395,7 @@ function ListingsPage() {
                             <SystemIcon
                               name={listing.game.system.name}
                               systemKey={listing.game.system.key}
-                              size="sm"
+                              size="md"
                             />
                             <span className="sr-only">
                               {listing.game.system?.name}

@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type Maybe } from '@/types/utils'
 
@@ -43,26 +44,31 @@ function EmulatorIcon(props: Props) {
   }
 
   return (
-    <div
-      className={cn(
-        'flex items-center justify-center overflow-hidden rounded-lg bg-white dark:bg-gray-800 p-1',
-        sizeClass,
-        props.className,
-      )}
-    >
-      <Image
-        src={`/assets/emulators/${props.logo}`}
-        alt={`${props.name} emulator logo`}
-        width={32}
-        height={32}
-        className="w-full h-full object-contain"
-        style={{
-          filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-        }}
-        priority={false}
-        unoptimized
-      />
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            'flex items-center justify-center overflow-hidden rounded-lg bg-white dark:bg-gray-800 p-1',
+            sizeClass,
+            props.className,
+          )}
+        >
+          <Image
+            src={`/assets/emulators/${props.logo}`}
+            alt={`${props.name} emulator logo`}
+            width={32}
+            height={32}
+            className="w-full h-full object-contain"
+            style={{
+              filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
+            }}
+            priority={false}
+            unoptimized
+          />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top">{props.name}</TooltipContent>
+    </Tooltip>
   )
 }
 

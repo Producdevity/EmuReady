@@ -329,7 +329,7 @@ function GameApprovalsPage() {
                                 alt={game.title}
                                 width={64}
                                 height={64}
-                                className="rounded-md object-cover"
+                                className="rounded-md object-cover m-h-16 w-auto"
                                 unoptimized
                               />
                             </div>
@@ -383,7 +383,7 @@ function GameApprovalsPage() {
                               <SystemIcon
                                 name={game.system.name}
                                 systemKey={game.system.key}
-                                size="sm"
+                                size="md"
                               />
                               <span className="sr-only">
                                 {game.system.name}

@@ -46,9 +46,7 @@ const systemIcons: Record<string, () => ReactElement> = {
 type Icon = () => ReactElement
 
 function getSystemIcon(systemKey: Maybe<string>): Nullable<Icon> {
-  if (!systemKey || !isString(systemKey)) {
-    return null
-  }
+  if (!systemKey || !isString(systemKey)) return null
 
   const icon = systemIcons[systemKey]
   return icon || null
