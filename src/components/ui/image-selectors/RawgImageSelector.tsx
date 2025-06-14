@@ -82,12 +82,6 @@ function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
       )
 
       setAllImages(images)
-
-      if (images.length > 0 && !selectedImage) {
-        const firstImage = images[0]
-        setSelectedImage(firstImage)
-        onImageSelect(firstImage.url)
-      }
     }
   }, [onImageSelect, searchQuery.data, selectedImage, useCustomUrl])
 

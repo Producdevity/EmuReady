@@ -78,12 +78,6 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         .filter((image) => includeAllTypes || image.type === 'boxart')
 
       setAllImages(images)
-
-      if (images.length > 0 && !selectedImage) {
-        const firstImage = images[0]
-        setSelectedImage(firstImage)
-        onImageSelect(firstImage.url)
-      }
     }
   }, [
     searchQuery.data,

@@ -218,7 +218,10 @@ function CustomFieldFormModal(props: Props) {
       isRequired: data.isRequired ?? false,
       displayOrder: data.displayOrder ?? 0,
       options: undefined as { value: string; label: string }[] | undefined,
-      defaultValue: data.defaultValue || undefined,
+      defaultValue:
+        data.defaultValue === null || data.defaultValue === undefined
+          ? undefined
+          : data.defaultValue,
       placeholder: data.placeholder || undefined,
       rangeMin: undefined as number | undefined,
       rangeMax: undefined as number | undefined,

@@ -202,7 +202,8 @@ function CustomFieldTemplateFormModal(props: Props) {
                 (opt) => opt.value.trim() && opt.label.trim(),
               )
             : undefined,
-        defaultValue: field.defaultValue || undefined,
+        defaultValue:
+          field.defaultValue === null ? undefined : field.defaultValue,
         isRequired: field.isRequired,
         displayOrder: index,
       })),
