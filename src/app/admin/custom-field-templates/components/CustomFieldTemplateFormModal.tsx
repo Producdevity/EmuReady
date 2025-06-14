@@ -2,6 +2,7 @@
 
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useState, useEffect, type FormEvent } from 'react'
+import { toSnakeCase } from 'remeda'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CustomFieldType } from '@orm'
@@ -492,9 +493,14 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.label}
-                        onChange={(ev) =>
+                        onChange={(ev) => {
+                          if (field.name.trim() === '') {
+                            updateField(fieldIndex, {
+                              name: toSnakeCase(ev.target.value),
+                            })
+                          }
                           updateField(fieldIndex, { label: ev.target.value })
-                        }
+                        }}
                         placeholder="e.g., Driver Version"
                         maxLength={100}
                         className={
