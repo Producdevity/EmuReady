@@ -33,6 +33,7 @@ const customFieldTemplateFieldSchema = z.object({
     .array(customFieldOptionSchema)
     .max(50, 'Maximum 50 options allowed')
     .optional(),
+  defaultValue: z.union([z.string(), z.boolean(), z.null()]).optional(),
   isRequired: z.boolean().optional().default(false),
   displayOrder: z.number().int().min(0).optional().default(0),
 })

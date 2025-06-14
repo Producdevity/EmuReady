@@ -26,6 +26,7 @@ const customFieldFormSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   type: z.nativeEnum(CustomFieldType),
   options: z.array(customFieldOptionSchema).optional(),
+  defaultValue: z.union([z.string(), z.boolean(), z.null()]).optional(),
   isRequired: z.boolean().optional(),
   displayOrder: z.coerce.number().int().optional(),
 })
@@ -38,6 +39,7 @@ type CustomFieldUpdatePayload = {
   label?: string
   type?: CustomFieldType
   options?: { value: string; label: string }[] | undefined
+  defaultValue?: string | boolean | null
   isRequired?: boolean
   displayOrder?: number
 }
@@ -48,6 +50,7 @@ type CustomFieldCreatePayload = {
   label: string
   type: CustomFieldType
   options?: { value: string; label: string }[] | undefined
+  defaultValue?: string | boolean | null
   isRequired: boolean
   displayOrder: number
 }
@@ -82,6 +85,7 @@ function CustomFieldFormModal(props: Props) {
       label: '',
       type: CustomFieldType.TEXT,
       options: [],
+      defaultValue: null,
       isRequired: false,
       displayOrder: 0,
     },
@@ -103,6 +107,7 @@ function CustomFieldFormModal(props: Props) {
         label: fieldToEditData.label,
         type: fieldToEditData.type,
         options: opts,
+        defaultValue: fieldToEditData.defaultValue as string | boolean | null,
         isRequired: fieldToEditData.isRequired,
         displayOrder: fieldToEditData.displayOrder,
       })
@@ -112,6 +117,7 @@ function CustomFieldFormModal(props: Props) {
         label: '',
         type: CustomFieldType.TEXT,
         options: [],
+        defaultValue: null,
         isRequired: false,
         displayOrder: 0,
       })
@@ -161,6 +167,7 @@ function CustomFieldFormModal(props: Props) {
       isRequired: data.isRequired ?? false,
       displayOrder: data.displayOrder ?? 0,
       options: undefined as { value: string; label: string }[] | undefined,
+      defaultValue: data.defaultValue || undefined,
     }
 
     if (data.type === CustomFieldType.SELECT) {
@@ -181,6 +188,7 @@ function CustomFieldFormModal(props: Props) {
         isRequired: basePayload.isRequired,
         displayOrder: basePayload.displayOrder,
         options: basePayload.options,
+        defaultValue: basePayload.defaultValue,
       }
       return updateMutation.mutate(updatePayload)
     }
@@ -193,6 +201,7 @@ function CustomFieldFormModal(props: Props) {
       isRequired: basePayload.isRequired,
       displayOrder: basePayload.displayOrder,
       options: basePayload.options,
+      defaultValue: basePayload.defaultValue,
     }
     createMutation.mutate(createPayload)
   }
@@ -283,6 +292,80 @@ function CustomFieldFormModal(props: Props) {
               <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>
             )}
           </div>
+
+          {/* Default Value Section */}
+          {(selectedFieldType === CustomFieldType.BOOLEAN ||
+            selectedFieldType === CustomFieldType.SELECT) && (
+            <div>
+              <label
+                htmlFor="defaultValue"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Default Value (Optional)
+              </label>
+              {selectedFieldType === CustomFieldType.BOOLEAN ? (
+                <Controller
+                  name="defaultValue"
+                  control={control}
+                  render={({ field }) => (
+                    <SelectInput
+                      label="Default Value"
+                      options={[
+                        { id: '', name: 'No default' },
+                        { id: 'true', name: 'Yes' },
+                        { id: 'false', name: 'No' },
+                      ]}
+                      value={field.value === null ? '' : String(field.value)}
+                      onChange={(ev) =>
+                        field.onChange(
+                          ev.target.value === ''
+                            ? null
+                            : ev.target.value === 'true',
+                        )
+                      }
+                    />
+                  )}
+                />
+              ) : selectedFieldType === CustomFieldType.SELECT &&
+                fields.length > 0 ? (
+                <Controller
+                  name="defaultValue"
+                  control={control}
+                  render={({ field }) => (
+                    <SelectInput
+                      label="Default Value"
+                      options={[
+                        { id: '', name: 'No default' },
+                        ...fields
+                          .filter(
+                            (opt) => opt.value?.trim() && opt.label?.trim(),
+                          )
+                          .map((option) => ({
+                            id: option.value,
+                            name: option.label,
+                          })),
+                      ]}
+                      value={field.value === null ? '' : String(field.value)}
+                      onChange={(ev) =>
+                        field.onChange(
+                          ev.target.value === '' ? null : ev.target.value,
+                        )
+                      }
+                    />
+                  )}
+                />
+              ) : selectedFieldType === CustomFieldType.SELECT ? (
+                <p className="text-sm text-gray-500 italic mt-1">
+                  Add options first to set a default value
+                </p>
+              ) : null}
+              {errors.defaultValue && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.defaultValue.message}
+                </p>
+              )}
+            </div>
+          )}
 
           {selectedFieldType === CustomFieldType.SELECT && (
             <div className="space-y-3 p-3 border rounded-md dark:border-gray-700">

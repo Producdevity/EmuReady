@@ -22,6 +22,7 @@ type TemplateField = {
   label: string
   type: CustomFieldType
   options?: { value: string; label: string }[]
+  defaultValue?: string | boolean | null
   isRequired?: boolean
   displayOrder?: number
 }
@@ -53,6 +54,7 @@ function createFieldData(field: TemplateField, index: number) {
       field.type === CustomFieldType.SELECT
         ? (field.options ?? Prisma.DbNull)
         : Prisma.DbNull,
+    defaultValue: field.defaultValue ?? Prisma.DbNull,
     isRequired: field.isRequired ?? false,
     displayOrder: field.displayOrder ?? index,
   }
@@ -220,6 +222,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
                 field.type === CustomFieldType.SELECT
                   ? (field.options ?? Prisma.DbNull)
                   : Prisma.DbNull,
+              defaultValue: field.defaultValue ?? Prisma.DbNull,
               isRequired: field.isRequired,
               displayOrder: maxDisplayOrder + index + 1,
             },

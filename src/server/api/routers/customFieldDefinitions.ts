@@ -53,6 +53,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
             input.type === CustomFieldType.SELECT && input.options
               ? input.options
               : Prisma.DbNull,
+          defaultValue: input.defaultValue ?? Prisma.DbNull,
           isRequired: input.isRequired,
           displayOrder: input.displayOrder,
         },
@@ -155,6 +156,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           label: input.label,
           type: input.type,
           options: optionsToSave,
+          defaultValue: input.defaultValue ?? Prisma.DbNull,
           isRequired: input.isRequired,
           displayOrder: input.displayOrder,
         },

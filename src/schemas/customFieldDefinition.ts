@@ -17,6 +17,7 @@ export const CreateCustomFieldDefinitionSchema = z.object({
   label: z.string().min(1),
   type: z.nativeEnum(CustomFieldType),
   options: z.array(customFieldOptionSchema).optional(),
+  defaultValue: z.union([z.string(), z.boolean(), z.null()]).optional(),
   isRequired: z.boolean().optional().default(false),
   displayOrder: z.number().int().optional().default(0),
 })
@@ -41,6 +42,7 @@ export const UpdateCustomFieldDefinitionSchema = z.object({
   label: z.string().min(1).optional(),
   type: z.nativeEnum(CustomFieldType).optional(),
   options: z.array(customFieldOptionSchema).optional(),
+  defaultValue: z.union([z.string(), z.boolean(), z.null()]).optional(),
   isRequired: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
 })

@@ -11,6 +11,7 @@ interface TemplateField {
   label: string
   type: CustomFieldType
   options: { value: string; label: string }[]
+  defaultValue?: string | boolean | null
   isRequired: boolean
   displayOrder: number
 }
@@ -91,6 +92,7 @@ function CustomFieldTemplateFormModal(props: Props) {
         label: field.label,
         type: field.type,
         options: (field.options as { value: string; label: string }[]) || [],
+        defaultValue: field.defaultValue as string | boolean | null | undefined,
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
       })),
@@ -193,6 +195,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                 (opt) => opt.value.trim() && opt.label.trim(),
               )
             : undefined,
+        defaultValue: field.defaultValue || undefined,
         isRequired: field.isRequired,
         displayOrder: index,
       })),
@@ -221,6 +224,7 @@ function CustomFieldTemplateFormModal(props: Props) {
         label: '',
         type: CustomFieldType.TEXT,
         options: [],
+        defaultValue: null,
         isRequired: false,
         displayOrder: fields.length,
       },
@@ -508,6 +512,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                         onChange={(ev) =>
                           updateField(fieldIndex, {
                             type: ev.target.value as CustomFieldType,
+                            defaultValue: null, // Reset default value when type changes
                           })
                         }
                       >
@@ -534,6 +539,69 @@ function CustomFieldTemplateFormModal(props: Props) {
                       </label>
                     </div>
                   </div>
+
+                  {/* Default Value Section */}
+                  {(field.type === CustomFieldType.BOOLEAN ||
+                    field.type === CustomFieldType.SELECT) && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Default Value (Optional)
+                      </label>
+                      {field.type === CustomFieldType.BOOLEAN ? (
+                        <Input
+                          as="select"
+                          value={
+                            field.defaultValue === null
+                              ? ''
+                              : String(field.defaultValue)
+                          }
+                          onChange={(ev) =>
+                            updateField(fieldIndex, {
+                              defaultValue:
+                                ev.target.value === ''
+                                  ? null
+                                  : ev.target.value === 'true',
+                            })
+                          }
+                        >
+                          <option value="">No default</option>
+                          <option value="true">Yes</option>
+                          <option value="false">No</option>
+                        </Input>
+                      ) : field.type === CustomFieldType.SELECT &&
+                        field.options.length > 0 ? (
+                        <Input
+                          as="select"
+                          value={
+                            field.defaultValue === null
+                              ? ''
+                              : String(field.defaultValue)
+                          }
+                          onChange={(ev) =>
+                            updateField(fieldIndex, {
+                              defaultValue:
+                                ev.target.value === '' ? null : ev.target.value,
+                            })
+                          }
+                        >
+                          <option value="">No default</option>
+                          {field.options
+                            .filter(
+                              (opt) => opt.value.trim() && opt.label.trim(),
+                            )
+                            .map((option, optIndex) => (
+                              <option key={optIndex} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                        </Input>
+                      ) : field.type === CustomFieldType.SELECT ? (
+                        <p className="text-sm text-gray-500 italic">
+                          Add options first to set a default value
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
 
                   {field.type === CustomFieldType.SELECT && (
                     <div>

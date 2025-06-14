@@ -164,6 +164,7 @@ model CustomFieldDefinition {
   label        String // UI display label, e.g., "Driver Version"
   type         CustomFieldType
   options      Json? // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
+  defaultValue Json? // Default value for the field (boolean: true/false, select: option value, text: string)
   isRequired   Boolean           @default(false)
   displayOrder Int               @default(0)
   createdAt    DateTime          @default(now())
@@ -191,6 +192,7 @@ model CustomFieldTemplateField {
   label        String              // UI display label, e.g., "Driver Version"
   type         CustomFieldType
   options      Json?               // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
+  defaultValue Json?               // Default value for the field (boolean: true/false, select: option value, text: string)
   isRequired   Boolean             @default(false)
   displayOrder Int                 @default(0)
   createdAt    DateTime            @default(now())
