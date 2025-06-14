@@ -6,6 +6,7 @@ import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { gamesRouter } from './routers/games'
 import { listingsRouter } from './routers/listings'
+import { mobileRouter } from './routers/mobile'
 import { notificationsRouter } from './routers/notifications'
 import { performanceScalesRouter } from './routers/performanceScales'
 import { rawgRouter } from './routers/rawg'
@@ -31,6 +32,7 @@ export const appRouter = createTRPCRouter({
   performanceScales: performanceScalesRouter,
   rawg: rawgRouter,
   tgdb: tgdbRouter,
+  mobile: mobileRouter,
 })
 
 export type AppRouter = typeof appRouter

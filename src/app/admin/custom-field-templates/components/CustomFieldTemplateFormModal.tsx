@@ -252,7 +252,9 @@ function CustomFieldTemplateFormModal(props: Props) {
               options:
                 updates.type === CustomFieldType.SELECT
                   ? (updates.options ?? field.options)
-                  : [],
+                  : updates.type
+                    ? []
+                    : (updates.options ?? field.options),
             }
           : field,
       ),
