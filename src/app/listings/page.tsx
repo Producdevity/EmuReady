@@ -369,12 +369,21 @@ function ListingsPage() {
                     {columnVisibility.isColumnVisible('game') && (
                       <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
                         <div className="flex items-center gap-2">
-                          <Link
-                            href={`/games/${listing.game.id}`}
-                            className="hover:text-blue-600 dark:hover:text-blue-400"
-                          >
-                            {listing.game.title}
-                          </Link>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                href={`/games/${listing.game.id}`}
+                                className="hover:text-blue-600 dark:hover:text-blue-400"
+                              >
+                                {listing.game.title.substring(0, 30)}
+                                {listing.game.title.length > 30 && '...'}
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              {listing.game.title}
+                            </TooltipContent>
+                          </Tooltip>
+
                           {listing.status === ApprovalStatus.PENDING && (
                             <Tooltip>
                               <TooltipTrigger>
