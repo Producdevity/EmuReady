@@ -37,6 +37,7 @@ function GameEditForm(props: Props) {
           router.refresh()
         })
         .then(() => setIsSubmitting(false))
+      utils.games.getPendingGames.invalidate().catch(console.error)
     },
     onError: (error) => {
       toast.error(`Failed to update game: ${getErrorMessage(error)}`)

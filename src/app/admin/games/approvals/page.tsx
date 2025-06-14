@@ -83,11 +83,7 @@ function GameApprovalsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, false)
 
-  const {
-    data: pendingGamesData,
-    isLoading,
-    refetch,
-  } = api.games.getPendingGames.useQuery({
+  const pendingGamesQuery = api.games.getPendingGames.useQuery({
     limit: table.limit,
     page: table.page,
     sortField: table.sortField ?? 'submittedAt',
@@ -102,7 +98,7 @@ function GameApprovalsPage() {
   const approveGameMutation = api.games.approveGame.useMutation({
     onSuccess: (data) => {
       toast.success(`Game ${data.status.toLowerCase()} successfully!`)
-      refetch().catch(console.error)
+      pendingGamesQuery.refetch().catch(console.error)
       setIsModalOpen(false)
       setSelectedGameId(null)
       setProcessingAction(null)
@@ -116,7 +112,7 @@ function GameApprovalsPage() {
   })
 
   const showConfirmation = (gameId: string, action: ProcessingAction) => {
-    const game = pendingGamesData?.games.find((g) => g.id === gameId)
+    const game = pendingGamesQuery.data?.games.find((g) => g.id === gameId)
     if (game) {
       setConfirmationModal({
         isOpen: true,
@@ -159,13 +155,14 @@ function GameApprovalsPage() {
   }
 
   const selectedGame = selectedGameId
-    ? (pendingGamesData?.games.find((game) => game.id === selectedGameId) ??
-      null)
+    ? (pendingGamesQuery.data?.games.find(
+        (game) => game.id === selectedGameId,
+      ) ?? null)
     : null
 
-  const filteredGames = pendingGamesData?.games ?? []
+  const filteredGames = pendingGamesQuery.data?.games ?? []
 
-  if (isLoading) return <LoadingSpinner />
+  if (pendingGamesQuery.isLoading) return <LoadingSpinner />
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -461,11 +458,11 @@ function GameApprovalsPage() {
               </table>
             </div>
 
-            {pendingGamesData && (
+            {pendingGamesQuery.data && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                 <Pagination
                   currentPage={table.page}
-                  totalPages={pendingGamesData.pagination.pages}
+                  totalPages={pendingGamesQuery.data.pagination.pages}
                   onPageChange={table.setPage}
                 />
               </div>
