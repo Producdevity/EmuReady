@@ -137,10 +137,39 @@ function ProfilePage() {
     type: string,
     field: 'inAppEnabled' | 'emailEnabled',
   ): boolean {
-    const preference = notificationPreferencesQuery.data?.find(
-      (p) => p.type === type,
+    if (type === 'general') {
+      // For general toggle, check if ALL notification types are enabled
+      const allTypes = [
+        'LISTING_COMMENT',
+        'LISTING_VOTE_UP',
+        'LISTING_VOTE_DOWN',
+        'COMMENT_REPLY',
+        'USER_MENTION',
+        'NEW_DEVICE_LISTING',
+        'NEW_SOC_LISTING',
+        'GAME_ADDED',
+        'EMULATOR_UPDATED',
+        'MAINTENANCE_NOTICE',
+        'FEATURE_ANNOUNCEMENT',
+        'POLICY_UPDATE',
+        'LISTING_APPROVED',
+        'LISTING_REJECTED',
+        'CONTENT_FLAGGED',
+        'ACCOUNT_WARNING',
+      ]
+      return allTypes.every(
+        (notifType) =>
+          notificationPreferencesQuery.data?.find(
+            (p) => p.type === notifType,
+          )?.[field] ?? true,
+      )
+    }
+
+    return (
+      notificationPreferencesQuery.data?.find((p) => p.type === type)?.[
+        field
+      ] ?? true
     )
-    return preference?.[field] ?? true // Default to true if not found
   }
 
   // Helper function to update preference
@@ -149,6 +178,37 @@ function ProfilePage() {
     field: 'inAppEnabled' | 'emailEnabled',
     value: boolean,
   ) {
+    if (type === 'general') {
+      // For general toggle, update ALL notification types
+      const allTypes = [
+        'LISTING_COMMENT',
+        'LISTING_VOTE_UP',
+        'LISTING_VOTE_DOWN',
+        'COMMENT_REPLY',
+        'USER_MENTION',
+        'NEW_DEVICE_LISTING',
+        'NEW_SOC_LISTING',
+        'GAME_ADDED',
+        'EMULATOR_UPDATED',
+        'MAINTENANCE_NOTICE',
+        'FEATURE_ANNOUNCEMENT',
+        'POLICY_UPDATE',
+        'LISTING_APPROVED',
+        'LISTING_REJECTED',
+        'CONTENT_FLAGGED',
+        'ACCOUNT_WARNING',
+      ]
+
+      // Update each notification type
+      allTypes.forEach((notifType) => {
+        updateNotificationPreference.mutate({
+          type: notifType as NotificationType,
+          [field]: value,
+        })
+      })
+      return
+    }
+
     updateNotificationPreference.mutate({
       type: type as NotificationType,
       [field]: value,
