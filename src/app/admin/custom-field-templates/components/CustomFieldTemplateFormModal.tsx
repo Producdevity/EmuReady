@@ -494,7 +494,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                         type="text"
                         value={field.label}
                         onChange={(ev) => {
-                          if (field.name.trim() === '') {
+                          if (!field.name) {
                             updateField(fieldIndex, {
                               name: toSnakeCase(ev.target.value),
                             })
@@ -650,11 +650,16 @@ function CustomFieldTemplateFormModal(props: Props) {
                               <Input
                                 type="text"
                                 value={option.value}
-                                onChange={(ev) =>
+                                onChange={(ev) => {
+                                  if (!option.label) {
+                                    updateFieldOption(fieldIndex, optionIndex, {
+                                      label: ev.target.value,
+                                    })
+                                  }
                                   updateFieldOption(fieldIndex, optionIndex, {
                                     value: ev.target.value,
                                   })
-                                }
+                                }}
                                 placeholder="Value"
                                 maxLength={50}
                                 className={
@@ -682,9 +687,9 @@ function CustomFieldTemplateFormModal(props: Props) {
                                 type="text"
                                 value={option.label}
                                 onChange={(ev) => {
-                                  if (option.value.trim() === '') {
+                                  if (!option.value) {
                                     updateFieldOption(fieldIndex, optionIndex, {
-                                      value: toSnakeCase(ev.target.value),
+                                      value: ev.target.value,
                                     })
                                   }
                                   updateFieldOption(fieldIndex, optionIndex, {
