@@ -12,9 +12,14 @@ interface TemplateField {
   label: string
   type: CustomFieldType
   options: { value: string; label: string }[]
-  defaultValue?: string | boolean | null
+  defaultValue?: string | boolean | number | null
   isRequired: boolean
   displayOrder: number
+  // Range-specific fields
+  rangeMin?: number
+  rangeMax?: number
+  rangeUnit?: string
+  rangeDecimals?: number
 }
 
 interface Props {
@@ -29,6 +34,7 @@ const FIELD_TYPES = [
   { value: CustomFieldType.URL, label: 'URL' },
   { value: CustomFieldType.BOOLEAN, label: 'Yes/No' },
   { value: CustomFieldType.SELECT, label: 'Dropdown' },
+  { value: CustomFieldType.RANGE, label: 'Range (Slider)' },
 ]
 
 function CustomFieldTemplateFormModal(props: Props) {
@@ -102,9 +108,13 @@ function CustomFieldTemplateFormModal(props: Props) {
         defaultValue:
           field.defaultValue === undefined
             ? null
-            : (field.defaultValue as string | boolean | null),
+            : (field.defaultValue as string | boolean | number | null),
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
+        rangeMin: field.rangeMin ?? 0,
+        rangeMax: field.rangeMax ?? 100,
+        rangeUnit: field.rangeUnit ?? '',
+        rangeDecimals: field.rangeDecimals ?? 0,
       })),
     )
     setErrors({})
@@ -206,9 +216,24 @@ function CustomFieldTemplateFormModal(props: Props) {
               )
             : undefined,
         defaultValue:
-          field.defaultValue === null ? undefined : field.defaultValue,
+          field.defaultValue === null
+            ? undefined
+            : typeof field.defaultValue === 'number'
+              ? String(field.defaultValue)
+              : field.defaultValue,
         isRequired: field.isRequired,
         displayOrder: index,
+        // Range-specific fields
+        rangeMin:
+          field.type === CustomFieldType.RANGE ? field.rangeMin : undefined,
+        rangeMax:
+          field.type === CustomFieldType.RANGE ? field.rangeMax : undefined,
+        rangeUnit:
+          field.type === CustomFieldType.RANGE ? field.rangeUnit : undefined,
+        rangeDecimals:
+          field.type === CustomFieldType.RANGE
+            ? field.rangeDecimals
+            : undefined,
       })),
     }
 
@@ -238,6 +263,10 @@ function CustomFieldTemplateFormModal(props: Props) {
         defaultValue: null,
         isRequired: false,
         displayOrder: fields.length,
+        rangeMin: 0,
+        rangeMax: 100,
+        rangeUnit: '',
+        rangeDecimals: 0,
       },
     ])
   }
