@@ -7,7 +7,7 @@ function MicrosoftXbox360Icon() {
       y="0"
       width="100"
       height="100"
-      viewBox="0 0 171.81796 43.527214"
+      viewBox="4.5 0 163 45"
     >
       <title>Microsoft XBOX 360</title>
       <g transform="translate(-32.711327,-529.05475)">

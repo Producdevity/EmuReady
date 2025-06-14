@@ -7,7 +7,7 @@ function NintendoSwitchIcon() {
       y="0"
       width="100"
       height="100"
-      viewBox="0 0 48 48"
+      viewBox="2 2 44 44"
     >
       <title>Nintendo Switch</title>
       <g
