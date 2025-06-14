@@ -4,7 +4,9 @@ import PerformanceBadge from './PerformanceBadge'
 
 describe('PerformanceBadge', () => {
   it('renders correctly with rank 1 (Perfect)', () => {
-    render(<PerformanceBadge rank={1} label="Perfect" />)
+    render(
+      <PerformanceBadge rank={1} label="Perfect" description="description" />,
+    )
     const badge = screen.getByText('Perfect')
 
     expect(badge).toBeInTheDocument()
@@ -13,7 +15,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 2 (Great)', () => {
-    render(<PerformanceBadge rank={2} label="Great" />)
+    render(
+      <PerformanceBadge rank={2} label="Great" description="description" />,
+    )
     const badge = screen.getByText('Great')
 
     expect(badge).toBeInTheDocument()
@@ -21,7 +25,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 3 (Playable)', () => {
-    render(<PerformanceBadge rank={3} label="Playable" />)
+    render(
+      <PerformanceBadge rank={3} label="Playable" description="description" />,
+    )
     const badge = screen.getByText('Playable')
 
     expect(badge).toBeInTheDocument()
@@ -32,7 +38,7 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 4 (Poor)', () => {
-    render(<PerformanceBadge rank={4} label="Poor" />)
+    render(<PerformanceBadge rank={4} label="Poor" description="description" />)
     const badge = screen.getByText('Poor')
 
     expect(badge).toBeInTheDocument()
@@ -43,7 +49,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 5 (Ingame)', () => {
-    render(<PerformanceBadge rank={5} label="Ingame" />)
+    render(
+      <PerformanceBadge rank={5} label="Ingame" description="description" />,
+    )
     const badge = screen.getByText('Ingame')
 
     expect(badge).toBeInTheDocument()
@@ -51,7 +59,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 6 (Intro)', () => {
-    render(<PerformanceBadge rank={6} label="Intro" />)
+    render(
+      <PerformanceBadge rank={6} label="Intro" description="description" />,
+    )
     const badge = screen.getByText('Intro')
 
     expect(badge).toBeInTheDocument()
@@ -59,7 +69,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 7 (Loadable)', () => {
-    render(<PerformanceBadge rank={7} label="Loadable" />)
+    render(
+      <PerformanceBadge rank={7} label="Loadable" description="description" />,
+    )
     const badge = screen.getByText('Loadable')
 
     expect(badge).toBeInTheDocument()
@@ -67,7 +79,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders correctly with rank 8 (Nothing)', () => {
-    render(<PerformanceBadge rank={8} label="Nothing" />)
+    render(
+      <PerformanceBadge rank={8} label="Nothing" description="description" />,
+    )
     const badge = screen.getByText('Nothing')
 
     expect(badge).toBeInTheDocument()
@@ -75,7 +89,9 @@ describe('PerformanceBadge', () => {
   })
 
   it('applies dark mode classes correctly', () => {
-    render(<PerformanceBadge rank={1} label="Perfect" />)
+    render(
+      <PerformanceBadge rank={1} label="Perfect" description="description" />,
+    )
     const badge = screen.getByText('Perfect')
 
     expect(badge.closest('span')).toHaveClass(
@@ -85,14 +101,20 @@ describe('PerformanceBadge', () => {
   })
 
   it('renders custom labels correctly', () => {
-    render(<PerformanceBadge rank={1} label="Custom Performance Label" />)
+    render(
+      <PerformanceBadge
+        rank={1}
+        label="Custom Performance Label"
+        description="description"
+      />,
+    )
     const badge = screen.getByText('Custom Performance Label')
 
     expect(badge).toBeInTheDocument()
   })
 
   it('always renders as pill shape (rounded-full)', () => {
-    render(<PerformanceBadge rank={1} label="Test" />)
+    render(<PerformanceBadge rank={1} label="Test" description="description" />)
     const badge = screen.getByText('Test')
 
     expect(badge.closest('span')).toHaveClass('rounded-full')
@@ -100,7 +122,13 @@ describe('PerformanceBadge', () => {
   })
 
   it('has proper badge structure and styling', () => {
-    render(<PerformanceBadge rank={1} label="Test Badge" />)
+    render(
+      <PerformanceBadge
+        rank={1}
+        label="Test Badge"
+        description="description"
+      />,
+    )
     const badge = screen.getByText('Test Badge')
 
     expect(badge.closest('span')).toHaveClass(
@@ -113,17 +141,23 @@ describe('PerformanceBadge', () => {
 
   it('color progression follows performance hierarchy', () => {
     // Test that better performance has greener colors, worse has redder colors
-    const { rerender } = render(<PerformanceBadge rank={1} label="Perfect" />)
+    const { rerender } = render(
+      <PerformanceBadge rank={1} label="Perfect" description="description" />,
+    )
     expect(screen.getByText('Perfect').closest('span')).toHaveClass(
       'bg-green-100',
     )
 
-    rerender(<PerformanceBadge rank={8} label="Nothing" />)
+    rerender(
+      <PerformanceBadge rank={8} label="Nothing" description="description" />,
+    )
     expect(screen.getByText('Nothing').closest('span')).toHaveClass(
       'bg-red-400',
     )
 
-    rerender(<PerformanceBadge rank={3} label="Playable" />)
+    rerender(
+      <PerformanceBadge rank={3} label="Playable" description="description" />,
+    )
     expect(screen.getByText('Playable').closest('span')).toHaveClass(
       'bg-yellow-100',
     )

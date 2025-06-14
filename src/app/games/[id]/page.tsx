@@ -127,6 +127,7 @@ function GameDetailsPage() {
                         <PerformanceBadge
                           rank={listing.performance.rank}
                           label={listing.performance.label}
+                          description={listing.performance?.description}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

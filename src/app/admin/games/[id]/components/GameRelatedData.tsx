@@ -86,6 +86,7 @@ function GameRelatedData(props: Props) {
                     <PerformanceBadge
                       rank={listing.performance.rank}
                       label={listing.performance.label}
+                      description={listing.performance.description}
                     />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">

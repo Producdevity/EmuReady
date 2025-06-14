@@ -277,6 +277,7 @@ function Home() {
                       <PerformanceBadge
                         rank={listing.performance?.rank ?? 0}
                         label={listing.performance?.label ?? 'N/A'}
+                        description={listing.performance?.description}
                       />
                     </div>
                     <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">

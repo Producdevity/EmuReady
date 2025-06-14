@@ -443,6 +443,7 @@ function ListingsPage() {
                         <PerformanceBadge
                           rank={listing.performance?.rank ?? 8}
                           label={listing.performance?.label ?? 'N/A'}
+                          description={listing.performance?.description}
                         />
                       </td>
                     )}

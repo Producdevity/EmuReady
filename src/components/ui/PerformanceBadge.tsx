@@ -1,8 +1,14 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/Tooltip'
 import Badge from './Badge'
 
 interface Props {
   rank: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | number
   label: string
+  description?: string | null
 }
 
 const performanceColorMap: Record<number, string> = {
@@ -24,9 +30,16 @@ function PerformanceBadge(props: Props) {
     performanceColorMap[props.rank] ?? defaultPerformanceColor
 
   return (
-    <Badge className={customColorClass} pill>
-      {props.label}
-    </Badge>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge className={customColorClass} pill>
+          {props.label}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {props.description ?? 'No description available'}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
