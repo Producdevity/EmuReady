@@ -39,7 +39,7 @@ interface Props {
   className?: string
 }
 
-function TGDBImageSelector(props: Props) {
+function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(
     null,
@@ -52,10 +52,6 @@ function TGDBImageSelector(props: Props) {
 
   // Debounced search to avoid API spam
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
-
-  // Extract callbacks to avoid props dependency issues
-  const onImageSelect = props.onImageSelect
-  const onError = props.onError
 
   const getSearchQuery = () =>
     props.tgdbPlatformId
@@ -94,21 +90,20 @@ function TGDBImageSelector(props: Props) {
     selectedImage,
     useCustomUrl,
     includeAllTypes,
-    // Removed onImageSelect from dependencies to prevent unnecessary re-runs
+    onImageSelect,
   ])
 
   // Handle search errors
   useEffect(() => {
-    if (searchQuery.error && onError) {
-      onError(searchQuery.error.message || 'Failed to search for images')
-    }
+    if (!searchQuery.error || !onError) return
+    onError(searchQuery.error.message || 'Failed to search for images')
   }, [searchQuery.error, onError])
 
   const handleSearch = () => {
     if (searchTerm.trim().length >= 2) {
       searchQuery.refetch().catch((error) => {
         console.error('Search error:', error)
-        props.onError?.(`Failed to search for images: ${error.message}`)
+        onError?.(`Failed to search for images: ${error.message}`)
       })
     }
   }
@@ -134,23 +129,16 @@ function TGDBImageSelector(props: Props) {
     setPreviewImage(image)
   }
 
-  const closePreview = () => {
-    setPreviewImage(null)
-  }
-
   const handleToggleAllTypes = (checked: boolean) => {
     setIncludeAllTypes(checked)
-    if (searchTerm.trim().length >= 2) {
-      // Re-fetch results with the new setting
-      searchQuery.refetch().catch(console.error)
-    }
+    if (searchTerm.trim().length < 2) return
+    searchQuery.refetch().catch(console.error)
   }
 
   const enableAllTypes = () => {
     setIncludeAllTypes(true)
-    if (searchTerm.trim().length >= 2) {
-      searchQuery.refetch().catch(console.error)
-    }
+    if (searchTerm.trim().length < 2) return
+    searchQuery.refetch().catch(console.error)
   }
 
   const handleToggleCustomUrl = (checked: boolean) => {
@@ -407,7 +395,7 @@ function TGDBImageSelector(props: Props) {
       {previewImage && (
         <Modal
           isOpen={true}
-          onClose={closePreview}
+          onClose={() => setPreviewImage(null)}
           title={previewImage.gameName}
           size="lg"
           isNested={true}
@@ -452,7 +440,7 @@ function TGDBImageSelector(props: Props) {
               <Button
                 onClick={() => {
                   handleImageSelect(previewImage)
-                  closePreview()
+                  setPreviewImage(null)
                 }}
                 variant="primary"
                 size="sm"

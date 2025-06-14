@@ -25,7 +25,7 @@ interface Props {
   className?: string
 }
 
-function RawgImageSelector(props: Props) {
+function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(
     null,
@@ -56,10 +56,6 @@ function RawgImageSelector(props: Props) {
   // Debounced search to avoid API spam
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
 
-  // Extract callbacks to avoid props dependency issues
-  const onImageSelect = props.onImageSelect
-  const onError = props.onError
-
   const searchQuery = api.rawg.searchGameImages.useQuery(
     {
       query: getSearchQuery(),
@@ -78,14 +74,12 @@ function RawgImageSelector(props: Props) {
     }
   }, [props.gameTitle, searchTerm])
 
-  // Handle search results and auto-select first image
+  // Process search results and select initial image
   useEffect(() => {
     if (searchQuery.data && !useCustomUrl) {
-      const images: GameImageOption[] = []
-
-      Object.entries(searchQuery.data).forEach(([, gameImages]) => {
-        images.push(...gameImages)
-      })
+      const images = Object.values(searchQuery.data).flatMap(
+        (gameImages) => gameImages,
+      )
 
       setAllImages(images)
 
@@ -95,7 +89,7 @@ function RawgImageSelector(props: Props) {
         onImageSelect(firstImage.url)
       }
     }
-  }, [searchQuery.data, selectedImage, useCustomUrl, onImageSelect])
+  }, [onImageSelect, searchQuery.data, selectedImage, useCustomUrl])
 
   // Handle search errors
   useEffect(() => {
