@@ -13,14 +13,19 @@ interface Props {
   className?: string
   hideCloseButton?: boolean
   isNested?: boolean
+  closeOnBackdropClick?: boolean
+  closeOnEscape?: boolean
 }
 
 function Modal({ onClose, ...props }: Props) {
   const size = props.size ?? 'md'
   const hideCloseButton = props.hideCloseButton ?? false
   const isNested = props.isNested ?? false
+  const closeOnBackdropClick = props.closeOnBackdropClick ?? true
+  const closeOnEscape = props.closeOnEscape ?? true
 
   useEffect(() => {
+    if (!closeOnEscape) return
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
@@ -32,7 +37,7 @@ function Modal({ onClose, ...props }: Props) {
     return () => {
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [onClose, props.isOpen])
+  }, [closeOnEscape, onClose, props.isOpen])
 
   if (!props.isOpen) return null
 
@@ -44,6 +49,7 @@ function Modal({ onClose, ...props }: Props) {
   }
 
   const handleBackdropClick = (ev: MouseEvent) => {
+    if (!closeOnBackdropClick) return
     // Only close if the click is directly on the backdrop, not bubbling from child elements
     if (ev.target !== ev.currentTarget) return
     onClose()

@@ -319,6 +319,8 @@ function CustomFieldTemplateFormModal(props: Props) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       title={props.templateIdToEdit ? 'Edit Template' : 'Create Template'}
+      closeOnBackdropClick={false}
+      closeOnEscape={false}
       size="lg"
     >
       {customFieldTemplateQuery.isLoading ? (
