@@ -4,12 +4,21 @@ import { X } from 'lucide-react'
 import { useEffect, type ReactNode, type MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
+const sizeClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+}
+
 interface Props {
   isOpen: boolean
   onClose: () => void
   title?: string
   children: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: keyof typeof sizeClasses
   className?: string
   hideCloseButton?: boolean
   isNested?: boolean
@@ -40,13 +49,6 @@ function Modal({ onClose, ...props }: Props) {
   }, [closeOnEscape, onClose, props.isOpen])
 
   if (!props.isOpen) return null
-
-  const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-  }
 
   const handleBackdropClick = (ev: MouseEvent) => {
     if (!closeOnBackdropClick) return

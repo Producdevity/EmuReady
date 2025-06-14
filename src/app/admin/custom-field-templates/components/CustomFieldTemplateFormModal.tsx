@@ -321,7 +321,7 @@ function CustomFieldTemplateFormModal(props: Props) {
       title={props.templateIdToEdit ? 'Edit Template' : 'Create Template'}
       closeOnBackdropClick={false}
       closeOnEscape={false}
-      size="lg"
+      size="3xl"
     >
       {customFieldTemplateQuery.isLoading ? (
         <div className="flex justify-center items-center py-8">
