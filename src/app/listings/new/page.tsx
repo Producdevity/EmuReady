@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FileText } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
@@ -375,6 +376,15 @@ function AddListingPage() {
               onGameSelect={setSelectedGame}
               gameSearchTerm={gameSearchTerm}
             />
+            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Can&apos;t find your game?{' '}
+              <Link
+                href="/games/new"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+              >
+                Add it here
+              </Link>
+            </div>
           </div>
 
           {/* Device Selection */}
