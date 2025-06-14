@@ -4,7 +4,7 @@ const storageKeys = {
   theme: `${PREFIX}theme`,
   showSystemIcons: `${PREFIX}show_system_icons`,
   showEmulatorLogos: `${PREFIX}show_emulator_logos`,
-  betaWarningDismissed: `${PREFIX}beta_warning_dismissed`,
+  betaWarningDismissed: `${PREFIX}beta_warning_dismissed_v2`,
   columnVisibility: {
     listings: `${PREFIX}listings_column_visibility`,
     games: `${PREFIX}games_column_visibility`,

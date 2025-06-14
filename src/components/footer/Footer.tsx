@@ -1,11 +1,6 @@
 import KofiFooterButton from '@/components/footer/KofiFooterButton'
 import GitHubIcon from '@/components/icons/GitHubIcon'
-import {
-  ThemeSelect,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui'
+import { ThemeSelect } from '@/components/ui'
 
 const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
 
@@ -171,16 +166,9 @@ function Footer() {
 
       {/* Beta Badge */}
       <div className="fixed bottom-6 right-6 z-50">
-        <Tooltip>
-          <TooltipTrigger>
-            <div className="px-3 py-1.5 bg-orange-500 text-white text-xs font-medium rounded-full shadow-lg hover:bg-orange-600 transition-colors">
-              BETA
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            All data is fake mock data, used for testing purposes.
-          </TooltipContent>
-        </Tooltip>
+        <div className="px-3 py-1.5 bg-orange-500 text-white text-xs font-medium rounded-full shadow-lg hover:bg-orange-600 transition-colors">
+          BETA
+        </div>
       </div>
     </footer>
   )

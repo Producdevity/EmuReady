@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 
+const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
+
 function BetaWarningModal() {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -68,22 +70,36 @@ function BetaWarningModal() {
               <p>What this means:</p>
 
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>
-                  Most data you see is placeholder content for testing purposes
-                </li>
+                <li>You may encounter bugs or unexpected behavior</li>
                 <li>Features may change or be temporarily unavailable</li>
-                <li>
-                  Your account and data are safe, but some content may be reset
-                </li>
               </ul>
 
-              <p>
-                Feel free to explore, create an account, and get familiar with
-                the platform.
-                <strong className="text-gray-800 dark:text-gray-200">
-                  {' '}
-                  Our official launch is coming very soon!
-                </strong>
+              <p className="mt-2">
+                If you find any issues, please report them on our{' '}
+                <a
+                  href={discordUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Discord Community"
+                  className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                >
+                  Discord
+                </a>{' '}
+                or{' '}
+                <a
+                  href="https://github.com/Producdevity/EmuReady"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="EmuReady GitHub"
+                  className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                >
+                  GitHub
+                </a>
+                .
+                <span className="mt-2">
+                  Feel free to explore, create an account, and get familiar with
+                  the platform.
+                </span>
               </p>
             </div>
 
