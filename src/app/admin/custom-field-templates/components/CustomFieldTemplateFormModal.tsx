@@ -681,11 +681,16 @@ function CustomFieldTemplateFormModal(props: Props) {
                               <Input
                                 type="text"
                                 value={option.label}
-                                onChange={(ev) =>
+                                onChange={(ev) => {
+                                  if (option.value.trim() === '') {
+                                    updateFieldOption(fieldIndex, optionIndex, {
+                                      value: toSnakeCase(ev.target.value),
+                                    })
+                                  }
                                   updateFieldOption(fieldIndex, optionIndex, {
                                     label: ev.target.value,
                                   })
-                                }
+                                }}
                                 placeholder="Label"
                                 maxLength={100}
                                 className={
