@@ -16,7 +16,6 @@ import { api } from '@/lib/api'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
-import { type Role } from '@orm'
 import CommentForm from './CommentForm'
 
 type CommentsData = RouterOutput['listings']['getSortedComments']
@@ -41,11 +40,13 @@ function CommentThread(props: Props) {
     Record<string, boolean>
   >({})
 
-  const { data: commentsData, isLoading } =
-    api.listings.getSortedComments.useQuery(
-      { listingId: props.listingId, sortBy },
-      { enabled: !!props.listingId },
-    )
+  const listingsQuery = api.listings.getSortedComments.useQuery(
+    { listingId: props.listingId, sortBy },
+    { enabled: !!props.listingId },
+  )
+  const userQuery = api.users.me.useQuery(undefined, {
+    enabled: !!user,
+  })
 
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
@@ -106,7 +107,9 @@ function CommentThread(props: Props) {
 
   const isCommentExpanded = (commentId: string) => {
     if (expandedComments[commentId] === undefined) {
-      const comment = commentsData?.comments.find((c) => c.id === commentId)
+      const comment = listingsQuery.data?.comments.find(
+        (c) => c.id === commentId,
+      )
       return !comment || (comment.replies?.length ?? 0) <= 3
     }
 
@@ -121,12 +124,17 @@ function CommentThread(props: Props) {
     const isReplying = replyingTo === comment.id
     const expanded = isCommentExpanded(comment.id)
 
-    // Get user role from Clerk's publicMetadata
-    const userRole = user?.publicMetadata?.role as Role | undefined
+    const canEdit = canEditComment(
+      userQuery.data?.role,
+      comment.user.id,
+      user?.id,
+    )
 
-    const canEdit = canEditComment(userRole, comment.user.id, user?.id)
-
-    const canDelete = canDeleteComment(userRole, comment.user.id, user?.id)
+    const canDelete = canDeleteComment(
+      userQuery.data?.role,
+      comment.user.id,
+      user?.id,
+    )
 
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''
     const borderStyle =
@@ -374,30 +382,33 @@ function CommentThread(props: Props) {
   return (
     <div className="mt-6">
       <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-        Comments {commentsData?.comments && `(${commentsData.comments.length})`}
+        Comments{' '}
+        {listingsQuery.data?.comments &&
+          `(${listingsQuery.data.comments.length})`}
       </h2>
 
       <CommentForm listingId={props.listingId} onCommentSuccess={refreshData} />
 
-      {commentsData?.comments && commentsData.comments.length > 0 && (
-        <SortControls />
-      )}
+      {listingsQuery.data?.comments &&
+        listingsQuery.data.comments.length > 0 && <SortControls />}
 
       <div className="space-y-2">
-        {isLoading ? (
+        {listingsQuery.isLoading ? (
           <div className="text-gray-500 dark:text-gray-400 animate-pulse">
             Loading comments...
           </div>
         ) : (
           <>
-            {(!commentsData?.comments ||
-              commentsData.comments.length === 0) && (
+            {(!listingsQuery.data?.comments ||
+              listingsQuery.data.comments.length === 0) && (
               <div className="text-gray-500 dark:text-gray-400">
                 No comments yet. Be the first to comment!
               </div>
             )}
 
-            {commentsData?.comments?.map((comment) => renderComment(comment))}
+            {listingsQuery.data?.comments?.map((comment) =>
+              renderComment(comment),
+            )}
           </>
         )}
       </div>
