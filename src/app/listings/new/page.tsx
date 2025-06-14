@@ -320,17 +320,25 @@ function AddListingPage() {
         (cv) => cv.customFieldDefinitionId === field.id,
       )
       if (existingValueObj) return existingValueObj
-      let defaultValue: string | boolean | number | null | undefined
-      switch (field.type) {
-        case CustomFieldType.BOOLEAN:
-          defaultValue = false
-          break
-        case CustomFieldType.SELECT:
-          defaultValue = field.parsedOptions?.[0]?.value ?? ''
-          break
-        default:
-          defaultValue = ''
+
+      // Use the actual default value from the field definition
+      let defaultValue: string | boolean | number | null | undefined =
+        field.defaultValue as string | boolean | number | null | undefined
+
+      // Only fall back to hardcoded defaults if no default value is set
+      if (defaultValue === null || defaultValue === undefined) {
+        switch (field.type) {
+          case CustomFieldType.BOOLEAN:
+            defaultValue = false
+            break
+          case CustomFieldType.SELECT:
+            defaultValue = field.parsedOptions?.[0]?.value ?? ''
+            break
+          default:
+            defaultValue = ''
+        }
       }
+
       return {
         customFieldDefinitionId: field.id,
         value: defaultValue,
