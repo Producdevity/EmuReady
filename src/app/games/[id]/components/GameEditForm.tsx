@@ -41,6 +41,12 @@ function GameEditForm(props: Props) {
     enabled: !!user,
   })
 
+  // Get the complete system data including tgdbPlatformId
+  const systemQuery = api.systems.byId.useQuery(
+    { id: props.gameData.systemId },
+    { enabled: !!props.gameData.systemId },
+  )
+
   // Determine if user is admin or owner of pending game
   const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
   const isOwnerOfPendingGame =
@@ -161,6 +167,9 @@ function GameEditForm(props: Props) {
                   <ImageSelectorSwitcher
                     gameTitle={title}
                     systemName={props.gameData.system?.name}
+                    tgdbPlatformId={
+                      systemQuery.data?.tgdbPlatformId ?? undefined
+                    }
                     selectedImageUrl={imageUrl}
                     onImageSelect={handleImageSelect}
                     onError={setError}

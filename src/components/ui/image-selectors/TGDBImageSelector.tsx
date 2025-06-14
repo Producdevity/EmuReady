@@ -1,7 +1,7 @@
 'use client'
 
-import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
-import { useState, useEffect, type KeyboardEvent } from 'react'
+import { Search, Eye, Camera, LinkIcon } from 'lucide-react'
+import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   Button,
   LoadingSpinner,
@@ -13,7 +13,22 @@ import {
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { getImageDisplayName, getImageTypeDisplayName } from '@/lib/tgdb-utils'
-import { type GameImageOption } from '@/types/tgdb'
+import { cn } from '@/lib/utils'
+import { type GameImageOption, type GameImageType } from '@/types/tgdb'
+
+function getImageTypeClassName(imageType: GameImageType) {
+  return imageType === 'boxart'
+    ? 'bg-blue-600'
+    : imageType === 'fanart'
+      ? 'bg-purple-600'
+      : imageType === 'screenshot'
+        ? 'bg-green-600'
+        : imageType === 'banner'
+          ? 'bg-orange-600'
+          : imageType === 'clearlogo'
+            ? 'bg-pink-600'
+            : 'bg-gray-600'
+}
 
 interface Props {
   gameTitle?: string
@@ -115,19 +130,19 @@ function TGDBImageSelector(props: Props) {
     onImageSelect(image.url)
   }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
+  const handleKeyPress = (ev: KeyboardEvent<HTMLInputElement>) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault()
       handleSearch()
     }
   }
 
-  const handlePreviewImage = (e: React.MouseEvent, image: GameImageOption) => {
-    e.stopPropagation() // Prevent selecting the image when clicking preview
+  const handlePreviewImage = (
+    ev: MouseEvent<HTMLButtonElement>,
+    image: GameImageOption,
+  ) => {
+    ev.stopPropagation() // Prevent selecting the image when clicking preview
+    ev.preventDefault()
     setPreviewImage(image)
   }
 
@@ -153,36 +168,32 @@ function TGDBImageSelector(props: Props) {
   const handleToggleCustomUrl = (checked: boolean) => {
     setUseCustomUrl(checked)
 
-    // If switching to custom URL and we have an existing selection, populate the field
+    // If switching to custom URL, and we have an existing selection, populate the field
     if (checked && selectedImage) {
       setCustomUrl(selectedImage.url)
     }
 
-    // If switching back to TGDB search and we have a custom URL, create a custom image option
+    // If switching back to TGDB search, and we have a custom URL, create a custom image option
     if (!checked && customUrl.trim()) {
       applyCustomUrl()
     }
   }
 
-  const handleCustomUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomUrl(e.target.value)
-  }
-
   const applyCustomUrl = () => {
-    if (customUrl.trim()) {
-      // Create a custom image object
-      const customImage: GameImageOption = {
-        id: 'custom-url',
-        url: customUrl,
-        type: 'boxart',
-        source: 'custom',
-        gameId: 0,
-        gameName: 'Custom URL',
-      }
+    if (!customUrl.trim()) return
 
-      setSelectedImage(customImage)
-      onImageSelect(customImage.url)
+    // Create a custom image object
+    const customImage: GameImageOption = {
+      id: 'custom-url',
+      url: customUrl,
+      type: 'boxart',
+      source: 'custom',
+      gameId: 0,
+      gameName: 'Custom URL',
     }
+
+    setSelectedImage(customImage)
+    onImageSelect(customImage.url)
   }
 
   const handleCustomUrlKeyPress = (ev: KeyboardEvent<HTMLInputElement>) => {
@@ -217,7 +228,7 @@ function TGDBImageSelector(props: Props) {
               <Input
                 leftIcon={<LinkIcon className="h-5 w-5" />}
                 value={customUrl}
-                onChange={handleCustomUrlChange}
+                onChange={(ev) => setCustomUrl(ev.target.value)}
                 onKeyDown={handleCustomUrlKeyPress}
                 placeholder="Enter image URL..."
               />
@@ -257,7 +268,7 @@ function TGDBImageSelector(props: Props) {
               <Input
                 leftIcon={<Search className="h-5 w-5" />}
                 value={searchTerm}
-                onChange={handleSearchChange}
+                onChange={(ev) => setSearchTerm(ev.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Enter game title..."
               />
@@ -339,7 +350,7 @@ function TGDBImageSelector(props: Props) {
 
                       {/* Preview Button - Shows on hover */}
                       <button
-                        onClick={(e) => handlePreviewImage(e, image)}
+                        onClick={(ev) => handlePreviewImage(ev, image)}
                         className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         aria-label="Preview image"
                       >
@@ -349,25 +360,16 @@ function TGDBImageSelector(props: Props) {
                       <div className="absolute bottom-0 left-0 right-0 bg-black/75 text-white p-2">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              image.type === 'boxart'
-                                ? 'bg-blue-600'
-                                : image.type === 'fanart'
-                                  ? 'bg-purple-600'
-                                  : image.type === 'screenshot'
-                                    ? 'bg-green-600'
-                                    : image.type === 'banner'
-                                      ? 'bg-orange-600'
-                                      : image.type === 'clearlogo'
-                                        ? 'bg-pink-600'
-                                        : 'bg-gray-600'
-                            }`}
+                            className={cn(
+                              'text-xs px-2 py-1 rounded',
+                              getImageTypeClassName(image.type),
+                            )}
                           >
                             {getImageTypeDisplayName(image.type)}
                           </span>
                           <span
                             className="text-xs truncate"
-                            title={image.gameName} // Tooltip for full game name
+                            title={image.gameName}
                           >
                             {image.gameName}
                           </span>

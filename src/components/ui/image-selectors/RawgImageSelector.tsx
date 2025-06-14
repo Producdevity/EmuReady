@@ -1,7 +1,7 @@
 'use client'
 
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
-import { useState, useEffect, type KeyboardEvent } from 'react'
+import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   Button,
   LoadingSpinner,
@@ -115,19 +115,15 @@ function RawgImageSelector(props: Props) {
     onImageSelect(image.url)
   }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       handleSearch()
     }
   }
 
-  const handlePreviewImage = (e: React.MouseEvent, image: GameImageOption) => {
-    e.stopPropagation() // Prevent selecting the image when clicking preview
+  const handlePreviewImage = (ev: MouseEvent, image: GameImageOption) => {
+    ev.stopPropagation() // Prevent selecting the image when clicking preview
     setPreviewImage(image)
   }
 
@@ -153,36 +149,31 @@ function RawgImageSelector(props: Props) {
   const handleToggleCustomUrl = (checked: boolean) => {
     setUseCustomUrl(checked)
 
-    // If switching to custom URL and we have an existing selection, populate the field
+    // If switching to custom URL, and we have an existing selection, populate the field
     if (checked && selectedImage) {
       setCustomUrl(selectedImage.url)
     }
 
-    // If switching back to RAWG search and we have a custom URL, create a custom image option
+    // If switching back to RAWG search, and we have a custom URL, create a custom image option
     if (!checked && customUrl.trim()) {
       applyCustomUrl()
     }
   }
 
-  const handleCustomUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomUrl(e.target.value)
-  }
-
   const applyCustomUrl = () => {
-    if (customUrl.trim()) {
-      // Create a custom image object
-      const customImage: GameImageOption = {
-        id: 'custom-url',
-        url: customUrl,
-        type: 'background',
-        source: 'custom',
-        gameId: 0,
-        gameName: 'Custom URL',
-      }
-
-      setSelectedImage(customImage)
-      onImageSelect(customImage.url)
+    if (!customUrl.trim()) return
+    // Create a custom image object
+    const customImage: GameImageOption = {
+      id: 'custom-url',
+      url: customUrl,
+      type: 'background',
+      source: 'custom',
+      gameId: 0,
+      gameName: 'Custom URL',
     }
+
+    setSelectedImage(customImage)
+    onImageSelect(customImage.url)
   }
 
   const handleCustomUrlKeyPress = (ev: KeyboardEvent<HTMLInputElement>) => {
@@ -217,7 +208,7 @@ function RawgImageSelector(props: Props) {
               <Input
                 leftIcon={<LinkIcon className="h-5 w-5" />}
                 value={customUrl}
-                onChange={handleCustomUrlChange}
+                onChange={(ev) => setCustomUrl(ev.target.value)}
                 onKeyDown={handleCustomUrlKeyPress}
                 placeholder="Enter image URL..."
               />
@@ -257,7 +248,7 @@ function RawgImageSelector(props: Props) {
               <Input
                 leftIcon={<Search className="h-5 w-5" />}
                 value={searchTerm}
-                onChange={handleSearchChange}
+                onChange={(ev) => setSearchTerm(ev.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Enter game title..."
               />
