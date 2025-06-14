@@ -1,6 +1,6 @@
 'use client'
 
-import { type useUser } from '@clerk/nextjs'
+import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
 import { Edit, Shield, Calendar, User as UserIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -18,20 +18,16 @@ const roleBadgeColorMap: Record<Role | 'UNKNOWN', string> = {
   UNKNOWN: 'bg-gray-500/90 backdrop-blur-sm',
 }
 
-type ClerkUser = NonNullable<ReturnType<typeof useUser>['user']>
-
 interface Props {
-  user: ClerkUser
-  profileData: RouterOutput['users']['getProfile']
-  currentImage: string | null
-  onImageUpload: (imageUrl: string) => void
-  isEditing: boolean
-  onEditToggle: () => void
+  clerkUser: UserResource
+  profileData?: RouterOutput['users']['getProfile'] | null
+  currentImage?: string | null
+  onImageUpload?: (imageUrl: string) => void
+  isEditing?: boolean
+  onEditToggle?: () => void
 }
 
 function ProfileHeader(props: Props) {
-  const userRole = props.profileData.role as Role
-
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -44,12 +40,18 @@ function ProfileHeader(props: Props) {
       <div className="relative p-8 lg:p-12">
         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
           <div className="flex-shrink-0">
-            <ProfileUpload
-              currentImage={
-                props.currentImage ?? props.profileData.profileImage
-              }
-              onUploadSuccess={props.onImageUpload}
-            />
+            {props.onImageUpload ? (
+              <ProfileUpload
+                currentImage={
+                  props.currentImage ?? props.profileData?.profileImage
+                }
+                onUploadSuccess={props.onImageUpload}
+              />
+            ) : (
+              <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <UserIcon className="w-12 h-12 lg:w-16 lg:h-16 text-white/80" />
+              </div>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -61,41 +63,46 @@ function ProfileHeader(props: Props) {
                   transition={{ delay: 0.2 }}
                   className="text-3xl lg:text-4xl font-bold text-white mb-2"
                 >
-                  {props.user.fullName ?? 'Anonymous User'}
+                  {props.clerkUser.fullName ??
+                    props.profileData?.name ??
+                    'Anonymous User'}
                 </motion.h1>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <span className="text-blue-100 font-medium">
-                    {props.user.primaryEmailAddress?.emailAddress}
+                    {props.clerkUser.primaryEmailAddress?.emailAddress ??
+                      props.profileData?.email}
                   </span>
 
-                  {userRole && (
+                  {props.profileData?.role && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.3 }}
                       className={cn(
                         'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold shadow-lg',
-                        roleBadgeColorMap[userRole] ??
+                        roleBadgeColorMap[props.profileData.role] ??
                           roleBadgeColorMap.UNKNOWN,
                       )}
                     >
                       <Shield className="w-4 h-4" />
-                      {formatUserRole(userRole)}
+                      {formatUserRole(props.profileData.role)}
                     </motion.div>
                   )}
                 </div>
               </div>
 
-              <motion.button
-                onClick={props.onEditToggle}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-all duration-200 shadow-lg backdrop-blur-sm"
-              >
-                <Edit className="w-4 h-4" />
-                {props.isEditing ? 'Cancel' : 'Edit Profile'}
-              </motion.button>
+              {props.onEditToggle && (
+                <motion.button
+                  onClick={props.onEditToggle}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-all duration-200 shadow-lg backdrop-blur-sm"
+                >
+                  <Edit className="w-4 h-4" />
+                  {props.isEditing ? 'Cancel' : 'Edit Profile'}
+                </motion.button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -123,7 +130,9 @@ function ProfileHeader(props: Props) {
                   <span className="text-blue-100 font-medium">Joined</span>
                 </div>
                 <p className="text-white text-lg font-semibold">
-                  {formatMonthYear(props.profileData.createdAt)}
+                  {props.profileData?.createdAt
+                    ? formatMonthYear(props.profileData.createdAt)
+                    : formatMonthYear(props.clerkUser.createdAt ?? new Date())}
                 </p>
               </motion.div>
 
@@ -140,7 +149,9 @@ function ProfileHeader(props: Props) {
                   </span>
                 </div>
                 <p className="text-white text-lg font-semibold">
-                  {userRole ? formatUserRole(userRole) : 'Standard'}
+                  {props.profileData?.role
+                    ? formatUserRole(props.profileData.role)
+                    : 'Standard'}
                 </p>
               </motion.div>
             </div>

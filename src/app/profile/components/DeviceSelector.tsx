@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import Fuse from 'fuse.js'
 import { Smartphone, Search, X, Loader2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { api } from '@/lib/api'
@@ -27,6 +28,45 @@ interface Props {
   className?: string
 }
 
+// Create search data for fuzzy matching
+interface SearchableDevice extends Device {
+  fullName: string // "Retroid Pocket 5"
+  brandModel: string // "retroid pocket 5"
+  abbreviation: string // "rp5"
+  searchableText: string // combined searchable text
+}
+
+function createSearchableDevice(device: Device): SearchableDevice {
+  const fullName = `${device.brand.name} ${device.modelName}`
+  const brandModel = fullName.toLowerCase()
+
+  // Create abbreviation (first letter of brand + model words)
+  const brandWords = device.brand.name.toLowerCase().split(' ')
+  const modelWords = device.modelName.toLowerCase().split(' ')
+  const abbreviation =
+    (brandWords[0]?.[0] || '') + modelWords.map((word) => word[0]).join('')
+
+  const searchableText = [
+    device.brand.name,
+    device.modelName,
+    fullName,
+    abbreviation,
+    device.soc?.name || '',
+    device.soc?.manufacturer || '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  return {
+    ...device,
+    fullName,
+    brandModel,
+    abbreviation,
+    searchableText,
+  }
+}
+
 function DeviceSelector(props: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedBrand, setSelectedBrand] = useState<string>('')
@@ -35,22 +75,49 @@ function DeviceSelector(props: Props) {
   const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
   const brandsQuery = api.deviceBrands.get.useQuery({ limit: 1000 })
 
+  // Prepare searchable devices
+  const searchableDevices = useMemo(() => {
+    if (!devicesQuery.data?.devices) return []
+    return devicesQuery.data.devices.map(createSearchableDevice)
+  }, [devicesQuery.data?.devices])
+
+  // Configure Fuse.js for fuzzy search
+  const fuse = useMemo(() => {
+    if (searchableDevices.length === 0) return null
+
+    return new Fuse(searchableDevices, {
+      keys: [
+        { name: 'brand.name', weight: 0.3 },
+        { name: 'modelName', weight: 0.3 },
+        { name: 'fullName', weight: 0.2 },
+        { name: 'abbreviation', weight: 0.15 },
+        { name: 'searchableText', weight: 0.05 },
+      ],
+      threshold: 0.4, // More lenient matching
+      distance: 100,
+      includeScore: true,
+      minMatchCharLength: 1,
+    })
+  }, [searchableDevices])
+
   // Filter devices based on search and brand
   const filteredDevices = useMemo(() => {
-    if (!devicesQuery.data?.devices) return []
+    if (!searchableDevices.length) return []
 
-    return devicesQuery.data.devices.filter((device) => {
-      const matchesSearch =
-        searchQuery === '' ||
-        device.modelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        device.brand.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // Create a pipeline of transformations
+    const applyFuzzySearch = (devices: SearchableDevice[]) =>
+      searchQuery.trim() && fuse
+        ? fuse.search(searchQuery.trim()).map((result) => result.item)
+        : devices
 
-      const matchesBrand =
-        selectedBrand === '' || device.brand.id === selectedBrand
+    const applyBrandFilter = (devices: SearchableDevice[]) =>
+      selectedBrand
+        ? devices.filter((device) => device.brand.id === selectedBrand)
+        : devices
 
-      return matchesSearch && matchesBrand
-    })
-  }, [devicesQuery.data?.devices, searchQuery, selectedBrand])
+    // Apply transformations in sequence without mutation
+    return [searchableDevices].map(applyFuzzySearch).map(applyBrandFilter)[0]
+  }, [searchableDevices, searchQuery, selectedBrand, fuse])
 
   // Group devices by brand for better organization
   const devicesByBrand = useMemo(() => {
@@ -164,7 +231,7 @@ function DeviceSelector(props: Props) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search devices..."
+            placeholder="Search devices... (e.g., 'rp5' for Retroid Pocket 5)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
