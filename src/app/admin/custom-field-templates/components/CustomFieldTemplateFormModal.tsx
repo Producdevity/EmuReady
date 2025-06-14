@@ -341,7 +341,7 @@ function CustomFieldTemplateFormModal(props: Props) {
               id="templateName"
               type="text"
               value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
+              onChange={(ev) => setTemplateName(ev.target.value)}
               placeholder="e.g., X86 Emulator Fields"
               maxLength={100}
               className={
@@ -374,7 +374,7 @@ function CustomFieldTemplateFormModal(props: Props) {
               id="templateDescription"
               as="textarea"
               value={templateDescription}
-              onChange={(e) => setTemplateDescription(e.target.value)}
+              onChange={(ev) => setTemplateDescription(ev.target.value)}
               placeholder="Describe what this template is for..."
               rows={3}
               maxLength={500}
@@ -454,8 +454,8 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.name}
-                        onChange={(e) =>
-                          updateField(fieldIndex, { name: e.target.value })
+                        onChange={(ev) =>
+                          updateField(fieldIndex, { name: ev.target.value })
                         }
                         placeholder="e.g., driver_version"
                         maxLength={50}
@@ -478,8 +478,8 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.label}
-                        onChange={(e) =>
-                          updateField(fieldIndex, { label: e.target.value })
+                        onChange={(ev) =>
+                          updateField(fieldIndex, { label: ev.target.value })
                         }
                         placeholder="e.g., Driver Version"
                         maxLength={100}
@@ -505,9 +505,9 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         as="select"
                         value={field.type}
-                        onChange={(e) =>
+                        onChange={(ev) =>
                           updateField(fieldIndex, {
-                            type: e.target.value as CustomFieldType,
+                            type: ev.target.value as CustomFieldType,
                           })
                         }
                       >
@@ -523,9 +523,9 @@ function CustomFieldTemplateFormModal(props: Props) {
                         <input
                           type="checkbox"
                           checked={field.isRequired}
-                          onChange={(e) =>
+                          onChange={(ev) =>
                             updateField(fieldIndex, {
-                              isRequired: e.target.checked,
+                              isRequired: ev.target.checked,
                             })
                           }
                           className="mr-2"
@@ -566,9 +566,9 @@ function CustomFieldTemplateFormModal(props: Props) {
                               <Input
                                 type="text"
                                 value={option.value}
-                                onChange={(e) =>
+                                onChange={(ev) =>
                                   updateFieldOption(fieldIndex, optionIndex, {
-                                    value: e.target.value,
+                                    value: ev.target.value,
                                   })
                                 }
                                 placeholder="Value"
@@ -597,9 +597,9 @@ function CustomFieldTemplateFormModal(props: Props) {
                               <Input
                                 type="text"
                                 value={option.label}
-                                onChange={(e) =>
+                                onChange={(ev) =>
                                   updateFieldOption(fieldIndex, optionIndex, {
-                                    label: e.target.value,
+                                    label: ev.target.value,
                                   })
                                 }
                                 placeholder="Label"

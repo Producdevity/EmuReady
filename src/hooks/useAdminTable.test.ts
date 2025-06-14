@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
+import { type ChangeEvent } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import useAdminTable from './useAdminTable'
 
@@ -75,7 +76,7 @@ describe('useAdminTable', () => {
       // Simulate search input change
       const mockEvent = {
         target: { value: 'new search' },
-      } as React.ChangeEvent<HTMLInputElement>
+      } as ChangeEvent<HTMLInputElement>
 
       act(() => {
         result.current.handleSearchChange(mockEvent)

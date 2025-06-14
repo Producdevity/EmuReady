@@ -1,7 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, type ReactNode, type MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -43,11 +43,10 @@ function Modal({ onClose, ...props }: Props) {
     xl: 'max-w-xl',
   }
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
+  const handleBackdropClick = (ev: MouseEvent) => {
     // Only close if the click is directly on the backdrop, not bubbling from child elements
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
+    if (ev.target !== ev.currentTarget) return
+    onClose()
   }
 
   return (

@@ -46,7 +46,7 @@ function ApprovalModal(props: Props) {
               as="textarea"
               id="approvalNotes"
               value={props.approvalNotes}
-              onChange={(e) => props.setApprovalNotes(e.target.value)}
+              onChange={(ev) => props.setApprovalNotes(ev.target.value)}
               rows={4}
               placeholder="Reason for rejection..."
               className="w-full mt-1"

@@ -16,7 +16,7 @@ import {
   User,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ChangeEvent } from 'react'
 import { MultiSelect, Input, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { type AppRouter } from '@/server/api/root'
@@ -89,7 +89,7 @@ function ListingFilters(props: FiltersProps) {
     analytics.filter.performance(values.join(','))
   }
 
-  const handleSearchChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
     props.onSearchChange(ev.target.value)
     analytics.filter.search(ev.target.value)
   }
