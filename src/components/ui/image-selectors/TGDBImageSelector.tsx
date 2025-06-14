@@ -74,24 +74,12 @@ function TGDBImageSelector(props: Props) {
     }
   }, [props.gameTitle, searchTerm])
 
-  // Handle search results and auto-select first image
+  // Process search results and select initial image
   useEffect(() => {
     if (searchQuery.data && !useCustomUrl) {
-      const images: GameImageOption[] = []
-
-      Object.entries(searchQuery.data).forEach(([, gameImages]) => {
-        if (Array.isArray(gameImages)) {
-          // Type assertion for the game images array
-          const typedGameImages = gameImages as GameImageOption[]
-
-          // Filter images based on include setting
-          const filteredImages = includeAllTypes
-            ? typedGameImages
-            : typedGameImages.filter((img) => img.type === 'boxart')
-
-          images.push(...filteredImages)
-        }
-      })
+      const images = Object.values(searchQuery.data)
+        .flatMap((gameImages) => gameImages)
+        .filter((image) => includeAllTypes || image.type === 'boxart')
 
       setAllImages(images)
 
@@ -106,7 +94,7 @@ function TGDBImageSelector(props: Props) {
     selectedImage,
     useCustomUrl,
     includeAllTypes,
-    onImageSelect,
+    // Removed onImageSelect from dependencies to prevent unnecessary re-runs
   ])
 
   // Handle search errors
