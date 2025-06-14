@@ -47,6 +47,9 @@ function CustomFieldTemplateFormModal(props: Props) {
   const createMutation = api.customFieldTemplates.create.useMutation({
     onSuccess: () => {
       utils.customFieldTemplates.getAll.invalidate().catch(console.error)
+      utils.customFieldTemplates.getById
+        .invalidate({ id: props.templateIdToEdit! })
+        .catch(console.error)
       resetForm()
       props.onClose()
     },
@@ -59,6 +62,9 @@ function CustomFieldTemplateFormModal(props: Props) {
   const updateMutation = api.customFieldTemplates.update.useMutation({
     onSuccess: () => {
       utils.customFieldTemplates.getAll.invalidate().catch(console.error)
+      utils.customFieldTemplates.getById
+        .invalidate({ id: props.templateIdToEdit! })
+        .catch(console.error)
       resetForm()
       props.onClose()
     },

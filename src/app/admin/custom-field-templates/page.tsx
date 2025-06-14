@@ -13,12 +13,7 @@ function CustomFieldTemplatesPage() {
     null,
   )
 
-  const {
-    data: templates,
-    isLoading,
-    error,
-    refetch,
-  } = api.customFieldTemplates.getAll.useQuery()
+  const customFieldTemplatesQuery = api.customFieldTemplates.getAll.useQuery()
 
   function handleOpenCreateModal() {
     setEditingTemplateId(null)
@@ -35,18 +30,21 @@ function CustomFieldTemplatesPage() {
     setEditingTemplateId(null)
   }
 
-  if (isLoading) {
+  if (customFieldTemplatesQuery.isLoading) {
     return <LoadingSpinner text="Loading templates..." />
   }
 
-  if (error) {
+  if (customFieldTemplatesQuery.error) {
     return (
       <div className="container mx-auto py-8">
         <div className="text-center py-12">
           <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading templates: {error.message}
+            Error loading templates: {customFieldTemplatesQuery.error.message}
           </p>
-          <Button onClick={() => refetch()} className="mt-4">
+          <Button
+            onClick={() => customFieldTemplatesQuery.refetch()}
+            className="mt-4"
+          >
             Try Again
           </Button>
         </div>
@@ -71,11 +69,12 @@ function CustomFieldTemplatesPage() {
         </Button>
       </div>
 
-      {templates && templates.length > 0 ? (
+      {customFieldTemplatesQuery.data &&
+      customFieldTemplatesQuery.data.length > 0 ? (
         <CustomFieldTemplateList
-          templates={templates}
+          templates={customFieldTemplatesQuery.data}
           onEdit={handleOpenEditModal}
-          onDeleteSuccess={refetch}
+          onDeleteSuccess={customFieldTemplatesQuery.refetch}
         />
       ) : (
         <div className="text-center py-12">
