@@ -168,6 +168,38 @@ export const customFieldTemplateRouter = createTRPCRouter({
       })
     }),
 
+  duplicate: protectedProcedure
+    .input(GetCustomFieldTemplateByIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      await requireSuperAdminPermission(ctx)
+
+      const originalTemplate = await findTemplateOrThrow(ctx, input.id)
+
+      if (!originalTemplate) return ResourceError.customFieldTemplate.notFound()
+
+      // Create a new template with "Copy of" prefix
+      const newName = `Copy of ${originalTemplate.name}`
+
+      return ctx.prisma.customFieldTemplate.create({
+        data: {
+          name: newName,
+          description: originalTemplate.description,
+          fields: {
+            create: originalTemplate.fields.map((field) => ({
+              name: field.name,
+              label: field.label,
+              type: field.type,
+              options: field.options ?? Prisma.DbNull,
+              defaultValue: field.defaultValue ?? Prisma.DbNull,
+              isRequired: field.isRequired,
+              displayOrder: field.displayOrder,
+            })),
+          },
+        },
+        include: FIELDS_INCLUDE,
+      })
+    }),
+
   applyToEmulator: protectedProcedure
     .input(ApplyCustomFieldTemplateSchema)
     .mutation(async ({ ctx, input }) => {

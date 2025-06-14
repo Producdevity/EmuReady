@@ -3,39 +3,15 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+import { isNumber } from 'remeda'
 import { Card, Badge } from '@/components/ui'
 import { api } from '@/lib/api'
+import { type RouterOutput } from '@/types/trpc'
+import { CustomFieldType } from '@orm'
 import CommentThread from './CommentThread'
 import VoteButtons from './VoteButtons'
 
-export interface Listing {
-  id: string
-  game: { title: string; system?: { name?: string } }
-  device?: {
-    brand?: { name?: string }
-    modelName?: string
-  }
-  emulator?: { name?: string }
-  performance?: { label?: string }
-  notes?: string | null
-  author?: {
-    name?: string | null
-    email?: string
-    id?: string
-    profileImage?: string | null
-  }
-  customFieldValues?: Array<{
-    id: string
-    value: unknown
-    customFieldDefinition: {
-      id: string
-      label: string
-      name: string
-      type: string
-      options?: unknown
-    }
-  }>
-}
+export type Listing = NonNullable<RouterOutput['listings']['byId']>
 
 interface Props {
   listing: Listing
@@ -60,13 +36,13 @@ function ListingDetailsClient(props: Props) {
     const { value, customFieldDefinition } = fieldValue
 
     switch (customFieldDefinition.type) {
-      case 'BOOLEAN':
+      case CustomFieldType.BOOLEAN:
         return (
           <Badge variant={value ? 'success' : 'default'}>
             {value ? 'Yes' : 'No'}
           </Badge>
         )
-      case 'SELECT':
+      case CustomFieldType.SELECT:
         // For select fields, try to find the label from options
         if (Array.isArray(customFieldDefinition.options)) {
           const option = (
@@ -78,7 +54,24 @@ function ListingDetailsClient(props: Props) {
           return option?.label ?? String(value)
         }
         return String(value)
-      case 'URL':
+      case CustomFieldType.RANGE:
+        // For range fields, format the number with unit and proper decimals
+        if (isNumber(value)) {
+          const decimals = customFieldDefinition.rangeDecimals ?? 0
+          const unit = customFieldDefinition.rangeUnit ?? ''
+          const formatted =
+            decimals > 0
+              ? value.toFixed(decimals)
+              : Math.round(value).toString()
+          return (
+            <Badge>
+              {formatted}
+              {unit}
+            </Badge>
+          )
+        }
+        return String(value ?? '')
+      case CustomFieldType.URL:
         if (typeof value === 'string' && value.trim()) {
           return (
             <a
@@ -92,8 +85,8 @@ function ListingDetailsClient(props: Props) {
           )
         }
         return String(value)
-      case 'TEXT':
-      case 'TEXTAREA':
+      case CustomFieldType.TEXT:
+      case CustomFieldType.TEXTAREA:
       default:
         return String(value ?? '')
     }

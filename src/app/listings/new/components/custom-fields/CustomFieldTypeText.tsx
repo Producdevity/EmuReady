@@ -43,7 +43,10 @@ function CustomFieldTypeText(props: Props) {
             leftIcon={props.icon}
             value={field.value as string}
             onChange={(e) => field.onChange(e.target.value)}
-            placeholder={`Enter ${props.fieldDef.label.toLowerCase()}`}
+            placeholder={
+              props.fieldDef.placeholder ||
+              `Enter ${props.fieldDef.label.toLowerCase()}`
+            }
           />
         )}
       />

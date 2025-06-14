@@ -3,6 +3,7 @@
 import { type Control } from 'react-hook-form'
 import { isEmpty, isString } from 'remeda'
 import CustomFieldTypeBoolean from '@/app/listings/new/components/custom-fields/CustomFieldTypeBoolean'
+import CustomFieldTypeRange from '@/app/listings/new/components/custom-fields/CustomFieldTypeRange'
 import CustomFieldTypeSelect from '@/app/listings/new/components/custom-fields/CustomFieldTypeSelect'
 import CustomFieldTypeText from '@/app/listings/new/components/custom-fields/CustomFieldTypeText'
 import CustomFieldTypeTextArea from '@/app/listings/new/components/custom-fields/CustomFieldTypeTextArea'
@@ -24,6 +25,11 @@ export interface CustomFieldDefinitionWithOptions {
   type: CustomFieldType
   isRequired: boolean
   parsedOptions?: CustomFieldOptionUI[]
+  placeholder?: string | null
+  rangeMin?: number | null
+  rangeMax?: number | null
+  rangeUnit?: string | null
+  rangeDecimals?: number | null
 }
 
 export interface ValidationRules {
@@ -108,6 +114,19 @@ function CustomFieldRenderer(props: Props) {
     case CustomFieldType.SELECT:
       return (
         <CustomFieldTypeSelect
+          fieldDef={props.fieldDef}
+          fieldName={fieldName}
+          index={props.index}
+          rules={validationRules}
+          control={props.control}
+          errorMessage={props.errorMessage}
+          icon={icon}
+        />
+      )
+
+    case CustomFieldType.RANGE:
+      return (
+        <CustomFieldTypeRange
           fieldDef={props.fieldDef}
           fieldName={fieldName}
           index={props.index}

@@ -1,4 +1,4 @@
-import { isString } from 'remeda'
+import { isNullish, isString } from 'remeda'
 import { z } from 'zod'
 import { CustomFieldType, type CustomFieldDefinition } from '@orm'
 import listingFormSchema from './listingFormSchema'
@@ -62,6 +62,14 @@ function createDynamicListingSchema(
               break
             case CustomFieldType.SELECT:
               if (!fieldValue.value || fieldValue.value === '') {
+                isValid = false
+              }
+              break
+            case CustomFieldType.RANGE:
+              if (
+                isNullish(fieldValue.value) ||
+                (isString(fieldValue.value) && fieldValue.value.trim() === '')
+              ) {
                 isValid = false
               }
               break

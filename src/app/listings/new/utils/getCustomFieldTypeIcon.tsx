@@ -4,6 +4,7 @@ import {
   FileText,
   LinkIcon,
   ListChecks,
+  Sliders,
 } from 'lucide-react'
 import { CustomFieldType } from '@orm'
 import type { ReactNode } from 'react'
@@ -14,6 +15,7 @@ const iconMap: Record<CustomFieldType, ReactNode> = {
   [CustomFieldType.URL]: <LinkIcon className="w-5 h-5" />,
   [CustomFieldType.BOOLEAN]: <CheckSquare className="w-5 h-5" />,
   [CustomFieldType.SELECT]: <ListChecks className="w-5 h-5" />,
+  [CustomFieldType.RANGE]: <Sliders className="w-5 h-5" />,
 }
 
 function getCustomFieldTypeIcon(type: CustomFieldType) {

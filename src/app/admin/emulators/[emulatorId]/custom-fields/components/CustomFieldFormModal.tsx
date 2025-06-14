@@ -2,8 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PlusCircle, Trash2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
+import { toSnakeCase } from 'remeda'
 import { z } from 'zod'
 import { Button, Input, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -26,7 +27,15 @@ const customFieldFormSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   type: z.nativeEnum(CustomFieldType),
   options: z.array(customFieldOptionSchema).optional(),
-  defaultValue: z.union([z.string(), z.boolean(), z.null()]).optional(),
+  defaultValue: z
+    .union([z.string(), z.boolean(), z.number(), z.null()])
+    .optional(),
+  placeholder: z.string().optional(),
+  // Range-specific fields
+  rangeMin: z.coerce.number().optional(),
+  rangeMax: z.coerce.number().optional(),
+  rangeUnit: z.string().optional(),
+  rangeDecimals: z.coerce.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional(),
   displayOrder: z.coerce.number().int().optional(),
 })
@@ -39,7 +48,12 @@ type CustomFieldUpdatePayload = {
   label?: string
   type?: CustomFieldType
   options?: { value: string; label: string }[] | undefined
-  defaultValue?: string | boolean | null
+  defaultValue?: string | boolean | number | null
+  placeholder?: string
+  rangeMin?: number
+  rangeMax?: number
+  rangeUnit?: string
+  rangeDecimals?: number
   isRequired?: boolean
   displayOrder?: number
 }
@@ -50,7 +64,12 @@ type CustomFieldCreatePayload = {
   label: string
   type: CustomFieldType
   options?: { value: string; label: string }[] | undefined
-  defaultValue?: string | boolean | null
+  defaultValue?: string | boolean | number | null
+  placeholder?: string
+  rangeMin?: number
+  rangeMax?: number
+  rangeUnit?: string
+  rangeDecimals?: number
   isRequired: boolean
   displayOrder: number
 }
@@ -64,6 +83,7 @@ interface Props {
 
 function CustomFieldFormModal(props: Props) {
   const utils = api.useUtils()
+  const [userHasEditedName, setUserHasEditedName] = useState(false)
 
   const { data: fieldToEditData, isLoading: isLoadingFieldToEdit } =
     api.customFieldDefinitions.byId.useQuery(
@@ -77,6 +97,7 @@ function CustomFieldFormModal(props: Props) {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CustomFieldFormValues>({
     resolver: zodResolver(customFieldFormSchema),
@@ -86,16 +107,30 @@ function CustomFieldFormModal(props: Props) {
       type: CustomFieldType.TEXT,
       options: [],
       defaultValue: null,
+      placeholder: '',
+      rangeMin: 0,
+      rangeMax: 100,
+      rangeUnit: '',
+      rangeDecimals: 0,
       isRequired: false,
       displayOrder: 0,
     },
   })
 
   const selectedFieldType = watch('type')
+  const watchedLabel = watch('label')
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'options',
   })
+
+  // Autopopulate field name from label
+  useEffect(() => {
+    if (!userHasEditedName && watchedLabel && !props.fieldIdToEdit) {
+      const snakeCaseName = toSnakeCase(watchedLabel)
+      setValue('name', snakeCaseName)
+    }
+  }, [watchedLabel, userHasEditedName, props.fieldIdToEdit, setValue])
 
   useEffect(() => {
     if (fieldToEditData) {
@@ -107,10 +142,20 @@ function CustomFieldFormModal(props: Props) {
         label: fieldToEditData.label,
         type: fieldToEditData.type,
         options: opts,
-        defaultValue: fieldToEditData.defaultValue as string | boolean | null,
+        defaultValue: fieldToEditData.defaultValue as
+          | string
+          | boolean
+          | number
+          | null,
+        placeholder: fieldToEditData.placeholder || '',
+        rangeMin: fieldToEditData.rangeMin || 0,
+        rangeMax: fieldToEditData.rangeMax || 100,
+        rangeUnit: fieldToEditData.rangeUnit || '',
+        rangeDecimals: fieldToEditData.rangeDecimals || 0,
         isRequired: fieldToEditData.isRequired,
         displayOrder: fieldToEditData.displayOrder,
       })
+      setUserHasEditedName(true) // Don't auto-populate when editing
     } else if (!props.fieldIdToEdit) {
       reset({
         name: '',
@@ -118,9 +163,15 @@ function CustomFieldFormModal(props: Props) {
         type: CustomFieldType.TEXT,
         options: [],
         defaultValue: null,
+        placeholder: '',
+        rangeMin: 0,
+        rangeMax: 100,
+        rangeUnit: '',
+        rangeDecimals: 0,
         isRequired: false,
         displayOrder: 0,
       })
+      setUserHasEditedName(false)
     }
   }, [fieldToEditData, props.fieldIdToEdit, reset])
 
@@ -168,42 +219,67 @@ function CustomFieldFormModal(props: Props) {
       displayOrder: data.displayOrder ?? 0,
       options: undefined as { value: string; label: string }[] | undefined,
       defaultValue: data.defaultValue || undefined,
+      placeholder: data.placeholder || undefined,
+      rangeMin: undefined as number | undefined,
+      rangeMax: undefined as number | undefined,
+      rangeUnit: undefined as string | undefined,
+      rangeDecimals: undefined as number | undefined,
     }
 
     if (data.type === CustomFieldType.SELECT) {
       if (data.options && data.options.length > 0) {
         basePayload.options = data.options
       } else {
-        // TODO: replace this with inline validation
         return toast.warning('Options are required for SELECT type fields.')
+      }
+    }
+
+    if (data.type === CustomFieldType.RANGE) {
+      if (data.rangeMin !== undefined && data.rangeMax !== undefined) {
+        if (data.rangeMin >= data.rangeMax) {
+          return toast.error('Range minimum must be less than maximum.')
+        }
+        basePayload.rangeMin = data.rangeMin
+        basePayload.rangeMax = data.rangeMax
+        basePayload.rangeUnit = data.rangeUnit || ''
+        basePayload.rangeDecimals = data.rangeDecimals || 0
+      } else {
+        return toast.warning(
+          'Range minimum and maximum are required for RANGE type fields.',
+        )
       }
     }
 
     if (props.fieldIdToEdit) {
       const updatePayload: CustomFieldUpdatePayload = {
         id: props.fieldIdToEdit,
-        name: basePayload.name,
-        label: basePayload.label,
-        type: basePayload.type,
-        isRequired: basePayload.isRequired,
-        displayOrder: basePayload.displayOrder,
-        options: basePayload.options,
-        defaultValue: basePayload.defaultValue,
+        ...basePayload,
       }
       return updateMutation.mutate(updatePayload)
     }
 
     const createPayload: CustomFieldCreatePayload = {
       emulatorId: props.emulatorId,
-      name: basePayload.name,
-      label: basePayload.label,
-      type: basePayload.type,
-      isRequired: basePayload.isRequired,
-      displayOrder: basePayload.displayOrder,
-      options: basePayload.options,
-      defaultValue: basePayload.defaultValue,
+      ...basePayload,
     }
     createMutation.mutate(createPayload)
+  }
+
+  // Auto-populate option values from labels
+  const handleOptionLabelChange = (index: number, label: string) => {
+    const currentValue = fields[index]?.value
+    if (!currentValue || currentValue.trim() === '') {
+      setValue(`options.${index}.value`, label)
+    }
+    setValue(`options.${index}.label`, label)
+  }
+
+  const handleOptionValueChange = (index: number, value: string) => {
+    const currentLabel = fields[index]?.label
+    if (!currentLabel || currentLabel.trim() === '') {
+      setValue(`options.${index}.label`, value)
+    }
+    setValue(`options.${index}.value`, value)
   }
 
   if (!props.isOpen) return null
@@ -216,12 +292,12 @@ function CustomFieldFormModal(props: Props) {
 
   const typeOptions = Object.values(CustomFieldType).map((type) => ({
     value: type,
-    label: type,
+    label: type === CustomFieldType.RANGE ? 'Range (Slider)' : type,
   }))
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-4">
           {props.fieldIdToEdit ? 'Edit' : 'Create'} Custom Field
         </h2>
@@ -258,6 +334,10 @@ function CustomFieldFormModal(props: Props) {
               {...register('name')}
               placeholder="e.g., driver_version"
               className="mt-1"
+              onChange={(e) => {
+                setUserHasEditedName(true)
+                register('name').onChange(e)
+              }}
             />
             {errors.name && (
               <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
@@ -293,9 +373,138 @@ function CustomFieldFormModal(props: Props) {
             )}
           </div>
 
+          {/* Placeholder for TEXT fields */}
+          {selectedFieldType === CustomFieldType.TEXT && (
+            <div>
+              <label
+                htmlFor="placeholder"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Placeholder Text (Optional)
+              </label>
+              <Input
+                id="placeholder"
+                {...register('placeholder')}
+                placeholder="e.g., Enter driver version..."
+                className="mt-1"
+              />
+              {errors.placeholder && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.placeholder.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Range Configuration */}
+          {selectedFieldType === CustomFieldType.RANGE && (
+            <div className="space-y-4 p-4 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+              <h3 className="text-md font-medium text-gray-700 dark:text-gray-300">
+                Range Configuration
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="rangeMin"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Minimum Value
+                  </label>
+                  <Input
+                    id="rangeMin"
+                    type="number"
+                    step="any"
+                    {...register('rangeMin')}
+                    placeholder="0"
+                    className="mt-1"
+                  />
+                  {errors.rangeMin && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.rangeMin.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="rangeMax"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Maximum Value
+                  </label>
+                  <Input
+                    id="rangeMax"
+                    type="number"
+                    step="any"
+                    {...register('rangeMax')}
+                    placeholder="100"
+                    className="mt-1"
+                  />
+                  {errors.rangeMax && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.rangeMax.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="rangeUnit"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Unit (Optional)
+                  </label>
+                  <Input
+                    id="rangeUnit"
+                    {...register('rangeUnit')}
+                    placeholder="e.g., %, GB, MB"
+                    className="mt-1"
+                  />
+                  {errors.rangeUnit && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.rangeUnit.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="rangeDecimals"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Decimal Places
+                  </label>
+                  <Controller
+                    name="rangeDecimals"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        label="Decimal Places"
+                        options={[
+                          { id: '0', name: '0 (integers)' },
+                          { id: '1', name: '1 decimal place' },
+                          { id: '2', name: '2 decimal places' },
+                        ]}
+                        value={String(field.value || 0)}
+                        onChange={(ev) =>
+                          field.onChange(Number(ev.target.value))
+                        }
+                      />
+                    )}
+                  />
+                  {errors.rangeDecimals && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.rangeDecimals.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Default Value Section */}
           {(selectedFieldType === CustomFieldType.BOOLEAN ||
-            selectedFieldType === CustomFieldType.SELECT) && (
+            selectedFieldType === CustomFieldType.SELECT ||
+            selectedFieldType === CustomFieldType.RANGE) && (
             <div>
               <label
                 htmlFor="defaultValue"
@@ -315,16 +524,29 @@ function CustomFieldFormModal(props: Props) {
                         { id: 'true', name: 'Yes' },
                         { id: 'false', name: 'No' },
                       ]}
-                      value={field.value === null ? '' : String(field.value)}
-                      onChange={(ev) =>
-                        field.onChange(
-                          ev.target.value === ''
-                            ? null
-                            : ev.target.value === 'true',
-                        )
+                      value={
+                        field.value === null || field.value === undefined
+                          ? ''
+                          : String(field.value)
                       }
+                      onChange={(ev) => {
+                        const value = ev.target.value
+                        if (value === '') {
+                          field.onChange(null)
+                        } else {
+                          field.onChange(value === 'true')
+                        }
+                      }}
                     />
                   )}
+                />
+              ) : selectedFieldType === CustomFieldType.RANGE ? (
+                <Input
+                  type="number"
+                  step="any"
+                  {...register('defaultValue')}
+                  placeholder="Default value within range"
+                  className="mt-1"
                 />
               ) : selectedFieldType === CustomFieldType.SELECT &&
                 fields.length > 0 ? (
@@ -381,11 +603,17 @@ function CustomFieldFormModal(props: Props) {
                     {...register(`options.${index}.value`)}
                     placeholder="Value (e.g., v1.0)"
                     className="flex-1"
+                    onChange={(e) =>
+                      handleOptionValueChange(index, e.target.value)
+                    }
                   />
                   <Input
                     {...register(`options.${index}.label`)}
                     placeholder="Label (e.g., Version 1.0)"
                     className="flex-1"
+                    onChange={(e) =>
+                      handleOptionLabelChange(index, e.target.value)
+                    }
                   />
                   <Button
                     type="button"

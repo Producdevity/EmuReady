@@ -162,7 +162,10 @@ function CommentThread(props: Props) {
             isEditing
           />
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md">
+          <div
+            id={`comment-${comment.id}`}
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md"
+          >
             {/* Comment header */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">

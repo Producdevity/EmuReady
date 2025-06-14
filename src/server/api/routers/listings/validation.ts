@@ -116,6 +116,25 @@ function validateFieldValue(
       }
       break
 
+    case CustomFieldType.RANGE:
+      if (fieldDef.isRequired && (value === null || value === undefined)) {
+        return AppError.badRequest(
+          `Required custom field '${fieldDef.label}' must have a value`,
+        )
+      }
+
+      // Validate that the value is a number within the expected range
+      if (value !== null && value !== undefined) {
+        const numValue =
+          typeof value === 'string' ? parseFloat(value) : Number(value)
+        if (isNaN(numValue)) {
+          return AppError.badRequest(
+            `Custom field '${fieldDef.label}' must be a valid number`,
+          )
+        }
+      }
+      break
+
     case CustomFieldType.BOOLEAN:
       // Boolean fields are always valid (true or false)
       break

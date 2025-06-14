@@ -248,7 +248,9 @@ export const coreRouter = createTRPCRouter({
           device: { include: { brand: true, soc: true } },
           emulator: true,
           performance: true,
-          author: { select: { id: true, name: true, email: true } },
+          author: {
+            select: { id: true, name: true, email: true, profileImage: true },
+          },
           customFieldValues: {
             include: { customFieldDefinition: true },
             orderBy: { customFieldDefinition: { name: 'asc' } },

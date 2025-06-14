@@ -22,6 +22,7 @@ enum CustomFieldType {
   URL
   BOOLEAN
   SELECT
+  RANGE
 }
 
 enum ApprovalStatus {
@@ -165,6 +166,12 @@ model CustomFieldDefinition {
   type         CustomFieldType
   options      Json? // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
   defaultValue Json? // Default value for the field (boolean: true/false, select: option value, text: string)
+  placeholder  String? // Placeholder text for TEXT fields
+  // Range-specific fields
+  rangeMin     Float? // Minimum value for RANGE type
+  rangeMax     Float? // Maximum value for RANGE type
+  rangeUnit    String? // Unit for RANGE type (e.g., "%", "GB", "MB")
+  rangeDecimals Int? // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
   isRequired   Boolean           @default(false)
   displayOrder Int               @default(0)
   createdAt    DateTime          @default(now())
@@ -193,6 +200,12 @@ model CustomFieldTemplateField {
   type         CustomFieldType
   options      Json?               // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
   defaultValue Json?               // Default value for the field (boolean: true/false, select: option value, text: string)
+  placeholder  String?             // Placeholder text for TEXT fields
+  // Range-specific fields
+  rangeMin     Float?              // Minimum value for RANGE type
+  rangeMax     Float?              // Maximum value for RANGE type
+  rangeUnit    String?             // Unit for RANGE type (e.g., "%", "GB", "MB")
+  rangeDecimals Int?               // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
   isRequired   Boolean             @default(false)
   displayOrder Int                 @default(0)
   createdAt    DateTime            @default(now())

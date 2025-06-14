@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit, Trash2, Eye } from 'lucide-react'
+import { Edit, Trash2, Eye, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Card } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -45,12 +45,32 @@ function CustomFieldTemplateList(props: Props) {
     },
   })
 
+  const duplicateTemplateMutation =
+    api.customFieldTemplates.duplicate.useMutation({
+      onSuccess: () => {
+        props.onDeleteSuccess() // Refresh the list
+      },
+      onError: (error) => {
+        console.error('Failed to duplicate template:', error)
+        alert('Failed to duplicate template. Please try again.')
+      },
+    })
+
   function handleDelete(templateId: string, templateName: string) {
     const confirmed = confirm(
       `Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`,
     )
     if (confirmed) {
       deleteTemplateMutation.mutate({ id: templateId })
+    }
+  }
+
+  function handleDuplicate(templateId: string, templateName: string) {
+    const confirmed = confirm(
+      `Create a copy of the template "${templateName}"?`,
+    )
+    if (confirmed) {
+      duplicateTemplateMutation.mutate({ id: templateId })
     }
   }
 
@@ -71,6 +91,7 @@ function CustomFieldTemplateList(props: Props) {
       [CustomFieldType.URL]: 'URL',
       [CustomFieldType.BOOLEAN]: 'Yes/No',
       [CustomFieldType.SELECT]: 'Dropdown',
+      [CustomFieldType.RANGE]: 'Range (Slider)',
     }
     return typeMap[type] || type
   }
@@ -122,6 +143,15 @@ function CustomFieldTemplateList(props: Props) {
                 >
                   <Edit className="h-4 w-4" />
                   Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDuplicate(template.id, template.name)}
+                  disabled={duplicateTemplateMutation.isPending}
+                >
+                  <Copy className="h-4 w-4" />
+                  Duplicate
                 </Button>
                 <Button
                   variant="destructive"

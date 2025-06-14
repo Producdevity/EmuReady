@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui'
+import { Button, PageLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import EmulatorEditForm from './components/EmulatorEditForm'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
@@ -12,40 +12,29 @@ function EditEmulatorPage() {
   const params = useParams()
   const emulatorId = params.emulatorId as string
 
-  const {
-    data: emulator,
-    isLoading: isLoadingEmulator,
-    error: emulatorError,
-  } = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
+  const emulatorsQuery = api.emulators.byId.useQuery(
+    { id: emulatorId },
+    { enabled: !!emulatorId },
+  )
 
-  const {
-    data: allSystems,
-    isLoading: isLoadingSystems,
-    error: systemsError,
-  } = api.systems.get.useQuery({})
+  const systemsQuery = api.systems.get.useQuery({})
 
-  if (isLoadingEmulator || isLoadingSystems) {
-    return (
-      <div className="container mx-auto p-4">
-        <p>Loading emulator and systems data...</p>
-      </div>
-    )
-  }
+  if (emulatorsQuery.isLoading || systemsQuery.isLoading) return <PageLoading />
 
-  if (emulatorError || systemsError) {
+  if (emulatorsQuery.error || systemsQuery.error) {
     return (
       <div className="container mx-auto p-4">
         <p className="text-red-500">
           Error loading data:{' '}
-          {emulatorError?.message ??
-            systemsError?.message ??
+          {emulatorsQuery.error?.message ??
+            systemsQuery.error?.message ??
             'An unknown error occurred'}
         </p>
       </div>
     )
   }
 
-  if (!emulator) {
+  if (!emulatorsQuery.data) {
     return (
       <div className="container mx-auto p-4">
         <p>Emulator not found.</p>
@@ -53,7 +42,7 @@ function EditEmulatorPage() {
     )
   }
 
-  if (!allSystems) {
+  if (!systemsQuery.data) {
     return (
       <div className="container mx-auto p-4">
         <p>No systems found to configure.</p>
@@ -76,7 +65,7 @@ function EditEmulatorPage() {
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
         Edit Emulator:{' '}
         <span className="text-blue-600 dark:text-blue-400">
-          {emulator.name}
+          {emulatorsQuery.data.name}
         </span>
       </h1>
 
@@ -86,7 +75,7 @@ function EditEmulatorPage() {
           <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
             Emulator Details
           </h2>
-          <EmulatorEditForm emulator={emulator} />
+          <EmulatorEditForm emulator={emulatorsQuery.data} />
         </section>
 
         {/* Section for Supported Systems */}
@@ -95,9 +84,9 @@ function EditEmulatorPage() {
             Supported Systems
           </h2>
           <ManageSupportedSystems
-            emulatorId={emulator.id}
-            allSystems={allSystems}
-            currentlySupportedSystems={emulator.systems} // emulator.systems should be populated by the byId query
+            emulatorId={emulatorsQuery.data.id}
+            allSystems={systemsQuery.data}
+            currentlySupportedSystems={emulatorsQuery.data.systems} // emulator.systems should be populated by the byId query
           />
         </section>
 

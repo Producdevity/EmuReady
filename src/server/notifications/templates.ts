@@ -57,9 +57,12 @@ class NotificationTemplateEngine {
     this.templates.set('LISTING_COMMENT', (context) => ({
       title: 'New comment on your listing',
       message: `${context.userName || 'Someone'} commented on your listing "${context.listingTitle || 'Unknown'}": "${sanitizeText(context.commentText || '')}"`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl:
+        context.listingId && context.commentId
+          ? `/listings/${context.listingId}#comment-${context.commentId}`
+          : context.listingId
+            ? `/listings/${context.listingId}`
+            : undefined,
       metadata: {
         listingId: context.listingId,
         commentId: context.commentId,
@@ -96,9 +99,12 @@ class NotificationTemplateEngine {
     this.templates.set('COMMENT_REPLY', (context) => ({
       title: 'Someone replied to your comment',
       message: `${context.userName || 'Someone'} replied to your comment: "${sanitizeText(context.commentText || '')}"`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl:
+        context.listingId && context.commentId
+          ? `/listings/${context.listingId}#comment-${context.commentId}`
+          : context.listingId
+            ? `/listings/${context.listingId}`
+            : undefined,
       metadata: {
         listingId: context.listingId,
         commentId: context.commentId,
@@ -110,9 +116,12 @@ class NotificationTemplateEngine {
     this.templates.set('USER_MENTION', (context) => ({
       title: 'You were mentioned in a comment',
       message: `${context.userName || 'Someone'} mentioned you in a comment: "${sanitizeText(context.commentText || '')}"`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl:
+        context.listingId && context.commentId
+          ? `/listings/${context.listingId}#comment-${context.commentId}`
+          : context.listingId
+            ? `/listings/${context.listingId}`
+            : undefined,
       metadata: {
         listingId: context.listingId,
         commentId: context.commentId,

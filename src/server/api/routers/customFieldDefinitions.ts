@@ -33,6 +33,17 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         ValidationError.optionsNotAllowed(input.type)
       }
 
+      if (input.type === CustomFieldType.RANGE) {
+        if (input.rangeMin === undefined || input.rangeMax === undefined) {
+          AppError.badRequest(
+            'Range minimum and maximum are required for RANGE type fields',
+          )
+        }
+        if (input.rangeMin >= input.rangeMax) {
+          AppError.badRequest('Range minimum must be less than maximum')
+        }
+      }
+
       const existingField = await prisma.customFieldDefinition.findUnique({
         where: {
           emulatorId_name: { emulatorId: input.emulatorId, name: input.name },
@@ -54,6 +65,11 @@ export const customFieldDefinitionRouter = createTRPCRouter({
               ? input.options
               : Prisma.DbNull,
           defaultValue: input.defaultValue ?? Prisma.DbNull,
+          placeholder: input.placeholder ?? null,
+          rangeMin: input.rangeMin ?? null,
+          rangeMax: input.rangeMax ?? null,
+          rangeUnit: input.rangeUnit ?? null,
+          rangeDecimals: input.rangeDecimals ?? null,
           isRequired: input.isRequired,
           displayOrder: input.displayOrder,
         },
@@ -135,6 +151,14 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         optionsToSave = Prisma.DbNull
       }
 
+      if (newType === CustomFieldType.RANGE) {
+        const rangeMin = input.rangeMin ?? fieldToUpdate.rangeMin
+        const rangeMax = input.rangeMax ?? fieldToUpdate.rangeMax
+        if (rangeMin !== null && rangeMax !== null && rangeMin >= rangeMax) {
+          AppError.badRequest('Range minimum must be less than maximum')
+        }
+      }
+
       if (input.name && input.name !== fieldToUpdate.name) {
         const existingField = await prisma.customFieldDefinition.findUnique({
           where: {
@@ -157,6 +181,11 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           type: input.type,
           options: optionsToSave,
           defaultValue: input.defaultValue ?? Prisma.DbNull,
+          placeholder: input.placeholder ?? undefined,
+          rangeMin: input.rangeMin ?? undefined,
+          rangeMax: input.rangeMax ?? undefined,
+          rangeUnit: input.rangeUnit ?? undefined,
+          rangeDecimals: input.rangeDecimals ?? undefined,
           isRequired: input.isRequired,
           displayOrder: input.displayOrder,
         },
