@@ -99,7 +99,10 @@ function CustomFieldTemplateFormModal(props: Props) {
         label: field.label,
         type: field.type,
         options: (field.options as { value: string; label: string }[]) || [],
-        defaultValue: field.defaultValue as string | boolean | null | undefined,
+        defaultValue:
+          field.defaultValue === undefined
+            ? null
+            : (field.defaultValue as string | boolean | null),
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
       })),
@@ -568,7 +571,8 @@ function CustomFieldTemplateFormModal(props: Props) {
                         <Input
                           as="select"
                           value={
-                            field.defaultValue === null
+                            field.defaultValue === null ||
+                            field.defaultValue === undefined
                               ? ''
                               : String(field.defaultValue)
                           }
