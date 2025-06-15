@@ -1,5 +1,6 @@
 import { PrismaClient } from '@orm'
 import clearTestDataSeeder from './seeders/clearTestDataSeeder'
+import customFieldTemplatesSeeder from './seeders/customFieldTemplatesSeeder'
 import devicesSeeder from './seeders/devicesSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
@@ -22,6 +23,8 @@ async function clearDb() {
   await prisma.listingCustomFieldValue.deleteMany()
   await prisma.listing.deleteMany()
   await prisma.customFieldDefinition.deleteMany()
+  await prisma.customFieldTemplateField.deleteMany()
+  await prisma.customFieldTemplate.deleteMany()
   await prisma.performanceScale.deleteMany()
   await prisma.device.deleteMany()
   await prisma.soC.deleteMany()
@@ -38,6 +41,7 @@ async function main() {
   const seedSocsOnly = args.includes('--socs-only')
   const seedDevicesOnly = args.includes('--devices-only')
   const seedEmulatorsOnly = args.includes('--emulators-only')
+  const seedCustomFieldsOnly = args.includes('--custom-fields-only')
 
   if (clearDbTestDataArg) {
     console.info('🧹 Clearing test data only...')
@@ -95,6 +99,20 @@ async function main() {
     return
   }
 
+  if (seedCustomFieldsOnly) {
+    console.info('🌱 Seeding custom fields only...')
+    try {
+      await customFieldTemplatesSeeder(prisma)
+      console.info('✅ Custom fields seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding custom fields:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
   if (clearDbArg) {
     console.warn('🗑️ Clearing database...')
     console.warn('I hope you know what you are doing 😅')
@@ -113,6 +131,7 @@ async function main() {
     await systemsSeeder(prisma)
     await usersSeeder(prisma)
     await emulatorsSeeder(prisma)
+    await customFieldTemplatesSeeder(prisma)
     await socSeeder(prisma)
     await devicesSeeder(prisma)
     await gamesSeeder(prisma)
