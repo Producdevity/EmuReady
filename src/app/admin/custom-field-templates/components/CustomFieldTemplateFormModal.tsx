@@ -298,8 +298,7 @@ function CustomFieldTemplateFormModal(props: Props) {
 
   function addField() {
     if (fields.length >= 50) {
-      setErrors({ fields: 'Maximum 50 fields allowed per template' })
-      return
+      return setErrors({ fields: 'Maximum 50 fields allowed per template' })
     }
 
     setFields([
