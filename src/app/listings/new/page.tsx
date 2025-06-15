@@ -308,7 +308,16 @@ function AddListingPage() {
             [],
           )
         }
-        return { ...field, parsedOptions }
+        return {
+          ...field,
+          parsedOptions,
+          defaultValue: field.defaultValue as
+            | string
+            | number
+            | boolean
+            | null
+            | undefined,
+        }
       },
     )
     setParsedCustomFields(parsed)

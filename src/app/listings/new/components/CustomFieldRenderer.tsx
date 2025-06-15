@@ -30,6 +30,7 @@ export interface CustomFieldDefinitionWithOptions {
   rangeMax?: number | null
   rangeUnit?: string | null
   rangeDecimals?: number | null
+  defaultValue?: string | number | boolean | null
 }
 
 export interface ValidationRules {

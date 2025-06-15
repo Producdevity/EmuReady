@@ -17,12 +17,19 @@ interface Props {
 }
 
 function CustomFieldTypeBoolean(props: Props) {
+  // Use the actual default value from the field definition, fallback to false if null/undefined
+  const defaultValue =
+    props.fieldDef.defaultValue !== null &&
+    props.fieldDef.defaultValue !== undefined
+      ? Boolean(props.fieldDef.defaultValue)
+      : false
+
   return (
     <div key={props.fieldDef.id} className="mb-4">
       <Controller
         name={props.fieldName}
         control={props.control}
-        defaultValue={false}
+        defaultValue={defaultValue}
         render={({ field }) => (
           <label
             htmlFor={props.fieldName}
