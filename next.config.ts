@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
   },
 
-  turbo: {
+  turbopack: {
     rules: {
       '*.svg': {
         loaders: ['@svgr/webpack'],
