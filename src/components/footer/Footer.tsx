@@ -1,8 +1,14 @@
+import Link from 'next/link'
 import KofiFooterButton from '@/components/footer/KofiFooterButton'
 import GitHubIcon from '@/components/icons/GitHubIcon'
 import { ThemeSelect } from '@/components/ui'
 
 const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
+const githubUrl = process.env.NEXT_PUBLIC_GITHUB_URL
+const githubReadmeUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/README.md`
+const githubSupportUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=question.md`
+const githubContributingUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/CONTRIBUTING.md`
+const githubRequestEmulatorUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=emulator_request.md`
 
 function Footer() {
   return (
@@ -35,7 +41,7 @@ function Footer() {
 
               <div className="flex items-center gap-4">
                 <a
-                  href="https://github.com/Producdevity/EmuReady"
+                  href={githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="EmuReady GitHub"
@@ -61,7 +67,7 @@ function Footer() {
               <ul className="space-y-4">
                 <li>
                   <a
-                    href="https://github.com/Producdevity/EmuReady/blob/master/README.md"
+                    href={githubReadmeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="EmuReady Documentation"
@@ -73,7 +79,7 @@ function Footer() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/Producdevity/EmuReady/issues/new?template=question.md"
+                    href={githubSupportUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="EmuReady Support"
@@ -82,6 +88,26 @@ function Footer() {
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Support
                   </a>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    aria-label="Privacy Policy"
+                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
+                  >
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/terms"
+                    aria-label="Terms of Service"
+                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
+                  >
+                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
+                    Terms of Service
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -95,7 +121,7 @@ function Footer() {
               <ul className="space-y-4">
                 <li>
                   <a
-                    href="https://github.com/Producdevity/EmuReady/blob/master/CONTRIBUTING.md"
+                    href={githubContributingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Contribute to EmuReady"
@@ -107,7 +133,7 @@ function Footer() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
+                    href={githubRequestEmulatorUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Add your Emulator"
@@ -119,7 +145,7 @@ function Footer() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/Producdevity/EmuReady"
+                    href={githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="EmuReady GitHub"
