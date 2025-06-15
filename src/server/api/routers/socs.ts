@@ -27,7 +27,8 @@ export const socsRouter = createTRPCRouter({
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
     // Use reasonable limits: 100 for admin pages, 20 for regular pagination
-    const effectiveLimit = Math.min(limit, limit > 100 ? 100 : limit)
+    // temp disable (hotfix)
+    // const effectiveLimit = Math.min(limit, limit > 100 ? 100 : limit)
 
     // Build where clause for filtering
     const where: Prisma.SoCWhereInput = search
@@ -84,17 +85,17 @@ export const socsRouter = createTRPCRouter({
       },
       orderBy,
       skip: actualOffset,
-      take: effectiveLimit,
+      take: limit,
     })
 
     return {
       socs,
       pagination: {
         total,
-        pages: Math.ceil(total / effectiveLimit),
-        page: page ?? Math.floor(actualOffset / effectiveLimit) + 1,
+        pages: Math.ceil(total / limit),
+        page: page ?? Math.floor(actualOffset / limit) + 1,
         offset: actualOffset,
-        limit: effectiveLimit,
+        limit: limit,
       },
     }
   }),
