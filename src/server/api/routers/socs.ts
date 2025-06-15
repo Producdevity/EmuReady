@@ -26,7 +26,8 @@ export const socsRouter = createTRPCRouter({
 
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
-    const effectiveLimit = Math.min(limit, 10000) // Cap at 10000 items per page for filter dropdowns
+    // Use reasonable limits: 100 for admin pages, 20 for regular pagination
+    const effectiveLimit = Math.min(limit, limit > 100 ? 100 : limit)
 
     // Build where clause for filtering
     const where: Prisma.SoCWhereInput = search
@@ -37,6 +38,15 @@ export const socsRouter = createTRPCRouter({
             { architecture: { contains: search, mode: 'insensitive' } },
             { processNode: { contains: search, mode: 'insensitive' } },
             { gpuModel: { contains: search, mode: 'insensitive' } },
+            // Combined manufacturer + name search (e.g., "qualcomm snapdragon")
+            {
+              AND: search.split(' ').map((term) => ({
+                OR: [
+                  { manufacturer: { contains: term, mode: 'insensitive' } },
+                  { name: { contains: term, mode: 'insensitive' } },
+                ],
+              })),
+            },
           ],
         }
       : {}

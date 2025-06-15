@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
+import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   Button,
   Input,
@@ -22,11 +23,13 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type RouterInput } from '@/types/trpc'
+import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import DeviceModal from './components/DeviceModal'
+import DeviceViewModal from './components/DeviceViewModal'
 
 type DeviceSortField = 'brand' | 'modelName' | 'soc'
+type DeviceData = RouterOutput['devices']['get']['devices'][number]
 
 const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'brand', label: 'Brand', defaultVisible: true },
@@ -52,23 +55,14 @@ function AdminDevicesPage() {
   const deleteDevice = api.devices.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [viewModalOpen, setViewModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [deviceData, setDeviceData] = useState<{
-    id: string
-    brand: { id: string; name: string }
-    modelName: string
-    soc?: { id: string; name: string } | null
-  } | null>(null)
+  const [deviceData, setDeviceData] = useState<DeviceData | null>(null)
 
   const devices = devicesQuery.data?.devices ?? []
   const pagination = devicesQuery.data?.pagination
 
-  const openModal = (device?: {
-    id: string
-    brand: { id: string; name: string }
-    modelName: string
-    soc?: { id: string; name: string } | null
-  }) => {
+  const openModal = (device?: DeviceData) => {
     setEditId(device?.id ?? null)
     setDeviceData(device ?? null)
     setModalOpen(true)
@@ -77,6 +71,16 @@ function AdminDevicesPage() {
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
+    setDeviceData(null)
+  }
+
+  const openViewModal = (device: DeviceData) => {
+    setDeviceData(device)
+    setViewModalOpen(true)
+  }
+
+  const closeViewModal = () => {
+    setViewModalOpen(false)
     setDeviceData(null)
   }
 
@@ -208,6 +212,10 @@ function AdminDevicesPage() {
                         onClick={() => openModal(dev)}
                         title="Edit Device"
                       />
+                      <ViewButton
+                        onClick={() => openViewModal(dev)}
+                        title="View Device"
+                      />
                       <DeleteButton
                         onClick={() => handleDelete(dev.id)}
                         title="Delete Device"
@@ -251,6 +259,12 @@ function AdminDevicesPage() {
         editId={editId}
         deviceData={deviceData}
         onSuccess={handleModalSuccess}
+      />
+
+      <DeviceViewModal
+        isOpen={viewModalOpen}
+        onClose={closeViewModal}
+        deviceData={deviceData}
       />
     </div>
   )

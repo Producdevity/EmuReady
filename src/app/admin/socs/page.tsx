@@ -5,14 +5,15 @@ import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
+import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   Button,
   Input,
-  SortableHeader,
+  LoadingSpinner,
   ColumnVisibilityControl,
+  SortableHeader,
   AdminTableContainer,
   Pagination,
-  LoadingSpinner,
   useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
@@ -22,11 +23,13 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type RouterInput } from '@/types/trpc'
+import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import SocModal from './components/SocModal'
+import SocViewModal from './components/SocViewModal'
 
 type SocSortField = 'name' | 'manufacturer' | 'devicesCount'
+type SocData = RouterOutput['socs']['get']['socs'][number]
 
 const SOCS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },
@@ -56,30 +59,15 @@ function AdminSoCsPage() {
   const deleteSoC = api.socs.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [viewModalOpen, setViewModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [socData, setSocData] = useState<{
-    id: string
-    name: string
-    manufacturer: string
-    architecture: string | null
-    processNode: string | null
-    cpuCores: number | null
-    gpuModel: string | null
-  } | null>(null)
+  const [socData, setSocData] = useState<SocData | null>(null)
 
   const socs = socQuery.data?.socs ?? []
   const pagination = socQuery.data?.pagination
   const isLoading = socQuery.isLoading
 
-  const openModal = (soc?: {
-    id: string
-    name: string
-    manufacturer: string
-    architecture: string | null
-    processNode: string | null
-    cpuCores: number | null
-    gpuModel: string | null
-  }) => {
+  const openModal = (soc?: SocData) => {
     setEditId(soc?.id ?? null)
     setSocData(soc ?? null)
     setModalOpen(true)
@@ -88,6 +76,16 @@ function AdminSoCsPage() {
   const closeModal = () => {
     setModalOpen(false)
     setEditId(null)
+    setSocData(null)
+  }
+
+  const openViewModal = (soc: SocData) => {
+    setSocData(soc)
+    setViewModalOpen(true)
+  }
+
+  const closeViewModal = () => {
+    setViewModalOpen(false)
     setSocData(null)
   }
 
@@ -272,6 +270,10 @@ function AdminSoCsPage() {
                         onClick={() => openModal(soc)}
                         title="Edit SoC"
                       />
+                      <ViewButton
+                        onClick={() => openViewModal(soc)}
+                        title="View SoC"
+                      />
                       <DeleteButton
                         onClick={() => handleDelete(soc.id, soc.name)}
                         title="Delete SoC"
@@ -301,6 +303,12 @@ function AdminSoCsPage() {
         editId={editId}
         socData={socData}
         onSuccess={handleModalSuccess}
+      />
+
+      <SocViewModal
+        isOpen={viewModalOpen}
+        onClose={closeViewModal}
+        socData={socData}
       />
     </div>
   )

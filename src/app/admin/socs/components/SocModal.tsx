@@ -3,18 +3,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
-import { type RouterInput } from '@/types/trpc'
+import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface SocData {
-  id: string
-  name: string
-  manufacturer: string
-  architecture: string | null
-  processNode: string | null
-  cpuCores: number | null
-  gpuModel: string | null
-}
+type SocData = RouterOutput['socs']['get']['socs'][number]
 
 interface Props {
   isOpen: boolean

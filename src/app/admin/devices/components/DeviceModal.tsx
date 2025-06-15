@@ -3,15 +3,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal, Autocomplete } from '@/components/ui'
 import { api } from '@/lib/api'
-import { type RouterInput } from '@/types/trpc'
+import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface DeviceData {
-  id: string
-  brand: { id: string; name: string }
-  modelName: string
-  soc?: { id: string; name: string } | null
-}
+type DeviceData = RouterOutput['devices']['get']['devices'][number]
 
 interface Props {
   isOpen: boolean
