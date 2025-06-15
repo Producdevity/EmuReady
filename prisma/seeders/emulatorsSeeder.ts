@@ -158,6 +158,11 @@ const emulators: EmulatorData[] = [
     supportedSystemNames: ['Nintendo DS'],
     logo: 'melonds.png',
   },
+  {
+    name: 'MeloNX',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'melonx.png',
+  },
 ]
 
 async function emulatorsSeeder(prisma: PrismaClient) {
