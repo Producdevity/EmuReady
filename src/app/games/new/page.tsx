@@ -93,7 +93,11 @@ function AddGamePage() {
       })
 
       setSuccess('Game added successfully!')
-      setTimeout(() => router.push(`/games/${result.id}`), 1500)
+      const timeoutId = window.setTimeout(
+        () => router.push(`/games/${result.id}`),
+        1500,
+      )
+      return () => window.clearTimeout(timeoutId)
     } catch (err) {
       console.error(err)
       setError(getErrorMessage(err, 'Failed to add game.'))
