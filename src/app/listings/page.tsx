@@ -97,9 +97,9 @@ function ListingsPage() {
     userSocIds.length > 0
 
   const systemsQuery = api.systems.get.useQuery()
-  const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
-  const socsQuery = api.socs.get.useQuery({ limit: 1000 })
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 1000 })
+  const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
+  const socsQuery = api.socs.get.useQuery({ limit: 10000 })
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 10000 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
