@@ -1,14 +1,28 @@
-import { z } from 'zod'
+import {
+  CreateCommentSchema,
+  CreateListingSchema,
+  DeleteCommentSchema,
+  DeleteListingSchema,
+  GetGameByIdSchema,
+  GetListingByIdSchema,
+  GetListingCommentsSchema,
+  GetListingsByGameSchema,
+  GetUserListingsSchema,
+  GetUserProfileSchema,
+  SearchGamesSchema,
+  UpdateCommentSchema,
+  UpdateListingSchema,
+  UpdateProfileSchema,
+  VoteListingSchema,
+} from '@/schemas/mobile'
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
+  publicProcedure,
 } from '@/server/api/trpc'
 import { ApprovalStatus } from '@orm'
-import type { Prisma } from '@orm'
 
 export const mobileRouter = createTRPCRouter({
-  // Get featured listings for home screen
   getFeaturedListings: publicProcedure.query(async ({ ctx }) => {
     const listings = await ctx.prisma.listing.findMany({
       where: {
@@ -19,564 +33,447 @@ export const mobileRouter = createTRPCRouter({
       take: 10,
       include: {
         game: {
-          include: {
-            system: {
-              select: {
-                id: true,
-                name: true,
-                key: true,
-              },
-            },
-          },
+          include: { system: { select: { id: true, name: true, key: true } } },
         },
-        device: {
-          include: {
-            brand: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        emulator: {
-          select: {
-            id: true,
-            name: true,
-            logo: true,
-          },
-        },
-        performance: {
-          select: {
-            id: true,
-            label: true,
-            rank: true,
-          },
-        },
-        author: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        _count: {
-          select: {
-            votes: true,
-            comments: true,
-          },
-        },
+        device: { include: { brand: { select: { id: true, name: true } } } },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
       },
     })
 
     // Calculate success rate for each listing
-    const listingsWithSuccessRate = await Promise.all(
+    return await Promise.all(
       listings.map(async (listing) => {
         const upVotes = await ctx.prisma.vote.count({
           where: { listingId: listing.id, value: true },
         })
-        const totalVotes = listing._count.votes
-        const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-        return { ...listing, successRate }
+        const downVotes = await ctx.prisma.vote.count({
+          where: { listingId: listing.id, value: false },
+        })
+        const totalVotes = upVotes + downVotes
+        const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
+
+        return { ...listing, successRate, upVotes, downVotes, totalVotes }
       }),
     )
-
-    return listingsWithSuccessRate
   }),
 
-  // Get simplified listings with pagination
-  getListings: publicProcedure
-    .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        limit: z.number().min(1).max(50).default(20),
-        gameId: z.string().optional(),
-        systemId: z.string().optional(),
-        deviceId: z.string().optional(),
-        emulatorId: z.string().optional(),
-        search: z.string().optional(),
-      }),
-    )
+  getPopularGames: publicProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.game.findMany({
+      where: { status: ApprovalStatus.APPROVED },
+      include: {
+        system: { select: { id: true, name: true, key: true } },
+        _count: {
+          select: { listings: { where: { status: ApprovalStatus.APPROVED } } },
+        },
+      },
+      orderBy: { listings: { _count: 'desc' } },
+      take: 20,
+    })
+  }),
+
+  getAppStats: publicProcedure.query(async ({ ctx }) => {
+    const [totalListings, totalGames, totalUsers] = await Promise.all([
+      ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
+      ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
+      ctx.prisma.user.count(),
+    ])
+
+    return {
+      totalListings,
+      totalGames,
+      totalUsers,
+    }
+  }),
+
+  getListingsByGame: publicProcedure
+    .input(GetListingsByGameSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, gameId, systemId, deviceId, emulatorId, search } =
-        input
-      const skip = (page - 1) * limit
-
-      const where: Prisma.ListingWhereInput = {
-        status: ApprovalStatus.APPROVED,
-        game: {
-          status: ApprovalStatus.APPROVED,
-          ...(systemId && { systemId }),
-          ...(search && {
-            title: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          }),
+      const listings = await ctx.prisma.listing.findMany({
+        where: { gameId: input.gameId, status: ApprovalStatus.APPROVED },
+        include: {
+          device: { include: { brand: { select: { id: true, name: true } } } },
+          emulator: { select: { id: true, name: true, logo: true } },
+          performance: { select: { id: true, label: true, rank: true } },
+          author: { select: { id: true, name: true } },
+          _count: { select: { votes: true, comments: true } },
         },
-        ...(gameId && { gameId }),
-        ...(deviceId && { deviceId }),
-        ...(emulatorId && { emulatorId }),
-      }
+        orderBy: { createdAt: 'desc' },
+      })
 
-      const [listings, total] = await Promise.all([
-        ctx.prisma.listing.findMany({
-          where,
-          include: {
-            game: {
-              include: {
-                system: {
-                  select: {
-                    id: true,
-                    name: true,
-                    key: true,
-                  },
-                },
-              },
-            },
-            device: {
-              include: {
-                brand: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-            emulator: {
-              select: {
-                id: true,
-                name: true,
-                logo: true,
-              },
-            },
-            performance: {
-              select: {
-                id: true,
-                label: true,
-                rank: true,
-              },
-            },
-            author: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            _count: {
-              select: {
-                votes: true,
-                comments: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
+      // Calculate success rate for each listing
+      return await Promise.all(
+        listings.map(async (listing) => {
+          const upVotes = await ctx.prisma.vote.count({
+            where: { listingId: listing.id, value: true },
+          })
+          const downVotes = await ctx.prisma.vote.count({
+            where: { listingId: listing.id, value: false },
+          })
+          const totalVotes = upVotes + downVotes
+          const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
+
+          return { ...listing, successRate, upVotes, downVotes, totalVotes }
         }),
-        ctx.prisma.listing.count({ where }),
-      ])
-
-      return {
-        listings,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          currentPage: page,
-          limit,
-        },
-      }
+      )
     }),
 
-  // Get listing details
-  getListingById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.id },
+  searchGames: publicProcedure.input(SearchGamesSchema).query(
+    async ({ ctx, input }) =>
+      await ctx.prisma.game.findMany({
+        where: {
+          status: ApprovalStatus.APPROVED,
+          title: { contains: input.query, mode: 'insensitive' },
+        },
         include: {
-          game: {
-            include: {
-              system: true,
-            },
-          },
-          device: {
-            include: {
-              brand: true,
-              soc: true,
-            },
-          },
-          emulator: true,
-          performance: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          customFieldValues: {
-            include: {
-              customFieldDefinition: true,
-            },
-          },
+          system: { select: { id: true, name: true, key: true } },
           _count: {
             select: {
+              listings: { where: { status: ApprovalStatus.APPROVED } },
+            },
+          },
+        },
+        take: 20,
+      }),
+  ),
+
+  getGameById: publicProcedure.input(GetGameByIdSchema).query(
+    async ({ ctx, input }) =>
+      await ctx.prisma.game.findUnique({
+        where: { id: input.gameId },
+        include: {
+          system: { select: { id: true, name: true, key: true } },
+          _count: {
+            select: {
+              listings: { where: { status: ApprovalStatus.APPROVED } },
+            },
+          },
+        },
+      }),
+  ),
+
+  getListingComments: publicProcedure.input(GetListingCommentsSchema).query(
+    async ({ ctx, input }) =>
+      await ctx.prisma.comment.findMany({
+        where: { listingId: input.listingId },
+        include: { user: { select: { id: true, name: true, email: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+  ),
+
+  createComment: protectedProcedure.input(CreateCommentSchema).mutation(
+    async ({ ctx, input }) =>
+      await ctx.prisma.comment.create({
+        data: {
+          content: input.content,
+          listingId: input.listingId,
+          userId: ctx.session.user.id,
+        },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      }),
+  ),
+
+  voteListing: protectedProcedure
+    .input(VoteListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if user already voted
+      const existingVote = await ctx.prisma.vote.findUnique({
+        where: {
+          userId_listingId: {
+            userId: ctx.session.user.id,
+            listingId: input.listingId,
+          },
+        },
+      })
+
+      return existingVote
+        ? await ctx.prisma.vote.update({
+            where: { id: existingVote.id },
+            data: { value: input.value },
+          })
+        : await ctx.prisma.vote.create({
+            data: {
+              value: input.value,
+              listingId: input.listingId,
+              userId: ctx.session.user.id,
+            },
+          })
+    }),
+
+  getUserProfile: protectedProcedure
+    .input(GetUserProfileSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bio: true,
+          createdAt: true,
+          _count: {
+            select: {
+              listings: true,
               votes: true,
               comments: true,
             },
           },
         },
       })
+    }),
 
-      if (!listing) {
-        throw new Error('Listing not found')
-      }
+  getUserListings: protectedProcedure.input(GetUserListingsSchema).query(
+    async ({ ctx, input }) =>
+      await ctx.prisma.listing.findMany({
+        where: { authorId: input.userId },
+        include: {
+          game: {
+            include: {
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          device: {
+            include: { brand: { select: { id: true, name: true } } },
+          },
+          emulator: { select: { id: true, name: true, logo: true } },
+          performance: { select: { id: true, label: true, rank: true } },
+          _count: { select: { votes: true, comments: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+  ),
+
+  getListingById: publicProcedure
+    .input(GetListingByIdSchema)
+    .query(async ({ ctx, input }) => {
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        include: {
+          game: {
+            include: {
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          device: { include: { brand: { select: { id: true, name: true } } } },
+          emulator: { select: { id: true, name: true, logo: true } },
+          performance: { select: { id: true, label: true, rank: true } },
+          author: { select: { id: true, name: true } },
+          _count: { select: { votes: true, comments: true } },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: {
+                select: {
+                  id: true,
+                  name: true,
+                  label: true,
+                  type: true,
+                  options: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!listing) return null
 
       // Calculate success rate
       const upVotes = await ctx.prisma.vote.count({
         where: { listingId: listing.id, value: true },
       })
-      const totalVotes = listing._count.votes
-      const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-
-      // Get user's vote if authenticated
-      let userVote = null
-      if (ctx.session?.user) {
-        const vote = await ctx.prisma.vote.findUnique({
-          where: {
-            userId_listingId: {
-              userId: ctx.session.user.id,
-              listingId: listing.id,
-            },
-          },
-        })
-        userVote = vote?.value ?? null
-      }
-
-      return { ...listing, successRate, userVote }
-    }),
-
-  // Get simplified games list
-  getGames: publicProcedure
-    .input(
-      z.object({
-        search: z.string().optional(),
-        systemId: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { search, systemId, limit } = input
-
-      let where: Prisma.GameWhereInput = {
-        status: ApprovalStatus.APPROVED,
-      }
-
-      if (systemId) where.systemId = systemId
-      if (search) {
-        where.title = {
-          contains: search,
-          mode: 'insensitive',
-        }
-      }
-
-      return ctx.prisma.game.findMany({
-        where,
-        include: {
-          system: {
-            select: {
-              id: true,
-              name: true,
-              key: true,
-            },
-          },
-          _count: {
-            select: {
-              listings: true,
-            },
-          },
-        },
-        orderBy: { title: 'asc' },
-        take: limit,
+      const downVotes = await ctx.prisma.vote.count({
+        where: { listingId: listing.id, value: false },
       })
+      const totalVotes = upVotes + downVotes
+      const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
+
+      return { ...listing, successRate, upVotes, downVotes, totalVotes }
     }),
 
-  // Get systems
   getSystems: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.system.findMany({
-      include: {
-        _count: {
-          select: {
-            games: {
-              where: {
-                status: ApprovalStatus.APPROVED,
-              },
-            },
-          },
-        },
-      },
+    return await ctx.prisma.system.findMany({
+      select: { id: true, name: true, key: true },
       orderBy: { name: 'asc' },
     })
   }),
 
-  // Get devices
-  getDevices: publicProcedure
-    .input(
-      z.object({
-        search: z.string().optional(),
-        brandId: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { search, brandId, limit } = input
+  getDevices: publicProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.device.findMany({
+      include: {
+        brand: { select: { id: true, name: true } },
+        soc: { select: { id: true, name: true, manufacturer: true } },
+      },
+      orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+    })
+  }),
 
-      let where: Prisma.DeviceWhereInput = {}
-
-      if (brandId) where.brandId = brandId
-      if (search) {
-        where.OR = [
-          {
-            modelName: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-          {
-            brand: {
-              name: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          },
-        ]
-      }
-
-      return ctx.prisma.device.findMany({
-        where,
-        include: {
-          brand: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          soc: {
-            select: {
-              id: true,
-              name: true,
-              manufacturer: true,
-            },
-          },
-          _count: {
-            select: {
-              listings: true,
-            },
-          },
-        },
-        orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-        take: limit,
-      })
-    }),
-
-  // Get emulators
-  getEmulators: publicProcedure
-    .input(
-      z.object({
-        systemId: z.string().optional(),
-        search: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { systemId, search, limit } = input
-
-      let where: Prisma.EmulatorWhereInput = {}
-
-      if (systemId) {
-        where.systems = {
-          some: {
-            id: systemId,
-          },
-        }
-      }
-
-      if (search) {
-        where.name = {
-          contains: search,
-          mode: 'insensitive',
-        }
-      }
-
-      return ctx.prisma.emulator.findMany({
-        where,
-        include: {
-          systems: {
-            select: {
-              id: true,
-              name: true,
-              key: true,
-            },
-          },
-          _count: {
-            select: {
-              listings: true,
-            },
-          },
-        },
-        orderBy: { name: 'asc' },
-        take: limit,
-      })
-    }),
-
-  // Vote on listing
-  voteListing: protectedProcedure
-    .input(
-      z.object({
-        listingId: z.string(),
-        value: z.boolean(),
-      }),
-    )
+  createListing: protectedProcedure
+    .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
-      const { listingId, value } = input
-      const userId = ctx.session.user.id
+      return await ctx.prisma.listing.create({
+        data: {
+          gameId: input.gameId,
+          deviceId: input.deviceId,
+          emulatorId: input.emulatorId,
+          performanceId: input.performanceId,
+          notes: input.notes,
+          authorId: ctx.session.user.id,
+          status: ApprovalStatus.PENDING,
+          customFieldValues: input.customFieldValues
+            ? {
+                create: input.customFieldValues.map((cfv) => ({
+                  customFieldDefinitionId: cfv.customFieldDefinitionId,
+                  value: cfv.value,
+                })),
+              }
+            : undefined,
+        },
+        include: {
+          game: {
+            include: {
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          device: { include: { brand: { select: { id: true, name: true } } } },
+          emulator: { select: { id: true, name: true, logo: true } },
+          performance: { select: { id: true, label: true, rank: true } },
+          author: { select: { id: true, name: true } },
+          _count: { select: { votes: true, comments: true } },
+        },
+      })
+    }),
 
-      // Check if listing exists
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
+  updateListing: protectedProcedure
+    .input(UpdateListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, customFieldValues, ...updateData } = input
+
+      // Check if user owns the listing
+      const existing = await ctx.prisma.listing.findUnique({
+        where: { id },
+        select: { authorId: true },
       })
 
-      if (!listing) {
+      if (!existing) {
         throw new Error('Listing not found')
       }
 
-      // Upsert vote
-      await ctx.prisma.vote.upsert({
-        where: {
-          userId_listingId: {
-            userId,
-            listingId,
-          },
+      if (existing.authorId !== ctx.session.user.id) {
+        throw new Error('Unauthorized')
+      }
+
+      return await ctx.prisma.listing.update({
+        where: { id },
+        data: {
+          ...updateData,
+          customFieldValues: customFieldValues
+            ? {
+                deleteMany: {},
+                create: customFieldValues.map((cfv) => ({
+                  customFieldDefinitionId: cfv.customFieldDefinitionId,
+                  value: cfv.value,
+                })),
+              }
+            : undefined,
         },
-        update: { value },
-        create: {
-          userId,
-          listingId,
-          value,
+        include: {
+          game: {
+            include: {
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          device: { include: { brand: { select: { id: true, name: true } } } },
+          emulator: { select: { id: true, name: true, logo: true } },
+          performance: { select: { id: true, label: true, rank: true } },
+          author: { select: { id: true, name: true } },
+          _count: { select: { votes: true, comments: true } },
         },
       })
-
-      return { success: true }
     }),
 
-  // Get user's profile
-  getUserProfile: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      include: {
-        _count: {
-          select: {
-            listings: true,
-            votes: true,
-            comments: true,
-          },
-        },
-        devicePreferences: {
-          include: {
-            device: {
-              include: {
-                brand: true,
-              },
-            },
-          },
-        },
-        socPreferences: {
-          include: {
-            soc: true,
-          },
-        },
-      },
-    })
+  deleteListing: protectedProcedure
+    .input(DeleteListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if user owns the listing
+      const existing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        select: { authorId: true },
+      })
 
-    return user
-  }),
-
-  // Get user's listings
-  getUserListings: protectedProcedure
-    .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        limit: z.number().min(1).max(50).default(20),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { page, limit } = input
-      const skip = (page - 1) * limit
-
-      const [listings, total] = await Promise.all([
-        ctx.prisma.listing.findMany({
-          where: { authorId: ctx.session.user.id },
-          include: {
-            game: {
-              include: {
-                system: {
-                  select: {
-                    id: true,
-                    name: true,
-                    key: true,
-                  },
-                },
-              },
-            },
-            device: {
-              include: {
-                brand: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-            emulator: {
-              select: {
-                id: true,
-                name: true,
-                logo: true,
-              },
-            },
-            performance: {
-              select: {
-                id: true,
-                label: true,
-                rank: true,
-              },
-            },
-            _count: {
-              select: {
-                votes: true,
-                comments: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-        }),
-        ctx.prisma.listing.count({
-          where: { authorId: ctx.session.user.id },
-        }),
-      ])
-
-      return {
-        listings,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          currentPage: page,
-          limit,
-        },
+      if (!existing) {
+        throw new Error('Listing not found')
       }
+
+      if (existing.authorId !== ctx.session.user.id) {
+        throw new Error('Unauthorized')
+      }
+
+      return await ctx.prisma.listing.delete({
+        where: { id: input.id },
+      })
+    }),
+
+  updateComment: protectedProcedure
+    .input(UpdateCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if user owns the comment
+      const existing = await ctx.prisma.comment.findUnique({
+        where: { id: input.commentId },
+        select: { userId: true },
+      })
+
+      if (!existing) {
+        throw new Error('Comment not found')
+      }
+
+      if (existing.userId !== ctx.session.user.id) {
+        throw new Error('Unauthorized')
+      }
+
+      return await ctx.prisma.comment.update({
+        where: { id: input.commentId },
+        data: { content: input.content },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      })
+    }),
+
+  deleteComment: protectedProcedure
+    .input(DeleteCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if user owns the comment
+      const existing = await ctx.prisma.comment.findUnique({
+        where: { id: input.commentId },
+        select: { userId: true },
+      })
+
+      if (!existing) {
+        throw new Error('Comment not found')
+      }
+
+      if (existing.userId !== ctx.session.user.id) {
+        throw new Error('Unauthorized')
+      }
+
+      return await ctx.prisma.comment.delete({
+        where: { id: input.commentId },
+      })
+    }),
+
+  updateProfile: protectedProcedure
+    .input(UpdateProfileSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.prisma.user.update({
+        where: { id: ctx.session.user.id },
+        data: input,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bio: true,
+          createdAt: true,
+        },
+      })
     }),
 })
