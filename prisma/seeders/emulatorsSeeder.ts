@@ -36,6 +36,11 @@ const emulators: EmulatorData[] = [
   },
   { name: 'Eden', supportedSystemNames: ['Nintendo Switch'], logo: 'eden.png' },
   {
+    name: 'ExaGear',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'exagear.png',
+  },
+  {
     name: 'Flycast',
     supportedSystemNames: ['Sega Dreamcast'],
     logo: 'flycast.png',
@@ -44,6 +49,11 @@ const emulators: EmulatorData[] = [
     name: 'GameFusion - GameHub',
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'gamefusion.png',
+  },
+  {
+    name: 'Horizon',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'horizon.png',
   },
   {
     name: 'Lemuroid',
@@ -59,6 +69,11 @@ const emulators: EmulatorData[] = [
     name: 'MiceWine',
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'micewine.png',
+  },
+  {
+    name: 'Mobox',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'mobox.png',
   },
   {
     name: 'NethersX2',

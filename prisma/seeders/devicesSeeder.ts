@@ -95,6 +95,42 @@ const devices: DeviceData[] = [
   { brandName: 'Razer', modelName: 'Edge 5G', socName: 'Snapdragon 8 Gen 1' },
   { brandName: 'Razer', modelName: 'Edge', socName: 'Snapdragon 8 Gen 1' },
 
+  // Realme
+
+  { brandName: 'Realme', modelName: '10 Pro+', socName: 'Dimensity 1080' },
+  { brandName: 'Realme', modelName: '11 Pro', socName: 'Dimensity 7050' },
+  { brandName: 'Realme', modelName: '11 Pro+', socName: 'Dimensity 7050' },
+  { brandName: 'Realme', modelName: '12 Pro', socName: 'Snapdragon 6 Gen 1' },
+  { brandName: 'Realme', modelName: '12 Pro+', socName: 'Snapdragon 7s Gen 2' },
+  { brandName: 'Realme', modelName: '12+ 5G', socName: 'Dimensity 7050' },
+  { brandName: 'Realme', modelName: '8 Pro', socName: 'Snapdragon 720G' },
+  { brandName: 'Realme', modelName: '9 Pro+', socName: 'Dimensity 920' },
+  { brandName: 'Realme', modelName: '9i', socName: 'Snapdragon 680' },
+  { brandName: 'Realme', modelName: 'C55', socName: 'Helio G88' },
+  { brandName: 'Realme', modelName: 'C75', socName: 'Helio G92 Max' },
+  { brandName: 'Realme', modelName: 'GT 2 Pro', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'Realme', modelName: 'GT 2 Pro', socName: 'Snapdragon 8 Gen 1' },
+  { brandName: 'Realme', modelName: 'GT 3', socName: 'Snapdragon 8+ Gen 1' },
+  { brandName: 'Realme', modelName: 'GT 5 Pro', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'Realme', modelName: 'GT 5', socName: 'Snapdragon 8 Gen 2' },
+  { brandName: 'Realme', modelName: 'GT Neo 3', socName: 'Dimensity 8100' },
+  {
+    brandName: 'Realme',
+    modelName: 'GT Neo 5 SE',
+    socName: 'Snapdragon 7+ Gen 2',
+  },
+  {
+    brandName: 'Realme',
+    modelName: 'GT Neo 5',
+    socName: 'Snapdragon 8+ Gen 1',
+  },
+  {
+    brandName: 'Realme',
+    modelName: 'GT Neo 6 SE',
+    socName: 'Snapdragon 7+ Gen 2',
+  },
+  { brandName: 'Realme', modelName: 'GT Neo 6', socName: 'Snapdragon 8 Gen 2' },
+
   // RedMagic
   { brandName: 'RedMagic', modelName: '6R', socName: 'Snapdragon 888' },
   { brandName: 'RedMagic', modelName: '7', socName: 'Snapdragon 8 Gen 1' },

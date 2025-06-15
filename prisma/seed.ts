@@ -37,6 +37,7 @@ async function main() {
   const clearDbTestDataArg = args.includes('--clear-test-data')
   const seedSocsOnly = args.includes('--socs-only')
   const seedDevicesOnly = args.includes('--devices-only')
+  const seedEmulatorsOnly = args.includes('--emulators-only')
 
   if (clearDbTestDataArg) {
     console.info('🧹 Clearing test data only...')
@@ -73,6 +74,20 @@ async function main() {
       console.info('✅ Devices seeded successfully!')
     } catch (error) {
       console.error('❌ Error seeding devices:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
+  if (seedEmulatorsOnly) {
+    console.info('🌱 Seeding emulators only...')
+    try {
+      await emulatorsSeeder(prisma)
+      console.info('✅ Emulators seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding emulators:', error)
       throw error
     } finally {
       await prisma.$disconnect()

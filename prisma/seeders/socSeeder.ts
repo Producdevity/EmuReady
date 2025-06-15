@@ -445,6 +445,22 @@ const socs: SoCData[] = [
     cpuCores: 8,
     gpuModel: 'Mali-G76 MC4',
   },
+  {
+    name: 'Helio G88',
+    manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    processNode: '12nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G52 MC2',
+  },
+  {
+    name: 'Helio G92 Max',
+    manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    processNode: '12nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G52',
+  },
 
   // Exynos
   {
