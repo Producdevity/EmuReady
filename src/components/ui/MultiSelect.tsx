@@ -61,9 +61,9 @@ function MultiSelect(props: Props) {
       const spaceBelow = viewportHeight - buttonRect.bottom
       const spaceAbove = buttonRect.top
 
-      // Estimate dropdown height (max-height is 240px + padding)
+      // Estimate dropdown height (max-height is 320px + padding)
       const estimatedDropdownHeight = Math.min(
-        280,
+        360,
         filteredOptions.length * 40 + 100,
       )
 
@@ -206,7 +206,7 @@ function MultiSelect(props: Props) {
 
         {isOpen && (
           <div
-            className={`absolute z-50 w-full bg-white dark:bg-gray-800
+            className={`absolute z-[9999] w-full bg-white dark:bg-gray-800
               border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg
               animate-in fade-in-0 zoom-in-95 duration-200 ${
                 dropdownPosition === 'top'
@@ -244,7 +244,7 @@ function MultiSelect(props: Props) {
               </div>
             </div>
 
-            <div className="max-h-60 overflow-y-auto p-1">
+            <div className="max-h-80 overflow-y-auto p-1">
               {sortedFilteredOptions.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                   No options found

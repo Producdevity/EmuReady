@@ -24,7 +24,7 @@ export const emulatorsRouter = createTRPCRouter({
 
       // Calculate actual offset based on page or use provided offset
       const actualOffset = input?.page ? (input.page - 1) * limit : offset
-      const effectiveLimit = Math.min(limit, 100) // Cap at 100 items per page
+      const effectiveLimit = Math.min(limit, 10000) // Cap at 10000 items per page for filter dropdowns
 
       // Build where clause for filtering
       const where: Prisma.EmulatorWhereInput | undefined = input?.search

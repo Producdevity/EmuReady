@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal, Autocomplete } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
@@ -27,11 +27,26 @@ function DeviceModal(props: Props) {
   const deviceBrandsQuery = api.deviceBrands.get.useQuery()
   const socsQuery = api.socs.get.useQuery()
 
-  const [brandId, setBrandId] = useState(props.deviceData?.brand.id ?? '')
-  const [modelName, setModelName] = useState(props.deviceData?.modelName ?? '')
-  const [socId, setSocId] = useState(props.deviceData?.soc?.id ?? '')
+  const [brandId, setBrandId] = useState('')
+  const [modelName, setModelName] = useState('')
+  const [socId, setSocId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Update form fields when deviceData changes
+  useEffect(() => {
+    if (props.deviceData) {
+      setBrandId(props.deviceData.brand.id)
+      setModelName(props.deviceData.modelName)
+      setSocId(props.deviceData.soc?.id ?? '')
+    } else {
+      setBrandId('')
+      setModelName('')
+      setSocId('')
+    }
+    setError('')
+    setSuccess('')
+  }, [props.deviceData, props.isOpen])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()

@@ -222,7 +222,7 @@ function ListingsPage() {
     )
 
   return (
-    <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
+    <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900 overflow-visible">
       <ListingFilters
         systemIds={listingsState.systemIds}
         deviceIds={listingsState.deviceIds}

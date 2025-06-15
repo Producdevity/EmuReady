@@ -200,7 +200,7 @@ function ListingFilters(props: FiltersProps) {
         style={{ zIndex: 10, overflow: 'visible' }}
       >
         <div
-          className={`${props.isCollapsed ? 'p-4' : 'p-6'} transition-all duration-400`}
+          className={`${props.isCollapsed ? 'p-4' : 'p-6'} transition-all duration-400 overflow-visible`}
         >
           <AnimatePresence mode="wait">
             {props.isCollapsed ? (

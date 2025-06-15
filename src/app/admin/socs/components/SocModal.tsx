@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
@@ -28,22 +28,35 @@ function SocModal(props: Props) {
   const createSoC = api.socs.create.useMutation()
   const updateSoC = api.socs.update.useMutation()
 
-  const [name, setName] = useState(props.socData?.name ?? '')
-  const [manufacturer, setManufacturer] = useState(
-    props.socData?.manufacturer ?? '',
-  )
-  const [architecture, setArchitecture] = useState(
-    props.socData?.architecture ?? '',
-  )
-  const [processNode, setProcessNode] = useState(
-    props.socData?.processNode ?? '',
-  )
-  const [cpuCores, setCpuCores] = useState(
-    props.socData?.cpuCores?.toString() ?? '',
-  )
-  const [gpuModel, setGpuModel] = useState(props.socData?.gpuModel ?? '')
+  const [name, setName] = useState('')
+  const [manufacturer, setManufacturer] = useState('')
+  const [architecture, setArchitecture] = useState('')
+  const [processNode, setProcessNode] = useState('')
+  const [cpuCores, setCpuCores] = useState('')
+  const [gpuModel, setGpuModel] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Update form fields when socData changes
+  useEffect(() => {
+    if (props.socData) {
+      setName(props.socData.name)
+      setManufacturer(props.socData.manufacturer)
+      setArchitecture(props.socData.architecture ?? '')
+      setProcessNode(props.socData.processNode ?? '')
+      setCpuCores(props.socData.cpuCores?.toString() ?? '')
+      setGpuModel(props.socData.gpuModel ?? '')
+    } else {
+      setName('')
+      setManufacturer('')
+      setArchitecture('')
+      setProcessNode('')
+      setCpuCores('')
+      setGpuModel('')
+    }
+    setError('')
+    setSuccess('')
+  }, [props.socData, props.isOpen])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
