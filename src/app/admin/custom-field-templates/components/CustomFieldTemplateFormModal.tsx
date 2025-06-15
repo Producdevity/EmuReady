@@ -261,7 +261,15 @@ function CustomFieldTemplateFormModal(props: Props) {
             : typeof field.defaultValue === 'number'
               ? String(field.defaultValue)
               : field.defaultValue,
-        placeholder: field.placeholder,
+        placeholder: (
+          [
+            CustomFieldType.TEXT,
+            CustomFieldType.TEXTAREA,
+            CustomFieldType.URL,
+          ] as CustomFieldType[]
+        ).includes(field.type)
+          ? field.placeholder || undefined
+          : undefined,
         isRequired: field.isRequired,
         displayOrder: index,
         // Range-specific fields
