@@ -54,11 +54,28 @@ function AddGamePage() {
     return () => clearTimeout(timer)
   }, [success, error])
 
+  // Redirect non-admin users to TGDB search page
+  useEffect(() => {
+    if (
+      isLoaded &&
+      user &&
+      userQuery.data &&
+      !hasPermission(userQuery.data.role, Role.ADMIN)
+    ) {
+      router.replace('/games/new/search')
+    }
+  }, [isLoaded, user, userQuery.data, router])
+
   if (!isLoaded || userQuery.isLoading) return <LoadingSpinner />
 
   if (!user || !userQuery.data) return <NotSignedInMessage />
 
   const isAdmin = hasPermission(userQuery.data.role, Role.ADMIN)
+
+  // If not admin, show loading while redirecting
+  if (!isAdmin) {
+    return <LoadingSpinner />
+  }
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -75,15 +92,8 @@ function AddGamePage() {
         imageUrl: imageUrl || undefined,
       })
 
-      if (isAdmin) {
-        setSuccess('Game added successfully!')
-        setTimeout(() => router.push(`/games/${result.id}`), 1500)
-      } else {
-        setSuccess(
-          'Game submitted for approval! You can now create listings for this game while it awaits admin approval.',
-        )
-        setTimeout(() => router.push(`/games/${result.id}`), 3000)
-      }
+      setSuccess('Game added successfully!')
+      setTimeout(() => router.push(`/games/${result.id}`), 1500)
     } catch (err) {
       console.error(err)
       setError(getErrorMessage(err, 'Failed to add game.'))
@@ -93,7 +103,7 @@ function AddGamePage() {
   return (
     <div className="w-full md:w-3xl mx-auto my-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-        Add New Game
+        Add New Game (Admin)
       </h1>
 
       {/* Method Selection */}
@@ -145,16 +155,13 @@ function AddGamePage() {
         </div>
       </div>
 
-      {!isAdmin && (
-        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Note:</strong> Games submitted by users require admin
-            approval before becoming visible to other users. You can create
-            listings for your submitted games immediately while they await
-            approval.
-          </p>
-        </div>
-      )}
+      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+        <p className="text-sm text-amber-800 dark:text-amber-200">
+          <strong>Admin Note:</strong> Manual entry is restricted to
+          administrators to maintain data quality. Regular users are
+          automatically redirected to the TGDB search method.
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>

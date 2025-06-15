@@ -67,62 +67,79 @@ function SearchForm(props: SearchFormProps) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            System (Optional)
-          </label>
-          <Autocomplete<SystemOption>
-            placeholder="Choose a system to filter results..."
-            value={selectedSystemId}
-            onChange={(value) => setSelectedSystemId(value ?? '')}
-            items={systemsQuery.data ?? []}
-            optionToValue={(option) => option.id}
-            optionToLabel={(option) => option.name}
-            filterKeys={['name']}
-            minCharsToTrigger={0}
-            disabled={systemsQuery.isLoading}
-            className="w-full"
-          />
-          {selectedSystem && !selectedSystem.tgdbPlatformId && (
-            <div className="mt-2 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-amber-800 dark:text-amber-200">
-                <p className="font-medium">Platform not mapped</p>
-                <p>
-                  This system isn&apos;t mapped to TheGamesDB. Search results
-                  may include games from all platforms.
-                </p>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              System (Optional)
+            </label>
+            <Autocomplete<SystemOption>
+              placeholder="Choose a system to filter results..."
+              value={selectedSystemId}
+              onChange={(value) => setSelectedSystemId(value ?? '')}
+              items={systemsQuery.data ?? []}
+              optionToValue={(option) => option.id}
+              optionToLabel={(option) => option.name}
+              filterKeys={['name']}
+              minCharsToTrigger={0}
+              disabled={systemsQuery.isLoading}
+              className="w-full"
+            />
+            {selectedSystem && !selectedSystem.tgdbPlatformId && (
+              <div className="mt-2 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  <p className="font-medium">Platform not mapped</p>
+                  <p>
+                    This system isn&apos;t mapped to TheGamesDB. Search results
+                    may include games from all platforms.
+                  </p>
+                </div>
               </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Game Title
+            </label>
+            <div className="flex gap-3">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Enter game title (e.g., Super Mario Bros, Zelda)"
+                className="flex-1"
+                disabled={props.isSearching}
+              />
+              <Button
+                type="submit"
+                disabled={!searchQuery.trim() || props.isSearching}
+                isLoading={props.isSearching}
+                className="px-6 whitespace-nowrap"
+              >
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
+                </>
+              </Button>
             </div>
-          )}
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Game Title
-          </label>
-          <div className="flex gap-3">
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Enter game title (e.g., Super Mario Bros, Zelda)"
-              className="flex-1"
-              disabled={props.isSearching}
-            />
-            <Button
-              type="submit"
-              disabled={!searchQuery.trim() || props.isSearching}
-              isLoading={props.isSearching}
-              className="h-full px-6"
-            >
-              <>
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </>
-            </Button>
-          </div>
+        {/* Mobile-friendly search button for smaller screens */}
+        <div className="lg:hidden">
+          <Button
+            type="submit"
+            disabled={!searchQuery.trim() || props.isSearching}
+            isLoading={props.isSearching}
+            className="w-full"
+          >
+            <>
+              <Search className="h-4 w-4 mr-2" />
+              Search Games
+            </>
+          </Button>
         </div>
       </form>
     </motion.div>

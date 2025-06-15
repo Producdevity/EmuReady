@@ -72,15 +72,18 @@ function GamesPage() {
     setPage(1)
   }
 
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const addGameHref = isAdmin ? '/games/new' : '/games/new/search'
+
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
-        {hasPermission(userQuery.data?.role, Role.ADMIN) && (
+        {user && (
           <Button asChild variant="fancy" className="hidden md:inline-flex">
-            <Link href="/games/new">Add Game</Link>
+            <Link href={addGameHref}>Add Game</Link>
           </Button>
         )}
       </div>
@@ -121,14 +124,16 @@ function GamesPage() {
           />
         )}
 
-        <div className="mt-12 text-center">
-          <Link
-            href="/games/new"
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium text-lg shadow-md hover:shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
-          >
-            Add New Game
-          </Link>
-        </div>
+        {user && (
+          <div className="mt-12 text-center">
+            <Link
+              href={addGameHref}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium text-lg shadow-md hover:shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
+            >
+              Add New Game
+            </Link>
+          </div>
+        )}
       </div>
     </main>
   )
