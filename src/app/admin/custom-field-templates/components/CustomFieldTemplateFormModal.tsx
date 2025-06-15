@@ -13,6 +13,7 @@ interface TemplateField {
   type: CustomFieldType
   options: { value: string; label: string }[]
   defaultValue?: string | boolean | number | null
+  placeholder?: string
   isRequired: boolean
   displayOrder: number
   // Range-specific fields
@@ -109,6 +110,7 @@ function CustomFieldTemplateFormModal(props: Props) {
           field.defaultValue === undefined
             ? null
             : (field.defaultValue as string | boolean | number | null),
+        placeholder: field.placeholder ?? '',
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
         rangeMin: field.rangeMin ?? 0,
@@ -161,6 +163,44 @@ function CustomFieldTemplateFormModal(props: Props) {
       } else if (field.label.length > 100) {
         newErrors[`field-${index}-label`] =
           'Field label must be 100 characters or less'
+      }
+
+      // Validate placeholder for text fields
+      if (
+        (field.type === CustomFieldType.TEXT ||
+          field.type === CustomFieldType.TEXTAREA ||
+          field.type === CustomFieldType.URL) &&
+        field.placeholder &&
+        field.placeholder.length > 200
+      ) {
+        newErrors[`field-${index}-placeholder`] =
+          'Placeholder must be 200 characters or less'
+      }
+
+      // Validate range fields
+      if (field.type === CustomFieldType.RANGE) {
+        const min = field.rangeMin ?? 0
+        const max = field.rangeMax ?? 100
+
+        if (min >= max) {
+          newErrors[`field-${index}-rangeMin`] =
+            'Minimum value must be less than maximum value'
+          newErrors[`field-${index}-rangeMax`] =
+            'Maximum value must be greater than minimum value'
+        }
+
+        if (field.rangeUnit && field.rangeUnit.length > 10) {
+          newErrors[`field-${index}-rangeUnit`] =
+            'Unit must be 10 characters or less'
+        }
+
+        if (
+          field.rangeDecimals !== undefined &&
+          (field.rangeDecimals < 0 || field.rangeDecimals > 5)
+        ) {
+          newErrors[`field-${index}-rangeDecimals`] =
+            'Decimal places must be between 0 and 5'
+        }
       }
 
       if (field.type === CustomFieldType.SELECT) {
@@ -221,6 +261,7 @@ function CustomFieldTemplateFormModal(props: Props) {
             : typeof field.defaultValue === 'number'
               ? String(field.defaultValue)
               : field.defaultValue,
+        placeholder: field.placeholder,
         isRequired: field.isRequired,
         displayOrder: index,
         // Range-specific fields
@@ -261,6 +302,7 @@ function CustomFieldTemplateFormModal(props: Props) {
         type: CustomFieldType.TEXT,
         options: [],
         defaultValue: null,
+        placeholder: '',
         isRequired: false,
         displayOrder: fields.length,
         rangeMin: 0,
@@ -562,6 +604,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                           updateField(fieldIndex, {
                             type: ev.target.value as CustomFieldType,
                             defaultValue: null, // Reset default value when type changes
+                            placeholder: '', // Reset placeholder when type changes
                           })
                         }
                       >
@@ -588,6 +631,38 @@ function CustomFieldTemplateFormModal(props: Props) {
                       </label>
                     </div>
                   </div>
+
+                  {/* Placeholder for TEXT, TEXTAREA, and URL fields */}
+                  {(field.type === CustomFieldType.TEXT ||
+                    field.type === CustomFieldType.TEXTAREA ||
+                    field.type === CustomFieldType.URL) && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Placeholder Text (Optional)
+                      </label>
+                      <Input
+                        type="text"
+                        value={field.placeholder || ''}
+                        onChange={(ev) =>
+                          updateField(fieldIndex, {
+                            placeholder: ev.target.value,
+                          })
+                        }
+                        placeholder={`e.g., Enter ${field.label.toLowerCase()}...`}
+                        maxLength={200}
+                        className={
+                          errors[`field-${fieldIndex}-placeholder`]
+                            ? 'border-red-300 dark:border-red-600'
+                            : ''
+                        }
+                      />
+                      {errors[`field-${fieldIndex}-placeholder`] && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors[`field-${fieldIndex}-placeholder`]}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Default Value Section */}
                   {(field.type === CustomFieldType.BOOLEAN ||
@@ -650,6 +725,153 @@ function CustomFieldTemplateFormModal(props: Props) {
                           Add options first to set a default value
                         </p>
                       ) : null}
+                    </div>
+                  )}
+
+                  {/* Enhanced Range Configuration */}
+                  {field.type === CustomFieldType.RANGE && (
+                    <div className="space-y-4 p-4 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+                      <h3 className="text-md font-medium text-gray-700 dark:text-gray-300">
+                        Range Configuration
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Minimum Value{' '}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={field.rangeMin ?? 0}
+                            onChange={(ev) =>
+                              updateField(fieldIndex, {
+                                rangeMin: parseFloat(ev.target.value) || 0,
+                              })
+                            }
+                            placeholder="0"
+                            className={
+                              errors[`field-${fieldIndex}-rangeMin`]
+                                ? 'border-red-300 dark:border-red-600'
+                                : ''
+                            }
+                          />
+                          {errors[`field-${fieldIndex}-rangeMin`] && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors[`field-${fieldIndex}-rangeMin`]}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Maximum Value{' '}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={field.rangeMax ?? 100}
+                            onChange={(ev) =>
+                              updateField(fieldIndex, {
+                                rangeMax: parseFloat(ev.target.value) || 100,
+                              })
+                            }
+                            placeholder="100"
+                            className={
+                              errors[`field-${fieldIndex}-rangeMax`]
+                                ? 'border-red-300 dark:border-red-600'
+                                : ''
+                            }
+                          />
+                          {errors[`field-${fieldIndex}-rangeMax`] && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors[`field-${fieldIndex}-rangeMax`]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Unit (Optional)
+                          </label>
+                          <Input
+                            type="text"
+                            value={field.rangeUnit || ''}
+                            onChange={(ev) =>
+                              updateField(fieldIndex, {
+                                rangeUnit: ev.target.value,
+                              })
+                            }
+                            placeholder="e.g., %, GB, MB"
+                            maxLength={10}
+                            className={
+                              errors[`field-${fieldIndex}-rangeUnit`]
+                                ? 'border-red-300 dark:border-red-600'
+                                : ''
+                            }
+                          />
+                          {errors[`field-${fieldIndex}-rangeUnit`] && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors[`field-${fieldIndex}-rangeUnit`]}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Decimal Places
+                          </label>
+                          <Input
+                            as="select"
+                            value={field.rangeDecimals ?? 0}
+                            onChange={(ev) =>
+                              updateField(fieldIndex, {
+                                rangeDecimals: parseInt(ev.target.value) || 0,
+                              })
+                            }
+                          >
+                            <option value="0">0 (integers)</option>
+                            <option value="1">1 decimal place</option>
+                            <option value="2">2 decimal places</option>
+                            <option value="3">3 decimal places</option>
+                          </Input>
+                          {errors[`field-${fieldIndex}-rangeDecimals`] && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors[`field-${fieldIndex}-rangeDecimals`]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Range Preview */}
+                      <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Preview
+                        </h4>
+                        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                          <span>
+                            Min: {field.rangeMin ?? 0}
+                            {field.rangeUnit}
+                          </span>
+                          <span>
+                            Range: {field.rangeMin ?? 0} -{' '}
+                            {field.rangeMax ?? 100}
+                            {field.rangeUnit}
+                          </span>
+                          <span>
+                            Max: {field.rangeMax ?? 100}
+                            {field.rangeUnit}
+                          </span>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                          Step:{' '}
+                          {field.rangeDecimals && field.rangeDecimals > 0
+                            ? Math.pow(10, -field.rangeDecimals).toFixed(
+                                field.rangeDecimals,
+                              )
+                            : '1'}
+                        </div>
+                      </div>
                     </div>
                   )}
 
