@@ -53,10 +53,13 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   // Debounced search to avoid API spam
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
 
-  const getSearchQuery = () =>
-    props.tgdbPlatformId
-      ? { query: debouncedSearchTerm, platformId: props.tgdbPlatformId }
-      : { query: debouncedSearchTerm }
+  const getSearchQuery = () => {
+    const baseQuery = { query: debouncedSearchTerm }
+    // Only add platformId if it's a valid number greater than 0
+    return props.tgdbPlatformId && props.tgdbPlatformId > 0
+      ? { ...baseQuery, tgdbPlatformId: props.tgdbPlatformId }
+      : baseQuery
+  }
 
   const searchQuery = api.tgdb.searchGameImages.useQuery(getSearchQuery(), {
     enabled: !useCustomUrl && debouncedSearchTerm.length >= 2,
@@ -77,15 +80,23 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         .flatMap((gameImages) => gameImages)
         .filter((image) => includeAllTypes || image.type === 'boxart')
 
-      setAllImages(images)
+      // Deduplicate images based on URL to prevent showing the same image twice
+      const uniqueImages = images.reduce(
+        (acc, image) => {
+          const existingImage = acc.find(
+            (existing) => existing.url === image.url,
+          )
+          if (!existingImage) {
+            acc.push(image)
+          }
+          return acc
+        },
+        [] as typeof images,
+      )
+
+      setAllImages(uniqueImages)
     }
-  }, [
-    searchQuery.data,
-    selectedImage,
-    useCustomUrl,
-    includeAllTypes,
-    onImageSelect,
-  ])
+  }, [searchQuery.data, useCustomUrl, includeAllTypes])
 
   // Handle search errors
   useEffect(() => {

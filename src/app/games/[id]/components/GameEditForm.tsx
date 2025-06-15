@@ -147,6 +147,8 @@ function GameEditForm(props: Props) {
         break
     }
     setShowImageSelector(false)
+    setIsLoading(false)
+    setError('')
   }
 
   const getCurrentImageUrl = () => {
@@ -187,6 +189,23 @@ function GameEditForm(props: Props) {
         setBannerUrl('')
         break
     }
+    // Reset loading state when clearing image
+    setIsLoading(false)
+    setError('')
+  }
+
+  // Reset loading state when switching tabs
+  const handleTabSwitch = (type: ImageType) => {
+    setActiveImageTab(type)
+    setIsLoading(false)
+    setError('')
+  }
+
+  // Reset loading state when closing image selector
+  const handleCloseImageSelector = () => {
+    setShowImageSelector(false)
+    setIsLoading(false)
+    setError('')
   }
 
   const imageTypes: ImageType[] = ['imageUrl', 'boxartUrl', 'bannerUrl']
@@ -242,7 +261,7 @@ function GameEditForm(props: Props) {
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setActiveImageTab(type)}
+                        onClick={() => handleTabSwitch(type)}
                         className={cn(
                           'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
                           activeImageTab === type
@@ -371,7 +390,7 @@ function GameEditForm(props: Props) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowImageSelector(false)}
+                onClick={handleCloseImageSelector}
                 className="h-8 w-8 p-0"
               >
                 ✕

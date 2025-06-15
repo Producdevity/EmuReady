@@ -310,13 +310,18 @@ export async function searchGameImages(
 
     // Process each game's images using functional approach
     gamesResponse.data.games.forEach((game) => {
-      const gameImages = [
-        ...createBoxartImages(game, gamesResponse),
-        ...createOtherImages(game, imagesResponse),
-      ]
+      const boxartImages = createBoxartImages(game, gamesResponse)
+      const otherImages = createOtherImages(game, imagesResponse)
 
-      if (gameImages.length > 0) {
-        gameImageMap.set(game.id, gameImages)
+      // Combine and deduplicate images based on URL
+      const allImages = [...boxartImages, ...otherImages]
+      const uniqueImages = allImages.reduce((acc, image) => {
+        const existingImage = acc.find((existing) => existing.url === image.url)
+        return existingImage ? acc : [...acc, image]
+      }, [] as GameImageOption[])
+
+      if (uniqueImages.length > 0) {
+        gameImageMap.set(game.id, uniqueImages)
       }
     })
 
@@ -346,16 +351,19 @@ function createBoxartImages(
 
   return boxartData
     .filter((boxart) => boxart.filename)
-    .map((boxart, index) => ({
-      filename: boxart.filename,
-      url: `${gamesResponse.include!.boxart!.base_url.original}${boxart.filename}`,
-      resolution: boxart.resolution,
-      id: boxart.id,
-      index, // Add index to ensure uniqueness
-    }))
+    .map((boxart, index) => {
+      const url = `${gamesResponse.include!.boxart!.base_url.original}${boxart.filename}`
+      return {
+        filename: boxart.filename,
+        url,
+        resolution: boxart.resolution,
+        id: boxart.id,
+        index, // Add index to ensure uniqueness
+      }
+    })
     .filter((boxart) => isValidImageUrl(boxart.url))
     .map((boxart) => ({
-      id: `tgdb-${game.id}-boxart-${boxart.id}-${boxart.index}`,
+      id: `tgdb-${game.id}-boxart-${boxart.id}`,
       url: boxart.url,
       type: 'boxart' as const,
       source: 'tgdb' as const,
@@ -385,14 +393,16 @@ function createOtherImages(
   return imagesResponse.data.base_url
     ? gameImagesData
         .filter((image) => image.filename)
-        .map((image, index) => ({
-          ...image,
-          url: `${imagesResponse.data.base_url!.original}${image.filename}`,
-          index, // Add index to ensure uniqueness
-        }))
+        .map((image) => {
+          const url = `${imagesResponse.data.base_url!.original}${image.filename}`
+          return {
+            ...image,
+            url,
+          }
+        })
         .filter((image) => isValidImageUrl(image.url))
         .map((image) => ({
-          id: `tgdb-${game.id}-${image.type}-${image.id}-${image.index}`,
+          id: `tgdb-${game.id}-${image.type}-${image.id}`,
           url: image.url,
           type: image.type as GameImageOption['type'],
           source: 'tgdb' as const,
