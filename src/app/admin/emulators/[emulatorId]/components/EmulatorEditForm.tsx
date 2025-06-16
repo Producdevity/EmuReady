@@ -202,6 +202,7 @@ function EmulatorEditForm(props: Props) {
               <EmulatorIcon
                 logo={logoFileName}
                 name={logoFileName.replace('.png', '')}
+                className="w-full"
                 showLogo={true}
                 size="sm"
               />
