@@ -88,6 +88,7 @@ function AdminDevicesPage() {
 
   const handleModalSuccess = () => {
     devicesQuery.refetch().catch(console.error)
+    devicesStatsQuery.refetch().catch(console.error)
     closeModal()
   }
 

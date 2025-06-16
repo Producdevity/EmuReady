@@ -531,10 +531,18 @@ function AddListingPage() {
   )
 }
 
-export default function Page() {
+function NewListingPage() {
   return (
-    <Suspense fallback={<LoadingSpinner text="Loading page..." />}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-96">
+          <LoadingSpinner />
+        </div>
+      }
+    >
       <AddListingPage />
     </Suspense>
   )
 }
+
+export default NewListingPage

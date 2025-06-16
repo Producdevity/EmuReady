@@ -2,8 +2,8 @@
 
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -17,9 +17,10 @@ import SearchResults from './components/SearchResults'
 import NotSignedInMessage from '../components/NotSignedInMessage'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
-function GameSearchPage() {
+function GameSearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const { user, isLoaded } = useUser()
 
   // Get values directly from URL
@@ -65,12 +66,10 @@ function GameSearchPage() {
         params.set('system', systemId)
       }
       const searchString = params.toString()
-      const newUrl = searchString
-        ? `?${searchString}`
-        : window.location.pathname
+      const newUrl = searchString ? `?${searchString}` : pathname
       router.replace(newUrl, { scroll: false })
     },
-    [router],
+    [router, pathname],
   )
 
   const handleSearch = useCallback(
@@ -308,6 +307,20 @@ function GameSearchPage() {
         />
       </div>
     </div>
+  )
+}
+
+function GameSearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-96">
+          <LoadingSpinner />
+        </div>
+      }
+    >
+      <GameSearchContent />
+    </Suspense>
   )
 }
 

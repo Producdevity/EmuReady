@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Search, Info } from 'lucide-react'
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useState, useEffect, type FormEvent, type KeyboardEvent } from 'react'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import { api } from '@/lib/api'
 import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
@@ -25,6 +25,15 @@ function SearchForm(props: Props) {
     props.initialSystemId ?? '',
   )
   const [searchQuery, setSearchQuery] = useState(props.initialQuery ?? '')
+
+  // Sync local state with prop changes
+  useEffect(() => {
+    setSelectedSystemId(props.initialSystemId ?? '')
+  }, [props.initialSystemId])
+
+  useEffect(() => {
+    setSearchQuery(props.initialQuery ?? '')
+  }, [props.initialQuery])
 
   const systemsQuery = api.systems.get.useQuery()
 
