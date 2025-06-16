@@ -223,14 +223,10 @@ export const devicesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const existingDevice = await ctx.prisma.device.findUnique({
         where: { id: input.id },
-        include: {
-          _count: { select: { listings: true } },
-        },
+        include: { _count: { select: { listings: true } } },
       })
 
-      if (!existingDevice) {
-        return ResourceError.device.notFound()
-      }
+      if (!existingDevice) return ResourceError.device.notFound()
 
       if (existingDevice._count.listings > 0) {
         return AppError.conflict(
@@ -238,9 +234,7 @@ export const devicesRouter = createTRPCRouter({
         )
       }
 
-      return ctx.prisma.device.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
 
   stats: adminProcedure.query(async ({ ctx }) => {
