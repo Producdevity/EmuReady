@@ -55,7 +55,7 @@ const eslintConfig = [
       'no-useless-escape': 'off',
       'no-case-declarations': 'off',
       'no-prototype-builtins': 'off',
-      'no-redeclare': 'error',
+      'no-redeclare': 'off',
     },
   },
 
@@ -80,6 +80,7 @@ const eslintConfig = [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
+      '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
