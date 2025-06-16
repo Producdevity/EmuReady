@@ -168,6 +168,11 @@ const emulators: EmulatorData[] = [
     supportedSystemNames: ['Nintendo Switch'],
     logo: 'melonx.png',
   },
+  {
+    name: 'Lime3DS',
+    supportedSystemNames: ['Nintendo 3DS'],
+    logo: 'lime3ds.png',
+  },
 ]
 
 async function emulatorsSeeder(prisma: PrismaClient) {

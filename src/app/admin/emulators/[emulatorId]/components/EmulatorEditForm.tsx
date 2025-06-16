@@ -37,6 +37,7 @@ const logoOptions = [
   'gamehub.png',
   'horizon.png',
   'lemuroid.png',
+  'lime3ds.png',
   'melonds.png',
   'melonx.png',
   'micewine.png',
