@@ -19,6 +19,7 @@ export default [
     ignores: [
       // Config files
       'eslint.config.mjs',
+      'lint-staged.config.mjs',
       'next.config.ts',
 
       // Next.js build output and cache
@@ -72,7 +73,7 @@ export default [
   js.configs.recommended,
 
   // Next.js configuration via FlatCompat for compatibility
-  ...compat.extends('next/core-web-vitals'),
+  ...compat.extends('next', 'next/core-web-vitals'),
 
   // Essential globals configuration
   {
