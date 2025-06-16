@@ -122,4 +122,30 @@ export const systemsRouter = createTRPCRouter({
         where: { id: input.id },
       })
     }),
+
+  stats: adminProcedure.query(async ({ ctx }) => {
+    const [total, withGames, withoutGames] = await Promise.all([
+      ctx.prisma.system.count(),
+      ctx.prisma.system.count({
+        where: {
+          games: {
+            some: {},
+          },
+        },
+      }),
+      ctx.prisma.system.count({
+        where: {
+          games: {
+            none: {},
+          },
+        },
+      }),
+    ])
+
+    return {
+      total,
+      withGames,
+      withoutGames,
+    }
+  }),
 })

@@ -496,7 +496,7 @@ function Autocomplete<T extends AutocompleteOptionBase>({
             ref={listRef}
             id="autocomplete-list"
             role="listbox"
-            className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
+            className="absolute z-[70] mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
           >
             {isLoading && (
               <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">

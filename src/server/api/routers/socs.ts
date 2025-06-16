@@ -29,24 +29,58 @@ export const socsRouter = createTRPCRouter({
     // Use reasonable limits: 100 for admin pages, 20 for regular pagination
     const effectiveLimit = Math.min(limit, limit > 100 ? 100 : limit)
 
-    // Build where clause for filtering
+    // Build where clause for filtering with more restrictive search
     const where: Prisma.SoCWhereInput = search
       ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { manufacturer: { contains: search, mode: 'insensitive' } },
-            { architecture: { contains: search, mode: 'insensitive' } },
-            { processNode: { contains: search, mode: 'insensitive' } },
-            { gpuModel: { contains: search, mode: 'insensitive' } },
-            // Combined manufacturer + name search (e.g., "qualcomm snapdragon")
+            // Exact name match (highest priority)
+            { name: { equals: search, mode: 'insensitive' as const } },
+            // Exact manufacturer match
+            { manufacturer: { equals: search, mode: 'insensitive' as const } },
+            // Name starts with search term
+            { name: { startsWith: search, mode: 'insensitive' as const } },
+            // Manufacturer starts with search term
             {
-              AND: search.split(' ').map((term) => ({
-                OR: [
-                  { manufacturer: { contains: term, mode: 'insensitive' } },
-                  { name: { contains: term, mode: 'insensitive' } },
-                ],
-              })),
+              manufacturer: {
+                startsWith: search,
+                mode: 'insensitive' as const,
+              },
             },
+            // Only allow contains search for longer terms (3+ characters)
+            ...(search.length >= 3
+              ? [
+                  { name: { contains: search, mode: 'insensitive' as const } },
+                  {
+                    manufacturer: {
+                      contains: search,
+                      mode: 'insensitive' as const,
+                    },
+                  },
+                ]
+              : []),
+            // Combined manufacturer + name search for multi-word terms only
+            ...(search.includes(' ')
+              ? [
+                  {
+                    AND: search.split(' ').map((term) => ({
+                      OR: [
+                        {
+                          manufacturer: {
+                            contains: term,
+                            mode: 'insensitive' as const,
+                          },
+                        },
+                        {
+                          name: {
+                            contains: term,
+                            mode: 'insensitive' as const,
+                          },
+                        },
+                      ],
+                    })),
+                  },
+                ]
+              : []),
           ],
         }
       : {}
@@ -221,5 +255,31 @@ export const socsRouter = createTRPCRouter({
     })
 
     return manufacturers.map((soc) => soc.manufacturer)
+  }),
+
+  stats: adminProcedure.query(async ({ ctx }) => {
+    const [total, withDevices, withoutDevices] = await Promise.all([
+      ctx.prisma.soC.count(),
+      ctx.prisma.soC.count({
+        where: {
+          devices: {
+            some: {},
+          },
+        },
+      }),
+      ctx.prisma.soC.count({
+        where: {
+          devices: {
+            none: {},
+          },
+        },
+      }),
+    ])
+
+    return {
+      total,
+      withDevices,
+      withoutDevices,
+    }
   }),
 })

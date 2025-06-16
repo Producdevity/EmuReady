@@ -223,13 +223,51 @@ export const devicesRouter = createTRPCRouter({
   delete: adminProcedure
     .input(DeleteDeviceSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if device is used in any listings
-      const listingsCount = await ctx.prisma.listing.count({
-        where: { deviceId: input.id },
+      const existingDevice = await ctx.prisma.device.findUnique({
+        where: { id: input.id },
+        include: {
+          _count: { select: { listings: true } },
+        },
       })
 
-      if (listingsCount > 0) return ResourceError.device.inUse(listingsCount)
+      if (!existingDevice) {
+        return ResourceError.device.notFound()
+      }
 
-      return ctx.prisma.device.delete({ where: { id: input.id } })
+      if (existingDevice._count.listings > 0) {
+        return AppError.conflict(
+          `Cannot delete device "${existingDevice.modelName}" because it has ${existingDevice._count.listings} active listing(s). Please remove all listings for this device first.`,
+        )
+      }
+
+      return ctx.prisma.device.delete({
+        where: { id: input.id },
+      })
     }),
+
+  stats: adminProcedure.query(async ({ ctx }) => {
+    const [total, withListings, withoutListings] = await Promise.all([
+      ctx.prisma.device.count(),
+      ctx.prisma.device.count({
+        where: {
+          listings: {
+            some: {},
+          },
+        },
+      }),
+      ctx.prisma.device.count({
+        where: {
+          listings: {
+            none: {},
+          },
+        },
+      }),
+    ])
+
+    return {
+      total,
+      withListings,
+      withoutListings,
+    }
+  }),
 })

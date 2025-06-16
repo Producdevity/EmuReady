@@ -2,8 +2,8 @@
 
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
-import { useState, useCallback, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -19,7 +19,13 @@ import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 function GameSearchPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, isLoaded } = useUser()
+
+  // Get values directly from URL
+  const urlQuery = searchParams.get('q') ?? ''
+  const urlSystemId = searchParams.get('system') ?? ''
+
   const [searchResults, setSearchResults] =
     useState<TGDBGamesByNameResponse | null>(null)
   const [selectedGame, setSelectedGame] = useState<TGDBGame | null>(null)
@@ -48,9 +54,32 @@ function GameSearchPage() {
     },
   )
 
+  // Update URL when search parameters change
+  const updateSearchParams = useCallback(
+    (query: string, systemId?: string) => {
+      const params = new URLSearchParams()
+      if (query.trim()) {
+        params.set('q', query.trim())
+      }
+      if (systemId) {
+        params.set('system', systemId)
+      }
+      const searchString = params.toString()
+      const newUrl = searchString
+        ? `?${searchString}`
+        : window.location.pathname
+      router.replace(newUrl, { scroll: false })
+    },
+    [router],
+  )
+
   const handleSearch = useCallback(
-    async (query: string, platformId?: number) => {
+    async (query: string, platformId?: number, systemId?: string) => {
       setIsSearching(true)
+
+      // Update URL with search parameters
+      updateSearchParams(query, systemId)
+
       try {
         const results = await utils.tgdb.searchGames.fetch({
           query,
@@ -64,8 +93,23 @@ function GameSearchPage() {
         setIsSearching(false)
       }
     },
-    [utils],
+    [utils, updateSearchParams],
   )
+
+  // Auto-search on page load if URL has parameters
+  useEffect(() => {
+    if (urlQuery && systemsQuery.data && !searchResults) {
+      const selectedSystem = urlSystemId
+        ? systemsQuery.data.find((system) => system.id === urlSystemId)
+        : null
+
+      handleSearch(
+        urlQuery,
+        selectedSystem?.tgdbPlatformId ?? undefined,
+        urlSystemId || undefined,
+      ).catch(console.error)
+    }
+  }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
 
   const handlePreview = useCallback((game: TGDBGame) => {
     setSelectedGame(game)
@@ -138,6 +182,9 @@ function GameSearchPage() {
         }
 
         const newGame = await createGame.mutateAsync(gameData)
+
+        // Invalidate the existing games query to update the UI immediately
+        await utils.games.checkExistingByTgdbIds.invalidate()
 
         // Show success message and redirect
         if (isAdmin) {
@@ -226,7 +273,12 @@ function GameSearchPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SearchHeader />
 
-        <SearchForm onSearch={handleSearch} isSearching={isSearching} />
+        <SearchForm
+          onSearch={handleSearch}
+          isSearching={isSearching}
+          initialQuery={urlQuery}
+          initialSystemId={urlSystemId}
+        />
 
         {isSearching && (
           <motion.div

@@ -20,7 +20,7 @@ function DeviceModal(props: Props) {
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deviceBrandsQuery = api.deviceBrands.get.useQuery()
-  const socsQuery = api.socs.get.useQuery()
+  const socsQuery = api.socs.get.useQuery({ limit: 1000 })
 
   const [brandId, setBrandId] = useState('')
   const [modelName, setModelName] = useState('')

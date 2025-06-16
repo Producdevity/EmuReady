@@ -13,14 +13,18 @@ interface SystemOption extends AutocompleteOptionBase {
   tgdbPlatformId?: number | null
 }
 
-interface SearchFormProps {
-  onSearch: (query: string, platformId?: number) => void
+interface Props {
+  onSearch: (query: string, platformId?: number, systemId?: string) => void
   isSearching: boolean
+  initialQuery?: string
+  initialSystemId?: string
 }
 
-function SearchForm(props: SearchFormProps) {
-  const [selectedSystemId, setSelectedSystemId] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
+function SearchForm(props: Props) {
+  const [selectedSystemId, setSelectedSystemId] = useState(
+    props.initialSystemId ?? '',
+  )
+  const [searchQuery, setSearchQuery] = useState(props.initialQuery ?? '')
 
   const systemsQuery = api.systems.get.useQuery()
 
@@ -34,6 +38,7 @@ function SearchForm(props: SearchFormProps) {
     props.onSearch(
       searchQuery.trim(),
       selectedSystem?.tgdbPlatformId ?? undefined,
+      selectedSystemId || undefined,
     )
   }
 
@@ -45,6 +50,7 @@ function SearchForm(props: SearchFormProps) {
     props.onSearch(
       searchQuery.trim(),
       selectedSystem?.tgdbPlatformId ?? undefined,
+      selectedSystemId || undefined,
     )
   }
 

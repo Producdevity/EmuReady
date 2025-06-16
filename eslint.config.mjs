@@ -1,110 +1,74 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import js from '@eslint/js'
 import { FlatCompat } from '@eslint/eslintrc'
-import importPlugin from 'eslint-plugin-import'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
+import importPlugin from 'eslint-plugin-import'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
 const compat = new FlatCompat({
   baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
 })
 
-export default [
+const eslintConfig = [
+  // Ignore rules
   {
     ignores: [
-      // Config files
-      'eslint.config.mjs',
-      'lint-staged.config.mjs',
-      'next.config.ts',
-
-      // Next.js build output and cache
-      '.next/',
-      'out/',
-
-      // Node modules
       'node_modules/',
-
-      // Build and distribution directories
+      '.next/',
       'dist/',
       'build/',
-
-      // Prisma generated client code
-      'prisma/generated/**',
-
-      // Test output/coverage directories
+      'public/',
       'coverage/',
-      'test-results/',
-      'tests/.auth',
-      'playwright-report/',
-      'blob-report/',
-
-      // IDE and editor directories
-      '.claude/',
-      '.cursor/',
-      '.vscode/',
-      '.idea/',
-
-      // Vercel deployment files
-      '.vercel/',
-
-      // Log files
+      'prisma/generated/**',
       '*.log',
-      'npm-debug.log*',
-      'yarn-debug.log*',
-      'yarn-error.log*',
-      '.pnpm-debug.log*',
-
-      // OS generated files
-      '.DS_Store',
-      '*.pem',
-
-      // TypeScript build info
       '*.tsbuildinfo',
       'next-env.d.ts',
+      '.vercel/',
     ],
   },
 
-  // JavaScript base configuration
-  js.configs.recommended,
+  // Next.js + Prettier via FlatCompat
+  ...compat.config({
+    extends: ['next/core-web-vitals', 'next/typescript', 'prettier'],
+  }),
 
-  // Next.js configuration via FlatCompat for compatibility
-  ...compat.extends('next', 'next/core-web-vitals'),
-
-  // Essential globals configuration
+  // JS and TS global config
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
       globals: {
         React: 'readonly',
         NodeJS: 'readonly',
       },
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
+    },
+    rules: {
+      // Your custom JS rules
+      'prefer-template': 'error',
+      'no-useless-escape': 'off',
+      'no-case-declarations': 'off',
+      'no-prototype-builtins': 'off',
+      'no-redeclare': 'error',
     },
   },
 
-  // TypeScript configuration
+  // TypeScript config
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
+        project: './tsconfig.json',
         ecmaVersion: 'latest',
         sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
-        project: './tsconfig.json',
+        ecmaFeatures: { jsx: true },
       },
     },
     plugins: {
@@ -112,18 +76,6 @@ export default [
     },
     rules: {
       ...typescriptEslint.configs.recommended.rules,
-    },
-  },
-
-  // Custom rules for the project
-  {
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    rules: {
-      'prefer-template': 'error',
-      'no-useless-escape': 'off',
-      'no-case-declarations': 'off',
-      'no-prototype-builtins': 'off',
-      'no-redeclare': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
@@ -140,18 +92,15 @@ export default [
     },
   },
 
-  // Import plugin configuration
+  // Import plugin
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
-    ignores: ['eslint.config.mjs', 'next.config.ts'],
     plugins: {
       import: importPlugin,
     },
     settings: {
       'import/resolver': {
-        typescript: {
-          project: './tsconfig.json',
-        },
+        typescript: { project: './tsconfig.json' },
         node: {
           extensions: ['.js', '.jsx', '.ts', '.tsx'],
         },
@@ -161,39 +110,22 @@ export default [
       },
     },
     rules: {
-      // Import order and sorting - libraries first, then local files
       'import/order': [
         'error',
         {
           groups: [
-            'builtin', // Node.js built-in modules
-            'external', // External packages from node_modules
-            'internal', // Internal modules (your own modules)
-            ['parent', 'sibling'], // Relative imports from parent/sibling directories
-            'index', // Index imports
-            'type', // TypeScript type imports
+            'builtin',
+            'external',
+            'internal',
+            ['parent', 'sibling'],
+            'index',
+            'type',
           ],
           pathGroups: [
-            {
-              pattern: '@/**',
-              group: 'internal',
-              position: 'before',
-            },
-            {
-              pattern: '~/**',
-              group: 'internal',
-              position: 'before',
-            },
-            {
-              pattern: './**.module.css',
-              group: 'sibling',
-              position: 'after',
-            },
-            {
-              pattern: './**.css',
-              group: 'sibling',
-              position: 'after',
-            },
+            { pattern: '@/**', group: 'internal', position: 'before' },
+            { pattern: '~/**', group: 'internal', position: 'before' },
+            { pattern: './**.module.css', group: 'sibling', position: 'after' },
+            { pattern: './**.css', group: 'sibling', position: 'after' },
           ],
           pathGroupsExcludedImportTypes: ['type'],
           'newlines-between': 'never',
@@ -204,10 +136,7 @@ export default [
           distinctGroup: false,
         },
       ],
-
-      // Additional import rules for clean code
       'import/first': 'error',
-      'import/newline-after-import': 'off',
       'import/no-duplicates': 'error',
       'import/extensions': [
         'error',
@@ -222,21 +151,23 @@ export default [
     },
   },
 
-  // UI components - allow circular dependencies for component index files
+  // UI component import cycle override
   {
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: {
-      'import/no-cycle': 'off', // UI components often have legitimate circular dependencies
+      'import/no-cycle': 'off',
     },
   },
 
-  // Test files specific configuration
+  // Test file rules
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@next/next/no-img-element': 'off',
-      'import/no-cycle': 'off', // Tests don't need strict dependency checking
+      'import/no-cycle': 'off',
     },
   },
 ]
+
+export default eslintConfig
