@@ -1,6 +1,10 @@
 import { keys } from 'remeda'
 import { ResourceError } from '@/lib/errors'
-import { applyTrustAction, canUserAutoApprove } from '@/lib/trust/service'
+import {
+  applyTrustAction,
+  canUserAutoApprove,
+  reverseTrustAction,
+} from '@/lib/trust/service'
 import {
   CreateListingSchema,
   CreateVoteSchema,
@@ -445,12 +449,12 @@ export const coreRouter = createTRPCRouter({
           where: { userId_listingId: { userId, listingId: input.listingId } },
         })
 
-        // Apply reverse trust action when vote is removed
-        await applyTrustAction({
+        // Properly reverse the original trust action when vote is removed
+        await reverseTrustAction({
           userId,
           action: existingVote.value
-            ? TrustAction.DOWNVOTE
-            : TrustAction.UPVOTE,
+            ? TrustAction.UPVOTE
+            : TrustAction.DOWNVOTE,
           context: { listingId: input.listingId, reason: 'vote_removed' },
         })
 
@@ -463,10 +467,10 @@ export const coreRouter = createTRPCRouter({
         data: { value: input.value },
       })
 
-      // Apply trust action for vote change (remove old, add new)
-      await applyTrustAction({
+      // Apply trust action for vote change (properly reverse old, add new)
+      await reverseTrustAction({
         userId,
-        action: existingVote.value ? TrustAction.DOWNVOTE : TrustAction.UPVOTE,
+        action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
         context: { listingId: input.listingId, reason: 'vote_changed_from' },
       })
       await applyTrustAction({

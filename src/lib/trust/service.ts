@@ -21,6 +21,12 @@ interface ApplyTrustActionParams {
   context?: TrustActionContext
 }
 
+interface ReverseTrustActionParams {
+  userId: string
+  action: TrustAction
+  context?: TrustActionContext
+}
+
 export async function applyTrustAction(
   params: ApplyTrustActionParams,
 ): Promise<void> {
@@ -59,6 +65,49 @@ export async function applyTrustAction(
     })
   } catch (error) {
     console.error('Failed to apply trust action:', error)
+    throw new Error('Failed to update trust score')
+  }
+}
+
+export async function reverseTrustAction(
+  params: ReverseTrustActionParams,
+): Promise<void> {
+  const { userId, action, context = {} } = params
+
+  // Validate action exists
+  if (!TRUST_ACTIONS[action]) {
+    throw new Error(`Invalid trust action: ${action}`)
+  }
+
+  // Apply the negative weight to reverse the action
+  const weight = -TRUST_ACTIONS[action].weight
+
+  try {
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // Update user's trust score
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: {
+            increment: weight,
+          },
+          lastActiveAt: new Date(),
+        },
+      })
+
+      // Create audit log entry with negative weight
+      await tx.trustActionLog.create({
+        data: {
+          userId,
+          action,
+          weight,
+          metadata: JSON.parse(JSON.stringify(context)),
+        },
+      })
+    })
+  } catch (error) {
+    console.error('Failed to reverse trust action:', error)
     throw new Error('Failed to update trust score')
   }
 }
