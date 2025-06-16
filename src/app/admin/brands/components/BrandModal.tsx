@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, useEffect } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
@@ -17,9 +17,27 @@ interface Props {
 function BrandModal(props: Props) {
   const createBrand = api.deviceBrands.create.useMutation()
   const updateBrand = api.deviceBrands.update.useMutation()
-  const [name, setName] = useState(props.brandName)
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Update form fields when props change or modal opens
+  useEffect(() => {
+    if (props.isOpen) {
+      setName(props.brandName || '')
+      setError('')
+      setSuccess('')
+    }
+  }, [props.isOpen, props.brandName])
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!props.isOpen) {
+      setName('')
+      setError('')
+      setSuccess('')
+    }
+  }, [props.isOpen])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -38,7 +56,7 @@ function BrandModal(props: Props) {
         } satisfies RouterInput['deviceBrands']['create'])
         setSuccess('Brand created!')
       }
-      setName('')
+
       props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save brand.'))

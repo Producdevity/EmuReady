@@ -11,7 +11,7 @@ import {
 } from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'
 import { realtimeNotificationService } from './realtimeService'
-import { notificationTemplateEngine } from './templates'
+import { notificationTemplateEngine, type TemplateContext } from './templates'
 import type {
   NotificationData,
   NotificationServiceConfig,
@@ -97,13 +97,16 @@ export class NotificationService {
         return null
       }
 
+      // Enrich context with database data
+      const enrichedContext = await this.enrichContextWithData(
+        eventData,
+        notificationType,
+      )
+
       // Generate notification content
       const template = notificationTemplateEngine.generateTemplate(
         notificationType,
-        {
-          eventData,
-          userId,
-        },
+        enrichedContext,
       )
 
       // Create notification
@@ -530,6 +533,179 @@ export class NotificationService {
       where,
       select: { id: true },
     })
+  }
+
+  private async enrichContextWithData(
+    eventData: NotificationEventData,
+    notificationType: NotificationType,
+  ): Promise<TemplateContext> {
+    const context: TemplateContext = {}
+    const payload = eventData.payload || {}
+
+    try {
+      // Get triggering user info
+      if (eventData.triggeredBy) {
+        const user = await prisma.user.findUnique({
+          where: { id: eventData.triggeredBy },
+          select: { name: true },
+        })
+        context.userName = user?.name || undefined
+      }
+
+      // Enrich based on notification type and available data
+      if (payload.listingId) {
+        const listing = await prisma.listing.findUnique({
+          where: { id: payload.listingId as string },
+          include: {
+            game: {
+              select: { title: true, id: true },
+            },
+            device: {
+              select: {
+                modelName: true,
+                id: true,
+                brand: { select: { name: true } },
+              },
+            },
+            emulator: {
+              select: { name: true, id: true },
+            },
+          },
+        })
+
+        if (listing) {
+          context.listingId = listing.id
+          context.listingTitle = listing.game.title
+          context.gameTitle = listing.game.title
+          context.gameId = listing.game.id
+          context.deviceName = `${listing.device.brand.name} ${listing.device.modelName}`
+          context.deviceId = listing.device.id
+          context.emulatorName = listing.emulator.name
+          context.emulatorId = listing.emulator.id
+        }
+      }
+
+      // Handle comment-specific data
+      if (
+        payload.commentId &&
+        ['LISTING_COMMENT', 'COMMENT_REPLY', 'USER_MENTION'].includes(
+          notificationType,
+        )
+      ) {
+        const comment = await prisma.comment.findUnique({
+          where: { id: payload.commentId as string },
+          select: {
+            id: true,
+            content: true,
+            listingId: true,
+            parentId: true,
+          },
+        })
+
+        if (comment) {
+          context.commentId = comment.id
+          context.commentText = comment.content
+          context.listingId = comment.listingId
+          context.parentCommentId = comment.parentId || undefined
+
+          // If we don't have listing data yet, fetch it
+          if (!context.listingTitle && comment.listingId) {
+            const listing = await prisma.listing.findUnique({
+              where: { id: comment.listingId },
+              include: {
+                game: { select: { title: true } },
+              },
+            })
+            if (listing) {
+              context.listingTitle = listing.game.title
+              context.listingId = listing.id
+            }
+          }
+        }
+      }
+
+      // Handle game-specific data
+      if (payload.gameId) {
+        const game = await prisma.game.findUnique({
+          where: { id: payload.gameId as string },
+          select: { title: true, id: true },
+        })
+        if (game) {
+          context.gameId = game.id
+          context.gameTitle = game.title
+        }
+      }
+
+      // Handle device-specific data for NEW_DEVICE_LISTING
+      if (payload.deviceId && notificationType === 'NEW_DEVICE_LISTING') {
+        const device = await prisma.device.findUnique({
+          where: { id: payload.deviceId as string },
+          include: {
+            brand: { select: { name: true } },
+          },
+        })
+        if (device) {
+          context.deviceId = device.id
+          context.deviceName = `${device.brand.name} ${device.modelName}`
+        }
+      }
+
+      // Handle SOC-specific data for NEW_SOC_LISTING
+      if (payload.socId && notificationType === 'NEW_SOC_LISTING') {
+        const soc = await prisma.soC.findUnique({
+          where: { id: payload.socId as string },
+          select: { id: true, name: true, manufacturer: true },
+        })
+        if (soc) {
+          context.socId = soc.id
+          context.socName = `${soc.manufacturer} ${soc.name}`
+        }
+      }
+
+      // Handle emulator-specific data
+      if (payload.emulatorId) {
+        const emulator = await prisma.emulator.findUnique({
+          where: { id: payload.emulatorId as string },
+          select: { id: true, name: true },
+        })
+        if (emulator) {
+          context.emulatorId = emulator.id
+          context.emulatorName = emulator.name
+        }
+      }
+
+      // Handle moderation-specific data
+      if (['LISTING_APPROVED', 'LISTING_REJECTED'].includes(notificationType)) {
+        if (payload.approvedBy) {
+          const approver = await prisma.user.findUnique({
+            where: { id: payload.approvedBy as string },
+            select: { name: true },
+          })
+          context.approvedBy = approver?.name || undefined
+        }
+        if (payload.rejectedBy) {
+          const rejector = await prisma.user.findUnique({
+            where: { id: payload.rejectedBy as string },
+            select: { name: true },
+          })
+          context.rejectedBy = rejector?.name || undefined
+        }
+        context.rejectionReason = payload.rejectionReason as string
+        context.approvedAt = payload.approvedAt as string
+        context.rejectedAt = payload.rejectedAt as string
+      }
+
+      // Copy over any additional metadata
+      Object.keys(payload).forEach((key) => {
+        if (!context[key]) {
+          context[key] = payload[key] as unknown
+        }
+      })
+    } catch (error) {
+      console.error('Error enriching notification context:', error)
+    }
+
+    return context
   }
 }
 

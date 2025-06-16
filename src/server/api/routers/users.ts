@@ -76,6 +76,7 @@ export const usersRouter = createTRPCRouter({
         bio: true,
         profileImage: true,
         role: true,
+        trustScore: true,
         createdAt: true,
         listings: {
           select: {

@@ -1,0 +1,246 @@
+import { prisma } from '@/server/db'
+import { TrustAction } from '@orm'
+import {
+  TRUST_ACTIONS,
+  TRUST_CONFIG,
+  getTrustLevel,
+  hasTrustLevel,
+} from './config'
+
+interface TrustActionContext {
+  listingId?: string
+  targetUserId?: string
+  voteType?: 'up' | 'down'
+  adminUserId?: string
+  reason?: string
+}
+
+interface ApplyTrustActionParams {
+  userId: string
+  action: TrustAction
+  context?: TrustActionContext
+}
+
+export async function applyTrustAction(
+  params: ApplyTrustActionParams,
+): Promise<void> {
+  const { userId, action, context = {} } = params
+
+  // Validate action exists
+  if (!TRUST_ACTIONS[action]) {
+    throw new Error(`Invalid trust action: ${action}`)
+  }
+
+  const weight = TRUST_ACTIONS[action].weight
+
+  try {
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // Update user's trust score
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: {
+            increment: weight,
+          },
+          lastActiveAt: new Date(),
+        },
+      })
+
+      // Create audit log entry
+      await tx.trustActionLog.create({
+        data: {
+          userId,
+          action,
+          weight,
+          metadata: JSON.parse(JSON.stringify(context)),
+        },
+      })
+    })
+  } catch (error) {
+    console.error('Failed to apply trust action:', error)
+    throw new Error('Failed to update trust score')
+  }
+}
+
+export async function validateTrustActionRate(
+  userId: string,
+  action: TrustAction,
+): Promise<boolean> {
+  // Check daily action limit
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const todayActionsCount = await prisma.trustActionLog.count({
+    where: {
+      userId,
+      createdAt: {
+        gte: today,
+      },
+    },
+  })
+
+  if (todayActionsCount >= TRUST_CONFIG.MAX_ACTIONS_PER_USER_PER_DAY) {
+    return false
+  }
+
+  // Special rate limiting for voting actions
+  if (action === TrustAction.UPVOTE || action === TrustAction.DOWNVOTE) {
+    const rateLimitWindow = new Date(
+      Date.now() - TRUST_CONFIG.VOTE_RATE_LIMIT.windowMs,
+    )
+
+    const recentVotes = await prisma.trustActionLog.count({
+      where: {
+        userId,
+        action: {
+          in: [TrustAction.UPVOTE, TrustAction.DOWNVOTE],
+        },
+        createdAt: {
+          gte: rateLimitWindow,
+        },
+      },
+    })
+
+    if (recentVotes >= TRUST_CONFIG.VOTE_RATE_LIMIT.maxVotes) {
+      return false
+    }
+  }
+
+  return true
+}
+
+export async function getUserTrustLevel(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { trustScore: true },
+  })
+
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  return getTrustLevel(user.trustScore)
+}
+
+export async function canUserAutoApprove(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { trustScore: true },
+  })
+
+  if (!user) {
+    return false
+  }
+
+  return hasTrustLevel(user.trustScore, TRUST_CONFIG.AUTO_APPROVAL_MIN_LEVEL)
+}
+
+export async function getUsersEligibleForMonthlyBonus(): Promise<string[]> {
+  const cutoffDate = new Date()
+  cutoffDate.setDate(
+    cutoffDate.getDate() - TRUST_CONFIG.MIN_ACCOUNT_AGE_FOR_BONUS,
+  )
+
+  const activityCutoff = new Date()
+  activityCutoff.setDate(
+    activityCutoff.getDate() - TRUST_CONFIG.MAX_DAYS_INACTIVE_FOR_BONUS,
+  )
+
+  const eligibleUsers = await prisma.user.findMany({
+    where: {
+      createdAt: {
+        lte: cutoffDate, // Account older than 30 days
+      },
+      lastActiveAt: {
+        gte: activityCutoff, // Active within last 30 days
+      },
+    },
+    select: { id: true },
+  })
+
+  return eligibleUsers.map((user) => user.id)
+}
+
+export async function applyMonthlyActiveBonus(): Promise<{
+  processedUsers: number
+  errors: string[]
+}> {
+  const eligibleUserIds = await getUsersEligibleForMonthlyBonus()
+  const errors: string[] = []
+  let processedUsers = 0
+
+  for (const userId of eligibleUserIds) {
+    try {
+      // Check if user already received bonus this month
+      const thisMonth = new Date()
+      thisMonth.setDate(1) // First day of current month
+      thisMonth.setHours(0, 0, 0, 0)
+
+      const existingBonus = await prisma.trustActionLog.findFirst({
+        where: {
+          userId,
+          action: TrustAction.MONTHLY_ACTIVE_BONUS,
+          createdAt: {
+            gte: thisMonth,
+          },
+        },
+      })
+
+      if (!existingBonus) {
+        await applyTrustAction({
+          userId,
+          action: TrustAction.MONTHLY_ACTIVE_BONUS,
+          context: { reason: 'Monthly active user bonus' },
+        })
+        processedUsers++
+      }
+    } catch (error) {
+      errors.push(
+        `Failed to process user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
+    }
+  }
+
+  return { processedUsers, errors }
+}
+
+export async function getTrustActionStats(userId?: string) {
+  const whereClause = userId ? { userId } : {}
+
+  const [totalActions, actionBreakdown, recentActions] = await Promise.all([
+    prisma.trustActionLog.count({
+      where: whereClause,
+    }),
+    prisma.trustActionLog.groupBy({
+      by: ['action'],
+      where: whereClause,
+      _count: {
+        action: true,
+      },
+      _sum: {
+        weight: true,
+      },
+    }),
+    prisma.trustActionLog.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    }),
+  ])
+
+  return {
+    totalActions,
+    actionBreakdown,
+    recentActions,
+  }
+}

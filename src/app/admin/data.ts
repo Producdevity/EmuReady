@@ -69,4 +69,9 @@ export const superAdminNavItems: NavItem[] = [
     label: 'Field Templates',
     description: 'Manage custom field templates.',
   },
+  {
+    href: '/admin/trust-logs',
+    label: 'Trust Logs',
+    description: 'Monitor trust system activity and scores.',
+  },
 ]

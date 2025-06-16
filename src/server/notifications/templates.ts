@@ -56,7 +56,7 @@ class NotificationTemplateEngine {
     // Engagement notifications
     this.templates.set('LISTING_COMMENT', (context) => ({
       title: 'New comment on your listing',
-      message: `${context.userName || 'Someone'} commented on your listing "${context.listingTitle || 'Unknown'}": "${sanitizeText(context.commentText || '')}"`,
+      message: `${context.userName || 'Someone'} commented on your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
       actionUrl:
         context.listingId && context.commentId
           ? `/listings/${context.listingId}#comment-${context.commentId}`
@@ -72,7 +72,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('LISTING_VOTE_UP', (context) => ({
       title: 'Your listing received an upvote',
-      message: `${context.userName || 'Someone'} upvoted your listing "${context.listingTitle || 'Unknown'}"`,
+      message: `${context.userName || 'Someone'} upvoted your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -85,7 +85,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('LISTING_VOTE_DOWN', (context) => ({
       title: 'Your listing received a downvote',
-      message: `${context.userName || 'Someone'} downvoted your listing "${context.listingTitle || 'Unknown'}"`,
+      message: `${context.userName || 'Someone'} downvoted your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -98,7 +98,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('COMMENT_REPLY', (context) => ({
       title: 'Someone replied to your comment',
-      message: `${context.userName || 'Someone'} replied to your comment: "${sanitizeText(context.commentText || '')}"`,
+      message: `${context.userName || 'Someone'} replied to your comment${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
       actionUrl:
         context.listingId && context.commentId
           ? `/listings/${context.listingId}#comment-${context.commentId}`
@@ -115,7 +115,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('USER_MENTION', (context) => ({
       title: 'You were mentioned in a comment',
-      message: `${context.userName || 'Someone'} mentioned you in a comment: "${sanitizeText(context.commentText || '')}"`,
+      message: `${context.userName || 'Someone'} mentioned you in a comment${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
       actionUrl:
         context.listingId && context.commentId
           ? `/listings/${context.listingId}#comment-${context.commentId}`
@@ -132,7 +132,7 @@ class NotificationTemplateEngine {
     // Content notifications
     this.templates.set('NEW_DEVICE_LISTING', (context) => ({
       title: 'New listing for your preferred device',
-      message: `A new listing was added for ${context.deviceName || 'your preferred device'}: "${context.listingTitle || 'Unknown'}"`,
+      message: `A new listing was added${context.deviceName ? ` for ${context.deviceName}` : ''}${context.listingTitle ? `: "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -145,7 +145,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('NEW_SOC_LISTING', (context) => ({
       title: 'New listing for your preferred SOC',
-      message: `A new listing was added for ${context.socName || 'your preferred SOC'}: "${context.listingTitle || 'Unknown'}"`,
+      message: `A new listing was added${context.socName ? ` for ${context.socName}` : ''}${context.listingTitle ? `: "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -158,7 +158,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('GAME_ADDED', (context) => ({
       title: 'New game added to the system',
-      message: `"${context.gameTitle || 'A new game'}" has been added to the game library`,
+      message: `${context.gameTitle ? `"${context.gameTitle}"` : 'A new game'} has been added to the game library`,
       actionUrl: context.gameId ? `/games/${context.gameId}` : undefined,
       metadata: {
         gameId: context.gameId,
@@ -217,7 +217,7 @@ class NotificationTemplateEngine {
     // Moderation notifications
     this.templates.set('LISTING_APPROVED', (context) => ({
       title: 'Your submitted listing was approved',
-      message: `Your listing "${context.listingTitle || 'Unknown'}" has been approved and is now live on the platform.`,
+      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been approved and is now live on the platform.`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -230,7 +230,7 @@ class NotificationTemplateEngine {
 
     this.templates.set('LISTING_REJECTED', (context) => ({
       title: 'Your submitted listing was rejected',
-      message: `Your listing "${context.listingTitle || 'Unknown'}" was not approved. Reason: ${sanitizeText(context.rejectionReason || '')}`,
+      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} was not approved${context.rejectionReason ? `. Reason: ${sanitizeText(context.rejectionReason)}` : '.'}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,

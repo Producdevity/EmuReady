@@ -18,6 +18,7 @@ const storageKeys = {
     adminProcessedListings: `${PREFIX}admin_processed_listings_column_visibility`,
     adminSoCs: `${PREFIX}admin_socs_column_visibility`,
     adminSystems: `${PREFIX}admin_systems_column_visibility`,
+    adminTrustLogs: `${PREFIX}admin_trust_logs_column_visibility`,
     adminUsers: `${PREFIX}admin_users_column_visibility`,
   },
 } as const

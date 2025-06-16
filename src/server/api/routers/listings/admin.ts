@@ -1,4 +1,5 @@
 import { ResourceError } from '@/lib/errors'
+import { applyTrustAction } from '@/lib/trust/service'
 import {
   ApproveListingSchema,
   RejectListingSchema,
@@ -17,7 +18,7 @@ import {
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus, TrustAction } from '@orm'
 import type { Prisma } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
@@ -138,6 +139,7 @@ export const adminRouter = createTRPCRouter({
 
       const listingToApprove = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
+        include: { author: { select: { id: true } } },
       })
 
       if (
@@ -156,6 +158,19 @@ export const adminRouter = createTRPCRouter({
           processedNotes: null,
         },
       })
+
+      // Apply trust action for listing approval to the author
+      if (listingToApprove.authorId) {
+        await applyTrustAction({
+          userId: listingToApprove.authorId,
+          action: TrustAction.LISTING_APPROVED,
+          context: {
+            listingId,
+            adminUserId,
+            reason: 'listing_approved',
+          },
+        })
+      }
 
       // Emit notification event
       notificationEventEmitter.emitNotificationEvent({
@@ -191,6 +206,7 @@ export const adminRouter = createTRPCRouter({
 
       const listingToReject = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
+        include: { author: { select: { id: true } } },
       })
 
       if (
@@ -209,6 +225,19 @@ export const adminRouter = createTRPCRouter({
           processedNotes: notes,
         },
       })
+
+      // Apply trust action for listing rejection to the author
+      if (listingToReject.authorId) {
+        await applyTrustAction({
+          userId: listingToReject.authorId,
+          action: TrustAction.LISTING_REJECTED,
+          context: {
+            listingId,
+            adminUserId,
+            reason: notes || 'listing_rejected',
+          },
+        })
+      }
 
       notificationEventEmitter.emitNotificationEvent({
         eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
