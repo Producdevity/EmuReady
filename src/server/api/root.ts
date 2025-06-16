@@ -13,6 +13,7 @@ import { rawgRouter } from './routers/rawg'
 import { socsRouter } from './routers/socs'
 import { systemsRouter } from './routers/systems'
 import { tgdbRouter } from './routers/tgdb'
+import { trustRouter } from './routers/trust'
 import { userPreferencesRouter } from './routers/userPreferences'
 import { usersRouter } from './routers/users'
 
@@ -30,6 +31,7 @@ export const appRouter = createTRPCRouter({
   customFieldDefinitions: customFieldDefinitionRouter,
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,
+  trust: trustRouter,
   rawg: rawgRouter,
   tgdb: tgdbRouter,
   mobile: mobileRouter,

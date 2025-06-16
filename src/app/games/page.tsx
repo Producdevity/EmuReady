@@ -18,7 +18,7 @@ import { Role } from '@orm'
 import GameCard from './components/GameCard'
 import GameFilters from './components/GameFilters'
 
-function GamesPage() {
+function GamesContent() {
   const { user } = useUser()
   const searchParams = useSearchParams()
 
@@ -130,7 +130,7 @@ function GamesPage() {
               href={addGameHref}
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium text-lg shadow-md hover:shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
             >
-              Add New Game
+              Add a Game
             </Link>
           </div>
         )}
@@ -139,10 +139,20 @@ function GamesPage() {
   )
 }
 
-export default function Page() {
+function GamesPage() {
   return (
-    <Suspense fallback={<LoadingSpinner text="Loading page..." />}>
-      <GamesPage />
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-96">
+          <LoadingSpinner />
+        </div>
+      }
+    >
+      <GamesContent />
     </Suspense>
   )
+}
+
+export default function Page() {
+  return <GamesPage />
 }

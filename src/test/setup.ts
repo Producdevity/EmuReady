@@ -47,6 +47,14 @@ vi.mock('@orm', () => ({
     ADMIN: 'ADMIN',
     SUPER_ADMIN: 'SUPER_ADMIN',
   },
+  TrustAction: {
+    UPVOTE: 'UPVOTE',
+    DOWNVOTE: 'DOWNVOTE',
+    LISTING_CREATED: 'LISTING_CREATED',
+    LISTING_APPROVED: 'LISTING_APPROVED',
+    LISTING_REJECTED: 'LISTING_REJECTED',
+    MONTHLY_ACTIVE_BONUS: 'MONTHLY_ACTIVE_BONUS',
+  },
 }))
 
 // Mock the database module to use a mock prisma client

@@ -3,6 +3,7 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
@@ -52,6 +53,7 @@ function AdminDevicesPage() {
     page: table.page,
     limit: table.limit,
   })
+  const devicesStatsQuery = api.devices.stats.useQuery()
   const deleteDevice = api.devices.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -86,6 +88,7 @@ function AdminDevicesPage() {
 
   const handleModalSuccess = () => {
     devicesQuery.refetch().catch(console.error)
+    devicesStatsQuery.refetch().catch(console.error)
     closeModal()
   }
 
@@ -119,6 +122,26 @@ function AdminDevicesPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <AdminStatsBar
+            stats={[
+              {
+                label: 'Total',
+                value: devicesStatsQuery.data?.total ?? 0,
+                color: 'blue',
+              },
+              {
+                label: 'With Listings',
+                value: devicesStatsQuery.data?.withListings ?? 0,
+                color: 'green',
+              },
+              {
+                label: 'No Listings',
+                value: devicesStatsQuery.data?.withoutListings ?? 0,
+                color: 'gray',
+              },
+            ]}
+            isLoading={devicesStatsQuery.isLoading}
+          />
           <ColumnVisibilityControl
             columns={DEVICES_COLUMNS}
             columnVisibility={columnVisibility}

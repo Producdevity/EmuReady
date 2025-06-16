@@ -12,6 +12,11 @@ const emulators: EmulatorData[] = [
     supportedSystemNames: ['Sony PlayStation 2'],
     logo: 'aethersx2.png',
   },
+  {
+    name: 'Azahar',
+    supportedSystemNames: ['Nintendo 3DS'],
+    logo: 'azahar.png',
+  },
   { name: 'Cemu', supportedSystemNames: ['Nintendo Wii U'], logo: 'cemu.png' },
   { name: 'Citra', supportedSystemNames: ['Nintendo 3DS'], logo: 'citra.png' },
   {

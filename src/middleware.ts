@@ -6,19 +6,19 @@ export default clerkMiddleware((auth, req: NextRequest) => {
 
   // Skip Clerk middleware for webhook endpoints
   if (pathname.startsWith('/api/webhooks/')) {
-    console.log('Skipping Clerk middleware for webhook:', pathname)
+    console.info('Skipping Clerk middleware for webhook:', pathname)
     return
   }
 
   // Skip Clerk middleware for mobile API routes to prevent CORS issues
   if (pathname.startsWith('/api/mobile/')) {
-    console.log('Skipping Clerk middleware for mobile API:', pathname)
+    console.info('Skipping Clerk middleware for mobile API:', pathname)
     return
   }
 
   // Skip Clerk middleware for the mobile test endpoint (TODO: remove later)
   if (pathname === '/api/mobile/test') {
-    console.log('Skipping Clerk middleware for mobile test:', pathname)
+    console.info('Skipping Clerk middleware for mobile test:', pathname)
     return
   }
 

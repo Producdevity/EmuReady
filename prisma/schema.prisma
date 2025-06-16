@@ -40,6 +40,9 @@ model User {
   profileImage         String?
   role                 Role        @default(USER)
   createdAt            DateTime    @default(now())
+  // Trust system fields
+  trustScore           Int         @default(0)
+  lastActiveAt         DateTime    @default(now())
   // User preferences
   defaultToUserDevices Boolean     @default(false)
   defaultToUserSocs    Boolean     @default(false)
@@ -58,6 +61,7 @@ model User {
   notificationPreferences     NotificationPreference[]
   listingNotificationPrefs    ListingNotificationPreference[]
   triggeredNotificationEvents NotificationEvent[]
+  trustActionLogs             TrustActionLog[]
 }
 
 model UserDevicePreference {
@@ -446,4 +450,33 @@ enum NotificationDeliveryStatus {
   FAILED
 
   @@map("notification_delivery_status")
+}
+
+// Trust System Enums and Models
+enum TrustAction {
+  UPVOTE
+  DOWNVOTE
+  LISTING_CREATED
+  LISTING_APPROVED
+  LISTING_REJECTED
+  MONTHLY_ACTIVE_BONUS
+
+  @@map("trust_action")
+}
+
+model TrustActionLog {
+  id        String      @id @default(uuid())
+  userId    String
+  action    TrustAction
+  weight    Int
+  metadata  Json?       // Additional context like listingId, targetUserId, etc.
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("trust_action_logs")
 }

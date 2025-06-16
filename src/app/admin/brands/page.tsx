@@ -3,13 +3,14 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
-  SortableHeader,
   ColumnVisibilityControl,
+  SortableHeader,
   AdminTableContainer,
   useConfirmDialog,
 } from '@/components/ui'
@@ -38,11 +39,13 @@ function AdminBrandsPage() {
     storageKey: storageKeys.columnVisibility.adminBrands,
   })
 
-  const { data: brands, refetch } = api.deviceBrands.get.useQuery({
+  const brandsQuery = api.deviceBrands.get.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
+    limit: table.limit,
   })
+  const brandsStatsQuery = api.deviceBrands.stats.useQuery()
   const deleteBrand = api.deviceBrands.delete.useMutation()
   const confirm = useConfirmDialog()
 
@@ -63,7 +66,7 @@ function AdminBrandsPage() {
   }
 
   const handleModalSuccess = () => {
-    refetch().catch(console.error)
+    brandsQuery.refetch().catch(console.error)
     closeModal()
   }
 
@@ -80,7 +83,7 @@ function AdminBrandsPage() {
       await deleteBrand.mutateAsync({
         id,
       } satisfies RouterInput['deviceBrands']['delete'])
-      refetch().catch(console.error)
+      brandsQuery.refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete brand: ${getErrorMessage(err)}`)
     }
@@ -95,6 +98,26 @@ function AdminBrandsPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <AdminStatsBar
+            stats={[
+              {
+                label: 'Total',
+                value: brandsStatsQuery.data?.total ?? 0,
+                color: 'blue',
+              },
+              {
+                label: 'With Devices',
+                value: brandsStatsQuery.data?.withDevices ?? 0,
+                color: 'green',
+              },
+              {
+                label: 'No Devices',
+                value: brandsStatsQuery.data?.withoutDevices ?? 0,
+                color: 'gray',
+              },
+            ]}
+            isLoading={brandsStatsQuery.isLoading}
+          />
           <ColumnVisibilityControl
             columns={BRANDS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -145,7 +168,7 @@ function AdminBrandsPage() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {brands?.map((brand) => (
+            {brandsQuery.data?.map((brand) => (
               <tr
                 key={brand.id}
                 className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
@@ -178,7 +201,7 @@ function AdminBrandsPage() {
                 )}
               </tr>
             ))}
-            {brands?.length === 0 && (
+            {brandsQuery.data?.length === 0 && (
               <tr>
                 <td
                   colSpan={3}

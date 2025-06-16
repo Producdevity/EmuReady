@@ -1,8 +1,8 @@
 # Test coverage reports
-/coverage
+coverage/
 
 # Node.js dependencies
-/node_modules
+node_modules/
 
 # Test files
 /test-results
@@ -19,23 +19,25 @@ pnpm-lock.yaml
 /temp
 
 # Configuration files
-/.eslintignore
-/.prettierignore
+.eslintignore
+.prettierignore
 
 # IDE and editor directories
-/.idea
-/.vscode
-/.claude
-/.cursor
+.idea/
+.vscode/
+.claude/
+.cursor/
 
-# Build directories
-/dist
-/build
-/public
-/prisma/generated
+# Build directories and cache
+.next/
+.cache/
+dist/
+build/
+public/
+prisma/generated/
 
 # Logs
-/logs
+logs/
 
 # Other ignored files
-/.DS_Store
+.DS_Store

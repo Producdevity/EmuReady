@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { isNumber } from 'remeda'
+import { isNullish, isNumber } from 'remeda'
 import { Card, Badge } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
@@ -33,36 +33,34 @@ function ListingDetailsClient(props: Props) {
   const renderCustomFieldValue = (
     fieldValue: NonNullable<Props['listing']['customFieldValues']>[0],
   ) => {
-    const { value, customFieldDefinition } = fieldValue
-
-    switch (customFieldDefinition.type) {
+    switch (fieldValue.customFieldDefinition.type) {
       case CustomFieldType.BOOLEAN:
         return (
-          <Badge variant={value ? 'success' : 'default'}>
-            {value ? 'Yes' : 'No'}
+          <Badge variant={fieldValue.value ? 'success' : 'default'}>
+            {fieldValue.value ? 'Yes' : 'No'}
           </Badge>
         )
       case CustomFieldType.SELECT:
         // For select fields, try to find the label from options
-        if (Array.isArray(customFieldDefinition.options)) {
+        if (Array.isArray(fieldValue.customFieldDefinition.options)) {
           const option = (
-            customFieldDefinition.options as Array<{
+            fieldValue.customFieldDefinition.options as Array<{
               value: string
               label: string
             }>
-          ).find((opt) => opt.value === String(value))
-          return option?.label ?? String(value)
+          ).find((opt) => opt.value === String(fieldValue.value))
+          return option?.label ?? String(fieldValue.value)
         }
-        return String(value)
+        return String(fieldValue.value)
       case CustomFieldType.RANGE:
         // For range fields, format the number with unit and proper decimals
-        if (isNumber(value)) {
-          const decimals = customFieldDefinition.rangeDecimals ?? 0
-          const unit = customFieldDefinition.rangeUnit ?? ''
+        if (isNumber(fieldValue.value)) {
+          const decimals = fieldValue.customFieldDefinition.rangeDecimals ?? 0
+          const unit = fieldValue.customFieldDefinition.rangeUnit ?? ''
           const formatted =
             decimals > 0
-              ? value.toFixed(decimals)
-              : Math.round(value).toString()
+              ? fieldValue.value.toFixed(decimals)
+              : Math.round(fieldValue.value).toString()
           return (
             <Badge>
               {formatted}
@@ -70,25 +68,25 @@ function ListingDetailsClient(props: Props) {
             </Badge>
           )
         }
-        return String(value ?? '')
+        return String(fieldValue.value ?? '')
       case CustomFieldType.URL:
-        if (typeof value === 'string' && value.trim()) {
+        if (typeof fieldValue.value === 'string' && fieldValue.value.trim()) {
           return (
             <a
-              href={value}
+              href={fieldValue.value}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 dark:text-blue-400 hover:underline"
             >
-              {value}
+              {fieldValue.value}
             </a>
           )
         }
-        return String(value)
+        return String(fieldValue.value)
       case CustomFieldType.TEXT:
       case CustomFieldType.TEXTAREA:
       default:
-        return String(value ?? '')
+        return String(fieldValue.value ?? '')
     }
   }
 
@@ -139,21 +137,27 @@ function ListingDetailsClient(props: Props) {
                       Emulator-Specific Details
                     </h2>
                     <div className="space-y-3">
-                      {props.listing.customFieldValues.map((fieldValue) => (
-                        <div
-                          key={fieldValue.id}
-                          className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
-                              {fieldValue.customFieldDefinition.label}:
-                            </span>
-                            <span className="text-gray-600 dark:text-gray-400">
-                              {renderCustomFieldValue(fieldValue)}
-                            </span>
+                      {props.listing.customFieldValues
+                        .filter(
+                          (fieldValue) =>
+                            !isNullish(fieldValue.value) &&
+                            fieldValue.value !== '',
+                        )
+                        .map((fieldValue) => (
+                          <div
+                            key={fieldValue.id}
+                            className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                                {fieldValue.customFieldDefinition.label}:
+                              </span>
+                              <span className="text-gray-600 dark:text-gray-400">
+                                {renderCustomFieldValue(fieldValue)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}

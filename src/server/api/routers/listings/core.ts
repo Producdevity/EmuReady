@@ -1,6 +1,11 @@
 import { keys } from 'remeda'
 import { ResourceError } from '@/lib/errors'
 import {
+  applyTrustAction,
+  canUserAutoApprove,
+  reverseTrustAction,
+} from '@/lib/trust/service'
+import {
   CreateListingSchema,
   CreateVoteSchema,
   GetListingByIdSchema,
@@ -17,7 +22,7 @@ import {
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { hasPermission } from '@/utils/permissions'
-import { ApprovalStatus, Prisma, Role } from '@orm'
+import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
 
 export const coreRouter = createTRPCRouter({
@@ -320,6 +325,12 @@ export const coreRouter = createTRPCRouter({
         // Validate custom fields
         await validateCustomFields(tx, emulatorId, customFieldValues)
 
+        // Check if user can auto-approve
+        const canAutoApprove = await canUserAutoApprove(authorId)
+        const listingStatus = canAutoApprove
+          ? ApprovalStatus.APPROVED
+          : ApprovalStatus.PENDING
+
         const newListing = await tx.listing.create({
           data: {
             gameId,
@@ -328,7 +339,11 @@ export const coreRouter = createTRPCRouter({
             performanceId,
             notes,
             authorId: authorId,
-            status: ApprovalStatus.PENDING,
+            status: listingStatus,
+            ...(canAutoApprove && {
+              processedAt: new Date(),
+              processedNotes: 'Auto-approved (Trusted user)',
+            }),
           },
         })
 
@@ -347,6 +362,13 @@ export const coreRouter = createTRPCRouter({
             })
           }
         }
+
+        // Apply trust action for creating a listing
+        await applyTrustAction({
+          userId: authorId,
+          action: TrustAction.LISTING_CREATED,
+          context: { listingId: newListing.id },
+        })
 
         // Emit notification event
         notificationEventEmitter.emitNotificationEvent({
@@ -398,6 +420,13 @@ export const coreRouter = createTRPCRouter({
           data: { value: input.value, userId, listingId: input.listingId },
         })
 
+        // Apply trust action for the vote
+        await applyTrustAction({
+          userId,
+          action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
+          context: { listingId: input.listingId },
+        })
+
         // Emit notification event for new vote
         notificationEventEmitter.emitNotificationEvent({
           eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
@@ -419,6 +448,16 @@ export const coreRouter = createTRPCRouter({
         await ctx.prisma.vote.delete({
           where: { userId_listingId: { userId, listingId: input.listingId } },
         })
+
+        // Properly reverse the original trust action when vote is removed
+        await reverseTrustAction({
+          userId,
+          action: existingVote.value
+            ? TrustAction.UPVOTE
+            : TrustAction.DOWNVOTE,
+          context: { listingId: input.listingId, reason: 'vote_removed' },
+        })
+
         return { message: 'Vote removed' }
       }
 
@@ -426,6 +465,18 @@ export const coreRouter = createTRPCRouter({
       const updatedVote = await ctx.prisma.vote.update({
         where: { userId_listingId: { userId, listingId: input.listingId } },
         data: { value: input.value },
+      })
+
+      // Apply trust action for vote change (properly reverse old, add new)
+      await reverseTrustAction({
+        userId,
+        action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
+        context: { listingId: input.listingId, reason: 'vote_changed_from' },
+      })
+      await applyTrustAction({
+        userId,
+        action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
+        context: { listingId: input.listingId, reason: 'vote_changed_to' },
       })
 
       // Emit notification event for vote update

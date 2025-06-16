@@ -134,4 +134,30 @@ export const deviceBrandsRouter = createTRPCRouter({
         where: { id: input.id },
       })
     }),
+
+  stats: adminProcedure.query(async ({ ctx }) => {
+    const [total, withDevices, withoutDevices] = await Promise.all([
+      ctx.prisma.deviceBrand.count(),
+      ctx.prisma.deviceBrand.count({
+        where: {
+          devices: {
+            some: {},
+          },
+        },
+      }),
+      ctx.prisma.deviceBrand.count({
+        where: {
+          devices: {
+            none: {},
+          },
+        },
+      }),
+    ])
+
+    return {
+      total,
+      withDevices,
+      withoutDevices,
+    }
+  }),
 })

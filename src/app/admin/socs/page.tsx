@@ -3,6 +3,7 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
@@ -56,6 +57,7 @@ function AdminSoCsPage() {
     page: table.page,
     limit: table.limit,
   })
+  const socsStatsQuery = api.socs.stats.useQuery()
   const deleteSoC = api.socs.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -125,6 +127,26 @@ function AdminSoCsPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <AdminStatsBar
+            stats={[
+              {
+                label: 'Total',
+                value: socsStatsQuery.data?.total ?? 0,
+                color: 'blue',
+              },
+              {
+                label: 'With Devices',
+                value: socsStatsQuery.data?.withDevices ?? 0,
+                color: 'green',
+              },
+              {
+                label: 'No Devices',
+                value: socsStatsQuery.data?.withoutDevices ?? 0,
+                color: 'gray',
+              },
+            ]}
+            isLoading={socsStatsQuery.isLoading}
+          />
           <ColumnVisibilityControl
             columns={SOCS_COLUMNS}
             columnVisibility={columnVisibility}

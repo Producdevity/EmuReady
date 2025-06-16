@@ -2,7 +2,8 @@
 
 import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
-import { Edit, Shield, Calendar, User as UserIcon } from 'lucide-react'
+import { Edit, Shield, Calendar, User as UserIcon, Award } from 'lucide-react'
+import { TrustLevelBadge } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import { formatMonthYear } from '@/utils/date'
@@ -105,7 +106,7 @@ function ProfileHeader(props: Props) {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -154,6 +155,29 @@ function ProfileHeader(props: Props) {
                     : 'Standard'}
                 </p>
               </motion.div>
+
+              {props.profileData?.trustScore !== undefined && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <Award className="w-5 h-5 text-blue-200" />
+                    <span className="text-blue-100 font-medium">
+                      Trust Level
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <TrustLevelBadge
+                      trustScore={props.profileData.trustScore}
+                      size="sm"
+                      className="[&_.bg-gray-600]:bg-white/20 [&_.text-gray-900]:text-white"
+                    />
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
         </div>

@@ -28,9 +28,6 @@ export const devicesRouter = createTRPCRouter({
 
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
-    // Use reasonable limits: 100 for admin pages, 20 for regular pagination
-    // temp disable as hotfix
-    // const effectiveLimit = Math.min(limit, limit > 100 ? 100 : limit)
 
     // Build where clause for filtering
     const where: Prisma.DeviceWhereInput = {
@@ -113,7 +110,7 @@ export const devicesRouter = createTRPCRouter({
         pages: Math.ceil(total / limit),
         page: page ?? Math.floor(actualOffset / limit) + 1,
         offset: actualOffset,
-        limit,
+        limit: limit,
       },
     }
   }),
@@ -224,13 +221,33 @@ export const devicesRouter = createTRPCRouter({
   delete: adminProcedure
     .input(DeleteDeviceSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if device is used in any listings
-      const listingsCount = await ctx.prisma.listing.count({
-        where: { deviceId: input.id },
+      const existingDevice = await ctx.prisma.device.findUnique({
+        where: { id: input.id },
+        include: { _count: { select: { listings: true } } },
       })
 
-      if (listingsCount > 0) return ResourceError.device.inUse(listingsCount)
+      if (!existingDevice) return ResourceError.device.notFound()
+
+      if (existingDevice._count.listings > 0) {
+        return AppError.conflict(
+          `Cannot delete device "${existingDevice.modelName}" because it has ${existingDevice._count.listings} active listing(s). Please remove all listings for this device first.`,
+        )
+      }
 
       return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
+
+  stats: adminProcedure.query(async ({ ctx }) => {
+    const [total, withListings, withoutListings] = await Promise.all([
+      ctx.prisma.device.count(),
+      ctx.prisma.device.count({ where: { listings: { some: {} } } }),
+      ctx.prisma.device.count({ where: { listings: { none: {} } } }),
+    ])
+
+    return {
+      total,
+      withListings,
+      withoutListings,
+    }
+  }),
 })

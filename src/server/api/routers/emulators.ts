@@ -24,7 +24,6 @@ export const emulatorsRouter = createTRPCRouter({
 
       // Calculate actual offset based on page or use provided offset
       const actualOffset = input?.page ? (input.page - 1) * limit : offset
-      const effectiveLimit = Math.min(limit, limit > 100 ? 100 : limit)
 
       // Build where clause for filtering
       const where: Prisma.EmulatorWhereInput | undefined = input?.search
@@ -51,7 +50,7 @@ export const emulatorsRouter = createTRPCRouter({
         include: { _count: { select: { listings: true, systems: true } } },
         orderBy,
         skip: actualOffset,
-        take: effectiveLimit,
+        take: limit,
       })
 
       return {
@@ -61,7 +60,7 @@ export const emulatorsRouter = createTRPCRouter({
           pages: Math.ceil(total / limit),
           page: input?.page ?? Math.floor(actualOffset / limit) + 1,
           offset: actualOffset,
-          limit: effectiveLimit,
+          limit: limit,
         },
       }
     }),

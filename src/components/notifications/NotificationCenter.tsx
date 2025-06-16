@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Check, Trash2, X, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -13,6 +14,7 @@ interface Props {
 }
 
 function NotificationCenter(props: Props) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -86,6 +88,11 @@ function NotificationCenter(props: Props) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleViewAllNotifications = () => {
+    setIsOpen(false)
+    router.push('/notifications')
   }
 
   const unreadCount = unreadCountQuery.data || 0
@@ -230,20 +237,14 @@ function NotificationCenter(props: Props) {
             </div>
 
             {/* Footer */}
-            {notifications.length > 0 && (
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => {
-                    setIsOpen(false)
-                    // Navigate to full notifications page
-                    window.location.href = '/notifications'
-                  }}
-                  className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                >
-                  View all notifications
-                </button>
-              </div>
-            )}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={handleViewAllNotifications}
+                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+              >
+                View all notifications
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

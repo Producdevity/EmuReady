@@ -223,16 +223,10 @@ export async function getGameImageUrls(
   }
 
   try {
-    console.log(`📡 Fetching images from TGDB for game ID: ${gameId}`)
     const imagesResponse = await getGameImages([gameId])
 
     const gameIdStr = gameId.toString()
     const gameImagesData = imagesResponse.data.images[gameIdStr] ?? []
-    console.log(
-      `🖼️ Images found for game ${gameId}:`,
-      gameImagesData.length,
-      'images',
-    )
 
     // Use functional approach to find images
     const validImages = gameImagesData
@@ -243,11 +237,6 @@ export async function getGameImageUrls(
       }))
       .filter((image) => isValidImageUrl(image.fullUrl))
 
-    console.log(
-      `✅ Valid images for game ${gameId}:`,
-      validImages.map((img) => ({ type: img.type, url: img.fullUrl })),
-    )
-
     const boxartUrl = validImages.find((img) => img.type === 'boxart')?.fullUrl
     let bannerUrl = validImages.find((img) => img.type === 'banner')?.fullUrl
 
@@ -257,7 +246,6 @@ export async function getGameImageUrls(
     )?.fullUrl
 
     const result = { boxartUrl, bannerUrl }
-    console.log(`🎯 Final result for game ${gameId}:`, result)
 
     // Cache the result
     tgdbImageUrlsCache.set(cacheKey, result)

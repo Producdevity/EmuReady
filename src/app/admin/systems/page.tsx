@@ -3,13 +3,14 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
-  SortableHeader,
   ColumnVisibilityControl,
+  SortableHeader,
   useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
@@ -33,17 +34,18 @@ const SYSTEMS_COLUMNS: ColumnDefinition[] = [
 
 function AdminSystemsPage() {
   const table = useAdminTable<SystemSortField>()
+  const confirm = useConfirmDialog()
   const columnVisibility = useColumnVisibility(SYSTEMS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSystems,
   })
 
-  const { data: systems, refetch } = api.systems.get.useQuery({
+  const systemsQuery = api.systems.get.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
+  const systemsStatsQuery = api.systems.stats.useQuery()
   const deleteSystem = api.systems.delete.useMutation()
-  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -62,7 +64,7 @@ function AdminSystemsPage() {
   }
 
   const handleModalSuccess = () => {
-    refetch().catch(console.error)
+    systemsQuery.refetch().catch(console.error)
     closeModal()
   }
 
@@ -79,17 +81,41 @@ function AdminSystemsPage() {
       await deleteSystem.mutateAsync({
         id,
       } satisfies RouterInput['systems']['delete'])
-      refetch().catch(console.error)
+      systemsQuery.refetch().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete system: ${getErrorMessage(err)}`)
     }
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Game Systems</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Systems
+          </h1>
+        </div>
         <div className="flex items-center gap-3">
+          <AdminStatsBar
+            stats={[
+              {
+                label: 'Total',
+                value: systemsStatsQuery.data?.total ?? 0,
+                color: 'blue',
+              },
+              {
+                label: 'With Games',
+                value: systemsStatsQuery.data?.withGames ?? 0,
+                color: 'green',
+              },
+              {
+                label: 'No Games',
+                value: systemsStatsQuery.data?.withoutGames ?? 0,
+                color: 'gray',
+              },
+            ]}
+            isLoading={systemsStatsQuery.isLoading}
+          />
           <ColumnVisibilityControl
             columns={SYSTEMS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -140,7 +166,7 @@ function AdminSystemsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {systems?.map(
+            {systemsQuery.data?.map(
               (system: {
                 id: string
                 name: string

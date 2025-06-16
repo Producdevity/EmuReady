@@ -46,6 +46,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
   experimental: {
     optimizePackageImports: [
       '@clerk/nextjs',
@@ -55,6 +56,10 @@ const nextConfig: NextConfig = {
       'lucide-react',
     ],
     optimizeCss: true,
+  },
+
+  eslint: {
+    ignoreDuringBuilds: process.env.NODE_ENV !== 'production',
   },
 
   turbopack: {

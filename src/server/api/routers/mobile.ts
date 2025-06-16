@@ -1,3 +1,4 @@
+import { AppError } from '@/lib/errors'
 import {
   CreateCommentSchema,
   CreateListingSchema,
@@ -356,12 +357,10 @@ export const mobileRouter = createTRPCRouter({
         select: { authorId: true },
       })
 
-      if (!existing) {
-        throw new Error('Listing not found')
-      }
+      if (!existing) return AppError.notFound('Listing')
 
       if (existing.authorId !== ctx.session.user.id) {
-        throw new Error('Unauthorized')
+        return AppError.forbidden('You can only edit your own listings')
       }
 
       return await ctx.prisma.listing.update({
@@ -402,12 +401,10 @@ export const mobileRouter = createTRPCRouter({
         select: { authorId: true },
       })
 
-      if (!existing) {
-        throw new Error('Listing not found')
-      }
+      if (!existing) return AppError.notFound('Listing')
 
       if (existing.authorId !== ctx.session.user.id) {
-        throw new Error('Unauthorized')
+        return AppError.forbidden('You can only delete your own listings')
       }
 
       return await ctx.prisma.listing.delete({
@@ -425,11 +422,11 @@ export const mobileRouter = createTRPCRouter({
       })
 
       if (!existing) {
-        throw new Error('Comment not found')
+        return AppError.notFound('Comment')
       }
 
       if (existing.userId !== ctx.session.user.id) {
-        throw new Error('Unauthorized')
+        return AppError.forbidden('You can only edit your own comments')
       }
 
       return await ctx.prisma.comment.update({
@@ -448,23 +445,18 @@ export const mobileRouter = createTRPCRouter({
         select: { userId: true },
       })
 
-      if (!existing) {
-        throw new Error('Comment not found')
-      }
+      if (!existing) return AppError.notFound('Comment')
 
       if (existing.userId !== ctx.session.user.id) {
-        throw new Error('Unauthorized')
+        return AppError.forbidden('You can only delete your own comments')
       }
 
-      return await ctx.prisma.comment.delete({
-        where: { id: input.commentId },
-      })
+      return await ctx.prisma.comment.delete({ where: { id: input.commentId } })
     }),
 
-  updateProfile: protectedProcedure
-    .input(UpdateProfileSchema)
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.user.update({
+  updateProfile: protectedProcedure.input(UpdateProfileSchema).mutation(
+    async ({ ctx, input }) =>
+      await ctx.prisma.user.update({
         where: { id: ctx.session.user.id },
         data: input,
         select: {
@@ -474,6 +466,6 @@ export const mobileRouter = createTRPCRouter({
           bio: true,
           createdAt: true,
         },
-      })
-    }),
+      }),
+  ),
 })
