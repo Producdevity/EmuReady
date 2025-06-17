@@ -764,18 +764,20 @@ export const coreRouter = createTRPCRouter({
       })
 
       if (!listing) {
-        return { canEdit: false, reason: 'Listing not found' }
+        return { canEdit: false, isOwner: false, reason: 'Listing not found' }
       }
 
       // Check ownership
-      if (listing.authorId !== ctx.session.user.id) {
-        return { canEdit: false, reason: 'Not your listing' }
+      const isOwner = listing.authorId === ctx.session.user.id
+      if (!isOwner) {
+        return { canEdit: false, isOwner: false, reason: 'Not your listing' }
       }
 
       // PENDING listings can always be edited by the author
       if (listing.status === ApprovalStatus.PENDING) {
         return {
           canEdit: true,
+          isOwner: true,
           reason: 'Pending listings can always be edited',
           isPending: true,
         }
@@ -785,6 +787,7 @@ export const coreRouter = createTRPCRouter({
       if (listing.status === ApprovalStatus.REJECTED) {
         return {
           canEdit: false,
+          isOwner: true,
           reason:
             'Rejected listings cannot be edited. Please create a new listing.',
         }
@@ -793,7 +796,11 @@ export const coreRouter = createTRPCRouter({
       // APPROVED listings can be edited for 1 hour after approval
       if (listing.status === ApprovalStatus.APPROVED) {
         if (!listing.processedAt) {
-          return { canEdit: false, reason: 'No approval time found' }
+          return {
+            canEdit: false,
+            isOwner: true,
+            reason: 'No approval time found',
+          }
         }
 
         const now = new Date()
@@ -806,6 +813,7 @@ export const coreRouter = createTRPCRouter({
         if (timeSinceApproval > timeLimit) {
           return {
             canEdit: false,
+            isOwner: true,
             reason: `Edit time expired (${EDIT_TIME_LIMIT_MINUTES} minutes after approval)`,
             timeExpired: true,
           }
@@ -813,13 +821,14 @@ export const coreRouter = createTRPCRouter({
 
         return {
           canEdit: true,
+          isOwner: true,
           remainingMinutes: Math.max(0, remainingMinutes),
           remainingTime: Math.max(0, remainingTime),
           isApproved: true,
         }
       }
 
-      return { canEdit: false, reason: 'Invalid listing status' }
+      return { canEdit: false, isOwner: true, reason: 'Invalid listing status' }
     }),
 
   update: authorProcedure

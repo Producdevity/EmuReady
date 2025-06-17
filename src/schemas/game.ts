@@ -30,6 +30,7 @@ export const GetGamesSchema = z
       .or(z.literal('').transform(() => undefined)),
     status: GameApprovalStatusSchema.optional(),
     submittedBy: z.string().uuid().optional(),
+    hideGamesWithNoListings: z.boolean().optional().default(false),
     limit: z.number().default(100),
     offset: z.number().default(0),
     page: z.number().optional(),

@@ -101,6 +101,7 @@ export const gamesRouter = createTRPCRouter({
       search,
       status,
       submittedBy,
+      hideGamesWithNoListings = false,
       limit = 100,
       offset = 0,
       page,
@@ -242,11 +243,28 @@ export const gamesRouter = createTRPCRouter({
 
     const games = await gamesQuery
 
+    // Filter out games with no listings if requested
+    const filteredGames = hideGamesWithNoListings
+      ? games.filter((game) => game._count.listings > 0)
+      : games
+
+    // Adjust pagination if filtering removed games
+    const actualTotal = hideGamesWithNoListings
+      ? await ctx.prisma.game.count({
+          where: {
+            ...where,
+            listings: {
+              some: {},
+            },
+          },
+        })
+      : total
+
     return {
-      games,
+      games: filteredGames,
       pagination: {
-        total,
-        pages: Math.ceil(total / limit),
+        total: actualTotal,
+        pages: Math.ceil(actualTotal / limit),
         page: page ?? Math.floor(actualOffset / limit) + 1,
         offset: actualOffset,
         limit: effectiveLimit,

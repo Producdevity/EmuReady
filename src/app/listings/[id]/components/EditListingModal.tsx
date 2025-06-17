@@ -1,29 +1,28 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { Edit3, Clock, ExternalLink } from 'lucide-react'
+import { Edit3, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui'
+import { Button, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 
-interface EditListingModalProps {
+interface Props {
   listingId: string
-  authorId: string
   currentNotes: string
   onSuccess?: () => void
 }
 
-function EditListingModal(props: EditListingModalProps) {
+function EditListingModal(props: Props) {
   const { user } = useUser()
-  const [isEditing, setIsEditing] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const [notes, setNotes] = useState(props.currentNotes || '')
 
   const canEditQuery = api.listings.canEdit.useQuery(
     { id: props.listingId },
     {
-      enabled: !!user?.id && user.id === props.authorId,
+      enabled: !!user?.id,
       refetchInterval: 60000, // Refetch every minute to update time remaining
     },
   )
@@ -31,7 +30,7 @@ function EditListingModal(props: EditListingModalProps) {
   const updateMutation = api.listings.update.useMutation({
     onSuccess: () => {
       toast.success('Listing updated successfully!')
-      setIsEditing(false)
+      setIsOpen(false)
       props.onSuccess?.()
     },
     onError: (error) => {
@@ -47,22 +46,19 @@ function EditListingModal(props: EditListingModalProps) {
     })
   }
 
-  // Don't show edit button if user is not the author
-  if (!user?.id || user.id !== props.authorId) {
+  const handleOpen = () => {
+    setNotes(props.currentNotes || '')
+    setIsOpen(true)
+  }
+
+  // Don't show anything if user is not logged in
+  if (!user?.id) {
     return null
   }
 
-  if (canEditQuery.isLoading) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        disabled
-        title="Checking edit permissions..."
-      >
-        <Clock className="w-4 h-4" />
-      </Button>
-    )
+  // If it's not our listing, don't show the button at all
+  if (canEditQuery.data?.isOwner === false) {
+    return null
   }
 
   const canEdit = canEditQuery.data?.canEdit ?? false
@@ -71,20 +67,44 @@ function EditListingModal(props: EditListingModalProps) {
   const isPending = canEditQuery.data?.isPending ?? false
   const isApproved = canEditQuery.data?.isApproved ?? false
 
-  if (isEditing) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+  const buttonTitle = canEdit
+    ? isPending
+      ? 'Edit listing (pending approval - no time limit)'
+      : `Edit listing (${remainingMinutes} minutes remaining after approval)`
+    : timeExpired
+      ? 'Edit time expired (60 minute limit after approval)'
+      : 'Cannot edit listing'
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleOpen}
+        disabled={!canEdit || canEditQuery.isLoading}
+        title={buttonTitle}
+        className={canEdit ? '' : 'opacity-50'}
+      >
+        <Edit3 className="w-4 h-4" />
+        <span className="ml-1 hidden sm:inline">Edit</span>
+      </Button>
+
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Edit Listing"
+        size="md"
+      >
+        <div className="space-y-4">
+          {/* Status indicators */}
           <div className="flex items-center gap-2 mb-4">
-            <Edit3 className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-xl font-semibold">Edit Listing</h2>
             {canEdit && isPending && (
-              <span className="text-sm text-orange-600 bg-orange-100 px-2 py-1 rounded">
+              <span className="text-sm text-orange-600 bg-orange-100 dark:bg-orange-900/20 px-2 py-1 rounded">
                 Pending Approval
               </span>
             )}
             {canEdit && isApproved && (
-              <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">
+              <span className="text-sm text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded">
                 {remainingMinutes} minutes remaining
               </span>
             )}
@@ -155,7 +175,7 @@ function EditListingModal(props: EditListingModalProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => setIsOpen(false)}
                   disabled={updateMutation.isPending}
                 >
                   Cancel
@@ -171,30 +191,8 @@ function EditListingModal(props: EditListingModalProps) {
             </form>
           )}
         </div>
-      </div>
-    )
-  }
-
-  const buttonTitle = canEdit
-    ? isPending
-      ? 'Edit listing (pending approval - no time limit)'
-      : `Edit listing (${remainingMinutes} minutes remaining after approval)`
-    : timeExpired
-      ? 'Edit time expired (60 minute limit after approval)'
-      : 'Cannot edit listing'
-
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => setIsEditing(true)}
-      disabled={!canEdit}
-      title={buttonTitle}
-      className={canEdit ? '' : 'opacity-50'}
-    >
-      <Edit3 className="w-4 h-4" />
-      <span className="ml-1 hidden sm:inline">Edit</span>
-    </Button>
+      </Modal>
+    </>
   )
 }
 

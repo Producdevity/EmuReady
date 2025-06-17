@@ -25,6 +25,7 @@ function GamesContent() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [systemId, setSystemId] = useState('')
+  const [hideGamesWithNoListings, setHideGamesWithNoListings] = useState(false)
   const limit = 12
 
   // Initialize state from URL parameters, ensuring we don't use string "undefined"
@@ -55,6 +56,7 @@ function GamesContent() {
   const gamesQuery = api.games.get.useQuery({
     search: search.trim() || undefined,
     systemId: systemId || undefined,
+    hideGamesWithNoListings,
     limit,
     offset: (page - 1) * limit,
   })
@@ -91,9 +93,14 @@ function GamesContent() {
         <GameFilters
           search={search}
           systemId={systemId}
+          hideGamesWithNoListings={hideGamesWithNoListings}
           systems={systemsQuery.data}
           onSearchChange={handleSearchChange}
           onSystemChange={handleSystemChange}
+          onHideGamesWithNoListingsChange={(hide) => {
+            setHideGamesWithNoListings(hide)
+            setPage(1) // Reset to first page when filtering
+          }}
         />
 
         {gamesQuery.isLoading ? (

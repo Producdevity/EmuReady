@@ -225,7 +225,6 @@ function ListingDetailsClient(props: Props) {
               <div className="mt-2">
                 <EditListingModal
                   listingId={props.listing.id}
-                  authorId={props.listing.authorId}
                   currentNotes={props.listing.notes || ''}
                   onSuccess={refreshData}
                 />
