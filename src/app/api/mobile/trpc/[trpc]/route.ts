@@ -63,7 +63,11 @@ const handler = async (req: NextRequest) => {
           console.warn('Auth error in mobile tRPC:', authError)
         }
 
-        return { session, prisma }
+        return {
+          session,
+          prisma,
+          headers: new Headers(req.headers),
+        }
       },
       onError:
         process.env.NODE_ENV === 'development'

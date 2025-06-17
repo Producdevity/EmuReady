@@ -15,6 +15,7 @@ import {
 } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 import { api } from '@/lib/api'
+import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -71,6 +72,8 @@ function AddListingPage() {
   const searchParams = useSearchParams()
   const mounted = useMounted()
   const utils = api.useUtils()
+  const { executeForCreateListing, isCaptchaEnabled } =
+    useRecaptchaForCreateListing()
 
   const gameIdFromUrl = searchParams.get('gameId')
 
@@ -366,9 +369,18 @@ function AddListingPage() {
     },
   })
 
-  const onSubmit = (data: ListingFormValues) => {
+  const onSubmit = async (data: ListingFormValues) => {
+    // Get CAPTCHA token if enabled
+    let recaptchaToken: string | null = null
+    if (isCaptchaEnabled) {
+      recaptchaToken = await executeForCreateListing()
+    }
+
     // Schema validation handles all validation including custom fields
-    createListingMutation.mutate(data)
+    createListingMutation.mutate({
+      ...data,
+      ...(recaptchaToken && { recaptchaToken }),
+    })
   }
 
   if (!mounted) return null

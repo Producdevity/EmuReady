@@ -6,6 +6,7 @@ import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { api } from '@/lib/api'
+import { useRecaptchaForVote } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 function VoteButtons(props: Props) {
   const { user } = useUser()
   const isAuthenticated = !!user
+  const { executeForVote, isCaptchaEnabled } = useRecaptchaForVote()
 
   const [optimisticVote, setOptimisticVote] = useState<boolean | null>(
     props.currentVote,
@@ -34,10 +36,16 @@ function VoteButtons(props: Props) {
     },
   })
 
-  const handleVote = (value: boolean) => {
+  const handleVote = async (value: boolean) => {
     if (!isAuthenticated) {
       // TODO: Redirect to login or show a login prompt
       return
+    }
+
+    // Get CAPTCHA token if enabled
+    let recaptchaToken: string | null = null
+    if (isCaptchaEnabled) {
+      recaptchaToken = await executeForVote()
     }
 
     // Apply optimistic update
@@ -49,25 +57,18 @@ function VoteButtons(props: Props) {
       // If same vote clicked, we're removing the vote (toggle behavior)
       if (optimisticVote === value) {
         // If upvote is being removed
-        if (value === true) {
+        if (value) {
           newUpVotes -= 1
         }
         newTotalVotes -= 1
         setOptimisticVote(null)
       } else {
-        // Changing vote from up to down or vice versa
-        if (optimisticVote === true) {
-          // Changing from up to down
-          newUpVotes -= 1
-        } else {
-          // Changing from down to up
-          newUpVotes += 1
-        }
+        newUpVotes = optimisticVote ? newUpVotes - 1 : newUpVotes + 1
         setOptimisticVote(value)
       }
     } else {
       // No previous vote, adding a new vote
-      if (value === true) {
+      if (value) {
         newUpVotes += 1
       }
       newTotalVotes += 1
@@ -80,6 +81,7 @@ function VoteButtons(props: Props) {
     voteMutation.mutate({
       listingId: props.listingId,
       value,
+      ...(recaptchaToken && { recaptchaToken }),
     } satisfies RouterInput['listings']['vote'])
   }
 

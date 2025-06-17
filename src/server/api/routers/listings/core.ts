@@ -1,4 +1,6 @@
 import { keys } from 'remeda'
+import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
+import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { ResourceError } from '@/lib/errors'
 import {
   applyTrustAction,
@@ -310,8 +312,23 @@ export const coreRouter = createTRPCRouter({
         performanceId,
         notes,
         customFieldValues,
+        recaptchaToken,
       } = input
       const authorId = ctx.session.user.id
+
+      // Verify CAPTCHA if token is provided
+      if (recaptchaToken) {
+        const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
+        const captchaResult = await verifyRecaptcha({
+          token: recaptchaToken,
+          expectedAction: RECAPTCHA_CONFIG.actions.CREATE_LISTING,
+          userIP: clientIP,
+        })
+
+        if (!captchaResult.success) {
+          throw new Error(`CAPTCHA verification failed: ${captchaResult.error}`)
+        }
+      }
 
       const userExists = await ctx.prisma.user.findUnique({
         where: { id: authorId },
@@ -395,6 +412,20 @@ export const coreRouter = createTRPCRouter({
     .input(CreateVoteSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id
+
+      // Verify CAPTCHA if token is provided
+      if (input.recaptchaToken) {
+        const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
+        const captchaResult = await verifyRecaptcha({
+          token: input.recaptchaToken,
+          expectedAction: RECAPTCHA_CONFIG.actions.VOTE,
+          userIP: clientIP,
+        })
+
+        if (!captchaResult.success) {
+          throw new Error(`CAPTCHA verification failed: ${captchaResult.error}`)
+        }
+      }
 
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: input.listingId },

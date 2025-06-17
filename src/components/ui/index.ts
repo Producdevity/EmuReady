@@ -6,6 +6,7 @@ export {
   type AutocompleteOptionBase,
 } from './Autocomplete'
 export { default as Badge } from './Badge'
+export { default as BulkActions } from './BulkActions'
 export { default as Button, buttonVariants, type ButtonProps } from './Button'
 export { default as Card } from './Card'
 export { default as ColumnVisibilityControl } from './ColumnVisibilityControl'

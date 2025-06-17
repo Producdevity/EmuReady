@@ -15,6 +15,7 @@ export const CreateListingSchema = z.object({
       }),
     )
     .optional(),
+  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
 })
 
 export const GetListingsSchema = z.object({
@@ -81,6 +82,7 @@ export const OverrideApprovalStatusSchema = z.object({
 export const CreateVoteSchema = z.object({
   listingId: z.string().uuid(),
   value: z.boolean(),
+  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
 })
 
 export const CreateVoteComment = z.object({
@@ -91,6 +93,7 @@ export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1).max(1000),
   parentId: z.string().uuid().optional(),
+  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
 })
 
 export const EditCommentSchema = z.object({
@@ -110,5 +113,18 @@ export const DeleteCommentSchema = z.object({ commentId: z.string().uuid() })
 export const ApproveListingSchema = z.object({ listingId: z.string().uuid() })
 export const RejectListingSchema = z.object({
   listingId: z.string().uuid(),
+  notes: z.string().optional(),
+})
+
+export const BulkApproveListingsSchema = z.object({
+  listingIds: z
+    .array(z.string().uuid())
+    .min(1, 'At least one listing must be selected'),
+})
+
+export const BulkRejectListingsSchema = z.object({
+  listingIds: z
+    .array(z.string().uuid())
+    .min(1, 'At least one listing must be selected'),
   notes: z.string().optional(),
 })

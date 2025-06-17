@@ -1,3 +1,5 @@
+import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
+import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateCommentSchema,
@@ -23,8 +25,22 @@ export const commentsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(CreateCommentSchema)
     .mutation(async ({ ctx, input }) => {
-      const { listingId, content, parentId } = input
+      const { listingId, content, parentId, recaptchaToken } = input
       const userId = ctx.session.user.id
+
+      // Verify CAPTCHA if token is provided
+      if (recaptchaToken) {
+        const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
+        const captchaResult = await verifyRecaptcha({
+          token: recaptchaToken,
+          expectedAction: RECAPTCHA_CONFIG.actions.COMMENT,
+          userIP: clientIP,
+        })
+
+        if (!captchaResult.success) {
+          throw new Error(`CAPTCHA verification failed: ${captchaResult.error}`)
+        }
+      }
 
       // Check if listing exists
       const listing = await ctx.prisma.listing.findUnique({

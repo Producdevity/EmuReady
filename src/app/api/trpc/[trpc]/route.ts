@@ -38,7 +38,11 @@ const handler = async (req: NextRequest) => {
         }
       }
 
-      return { session, prisma }
+      return {
+        session,
+        prisma,
+        headers: new Headers(req.headers),
+      }
     },
     onError:
       process.env.NODE_ENV === 'development'

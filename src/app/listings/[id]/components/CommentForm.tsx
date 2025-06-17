@@ -4,6 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
+import { useRecaptchaForComment } from '@/lib/captcha/hooks'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { sanitizeString } from '@/utils/validation'
@@ -22,6 +23,7 @@ interface Props {
 function CommentForm(props: Props) {
   const [content, setContent] = useState(props.initialContent ?? '')
   const { user } = useUser()
+  const { executeForComment, isCaptchaEnabled } = useRecaptchaForComment()
 
   const createComment = api.listings.createComment.useMutation({
     onSuccess: () => {
@@ -45,6 +47,12 @@ function CommentForm(props: Props) {
 
     if (sanitizedContent.trim().length === 0) return
 
+    // Get CAPTCHA token for new comments (not for edits)
+    let recaptchaToken: string | null = null
+    if (!props.isEditing && isCaptchaEnabled) {
+      recaptchaToken = await executeForComment()
+    }
+
     if (props.isEditing && props.commentId) {
       editComment.mutate({
         commentId: props.commentId,
@@ -55,6 +63,7 @@ function CommentForm(props: Props) {
         listingId: props.listingId,
         content: sanitizedContent,
         parentId: props.parentId,
+        ...(recaptchaToken && { recaptchaToken }),
       } satisfies RouterInput['listings']['createComment'])
     }
   }

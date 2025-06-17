@@ -26,14 +26,17 @@ type CreateContextOptions = {
   session: Nullable<Session>
 }
 
-const createInnerTRPCContext = (opts: CreateContextOptions) => {
+const createInnerTRPCContext = (
+  opts: CreateContextOptions & { headers?: Headers },
+) => {
   return {
     session: opts.session,
     prisma,
+    headers: opts.headers,
   }
 }
 
-export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
+export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { userId } = await auth()
 
   let session: Nullable<Session> = null
@@ -81,7 +84,10 @@ export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
   // Initialize notification service
   initializeNotificationService()
 
-  return createInnerTRPCContext({ session })
+  return createInnerTRPCContext({
+    session,
+    headers: new Headers(opts.req.headers as Record<string, string>),
+  })
 }
 
 export type TRPCContext = ReturnType<typeof createInnerTRPCContext>

@@ -7,6 +7,8 @@ import {
   GetPendingListingsSchema,
   OverrideApprovalStatusSchema,
   DeleteListingSchema,
+  BulkApproveListingsSchema,
+  BulkRejectListingsSchema,
 } from '@/schemas/listing'
 import {
   createTRPCRouter,
@@ -376,6 +378,163 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       return { success: true, message: 'Listing deleted successfully' }
+    }),
+
+  bulkApprove: adminProcedure
+    .input(BulkApproveListingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingIds } = input
+      const adminUserId = ctx.session.user.id
+
+      // Verify admin user exists
+      const adminUserExists = await ctx.prisma.user.findUnique({
+        where: { id: adminUserId },
+        select: { id: true },
+      })
+      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
+      return ctx.prisma.$transaction(async (tx) => {
+        // Get all listings to approve and verify they are pending
+        const listingsToApprove = await tx.listing.findMany({
+          where: {
+            id: { in: listingIds },
+            status: ApprovalStatus.PENDING,
+          },
+          include: { author: { select: { id: true } } },
+        })
+
+        if (listingsToApprove.length === 0) {
+          throw new Error('No valid pending listings found to approve')
+        }
+
+        // Update all listings to approved
+        await tx.listing.updateMany({
+          where: { id: { in: listingsToApprove.map((l) => l.id) } },
+          data: {
+            status: ApprovalStatus.APPROVED,
+            processedByUserId: adminUserId,
+            processedAt: new Date(),
+            processedNotes: null,
+          },
+        })
+
+        // Apply trust actions for all approved listings
+        for (const listing of listingsToApprove) {
+          if (listing.authorId) {
+            await applyTrustAction({
+              userId: listing.authorId,
+              action: TrustAction.LISTING_APPROVED,
+              context: {
+                listingId: listing.id,
+                adminUserId,
+                reason: 'bulk_listing_approved',
+              },
+            })
+          }
+
+          // Emit notification event for each listing
+          notificationEventEmitter.emitNotificationEvent({
+            eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
+            entityType: 'listing',
+            entityId: listing.id,
+            triggeredBy: adminUserId,
+            payload: {
+              listingId: listing.id,
+              approvedBy: adminUserId,
+              approvedAt: new Date(),
+              bulk: true,
+            },
+          })
+        }
+
+        // Invalidate listing stats cache
+        listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+        return {
+          success: true,
+          approvedCount: listingsToApprove.length,
+          message: `Successfully approved ${listingsToApprove.length} listing(s)`,
+        }
+      })
+    }),
+
+  bulkReject: adminProcedure
+    .input(BulkRejectListingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingIds, notes } = input
+      const adminUserId = ctx.session.user.id
+
+      // Verify admin user exists
+      const adminUserExists = await ctx.prisma.user.findUnique({
+        where: { id: adminUserId },
+        select: { id: true },
+      })
+      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
+      return ctx.prisma.$transaction(async (tx) => {
+        // Get all listings to reject and verify they are pending
+        const listingsToReject = await tx.listing.findMany({
+          where: {
+            id: { in: listingIds },
+            status: ApprovalStatus.PENDING,
+          },
+          include: { author: { select: { id: true } } },
+        })
+
+        if (listingsToReject.length === 0) {
+          throw new Error('No valid pending listings found to reject')
+        }
+
+        // Update all listings to rejected
+        await tx.listing.updateMany({
+          where: { id: { in: listingsToReject.map((l) => l.id) } },
+          data: {
+            status: ApprovalStatus.REJECTED,
+            processedByUserId: adminUserId,
+            processedAt: new Date(),
+            processedNotes: notes,
+          },
+        })
+
+        // Apply trust actions for all rejected listings
+        for (const listing of listingsToReject) {
+          if (listing.authorId) {
+            await applyTrustAction({
+              userId: listing.authorId,
+              action: TrustAction.LISTING_REJECTED,
+              context: {
+                listingId: listing.id,
+                adminUserId,
+                reason: notes || 'bulk_listing_rejected',
+              },
+            })
+          }
+
+          // Emit notification event for each listing
+          notificationEventEmitter.emitNotificationEvent({
+            eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
+            entityType: 'listing',
+            entityId: listing.id,
+            triggeredBy: adminUserId,
+            payload: {
+              listingId: listing.id,
+              rejectedBy: adminUserId,
+              rejectedAt: new Date(),
+              rejectionReason: notes,
+              bulk: true,
+            },
+          })
+        }
+
+        // Invalidate listing stats cache
+        listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+        return {
+          success: true,
+          rejectedCount: listingsToReject.length,
+          message: `Successfully rejected ${listingsToReject.length} listing(s)`,
+        }
+      })
     }),
 
   getStats: adminProcedure.query(async ({ ctx }) => {
