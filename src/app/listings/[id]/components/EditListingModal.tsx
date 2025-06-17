@@ -68,6 +68,8 @@ function EditListingModal(props: EditListingModalProps) {
   const canEdit = canEditQuery.data?.canEdit ?? false
   const remainingMinutes = canEditQuery.data?.remainingMinutes ?? 0
   const timeExpired = canEditQuery.data?.timeExpired ?? false
+  const isPending = canEditQuery.data?.isPending ?? false
+  const isApproved = canEditQuery.data?.isApproved ?? false
 
   if (isEditing) {
     return (
@@ -76,9 +78,14 @@ function EditListingModal(props: EditListingModalProps) {
           <div className="flex items-center gap-2 mb-4">
             <Edit3 className="w-5 h-5 text-indigo-600" />
             <h2 className="text-xl font-semibold">Edit Listing</h2>
-            {canEdit && (
-              <span className="text-sm text-gray-500">
-                ({remainingMinutes} minutes remaining)
+            {canEdit && isPending && (
+              <span className="text-sm text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                Pending Approval
+              </span>
+            )}
+            {canEdit && isApproved && (
+              <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">
+                {remainingMinutes} minutes remaining
               </span>
             )}
           </div>
@@ -109,6 +116,20 @@ function EditListingModal(props: EditListingModalProps) {
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
                   <strong>Note:</strong> You can only edit the notes section.
+                  {isPending && (
+                    <span>
+                      {' '}
+                      You can edit anytime while your listing is pending
+                      approval.
+                    </span>
+                  )}
+                  {isApproved && (
+                    <span>
+                      {' '}
+                      After approval, you have {remainingMinutes} minutes to
+                      make edits.
+                    </span>
+                  )}
                   This feature is intended for fixing typos, not major changes.
                 </p>
               </div>
@@ -155,9 +176,11 @@ function EditListingModal(props: EditListingModalProps) {
   }
 
   const buttonTitle = canEdit
-    ? `Edit listing (${remainingMinutes} minutes remaining)`
+    ? isPending
+      ? 'Edit listing (pending approval - no time limit)'
+      : `Edit listing (${remainingMinutes} minutes remaining after approval)`
     : timeExpired
-      ? 'Edit time expired (60 minute limit)'
+      ? 'Edit time expired (60 minute limit after approval)'
       : 'Cannot edit listing'
 
   return (

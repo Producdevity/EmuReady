@@ -772,36 +772,54 @@ export const coreRouter = createTRPCRouter({
         return { canEdit: false, reason: 'Not your listing' }
       }
 
-      // Check approval status
-      if (listing.status !== ApprovalStatus.APPROVED) {
-        return { canEdit: false, reason: 'Listing not approved' }
-      }
-
-      // Check time limit
-      if (!listing.processedAt) {
-        return { canEdit: false, reason: 'No approval time found' }
-      }
-
-      const now = new Date()
-      const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
-      const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
-
-      const remainingTime = timeLimit - timeSinceApproval
-      const remainingMinutes = Math.floor(remainingTime / (60 * 1000))
-
-      if (timeSinceApproval > timeLimit) {
+      // PENDING listings can always be edited by the author
+      if (listing.status === ApprovalStatus.PENDING) {
         return {
-          canEdit: false,
-          reason: `Edit time expired (${EDIT_TIME_LIMIT_MINUTES} minutes limit)`,
-          timeExpired: true,
+          canEdit: true,
+          reason: 'Pending listings can always be edited',
+          isPending: true,
         }
       }
 
-      return {
-        canEdit: true,
-        remainingMinutes: Math.max(0, remainingMinutes),
-        remainingTime: Math.max(0, remainingTime),
+      // REJECTED listings cannot be edited
+      if (listing.status === ApprovalStatus.REJECTED) {
+        return {
+          canEdit: false,
+          reason:
+            'Rejected listings cannot be edited. Please create a new listing.',
+        }
       }
+
+      // APPROVED listings can be edited for 1 hour after approval
+      if (listing.status === ApprovalStatus.APPROVED) {
+        if (!listing.processedAt) {
+          return { canEdit: false, reason: 'No approval time found' }
+        }
+
+        const now = new Date()
+        const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
+        const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+
+        const remainingTime = timeLimit - timeSinceApproval
+        const remainingMinutes = Math.floor(remainingTime / (60 * 1000))
+
+        if (timeSinceApproval > timeLimit) {
+          return {
+            canEdit: false,
+            reason: `Edit time expired (${EDIT_TIME_LIMIT_MINUTES} minutes after approval)`,
+            timeExpired: true,
+          }
+        }
+
+        return {
+          canEdit: true,
+          remainingMinutes: Math.max(0, remainingMinutes),
+          remainingTime: Math.max(0, remainingTime),
+          isApproved: true,
+        }
+      }
+
+      return { canEdit: false, reason: 'Invalid listing status' }
     }),
 
   update: authorProcedure
@@ -830,22 +848,33 @@ export const coreRouter = createTRPCRouter({
         throw AppError.forbidden('You can only edit your own listings')
       }
 
-      if (listing.status !== ApprovalStatus.APPROVED) {
-        throw AppError.badRequest('You can only edit approved listings')
-      }
-
-      if (!listing.processedAt) {
-        throw AppError.badRequest('Listing approval time not found')
-      }
-
-      const now = new Date()
-      const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
-      const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
-
-      if (timeSinceApproval > timeLimit) {
+      // REJECTED listings cannot be edited
+      if (listing.status === ApprovalStatus.REJECTED) {
         throw AppError.badRequest(
-          `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
+          'Rejected listings cannot be edited. Please create a new listing.',
         )
+      }
+
+      // PENDING listings can always be edited
+      if (listing.status === ApprovalStatus.PENDING) {
+        // No time restrictions for pending listings
+      } else if (listing.status === ApprovalStatus.APPROVED) {
+        // APPROVED listings have a time limit
+        if (!listing.processedAt) {
+          throw AppError.badRequest('Listing approval time not found')
+        }
+
+        const now = new Date()
+        const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
+        const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+
+        if (timeSinceApproval > timeLimit) {
+          throw AppError.badRequest(
+            `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
+          )
+        }
+      } else {
+        throw AppError.badRequest('Invalid listing status')
       }
 
       // Update the listing
