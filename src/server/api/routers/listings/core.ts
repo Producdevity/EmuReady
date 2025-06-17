@@ -160,8 +160,8 @@ export const coreRouter = createTRPCRouter({
           case 'emulator.name':
             orderBy.push({ emulator: { name: input.sortDirection } })
             break
-          case 'performance.label':
-            orderBy.push({ performance: { label: input.sortDirection } })
+          case 'performance.rank':
+            orderBy.push({ performance: { rank: input.sortDirection } })
             break
           case 'author.name':
             orderBy.push({ author: { name: input.sortDirection } })

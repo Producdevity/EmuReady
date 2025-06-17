@@ -329,7 +329,7 @@ function ListingsPage() {
                   {columnVisibility.isColumnVisible('performance') && (
                     <SortableHeader
                       label="Performance"
-                      field="performance.label"
+                      field="performance.rank"
                       currentSortField={listingsState.sortField}
                       currentSortDirection={listingsState.sortDirection}
                       onSort={handleSort}

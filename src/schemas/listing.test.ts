@@ -157,7 +157,7 @@ describe('Listing Schemas', () => {
         'game.system.name',
         'device',
         'emulator.name',
-        'performance.label',
+        'performance.rank',
         'successRate',
         'author.name',
         'createdAt',

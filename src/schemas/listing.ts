@@ -33,7 +33,7 @@ export const GetListingsSchema = z.object({
       'game.system.name',
       'device',
       'emulator.name',
-      'performance.label',
+      'performance.rank',
       'successRate',
       'author.name',
       'createdAt',

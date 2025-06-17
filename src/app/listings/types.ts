@@ -90,7 +90,7 @@ export type SortField =
   | 'game.system.name'
   | 'device'
   | 'emulator.name'
-  | 'performance.label'
+  | 'performance.rank'
   | 'successRate'
   | 'author.name'
   | 'createdAt'
