@@ -19,6 +19,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
+  BulkActions,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import storageKeys from '@/data/storageKeys'
@@ -70,6 +71,9 @@ function GameApprovalsPage() {
       gameTitle: '',
     })
 
+  // Bulk selection state
+  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([])
+
   const table = useAdminTable<GameSortField>({
     defaultLimit: 20,
     defaultSortField: 'submittedAt',
@@ -110,6 +114,55 @@ function GameApprovalsPage() {
       setProcessingGameId(null)
     },
   })
+
+  const bulkApproveGamesMutation = api.games.bulkApproveGames.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+      await pendingGamesQuery.refetch()
+      setSelectedGameIds([])
+    },
+    onError: (err) => {
+      console.error('Failed to bulk approve games:', err)
+      toast.error(`Failed to bulk approve games: ${getErrorMessage(err)}`)
+    },
+  })
+
+  const bulkRejectGamesMutation = api.games.bulkRejectGames.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+      await pendingGamesQuery.refetch()
+      setSelectedGameIds([])
+    },
+    onError: (err) => {
+      console.error('Failed to bulk reject games:', err)
+      toast.error(`Failed to bulk reject games: ${getErrorMessage(err)}`)
+    },
+  })
+
+  // Bulk selection handlers
+  const handleSelectAllGames = (selected: boolean) => {
+    if (selected) {
+      setSelectedGameIds(filteredGames.map((g) => g.id))
+    } else {
+      setSelectedGameIds([])
+    }
+  }
+
+  const handleSelectGame = (gameId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedGameIds((prev) => [...prev, gameId])
+    } else {
+      setSelectedGameIds((prev) => prev.filter((id) => id !== gameId))
+    }
+  }
+
+  const handleBulkApproveGames = async (ids: string[]) => {
+    await bulkApproveGamesMutation.mutateAsync({ gameIds: ids })
+  }
+
+  const handleBulkRejectGames = async (ids: string[], notes?: string) => {
+    await bulkRejectGamesMutation.mutateAsync({ gameIds: ids, notes })
+  }
 
   const showConfirmation = (gameId: string, action: ProcessingAction) => {
     const game = pendingGamesQuery.data?.games.find((g) => g.id === gameId)
@@ -248,6 +301,26 @@ function GameApprovalsPage() {
         </div>
       </div>
 
+      {/* Bulk Actions */}
+      {filteredGames.length > 0 && (
+        <BulkActions
+          selectedIds={selectedGameIds}
+          totalCount={filteredGames.length}
+          onSelectAll={handleSelectAllGames}
+          onClearSelection={() => setSelectedGameIds([])}
+          actions={{
+            approve: {
+              label: 'Approve Selected',
+              onAction: handleBulkApproveGames,
+            },
+            reject: {
+              label: 'Reject Selected',
+              onAction: handleBulkRejectGames,
+            },
+          }}
+        />
+      )}
+
       {/* Games Table */}
       <AdminTableContainer>
         {filteredGames.length === 0 ? (
@@ -264,6 +337,17 @@ function GameApprovalsPage() {
               <table className="min-w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
+                    <th className="px-6 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedGameIds.length === filteredGames.length &&
+                          filteredGames.length > 0
+                        }
+                        onChange={(e) => handleSelectAllGames(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                    </th>
                     {columnVisibility.isColumnVisible('game') && (
                       <SortableHeader
                         label="Game"
@@ -317,6 +401,16 @@ function GameApprovalsPage() {
                       key={game.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedGameIds.includes(game.id)}
+                          onChange={(e) =>
+                            handleSelectGame(game.id, e.target.checked)
+                          }
+                          className="rounded border-gray-300"
+                        />
+                      </td>
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4">
                           <div className="flex items-center">

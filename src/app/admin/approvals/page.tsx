@@ -16,6 +16,7 @@ import {
   SortableHeader,
   Pagination,
   LoadingSpinner,
+  BulkActions,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import storageKeys from '@/data/storageKeys'
@@ -89,6 +90,9 @@ function AdminApprovalsPage() {
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalStatus | null>(null)
 
+  // Bulk selection state
+  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
+
   const utils = api.useUtils()
   const approveMutation = api.listings.approveListing.useMutation({
     onSuccess: async () => {
@@ -117,6 +121,59 @@ function AdminApprovalsPage() {
       toast.error(`Failed to reject listing: ${getErrorMessage(err)}`)
     },
   })
+
+  const bulkApproveMutation = api.listings.bulkApproveListing.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+      await pendingListingsQuery.refetch()
+      await utils.listings.getProcessed.invalidate()
+      await utils.listings.get.invalidate()
+      setSelectedListingIds([])
+    },
+    onError: (err) => {
+      console.error('Failed to bulk approve listings:', err)
+      toast.error(`Failed to bulk approve listings: ${getErrorMessage(err)}`)
+    },
+  })
+
+  const bulkRejectMutation = api.listings.bulkRejectListing.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+      await pendingListingsQuery.refetch()
+      await utils.listings.getProcessed.invalidate()
+      await utils.listings.get.invalidate()
+      setSelectedListingIds([])
+    },
+    onError: (err) => {
+      console.error('Failed to bulk reject listings:', err)
+      toast.error(`Failed to bulk reject listings: ${getErrorMessage(err)}`)
+    },
+  })
+
+  // Bulk selection handlers
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedListingIds(listings.map((l) => l.id))
+    } else {
+      setSelectedListingIds([])
+    }
+  }
+
+  const handleSelectListing = (listingId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedListingIds((prev) => [...prev, listingId])
+    } else {
+      setSelectedListingIds((prev) => prev.filter((id) => id !== listingId))
+    }
+  }
+
+  const handleBulkApprove = async (ids: string[]) => {
+    await bulkApproveMutation.mutateAsync({ listingIds: ids })
+  }
+
+  const handleBulkReject = async (ids: string[], notes?: string) => {
+    await bulkRejectMutation.mutateAsync({ listingIds: ids, notes })
+  }
 
   const openApprovalModal = (
     listing: PendingListing,
@@ -251,6 +308,26 @@ function AdminApprovalsPage() {
         </div>
       </div>
 
+      {/* Bulk Actions */}
+      {listings.length > 0 && (
+        <BulkActions
+          selectedIds={selectedListingIds}
+          totalCount={listings.length}
+          onSelectAll={handleSelectAll}
+          onClearSelection={() => setSelectedListingIds([])}
+          actions={{
+            approve: {
+              label: 'Approve Selected',
+              onAction: handleBulkApprove,
+            },
+            reject: {
+              label: 'Reject Selected',
+              onAction: handleBulkReject,
+            },
+          }}
+        />
+      )}
+
       {/* Listings Table */}
       <AdminTableContainer>
         {listings.length === 0 ? (
@@ -268,6 +345,17 @@ function AdminApprovalsPage() {
               <table className="min-w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
+                    <th className="px-6 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedListingIds.length === listings.length &&
+                          listings.length > 0
+                        }
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                    </th>
                     {columnVisibility.isColumnVisible('game') && (
                       <SortableHeader
                         label="Game"
@@ -341,6 +429,16 @@ function AdminApprovalsPage() {
                       key={listing.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedListingIds.includes(listing.id)}
+                          onChange={(e) =>
+                            handleSelectListing(listing.id, e.target.checked)
+                          }
+                          className="rounded border-gray-300"
+                        />
+                      </td>
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4">
                           <Link
