@@ -31,7 +31,7 @@ function UserDetailsProfile(props: Props) {
             Member Since
           </h2>
           <p className="mt-1 text-lg text-gray-900 dark:text-white">
-            {formatDate(props.userProfile.createdAt)}
+            {formatDate(props.userProfile.createdAt ?? new Date())}
           </p>
         </div>
       </div>

@@ -100,13 +100,14 @@ function UserDetailsModal(props: Props) {
                 </h1>
                 <div className="flex items-center gap-3">
                   <Badge
-                    variant={getRoleVariant(userQuery.data.role)}
+                    variant={getRoleVariant(userQuery.data.role ?? 'USER')}
                     className="text-xs"
                   >
                     {userQuery.data.role}
                   </Badge>
                   <span className="text-white/80 text-sm">
-                    Member since {formatDate(userQuery.data.createdAt)}
+                    Member since{' '}
+                    {formatDate(userQuery.data.createdAt ?? new Date())}
                   </span>
                 </div>
               </div>
@@ -125,7 +126,7 @@ function UserDetailsModal(props: Props) {
                   </span>
                 </div>
                 <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {userQuery.data.listings.length}
+                  {userQuery.data.listings.items.length}
                 </p>
               </div>
 
@@ -137,7 +138,7 @@ function UserDetailsModal(props: Props) {
                   </span>
                 </div>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                  {userQuery.data.votes.length}
+                  {userQuery.data.votes.items.length}
                 </p>
               </div>
 
@@ -168,7 +169,7 @@ function UserDetailsModal(props: Props) {
                   </span>
                 </div>
                 <p className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                  {formatTimeAgo(userQuery.data.createdAt)}
+                  {formatTimeAgo(userQuery.data.createdAt ?? new Date())}
                 </p>
               </div>
             </div>
@@ -191,7 +192,7 @@ function UserDetailsModal(props: Props) {
                       </span>
                       <div className="flex items-center gap-2">
                         <code className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
-                          {userQuery.data.id.slice(0, 8)}...
+                          {userQuery.data.id?.slice(0, 8) ?? 'N/A'}...
                         </code>
                         <button
                           onClick={() =>
@@ -214,7 +215,11 @@ function UserDetailsModal(props: Props) {
                       </span>
                       <div className="flex items-center gap-2">
                         <ShieldUser className="w-4 h-4 text-gray-500" />
-                        <Badge variant={getRoleVariant(userQuery.data.role)}>
+                        <Badge
+                          variant={getRoleVariant(
+                            userQuery.data.role ?? 'USER',
+                          )}
+                        >
                           {userQuery.data.role}
                         </Badge>
                       </div>
@@ -227,10 +232,10 @@ function UserDetailsModal(props: Props) {
                       Member Since
                     </span>
                     <p className="text-sm text-gray-900 dark:text-white">
-                      {formatDate(userQuery.data.createdAt)}
+                      {formatDate(userQuery.data.createdAt ?? new Date())}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatTimeAgo(userQuery.data.createdAt)}
+                      {formatTimeAgo(userQuery.data.createdAt ?? new Date())}
                     </p>
                   </div>
                 </div>
@@ -251,30 +256,32 @@ function UserDetailsModal(props: Props) {
                         Performance Listings
                       </span>
                       <span className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-full">
-                        {userQuery.data.listings.length} total
+                        {userQuery.data.listings.items.length} total
                       </span>
                     </div>
 
-                    {userQuery.data.listings.length > 0 ? (
+                    {userQuery.data.listings.items.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.listings.slice(0, 3).map((listing) => (
-                          <div
-                            key={listing.id}
-                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
-                          >
-                            <span className="truncate">
-                              {listing.game.title} on{' '}
-                              {listing.device.brand.name}{' '}
-                              {listing.device.modelName}
-                            </span>
-                            <span className="text-gray-500 ml-2">
-                              {listing.performance.label}
-                            </span>
-                          </div>
-                        ))}
-                        {userQuery.data.listings.length > 3 && (
+                        {userQuery.data.listings.items
+                          .slice(0, 3)
+                          .map((listing) => (
+                            <div
+                              key={listing.id}
+                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
+                            >
+                              <span className="truncate">
+                                {listing.game.title} on{' '}
+                                {listing.device.brand.name}{' '}
+                                {listing.device.modelName}
+                              </span>
+                              <span className="text-gray-500 ml-2">
+                                {listing.performance.label}
+                              </span>
+                            </div>
+                          ))}
+                        {userQuery.data.listings.items.length > 3 && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.listings.length - 3} more...
+                            +{userQuery.data.listings.items.length - 3} more...
                           </p>
                         )}
                       </div>
@@ -292,13 +299,13 @@ function UserDetailsModal(props: Props) {
                         Voting Activity
                       </span>
                       <span className="text-xs bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">
-                        {userQuery.data.votes.length} votes
+                        {userQuery.data.votes.items.length} votes
                       </span>
                     </div>
 
-                    {userQuery.data.votes.length > 0 ? (
+                    {userQuery.data.votes.items.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.votes.slice(0, 3).map((vote) => (
+                        {userQuery.data.votes.items.slice(0, 3).map((vote) => (
                           <div
                             key={vote.id}
                             className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
@@ -316,9 +323,10 @@ function UserDetailsModal(props: Props) {
                             </span>
                           </div>
                         ))}
-                        {userQuery.data.votes.length > 3 && (
+                        {userQuery.data.votes.items.length > 3 && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.votes.length - 3} more votes...
+                            +{userQuery.data.votes.items.length - 3} more
+                            votes...
                           </p>
                         )}
                       </div>

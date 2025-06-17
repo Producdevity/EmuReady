@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import type { RouterOutput } from '@/types/trpc'
 
 type UserProfile = RouterOutput['users']['getUserById']
-type UserVote = NonNullable<UserProfile>['votes'][0]
+type UserVote = NonNullable<UserProfile>['votes']['items'][0]
 
 interface Props {
   votes: UserVote[]

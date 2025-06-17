@@ -3,7 +3,7 @@ import { formatDate } from '@/utils/date'
 import type { RouterOutput } from '@/types/trpc'
 
 type UserProfile = RouterOutput['users']['getUserById']
-type UserListing = NonNullable<UserProfile>['listings'][0]
+type UserListing = NonNullable<UserProfile>['listings']['items'][0]
 
 interface Props {
   listings: UserListing[]
