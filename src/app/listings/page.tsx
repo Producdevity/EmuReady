@@ -421,7 +421,8 @@ function ListingsPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Link
-                                href={`/games/${listing.game.id}`}
+                                // href={`/games/${listing.game.id}`} // TODO: not sure whether to link to game or listing
+                                href={`/listings/${listing.id}`}
                                 className="hover:text-blue-600 dark:hover:text-blue-400"
                               >
                                 {listing.game.title.substring(0, 30)}
