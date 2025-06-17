@@ -83,6 +83,8 @@ function DeviceModal(props: Props) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       title={props.editId ? 'Edit Device' : 'Add Device'}
+      closeOnEscape={false}
+      closeOnBackdropClick={false}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
