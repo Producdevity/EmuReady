@@ -165,7 +165,7 @@ function ListingDetailsClient(props: Props) {
                 )}
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
-                  Rating
+                  Success Rate
                 </h2>
                 <VoteButtons
                   listingId={props.listing?.id}
