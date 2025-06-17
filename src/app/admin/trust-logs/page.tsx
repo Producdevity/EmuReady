@@ -1,9 +1,10 @@
 'use client'
 
-import { Shield, TrendingUp, Users, Calendar, Search } from 'lucide-react'
+import { Shield, Calendar, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import TrustStatsOverview from '@/app/admin/trust-logs/components/TrustStatsOverview'
 import {
   Button,
   Input,
@@ -22,6 +23,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'
+import { getTrustActionBadgeColor } from '@/utils/badgeColors'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { TrustAction } from '@orm'
 
@@ -76,16 +78,6 @@ function AdminTrustLogsPage() {
       toast.error(`Failed to run monthly bonus: ${error.message}`)
     },
   })
-
-  function getActionBadgeColor(
-    action: TrustAction,
-  ): 'success' | 'info' | 'danger' | 'warning' {
-    const weight = TRUST_ACTIONS[action]?.weight ?? 0
-    if (weight > 5) return 'success'
-    if (weight > 0) return 'info'
-    if (weight < -5) return 'danger'
-    return 'warning'
-  }
 
   function clearFilters() {
     table.setSearch('')
@@ -147,59 +139,8 @@ function AdminTrustLogsPage() {
         </div>
       </div>
 
-      {/* Trust Stats Overview */}
       {trustStatsQuery.data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Total Actions
-                </h3>
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">
-                  {trustStatsQuery.data.totalActions}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Users className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Total Users
-                </h3>
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">
-                  {trustStatsQuery.data.totalUsers}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Shield className="h-8 w-8 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Trusted+ Users
-                </h3>
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">
-                  {trustStatsQuery.data.levelDistribution
-                    ?.filter((level) => level.minScore >= 250)
-                    ?.reduce((sum, level) => sum + level.count, 0) ?? 0}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TrustStatsOverview trustStatsData={trustStatsQuery.data} />
       )}
 
       {/* Search and Filters */}
@@ -327,7 +268,7 @@ function AdminTrustLogsPage() {
                       {columnVisibility.isColumnVisible('action') && (
                         <td className="px-6 py-4">
                           <Badge
-                            variant={getActionBadgeColor(log.action)}
+                            variant={getTrustActionBadgeColor(log.action)}
                             size="sm"
                           >
                             {TRUST_ACTIONS[log.action]?.description ??

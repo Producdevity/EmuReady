@@ -1,4 +1,5 @@
-import { ApprovalStatus, Role } from '@orm'
+import { TRUST_ACTIONS } from '@/lib/trust/config'
+import { ApprovalStatus, Role, type TrustAction } from '@orm'
 import type { BadgeVariant } from '@/components/ui/Badge'
 
 const approvalStatusVariantsMap: Record<ApprovalStatus, BadgeVariant> = {
@@ -38,4 +39,12 @@ const roleVariantsMap: Record<Role, BadgeVariant> = {
 
 export function getRoleVariant(role: Role): BadgeVariant {
   return roleVariantsMap[role] || 'default'
+}
+
+export function getTrustActionBadgeColor(action: TrustAction): BadgeVariant {
+  const weight = TRUST_ACTIONS[action]?.weight ?? 0
+  if (weight > 5) return 'success'
+  if (weight > 0) return 'info'
+  if (weight < -5) return 'danger'
+  return 'warning'
 }
