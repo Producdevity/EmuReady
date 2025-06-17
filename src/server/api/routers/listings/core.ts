@@ -151,7 +151,10 @@ export const coreRouter = createTRPCRouter({
       // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
 
-      if (input.sortField && input.sortDirection) {
+      // Special handling for success rate sorting - we need to fetch all data first
+      const isSortingBySuccessRate = input.sortField === 'successRate'
+
+      if (input.sortField && input.sortDirection && !isSortingBySuccessRate) {
         switch (input.sortField) {
           case 'game.title':
             orderBy.push({ game: { title: input.sortDirection } })
@@ -175,15 +178,91 @@ export const coreRouter = createTRPCRouter({
           case 'createdAt':
             orderBy.push({ createdAt: input.sortDirection })
             break
-          // 'successRate' will be handled after fetching the data
         }
       }
 
       // Default ordering if no sort specified or for secondary sort
-      if (!orderBy.length || input.sortField !== 'createdAt') {
+      if (
+        !orderBy.length ||
+        (input.sortField !== 'createdAt' && !isSortingBySuccessRate)
+      ) {
         orderBy.push({ createdAt: 'desc' })
       }
 
+      // For success rate sorting, we need to fetch ALL listings, calculate rates, sort, then paginate
+      if (isSortingBySuccessRate) {
+        const allListings = await ctx.prisma.listing.findMany({
+          where: combinedFilters,
+          include: {
+            game: { include: { system: true } },
+            device: { include: { brand: true, soc: true } },
+            emulator: true,
+            performance: true,
+            author: { select: { id: true, name: true, email: true } },
+            _count: { select: { votes: true, comments: true } },
+            votes: ctx.session
+              ? {
+                  where: { userId: ctx.session.user.id },
+                  select: { value: true },
+                }
+              : undefined,
+          },
+          orderBy: { createdAt: 'desc' }, // fallback ordering
+        })
+
+        // Calculate success rates for all listings
+        const allListingsWithStats = await Promise.all(
+          allListings.map(async (listing) => {
+            // Count upvotes
+            const upVotes = await ctx.prisma.vote.count({
+              where: { listingId: listing.id, value: true },
+            })
+
+            const totalVotes = listing._count.votes
+            const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
+
+            const userVote =
+              ctx.session && listing.votes.length > 0
+                ? listing.votes[0].value
+                : null
+
+            return {
+              ...listing,
+              successRate,
+              userVote,
+              // Remove the raw votes array from the response
+              votes: undefined,
+            }
+          }),
+        )
+
+        // Sort by success rate
+        allListingsWithStats.sort((a, b) =>
+          input.sortDirection === 'asc'
+            ? a.successRate - b.successRate
+            : b.successRate - a.successRate,
+        )
+
+        // Apply pagination manually
+        const startIndex = skip
+        const endIndex = skip + input.limit
+        const paginatedListings = allListingsWithStats.slice(
+          startIndex,
+          endIndex,
+        )
+
+        return {
+          listings: paginatedListings,
+          pagination: {
+            total,
+            pages: Math.ceil(total / input.limit),
+            page: input.page,
+            limit: input.limit,
+          },
+        }
+      }
+
+      // Regular database sorting for other fields
       const listings = await ctx.prisma.listing.findMany({
         where: combinedFilters,
         include: {
@@ -230,15 +309,6 @@ export const coreRouter = createTRPCRouter({
           }
         }),
       )
-
-      // Handle sorting by success rate since it's calculated after the database query
-      if (input.sortField === 'successRate' && input.sortDirection) {
-        listingsWithStats.sort((a, b) =>
-          input.sortDirection === 'asc'
-            ? a.successRate - b.successRate
-            : b.successRate - a.successRate,
-        )
-      }
 
       return {
         listings: listingsWithStats,

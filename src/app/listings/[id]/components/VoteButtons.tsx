@@ -2,12 +2,13 @@
 
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
-import { ThumbsUp, ThumbsDown } from 'lucide-react'
+import { CheckCircle, XCircle, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import { useRecaptchaForVote } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
+import VotingHelpModal from './VotingHelpModal'
 
 interface Props {
   listingId: string
@@ -29,6 +30,7 @@ function VoteButtons(props: Props) {
   const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(
     props.totalVotes,
   )
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   const voteMutation = api.listings.vote.useMutation({
     onSuccess: () => {
@@ -91,63 +93,94 @@ function VoteButtons(props: Props) {
       : 0
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => handleVote(true)}
-          disabled={!isAuthenticated || voteMutation.isPending}
-          className={`flex flex-col items-center p-2 rounded-full transition-colors ${
-            optimisticVote === true
-              ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400'
-          }`}
-          title={isAuthenticated ? 'Vote Up' : 'Login to vote'}
-        >
-          <ThumbsUp className="w-6 h-6" />
-        </button>
-
-        <div className="text-center">
-          <div className="text-2xl font-bold text-gray-700 dark:text-gray-200">
-            {successRate}%
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {optimisticTotalVotes} votes
-          </div>
+    <>
+      <div className="flex flex-col items-center gap-2">
+        {/* Header with title and help */}
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Community Verification
+          </h3>
+          <button
+            onClick={() => setShowHelpModal(true)}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            title="How does verification work?"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
         </div>
 
-        <button
-          onClick={() => handleVote(false)}
-          disabled={!isAuthenticated || voteMutation.isPending}
-          className={`flex flex-col items-center p-2 rounded-full transition-colors ${
-            optimisticVote === false
-              ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400'
-          }`}
-          title={isAuthenticated ? 'Vote Down' : 'Login to vote'}
-        >
-          <ThumbsDown className="w-6 h-6" />
-        </button>
-      </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => handleVote(true)}
+            disabled={!isAuthenticated || voteMutation.isPending}
+            className={`flex flex-col items-center p-3 rounded-lg transition-colors border-2 ${
+              optimisticVote === true
+                ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400'
+                : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-green-300 dark:hover:border-green-600'
+            }`}
+            title={
+              isAuthenticated
+                ? 'Confirm - This matches my experience'
+                : 'Login to verify'
+            }
+          >
+            <CheckCircle className="w-6 h-6 mb-1" />
+            <span className="text-xs font-medium">Confirm</span>
+          </button>
 
-      {/* Progress bar showing success rate */}
-      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full bg-green-500"
-          initial={{ width: 0 }}
-          animate={{ width: `${successRate}%` }}
-          transition={{ duration: 0.5 }}
-        />
-      </div>
+          <div className="text-center px-4">
+            <div className="text-3xl font-bold text-gray-700 dark:text-gray-200">
+              {successRate}%
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              verified by {optimisticTotalVotes} users
+            </div>
+          </div>
 
-      {!isAuthenticated && (
-        <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-          <Link href="/sign-in" className="text-blue-500 hover:underline">
-            Sign in
-          </Link>{' '}
-          to vote
+          <button
+            onClick={() => handleVote(false)}
+            disabled={!isAuthenticated || voteMutation.isPending}
+            className={`flex flex-col items-center p-3 rounded-lg transition-colors border-2 ${
+              optimisticVote === false
+                ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400'
+                : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-600'
+            }`}
+            title={
+              isAuthenticated
+                ? "Dispute - This doesn't match my experience"
+                : 'Login to verify'
+            }
+          >
+            <XCircle className="w-6 h-6 mb-1" />
+            <span className="text-xs font-medium">Dispute</span>
+          </button>
         </div>
-      )}
-    </div>
+
+        {/* Progress bar showing success rate */}
+        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-green-500"
+            initial={{ width: 0 }}
+            animate={{ width: `${successRate}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+
+        {!isAuthenticated && (
+          <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
+            <Link href="/sign-in" className="text-blue-500 hover:underline">
+              Sign in
+            </Link>{' '}
+            to verify
+          </div>
+        )}
+      </div>
+
+      <VotingHelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+      />
+    </>
   )
 }
 

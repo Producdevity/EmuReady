@@ -20,16 +20,42 @@ function UserDetailsListings(props: Props) {
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
             <div className="flex flex-col gap-4">
               {props.listings.map((listing: UserListing) => (
-                <div key={listing.id} className="flex flex-row gap-4">
-                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                    <Link href={`/listings/${listing.id}`}>
-                      {listing.game?.title} on {listing.device?.brand.name}{' '}
+                <div
+                  key={listing.id}
+                  className="flex flex-row gap-4 items-center"
+                >
+                  {/* Game Placeholder */}
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                      <span className="text-2xl">🎮</span>
+                    </div>
+                  </div>
+
+                  {/* Game Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+                      <Link
+                        href={`/listings/${listing.id}`}
+                        className="hover:underline"
+                      >
+                        {listing.game?.title}
+                      </Link>
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                      on {listing.device?.brand.name}{' '}
                       {listing.device?.modelName}
-                    </Link>
-                  </h4>
-                  <p className="align-right ml-auto text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(listing.createdAt)}
-                  </p>
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                      Performance: {listing.performance?.label}
+                    </p>
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(listing.createdAt)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

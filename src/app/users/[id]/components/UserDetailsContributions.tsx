@@ -29,7 +29,7 @@ function UserDetailsContributions(props: Props) {
                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
                     )}
                   >
-                    {vote.value ? 'Upvoted' : 'Downvoted'}
+                    {vote.value ? 'Confirmed' : 'Disputed'}
                   </span>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     <Link href={`/listings/${vote.listing.id}`}>
