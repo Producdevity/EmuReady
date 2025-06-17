@@ -29,6 +29,16 @@ function SocModal(props: Props) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  // Common values for quick selection
+  const commonManufacturers = [
+    'Qualcomm',
+    'MediaTek',
+    'Apple',
+    'Samsung',
+    'NVIDIA',
+  ]
+  const commonArchitectures = ['ARM64', 'x86_64']
+
   // Update form fields when socData changes
   useEffect(() => {
     if (props.socData) {
@@ -134,6 +144,22 @@ function SocModal(props: Props) {
               className="w-full"
               placeholder="e.g., Qualcomm"
             />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {commonManufacturers.map((mfg) => (
+                <button
+                  key={mfg}
+                  type="button"
+                  onClick={() => setManufacturer(mfg)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    manufacturer === mfg
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-600'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+                  }`}
+                >
+                  {mfg}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -150,6 +176,22 @@ function SocModal(props: Props) {
               className="w-full"
               placeholder="e.g., ARM64"
             />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {commonArchitectures.map((arch) => (
+                <button
+                  key={arch}
+                  type="button"
+                  onClick={() => setArchitecture(arch)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    architecture === arch
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-600'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+                  }`}
+                >
+                  {arch}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

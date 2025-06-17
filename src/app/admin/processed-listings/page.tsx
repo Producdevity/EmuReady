@@ -351,6 +351,7 @@ function ProcessedListingsPage() {
         <Modal
           isOpen={showOverrideModal}
           onClose={closeOverrideModal}
+          closeOnBackdropClick={false}
           title={`Override Status: ${selectedListingForOverride.game.title}`}
           size="lg"
         >

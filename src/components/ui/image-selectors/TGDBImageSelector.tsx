@@ -403,6 +403,8 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
           onClose={() => setPreviewImage(null)}
           title={previewImage.gameName}
           size="lg"
+          closeOnBackdropClick={false}
+          closeOnEscape={false}
           isNested={true}
         >
           <div className="space-y-4">

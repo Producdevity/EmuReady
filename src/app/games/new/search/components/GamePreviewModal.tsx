@@ -31,6 +31,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       title="Game Preview"
+      closeOnBackdropClick={false}
       size="lg"
     >
       <div className="space-y-6">

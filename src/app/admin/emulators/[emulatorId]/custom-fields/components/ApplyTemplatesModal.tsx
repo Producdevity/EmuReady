@@ -94,6 +94,8 @@ export default function ApplyTemplatesModal(props: Props) {
       isOpen={props.isOpen}
       onClose={handleClose}
       title="Apply Field Templates"
+      closeOnBackdropClick={false}
+      closeOnEscape={false}
       size="lg"
     >
       <div className="space-y-6">

@@ -392,6 +392,8 @@ function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
           isOpen={true}
           onClose={closePreview}
           title={previewImage.gameName}
+          closeOnBackdropClick={false}
+          closeOnEscape={false}
           size="lg"
           isNested={true}
         >

@@ -21,6 +21,7 @@ function SocViewModal(props: Props) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       title="SoC Details"
+      closeOnBackdropClick={false}
       size="lg"
     >
       <div className="space-y-6">
