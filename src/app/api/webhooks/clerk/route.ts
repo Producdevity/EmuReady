@@ -5,23 +5,119 @@ import { prisma } from '@/server/db'
 import { Role } from '@orm'
 import type { NextRequest } from 'next/server'
 
-type ClerkWebhookEvent = {
-  type: string
+interface ClerkWebhookEvent {
   data: {
     id: string
+    username?: string
     email_addresses: Array<{
-      email_address: string
       id: string
+      email_address: string
     }>
     primary_email_address_id?: string
-    first_name?: string
-    last_name?: string
-    full_name?: string
-    image_url?: string
-    username?: string
     public_metadata?: {
-      role?: string
+      role?: Role
     }
+    image_url?: string
+  }
+  type: string
+}
+
+async function handleUserCreated(data: ClerkWebhookEvent['data']) {
+  const primaryEmail = data.primary_email_address_id
+    ? data.email_addresses.find(
+        (email) => email.id === data.primary_email_address_id,
+      )
+    : data.email_addresses[0]
+
+  if (!primaryEmail) {
+    console.error('❌ No primary email found for user:', data.id)
+    return
+  }
+
+  const role = (data.public_metadata?.role as Role) ?? Role.USER
+
+  let displayName: string | null = null
+  if (data.username) {
+    displayName = data.username
+  }
+
+  try {
+    await prisma.user.create({
+      data: {
+        clerkId: data.id,
+        email: primaryEmail.email_address,
+        name: displayName,
+        profileImage: data.image_url ?? null,
+        role: role,
+      },
+    })
+  } catch (error) {
+    console.error('❌ Failed to create user in database:', error)
+    throw error
+  }
+}
+
+async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
+  const primaryEmail = data.primary_email_address_id
+    ? data.email_addresses.find(
+        (email) => email.id === data.primary_email_address_id,
+      )
+    : data.email_addresses[0]
+
+  if (!primaryEmail) {
+    console.error('❌ No primary email found for user:', data.id)
+    return
+  }
+
+  const role = data.public_metadata?.role as Role
+
+  let displayName: string | null = null
+  if (data.username) {
+    displayName = data.username
+  }
+
+  if (displayName) {
+    const existingUserWithName = await prisma.user.findFirst({
+      where: {
+        name: displayName,
+        clerkId: { not: data.id },
+      },
+    })
+
+    if (existingUserWithName) {
+      console.warn(
+        `⚠️ Username conflict: "${displayName}" already exists for another user. Skipping username update for user ${data.id}`,
+      )
+      displayName = null
+    }
+  }
+
+  const updateData = {
+    email: primaryEmail.email_address,
+    ...(displayName !== null && { name: displayName }),
+    profileImage: data.image_url ?? null,
+    ...(role && { role: role }),
+  }
+
+  try {
+    await prisma.user.update({
+      where: { clerkId: data.id },
+      data: updateData,
+    })
+  } catch (error) {
+    console.error('❌ Failed to update user in database:', error)
+    throw error
+  }
+}
+
+async function handleUserDeleted(data: ClerkWebhookEvent['data']) {
+  try {
+    await prisma.user.delete({
+      where: { clerkId: data.id },
+    })
+  } catch (error) {
+    console.error('❌ Failed to delete user from database:', error)
+    throw error
   }
 }
 
@@ -42,153 +138,47 @@ export async function POST(request: NextRequest) {
   const svixSignature = headerPayload.get('svix-signature')
 
   if (!svixId || !svixTimestamp || !svixSignature) {
-    console.error('❌ Missing required svix headers')
+    console.error('❌ Missing svix headers')
     return NextResponse.json({ error: 'Missing svix headers' }, { status: 400 })
   }
 
   const payload = await request.text()
 
-  // Verify webhook
-  const webhook = new Webhook(WEBHOOK_SECRET)
-  let event: ClerkWebhookEvent
+  const wh = new Webhook(WEBHOOK_SECRET)
+
+  let evt: ClerkWebhookEvent
 
   try {
-    event = webhook.verify(payload, {
+    evt = wh.verify(payload, {
       'svix-id': svixId,
       'svix-timestamp': svixTimestamp,
       'svix-signature': svixSignature,
     }) as ClerkWebhookEvent
-  } catch (error) {
-    console.error('❌ Webhook verification failed:', error)
-    return NextResponse.json(
-      { error: 'Invalid webhook signature' },
-      { status: 400 },
-    )
+  } catch (err) {
+    console.error('❌ Error verifying webhook:', err)
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  // Handle the webhook event
+  const { data, type } = evt
+
   try {
-    switch (event.type) {
+    switch (type) {
       case 'user.created':
-        await handleUserCreated(event.data)
+        await handleUserCreated(data)
         break
       case 'user.updated':
-        await handleUserUpdated(event.data)
+        await handleUserUpdated(data)
         break
       case 'user.deleted':
-        await handleUserDeleted(event.data)
+        await handleUserDeleted(data)
         break
       default:
-        console.info(`⚠️ Unhandled webhook event: ${event.type}`)
+        console.log(`Unhandled webhook type: ${type}`)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('❌ Webhook handler error:', error)
-    return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 },
-    )
-  }
-}
-
-async function handleUserCreated(data: ClerkWebhookEvent['data']) {
-  // Use primary_email_address_id if available, otherwise fall back to first email
-  const primaryEmail = data.primary_email_address_id
-    ? data.email_addresses.find(
-        (email) => email.id === data.primary_email_address_id,
-      )
-    : data.email_addresses[0]
-
-  if (!primaryEmail) {
-    console.error('❌ No primary email found for user:', data.id)
-    return
-  }
-
-  // Determine role from public metadata, default to USER
-  const role = (data.public_metadata?.role as Role) ?? Role.USER
-
-  // Use full_name, or combine first_name + last_name, or use username as fallback
-  let displayName = data.full_name
-  if (!displayName && data.first_name) {
-    displayName = data.last_name
-      ? `${data.first_name} ${data.last_name}`
-      : data.first_name
-  }
-  if (!displayName && data.username) {
-    displayName = data.username
-  }
-
-  const userData = {
-    clerkId: data.id,
-    email: primaryEmail.email_address,
-    name: displayName ?? null,
-    profileImage: data.image_url ?? null,
-    role: role,
-  }
-
-  try {
-    await prisma.user.create({
-      data: userData,
-    })
-  } catch (error) {
-    console.error('❌ Failed to create user in database:', error)
-    throw error // Re-throw to return 500 status
-  }
-}
-
-async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
-  // Use primary_email_address_id if available, otherwise fall back to first email
-  const primaryEmail = data.primary_email_address_id
-    ? data.email_addresses.find(
-        (email) => email.id === data.primary_email_address_id,
-      )
-    : data.email_addresses[0]
-
-  if (!primaryEmail) {
-    console.error('❌ No primary email found for user:', data.id)
-    return
-  }
-
-  // Determine role from public metadata
-  const role = data.public_metadata?.role as Role
-
-  // Use full_name, or combine first_name + last_name, or use username as fallback
-  let displayName = data.full_name
-  if (!displayName && data.first_name) {
-    displayName = data.last_name
-      ? `${data.first_name} ${data.last_name}`
-      : data.first_name
-  }
-  if (!displayName && data.username) {
-    displayName = data.username
-  }
-
-  const updateData = {
-    email: primaryEmail.email_address,
-    name: displayName ?? null,
-    profileImage: data.image_url ?? null,
-    ...(role && { role: role }),
-  }
-
-  try {
-    await prisma.user.update({
-      where: { clerkId: data.id },
-      data: updateData,
-    })
-  } catch (error) {
-    console.error('❌ Failed to update user in database:', error)
-    throw error // Re-throw to return 500 status
-  }
-}
-
-async function handleUserDeleted(data: ClerkWebhookEvent['data']) {
-  try {
-    await prisma.user.delete({
-      where: { clerkId: data.id },
-    })
-  } catch (error) {
-    console.error('❌ Failed to delete user from database:', error)
-    throw error // Re-throw to return 500 status
+    console.error(`❌ Error handling webhook ${type}:`, error)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   RegisterUserSchema,
@@ -207,7 +208,7 @@ export const usersRouter = createTRPCRouter({
 
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true },
+        select: { id: true, email: true, clerkId: true },
       })
 
       if (!user) return ResourceError.user.notFound()
@@ -220,11 +221,46 @@ export const usersRouter = createTRPCRouter({
         if (existingUser) ResourceError.user.emailExists()
       }
 
-      // Update user (note: password changes handled by Clerk)
+      // Check for username conflicts if name is being updated
+      if (name && name.trim()) {
+        const existingUserWithName = await ctx.prisma.user.findFirst({
+          where: {
+            name: name.trim(),
+            id: { not: userId }, // Exclude current user
+          },
+        })
+
+        if (existingUserWithName) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message:
+              'This username is already taken. Please choose a different one.',
+          })
+        }
+      }
+
+      // Sync name changes back to Clerk if username is being updated
+      if (name !== undefined && user.clerkId) {
+        try {
+          const { clerkClient } = await import('@clerk/nextjs/server')
+          const clerk = await clerkClient()
+
+          // Update username in Clerk to keep them in sync
+          await clerk.users.updateUser(user.clerkId, {
+            username: name || undefined, // Clear username if name is empty
+          })
+        } catch (clerkError) {
+          console.error('Failed to sync username to Clerk:', clerkError)
+          // Continue with database update even if Clerk sync fails
+          // The webhook will eventually sync it back if Clerk is updated manually
+        }
+      }
+
+      // Update user in database
       return await ctx.prisma.user.update({
         where: { id: userId },
         data: {
-          ...(name && { name }),
+          ...(name !== undefined && { name: name?.trim() || null }),
           ...(email && { email }),
           ...(profileImage && { profileImage }),
           ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
