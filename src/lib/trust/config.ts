@@ -1,14 +1,14 @@
 import { TrustAction } from '@orm'
 
 export const TRUST_ACTIONS = {
-  [TrustAction.UPVOTE]: { weight: 3, description: 'Upvoted a listing' },
-  [TrustAction.DOWNVOTE]: { weight: -4, description: 'Downvoted a listing' },
+  [TrustAction.UPVOTE]: { weight: 1, description: 'Upvoted a listing' },
+  [TrustAction.DOWNVOTE]: { weight: -1, description: 'Downvoted a listing' },
   [TrustAction.LISTING_CREATED]: {
     weight: 1,
     description: 'Created a listing',
   },
   [TrustAction.LISTING_APPROVED]: {
-    weight: 6,
+    weight: 4,
     description: 'Listing was approved',
   },
   [TrustAction.LISTING_REJECTED]: {
