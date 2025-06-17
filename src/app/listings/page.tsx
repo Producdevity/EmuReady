@@ -130,6 +130,7 @@ function ListingsPage() {
     limit: 10,
     sortField: listingsState.sortField ?? undefined,
     sortDirection: listingsState.sortDirection ?? undefined,
+    myListings: listingsState.myListings || undefined,
   }
 
   const listingsQuery = api.listings.get.useQuery(filterParams)
@@ -222,7 +223,7 @@ function ListingsPage() {
     )
 
   return (
-    <main className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900 overflow-visible">
+    <main className="flex flex-col lg:flex-row min-h-screen bg-gray-50 dark:bg-gray-900 overflow-visible">
       <ListingFilters
         systemIds={listingsState.systemIds}
         deviceIds={listingsState.deviceIds}
@@ -251,35 +252,64 @@ function ListingsPage() {
       />
 
       {/* Main Content - Listings */}
-      <section className="flex-1 overflow-x-auto py-6 px-4 md:pl-8">
-        <div className="flex justify-between items-center mb-8">
+      <section className="flex-1 overflow-x-auto py-4 px-4 lg:py-6 lg:pl-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 lg:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Game Listings
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <DisplayToggleButton
-              showLogos={showSystemIcons}
-              onToggle={() => setShowSystemIcons(!showSystemIcons)}
-              isHydrated={isSystemIconsHydrated}
-              logoLabel="Show System Icons"
-              nameLabel="Show System Names"
-            />
-            <DisplayToggleButton
-              showLogos={showEmulatorLogos}
-              onToggle={toggleEmulatorLogos}
-              isHydrated={isEmulatorLogosHydrated}
-              logoLabel="Show Emulator Logos"
-              nameLabel="Show Emulator Names"
-            />
-            <ColumnVisibilityControl
-              columns={LISTINGS_COLUMNS}
-              columnVisibility={columnVisibility}
-            />
-            <Button asChild variant="fancy">
-              <Link href="/listings/new">Add Listing</Link>
-            </Button>
+
+          {/* Mobile-friendly controls */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            {/* First row on mobile: Toggle buttons */}
+            <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-start">
+              {userQuery.data && (
+                <Button
+                  variant={listingsState.myListings ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    const newValue = !listingsState.myListings
+                    listingsState.setMyListings(newValue)
+                    listingsState.setPage(1)
+                    listingsState.updateQuery({
+                      myListings: newValue ? 'true' : null,
+                      page: 1,
+                    })
+                  }}
+                >
+                  {listingsState.myListings ? 'All Listings' : 'My Listings'}
+                </Button>
+              )}
+              <DisplayToggleButton
+                showLogos={showSystemIcons}
+                onToggle={() => setShowSystemIcons(!showSystemIcons)}
+                isHydrated={isSystemIconsHydrated}
+                logoLabel="System Icons"
+                nameLabel="System Names"
+              />
+              <DisplayToggleButton
+                showLogos={showEmulatorLogos}
+                onToggle={toggleEmulatorLogos}
+                isHydrated={isEmulatorLogosHydrated}
+                logoLabel="Emulator Logos"
+                nameLabel="Emulator Names"
+              />
+            </div>
+
+            {/* Second row on mobile: Controls and Add button */}
+            <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-start">
+              <ColumnVisibilityControl
+                columns={LISTINGS_COLUMNS}
+                columnVisibility={columnVisibility}
+              />
+              <Button asChild variant="fancy" className="flex-shrink-0 min-w-0">
+                <Link href="/listings/new" className="whitespace-nowrap">
+                  <span className="hidden sm:inline">Add Listing</span>
+                  <span className="sm:hidden">Add</span>
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -287,7 +317,7 @@ function ListingsPage() {
           {listingsQuery.isLoading ? (
             <LoadingSpinner text="Loading listings..." />
           ) : (
-            <table className="table-auto md:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+            <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
               <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
                 <tr>
                   {columnVisibility.isColumnVisible('game') && (

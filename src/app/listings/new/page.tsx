@@ -383,6 +383,18 @@ function AddListingPage() {
     })
   }
 
+  // Prevent form submission on Enter key press
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if (event.key === 'Enter' && event.target instanceof HTMLElement) {
+      // Allow Enter key in textareas for line breaks
+      if (event.target.tagName.toLowerCase() === 'textarea') {
+        return
+      }
+      // Prevent form submission for all other elements
+      event.preventDefault()
+    }
+  }
+
   if (!mounted) return null
 
   return (
@@ -393,6 +405,7 @@ function AddListingPage() {
         </h1>
         <form
           onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={handleKeyDown}
           className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl"
         >
           {/* Game Selection */}

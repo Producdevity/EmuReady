@@ -72,8 +72,8 @@ function GamesContent() {
     setPage(1)
   }
 
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
-  const addGameHref = isAdmin ? '/games/new' : '/games/new/search'
+  const isAuthor = hasPermission(userQuery.data?.role, Role.AUTHOR)
+  const addGameHref = isAuthor ? '/games/new' : '/games/new/search'
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">

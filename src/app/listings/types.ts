@@ -107,4 +107,5 @@ export interface ListingsFilter {
   sortField?: SortField
   sortDirection?: SortDirection
   approvalStatus?: ApprovalStatus
+  myListings?: boolean
 }

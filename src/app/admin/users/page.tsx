@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
+import TableButton from '@/app/admin/components/table-buttons/TableButton'
+import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   Button,
   Input,
@@ -116,10 +118,6 @@ function AdminUsersPage() {
       email: user.email,
       role: user.role,
     })
-  }
-
-  const closeRoleModal = () => {
-    setSelectedUserForRole(null)
   }
 
   const openUserDetailsModal = (userId: string) => {
@@ -338,22 +336,16 @@ function AdminUsersPage() {
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        name="View Details"
-                        onClick={() => openUserDetailsModal(user.id)}
-                      >
-                        <User />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        name="Change Role"
+                      <TableButton
                         onClick={() => openRoleModal(user)}
-                      >
-                        <ShieldUser />
-                      </Button>
+                        title="Change Role"
+                        icon={ShieldUser}
+                        color="yellow"
+                      />
+                      <ViewButton
+                        title="View User Details"
+                        onClick={() => openUserDetailsModal(user.id)}
+                      />
                       <DeleteButton
                         onClick={() => handleDelete(user.id)}
                         title="Delete User"
@@ -402,7 +394,7 @@ function AdminUsersPage() {
         <UserRoleModal
           user={selectedUserForRole}
           isOpen={true}
-          onClose={closeRoleModal}
+          onClose={() => setSelectedUserForRole(null)}
         />
       )}
 

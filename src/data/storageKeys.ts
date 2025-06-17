@@ -8,6 +8,8 @@ const storageKeys = {
   columnVisibility: {
     listings: `${PREFIX}listings_column_visibility`,
     games: `${PREFIX}games_column_visibility`,
+    devices: `${PREFIX}devices_column_visibility`,
+    emulators: `${PREFIX}emulators_column_visibility`,
     adminApprovals: `${PREFIX}admin_approvals_column_visibility`,
     adminGameApprovals: `${PREFIX}admin_game_approvals_column_visibility`,
     adminBrands: `${PREFIX}admin_brands_column_visibility`,

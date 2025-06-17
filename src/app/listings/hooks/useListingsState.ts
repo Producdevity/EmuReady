@@ -49,6 +49,9 @@ function useListingsState() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     (searchParams.get('sortDirection') as SortDirection) ?? null,
   )
+  const [myListings, setMyListings] = useState<boolean>(
+    searchParams.get('myListings') === 'true',
+  )
 
   // Helper to update URL and state
   const updateQuery = (
@@ -108,6 +111,7 @@ function useListingsState() {
     performanceIds,
     sortField,
     sortDirection,
+    myListings,
 
     // Setters
     setSystemIds,
@@ -119,6 +123,7 @@ function useListingsState() {
     setPerformanceIds,
     setSortField,
     setSortDirection,
+    setMyListings,
 
     // Helpers
     updateQuery,

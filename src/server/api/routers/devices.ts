@@ -36,31 +36,45 @@ export const devicesRouter = createTRPCRouter({
       ...(search
         ? {
             OR: [
+              // Exact match for model name (highest priority)
+              { modelName: { equals: search, mode: 'insensitive' } },
+              // Exact match for brand name
+              { brand: { name: { equals: search, mode: 'insensitive' } } },
+              // Contains match for model name
               { modelName: { contains: search, mode: 'insensitive' } },
+              // Contains match for brand name
               { brand: { name: { contains: search, mode: 'insensitive' } } },
+              // SoC name search
               { soc: { name: { contains: search, mode: 'insensitive' } } },
+              // SoC manufacturer search
               {
                 soc: {
                   manufacturer: { contains: search, mode: 'insensitive' },
                 },
               },
-              // Combined brand + model search (e.g., "retroid pocket 5")
-              {
-                AND: [
-                  {
-                    OR: search.split(' ').map((term) => ({
-                      OR: [
+              // Brand + Model combination search (e.g., "Retroid Pocket 5")
+              ...(search.includes(' ')
+                ? [
+                    {
+                      AND: [
                         {
                           brand: {
-                            name: { contains: term, mode: 'insensitive' },
+                            name: {
+                              contains: search.split(' ')[0],
+                              mode: 'insensitive' as const,
+                            },
                           },
                         },
-                        { modelName: { contains: term, mode: 'insensitive' } },
+                        {
+                          modelName: {
+                            contains: search.split(' ').slice(1).join(' '),
+                            mode: 'insensitive' as const,
+                          },
+                        },
                       ],
-                    })),
-                  },
-                ],
-              },
+                    },
+                  ]
+                : []),
             ],
           }
         : {}),
@@ -83,7 +97,7 @@ export const devicesRouter = createTRPCRouter({
       }
     }
 
-    // Default ordering if no sort specified
+    // Default ordering if no sort specified - prioritize exact matches when searching
     if (!orderBy.length) {
       orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
     }

@@ -41,6 +41,7 @@ export const GetListingsSchema = z.object({
     .optional(),
   sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
   approvalStatus: z.nativeEnum(ApprovalStatus).optional(),
+  myListings: z.boolean().optional(),
 })
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })

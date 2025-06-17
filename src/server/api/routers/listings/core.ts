@@ -1,7 +1,8 @@
 import { keys } from 'remeda'
+import { z } from 'zod'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
-import { ResourceError } from '@/lib/errors'
+import { ResourceError, AppError } from '@/lib/errors'
 import {
   applyTrustAction,
   canUserAutoApprove,
@@ -27,6 +28,8 @@ import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
 
+const EDIT_TIME_LIMIT_MINUTES = 60
+
 export const coreRouter = createTRPCRouter({
   get: publicProcedure
     .input(GetListingsSchema)
@@ -38,10 +41,8 @@ export const coreRouter = createTRPCRouter({
         gameFilter.systemId = { in: input.systemIds }
       }
 
-      // Game approval status filtering - similar to listing status filtering
-      if (hasPermission(ctx.session?.user?.role, Role.ADMIN)) {
-        // Admins can see listings for all games
-      } else if (ctx.session?.user?.id) {
+      // Game approval status filtering - filter games based on user authentication
+      if (ctx.session?.user?.id) {
         // Authenticated users see listings for approved games + their own pending games
         gameFilter.OR = [
           { status: ApprovalStatus.APPROVED },
@@ -89,6 +90,11 @@ export const coreRouter = createTRPCRouter({
         } else {
           statusFilter = { status: ApprovalStatus.APPROVED }
         }
+      }
+
+      // Add myListings filter if requested and user is authenticated
+      if (input.myListings && ctx.session?.user?.id) {
+        filters.authorId = ctx.session.user.id
       }
 
       // Combine all filters using AND logic
@@ -344,9 +350,14 @@ export const coreRouter = createTRPCRouter({
 
         // Check if user can auto-approve
         const canAutoApprove = await canUserAutoApprove(authorId)
-        const listingStatus = canAutoApprove
-          ? ApprovalStatus.APPROVED
-          : ApprovalStatus.PENDING
+        const isAuthorOrHigher = hasPermission(
+          ctx.session.user.role,
+          Role.AUTHOR,
+        )
+        const listingStatus =
+          canAutoApprove || isAuthorOrHigher
+            ? ApprovalStatus.APPROVED
+            : ApprovalStatus.PENDING
 
         const newListing = await tx.listing.create({
           data: {
@@ -357,9 +368,13 @@ export const coreRouter = createTRPCRouter({
             notes,
             authorId: authorId,
             status: listingStatus,
-            ...(canAutoApprove && {
+            ...((canAutoApprove || isAuthorOrHigher) && {
+              processedByUserId: authorId,
               processedAt: new Date(),
-              processedNotes: 'Auto-approved (Trusted user)',
+              processedNotes:
+                isAuthorOrHigher && !canAutoApprove
+                  ? 'Auto-approved (Author or higher role)'
+                  : 'Auto-approved (Trusted user)',
             }),
           },
         })
@@ -580,4 +595,110 @@ export const coreRouter = createTRPCRouter({
 
     return await Promise.all(listings.map(calculateSuccessRate))
   }),
+
+  canEdit: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        select: {
+          authorId: true,
+          status: true,
+          processedAt: true,
+        },
+      })
+
+      if (!listing) {
+        return { canEdit: false, reason: 'Listing not found' }
+      }
+
+      // Check ownership
+      if (listing.authorId !== ctx.session.user.id) {
+        return { canEdit: false, reason: 'Not your listing' }
+      }
+
+      // Check approval status
+      if (listing.status !== ApprovalStatus.APPROVED) {
+        return { canEdit: false, reason: 'Listing not approved' }
+      }
+
+      // Check time limit
+      if (!listing.processedAt) {
+        return { canEdit: false, reason: 'No approval time found' }
+      }
+
+      const now = new Date()
+      const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
+      const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+
+      const remainingTime = timeLimit - timeSinceApproval
+      const remainingMinutes = Math.floor(remainingTime / (60 * 1000))
+
+      if (timeSinceApproval > timeLimit) {
+        return {
+          canEdit: false,
+          reason: `Edit time expired (${EDIT_TIME_LIMIT_MINUTES} minutes limit)`,
+          timeExpired: true,
+        }
+      }
+
+      return {
+        canEdit: true,
+        remainingMinutes: Math.max(0, remainingMinutes),
+        remainingTime: Math.max(0, remainingTime),
+      }
+    }),
+
+  update: authorProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        notes: z.string().min(1, 'Notes are required'),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // First check if user can edit this listing
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        select: {
+          authorId: true,
+          status: true,
+          processedAt: true,
+        },
+      })
+
+      if (!listing) {
+        throw ResourceError.listing.notFound()
+      }
+
+      if (listing.authorId !== ctx.session.user.id) {
+        throw AppError.forbidden('You can only edit your own listings')
+      }
+
+      if (listing.status !== ApprovalStatus.APPROVED) {
+        throw AppError.badRequest('You can only edit approved listings')
+      }
+
+      if (!listing.processedAt) {
+        throw AppError.badRequest('Listing approval time not found')
+      }
+
+      const now = new Date()
+      const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
+      const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+
+      if (timeSinceApproval > timeLimit) {
+        throw AppError.badRequest(
+          `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
+        )
+      }
+
+      // Update the listing
+      return await ctx.prisma.listing.update({
+        where: { id: input.id },
+        data: {
+          notes: input.notes,
+        },
+      })
+    }),
 })

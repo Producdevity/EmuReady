@@ -46,14 +46,18 @@ function AdminDevicesPage() {
     storageKey: storageKeys.columnVisibility.adminDevices,
   })
 
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('')
+
   const devicesQuery = api.devices.get.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
+    brandId: selectedBrandId || undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     page: table.page,
     limit: table.limit,
   })
   const devicesStatsQuery = api.devices.stats.useQuery()
+  const brandsQuery = api.deviceBrands.get.useQuery({ limit: 1000 })
   const deleteDevice = api.devices.delete.useMutation()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -90,6 +94,17 @@ function AdminDevicesPage() {
     devicesQuery.refetch().catch(console.error)
     devicesStatsQuery.refetch().catch(console.error)
     closeModal()
+  }
+
+  const handleBrandChange = (value: string) => {
+    setSelectedBrandId(value)
+    table.setPage(1) // Reset to first page when filtering
+  }
+
+  const clearFilters = () => {
+    table.setSearch('')
+    setSelectedBrandId('')
+    table.setPage(1)
   }
 
   const handleDelete = async (id: string) => {
@@ -150,15 +165,37 @@ function AdminDevicesPage() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            placeholder="Search devices..."
-            value={table.search}
-            onChange={table.handleSearchChange}
-            className="pl-10"
-          />
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                placeholder="Search devices..."
+                value={table.search}
+                onChange={table.handleSearchChange}
+                className="w-full pl-10"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              as="select"
+              value={selectedBrandId}
+              onChange={(e) => handleBrandChange(e.target.value)}
+              className="min-w-[200px]"
+            >
+              <option value="">All Brands</option>
+              {brandsQuery.data?.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </Input>
+            <Button variant="outline" onClick={clearFilters} className="h-full">
+              Clear
+            </Button>
+          </div>
         </div>
       </div>
 

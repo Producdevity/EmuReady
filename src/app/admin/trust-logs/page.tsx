@@ -299,9 +299,11 @@ function AdminTrustLogsPage() {
                       )}
                       {columnVisibility.isColumnVisible('metadata') && (
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {log.metadata && typeof log.metadata === 'object'
-                            ? JSON.stringify(log.metadata)
-                            : log.metadata || '-'}
+                          <code className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
+                            {log.metadata && typeof log.metadata === 'object'
+                              ? JSON.stringify(log.metadata)
+                              : log.metadata || '-'}
+                          </code>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('timestamp') && (
