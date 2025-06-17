@@ -7,6 +7,73 @@ type DeviceData = {
 }
 
 const devices: DeviceData[] = [
+  // Apple
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 15 Pro Max',
+    socName: 'Apple A17 Pro',
+  },
+  { brandName: 'Apple', modelName: 'iPhone 15 Pro', socName: 'Apple A17 Pro' },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 15 Plus',
+    socName: 'Apple A16 Bionic',
+  },
+  { brandName: 'Apple', modelName: 'iPhone 15', socName: 'Apple A16 Bionic' },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 14 Pro Max',
+    socName: 'Apple A16 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 14 Pro',
+    socName: 'Apple A16 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 14 Plus',
+    socName: 'Apple A15 Bionic',
+  },
+  { brandName: 'Apple', modelName: 'iPhone 14', socName: 'Apple A15 Bionic' },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone SE (3rd Gen)',
+    socName: 'A15 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 13 Pro Max',
+    socName: 'Apple A15 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 13 Pro',
+    socName: 'Apple A15 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 13 Mini',
+    socName: 'Apple A15 Bionic',
+  },
+  { brandName: 'Apple', modelName: 'iPhone 13', socName: 'Apple A15 Bionic' },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 12 Pro Max',
+    socName: 'Apple A14 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 12 Pro',
+    socName: 'Apple A14 Bionic',
+  },
+  {
+    brandName: 'Apple',
+    modelName: 'iPhone 12 Mini',
+    socName: 'Apple A14 Bionic',
+  },
+  { brandName: 'Apple', modelName: 'iPhone 12', socName: 'Apple A14 Bionic' },
+
   // ASUS
   { brandName: 'ASUS', modelName: 'ROG Ally RC71L', socName: 'AMD Z1 Extreme' },
   { brandName: 'ASUS', modelName: 'ROG Ally RC71L-NH001W', socName: 'AMD Z1' },
@@ -260,6 +327,150 @@ const devices: DeviceData[] = [
     brandName: 'Samsung',
     modelName: 'Galaxy A34 5G',
     socName: 'Dimensity 1080',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S3',
+    socName: 'Snapdragon 820',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S4',
+    socName: 'Snapdragon 835',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S5e',
+    socName: 'Snapdragon 670',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S6',
+    socName: 'Snapdragon 855',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S6 Lite',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S7',
+    socName: 'Snapdragon 865+',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S7+',
+    socName: 'Snapdragon 865+',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S7 FE',
+    socName: 'Snapdragon 750G',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S8',
+    socName: 'Snapdragon 8 Gen 1',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S8+',
+    socName: 'Snapdragon 8 Gen 1',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S8 Ultra',
+    socName: 'Snapdragon 8 Gen 1',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab A7',
+    socName: 'MediaTek Helio P22T',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab A7 Lite',
+    socName: 'Unisoc Tiger T618',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab A8',
+    socName: 'Unisoc Tiger T618',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab A9',
+    socName: 'Unisoc Tiger T616',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab A9+',
+    socName: 'Unisoc Tiger T616',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S9',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S9+',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S9 Ultra',
+    socName: 'Snapdragon 8 Gen 2',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S9 FE',
+    socName: 'Exynos 1380',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S9 FE+',
+    socName: 'Exynos 1380',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S10+',
+    socName: 'Dimensity 9300+',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S10 Ultra',
+    socName: 'MediaTek Dimensity 9300+',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S10 FE',
+    socName: 'Exynos 1580',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab S10 FE+',
+    socName: 'Exynos 1580',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab Active2',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab Active3',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab Active4 Pro',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab Active5',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Tab Active5 Pro',
   },
 
   // Google Pixel
@@ -750,7 +961,7 @@ async function devicesSeeder(prisma: PrismaClient) {
         },
       },
       update: {
-        socId: socId ?? null,
+        // socId: socId ?? null,
       },
       create: {
         brandId,
