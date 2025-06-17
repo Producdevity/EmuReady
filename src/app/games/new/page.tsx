@@ -54,13 +54,13 @@ function AddGamePage() {
     return () => clearTimeout(timer)
   }, [success, error])
 
-  // Redirect non-admin users to TGDB search page
+  // Redirect non-authors users to TGDB search page
   useEffect(() => {
     if (
       isLoaded &&
       user &&
       userQuery.data &&
-      !hasPermission(userQuery.data.role, Role.ADMIN)
+      !hasPermission(userQuery.data.role, Role.AUTHOR)
     ) {
       router.replace('/games/new/search')
     }
@@ -70,12 +70,10 @@ function AddGamePage() {
 
   if (!user || !userQuery.data) return <NotSignedInMessage />
 
-  const isAdmin = hasPermission(userQuery.data.role, Role.ADMIN)
+  const isAuthor = hasPermission(userQuery.data.role, Role.AUTHOR)
 
-  // If not admin, show loading while redirecting
-  if (!isAdmin) {
-    return <LoadingSpinner />
-  }
+  // If not author, show loading while redirecting
+  if (!isAuthor) return <LoadingSpinner />
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -107,7 +105,7 @@ function AddGamePage() {
   return (
     <div className="w-full md:w-3xl mx-auto my-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-        Add New Game (Admin)
+        Add New Game (Author and Admin Only)
       </h1>
 
       {/* Method Selection */}
@@ -161,8 +159,8 @@ function AddGamePage() {
 
       <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
         <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong>Admin Note:</strong> Manual entry is restricted to
-          administrators to maintain data quality. Regular users are
+          <strong>Author Note:</strong> Manual entry is restricted to authors
+          and administrators to maintain data quality. Regular users are
           automatically redirected to the TGDB search method.
         </p>
       </div>

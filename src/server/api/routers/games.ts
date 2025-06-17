@@ -80,13 +80,7 @@ async function performGameUpdate(
       data,
       include: {
         system: true,
-        submitter: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+        submitter: { select: { id: true, name: true, email: true } },
       },
     })
   } catch (error) {
@@ -169,10 +163,7 @@ export const gamesRouter = createTRPCRouter({
                 .split(/\s+/)
                 .filter((word) => word.length >= 2)
                 .map((word) => ({
-                  title: {
-                    contains: word,
-                    mode: 'insensitive',
-                  },
+                  title: { contains: word, mode: 'insensitive' },
                 })),
             },
           ],
@@ -181,10 +172,7 @@ export const gamesRouter = createTRPCRouter({
         // For single words, a simple contains is sufficient
         where = {
           ...where,
-          title: {
-            contains: searchTerm,
-            mode: 'insensitive',
-          },
+          title: { contains: searchTerm, mode: 'insensitive' },
         }
       }
     }
@@ -379,16 +367,16 @@ export const gamesRouter = createTRPCRouter({
         throw error
       }
 
-      const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
+      const isAuthor = hasPermission(ctx.session.user.role, Role.AUTHOR)
 
       try {
         const result = await ctx.prisma.game.create({
           data: {
             ...input,
-            status: isAdmin ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
+            status: isAuthor ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
             submittedBy: ctx.session.user.id,
             submittedAt: new Date(),
-            ...(isAdmin && {
+            ...(isAuthor && {
               approvedBy: ctx.session.user.id,
               approvedAt: new Date(),
             }),

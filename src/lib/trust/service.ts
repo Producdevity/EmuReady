@@ -178,9 +178,7 @@ export async function canUserAutoApprove(userId: string): Promise<boolean> {
     select: { trustScore: true },
   })
 
-  if (!user) {
-    return false
-  }
+  if (!user) return false
 
   return hasTrustLevel(user.trustScore, TRUST_CONFIG.AUTO_APPROVAL_MIN_LEVEL)
 }
