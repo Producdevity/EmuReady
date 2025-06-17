@@ -13,6 +13,7 @@ interface TrustActionContext {
   voteType?: 'up' | 'down'
   adminUserId?: string
   reason?: string
+  voterId?: string
 }
 
 interface ApplyTrustActionParams {

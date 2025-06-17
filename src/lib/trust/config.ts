@@ -19,6 +19,14 @@ export const TRUST_ACTIONS = {
     weight: 10,
     description: 'Monthly active user bonus',
   },
+  [TrustAction.LISTING_RECEIVED_UPVOTE]: {
+    weight: 2,
+    description: 'Received an upvote on a listing',
+  },
+  [TrustAction.LISTING_RECEIVED_DOWNVOTE]: {
+    weight: -1,
+    description: 'Received a downvote on a listing',
+  },
 } as const
 
 export const TRUST_LEVELS = [

@@ -531,17 +531,36 @@ export const coreRouter = createTRPCRouter({
       })
 
       if (!existingVote) {
+        // Get listing details to find the author
+        const listing = await ctx.prisma.listing.findUnique({
+          where: { id: input.listingId },
+          select: { authorId: true },
+        })
+
+        if (!listing) return AppError.notFound('Listing')
+
         // Create new vote
         const vote = await ctx.prisma.vote.create({
           data: { value: input.value, userId, listingId: input.listingId },
         })
 
-        // Apply trust action for the vote
+        // Apply trust action for the voter
         await applyTrustAction({
           userId,
           action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
           context: { listingId: input.listingId },
         })
+
+        // Apply trust action for the listing creator (only if not voting on their own listing)
+        if (listing.authorId && listing.authorId !== userId) {
+          await applyTrustAction({
+            userId: listing.authorId,
+            action: input.value
+              ? TrustAction.LISTING_RECEIVED_UPVOTE
+              : TrustAction.LISTING_RECEIVED_DOWNVOTE,
+            context: { listingId: input.listingId, voterId: userId },
+          })
+        }
 
         // Emit notification event for new vote
         notificationEventEmitter.emitNotificationEvent({
@@ -561,11 +580,21 @@ export const coreRouter = createTRPCRouter({
 
       // If value is the same, remove the vote (toggle)
       if (existingVote.value === input.value) {
+        // Get listing details to find the author
+        const listingForRemoval = await ctx.prisma.listing.findUnique({
+          where: { id: input.listingId },
+          select: { authorId: true },
+        })
+
+        if (!listingForRemoval) {
+          AppError.notFound('Listing')
+        }
+
         await ctx.prisma.vote.delete({
           where: { userId_listingId: { userId, listingId: input.listingId } },
         })
 
-        // Properly reverse the original trust action when vote is removed
+        // Reverse trust action for the voter
         await reverseTrustAction({
           userId,
           action: existingVote.value
@@ -574,16 +603,44 @@ export const coreRouter = createTRPCRouter({
           context: { listingId: input.listingId, reason: 'vote_removed' },
         })
 
+        // Reverse trust action for the listing creator (only if they didn't vote on their own listing)
+        if (
+          listingForRemoval.authorId &&
+          listingForRemoval.authorId !== userId
+        ) {
+          await reverseTrustAction({
+            userId: listingForRemoval.authorId,
+            action: existingVote.value
+              ? TrustAction.LISTING_RECEIVED_UPVOTE
+              : TrustAction.LISTING_RECEIVED_DOWNVOTE,
+            context: {
+              listingId: input.listingId,
+              reason: 'vote_removed',
+              voterId: userId,
+            },
+          })
+        }
+
         return { message: 'Vote removed' }
       }
 
       // Otherwise update the existing vote
+      // Get listing details to find the author
+      const listingForUpdate = await ctx.prisma.listing.findUnique({
+        where: { id: input.listingId },
+        select: { authorId: true },
+      })
+
+      if (!listingForUpdate) {
+        AppError.notFound('Listing')
+      }
+
       const updatedVote = await ctx.prisma.vote.update({
         where: { userId_listingId: { userId, listingId: input.listingId } },
         data: { value: input.value },
       })
 
-      // Apply trust action for vote change (properly reverse old, add new)
+      // Apply trust action for vote change (properly reverse old, add new) for voter
       await reverseTrustAction({
         userId,
         action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
@@ -594,6 +651,34 @@ export const coreRouter = createTRPCRouter({
         action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
         context: { listingId: input.listingId, reason: 'vote_changed_to' },
       })
+
+      // Apply trust action for vote change for listing creator (only if they didn't vote on their own listing)
+      if (listingForUpdate.authorId && listingForUpdate.authorId !== userId) {
+        // Reverse old received vote action
+        await reverseTrustAction({
+          userId: listingForUpdate.authorId,
+          action: existingVote.value
+            ? TrustAction.LISTING_RECEIVED_UPVOTE
+            : TrustAction.LISTING_RECEIVED_DOWNVOTE,
+          context: {
+            listingId: input.listingId,
+            reason: 'vote_changed_from',
+            voterId: userId,
+          },
+        })
+        // Apply new received vote action
+        await applyTrustAction({
+          userId: listingForUpdate.authorId,
+          action: input.value
+            ? TrustAction.LISTING_RECEIVED_UPVOTE
+            : TrustAction.LISTING_RECEIVED_DOWNVOTE,
+          context: {
+            listingId: input.listingId,
+            reason: 'vote_changed_to',
+            voterId: userId,
+          },
+        })
+      }
 
       // Emit notification event for vote update
       notificationEventEmitter.emitNotificationEvent({
