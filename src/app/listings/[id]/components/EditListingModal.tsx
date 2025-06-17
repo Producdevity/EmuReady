@@ -52,7 +52,6 @@ function EditListingModal(props: EditListingModalProps) {
     return null
   }
 
-  // Show loading state while checking edit permissions
   if (canEditQuery.isLoading) {
     return (
       <Button
@@ -142,9 +141,10 @@ function EditListingModal(props: EditListingModalProps) {
                 </Button>
                 <Button
                   type="submit"
+                  isLoading={updateMutation.isPending}
                   disabled={updateMutation.isPending || !notes.trim()}
                 >
-                  {updateMutation.isPending ? 'Updating...' : 'Update Listing'}
+                  Update Listing
                 </Button>
               </div>
             </form>

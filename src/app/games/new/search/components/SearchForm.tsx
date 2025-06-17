@@ -131,7 +131,7 @@ function SearchForm(props: Props) {
                 type="submit"
                 disabled={!searchQuery.trim() || props.isSearching}
                 isLoading={props.isSearching}
-                className="px-6 whitespace-nowrap"
+                className="px-6 h-full whitespace-nowrap hidden lg:inline-flex"
               >
                 <>
                   <Search className="h-4 w-4 mr-2" />

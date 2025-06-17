@@ -153,7 +153,7 @@ function NotificationCenter(props: Props) {
             </div>
 
             {/* Notifications List */}
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-72 overflow-y-auto">
               {notificationsQuery.isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
@@ -236,15 +236,17 @@ function NotificationCenter(props: Props) {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={handleViewAllNotifications}
-                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-              >
-                View all notifications
-              </button>
-            </div>
+            {/* Footer - Always visible */}
+            {notifications.length > 0 && (
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <button
+                  onClick={handleViewAllNotifications}
+                  className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium"
+                >
+                  View all notifications
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
