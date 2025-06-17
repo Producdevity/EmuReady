@@ -8,6 +8,8 @@ import {
   GetGamesSchema,
   GetPendingGamesSchema,
   UpdateGameSchema,
+  BulkApproveGamesSchema,
+  BulkRejectGamesSchema,
 } from '@/schemas/game'
 import {
   adminProcedure,
@@ -627,5 +629,86 @@ export const gamesRouter = createTRPCRouter({
       gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
       return result
+    }),
+
+  bulkApproveGames: adminProcedure
+    .input(BulkApproveGamesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { gameIds } = input
+      const adminUserId = ctx.session.user.id
+
+      return ctx.prisma.$transaction(async (tx) => {
+        // Get all games to approve and verify they are pending
+        const gamesToApprove = await tx.game.findMany({
+          where: {
+            id: { in: gameIds },
+            status: ApprovalStatus.PENDING,
+          },
+        })
+
+        if (gamesToApprove.length === 0) {
+          throw new Error('No valid pending games found to approve')
+        }
+
+        // Update all games to approved
+        await tx.game.updateMany({
+          where: { id: { in: gamesToApprove.map((g) => g.id) } },
+          data: {
+            status: ApprovalStatus.APPROVED,
+            approvedBy: adminUserId,
+            approvedAt: new Date(),
+          },
+        })
+
+        // Invalidate cache
+        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+
+        return {
+          success: true,
+          approvedCount: gamesToApprove.length,
+          message: `Successfully approved ${gamesToApprove.length} game(s)`,
+        }
+      })
+    }),
+
+  bulkRejectGames: adminProcedure
+    .input(BulkRejectGamesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { gameIds } = input
+      const adminUserId = ctx.session.user.id
+
+      return ctx.prisma.$transaction(async (tx) => {
+        // Get all games to reject and verify they are pending
+        const gamesToReject = await tx.game.findMany({
+          where: {
+            id: { in: gameIds },
+            status: ApprovalStatus.PENDING,
+          },
+        })
+
+        if (gamesToReject.length === 0) {
+          throw new Error('No valid pending games found to reject')
+        }
+
+        // Update all games to rejected
+        await tx.game.updateMany({
+          where: { id: { in: gamesToReject.map((g) => g.id) } },
+          data: {
+            status: ApprovalStatus.REJECTED,
+            approvedBy: adminUserId,
+            approvedAt: new Date(),
+            // Note: There's no rejectionNotes field in the schema, but we could add it
+          },
+        })
+
+        // Invalidate cache
+        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+
+        return {
+          success: true,
+          rejectedCount: gamesToReject.length,
+          message: `Successfully rejected ${gamesToReject.length} game(s)`,
+        }
+      })
     }),
 })
