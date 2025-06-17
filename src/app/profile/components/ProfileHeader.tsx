@@ -6,18 +6,10 @@ import { Edit, Shield, Calendar, User as UserIcon, Award } from 'lucide-react'
 import { TrustLevelBadge } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
+import { getRoleColor } from '@/utils/badgeColors'
 import { formatMonthYear } from '@/utils/date'
 import { formatUserRole } from '@/utils/format'
-import { type Role } from '@orm'
 import ProfileUpload from './ProfileUpload'
-
-const roleBadgeColorMap: Record<Role | 'UNKNOWN', string> = {
-  USER: 'bg-green-500/90 backdrop-blur-sm',
-  AUTHOR: 'bg-blue-500/90 backdrop-blur-sm',
-  ADMIN: 'bg-orange-500/90 backdrop-blur-sm',
-  SUPER_ADMIN: 'bg-red-500/90 backdrop-blur-sm',
-  UNKNOWN: 'bg-gray-500/90 backdrop-blur-sm',
-}
 
 interface Props {
   clerkUser: UserResource
@@ -64,8 +56,8 @@ function ProfileHeader(props: Props) {
                   transition={{ delay: 0.2 }}
                   className="text-3xl lg:text-4xl font-bold text-white mb-2"
                 >
-                  {props.clerkUser.fullName ??
-                    props.profileData?.name ??
+                  {props.profileData?.name ??
+                    props.clerkUser.fullName ??
                     'Anonymous User'}
                 </motion.h1>
 
@@ -82,8 +74,7 @@ function ProfileHeader(props: Props) {
                       transition={{ delay: 0.3 }}
                       className={cn(
                         'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold shadow-lg',
-                        roleBadgeColorMap[props.profileData.role] ??
-                          roleBadgeColorMap.UNKNOWN,
+                        getRoleColor(props.profileData.role),
                       )}
                     >
                       <Shield className="w-4 h-4" />

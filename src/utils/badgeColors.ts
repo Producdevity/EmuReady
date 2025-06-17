@@ -41,6 +41,18 @@ export function getRoleVariant(role: Role): BadgeVariant {
   return roleVariantsMap[role] || 'default'
 }
 
+const roleColorMap: Record<Role | 'UNKNOWN', string> = {
+  [Role.USER]: 'bg-green-500/90 backdrop-blur-sm',
+  [Role.AUTHOR]: 'bg-blue-500/90 backdrop-blur-sm',
+  [Role.ADMIN]: 'bg-orange-500/90 backdrop-blur-sm',
+  [Role.SUPER_ADMIN]: 'bg-red-500/90 backdrop-blur-sm',
+  UNKNOWN: 'bg-gray-500/90 backdrop-blur-sm',
+}
+
+export function getRoleColor(role: Role): string {
+  return roleColorMap[role] || roleColorMap.UNKNOWN
+}
+
 export function getTrustActionBadgeColor(action: TrustAction): BadgeVariant {
   const weight = TRUST_ACTIONS[action]?.weight ?? 0
   if (weight > 5) return 'success'
