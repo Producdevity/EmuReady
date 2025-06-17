@@ -34,7 +34,8 @@ import { type Nullable } from '@/types/utils'
 import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
-import { ApprovalStatus } from '@orm'
+import { hasPermission } from '@/utils/permissions'
+import { ApprovalStatus, Role } from '@orm'
 import ConfirmationModal from './components/ConfirmationModal'
 import GameDetailsModal from './components/GameDetailsModal'
 
@@ -97,6 +98,12 @@ function GameApprovalsPage() {
 
   // Query for game stats
   const { data: gameStats } = api.games.getStats.useQuery()
+
+  // Get current user to check permissions
+  const currentUserQuery = api.users.me.useQuery()
+  const isSuperAdmin = currentUserQuery.data?.role
+    ? hasPermission(currentUserQuery.data.role, Role.SUPER_ADMIN)
+    : false
 
   // Mutation for approving/rejecting games
   const approveGameMutation = api.games.approveGame.useMutation({
@@ -414,17 +421,38 @@ function GameApprovalsPage() {
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-16 w-16 flex justify-center items-center">
+                            <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center relative">
                               <Image
                                 src={getGameImageUrl(game)}
                                 alt={game.title}
-                                width={64}
+                                width={80}
                                 height={64}
-                                className="rounded-md object-cover m-h-16 w-auto"
+                                className="rounded-md object-contain max-h-16 max-w-20"
                                 unoptimized
                               />
+                              {/* Image type indicators */}
+                              <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                                {game.boxartUrl && (
+                                  <div
+                                    className="w-1.5 h-1.5 bg-blue-500 rounded-full"
+                                    title="Box Art available"
+                                  />
+                                )}
+                                {game.bannerUrl && (
+                                  <div
+                                    className="w-1.5 h-1.5 bg-green-500 rounded-full"
+                                    title="Banner available"
+                                  />
+                                )}
+                                {game.imageUrl && (
+                                  <div
+                                    className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+                                    title="Main Image available"
+                                  />
+                                )}
+                              </div>
                             </div>
-                            <div className="ml-4">
+                            <div className="ml-4 flex-1 min-w-0">
                               {game.title.length > 30 ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -487,7 +515,25 @@ function GameApprovalsPage() {
                       )}
                       {columnVisibility.isColumnVisible('submitter') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game.submitter?.name ?? 'Unknown'}
+                          {game.submitter?.id && isSuperAdmin ? (
+                            <Link
+                              href={`/admin/users?userId=${game.submitter.id}`}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                              title="View user details (admin)"
+                            >
+                              {game.submitter.name ?? 'Unknown'}
+                            </Link>
+                          ) : game.submitter?.id && !isSuperAdmin ? (
+                            <Link
+                              href={`/users/${game.submitter.id}`}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                              title="View public profile"
+                            >
+                              {game.submitter.name ?? 'Unknown'}
+                            </Link>
+                          ) : (
+                            (game.submitter?.name ?? 'Unknown')
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('submittedAt') && (

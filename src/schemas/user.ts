@@ -29,6 +29,16 @@ export const RegisterUserSchema = z.object({
 
 export const GetUserByIdSchema = z.object({
   userId: z.string().uuid(),
+  // Pagination for listings
+  listingsPage: z.number().int().min(1).default(1),
+  listingsLimit: z.number().int().min(1).max(50).default(12),
+  listingsSearch: z.string().optional(),
+  listingsSystem: z.string().optional(),
+  listingsEmulator: z.string().optional(),
+  // Pagination for votes
+  votesPage: z.number().int().min(1).default(1),
+  votesLimit: z.number().int().min(1).max(50).default(12),
+  votesSearch: z.string().optional(),
 })
 
 export const UpdateUserSchema = z.object({

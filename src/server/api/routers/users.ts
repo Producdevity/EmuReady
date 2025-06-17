@@ -41,7 +41,7 @@ export const usersRouter = createTRPCRouter({
         where: { email },
       })
 
-      if (existingUser) ResourceError.user.emailExists()
+      if (existingUser) return ResourceError.user.emailExists()
 
       // Note: This endpoint is deprecated since Clerk handles user registration
       // This is kept for backward compatibility but should not be used in production
@@ -61,10 +61,7 @@ export const usersRouter = createTRPCRouter({
         },
       })
 
-      return {
-        status: 'success',
-        data: user,
-      }
+      return { status: 'success', data: user }
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
@@ -147,8 +144,75 @@ export const usersRouter = createTRPCRouter({
   getUserById: publicProcedure
     .input(GetUserByIdSchema)
     .query(async ({ ctx, input }) => {
-      const { userId } = input
+      const {
+        userId,
+        listingsPage = 1,
+        listingsLimit = 12,
+        listingsSearch,
+        listingsSystem,
+        listingsEmulator,
+        votesPage = 1,
+        votesLimit = 12,
+        votesSearch,
+      } = input
 
+      // Check if user exists first
+      const userExists = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      })
+
+      if (!userExists) return ResourceError.user.notFound()
+
+      // Build where clauses for listings filtering
+      const listingsWhere: Prisma.ListingWhereInput = {}
+      if (listingsSearch) {
+        listingsWhere.OR = [
+          {
+            game: { title: { contains: listingsSearch, mode: 'insensitive' } },
+          },
+          {
+            device: {
+              modelName: { contains: listingsSearch, mode: 'insensitive' },
+            },
+          },
+          {
+            emulator: {
+              name: { contains: listingsSearch, mode: 'insensitive' },
+            },
+          },
+        ]
+      }
+      if (listingsSystem) {
+        listingsWhere.device = {
+          brand: { name: listingsSystem },
+        }
+      }
+      if (listingsEmulator) {
+        listingsWhere.emulator = { name: listingsEmulator }
+      }
+
+      // Build where clauses for votes filtering
+      const votesWhere: Prisma.VoteWhereInput = {}
+      if (votesSearch) {
+        votesWhere.listing = {
+          OR: [
+            { game: { title: { contains: votesSearch, mode: 'insensitive' } } },
+            {
+              device: {
+                modelName: { contains: votesSearch, mode: 'insensitive' },
+              },
+            },
+            {
+              emulator: {
+                name: { contains: votesSearch, mode: 'insensitive' },
+              },
+            },
+          ],
+        }
+      }
+
+      // Get user basic info
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -156,48 +220,126 @@ export const usersRouter = createTRPCRouter({
           name: true,
           profileImage: true,
           role: true,
+          trustScore: true,
           createdAt: true,
-          listings: {
-            select: {
-              id: true,
-              createdAt: true,
-              device: {
-                select: {
-                  brand: { select: { id: true, name: true } },
-                  modelName: true,
-                },
-              },
-              game: { select: { title: true } },
-              emulator: { select: { name: true } },
-              performance: { select: { label: true } },
-            },
+          trustActionLogs: {
+            select: { id: true, action: true, weight: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
           },
-          votes: {
+          _count: {
             select: {
-              id: true,
-              value: true,
-              listing: {
-                select: {
-                  id: true,
-                  device: {
-                    select: {
-                      brand: { select: { id: true, name: true } },
-                      modelName: true,
-                    },
-                  },
-                  game: { select: { title: true } },
-                  emulator: { select: { name: true } },
-                  performance: { select: { label: true } },
-                },
-              },
+              listings: true,
+              votes: true,
             },
           },
         },
       })
 
-      if (!user) ResourceError.user.notFound()
+      // Get paginated listings with filtering
+      const listingsSkip = (listingsPage - 1) * listingsLimit
+      const [listings, listingsTotal] = await Promise.all([
+        ctx.prisma.listing.findMany({
+          where: { authorId: userId, ...listingsWhere },
+          select: {
+            id: true,
+            createdAt: true,
+            device: {
+              select: {
+                brand: { select: { id: true, name: true } },
+                modelName: true,
+              },
+            },
+            game: { select: { title: true } },
+            emulator: { select: { name: true } },
+            performance: { select: { label: true, rank: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: listingsSkip,
+          take: listingsLimit,
+        }),
+        ctx.prisma.listing.count({
+          where: { authorId: userId, ...listingsWhere },
+        }),
+      ])
 
-      return user
+      // Get paginated votes with filtering
+      const votesSkip = (votesPage - 1) * votesLimit
+      const [votes, votesTotal] = await Promise.all([
+        ctx.prisma.vote.findMany({
+          where: { userId, ...votesWhere },
+          select: {
+            id: true,
+            value: true,
+            listing: {
+              select: {
+                id: true,
+                device: {
+                  select: {
+                    brand: { select: { id: true, name: true } },
+                    modelName: true,
+                  },
+                },
+                game: { select: { title: true } },
+                emulator: { select: { name: true } },
+                performance: { select: { label: true, rank: true } },
+              },
+            },
+          },
+          orderBy: { id: 'desc' }, // Use id for consistent ordering since votes don't have timestamps
+          skip: votesSkip,
+          take: votesLimit,
+        }),
+        ctx.prisma.vote.count({ where: { userId, ...votesWhere } }),
+      ])
+
+      // Get filter options (for frontend dropdowns)
+      const [availableSystems, availableEmulators] = await Promise.all([
+        ctx.prisma.listing.findMany({
+          where: { authorId: userId },
+          select: { device: { select: { brand: { select: { name: true } } } } },
+          distinct: ['deviceId'],
+        }),
+        ctx.prisma.listing.findMany({
+          where: { authorId: userId },
+          select: {
+            emulator: { select: { name: true } },
+          },
+          distinct: ['emulatorId'],
+        }),
+      ])
+
+      return {
+        ...user,
+        listings: {
+          items: listings,
+          pagination: {
+            total: listingsTotal,
+            pages: Math.ceil(listingsTotal / listingsLimit),
+            page: listingsPage,
+            limit: listingsLimit,
+          },
+        },
+        votes: {
+          items: votes,
+          pagination: {
+            total: votesTotal,
+            pages: Math.ceil(votesTotal / votesLimit),
+            page: votesPage,
+            limit: votesLimit,
+          },
+        },
+        filterOptions: {
+          systems: [
+            ...new Set(availableSystems.map((l) => l.device.brand.name)),
+          ],
+          emulators: [
+            ...new Set(
+              availableEmulators.map((l) => l.emulator?.name).filter(Boolean),
+            ),
+          ],
+        },
+      }
     }),
 
   update: protectedProcedure

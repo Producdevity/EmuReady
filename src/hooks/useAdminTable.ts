@@ -89,21 +89,28 @@ function useAdminTable<TSortField extends string>(
 
     const params = new URLSearchParams()
 
-    if (search.trim()) params.set('search', search.trim())
+    if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
     if (page > 1) params.set('page', page.toString())
     if (sortField) params.set('sortField', sortField)
     if (sortDirection) params.set('sortDirection', sortDirection)
 
     const url = params.toString() ? `?${params.toString()}` : ''
     router.replace(url, { scroll: false })
-  }, [enableUrlState, search, page, sortField, sortDirection, router])
+  }, [enableUrlState, debouncedSearch, page, sortField, sortDirection, router])
 
   // Update URL when relevant state changes
   useEffect(() => {
     if (enableUrlState) {
       updateUrl()
     }
-  }, [search, page, sortField, sortDirection, enableUrlState, updateUrl])
+  }, [
+    debouncedSearch,
+    page,
+    sortField,
+    sortDirection,
+    enableUrlState,
+    updateUrl,
+  ])
 
   const setSearch = (newSearch: string) => {
     setSearchState(newSearch)

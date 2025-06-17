@@ -7,15 +7,18 @@ import {
   GamepadIcon,
   Copy,
   ExternalLink,
+  TrendingUp,
+  Award,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Modal, Button, Badge, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 import { type Nullable } from '@/types/utils'
-import { getRoleVariant } from '@/utils/badgeColors'
+import { getRoleVariant, getTrustActionBadgeColor } from '@/utils/badgeColors'
 import { formatDate, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 
@@ -113,7 +116,7 @@ function UserDetailsModal(props: Props) {
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Statistics Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <GamepadIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -138,7 +141,26 @@ function UserDetailsModal(props: Props) {
                 </p>
               </div>
 
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg md:col-span-1 col-span-2">
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  <span className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                    Trust Score
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                  {userQuery.data.trustScore}
+                </p>
+                <p className="text-xs text-orange-700 dark:text-orange-300">
+                  {TRUST_LEVELS.find(
+                    (level) =>
+                      userQuery.data?.trustScore &&
+                      userQuery.data.trustScore >= level.minScore,
+                  )?.name || 'Unranked'}
+                </p>
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   <span className="text-sm font-medium text-purple-800 dark:text-purple-300">
@@ -303,6 +325,64 @@ function UserDetailsModal(props: Props) {
                     ) : (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         No votes cast yet
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Trust Activity */}
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Award className="w-4 h-4" />
+                        Trust Activity
+                      </span>
+                      <span className="text-xs bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300 px-2 py-1 rounded-full">
+                        {userQuery.data.trustActionLogs?.length || 0} actions
+                      </span>
+                    </div>
+
+                    {userQuery.data.trustActionLogs &&
+                    userQuery.data.trustActionLogs.length > 0 ? (
+                      <div className="space-y-1">
+                        {userQuery.data.trustActionLogs
+                          .slice(0, 3)
+                          .map((log) => (
+                            <div
+                              key={log.id}
+                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
+                            >
+                              <span className="truncate flex items-center gap-1">
+                                <Badge
+                                  variant={getTrustActionBadgeColor(log.action)}
+                                  size="sm"
+                                  className="text-xs"
+                                >
+                                  {log.action}
+                                </Badge>
+                              </span>
+                              <span
+                                className={cn(
+                                  'ml-2 font-medium',
+                                  log.weight > 0
+                                    ? 'text-green-600'
+                                    : 'text-red-600',
+                                )}
+                              >
+                                {log.weight > 0 ? '+' : ''}
+                                {log.weight}
+                              </span>
+                            </div>
+                          ))}
+                        {userQuery.data.trustActionLogs.length > 3 && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            +{userQuery.data.trustActionLogs.length - 3} more
+                            actions...
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        No trust actions yet
                       </p>
                     )}
                   </div>

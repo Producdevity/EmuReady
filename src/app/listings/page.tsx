@@ -263,9 +263,9 @@ function ListingsPage() {
           </div>
 
           {/* Mobile-friendly controls */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            {/* First row on mobile: Toggle buttons */}
-            <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-start">
+          <div className="flex flex-col gap-3">
+            {/* Primary actions row */}
+            <div className="flex items-center gap-2 justify-end">
               {userQuery.data && (
                 <Button
                   variant={listingsState.myListings ? 'primary' : 'outline'}
@@ -279,38 +279,46 @@ function ListingsPage() {
                       page: 1,
                     })
                   }}
+                  className="whitespace-nowrap"
                 >
-                  {listingsState.myListings ? 'All Listings' : 'My Listings'}
+                  <span className="hidden sm:inline">
+                    {listingsState.myListings ? 'All Listings' : 'My Listings'}
+                  </span>
+                  <span className="sm:hidden">
+                    {listingsState.myListings ? 'All' : 'Mine'}
+                  </span>
                 </Button>
               )}
-              <DisplayToggleButton
-                showLogos={showSystemIcons}
-                onToggle={() => setShowSystemIcons(!showSystemIcons)}
-                isHydrated={isSystemIconsHydrated}
-                logoLabel="System Icons"
-                nameLabel="System Names"
-              />
-              <DisplayToggleButton
-                showLogos={showEmulatorLogos}
-                onToggle={toggleEmulatorLogos}
-                isHydrated={isEmulatorLogosHydrated}
-                logoLabel="Emulator Logos"
-                nameLabel="Emulator Names"
-              />
-            </div>
-
-            {/* Second row on mobile: Controls and Add button */}
-            <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-start">
-              <ColumnVisibilityControl
-                columns={LISTINGS_COLUMNS}
-                columnVisibility={columnVisibility}
-              />
-              <Button asChild variant="fancy" className="flex-shrink-0 min-w-0">
+              <Button asChild variant="fancy" className="flex-shrink-0">
                 <Link href="/listings/new" className="whitespace-nowrap">
                   <span className="hidden sm:inline">Add Listing</span>
                   <span className="sm:hidden">Add</span>
                 </Link>
               </Button>
+            </div>
+
+            {/* Secondary controls row */}
+            <div className="flex items-center gap-2 justify-end flex-wrap">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <DisplayToggleButton
+                  showLogos={showSystemIcons}
+                  onToggle={() => setShowSystemIcons(!showSystemIcons)}
+                  isHydrated={isSystemIconsHydrated}
+                  logoLabel="System Icons"
+                  nameLabel="System Names"
+                />
+                <DisplayToggleButton
+                  showLogos={showEmulatorLogos}
+                  onToggle={toggleEmulatorLogos}
+                  isHydrated={isEmulatorLogosHydrated}
+                  logoLabel="Emulator Logos"
+                  nameLabel="Emulator Names"
+                />
+              </div>
+              <ColumnVisibilityControl
+                columns={LISTINGS_COLUMNS}
+                columnVisibility={columnVisibility}
+              />
             </div>
           </div>
         </div>

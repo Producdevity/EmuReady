@@ -15,12 +15,16 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
 import { Modal, Button, ApprovalStatusBadge } from '@/components/ui'
+import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import { formatDate, formatTimeAgo } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
+import ImagePreviewModal from './ImagePreviewModal'
 
 type Game = RouterOutput['games']['getPendingGames']['games'][number]
 type ImageTabType = 'boxart' | 'banner' | 'main'
@@ -46,6 +50,16 @@ function GameDetailsModal(props: Props) {
     getInitialImageTab(props.selectedGame),
   )
   const [imageError, setImageError] = useState<Record<string, boolean>>({})
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
+  const [previewImageType, setPreviewImageType] = useState<
+    'boxart' | 'banner' | 'imageUrl'
+  >('boxart')
+
+  // Get current user to check permissions
+  const currentUserQuery = api.users.me.useQuery()
+  const isSuperAdmin = currentUserQuery.data?.role
+    ? hasPermission(currentUserQuery.data.role, Role.SUPER_ADMIN)
+    : false
 
   if (!props.selectedGame) return null
 
@@ -101,6 +115,12 @@ function GameDetailsModal(props: Props) {
     // Navigate to admin users page with user modal open
     router.push(`/admin/users?userId=${userId}`)
   }
+
+  const handleImageClick = (imageType: 'boxart' | 'banner' | 'imageUrl') => {
+    setPreviewImageType(imageType)
+    setIsImagePreviewOpen(true)
+  }
+
   const displayImage = getImageUrl(getDisplayImage(), props.selectedGame.title)
 
   return (
@@ -205,15 +225,24 @@ function GameDetailsModal(props: Props) {
               {/* Image Display */}
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
                 {displayImage && (
-                  <Image
-                    src={displayImage ?? ''}
-                    alt={`${props.selectedGame.title} - ${activeImageTab}`}
-                    width={800}
-                    height={256}
-                    className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105"
-                    onError={() => handleImageError(activeImageTab)}
-                    unoptimized
-                  />
+                  <button
+                    onClick={() =>
+                      handleImageClick(
+                        activeImageTab === 'main' ? 'imageUrl' : activeImageTab,
+                      )
+                    }
+                    className="w-full block"
+                  >
+                    <Image
+                      src={displayImage ?? ''}
+                      alt={`${props.selectedGame.title} - ${activeImageTab}`}
+                      width={800}
+                      height={256}
+                      className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105 cursor-pointer"
+                      onError={() => handleImageError(activeImageTab)}
+                      unoptimized
+                    />
+                  </button>
                 )}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
@@ -253,7 +282,7 @@ function GameDetailsModal(props: Props) {
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    {props.selectedGame.submitter?.id ? (
+                    {props.selectedGame.submitter?.id && isSuperAdmin ? (
                       <button
                         onClick={() => {
                           if (!props.selectedGame?.submitter?.id) return
@@ -264,6 +293,14 @@ function GameDetailsModal(props: Props) {
                       >
                         {props.selectedGame.submitter.name ?? 'Unknown User'}
                       </button>
+                    ) : props.selectedGame.submitter?.id && !isSuperAdmin ? (
+                      <Link
+                        href={`/users/${props.selectedGame.submitter.id}`}
+                        className="text-left w-full text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                        title="View public profile"
+                      >
+                        {props.selectedGame.submitter.name ?? 'Unknown User'}
+                      </Link>
                     ) : (
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {props.selectedGame.submitter?.name ?? 'Unknown User'}
@@ -431,6 +468,14 @@ function GameDetailsModal(props: Props) {
           </div>
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={isImagePreviewOpen}
+        onClose={() => setIsImagePreviewOpen(false)}
+        game={props.selectedGame}
+        initialImageType={previewImageType}
+      />
     </Modal>
   )
 }

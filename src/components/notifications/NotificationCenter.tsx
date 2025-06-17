@@ -54,8 +54,8 @@ function NotificationCenter(props: Props) {
 
   const deleteMutation = api.notifications.delete.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch()
-      unreadCountQuery.refetch()
+      notificationsQuery.refetch().catch(console.error)
+      unreadCountQuery.refetch().catch(console.error)
       toast.success('Notification deleted')
     },
     onError: (error) => {
@@ -93,6 +93,33 @@ function NotificationCenter(props: Props) {
   const handleViewAllNotifications = () => {
     setIsOpen(false)
     router.push('/notifications')
+  }
+
+  const handleNotificationClick = (notification: (typeof notifications)[0]) => {
+    // Mark as read if not already read
+    if (!notification.isRead) {
+      handleMarkAsRead(notification.id)
+    }
+
+    setIsOpen(false)
+
+    // Navigate based on actionUrl if available
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl)
+    } else {
+      // Try to extract route from metadata if actionUrl is not available
+      const metadata = notification.metadata as Record<string, unknown>
+      if (typeof metadata?.listingId === 'string') {
+        router.push(`/listings/${metadata.listingId}`)
+      } else if (typeof metadata?.gameId === 'string') {
+        router.push(`/games/${metadata.gameId}`)
+      } else if (typeof metadata?.userId === 'string') {
+        router.push(`/users/${metadata.userId}`)
+      } else {
+        // Default to notifications page if no specific route
+        router.push('/notifications')
+      }
+    }
   }
 
   const unreadCount = unreadCountQuery.data || 0
@@ -175,6 +202,7 @@ function NotificationCenter(props: Props) {
                       key={notification.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
+                      onClick={() => handleNotificationClick(notification)}
                       className={cn(
                         'p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer',
                         !notification.isRead &&
@@ -238,10 +266,10 @@ function NotificationCenter(props: Props) {
 
             {/* Footer - Always visible */}
             {notifications.length > 0 && (
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky bottom-0">
                 <button
                   onClick={handleViewAllNotifications}
-                  className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium"
+                  className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
                   View all notifications
                 </button>

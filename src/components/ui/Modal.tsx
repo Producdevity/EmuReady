@@ -67,7 +67,7 @@ function Modal({ onClose, ...props }: Props) {
     >
       <div
         className={cn(
-          'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden w-full max-h-[90vh] transform transition-all duration-300 ease-out animate-slide-up',
+          'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col w-full max-h-[90vh] transform transition-all duration-300 ease-out animate-slide-up',
           sizeClasses[size],
           props.className,
         )}
@@ -94,7 +94,7 @@ function Modal({ onClose, ...props }: Props) {
         )}
 
         {/* Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-grow min-h-0">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-grow min-h-0 overflow-x-visible">
           {props.children}
         </div>
       </div>
