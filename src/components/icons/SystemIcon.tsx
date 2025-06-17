@@ -21,15 +21,13 @@ interface Props {
 function SystemIcon(props: Props) {
   const IconComponent = getSystemIcon(props.systemKey)
 
-  const sizeClass = props.size ? sizeClasses[props.size] : sizeClasses.md
-
   return IconComponent ? (
     <Tooltip>
       <TooltipTrigger asChild>
         <div
           className={cn(
             'flex items-center justify-center dark:bg-gray-200 dark:rounded-2xl dark:p-1 overflow-hidden',
-            sizeClass,
+            props.size ? sizeClasses[props.size] : sizeClasses.md,
             props.className,
           )}
         >
