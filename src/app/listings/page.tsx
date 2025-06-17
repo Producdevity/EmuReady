@@ -28,6 +28,7 @@ import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
+import { formatTimeAgo } from '@/utils/date'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
@@ -46,6 +47,7 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'performance', label: 'Performance', defaultVisible: true },
   { key: 'successRate', label: 'Success Rate', defaultVisible: true },
   { key: 'author', label: 'Author', defaultVisible: false },
+  { key: 'posted', label: 'Posted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -383,6 +385,15 @@ function ListingsPage() {
                       onSort={handleSort}
                     />
                   )}
+                  {columnVisibility.isColumnVisible('posted') && (
+                    <SortableHeader
+                      label="Posted"
+                      field="createdAt"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={handleSort}
+                    />
+                  )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                       Actions
@@ -488,6 +499,11 @@ function ListingsPage() {
                     {columnVisibility.isColumnVisible('author') && (
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
                         {listing.author?.name ?? 'Anonymous'}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('posted') && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                        {formatTimeAgo(listing.createdAt)}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (

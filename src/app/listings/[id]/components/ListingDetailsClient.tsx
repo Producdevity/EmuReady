@@ -7,6 +7,7 @@ import { isNullish, isNumber } from 'remeda'
 import { Card, Badge } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
+import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { CustomFieldType } from '@orm'
 import CommentThread from './CommentThread'
 import EditListingModal from './EditListingModal'
@@ -204,6 +205,21 @@ function ListingDetailsClient(props: Props) {
               >
                 View Profile
               </Link>
+
+              {/* Posted Date */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-center">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    Posted
+                  </div>
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {formatTimeAgo(props.listing.createdAt)}
+                  </div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500">
+                    {formatDateTime(props.listing.createdAt)}
+                  </div>
+                </div>
+              </div>
 
               {/* Edit Button */}
               <div className="mt-2">
