@@ -96,6 +96,8 @@ function SocModal(props: Props) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       title={props.editId ? 'Edit SoC' : 'Add SoC'}
+      closeOnEscape={false}
+      closeOnBackdropClick={false}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">

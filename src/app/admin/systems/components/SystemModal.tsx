@@ -50,6 +50,8 @@ function SystemModal(props: Props) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       title={props.editId ? 'Edit System' : 'Add System'}
+      closeOnEscape={false}
+      closeOnBackdropClick={false}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
