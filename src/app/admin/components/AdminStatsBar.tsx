@@ -4,6 +4,15 @@ interface StatItem {
   color: 'yellow' | 'green' | 'red' | 'blue' | 'purple' | 'gray'
 }
 
+const colorClasses: Record<StatItem['color'], string> = {
+  yellow: 'text-yellow-600 dark:text-yellow-400',
+  green: 'text-green-600 dark:text-green-400',
+  red: 'text-red-600 dark:text-red-400',
+  blue: 'text-blue-600 dark:text-blue-400',
+  purple: 'text-purple-600 dark:text-purple-400',
+  gray: 'text-gray-600 dark:text-gray-400',
+}
+
 interface Props {
   stats: StatItem[]
   isLoading?: boolean
@@ -23,30 +32,13 @@ function AdminStatsBar(props: Props) {
     )
   }
 
-  const getColorClasses = (color: StatItem['color']) => {
-    switch (color) {
-      case 'yellow':
-        return 'text-yellow-600 dark:text-yellow-400'
-      case 'green':
-        return 'text-green-600 dark:text-green-400'
-      case 'red':
-        return 'text-red-600 dark:text-red-400'
-      case 'blue':
-        return 'text-blue-600 dark:text-blue-400'
-      case 'purple':
-        return 'text-purple-600 dark:text-purple-400'
-      case 'gray':
-        return 'text-gray-600 dark:text-gray-400'
-      default:
-        return 'text-gray-600 dark:text-gray-400'
-    }
-  }
-
   return (
     <div className="flex items-center gap-4">
       {props.stats.map((stat) => (
         <div key={stat.label} className="text-center">
-          <div className={`text-2xl font-bold ${getColorClasses(stat.color)}`}>
+          <div
+            className={`text-2xl font-bold ${colorClasses[stat.color] || colorClasses.gray}`}
+          >
             {stat.value.toLocaleString()}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">

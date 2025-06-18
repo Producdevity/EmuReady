@@ -80,6 +80,8 @@ const eslintConfig = [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
+      'react-hooks/exhaustive-deps': 'error',
+      'react-hooks/rules-of-hooks': 'error',
       '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/no-unused-vars': [
