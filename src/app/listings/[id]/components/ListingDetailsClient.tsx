@@ -10,7 +10,7 @@ import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { CustomFieldType } from '@orm'
 import CommentThread from './CommentThread'
-import EditListingModal from './EditListingModal'
+import EditListingButton from './EditListingButton'
 import VoteButtons from './VoteButtons'
 
 export type Listing = NonNullable<RouterOutput['listings']['byId']>
@@ -223,7 +223,7 @@ function ListingDetailsClient(props: Props) {
 
               {/* Edit Button */}
               <div className="mt-2">
-                <EditListingModal
+                <EditListingButton
                   listingId={props.listing.id}
                   currentNotes={props.listing.notes || ''}
                   onSuccess={refreshData}
