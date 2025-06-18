@@ -60,6 +60,10 @@ function ListingsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, true)
 
+  const [userDeviceFilterDisabled, setUserDeviceFilterDisabled] =
+    useState(false)
+  const [userSocFilterDisabled, setUserSocFilterDisabled] = useState(false)
+
   const {
     showEmulatorLogos,
     toggleEmulatorLogos,
@@ -86,17 +90,19 @@ function ListingsPage() {
     ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
     : []
 
-  // Apply user device filter if enabled and no manual device filter is set
+  // Apply user device filter if enabled and no manual device filter is set and not explicitly disabled
   const shouldUseUserDeviceFilter =
     userPreferencesQuery.data?.defaultToUserDevices &&
     listingsState.deviceIds.length === 0 &&
-    userDeviceIds.length > 0
+    userDeviceIds.length > 0 &&
+    !userDeviceFilterDisabled
 
-  // Apply user SoC filter if enabled and no manual SoC filter is set
+  // Apply user SoC filter if enabled and no manual SoC filter is set and not explicitly disabled
   const shouldUseUserSocFilter =
     userPreferencesQuery.data?.defaultToUserSocs &&
     listingsState.socIds.length === 0 &&
-    userSocIds.length > 0
+    userSocIds.length > 0 &&
+    !userSocFilterDisabled
 
   const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
@@ -154,12 +160,14 @@ function ListingsPage() {
     listingsState.setDeviceIds(values)
     listingsState.setPage(1)
     listingsState.updateQuery({ deviceIds: values, page: 1 })
+    setUserDeviceFilterDisabled(values.length <= 0)
   }
 
   const handleSocChange = (values: string[]) => {
     listingsState.setSocIds(values)
     listingsState.setPage(1)
     listingsState.updateQuery({ socIds: values, page: 1 })
+    setUserSocFilterDisabled(values.length <= 0)
   }
 
   const handleEmulatorChange = (values: string[]) => {

@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useState, useCallback } from 'react'
 import { isArray, isString } from 'remeda'
-import getSystemIcon from '@/components/icons/systems/getSystemIcon'
+import SystemIcon from '@/components/icons/SystemIcon'
 import {
   Badge,
   Button,
@@ -365,10 +365,16 @@ function UserDetailsPage() {
                         >
                           <div className="flex items-start gap-4">
                             <div className="flex-shrink-0 w-10 h-10">
-                              {getSystemIcon(
-                                listing.device?.brand.name || '',
-                              )?.() || (
-                                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded" />
+                              {listing.game?.system?.key ? (
+                                <SystemIcon
+                                  systemKey={listing.game.system.key}
+                                  name={listing.game.system.name}
+                                  size="md"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+                                  <GamepadIcon className="w-5 h-5 text-white" />
+                                </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">

@@ -250,7 +250,18 @@ export const usersRouter = createTRPCRouter({
                 modelName: true,
               },
             },
-            game: { select: { title: true } },
+            game: {
+              select: {
+                title: true,
+                system: {
+                  select: {
+                    id: true,
+                    name: true,
+                    key: true,
+                  },
+                },
+              },
+            },
             emulator: { select: { name: true } },
             performance: { select: { label: true, rank: true } },
           },
@@ -280,7 +291,18 @@ export const usersRouter = createTRPCRouter({
                     modelName: true,
                   },
                 },
-                game: { select: { title: true } },
+                game: {
+                  select: {
+                    title: true,
+                    system: {
+                      select: {
+                        id: true,
+                        name: true,
+                        key: true,
+                      },
+                    },
+                  },
+                },
                 emulator: { select: { name: true } },
                 performance: { select: { label: true, rank: true } },
               },
