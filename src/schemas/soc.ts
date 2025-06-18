@@ -57,11 +57,3 @@ export const UpdateSoCSchema = z.object({
 export const DeleteSoCSchema = z.object({
   id: z.string(),
 })
-
-export type SoCBasic = z.infer<typeof SoCBasicSchema>
-export type SoCWithDevicesCount = z.infer<typeof SoCWithDevicesCountSchema>
-export type GetSoCs = z.infer<typeof GetSoCsSchema>
-export type GetSoCById = z.infer<typeof GetSoCByIdSchema>
-export type CreateSoC = z.infer<typeof CreateSoCSchema>
-export type UpdateSoC = z.infer<typeof UpdateSoCSchema>
-export type DeleteSoC = z.infer<typeof DeleteSoCSchema>
