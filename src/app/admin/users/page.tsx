@@ -189,7 +189,7 @@ function AdminUsersPage() {
               <Input
                 placeholder="Search users by name or email..."
                 value={table.search}
-                onChange={(e) => table.setSearch(e.target.value)}
+                onChange={table.handleSearchChange}
                 className="w-full pl-10"
               />
             </div>

@@ -200,7 +200,7 @@ function AdminGamesPage() {
             <Input
               placeholder="Search games by title..."
               value={table.search}
-              onChange={(ev) => table.setSearch(ev.target.value)}
+              onChange={table.handleSearchChange}
               className="w-full"
             />
           </div>

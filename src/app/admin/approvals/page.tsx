@@ -288,7 +288,7 @@ function AdminApprovalsPage() {
               <Input
                 placeholder="Search listings, games, or authors..."
                 value={table.search}
-                onChange={(ev) => table.setSearch(ev.target.value)}
+                onChange={table.handleSearchChange}
                 className="w-full pl-10"
               />
             </div>

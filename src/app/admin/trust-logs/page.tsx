@@ -151,7 +151,7 @@ function AdminTrustLogsPage() {
             <Input
               placeholder="Search users..."
               value={table.search}
-              onChange={(ev) => table.setSearch(ev.target.value)}
+              onChange={table.handleSearchChange}
               className="w-full pl-10"
             />
           </div>
