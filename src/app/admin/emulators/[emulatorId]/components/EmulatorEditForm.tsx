@@ -53,6 +53,7 @@ const logoOptions = [
   'ryujinx.png',
   'shadps4.png',
   'sudachi.png',
+  'torzu.png',
   'vita3k.png',
   'winlator.png',
   'xemu.png',

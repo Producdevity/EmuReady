@@ -142,6 +142,11 @@ const emulators: EmulatorData[] = [
     logo: 'sudachi.png',
   },
   {
+    name: 'Torzu',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'torzu.png',
+  },
+  {
     name: 'Vita3K',
     supportedSystemNames: ['Sony PlayStation Vita'],
     logo: 'vita3k.png',
