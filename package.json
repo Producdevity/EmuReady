@@ -1,7 +1,8 @@
 {
   "name": "emuready",
-  "version": "0.6.9",
-  "private": true,
+  "version": "0.6.10",
+  "private": false,
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

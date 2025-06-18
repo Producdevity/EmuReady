@@ -36,60 +36,7 @@ EmuReady helps users share and discover emulation compatibility information acro
 
 ## Features
 
-- **Comprehensive Compatibility Database**: Track how games perform on different emulators and devices
-- **User Contributions**: Community-driven reports and voting system
-- **Discussion System**: Comment threads with upvoting/downvoting functionality
-- **Admin Dashboard**: Manage users, listings, and content moderation
-- **Responsive Design**: Works on mobile, tablet, and desktop
-
-## Recent Improvements
-
-The codebase has been significantly improved with the following enhancements:
-
-### UI Components
-
-- Created an **ErrorBoundary** component for better error handling and recovery
-- Added an **OptimizedImage** component using Next.js Image component for better performance
-- Improved **Pagination** with accessibility features, keyboard navigation, and better UX
-- Enhanced **Badge** component with more variants, sizes, and a pill option
-- Added **ThemeToggle** component for switching between light, dark, and system themes
-- Implemented **SortableHeader** for table sorting with visual indicators
-
-### Caching & Performance
-
-- Improved React Query configuration with better defaults for caching, stale times, and retry logic
-- Added image optimization for device images
-- Implemented proper error handling throughout the application
-
-### Accessibility
-
-- Enhanced keyboard navigation for interactive elements
-- Added proper ARIA labels and roles
-- Improved focus management
-- Better color contrast in UI components
-
-### Security
-
-- Data validation and sanitization at multiple levels (client, server, database)
-- Content Security Policy implementation
-- Protection against XSS and CSRF attacks
-- Secure authentication with NextAuth.js
-- File upload validation and security measures
-- Input length restrictions and proper sanitization
-- UUID validation to prevent parameter tampering
-
-### Developer Experience
-
-- Added additional npm scripts for development workflow
-- Better project structure with consistent exports
-- Enhanced error feedback with custom ErrorBoundary
-- Improved 404 page with helpful navigation options
-
-### Theming
-
-- Added system theme preference detection
-- Created theme toggle with multiple UI options
-- Improved dark mode implementation across components
+Check the [Release Notes](https://github.com/Producdevity/EmuReady/releases) for detailed changelogs.
 
 ## Getting Started
 
@@ -97,7 +44,7 @@ The codebase has been significantly improved with the following enhancements:
 
 - Node.js 20+
 - `npm`
-- PostgreSQL (or SQLite for development)
+- PostgreSQL (or SQLite/Supabase-local for development)
 
 ### Installation
 
@@ -180,6 +127,12 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## License Change Notice
+
+🛡️ License Change: As of June 18, 2024, EmuReady has transitioned from the `MIT License` to the GNU General Public License v3.0 or later (`GPL-3.0-or-later`).
+This change is made to ensure that the software remains free and open-source while preventing proprietary commercial reuse.
+For more details, please refer to the [LICENSE](LICENSE) file.
 
 ## Code of Conduct (TODO)
 
