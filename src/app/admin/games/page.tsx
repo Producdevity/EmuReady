@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
+import ImageIndicators from '@/app/admin/components/ImageIndicators'
+import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
 import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
@@ -57,6 +59,9 @@ function AdminGamesPage() {
   const [systemId, setSystemId] = useState('')
   const [statusFilter, setStatusFilter] =
     useState<Nullable<ApprovalStatus>>(null)
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
+  const [selectedGameForImagePreview, setSelectedGameForImagePreview] =
+    useState<Game | null>(null)
   const confirm = useConfirmDialog()
 
   const table = useAdminTable<GameSortField>({ defaultLimit: 20 })
@@ -115,6 +120,11 @@ function AdminGamesPage() {
       setStatusFilter(value === '' ? null : value)
     }
     table.setPage(1)
+  }
+
+  const handleImageClick = (game: Game) => {
+    setSelectedGameForImagePreview(game)
+    setIsImagePreviewOpen(true)
   }
 
   // Prepare options for SelectInput components
@@ -321,15 +331,24 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-16 w-16 flex justify-center items-center">
-                              <Image
-                                src={getGameImageUrl(game)}
-                                alt={game.title}
-                                width={64}
-                                height={64}
-                                className="rounded-md object-cover m-h-16 w-auto"
-                                unoptimized
-                              />
+                            <div className="flex-shrink-0 h-16 w-16 flex justify-center items-center relative">
+                              <button
+                                onClick={() => handleImageClick(game)}
+                                className="group relative block"
+                              >
+                                <Image
+                                  src={getGameImageUrl(game)}
+                                  alt={game.title}
+                                  width={64}
+                                  height={64}
+                                  className="rounded-md object-cover m-h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                                  unoptimized
+                                />
+                                {/* Image indicators */}
+                                <div className="absolute -bottom-1 -right-1">
+                                  <ImageIndicators game={game} />
+                                </div>
+                              </button>
                             </div>
                             <div className="ml-4">
                               {game.title.length > 30 ? (
@@ -426,6 +445,13 @@ function AdminGamesPage() {
           </>
         )}
       </AdminTableContainer>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={isImagePreviewOpen}
+        onClose={() => setIsImagePreviewOpen(false)}
+        game={selectedGameForImagePreview}
+      />
     </div>
   )
 }

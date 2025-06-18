@@ -5,14 +5,14 @@ import { FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useForm } from 'react-hook-form'
-import { type z } from 'zod'
 import {
-  Input,
-  Button,
-  type AutocompleteOptionBase,
-  LoadingSpinner,
-} from '@/components/ui'
+  useForm,
+  type Control,
+  type FieldValues,
+  type UseFormSetValue,
+} from 'react-hook-form'
+import { type z } from 'zod'
+import { Input, Button, LoadingSpinner } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
@@ -20,12 +20,17 @@ import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { CustomFieldType } from '@orm'
-import CustomFieldRenderer from './components/CustomFieldRenderer'
-import FormValidationSummary from './components/FormValidationSummary'
-import DeviceSelector from './components/input-selectors/DeviceSelector'
-import EmulatorSelector from './components/input-selectors/EmulatorSelector'
-import GameSelector from './components/input-selectors/GameSelector'
-import PerformanceSelector from './components/input-selectors/PerformanceSelector'
+import {
+  CustomFieldRenderer,
+  FormValidationSummary,
+  GameSelector,
+  DeviceSelector,
+  EmulatorSelector,
+  PerformanceSelector,
+  type GameOption,
+  type EmulatorOption,
+  type DeviceOption,
+} from '../components/shared'
 import createDynamicListingSchema, {
   type CustomFieldOptionUI,
   type CustomFieldDefinitionWithOptions,
@@ -33,39 +38,6 @@ import createDynamicListingSchema, {
 import listingFormSchema from './form-schemas/listingFormSchema'
 
 export type ListingFormValues = RouterInput['listings']['create']
-
-interface GameOption extends AutocompleteOptionBase {
-  id: string
-  title: string
-  system: {
-    id: string
-    name: string
-  }
-  status?: string
-}
-
-interface EmulatorOption extends AutocompleteOptionBase {
-  id: string
-  name: string
-  systems: Array<{
-    id: string
-    name: string
-  }>
-}
-
-interface DeviceOption extends AutocompleteOptionBase {
-  id: string
-  modelName: string
-  brand: {
-    id: string
-    name: string
-  }
-  soc: {
-    id: string
-    name: string
-    manufacturer: string
-  }
-}
 
 function AddListingPage() {
   const router = useRouter()
@@ -77,7 +49,6 @@ function AddListingPage() {
 
   const gameIdFromUrl = searchParams.get('gameId')
 
-  const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
@@ -85,9 +56,8 @@ function AddListingPage() {
   const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(
     null,
   )
-  const [availableEmulators, setAvailableEmulators] = useState<
-    EmulatorOption[]
-  >([])
+  const [availableEmulators] = useState<EmulatorOption[]>([])
+  const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [parsedCustomFields, setParsedCustomFields] = useState<
     CustomFieldDefinitionWithOptions[]
   >([])
@@ -127,7 +97,7 @@ function AddListingPage() {
     { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
   )
 
-  // Autocomplete loadItems functions
+  // Individual load functions - cleaner than grouping them in an interface
   const loadGameItems = useCallback(
     async (query: string): Promise<GameOption[]> => {
       setGameSearchTerm(query)
@@ -195,7 +165,6 @@ function AddListingPage() {
           ),
         )
 
-        setAvailableEmulators(compatibleEmulators)
         return compatibleEmulators
       } catch (error) {
         console.error('Error fetching emulators:', error)
@@ -220,7 +189,10 @@ function AddListingPage() {
           .map((device) => ({
             id: device.id,
             modelName: device.modelName,
-            brand: device.brand,
+            brand: {
+              id: device.brand.id,
+              name: device.brand.name,
+            },
             soc: {
               id: device.soc!.id,
               name: device.soc!.name,
@@ -242,6 +214,7 @@ function AddListingPage() {
         id: preSelectedGameData.id,
         title: preSelectedGameData.title,
         system: preSelectedGameData.system,
+        status: preSelectedGameData.status,
       }
       setSelectedGame(gameOption)
       setValue('gameId', preSelectedGameData.id)
@@ -262,7 +235,6 @@ function AddListingPage() {
       })
     } else if (isInitialGameLoaded && !selectedGameId) {
       setSelectedGame(null)
-      setAvailableEmulators([])
       setValue('emulatorId', '') // Clear emulator when game is cleared
     }
   }, [
@@ -278,7 +250,6 @@ function AddListingPage() {
   useEffect(() => {
     if (selectedGame) {
       setValue('emulatorId', '') // Clear emulator selection when game changes
-      setAvailableEmulators([]) // Clear available emulators
     }
   }, [selectedGame, setValue])
 
@@ -411,11 +382,18 @@ function AddListingPage() {
           {/* Game Selection */}
           <div>
             <GameSelector
-              control={control}
+              control={control as unknown as Control<FieldValues>}
+              name="gameId"
               selectedGame={selectedGame}
-              errorMessage={String(formState.errors.gameId?.message ?? '')}
+              errorMessage={formState.errors.gameId?.message}
               loadGameItems={loadGameItems}
-              onGameSelect={setSelectedGame}
+              onGameSelect={(game: GameOption | null) => {
+                setSelectedGame(game)
+                if (!game) {
+                  setValue('emulatorId', '')
+                  setValue('customFieldValues', [])
+                }
+              }}
               gameSearchTerm={gameSearchTerm}
             />
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -432,11 +410,14 @@ function AddListingPage() {
           {/* Device Selection */}
           <div>
             <DeviceSelector
-              control={control}
+              control={control as unknown as Control<FieldValues>}
+              name="deviceId"
               selectedDevice={selectedDevice}
-              errorMessage={String(formState.errors.deviceId?.message ?? '')}
+              errorMessage={formState.errors.deviceId?.message}
               loadDeviceItems={loadDeviceItems}
-              onDeviceSelect={setSelectedDevice}
+              onDeviceSelect={(device: DeviceOption | null) =>
+                setSelectedDevice(device)
+              }
               deviceSearchTerm={deviceSearchTerm}
             />
           </div>
@@ -444,27 +425,28 @@ function AddListingPage() {
           {/* Emulator Selection */}
           <div>
             <EmulatorSelector
-              control={control}
+              control={control as unknown as Control<FieldValues>}
+              name="emulatorId"
               selectedGame={selectedGame}
               availableEmulators={availableEmulators}
               emulatorSearchTerm={emulatorSearchTerm}
               emulatorInputFocus={emulatorInputFocus}
-              errorMessage={String(formState.errors.emulatorId?.message ?? '')}
+              errorMessage={formState.errors.emulatorId?.message}
               loadEmulatorItems={loadEmulatorItems}
-              setValue={setValue}
+              setValue={setValue as unknown as UseFormSetValue<FieldValues>}
               onFocus={() => setEmulatorInputFocus(true)}
               onBlur={() => setEmulatorInputFocus(false)}
+              customFieldValuesFieldName="customFieldValues"
             />
           </div>
 
           {/* Performance Selection */}
           <div>
             <PerformanceSelector
-              control={control}
+              control={control as unknown as Control<FieldValues>}
+              name="performanceId"
               performanceScalesData={performanceScalesData}
-              errorMessage={String(
-                formState.errors.performanceId?.message ?? '',
-              )}
+              errorMessage={formState.errors.performanceId?.message}
             />
           </div>
 
@@ -516,8 +498,9 @@ function AddListingPage() {
                   <CustomFieldRenderer
                     key={fieldDef.id}
                     fieldDef={fieldDef}
+                    fieldName={`customFieldValues.${index}.value` as const}
                     index={index}
-                    control={control}
+                    control={control as unknown as Control<FieldValues>}
                     errorMessage={
                       formState.errors.customFieldValues?.[index]?.value
                         ?.message &&

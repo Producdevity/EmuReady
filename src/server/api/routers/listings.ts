@@ -25,4 +25,9 @@ export const listingsRouter = createTRPCRouter({
   overrideApprovalStatus: adminRouter.overrideStatus,
   delete: adminRouter.delete,
   getStats: adminRouter.getStats,
+
+  // Super admin operations for listing management
+  getAllListings: adminRouter.getAll,
+  getForEdit: adminRouter.getForEdit,
+  updateListingAdmin: adminRouter.updateListing,
 })

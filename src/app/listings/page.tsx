@@ -2,7 +2,7 @@
 
 import { Eye, Trash2, Clock } from 'lucide-react'
 import Link from 'next/link'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useCallback } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
@@ -207,15 +207,35 @@ function ListingsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    const confirmed = await confirm({
-      title: 'Delete Listing',
-      description: 'Are you sure you want to delete this listing?',
-    })
+    if (deleteConfirmId === id) {
+      const confirmed = await confirm({
+        title: 'Delete Listing',
+        description:
+          'Are you sure you want to delete this listing? This action cannot be undone.',
+      })
 
-    if (!confirmed) return
-
-    deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
+      if (confirmed) {
+        deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
+      }
+      setDeleteConfirmId(null)
+    } else {
+      setDeleteConfirmId(id)
+    }
   }
+
+  // Handle row click to navigate to listing details
+  const handleRowClick = useCallback((listingId: string) => {
+    window.location.href = `/listings/${listingId}`
+  }, [])
+
+  // Handle game name click to navigate to game details
+  const handleGameClick = useCallback(
+    (gameId: string, event: React.MouseEvent) => {
+      event.stopPropagation() // Prevent row click
+      window.location.href = `/games/${gameId}`
+    },
+    [],
+  )
 
   if (listingsQuery?.error)
     return (
@@ -225,7 +245,8 @@ function ListingsPage() {
     )
 
   return (
-    <main className="flex flex-col lg:flex-row min-h-screen bg-gray-50 dark:bg-gray-900 overflow-visible">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
+      {/* Sidebar */}
       <ListingFilters
         systemIds={listingsState.systemIds}
         deviceIds={listingsState.deviceIds}
@@ -413,21 +434,23 @@ function ListingsPage() {
                 {listingsQuery.data?.listings.map((listing) => (
                   <tr
                     key={listing.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                    onClick={() => handleRowClick(listing.id)}
                   >
                     {columnVisibility.isColumnVisible('game') && (
                       <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
                         <div className="flex items-center gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Link
-                                // href={`/games/${listing.game.id}`} // TODO: not sure whether to link to game or listing
-                                href={`/listings/${listing.id}`}
-                                className="hover:text-blue-600 dark:hover:text-blue-400"
+                              <button
+                                onClick={(e) =>
+                                  handleGameClick(listing.game.id, e)
+                                }
+                                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
                               >
                                 {listing.game.title.substring(0, 30)}
                                 {listing.game.title.length > 30 && '...'}
-                              </Link>
+                              </button>
                             </TooltipTrigger>
                             <TooltipContent side="top">
                               {listing.game.title}
@@ -516,19 +539,25 @@ function ListingsPage() {
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td
+                        className="px-4 py-2 whitespace-nowrap"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex items-center gap-2 flex-col">
                           <Link
                             href={`/listings/${listing.id}`}
-                            className="flex items-center justify-center min-w-19 gap-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-xs"
+                            className="flex items-center justify-center min-w-19 gap-1 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-sm"
                           >
                             <Eye className="w-4 h-4" /> View
                           </Link>
 
                           {isAdmin && (
                             <button
-                              onClick={() => handleDelete(listing.id)}
-                              className={`flex items-center justify-center min-w-19 gap-1 p-1 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-xs ${
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(listing.id)
+                              }}
+                              className={`flex items-center justify-center min-w-19 gap-1 p-2 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-sm ${
                                 deleteConfirmId === listing.id
                                   ? 'bg-orange-700 text-white hover:bg-orange-800'
                                   : 'bg-red-600 text-white hover:bg-red-700'

@@ -129,3 +129,66 @@ export const BulkRejectListingsSchema = z.object({
     .min(1, 'At least one listing must be selected'),
   notes: z.string().optional(),
 })
+
+// Admin schemas for listing management
+export const GetAllListingsAdminSchema = z.object({
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().positive().max(100).default(20),
+  sortField: z
+    .enum([
+      'game.title',
+      'game.system.name',
+      'device',
+      'emulator.name',
+      'performance.rank',
+      'author.name',
+      'createdAt',
+      'status',
+    ])
+    .optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
+  search: z.string().min(1).optional(),
+  statusFilter: z.nativeEnum(ApprovalStatus).optional(),
+  systemFilter: z.string().uuid().optional(),
+  emulatorFilter: z.string().uuid().optional(),
+})
+
+export const GetListingForEditSchema = z.object({
+  id: z.string().uuid(),
+})
+
+export const UpdateListingAdminSchema = z.object({
+  id: z.string().uuid(),
+  gameId: z.string().uuid(),
+  deviceId: z.string().uuid(),
+  emulatorId: z.string().uuid(),
+  performanceId: z.number(),
+  notes: z.string().optional(),
+  status: z.nativeEnum(ApprovalStatus),
+  customFieldValues: z
+    .array(
+      z.object({
+        customFieldDefinitionId: z.string().uuid(),
+        value: z.any(),
+      }),
+    )
+    .optional(),
+})
+
+export const UpdateListingUserSchema = z.object({
+  id: z.string().uuid(),
+  performanceId: z.number(),
+  notes: z.string().nullable().optional(),
+  customFieldValues: z
+    .array(
+      z.object({
+        customFieldDefinitionId: z.string().uuid(),
+        value: z.any(),
+      }),
+    )
+    .optional(),
+})
+
+export const GetListingForUserEditSchema = z.object({
+  id: z.string().uuid(),
+})

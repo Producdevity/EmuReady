@@ -1,24 +1,44 @@
 import { type ReactNode } from 'react'
-import { Controller, type Control } from 'react-hook-form'
 import {
-  type ValidationRules,
-  type CustomFieldDefinitionWithOptions,
-} from '@/app/listings/new/components/CustomFieldRenderer'
-import { type ListingFormValues } from '@/app/listings/new/page'
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form'
 import { SelectInput } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
-interface Props {
+interface CustomFieldOptionUI {
+  value: string
+  label: string
+}
+
+interface CustomFieldDefinitionWithOptions {
+  id: string
+  name: string
+  label: string
+  isRequired: boolean
+  parsedOptions?: CustomFieldOptionUI[]
+}
+
+interface ValidationRules {
+  required: string | boolean
+  validate?: (value: unknown) => boolean | string
+}
+
+interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
-  fieldName: `customFieldValues.${number}.value`
+  fieldName: FieldPath<TFieldValues>
   index: number
   rules: ValidationRules
-  control: Control<ListingFormValues>
+  control: Control<TFieldValues>
   errorMessage: string | undefined
   icon: ReactNode
 }
 
-function CustomFieldTypeSelect(props: Props) {
+function CustomFieldTypeSelect<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   return (
     <div key={props.fieldDef.id} className="mb-4">
       <label
@@ -30,7 +50,10 @@ function CustomFieldTypeSelect(props: Props) {
       <Controller
         name={props.fieldName}
         control={props.control}
-        defaultValue={props.fieldDef.parsedOptions?.[0]?.value ?? ''}
+        defaultValue={
+          (props.fieldDef.parsedOptions?.[0]?.value ??
+            '') as TFieldValues[FieldPath<TFieldValues>]
+        }
         rules={props.rules}
         render={({ field }) => (
           <SelectInput

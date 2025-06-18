@@ -106,10 +106,12 @@ function GameApprovalsPage() {
     : false
 
   // Mutation for approving/rejecting games
+  const utils = api.useUtils()
   const approveGameMutation = api.games.approveGame.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(`Game ${data.status.toLowerCase()} successfully!`)
-      pendingGamesQuery.refetch().catch(console.error)
+      await pendingGamesQuery.refetch()
+      await utils.games.getStats.invalidate()
       setIsModalOpen(false)
       setSelectedGameId(null)
       setProcessingAction(null)
@@ -126,6 +128,7 @@ function GameApprovalsPage() {
     onSuccess: async (result) => {
       toast.success(result.message)
       await pendingGamesQuery.refetch()
+      await utils.games.getStats.invalidate()
       setSelectedGameIds([])
     },
     onError: (err) => {
@@ -138,6 +141,7 @@ function GameApprovalsPage() {
     onSuccess: async (result) => {
       toast.success(result.message)
       await pendingGamesQuery.refetch()
+      await utils.games.getStats.invalidate()
       setSelectedGameIds([])
     },
     onError: (err) => {

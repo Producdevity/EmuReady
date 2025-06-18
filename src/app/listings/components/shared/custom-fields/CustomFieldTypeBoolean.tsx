@@ -1,22 +1,37 @@
 import { type ReactNode } from 'react'
-import { Controller, type Control } from 'react-hook-form'
 import {
-  type ValidationRules,
-  type CustomFieldDefinitionWithOptions,
-} from '@/app/listings/new/components/CustomFieldRenderer'
-import { type ListingFormValues } from '@/app/listings/new/page'
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form'
 
-interface Props {
+interface CustomFieldDefinitionWithOptions {
+  id: string
+  name: string
+  label: string
+  isRequired: boolean
+  defaultValue?: string | number | boolean | null
+}
+
+interface ValidationRules {
+  required: string | boolean
+  validate?: (value: unknown) => boolean | string
+}
+
+interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
-  fieldName: `customFieldValues.${number}.value`
+  fieldName: FieldPath<TFieldValues>
   index: number
   rules: ValidationRules
-  control: Control<ListingFormValues>
+  control: Control<TFieldValues>
   errorMessage: string | undefined
   icon: ReactNode
 }
 
-function CustomFieldTypeBoolean(props: Props) {
+function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   // Use the actual default value from the field definition, fallback to false if null/undefined
   const defaultValue =
     props.fieldDef.defaultValue !== null &&
@@ -29,7 +44,7 @@ function CustomFieldTypeBoolean(props: Props) {
       <Controller
         name={props.fieldName}
         control={props.control}
-        defaultValue={defaultValue}
+        defaultValue={defaultValue as TFieldValues[FieldPath<TFieldValues>]}
         render={({ field }) => (
           <label
             htmlFor={props.fieldName}

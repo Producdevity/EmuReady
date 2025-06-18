@@ -9,6 +9,9 @@ import {
   DeleteListingSchema,
   BulkApproveListingsSchema,
   BulkRejectListingsSchema,
+  GetListingForEditSchema,
+  UpdateListingAdminSchema,
+  GetAllListingsAdminSchema,
 } from '@/schemas/listing'
 import {
   createTRPCRouter,
@@ -551,4 +554,192 @@ export const adminRouter = createTRPCRouter({
       total: pending + approved + rejected,
     }
   }),
+
+  // Super admin procedures for listing management
+  getAll: superAdminProcedure
+    .input(GetAllListingsAdminSchema)
+    .query(async ({ ctx, input }) => {
+      const {
+        page,
+        limit,
+        sortField,
+        sortDirection,
+        search,
+        statusFilter,
+        systemFilter,
+        emulatorFilter,
+      } = input
+      const skip = (page - 1) * limit
+
+      const baseWhere: Prisma.ListingWhereInput = {
+        ...(statusFilter && { status: statusFilter }),
+        ...(systemFilter && { game: { systemId: systemFilter } }),
+        ...(emulatorFilter && { emulatorId: emulatorFilter }),
+      }
+
+      const searchWhere: Prisma.ListingWhereInput = search
+        ? {
+            OR: [
+              { game: { title: { contains: search, mode: 'insensitive' } } },
+              { author: { name: { contains: search, mode: 'insensitive' } } },
+              { notes: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}
+
+      const whereClause: Prisma.ListingWhereInput = {
+        ...baseWhere,
+        ...searchWhere,
+      }
+
+      // Handle sorting
+      let orderBy: Prisma.ListingOrderByWithRelationInput = {
+        createdAt: 'desc',
+      }
+      if (sortField && sortDirection) {
+        switch (sortField) {
+          case 'game.title':
+            orderBy = { game: { title: sortDirection } }
+            break
+          case 'game.system.name':
+            orderBy = { game: { system: { name: sortDirection } } }
+            break
+          case 'device':
+            orderBy = { device: { modelName: sortDirection } }
+            break
+          case 'emulator.name':
+            orderBy = { emulator: { name: sortDirection } }
+            break
+          case 'performance.rank':
+            orderBy = { performance: { rank: sortDirection } }
+            break
+          case 'author.name':
+            orderBy = { author: { name: sortDirection } }
+            break
+          case 'status':
+            orderBy = { status: sortDirection }
+            break
+          case 'createdAt':
+            orderBy = { createdAt: sortDirection }
+            break
+        }
+      }
+
+      const listings = await ctx.prisma.listing.findMany({
+        where: whereClause,
+        include: {
+          game: {
+            include: {
+              system: true,
+            },
+          },
+          device: {
+            include: {
+              brand: true,
+              soc: true,
+            },
+          },
+          emulator: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          performance: true,
+        },
+        orderBy,
+        skip,
+        take: limit,
+      })
+
+      const totalListings = await ctx.prisma.listing.count({
+        where: whereClause,
+      })
+
+      return {
+        listings,
+        pagination: {
+          total: totalListings,
+          totalPages: Math.ceil(totalListings / limit),
+          currentPage: page,
+          limit,
+        },
+      }
+    }),
+
+  getForEdit: superAdminProcedure
+    .input(GetListingForEditSchema)
+    .query(async ({ ctx, input }) => {
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        include: {
+          game: { include: { system: true } },
+          device: { include: { brand: true, soc: true } },
+          emulator: {
+            include: {
+              customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
+            },
+          },
+          author: { select: { id: true, name: true, email: true } },
+          performance: true,
+          customFieldValues: { include: { customFieldDefinition: true } },
+        },
+      })
+
+      if (!listing) return ResourceError.listing.notFound()
+
+      return listing
+    }),
+
+  updateListing: superAdminProcedure
+    .input(UpdateListingAdminSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, customFieldValues, ...updateData } = input
+      const adminUserId = ctx.session.user.id
+
+      const existingListing = await ctx.prisma.listing.findUnique({
+        where: { id },
+        include: { customFieldValues: true },
+      })
+
+      if (!existingListing) return ResourceError.listing.notFound()
+
+      return ctx.prisma.$transaction(async (tx) => {
+        // Update the main listing fields
+        const updatedListing = await tx.listing.update({
+          where: { id },
+          data: {
+            ...updateData,
+            processedByUserId: adminUserId,
+            processedAt: new Date(),
+          },
+        })
+
+        // Handle custom field values
+        if (customFieldValues) {
+          // Delete existing custom field values
+          await tx.listingCustomFieldValue.deleteMany({
+            where: { listingId: id },
+          })
+
+          // Create new custom field values
+          if (customFieldValues.length > 0) {
+            await tx.listingCustomFieldValue.createMany({
+              data: customFieldValues.map((cfv) => ({
+                listingId: id,
+                customFieldDefinitionId: cfv.customFieldDefinitionId,
+                value: cfv.value ?? null,
+              })),
+            })
+          }
+        }
+
+        // Invalidate listing stats cache
+        listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+        return updatedListing
+      })
+    }),
 })

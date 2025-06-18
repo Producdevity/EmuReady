@@ -9,7 +9,6 @@ import EditListingModal from './EditListingModal'
 
 interface Props {
   listingId: string
-  currentNotes: string
   onSuccess?: () => void
 }
 
@@ -89,7 +88,6 @@ function EditListingButton(props: Props) {
         isOpen={isModalOpen}
         onClose={handleClose}
         listingId={props.listingId}
-        currentNotes={props.currentNotes}
         canEdit={canEdit}
         remainingMinutes={remainingMinutes}
         timeExpired={timeExpired}

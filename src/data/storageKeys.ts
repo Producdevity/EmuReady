@@ -16,6 +16,7 @@ const storageKeys = {
     adminDevices: `${PREFIX}admin_devices_column_visibility`,
     adminEmulators: `${PREFIX}admin_emulators_column_visibility`,
     adminGames: `${PREFIX}admin_games_column_visibility`,
+    adminListings: `${PREFIX}admin_listings_column_visibility`,
     adminPerformance: `${PREFIX}admin_performance_column_visibility`,
     adminProcessedListings: `${PREFIX}admin_processed_listings_column_visibility`,
     adminSoCs: `${PREFIX}admin_socs_column_visibility`,

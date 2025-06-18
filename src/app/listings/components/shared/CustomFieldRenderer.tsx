@@ -1,17 +1,16 @@
 'use client'
 
-import { type Control } from 'react-hook-form'
+import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { isEmpty, isString } from 'remeda'
-import CustomFieldTypeBoolean from '@/app/listings/new/components/custom-fields/CustomFieldTypeBoolean'
-import CustomFieldTypeRange from '@/app/listings/new/components/custom-fields/CustomFieldTypeRange'
-import CustomFieldTypeSelect from '@/app/listings/new/components/custom-fields/CustomFieldTypeSelect'
-import CustomFieldTypeText from '@/app/listings/new/components/custom-fields/CustomFieldTypeText'
-import CustomFieldTypeTextArea from '@/app/listings/new/components/custom-fields/CustomFieldTypeTextArea'
-import { type RouterInput } from '@/types/trpc'
 import { CustomFieldType } from '@orm'
-import getCustomFieldTypeIcon from '../utils/getCustomFieldTypeIcon'
-
-type ListingFormValues = RouterInput['listings']['create']
+import {
+  CustomFieldTypeBoolean,
+  CustomFieldTypeRange,
+  CustomFieldTypeSelect,
+  CustomFieldTypeText,
+  CustomFieldTypeTextArea,
+  getCustomFieldTypeIcon,
+} from './index'
 
 interface CustomFieldOptionUI {
   value: string
@@ -38,16 +37,17 @@ export interface ValidationRules {
   validate?: (value: unknown) => boolean | string
 }
 
-interface Props {
+interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
+  fieldName: FieldPath<TFieldValues>
   index: number
-  control: Control<ListingFormValues>
+  control: Control<TFieldValues>
   errorMessage: string | undefined
 }
 
-function CustomFieldRenderer(props: Props) {
-  const fieldName = `customFieldValues.${props.index}.value` as const
-
+function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   function getValidationRules(): ValidationRules {
     return {
       required: props.fieldDef.isRequired
@@ -77,7 +77,7 @@ function CustomFieldRenderer(props: Props) {
       return (
         <CustomFieldTypeText
           fieldDef={props.fieldDef}
-          fieldName={fieldName}
+          fieldName={props.fieldName}
           index={props.index}
           rules={validationRules}
           control={props.control}
@@ -90,7 +90,7 @@ function CustomFieldRenderer(props: Props) {
       return (
         <CustomFieldTypeTextArea
           fieldDef={props.fieldDef}
-          fieldName={fieldName}
+          fieldName={props.fieldName}
           index={props.index}
           rules={validationRules}
           control={props.control}
@@ -103,7 +103,7 @@ function CustomFieldRenderer(props: Props) {
       return (
         <CustomFieldTypeBoolean
           fieldDef={props.fieldDef}
-          fieldName={fieldName}
+          fieldName={props.fieldName}
           index={props.index}
           rules={validationRules}
           control={props.control}
@@ -116,7 +116,7 @@ function CustomFieldRenderer(props: Props) {
       return (
         <CustomFieldTypeSelect
           fieldDef={props.fieldDef}
-          fieldName={fieldName}
+          fieldName={props.fieldName}
           index={props.index}
           rules={validationRules}
           control={props.control}
@@ -129,7 +129,7 @@ function CustomFieldRenderer(props: Props) {
       return (
         <CustomFieldTypeRange
           fieldDef={props.fieldDef}
-          fieldName={fieldName}
+          fieldName={props.fieldName}
           index={props.index}
           rules={validationRules}
           control={props.control}
@@ -144,3 +144,4 @@ function CustomFieldRenderer(props: Props) {
 }
 
 export default CustomFieldRenderer
+export type { CustomFieldOptionUI }

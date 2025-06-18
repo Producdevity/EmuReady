@@ -1,23 +1,41 @@
 import { type ReactNode, useState } from 'react'
-import { Controller, type Control } from 'react-hook-form'
 import {
-  type ValidationRules,
-  type CustomFieldDefinitionWithOptions,
-} from '@/app/listings/new/components/CustomFieldRenderer'
-import { type ListingFormValues } from '@/app/listings/new/page'
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form'
 import { cn } from '@/lib/utils'
 
-interface Props {
+interface CustomFieldDefinitionWithOptions {
+  id: string
+  name: string
+  label: string
+  isRequired: boolean
+  rangeMin?: number | null
+  rangeMax?: number | null
+  rangeUnit?: string | null
+  rangeDecimals?: number | null
+}
+
+interface ValidationRules {
+  required: string | boolean
+  validate?: (value: unknown) => boolean | string
+}
+
+interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
-  fieldName: `customFieldValues.${number}.value`
+  fieldName: FieldPath<TFieldValues>
   index: number
   rules: ValidationRules
-  control: Control<ListingFormValues>
+  control: Control<TFieldValues>
   errorMessage: string | undefined
   icon: ReactNode
 }
 
-function CustomFieldTypeRange(props: Props) {
+function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   const [displayValue, setDisplayValue] = useState<string>('')
 
   const min = props.fieldDef.rangeMin ?? 0
@@ -50,7 +68,7 @@ function CustomFieldTypeRange(props: Props) {
       <Controller
         name={props.fieldName}
         control={props.control}
-        defaultValue={min}
+        defaultValue={min as TFieldValues[FieldPath<TFieldValues>]}
         rules={props.rules}
         render={({ field }) => {
           const currentValue =
@@ -66,7 +84,6 @@ function CustomFieldTypeRange(props: Props) {
 
           return (
             <div className="mt-3 space-y-6">
-              {/* Beautiful Slider Container with Enhanced Design */}
               <div className="relative px-4 py-6 bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10 rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm">
                 {/* Slider Track Container */}
                 <div className="relative mb-6">
@@ -85,7 +102,7 @@ function CustomFieldTypeRange(props: Props) {
                     className="range-slider w-full h-3 bg-transparent cursor-pointer appearance-none focus:outline-none relative z-10"
                   />
 
-                  {/* Enhanced Track Background with Subtle Gradient */}
+                  {/* Track Background with Subtle Gradient */}
                   <div className="absolute top-1/2 left-0 w-full h-3 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-full pointer-events-none transform -translate-y-1/2 shadow-inner" />
 
                   {/* Animated Filled Track with Glow Effect */}
@@ -98,7 +115,6 @@ function CustomFieldTypeRange(props: Props) {
                     }}
                   />
 
-                  {/* Enhanced Custom Thumb with Glow and Animation */}
                   <div
                     className="absolute top-1/2 w-6 h-6 bg-white border-2 border-blue-500 rounded-full pointer-events-none transform -translate-y-1/2 -translate-x-1/2 transition-all duration-300 ease-out shadow-xl"
                     style={{

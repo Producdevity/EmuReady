@@ -13,6 +13,8 @@ import {
   CreateVoteSchema,
   GetListingByIdSchema,
   GetListingsSchema,
+  UpdateListingUserSchema,
+  GetListingForUserEditSchema,
 } from '@/schemas/listing'
 import {
   authorProcedure,
@@ -832,12 +834,7 @@ export const coreRouter = createTRPCRouter({
     }),
 
   update: authorProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        notes: z.string().min(1, 'Notes are required'),
-      }),
-    )
+    .input(UpdateListingUserSchema)
     .mutation(async ({ ctx, input }) => {
       // First check if user can edit this listing
       const listing = await ctx.prisma.listing.findUnique({
@@ -846,6 +843,7 @@ export const coreRouter = createTRPCRouter({
           authorId: true,
           status: true,
           processedAt: true,
+          emulatorId: true,
         },
       })
 
@@ -886,12 +884,116 @@ export const coreRouter = createTRPCRouter({
         throw AppError.badRequest('Invalid listing status')
       }
 
-      // Update the listing
-      return await ctx.prisma.listing.update({
+      // Update the listing using a transaction to handle custom fields
+      return await ctx.prisma.$transaction(async (tx) => {
+        // Validate custom fields if provided
+        if (input.customFieldValues && input.customFieldValues.length > 0) {
+          await validateCustomFields(
+            tx,
+            listing.emulatorId,
+            input.customFieldValues,
+          )
+        }
+
+        // Delete existing custom field values
+        if (input.customFieldValues) {
+          await tx.listingCustomFieldValue.deleteMany({
+            where: { listingId: input.id },
+          })
+
+          // Create new custom field values
+          if (input.customFieldValues.length > 0) {
+            await tx.listingCustomFieldValue.createMany({
+              data: input.customFieldValues.map((cfv) => ({
+                listingId: input.id,
+                customFieldDefinitionId: cfv.customFieldDefinitionId,
+                value: cfv.value,
+              })),
+            })
+          }
+        }
+
+        // Update the listing
+        return await tx.listing.update({
+          where: { id: input.id },
+          data: {
+            notes: input.notes,
+            performanceId: input.performanceId,
+          },
+        })
+      })
+    }),
+
+  getForUserEdit: authorProcedure
+    .input(GetListingForUserEditSchema)
+    .query(async ({ ctx, input }) => {
+      const listing = await ctx.prisma.listing.findUnique({
         where: { id: input.id },
-        data: {
-          notes: input.notes,
+        select: {
+          id: true,
+          authorId: true,
+          status: true,
+          processedAt: true,
+          notes: true,
+          performanceId: true,
+          game: {
+            select: {
+              id: true,
+              title: true,
+              system: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          device: {
+            select: {
+              id: true,
+              modelName: true,
+              brand: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          emulator: {
+            select: {
+              id: true,
+              name: true,
+              customFieldDefinitions: {
+                orderBy: { displayOrder: 'asc' },
+              },
+            },
+          },
+          performance: {
+            select: {
+              id: true,
+              label: true,
+              rank: true,
+            },
+          },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: true,
+            },
+          },
         },
       })
+
+      if (!listing) {
+        throw ResourceError.listing.notFound()
+      }
+
+      if (listing.authorId !== ctx.session.user.id) {
+        throw AppError.forbidden(
+          'You can only view your own listings for editing',
+        )
+      }
+
+      return listing
     }),
 })

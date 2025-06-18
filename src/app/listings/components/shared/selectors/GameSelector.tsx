@@ -2,24 +2,22 @@
 
 import { Puzzle, Info } from 'lucide-react'
 import { Controller } from 'react-hook-form'
-import { type Control } from 'react-hook-form'
+import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { type RouterInput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import { ApprovalStatus } from '@orm'
 
-type ListingFormValues = RouterInput['listings']['create']
-
-interface GameOption extends AutocompleteOptionBase {
+export interface GameOption extends AutocompleteOptionBase {
   id: string
   title: string
   system: { id: string; name: string }
-  status?: string
+  status: ApprovalStatus
 }
 
-interface Props {
-  control: Control<ListingFormValues>
+interface Props<TFieldValues extends FieldValues = FieldValues> {
+  control: Control<TFieldValues>
+  name: FieldPath<TFieldValues>
   selectedGame: Nullable<GameOption>
   errorMessage?: string
   loadGameItems: (query: string) => Promise<GameOption[]>
@@ -27,11 +25,13 @@ interface Props {
   gameSearchTerm: string
 }
 
-function GameSelector(props: Props) {
+function GameSelector<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   return (
     <>
       <Controller
-        name="gameId"
+        name={props.name}
         control={props.control}
         render={({ field }) => (
           <Autocomplete<GameOption>

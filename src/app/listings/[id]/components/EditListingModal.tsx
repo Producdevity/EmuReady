@@ -1,17 +1,26 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, type FormEvent } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'sonner'
-import { Button, Modal } from '@/components/ui'
+import {
+  FormValidationSummary,
+  renderCustomField,
+} from '@/app/listings/components/shared'
+import { Button, Modal, SelectInput, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
+import { UpdateListingUserSchema } from '@/schemas/listing'
+import type { z } from 'zod'
+
+type UpdateListingFormData = z.infer<typeof UpdateListingUserSchema>
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   listingId: string
-  currentNotes: string
   canEdit: boolean
   remainingMinutes?: number
   timeExpired?: boolean
@@ -21,28 +30,65 @@ interface Props {
 }
 
 function EditListingModal(props: Props) {
-  const [notes, setNotes] = useState(props.currentNotes || '')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const listingQuery = api.listings.getForUserEdit.useQuery(
+    { id: props.listingId },
+    { enabled: props.isOpen && props.canEdit },
+  )
+
+  const performanceScalesQuery = api.performanceScales.get.useQuery(undefined, {
+    enabled: props.isOpen && props.canEdit,
+  })
 
   const updateMutation = api.listings.update.useMutation({
     onSuccess: () => {
       toast.success('Listing updated successfully!')
+      setIsSubmitting(false)
       props.onClose()
       props.onSuccess?.()
     },
     onError: (error) => {
       toast.error(error.message)
+      setIsSubmitting(false)
     },
   })
 
-  const handleSubmit = (ev: FormEvent) => {
-    ev.preventDefault()
-    updateMutation.mutate({ id: props.listingId, notes })
+  const { control, handleSubmit, formState, reset } =
+    useForm<UpdateListingFormData>({
+      resolver: zodResolver(UpdateListingUserSchema),
+    })
+
+  // Reset form when modal opens or listing data changes
+  useEffect(() => {
+    if (listingQuery.data && props.isOpen) {
+      const defaultCustomFieldValues = listingQuery.data.customFieldValues.map(
+        (cfv) => ({
+          customFieldDefinitionId: cfv.customFieldDefinition.id,
+          value: cfv.value,
+        }),
+      )
+
+      reset({
+        id: listingQuery.data.id,
+        performanceId: listingQuery.data.performanceId,
+        notes: listingQuery.data.notes || '',
+        customFieldValues: defaultCustomFieldValues,
+      })
+    }
+  }, [listingQuery.data, props.isOpen, reset])
+
+  const onSubmit = (data: UpdateListingFormData) => {
+    setIsSubmitting(true)
+    updateMutation.mutate(data)
   }
 
-  useEffect(() => {
-    if (!props.isOpen) return
-    setNotes(props.currentNotes || '')
-  }, [props.isOpen, props.currentNotes])
+  const handleFormSubmit = (ev: FormEvent) => {
+    ev.preventDefault()
+    handleSubmit(onSubmit)()
+  }
+
+  if (!props.isOpen) return null
 
   return (
     <Modal
@@ -51,7 +97,7 @@ function EditListingModal(props: Props) {
       title="Edit Listing"
       closeOnBackdropClick={false}
       closeOnEscape={false}
-      size="md"
+      size="lg"
     >
       <div className="space-y-4">
         {/* Status indicators */}
@@ -90,62 +136,175 @@ function EditListingModal(props: Props) {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Note:</strong> You can only edit the notes section.
-                {props.isPending && (
-                  <span>
-                    {' '}
-                    You can edit anytime while your listing is pending approval.
-                  </span>
-                )}
-                {props.isApproved && (
-                  <span>
-                    {' '}
-                    After approval, you have {props.remainingMinutes} minutes to
-                    make edits.
-                  </span>
-                )}
-                This feature is intended for fixing typos, not major changes.
-              </p>
-            </div>
+          <>
+            {listingQuery.isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner text="Loading listing details..." />
+              </div>
+            )}
 
-            <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Enter your notes about this listing..."
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
+            {listingQuery.error && (
+              <div className="text-center py-8">
+                <p className="text-red-600 dark:text-red-400">
+                  Failed to load listing details: {listingQuery.error.message}
+                </p>
+              </div>
+            )}
 
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={props.onClose}
-                disabled={updateMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                isLoading={updateMutation.isPending}
-                disabled={updateMutation.isPending || !notes.trim()}
-              >
-                Update Listing
-              </Button>
-            </div>
-          </form>
+            {listingQuery.data && (
+              <form onSubmit={handleFormSubmit} className="space-y-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Enhanced Editing:</strong> You can now edit
+                    performance rating, custom fields, and notes.
+                    {props.isPending && (
+                      <span>
+                        {' '}
+                        You can edit anytime while your listing is pending
+                        approval.
+                      </span>
+                    )}
+                    {props.isApproved && (
+                      <span>
+                        {' '}
+                        After approval, you have {props.remainingMinutes}{' '}
+                        minutes to make edits.
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Game Info (read-only) */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Listing Details (Read-only)
+                  </h3>
+                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                    <p>
+                      <strong>Game:</strong> {listingQuery.data.game.title}
+                    </p>
+                    <p>
+                      <strong>System:</strong>{' '}
+                      {listingQuery.data.game.system.name}
+                    </p>
+                    <p>
+                      <strong>Device:</strong>{' '}
+                      {listingQuery.data.device.brand.name}{' '}
+                      {listingQuery.data.device.modelName}
+                    </p>
+                    <p>
+                      <strong>Emulator:</strong>{' '}
+                      {listingQuery.data.emulator.name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Performance Scale Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Performance Rating *
+                  </label>
+                  <Controller
+                    name="performanceId"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        label="Performance Rating"
+                        hideLabel
+                        options={
+                          performanceScalesQuery.data?.map((scale) => ({
+                            id: scale.id.toString(),
+                            name: scale.label,
+                          })) ?? []
+                        }
+                        value={field.value?.toString() ?? ''}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value, 10))
+                        }
+                      />
+                    )}
+                  />
+                  {formState.errors.performanceId && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {formState.errors.performanceId.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Custom Fields */}
+                {listingQuery.data.emulator.customFieldDefinitions &&
+                  listingQuery.data.emulator.customFieldDefinitions.length >
+                    0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        Emulator Settings
+                      </h3>
+                      <div className="space-y-4">
+                        {listingQuery.data.emulator.customFieldDefinitions.map(
+                          (fieldDef, index) =>
+                            renderCustomField({
+                              fieldDef,
+                              index,
+                              control,
+                              formErrors: formState.errors,
+                            }),
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Notes */}
+                <div>
+                  <label
+                    htmlFor="notes"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    Notes (Optional)
+                  </label>
+                  <Controller
+                    name="notes"
+                    control={control}
+                    render={({ field }) => (
+                      <textarea
+                        id="notes"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="Enter your notes about this listing..."
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    )}
+                  />
+                  {formState.errors.notes && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {formState.errors.notes.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Form Validation Summary */}
+                <FormValidationSummary errors={formState.errors} />
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={props.onClose}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    isLoading={isSubmitting}
+                    disabled={isSubmitting}
+                  >
+                    Update Listing
+                  </Button>
+                </div>
+              </form>
+            )}
+          </>
         )}
       </div>
     </Modal>

@@ -2,15 +2,17 @@
 
 import { Gamepad2, AlertCircle } from 'lucide-react'
 import { Controller } from 'react-hook-form'
-import { type Control, type UseFormSetValue } from 'react-hook-form'
+import {
+  type Control,
+  type UseFormSetValue,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form'
 import GitHubIcon from '@/components/icons/GitHubIcon'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { type RouterInput } from '@/types/trpc'
 
-type ListingFormValues = RouterInput['listings']['create']
-
-interface GameOption extends AutocompleteOptionBase {
+export interface GameOption extends AutocompleteOptionBase {
   id: string
   title: string
   system: { id: string; name: string }
@@ -22,20 +24,24 @@ interface EmulatorOption extends AutocompleteOptionBase {
   systems: { id: string; name: string }[]
 }
 
-interface Props {
-  control: Control<ListingFormValues>
+interface Props<TFieldValues extends FieldValues = FieldValues> {
+  control: Control<TFieldValues>
+  name: FieldPath<TFieldValues>
   selectedGame: GameOption | null
   availableEmulators: EmulatorOption[]
   emulatorSearchTerm: string
   emulatorInputFocus: boolean
   errorMessage?: string
   loadEmulatorItems: (query: string) => Promise<EmulatorOption[]>
-  setValue: UseFormSetValue<ListingFormValues>
+  setValue: UseFormSetValue<TFieldValues>
   onFocus: () => void
   onBlur: () => void
+  customFieldValuesFieldName?: FieldPath<TFieldValues>
 }
 
-function EmulatorSelector(props: Props) {
+function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   if (!props.selectedGame) {
     return (
       <>
@@ -58,7 +64,7 @@ function EmulatorSelector(props: Props) {
   return (
     <>
       <Controller
-        name="emulatorId"
+        name={props.name}
         control={props.control}
         render={({ field }) => (
           <Autocomplete<EmulatorOption>
@@ -67,8 +73,13 @@ function EmulatorSelector(props: Props) {
             value={field.value}
             onChange={(value) => {
               field.onChange(value)
-              // reset, setting customFieldValues is handled in useEffect
-              props.setValue('customFieldValues', [])
+              // reset custom field values when emulator changes
+              if (props.customFieldValuesFieldName) {
+                props.setValue(
+                  props.customFieldValuesFieldName,
+                  [] as TFieldValues[FieldPath<TFieldValues>],
+                )
+              }
             }}
             onFocus={props.onFocus}
             onBlur={props.onBlur}

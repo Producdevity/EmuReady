@@ -60,6 +60,11 @@ export const superAdminNavItems: NavItem[] = [
     description: 'Manage user accounts.',
   },
   {
+    href: '/admin/listings',
+    label: 'Manage Listings',
+    description: 'Edit and manage all listings.',
+  },
+  {
     href: '/admin/processed-listings',
     label: 'Processed Listings',
     description: 'View all processed listings.',

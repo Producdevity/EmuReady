@@ -537,7 +537,7 @@ function ListingFilters(props: FiltersProps) {
                       <div className="flex gap-2">
                         <Link
                           href="/profile?tab=devices"
-                          className="inline-flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
                         >
                           <Settings2 className="w-3 h-3" />
                           Manage devices
@@ -545,7 +545,7 @@ function ListingFilters(props: FiltersProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => props.onDeviceChange([])}
+                          onClick={() => handleDeviceChange([])}
                           className="text-xs h-7 px-2"
                         >
                           Show all devices
@@ -588,7 +588,7 @@ function ListingFilters(props: FiltersProps) {
                       <div className="flex gap-2">
                         <Link
                           href="/profile?tab=socs"
-                          className="inline-flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
                         >
                           <Settings2 className="w-3 h-3" />
                           Manage SoCs
@@ -596,7 +596,7 @@ function ListingFilters(props: FiltersProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => props.onSocChange([])}
+                          onClick={() => handleSocChange([])}
                           className="text-xs h-7 px-2"
                         >
                           Show all SoCs

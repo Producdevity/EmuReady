@@ -225,7 +225,6 @@ function ListingDetailsClient(props: Props) {
               <div className="mt-2">
                 <EditListingButton
                   listingId={props.listing.id}
-                  currentNotes={props.listing.notes || ''}
                   onSuccess={refreshData}
                 />
               </div>

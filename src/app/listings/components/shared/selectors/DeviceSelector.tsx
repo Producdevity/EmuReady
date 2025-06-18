@@ -2,14 +2,11 @@
 
 import { MonitorSmartphone, Info } from 'lucide-react'
 import { Controller } from 'react-hook-form'
-import { type Control } from 'react-hook-form'
+import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
-import { type RouterInput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 
-type ListingFormValues = RouterInput['listings']['create']
-
-interface DeviceOption extends AutocompleteOptionBase {
+export interface DeviceOption extends AutocompleteOptionBase {
   id: string
   modelName: string
   brand: {
@@ -23,8 +20,9 @@ interface DeviceOption extends AutocompleteOptionBase {
   }
 }
 
-interface Props {
-  control: Control<ListingFormValues>
+interface Props<TFieldValues extends FieldValues = FieldValues> {
+  control: Control<TFieldValues>
+  name: FieldPath<TFieldValues>
   selectedDevice: Nullable<DeviceOption>
   errorMessage?: string
   loadDeviceItems: (query: string) => Promise<DeviceOption[]>
@@ -32,11 +30,13 @@ interface Props {
   deviceSearchTerm: string
 }
 
-function DeviceSelector(props: Props) {
+function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   return (
     <>
       <Controller
-        name="deviceId"
+        name={props.name}
         control={props.control}
         render={({ field }) => (
           <Autocomplete<DeviceOption>

@@ -1,24 +1,39 @@
 import { type ReactNode } from 'react'
-import { Controller, type Control } from 'react-hook-form'
 import {
-  type ValidationRules,
-  type CustomFieldDefinitionWithOptions,
-} from '@/app/listings/new/components/CustomFieldRenderer'
-import { type ListingFormValues } from '@/app/listings/new/page'
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form'
 import { Input } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
-interface Props {
+interface CustomFieldDefinitionWithOptions {
+  id: string
+  name: string
+  label: string
+  isRequired: boolean
+  placeholder?: string | null
+}
+
+interface ValidationRules {
+  required: string | boolean
+  validate?: (value: unknown) => boolean | string
+}
+
+interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
-  fieldName: `customFieldValues.${number}.value`
+  fieldName: FieldPath<TFieldValues>
   index: number
   rules: ValidationRules
-  control: Control<ListingFormValues>
+  control: Control<TFieldValues>
   errorMessage: string | undefined
   icon: ReactNode
 }
 
-function CustomFieldTypeTextArea(props: Props) {
+function CustomFieldTypeTextArea<
+  TFieldValues extends FieldValues = FieldValues,
+>(props: Props<TFieldValues>) {
   return (
     <div key={props.fieldDef.id} className="mb-4">
       <label
@@ -30,7 +45,7 @@ function CustomFieldTypeTextArea(props: Props) {
       <Controller
         name={props.fieldName}
         control={props.control}
-        defaultValue=""
+        defaultValue={'' as TFieldValues[FieldPath<TFieldValues>]}
         rules={props.rules}
         render={({ field }) => (
           <Input

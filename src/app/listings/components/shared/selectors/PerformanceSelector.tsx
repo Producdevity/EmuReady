@@ -2,30 +2,30 @@
 
 import { Zap } from 'lucide-react'
 import { Controller } from 'react-hook-form'
-import { type Control } from 'react-hook-form'
+import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { SelectInput } from '@/components/ui'
-import { type RouterInput } from '@/types/trpc'
 
-type ListingFormValues = RouterInput['listings']['create']
-
-interface PerformanceScale {
+export interface PerformanceScale {
   id: number
   label: string
   rank: number
   description: string | null
 }
 
-interface Props {
-  control: Control<ListingFormValues>
+interface Props<TFieldValues extends FieldValues = FieldValues> {
+  control: Control<TFieldValues>
+  name: FieldPath<TFieldValues>
   performanceScalesData: PerformanceScale[] | undefined
   errorMessage?: string
 }
 
-function PerformanceSelector(props: Props) {
+function PerformanceSelector<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   return (
     <div>
       <Controller
-        name="performanceId"
+        name={props.name}
         control={props.control}
         render={({ field }) => {
           const selectedPerformance = props.performanceScalesData?.find(
