@@ -82,6 +82,7 @@ function AdminApprovalsPage() {
   })
 
   const gameStatsQuery = api.games.getStats.useQuery()
+  const listingStatsQuery = api.listings.getStats.useQuery()
 
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [selectedListingForApproval, setSelectedListingForApproval] =
@@ -89,17 +90,22 @@ function AdminApprovalsPage() {
   const [approvalNotes, setApprovalNotes] = useState('')
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalStatus | null>(null)
-
-  // Bulk selection state
   const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
 
   const utils = api.useUtils()
+
+  const invalidateQueries = async () => {
+    await pendingListingsQuery.refetch()
+    await utils.listings.getProcessed.invalidate()
+    await utils.listings.get.invalidate()
+    await utils.listings.getStats.invalidate()
+    await utils.games.getStats.invalidate()
+  }
+
   const approveMutation = api.listings.approveListing.useMutation({
     onSuccess: async () => {
       toast.success('Listing approved successfully!')
-      await pendingListingsQuery.refetch()
-      await utils.listings.getProcessed.invalidate()
-      await utils.listings.get.invalidate()
+      await invalidateQueries()
       closeApprovalModal()
     },
     onError: (err) => {
@@ -111,9 +117,7 @@ function AdminApprovalsPage() {
   const rejectMutation = api.listings.rejectListing.useMutation({
     onSuccess: async () => {
       toast.success('Listing rejected successfully!')
-      await pendingListingsQuery.refetch()
-      await utils.listings.getProcessed.invalidate()
-      await utils.listings.get.invalidate()
+      await invalidateQueries()
       closeApprovalModal()
     },
     onError: (err) => {
@@ -125,9 +129,7 @@ function AdminApprovalsPage() {
   const bulkApproveMutation = api.listings.bulkApproveListing.useMutation({
     onSuccess: async (result) => {
       toast.success(result.message)
-      await pendingListingsQuery.refetch()
-      await utils.listings.getProcessed.invalidate()
-      await utils.listings.get.invalidate()
+      await invalidateQueries()
       setSelectedListingIds([])
     },
     onError: (err) => {
@@ -139,9 +141,7 @@ function AdminApprovalsPage() {
   const bulkRejectMutation = api.listings.bulkRejectListing.useMutation({
     onSuccess: async (result) => {
       toast.success(result.message)
-      await pendingListingsQuery.refetch()
-      await utils.listings.getProcessed.invalidate()
-      await utils.listings.get.invalidate()
+      await invalidateQueries()
       setSelectedListingIds([])
     },
     onError: (err) => {
@@ -150,29 +150,14 @@ function AdminApprovalsPage() {
     },
   })
 
-  // Bulk selection handlers
   const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      setSelectedListingIds(listings.map((l) => l.id))
-    } else {
-      setSelectedListingIds([])
-    }
+    setSelectedListingIds(selected ? listings.map((l) => l.id) : [])
   }
 
   const handleSelectListing = (listingId: string, selected: boolean) => {
-    if (selected) {
-      setSelectedListingIds((prev) => [...prev, listingId])
-    } else {
-      setSelectedListingIds((prev) => prev.filter((id) => id !== listingId))
-    }
-  }
-
-  const handleBulkApprove = async (ids: string[]) => {
-    await bulkApproveMutation.mutateAsync({ listingIds: ids })
-  }
-
-  const handleBulkReject = async (ids: string[], notes?: string) => {
-    await bulkRejectMutation.mutateAsync({ listingIds: ids, notes })
+    setSelectedListingIds((prev) =>
+      selected ? [...prev, listingId] : prev.filter((id) => id !== listingId),
+    )
   }
 
   const openApprovalModal = (
@@ -193,17 +178,17 @@ function AdminApprovalsPage() {
   }
 
   const handleApprovalSubmit = () => {
-    if (selectedListingForApproval && approvalDecision) {
-      if (approvalDecision === ApprovalStatus.APPROVED) {
-        approveMutation.mutate({
-          listingId: selectedListingForApproval.id,
-        } satisfies RouterInput['listings']['approveListing'])
-      } else if (approvalDecision === ApprovalStatus.REJECTED) {
-        rejectMutation.mutate({
-          listingId: selectedListingForApproval.id,
-          notes: approvalNotes || undefined,
-        } satisfies RouterInput['listings']['rejectListing'])
-      }
+    if (!selectedListingForApproval || !approvalDecision) return
+    if (approvalDecision === ApprovalStatus.APPROVED) {
+      return approveMutation.mutate({
+        listingId: selectedListingForApproval.id,
+      } satisfies RouterInput['listings']['approveListing'])
+    }
+    if (approvalDecision === ApprovalStatus.REJECTED) {
+      return rejectMutation.mutate({
+        listingId: selectedListingForApproval.id,
+        notes: approvalNotes || undefined,
+      } satisfies RouterInput['listings']['rejectListing'])
     }
   }
 
@@ -248,6 +233,34 @@ function AdminApprovalsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {listingStatsQuery.data && (
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {listingStatsQuery.data.pending}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Pending
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {listingStatsQuery.data.approved}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Approved
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {listingStatsQuery.data.rejected}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Rejected
+                </div>
+              </div>
+            </div>
+          )}
           <DisplayToggleButton
             showLogos={showSystemIcons}
             onToggle={() => setShowSystemIcons(!showSystemIcons)}
@@ -318,11 +331,15 @@ function AdminApprovalsPage() {
           actions={{
             approve: {
               label: 'Approve Selected',
-              onAction: handleBulkApprove,
+              onAction: async (listingIds) => {
+                await bulkApproveMutation.mutateAsync({ listingIds })
+              },
             },
             reject: {
               label: 'Reject Selected',
-              onAction: handleBulkReject,
+              onAction: async (listingIds, notes) => {
+                await bulkRejectMutation.mutateAsync({ listingIds, notes })
+              },
             },
           }}
         />
@@ -352,7 +369,7 @@ function AdminApprovalsPage() {
                           selectedListingIds.length === listings.length &&
                           listings.length > 0
                         }
-                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        onChange={(ev) => handleSelectAll(ev.target.checked)}
                         className="rounded border-gray-300"
                       />
                     </th>
