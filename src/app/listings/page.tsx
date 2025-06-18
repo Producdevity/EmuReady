@@ -2,7 +2,8 @@
 
 import { Eye, Trash2, Clock } from 'lucide-react'
 import Link from 'next/link'
-import { Suspense, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { Suspense, useState, type MouseEvent } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
@@ -52,6 +53,7 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function ListingsPage() {
+  const router = useRouter()
   const confirm = useConfirmDialog()
   const listingsState = useListingsState()
 
@@ -215,35 +217,25 @@ function ListingsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (deleteConfirmId === id) {
-      const confirmed = await confirm({
-        title: 'Delete Listing',
-        description:
-          'Are you sure you want to delete this listing? This action cannot be undone.',
-      })
+    if (deleteConfirmId !== id) return setDeleteConfirmId(id)
 
-      if (confirmed) {
-        deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
-      }
-      setDeleteConfirmId(null)
-    } else {
-      setDeleteConfirmId(id)
+    const confirmed = await confirm({
+      title: 'Delete Listing',
+      description:
+        'Are you sure you want to delete this listing? This action cannot be undone.',
+    })
+
+    if (confirmed) {
+      deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
     }
+    setDeleteConfirmId(null)
   }
 
-  // Handle row click to navigate to listing details
-  const handleRowClick = useCallback((listingId: string) => {
-    window.location.href = `/listings/${listingId}`
-  }, [])
-
-  // Handle game name click to navigate to game details
-  const handleGameClick = useCallback(
-    (gameId: string, event: React.MouseEvent) => {
-      event.stopPropagation() // Prevent row click
-      window.location.href = `/games/${gameId}`
-    },
-    [],
-  )
+  // Handle game name click to navigate to game details (clicking on row navigates to listing details)
+  const handleGameClick = (gameId: string, ev: MouseEvent) => {
+    ev.stopPropagation()
+    router.push(`/games/${gameId}`)
+  }
 
   if (listingsQuery?.error)
     return (
@@ -443,7 +435,7 @@ function ListingsPage() {
                   <tr
                     key={listing.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                    onClick={() => handleRowClick(listing.id)}
+                    onClick={() => router.push(`/listings/${listing.id}`)}
                   >
                     {columnVisibility.isColumnVisible('game') && (
                       <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
