@@ -13,9 +13,3 @@ export const GetTrustLogsSchema = z.object({
 export const GetTrustStatsSchema = z.object({})
 
 export const RunMonthlyActiveBonusSchema = z.object({})
-
-export type GetTrustLogsInput = z.infer<typeof GetTrustLogsSchema>
-export type GetTrustStatsInput = z.infer<typeof GetTrustStatsSchema>
-export type RunMonthlyActiveBonusInput = z.infer<
-  typeof RunMonthlyActiveBonusSchema
->
