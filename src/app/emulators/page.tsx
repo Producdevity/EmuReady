@@ -1,10 +1,10 @@
 'use client'
 
 import { Search, Monitor } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
   Button,
   Input,
@@ -165,19 +165,13 @@ function EmulatorsPage() {
                   >
                     {columnVisibility.isColumnVisible('name') && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {emulator.logo ? (
-                            <Image
-                              src={emulator.logo}
-                              alt={emulator.name}
-                              width={32}
-                              height={32}
-                              className="object-contain mr-3"
-                              unoptimized
-                            />
-                          ) : (
-                            <Monitor className="w-5 h-5 text-gray-400 mr-3" />
-                          )}
+                        <div className="flex items-center gap-3">
+                          <EmulatorIcon
+                            logo={emulator.logo}
+                            name={emulator.name}
+                            showLogo={true}
+                            size="md"
+                          />
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {emulator.name}
                           </div>
