@@ -4,7 +4,7 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 function useEmulatorLogos() {
   const [showEmulatorLogos, setShowEmulatorLogos, isHydrated] = useLocalStorage(
     storageKeys.showEmulatorLogos,
-    false,
+    true,
   )
 
   return {

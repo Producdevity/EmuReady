@@ -58,7 +58,7 @@ function ListingsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
-    useLocalStorage(storageKeys.showSystemIcons, false)
+    useLocalStorage(storageKeys.showSystemIcons, true)
 
   const {
     showEmulatorLogos,
