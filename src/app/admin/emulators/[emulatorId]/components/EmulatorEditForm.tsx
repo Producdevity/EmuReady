@@ -35,6 +35,7 @@ const logoOptions = [
   'flycast.png',
   'gamefusion.png',
   'gamehub.png',
+  'gamenative.png',
   'horizon.png',
   'lemuroid.png',
   'lime3ds.png',

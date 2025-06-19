@@ -51,9 +51,14 @@ const emulators: EmulatorData[] = [
     logo: 'flycast.png',
   },
   {
-    name: 'GameFusion - GameHub',
+    name: 'GameHub',
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'gamefusion.png',
+  },
+  {
+    name: 'GameNative',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'gamenative.png',
   },
   {
     name: 'Horizon',
