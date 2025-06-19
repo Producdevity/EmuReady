@@ -3,14 +3,9 @@
 import Link from 'next/link'
 import { isDefined } from 'remeda'
 import AdminNavIcon from '@/app/admin/components/AdminNavIcon'
+import { type AdminNavItem } from '@/app/admin/data'
 import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
-
-interface AdminNavItem {
-  href: string
-  label: string
-  count?: number
-}
 
 interface Props {
   isCollapsed: boolean
@@ -33,7 +28,11 @@ function AdminNavbar(props: Props) {
             key={item.href}
             href={item.href}
             className={`flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 group relative ${
-              props.pathname === item.href
+              (
+                item.exact
+                  ? props.pathname === item.href
+                  : props.pathname.startsWith(item.href)
+              )
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
@@ -97,7 +96,11 @@ function AdminNavbar(props: Props) {
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 group relative',
-                  props.pathname === item.href
+                  (
+                    item.exact
+                      ? props.pathname === item.href
+                      : props.pathname.startsWith(item.href)
+                  )
                     ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
                 )}
