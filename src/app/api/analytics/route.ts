@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const promises: Promise<unknown>[] = []
 
     // TODO: decide what is the least scummy analytics tool and use that
-
+    // NOTE: They are all garbage, roll our own?
     if (process.env.GA_MEASUREMENT_ID && process.env.GA_API_SECRET) {
       promises.push(sendToGoogleAnalytics(event))
     }
