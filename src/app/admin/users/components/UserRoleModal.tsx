@@ -26,12 +26,10 @@ interface Props {
 
 function UserRoleModal(props: Props) {
   // Get current user to check if they're SUPER_ADMIN
-  const { data: currentUser } = api.users.me.useQuery()
+  const userQuery = api.users.me.useQuery()
   const utils = api.useUtils()
 
-  const isSuperAdmin = currentUser?.role
-    ? hasPermission(currentUser.role, Role.SUPER_ADMIN)
-    : false
+  const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   const [role, setRole] = useState<Role>(
     props.user.role === Role.SUPER_ADMIN && !isSuperAdmin
