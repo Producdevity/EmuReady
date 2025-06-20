@@ -1,15 +1,22 @@
 'use client'
 
 import Script from 'next/script'
+import useMounted from '@/hooks/useMounted'
 
 function KofiWidget() {
+  const mounted = useMounted()
+
+  if (!mounted) return
+
   const isMobile =
     window.innerWidth <= 768 ||
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent,
     )
 
-  return isMobile ? null : (
+  if (isMobile) return
+
+  return (
     <Script
       src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
       onLoad={() => {
