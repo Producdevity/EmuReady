@@ -173,6 +173,10 @@ function ListingDetailsClient(props: Props) {
                   upVoteCount={props.upVotes}
                   totalVotes={props.totalVotes}
                   onVoteSuccess={refreshData}
+                  gameId={props.listing?.game.id}
+                  systemId={props.listing?.game.system?.id}
+                  emulatorId={props.listing?.emulator?.id}
+                  deviceId={props.listing?.device?.id}
                 />
               </div>
             </div>
@@ -235,6 +239,8 @@ function ListingDetailsClient(props: Props) {
             <CommentThread
               listingId={props.listing?.id}
               initialSortBy="newest"
+              gameId={props.listing?.game.id}
+              systemId={props.listing?.game.system?.id}
             />
           </div>
         </Card>

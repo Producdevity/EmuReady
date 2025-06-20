@@ -6,8 +6,6 @@ import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
 import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
-import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
-import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
@@ -23,6 +21,8 @@ import {
   TooltipContent,
   SelectInput,
 } from '@/components/ui'
+import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
+import EditButton from '@/components/ui/table-buttons/EditButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -341,7 +341,8 @@ function AdminGamesPage() {
                                   alt={game.title}
                                   width={64}
                                   height={64}
-                                  className="rounded-md object-cover m-h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                                  className="rounded-md object-cover max-h-16 cursor-pointer hover:opacity-80 transition-opacity"
+                                  style={{ width: 'auto', height: 'auto' }}
                                   unoptimized
                                 />
                                 {/* Image indicators */}

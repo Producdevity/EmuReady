@@ -3,17 +3,19 @@
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { House, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import analytics from '@/lib/analytics'
 
 export default function NotFound() {
+  const pathname = usePathname()
   const router = useRouter()
 
   // Track 404 errors
   useEffect(() => {
-    // TODO: Add analytics tracking
+    analytics.navigation.pageNotFound({ page: pathname })
     console.error('404 error: Page not found')
-  }, [])
+  }, [pathname])
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-5">

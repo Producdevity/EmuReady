@@ -121,16 +121,21 @@ export const notificationsRouter = createTRPCRouter({
       // Create notification for each user
       const notificationIds: string[] = []
       for (const user of users) {
-        const notificationId = await notificationService.createNotification({
-          userId: user.id,
-          type: input.type,
-          category: NotificationCategory.SYSTEM,
-          title: input.title,
-          message: input.message,
-          actionUrl: input.actionUrl,
-          metadata: input.metadata,
-          deliveryChannel: DeliveryChannel.IN_APP,
-        })
+        const notificationId = await notificationService.createNotification(
+          {
+            userId: user.id,
+            type: input.type,
+            category: NotificationCategory.SYSTEM,
+            title: input.title,
+            message: input.message,
+            actionUrl: input.actionUrl,
+            metadata: input.metadata,
+            deliveryChannel: DeliveryChannel.IN_APP,
+          },
+          {
+            immediate: true, // Admin system notifications should be delivered immediately
+          },
+        )
         notificationIds.push(notificationId)
       }
 
@@ -165,5 +170,14 @@ export const notificationsRouter = createTRPCRouter({
         {} as Record<string, number>,
       ),
     }
+  }),
+
+  // Admin endpoint for monitoring batching queue
+  getBatchingStatus: protectedProcedure.query(async ({ ctx }) => {
+    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+      return AppError.insufficientPermissions()
+    }
+
+    return notificationService.getBatchingQueueStatus()
   }),
 })

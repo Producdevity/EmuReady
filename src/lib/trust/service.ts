@@ -1,3 +1,4 @@
+import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
 import { TrustAction } from '@orm'
 import {
@@ -41,6 +42,18 @@ export async function applyTrustAction(
   const weight = TRUST_ACTIONS[action].weight
 
   try {
+    // Get user's current trust score before applying action
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { trustScore: true },
+    })
+
+    const currentTrustLevel = currentUser
+      ? getTrustLevel(currentUser.trustScore)
+      : null
+    const newTrustScore = (currentUser?.trustScore || 0) + weight
+    const newTrustLevel = getTrustLevel(newTrustScore)
+
     // Use a transaction to ensure atomicity
     await prisma.$transaction(async (tx) => {
       // Update user's trust score
@@ -64,6 +77,24 @@ export async function applyTrustAction(
         },
       })
     })
+
+    analytics.trust.trustScoreChanged({
+      userId,
+      oldScore: currentUser?.trustScore || 0,
+      newScore: newTrustScore,
+      action,
+      weight,
+    })
+
+    // Track trust level achievement if level changed
+    if (currentTrustLevel && currentTrustLevel.name !== newTrustLevel.name) {
+      analytics.trust.trustLevelChanged({
+        userId,
+        oldLevel: currentTrustLevel.name,
+        newLevel: newTrustLevel.name,
+        score: newTrustScore,
+      })
+    }
   } catch (error) {
     console.error('Failed to apply trust action:', error)
     throw new Error('Failed to update trust score')
@@ -263,26 +294,14 @@ export async function getTrustActionStats(userId?: string) {
     prisma.trustActionLog.groupBy({
       by: ['action'],
       where: whereClause,
-      _count: {
-        action: true,
-      },
-      _sum: {
-        weight: true,
-      },
+      _count: { action: true },
+      _sum: { weight: true },
     }),
     prisma.trustActionLog.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: 10,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+      include: { user: { select: { id: true, name: true, email: true } } },
     }),
   ])
 

@@ -1,10 +1,10 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
+import { useUser, SignInButton } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react'
-import Link from 'next/link'
 import { useState } from 'react'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForVote } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
@@ -16,6 +16,10 @@ interface Props {
   upVoteCount: number
   totalVotes: number
   onVoteSuccess?: () => void
+  gameId?: string
+  systemId?: string
+  emulatorId?: string
+  deviceId?: string
 }
 
 function VoteButtons(props: Props) {
@@ -49,6 +53,25 @@ function VoteButtons(props: Props) {
     if (isCaptchaEnabled) {
       recaptchaToken = await executeForVote()
     }
+
+    // Track analytics before updating optimistic state
+    const previousVote = optimisticVote
+    let finalVoteValue: boolean | null = value
+
+    // If same vote clicked, we're removing the vote (toggle behavior)
+    if (optimisticVote === value) {
+      finalVoteValue = null
+    }
+
+    analytics.engagement.vote({
+      listingId: props.listingId,
+      voteValue: finalVoteValue,
+      previousVote,
+      gameId: props.gameId,
+      systemId: props.systemId,
+      emulatorId: props.emulatorId,
+      deviceId: props.deviceId,
+    })
 
     // Apply optimistic update
     let newTotalVotes = optimisticTotalVotes
@@ -168,9 +191,9 @@ function VoteButtons(props: Props) {
 
         {!isAuthenticated && (
           <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-            <Link href="/sign-in" className="text-blue-500 hover:underline">
-              Sign in
-            </Link>{' '}
+            <SignInButton mode="modal">
+              <button className="text-blue-500 hover:underline">Sign in</button>
+            </SignInButton>{' '}
             to verify
           </div>
         )}

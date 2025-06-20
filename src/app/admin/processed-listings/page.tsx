@@ -3,7 +3,6 @@
 import { CheckCircle, XCircle, Undo, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useState, type ChangeEvent } from 'react'
-import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   ColumnVisibilityControl,
@@ -11,6 +10,7 @@ import {
   Pagination,
   SelectInput,
 } from '@/components/ui'
+import EditButton from '@/components/ui/table-buttons/EditButton'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,

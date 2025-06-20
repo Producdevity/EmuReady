@@ -1,6 +1,6 @@
+import { RedirectToSignIn } from '@clerk/nextjs'
 import { type Metadata } from 'next'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/server/utils/auth'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -13,9 +13,20 @@ export const metadata: Metadata = {
 async function AdminDashboardPage() {
   const user = await getCurrentUser()
 
-  if (!user) return redirect('/sign-in')
+  if (!user) return <RedirectToSignIn />
 
-  if (!hasPermission(user.role, Role.ADMIN)) return redirect('/')
+  if (!hasPermission(user.role, Role.ADMIN)) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Access Denied
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          You don&apos;t have permission to access the admin dashboard.
+        </p>
+      </div>
+    )
+  }
 
   const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
 

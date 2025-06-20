@@ -4,8 +4,6 @@ import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
-import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
-import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import {
   Button,
   Input,
@@ -14,6 +12,8 @@ import {
   AdminTableContainer,
   useConfirmDialog,
 } from '@/components/ui'
+import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
+import EditButton from '@/components/ui/table-buttons/EditButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

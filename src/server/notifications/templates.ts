@@ -1,6 +1,6 @@
 import { sanitizeText } from '@/utils/sanitization'
+import { NotificationType, type NotificationCategory } from '@orm'
 import type { NotificationTemplate } from './types'
-import type { NotificationType, NotificationCategory } from '@orm'
 
 export interface TemplateContext {
   listingTitle?: string
@@ -54,7 +54,7 @@ class NotificationTemplateEngine {
 
   private initializeTemplates(): void {
     // Engagement notifications
-    this.templates.set('LISTING_COMMENT', (context) => ({
+    this.templates.set(NotificationType.LISTING_COMMENT, (context) => ({
       title: 'New comment on your listing',
       message: `${context.userName || 'Someone'} commented on your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
       actionUrl:
@@ -70,7 +70,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('LISTING_VOTE_UP', (context) => ({
+    this.templates.set(NotificationType.LISTING_VOTE_UP, (context) => ({
       title: 'Your listing received an upvote',
       message: `${context.userName || 'Someone'} upvoted your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
@@ -83,7 +83,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('LISTING_VOTE_DOWN', (context) => ({
+    this.templates.set(NotificationType.LISTING_VOTE_DOWN, (context) => ({
       title: 'Your listing received a downvote',
       message: `${context.userName || 'Someone'} downvoted your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
@@ -96,7 +96,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('COMMENT_REPLY', (context) => ({
+    this.templates.set(NotificationType.COMMENT_REPLY, (context) => ({
       title: 'Someone replied to your comment',
       message: `${context.userName || 'Someone'} replied to your comment${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
       actionUrl:
@@ -113,7 +113,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('USER_MENTION', (context) => ({
+    this.templates.set(NotificationType.USER_MENTION, (context) => ({
       title: 'You were mentioned in a comment',
       message: `${context.userName || 'Someone'} mentioned you in a comment${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
       actionUrl:
@@ -130,7 +130,7 @@ class NotificationTemplateEngine {
     }))
 
     // Content notifications
-    this.templates.set('NEW_DEVICE_LISTING', (context) => ({
+    this.templates.set(NotificationType.NEW_DEVICE_LISTING, (context) => ({
       title: 'New listing for your preferred device',
       message: `A new listing was added${context.deviceName ? ` for ${context.deviceName}` : ''}${context.listingTitle ? `: "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
@@ -143,7 +143,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('NEW_SOC_LISTING', (context) => ({
+    this.templates.set(NotificationType.NEW_SOC_LISTING, (context) => ({
       title: 'New listing for your preferred SOC',
       message: `A new listing was added${context.socName ? ` for ${context.socName}` : ''}${context.listingTitle ? `: "${context.listingTitle}"` : ''}`,
       actionUrl: context.listingId
@@ -156,7 +156,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('GAME_ADDED', (context) => ({
+    this.templates.set(NotificationType.GAME_ADDED, (context) => ({
       title: 'New game added to the system',
       message: `${context.gameTitle ? `"${context.gameTitle}"` : 'A new game'} has been added to the game library`,
       actionUrl: context.gameId ? `/games/${context.gameId}` : undefined,
@@ -166,7 +166,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('EMULATOR_UPDATED', (context) => ({
+    this.templates.set(NotificationType.EMULATOR_UPDATED, (context) => ({
       title: 'Emulator you follow was updated',
       message: `${context.emulatorName || 'An emulator'} has been updated with new features`,
       actionUrl: context.emulatorId
@@ -179,7 +179,7 @@ class NotificationTemplateEngine {
     }))
 
     // System notifications
-    this.templates.set('MAINTENANCE_NOTICE', (context) => ({
+    this.templates.set(NotificationType.MAINTENANCE_NOTICE, (context) => ({
       title: 'Scheduled maintenance notification',
       message:
         context.message ||
@@ -191,7 +191,7 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('FEATURE_ANNOUNCEMENT', (context) => ({
+    this.templates.set(NotificationType.FEATURE_ANNOUNCEMENT, (context) => ({
       title: 'New feature available',
       message:
         context.message || 'A new feature is now available on the platform.',
@@ -202,12 +202,12 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('POLICY_UPDATE', (context) => ({
-      title: 'Terms of service updated',
+    this.templates.set(NotificationType.POLICY_UPDATE, (context) => ({
+      title: 'Policy update notification',
       message:
         context.message ||
-        'Our terms of service have been updated. Please review the changes.',
-      actionUrl: context.actionUrl,
+        'Our policies have been updated. Please review the changes.',
+      actionUrl: context.actionUrl || '/terms',
       metadata: {
         policyVersion: context.policyVersion,
         effectiveDate: context.effectiveDate,
@@ -215,9 +215,9 @@ class NotificationTemplateEngine {
     }))
 
     // Moderation notifications
-    this.templates.set('LISTING_APPROVED', (context) => ({
-      title: 'Your submitted listing was approved',
-      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been approved and is now live on the platform.`,
+    this.templates.set(NotificationType.LISTING_APPROVED, (context) => ({
+      title: 'Your listing has been approved',
+      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been approved${context.approvedBy ? ` by ${context.approvedBy}` : ''}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -228,9 +228,9 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('LISTING_REJECTED', (context) => ({
-      title: 'Your submitted listing was rejected',
-      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} was not approved${context.rejectionReason ? `. Reason: ${sanitizeText(context.rejectionReason)}` : '.'}`,
+    this.templates.set(NotificationType.LISTING_REJECTED, (context) => ({
+      title: 'Your listing has been rejected',
+      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been rejected${context.rejectedBy ? ` by ${context.rejectedBy}` : ''}${context.rejectionReason ? `. Reason: ${context.rejectionReason}` : ''}`,
       actionUrl: context.listingId
         ? `/listings/${context.listingId}`
         : undefined,
@@ -242,9 +242,9 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('CONTENT_FLAGGED', (context) => ({
-      title: 'Your content was flagged for review',
-      message: `Your ${context.contentType || 'content'} has been flagged for review by our moderation team.`,
+    this.templates.set(NotificationType.CONTENT_FLAGGED, (context) => ({
+      title: 'Content flagged for review',
+      message: `Your ${context.contentType || 'content'} has been flagged for review${context.flagReason ? `. Reason: ${context.flagReason}` : ''}`,
       actionUrl: context.actionUrl,
       metadata: {
         contentId: context.contentId,
@@ -253,12 +253,10 @@ class NotificationTemplateEngine {
       },
     }))
 
-    this.templates.set('ACCOUNT_WARNING', (context) => ({
+    this.templates.set(NotificationType.ACCOUNT_WARNING, (context) => ({
       title: 'Account warning issued',
-      message:
-        context.message ||
-        'A warning has been issued for your account. Please review our community guidelines.',
-      actionUrl: context.actionUrl,
+      message: `A warning has been issued to your account${context.warningReason ? `: ${context.warningReason}` : ''}`,
+      actionUrl: context.actionUrl || '/profile',
       metadata: {
         warningType: context.warningType,
         warningReason: context.warningReason,
@@ -271,49 +269,42 @@ class NotificationTemplateEngine {
     type: NotificationType,
     context: TemplateContext,
   ): NotificationTemplate {
-    const template = this.templates.get(type)
-    if (!template) {
+    const templateFn = this.templates.get(type)
+    if (!templateFn) {
       throw new Error(`No template found for notification type: ${type}`)
     }
 
-    return template(context)
+    return templateFn(context)
   }
 
   getCategory(type: NotificationType): NotificationCategory {
-    const engagementTypes: NotificationType[] = [
-      'LISTING_COMMENT',
-      'LISTING_VOTE_UP',
-      'LISTING_VOTE_DOWN',
-      'COMMENT_REPLY',
-      'USER_MENTION',
-    ]
+    const categoryMap: Record<string, NotificationCategory> = {
+      [NotificationType.LISTING_COMMENT]: 'ENGAGEMENT',
+      [NotificationType.LISTING_VOTE_UP]: 'ENGAGEMENT',
+      [NotificationType.LISTING_VOTE_DOWN]: 'ENGAGEMENT',
+      [NotificationType.COMMENT_REPLY]: 'ENGAGEMENT',
+      [NotificationType.USER_MENTION]: 'ENGAGEMENT',
 
-    const contentTypes: NotificationType[] = [
-      'NEW_DEVICE_LISTING',
-      'NEW_SOC_LISTING',
-      'GAME_ADDED',
-      'EMULATOR_UPDATED',
-    ]
+      [NotificationType.NEW_DEVICE_LISTING]: 'CONTENT',
+      [NotificationType.NEW_SOC_LISTING]: 'CONTENT',
+      [NotificationType.GAME_ADDED]: 'CONTENT',
+      [NotificationType.EMULATOR_UPDATED]: 'CONTENT',
 
-    const systemTypes: NotificationType[] = [
-      'MAINTENANCE_NOTICE',
-      'FEATURE_ANNOUNCEMENT',
-      'POLICY_UPDATE',
-    ]
+      [NotificationType.MAINTENANCE_NOTICE]: 'SYSTEM',
+      [NotificationType.FEATURE_ANNOUNCEMENT]: 'SYSTEM',
+      [NotificationType.POLICY_UPDATE]: 'SYSTEM',
 
-    const moderationTypes: NotificationType[] = [
-      'LISTING_APPROVED',
-      'LISTING_REJECTED',
-      'CONTENT_FLAGGED',
-      'ACCOUNT_WARNING',
-    ]
+      [NotificationType.LISTING_APPROVED]: 'MODERATION',
+      [NotificationType.LISTING_REJECTED]: 'MODERATION',
+      [NotificationType.CONTENT_FLAGGED]: 'MODERATION',
+      [NotificationType.ACCOUNT_WARNING]: 'MODERATION',
+    }
 
-    if (engagementTypes.includes(type)) return 'ENGAGEMENT'
-    if (contentTypes.includes(type)) return 'CONTENT'
-    if (systemTypes.includes(type)) return 'SYSTEM'
-    if (moderationTypes.includes(type)) return 'MODERATION'
+    return categoryMap[type] || 'SYSTEM'
+  }
 
-    throw new Error(`Unknown notification type: ${type}`)
+  getAvailableTypes(): NotificationType[] {
+    return Array.from(this.templates.keys())
   }
 }
 

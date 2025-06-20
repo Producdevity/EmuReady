@@ -1,4 +1,5 @@
 import { TRPCError } from '@trpc/server'
+import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   RegisterUserSchema,
@@ -32,6 +33,9 @@ export const usersRouter = createTRPCRouter({
     }
   }),
 
+  /**
+   * @deprecated - use clerk
+   */
   register: publicProcedure
     .input(RegisterUserSchema)
     .mutation(async ({ ctx, input }) => {
@@ -591,6 +595,13 @@ export const usersRouter = createTRPCRouter({
 
       // Use the role sync utility to update both database and Clerk
       await updateUserRole(userId, role)
+
+      analytics.admin.userRoleChanged({
+        userId: targetUser.id,
+        adminId: ctx.session.user.id,
+        oldRole: targetUser.role,
+        newRole: role,
+      })
 
       // Return updated user data
       return await ctx.prisma.user.findUnique({

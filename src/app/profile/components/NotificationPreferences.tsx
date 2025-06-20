@@ -5,7 +5,26 @@ import { AnimatedToggle } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { type NotificationType } from '@orm'
+import { NotificationType } from '@orm'
+
+const allTypes = [
+  NotificationType.ACCOUNT_WARNING,
+  NotificationType.COMMENT_REPLY,
+  NotificationType.CONTENT_FLAGGED,
+  NotificationType.EMULATOR_UPDATED,
+  NotificationType.FEATURE_ANNOUNCEMENT,
+  NotificationType.GAME_ADDED,
+  NotificationType.LISTING_APPROVED,
+  NotificationType.LISTING_COMMENT,
+  NotificationType.LISTING_REJECTED,
+  NotificationType.LISTING_VOTE_DOWN,
+  NotificationType.LISTING_VOTE_UP,
+  NotificationType.MAINTENANCE_NOTICE,
+  NotificationType.NEW_DEVICE_LISTING,
+  NotificationType.NEW_SOC_LISTING,
+  NotificationType.POLICY_UPDATE,
+  NotificationType.USER_MENTION,
+]
 
 interface Props {
   notificationPreferencesQuery: {
@@ -41,24 +60,6 @@ function NotificationPreferences(props: Props) {
     field: 'inAppEnabled' | 'emailEnabled',
   ): boolean {
     if (type === 'general') {
-      const allTypes = [
-        'LISTING_COMMENT',
-        'LISTING_VOTE_UP',
-        'LISTING_VOTE_DOWN',
-        'COMMENT_REPLY',
-        'USER_MENTION',
-        'NEW_DEVICE_LISTING',
-        'NEW_SOC_LISTING',
-        'GAME_ADDED',
-        'EMULATOR_UPDATED',
-        'MAINTENANCE_NOTICE',
-        'FEATURE_ANNOUNCEMENT',
-        'POLICY_UPDATE',
-        'LISTING_APPROVED',
-        'LISTING_REJECTED',
-        'CONTENT_FLAGGED',
-        'ACCOUNT_WARNING',
-      ]
       return allTypes.every(
         (notifType) =>
           props.notificationPreferencesQuery.data?.find(
@@ -80,38 +81,18 @@ function NotificationPreferences(props: Props) {
     field: 'inAppEnabled' | 'emailEnabled',
     value: boolean,
   ) {
-    if (type === 'general') {
-      const allTypes = [
-        'LISTING_COMMENT',
-        'LISTING_VOTE_UP',
-        'LISTING_VOTE_DOWN',
-        'COMMENT_REPLY',
-        'USER_MENTION',
-        'NEW_DEVICE_LISTING',
-        'NEW_SOC_LISTING',
-        'GAME_ADDED',
-        'EMULATOR_UPDATED',
-        'MAINTENANCE_NOTICE',
-        'FEATURE_ANNOUNCEMENT',
-        'POLICY_UPDATE',
-        'LISTING_APPROVED',
-        'LISTING_REJECTED',
-        'CONTENT_FLAGGED',
-        'ACCOUNT_WARNING',
-      ]
-
-      allTypes.forEach((notifType) => {
-        updateNotificationPreference.mutate({
-          type: notifType as NotificationType,
-          [field]: value,
-        })
-      })
-    } else {
-      updateNotificationPreference.mutate({
+    if (type !== 'general') {
+      return updateNotificationPreference.mutate({
         type: type as NotificationType,
         [field]: value,
       })
     }
+    allTypes.forEach((notifType) => {
+      updateNotificationPreference.mutate({
+        type: notifType as NotificationType,
+        [field]: value,
+      })
+    })
   }
 
   if (props.notificationPreferencesQuery.isLoading) {
@@ -122,8 +103,8 @@ function NotificationPreferences(props: Props) {
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex justify-between items-center">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12" />
               </div>
             ))}
           </div>
@@ -149,27 +130,27 @@ function NotificationPreferences(props: Props) {
       description: 'Notifications about interactions with your content',
       items: [
         {
-          key: 'LISTING_COMMENT',
+          key: NotificationType.LISTING_COMMENT,
           label: 'Listing Comments',
           description: 'When someone comments on your listings',
         },
         {
-          key: 'LISTING_VOTE_UP',
+          key: NotificationType.LISTING_VOTE_UP,
           label: 'Upvotes',
           description: 'When someone upvotes your listings',
         },
         {
-          key: 'LISTING_VOTE_DOWN',
+          key: NotificationType.LISTING_VOTE_DOWN,
           label: 'Downvotes',
           description: 'When someone downvotes your listings',
         },
         {
-          key: 'COMMENT_REPLY',
+          key: NotificationType.COMMENT_REPLY,
           label: 'Comment Replies',
           description: 'When someone replies to your comments',
         },
         {
-          key: 'USER_MENTION',
+          key: NotificationType.USER_MENTION,
           label: 'Mentions',
           description: 'When someone mentions you',
         },
@@ -180,22 +161,22 @@ function NotificationPreferences(props: Props) {
       description: 'Notifications about new content',
       items: [
         {
-          key: 'NEW_DEVICE_LISTING',
+          key: NotificationType.NEW_DEVICE_LISTING,
           label: 'New Device Listings',
           description: 'When new devices are added',
         },
         {
-          key: 'NEW_SOC_LISTING',
+          key: NotificationType.NEW_SOC_LISTING,
           label: 'New SOC Listings',
           description: 'When new SOCs are added',
         },
         {
-          key: 'GAME_ADDED',
+          key: NotificationType.GAME_ADDED,
           label: 'New Games',
           description: 'When new games are added',
         },
         {
-          key: 'EMULATOR_UPDATED',
+          key: NotificationType.EMULATOR_UPDATED,
           label: 'Emulator Updates',
           description: 'When emulators are updated',
         },
@@ -206,17 +187,17 @@ function NotificationPreferences(props: Props) {
       description: 'Important system and policy updates',
       items: [
         {
-          key: 'MAINTENANCE_NOTICE',
+          key: NotificationType.MAINTENANCE_NOTICE,
           label: 'Maintenance',
           description: 'System maintenance notifications',
         },
         {
-          key: 'FEATURE_ANNOUNCEMENT',
+          key: NotificationType.FEATURE_ANNOUNCEMENT,
           label: 'Feature Announcements',
           description: 'New features and updates',
         },
         {
-          key: 'POLICY_UPDATE',
+          key: NotificationType.POLICY_UPDATE,
           label: 'Policy Updates',
           description: 'Terms of service and policy changes',
         },
@@ -227,22 +208,22 @@ function NotificationPreferences(props: Props) {
       description: 'Notifications about content moderation',
       items: [
         {
-          key: 'LISTING_APPROVED',
+          key: NotificationType.LISTING_APPROVED,
           label: 'Listing Approved',
           description: 'When your listings are approved',
         },
         {
-          key: 'LISTING_REJECTED',
+          key: NotificationType.LISTING_REJECTED,
           label: 'Listing Rejected',
           description: 'When your listings are rejected',
         },
         {
-          key: 'CONTENT_FLAGGED',
+          key: NotificationType.CONTENT_FLAGGED,
           label: 'Content Flagged',
           description: 'When your content is flagged',
         },
         {
-          key: 'ACCOUNT_WARNING',
+          key: NotificationType.ACCOUNT_WARNING,
           label: 'Account Warnings',
           description: 'Account-related warnings',
         },

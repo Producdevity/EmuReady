@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, Trash2, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState, type MouseEvent } from 'react'
@@ -14,13 +14,14 @@ import {
   LoadingSpinner,
   SortableHeader,
   Button,
-  useConfirmDialog,
   ColumnVisibilityControl,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import EditButton from '@/components/ui/table-buttons/EditButton'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -28,7 +29,6 @@ import useColumnVisibility, {
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'
-import { type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
@@ -54,10 +54,8 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
 
 function ListingsPage() {
   const router = useRouter()
-  const confirm = useConfirmDialog()
   const listingsState = useListingsState()
 
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, true)
@@ -145,13 +143,6 @@ function ListingsPage() {
 
   const listingsQuery = api.listings.get.useQuery(filterParams)
 
-  const deleteListing = api.listings.delete.useMutation({
-    onSuccess: () => {
-      listingsQuery.refetch().catch(console.error)
-      setDeleteConfirmId(null)
-    },
-  })
-
   const handleSystemChange = (values: string[]) => {
     listingsState.setSystemIds(values)
     listingsState.setPage(1)
@@ -214,21 +205,6 @@ function ListingsPage() {
       sortDirection: newSortDirection,
       page: 1,
     })
-  }
-
-  const handleDelete = async (id: string) => {
-    if (deleteConfirmId !== id) return setDeleteConfirmId(id)
-
-    const confirmed = await confirm({
-      title: 'Delete Listing',
-      description:
-        'Are you sure you want to delete this listing? This action cannot be undone.',
-    })
-
-    if (confirmed) {
-      deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
-    }
-    setDeleteConfirmId(null)
   }
 
   // Handle game name click to navigate to game details (clicking on row navigates to listing details)
@@ -544,30 +520,16 @@ function ListingsPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center gap-2 flex-col">
-                          <Link
+                          <ViewButton
+                            title="View Listing Details"
                             href={`/listings/${listing.id}`}
-                            className="flex items-center justify-center min-w-19 gap-1 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-blue-400 text-sm"
-                          >
-                            <Eye className="w-4 h-4" /> View
-                          </Link>
+                          />
 
                           {isAdmin && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDelete(listing.id)
-                              }}
-                              className={`flex items-center justify-center min-w-19 gap-1 p-2 rounded-lg transition-all duration-150 shadow-sm hover:scale-105 focus:ring-2 focus:ring-red-400 text-sm ${
-                                deleteConfirmId === listing.id
-                                  ? 'bg-orange-700 text-white hover:bg-orange-800'
-                                  : 'bg-red-600 text-white hover:bg-red-700'
-                              }`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              {deleteConfirmId === listing.id
-                                ? 'Confirm'
-                                : 'Delete'}
-                            </button>
+                            <EditButton
+                              href={`/admin/listings/${listing.id}/edit`}
+                              title="Edit Listing"
+                            />
                           )}
                         </div>
                       </td>

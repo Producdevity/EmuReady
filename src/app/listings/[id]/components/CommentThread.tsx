@@ -28,6 +28,8 @@ type SortBy = 'newest' | 'oldest' | 'popular'
 interface Props {
   listingId: string
   initialSortBy?: SortBy
+  gameId?: string
+  systemId?: string
 }
 
 function CommentThread(props: Props) {
@@ -160,6 +162,8 @@ function CommentThread(props: Props) {
             onCommentSuccess={refreshData}
             onCancelEdit={() => setEditingCommentId(null)}
             isEditing
+            gameId={props.gameId}
+            systemId={props.systemId}
           />
         ) : (
           <div
@@ -317,6 +321,8 @@ function CommentThread(props: Props) {
                 onCommentSuccess={refreshData}
                 onCancelEdit={() => setReplyingTo(null)}
                 isReply
+                gameId={props.gameId}
+                systemId={props.systemId}
               />
             </motion.div>
           )}
@@ -390,7 +396,12 @@ function CommentThread(props: Props) {
           `(${listingsQuery.data.comments.length})`}
       </h2>
 
-      <CommentForm listingId={props.listingId} onCommentSuccess={refreshData} />
+      <CommentForm
+        listingId={props.listingId}
+        onCommentSuccess={refreshData}
+        gameId={props.gameId}
+        systemId={props.systemId}
+      />
 
       {listingsQuery.data?.comments &&
         listingsQuery.data.comments.length > 0 && <SortControls />}

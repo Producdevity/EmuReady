@@ -12,7 +12,7 @@ import {
   getCustomFieldTypeIcon,
 } from './index'
 
-interface CustomFieldOptionUI {
+export interface CustomFieldOptionUI {
   value: string
   label: string
 }
@@ -42,7 +42,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldName: FieldPath<TFieldValues>
   index: number
   control: Control<TFieldValues>
-  errorMessage: string | undefined
+  errorMessage?: string
 }
 
 function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
@@ -144,4 +144,3 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
 }
 
 export default CustomFieldRenderer
-export type { CustomFieldOptionUI }

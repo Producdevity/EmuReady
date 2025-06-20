@@ -39,6 +39,13 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Custom animations */
+  --animate-pulse-slow: pulse-slow 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-in-up: fadeInUp 0.6s ease-out forwards;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-fade-in: fadeIn 0.2s ease-out forwards;
+  --animate-gradient-x: gradient-x 3s ease infinite;
 }
 
 :root {
@@ -110,6 +117,60 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Keyframes defined at root level */
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-x {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -131,49 +192,32 @@
   }
 
   .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out forwards;
+    animation: var(--animate-fade-in-up);
     opacity: 0;
     transform: translateY(20px);
   }
 
-  @keyframes fadeInUp {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: var(--animate-slide-up);
   }
 
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .animate-fadeIn {
+    animation: var(--animate-fade-in);
+  }
+
+  .animate-gradient-x {
+    background-size: 200% 200%;
+    animation: var(--animate-gradient-x);
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
-}
-
+/* Ko-fi Widget Positioning and Dark Mode Fixes */
 .dark [id^='kofi-widget'] {
   color-scheme: light !important;
+}
+
+/* Fix Ko-fi widget positioning to prevent overlaps */
+[id^='kofi-widget'],
+iframe[src*='ko-fi.com'] {
+  z-index: 40 !important; /* Below cookie banner (z-70) but above most content */
 }

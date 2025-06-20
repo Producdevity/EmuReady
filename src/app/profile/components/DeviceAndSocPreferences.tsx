@@ -2,6 +2,7 @@
 
 import { Smartphone, Cpu, Settings } from 'lucide-react'
 import { AnimatedToggle } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
@@ -25,6 +26,12 @@ function DeviceAndSocPreferences(props: Props) {
     onSuccess: () => {
       utils.userPreferences.get.invalidate().catch(console.error)
       toast.success('Preferences updated successfully!')
+
+      analytics.user.preferencesUpdated({
+        userId: props.preferencesQuery.data?.id || 'unknown',
+        preferenceType: 'general',
+        action: 'updated',
+      })
     },
     onError: (error) => {
       console.error('Error updating preferences:', error)
@@ -36,6 +43,12 @@ function DeviceAndSocPreferences(props: Props) {
     onSuccess: () => {
       utils.userPreferences.get.invalidate().catch(console.error)
       toast.success('Device preferences updated successfully!')
+
+      analytics.user.preferencesUpdated({
+        userId: props.preferencesQuery.data?.id || 'unknown',
+        preferenceType: 'device',
+        action: 'updated',
+      })
     },
     onError: (error) => {
       console.error('Error updating device preferences:', error)
@@ -49,6 +62,12 @@ function DeviceAndSocPreferences(props: Props) {
     onSuccess: () => {
       utils.userPreferences.get.invalidate().catch(console.error)
       toast.success('SOC preferences updated successfully!')
+
+      analytics.user.preferencesUpdated({
+        userId: props.preferencesQuery.data?.id || 'unknown',
+        preferenceType: 'soc',
+        action: 'updated',
+      })
     },
     onError: (error) => {
       console.error('Error updating SOC preferences:', error)

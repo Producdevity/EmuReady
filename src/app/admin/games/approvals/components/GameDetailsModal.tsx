@@ -239,6 +239,7 @@ function GameDetailsModal(props: Props) {
                       width={800}
                       height={256}
                       className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105 cursor-pointer"
+                      style={{ width: 'auto', height: 'auto' }}
                       onError={() => handleImageError(activeImageTab)}
                       unoptimized
                     />
@@ -278,6 +279,7 @@ function GameDetailsModal(props: Props) {
                       width={32}
                       height={32}
                       className="w-8 h-8 rounded-full object-cover"
+                      style={{ width: 'auto', height: 'auto' }}
                       unoptimized
                     />
                   )}

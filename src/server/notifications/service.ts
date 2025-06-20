@@ -1,9 +1,7 @@
 import { prisma } from '@/server/db'
-import {
-  type NotificationType,
-  type NotificationCategory,
-  type Prisma,
-} from '@orm'
+import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
+import { notificationBatchingService } from '@/server/notifications/batchingService'
+import { NotificationType, type NotificationCategory, type Prisma } from '@orm'
 import { createEmailService } from './emailService'
 import {
   notificationEventEmitter,
@@ -36,7 +34,13 @@ export class NotificationService {
     this.setupEventListeners()
   }
 
-  async createNotification(data: NotificationData): Promise<string> {
+  async createNotification(
+    data: NotificationData,
+    options: {
+      immediate?: boolean
+      scheduledFor?: Date
+    } = {},
+  ): Promise<string> {
     // Check rate limits first
     const rateLimitStatus = await notificationRateLimitService.checkRateLimit(
       data.userId,
@@ -50,28 +54,46 @@ export class NotificationService {
       throw new Error(`Rate limit exceeded: ${rateLimitStatus.reason}`)
     }
 
-    // Create notification record
-    const notification = await prisma.notification.create({
-      data: {
-        userId: data.userId,
-        type: data.type,
-        category: data.category,
-        title: data.title,
-        message: data.message,
-        actionUrl: data.actionUrl,
-        metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
-        deliveryChannel: data.deliveryChannel || 'IN_APP',
-        deliveryStatus: 'PENDING',
-      },
-    })
-
     // Record the notification for rate limiting
     notificationRateLimitService.recordNotification(data.userId, data.type)
 
-    // Attempt delivery
-    await this.deliverNotification(notification.id, data)
+    // Determine if we should use immediate processing or batching
+    const useImmediate = options.immediate ?? false
+    const scheduledFor = options.scheduledFor ?? new Date()
 
-    return notification.id
+    if (useImmediate) {
+      // Process immediately (for direct API calls, admin notifications, etc.)
+      const notification = await prisma.notification.create({
+        data: {
+          userId: data.userId,
+          type: data.type,
+          category: data.category,
+          title: data.title,
+          message: data.message,
+          actionUrl: data.actionUrl,
+          metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
+          deliveryChannel: data.deliveryChannel || 'IN_APP',
+          deliveryStatus: 'PENDING',
+        },
+      })
+
+      // Attempt immediate delivery
+      await this.deliverNotification(notification.id, data)
+
+      // Invalidate analytics cache when new notifications are created
+      notificationAnalyticsService.clearCache()
+
+      return notification.id
+    } else {
+      // Use batching service for better performance and retry logic
+      const batchId = notificationBatchingService.scheduleNotification(
+        data,
+        scheduledFor,
+      )
+
+      console.log(`Notification scheduled for batch processing: ${batchId}`)
+      return batchId
+    }
   }
 
   async createNotificationFromEvent(
@@ -109,7 +131,7 @@ export class NotificationService {
         enrichedContext,
       )
 
-      // Create notification
+      // Create notification data
       const notificationData: NotificationData = {
         userId,
         type: notificationType,
@@ -121,7 +143,11 @@ export class NotificationService {
         deliveryChannel: 'IN_APP', // Default to in-app for now
       }
 
-      return await this.createNotification(notificationData)
+      // Event-driven notifications use batching for better performance
+      // This is especially important for bulk operations like listing approvals
+      return await this.createNotification(notificationData, {
+        immediate: false, // Use batching for event-driven notifications
+      })
     } catch (error) {
       console.error('Error creating notification from event:', error)
       return null
@@ -278,20 +304,20 @@ export class NotificationService {
     eventType: string,
   ): NotificationType | null {
     const eventTypeMap: Record<string, NotificationType> = {
-      'listing.created': 'NEW_DEVICE_LISTING',
-      'listing.commented': 'LISTING_COMMENT',
-      'listing.voted': 'LISTING_VOTE_UP',
-      'comment.created': 'COMMENT_REPLY',
-      'comment.replied': 'COMMENT_REPLY',
-      'user.mentioned': 'USER_MENTION',
-      'listing.approved': 'LISTING_APPROVED',
-      'listing.rejected': 'LISTING_REJECTED',
-      'listing.status_overridden': 'LISTING_APPROVED',
-      'content.flagged': 'CONTENT_FLAGGED',
-      'game.added': 'GAME_ADDED',
-      'emulator.updated': 'EMULATOR_UPDATED',
-      'maintenance.scheduled': 'MAINTENANCE_NOTICE',
-      'feature.announced': 'FEATURE_ANNOUNCEMENT',
+      'listing.created': NotificationType.NEW_DEVICE_LISTING,
+      'listing.commented': NotificationType.LISTING_COMMENT,
+      'listing.voted': NotificationType.LISTING_VOTE_UP,
+      'comment.created': NotificationType.COMMENT_REPLY,
+      'comment.replied': NotificationType.COMMENT_REPLY,
+      'user.mentioned': NotificationType.USER_MENTION,
+      'listing.approved': NotificationType.LISTING_APPROVED,
+      'listing.rejected': NotificationType.LISTING_REJECTED,
+      'listing.status_overridden': NotificationType.LISTING_APPROVED,
+      'content.flagged': NotificationType.CONTENT_FLAGGED,
+      'game.added': NotificationType.GAME_ADDED,
+      'emulator.updated': NotificationType.EMULATOR_UPDATED,
+      'maintenance.scheduled': NotificationType.MAINTENANCE_NOTICE,
+      'feature.announced': NotificationType.FEATURE_ANNOUNCEMENT,
     }
 
     return eventTypeMap[eventType] || null
@@ -497,7 +523,7 @@ export class NotificationService {
           where: {
             notificationPreferences: {
               some: {
-                type: 'MAINTENANCE_NOTICE',
+                type: NotificationType.MAINTENANCE_NOTICE,
                 inAppEnabled: true,
               },
             },
@@ -588,9 +614,9 @@ export class NotificationService {
       // Handle comment-specific data
       if (
         payload.commentId &&
-        ['LISTING_COMMENT', 'COMMENT_REPLY', 'USER_MENTION'].includes(
-          notificationType,
-        )
+        (notificationType === NotificationType.LISTING_COMMENT ||
+          notificationType === NotificationType.COMMENT_REPLY ||
+          notificationType === NotificationType.USER_MENTION)
       ) {
         const comment = await prisma.comment.findUnique({
           where: { id: payload.commentId as string },
@@ -637,7 +663,10 @@ export class NotificationService {
       }
 
       // Handle device-specific data for NEW_DEVICE_LISTING
-      if (payload.deviceId && notificationType === 'NEW_DEVICE_LISTING') {
+      if (
+        payload.deviceId &&
+        notificationType === NotificationType.NEW_DEVICE_LISTING
+      ) {
         const device = await prisma.device.findUnique({
           where: { id: payload.deviceId as string },
           include: {
@@ -651,7 +680,10 @@ export class NotificationService {
       }
 
       // Handle SOC-specific data for NEW_SOC_LISTING
-      if (payload.socId && notificationType === 'NEW_SOC_LISTING') {
+      if (
+        payload.socId &&
+        notificationType === NotificationType.NEW_SOC_LISTING
+      ) {
         const soc = await prisma.soC.findUnique({
           where: { id: payload.socId as string },
           select: { id: true, name: true, manufacturer: true },
@@ -675,7 +707,10 @@ export class NotificationService {
       }
 
       // Handle moderation-specific data
-      if (['LISTING_APPROVED', 'LISTING_REJECTED'].includes(notificationType)) {
+      if (
+        notificationType === NotificationType.LISTING_APPROVED ||
+        notificationType === NotificationType.LISTING_REJECTED
+      ) {
         if (payload.approvedBy) {
           const approver = await prisma.user.findUnique({
             where: { id: payload.approvedBy as string },
@@ -706,6 +741,50 @@ export class NotificationService {
     }
 
     return context
+  }
+
+  /**
+   * Schedule a notification for future delivery (e.g., weekly digests, maintenance notices)
+   */
+  async scheduleNotification(
+    data: NotificationData,
+    scheduledFor: Date,
+    maxAttempts?: number,
+  ): Promise<string> {
+    return notificationBatchingService.scheduleNotification(
+      data,
+      scheduledFor,
+      maxAttempts,
+    )
+  }
+
+  /**
+   * Schedule weekly digest notifications for a user
+   */
+  scheduleWeeklyDigest(userId: string): void {
+    notificationBatchingService.scheduleWeeklyDigest(userId)
+  }
+
+  /**
+   * Schedule maintenance notifications for all users
+   */
+  scheduleMaintenanceNotification(
+    scheduledFor: Date,
+    title: string,
+    message: string,
+  ): void {
+    notificationBatchingService.scheduleMaintenanceNotification(
+      scheduledFor,
+      title,
+      message,
+    )
+  }
+
+  /**
+   * Get current batching queue status
+   */
+  getBatchingQueueStatus() {
+    return notificationBatchingService.getQueueStatus()
   }
 }
 

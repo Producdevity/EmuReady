@@ -4,16 +4,18 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
-  useForm,
   type Control,
   type FieldValues,
+  useForm,
   type UseFormSetValue,
 } from 'react-hook-form'
+import { isString } from 'remeda'
 import { type z } from 'zod'
-import { Input, Button, LoadingSpinner } from '@/components/ui'
+import { Button, Input, LoadingSpinner } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import toast from '@/lib/toast'
@@ -22,18 +24,18 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { CustomFieldType } from '@orm'
 import {
   CustomFieldRenderer,
-  FormValidationSummary,
-  GameSelector,
-  DeviceSelector,
-  EmulatorSelector,
-  PerformanceSelector,
-  type GameOption,
-  type EmulatorOption,
   type DeviceOption,
+  DeviceSelector,
+  type EmulatorOption,
+  EmulatorSelector,
+  FormValidationSummary,
+  type GameOption,
+  GameSelector,
+  PerformanceSelector,
 } from '../components/shared'
 import createDynamicListingSchema, {
-  type CustomFieldOptionUI,
   type CustomFieldDefinitionWithOptions,
+  type CustomFieldOptionUI,
 } from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 
@@ -66,33 +68,33 @@ function AddListingPage() {
   const [currentSchema, setCurrentSchema] =
     useState<z.ZodType<ListingFormValues>>(listingFormSchema)
 
-  const { control, register, handleSubmit, watch, setValue, formState } =
-    useForm<ListingFormValues>({
-      resolver: zodResolver(currentSchema),
-      defaultValues: {
-        gameId: gameIdFromUrl ?? '',
-        deviceId: '',
-        emulatorId: '',
-        performanceId: undefined,
-        notes: '',
-        customFieldValues: [],
-      },
-    })
+  const form = useForm<ListingFormValues>({
+    resolver: zodResolver(currentSchema),
+    defaultValues: {
+      gameId: gameIdFromUrl ?? '',
+      deviceId: '',
+      emulatorId: '',
+      performanceId: undefined,
+      notes: '',
+      customFieldValues: [],
+    },
+  })
 
-  const selectedEmulatorId = watch('emulatorId')
-  const selectedGameId = watch('gameId')
+  const selectedEmulatorId = form.watch('emulatorId')
+  const selectedGameId = form.watch('gameId')
 
   // Data fetching for Autocomplete options
-  const { data: performanceScalesData } =
-    api.listings.performanceScales.useQuery()
-  const { data: customFieldDefinitionsData, isLoading: isLoadingCustomFields } =
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
+  const customFieldDefinitionsQuery =
     api.customFieldDefinitions.getByEmulator.useQuery(
       { emulatorId: selectedEmulatorId! },
       { enabled: !!selectedEmulatorId },
     )
 
+  const currentUserQuery = api.users.me.useQuery()
+
   // Fetch game data if gameId is provided in URL
-  const { data: preSelectedGameData } = api.games.byId.useQuery(
+  const preSelectedGameQuery = api.games.byId.useQuery(
     { id: gameIdFromUrl! },
     { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
   )
@@ -105,11 +107,11 @@ function AddListingPage() {
       try {
         const result = await utils.games.get.fetch({ search: query, limit: 20 })
         return (
-          result.games.map((g) => ({
-            id: g.id,
-            title: g.title,
-            system: g.system,
-            status: g.status,
+          result.games.map((game) => ({
+            id: game.id,
+            title: game.title,
+            system: game.system,
+            status: game.status,
           })) ?? []
         )
       } catch (error) {
@@ -124,54 +126,29 @@ function AddListingPage() {
     async (query: string): Promise<EmulatorOption[]> => {
       setEmulatorSearchTerm(query)
 
-      // If no game is selected, show a message instead of loading emulators
       if (!selectedGame) return Promise.resolve([])
 
       try {
         const result = await utils.emulators.get.fetch({ search: query })
 
-        // Get full emulator data with systems for filtering
-        const emulatorsWithSystems = await Promise.all(
-          result.emulators.map(async (emulator) => {
-            try {
-              const fullEmulator = await utils.emulators.byId.fetch({
-                id: emulator.id,
-              })
-              return fullEmulator
-                ? {
-                    id: fullEmulator.id,
-                    name: fullEmulator.name,
-                    systems: fullEmulator.systems,
-                  }
-                : {
-                    id: emulator.id,
-                    name: emulator.name,
-                    systems: [],
-                  }
-            } catch {
-              return {
-                id: emulator.id,
-                name: emulator.name,
-                systems: [],
-              }
-            }
-          }),
-        )
-
         // Filter to only emulators that support the selected game's system
-        const compatibleEmulators = emulatorsWithSystems.filter((emulator) =>
-          emulator.systems.some(
-            (system) => system.id === selectedGame.system.id,
-          ),
-        )
-
-        return compatibleEmulators
+        return result.emulators
+          .filter((emulator) =>
+            emulator.systems.some(
+              (system) => system.id === selectedGame.system.id,
+            ),
+          )
+          .map((emulator) => ({
+            id: emulator.id,
+            name: emulator.name,
+            systems: emulator.systems,
+          }))
       } catch (error) {
         console.error('Error fetching emulators:', error)
         return []
       }
     },
-    [utils.emulators.get, utils.emulators.byId, selectedGame],
+    [utils.emulators.get, selectedGame],
   )
 
   const loadDeviceItems = useCallback(
@@ -209,21 +186,21 @@ function AddListingPage() {
 
   // Handle pre-selected game from URL parameter
   useEffect(() => {
-    if (preSelectedGameData && gameIdFromUrl && !isInitialGameLoaded) {
+    if (preSelectedGameQuery.data && gameIdFromUrl && !isInitialGameLoaded) {
       const gameOption: GameOption = {
-        id: preSelectedGameData.id,
-        title: preSelectedGameData.title,
-        system: preSelectedGameData.system,
-        status: preSelectedGameData.status,
+        id: preSelectedGameQuery.data.id,
+        title: preSelectedGameQuery.data.title,
+        system: preSelectedGameQuery.data.system,
+        status: preSelectedGameQuery.data.status,
       }
       setSelectedGame(gameOption)
-      setValue('gameId', preSelectedGameData.id)
+      form.setValue('gameId', preSelectedGameQuery.data.id)
       setIsInitialGameLoaded(true)
 
       // Set the game search term to help with the autocomplete display
-      setGameSearchTerm(preSelectedGameData.title)
+      setGameSearchTerm(preSelectedGameQuery.data.title)
     }
-  }, [preSelectedGameData, gameIdFromUrl, isInitialGameLoaded, setValue])
+  }, [preSelectedGameQuery.data, gameIdFromUrl, isInitialGameLoaded, form])
 
   // Update selected game when gameId changes (but not during initial load)
   useEffect(() => {
@@ -235,28 +212,28 @@ function AddListingPage() {
       })
     } else if (isInitialGameLoaded && !selectedGameId) {
       setSelectedGame(null)
-      setValue('emulatorId', '') // Clear emulator when game is cleared
+      form.setValue('emulatorId', '') // Clear emulator when game is cleared
     }
   }, [
     selectedGameId,
     selectedGame,
     gameSearchTerm,
     loadGameItems,
-    setValue,
+    form,
     isInitialGameLoaded,
   ])
 
   // Clear emulator when game changes
   useEffect(() => {
     if (selectedGame) {
-      setValue('emulatorId', '') // Clear emulator selection when game changes
+      form.setValue('emulatorId', '') // Clear emulator selection when game changes
     }
-  }, [selectedGame, setValue])
+  }, [selectedGame, form])
 
   useEffect(() => {
-    if (!customFieldDefinitionsData) return
+    if (!customFieldDefinitionsQuery.data) return
 
-    const parsed = customFieldDefinitionsData.map(
+    const parsed = customFieldDefinitionsQuery.data.map(
       (field): CustomFieldDefinitionWithOptions => {
         let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
         if (
@@ -297,7 +274,7 @@ function AddListingPage() {
     setParsedCustomFields(parsed)
     const dynamicSchema = createDynamicListingSchema(parsed)
     setCurrentSchema(dynamicSchema)
-    const currentCustomValues = watch('customFieldValues') ?? []
+    const currentCustomValues = form.watch('customFieldValues') ?? []
     const newCustomValues = parsed.map((field) => {
       const existingValueObj = currentCustomValues.find(
         (cv) => cv.customFieldDefinitionId === field.id,
@@ -327,11 +304,28 @@ function AddListingPage() {
         value: defaultValue,
       }
     })
-    setValue('customFieldValues', newCustomValues)
-  }, [customFieldDefinitionsData, setValue, watch])
+    form.setValue('customFieldValues', newCustomValues)
+  }, [customFieldDefinitionsQuery.data, form])
 
   const createListingMutation = api.listings.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      analytics.listing.created({
+        listingId: data.id,
+        gameId: data.gameId,
+        systemId: selectedGame?.system.id || 'unknown',
+        emulatorId: data.emulatorId,
+        deviceId: data.deviceId,
+        performanceId: data.performanceId,
+      })
+
+      if (currentUserQuery.data?.id) {
+        analytics.conversion.goalCompleted({
+          userId: currentUserQuery.data.id,
+          goalType: 'listing_created',
+          goalValue: 1,
+        })
+      }
+
       toast.success('Listing successfully submitted for review!')
       router.push('/listings')
     },
@@ -375,24 +369,23 @@ function AddListingPage() {
           Create New Listing
         </h1>
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit)}
           onKeyDown={handleKeyDown}
           className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl"
         >
           {/* Game Selection */}
           <div>
             <GameSelector
-              control={control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control<FieldValues>}
               name="gameId"
               selectedGame={selectedGame}
-              errorMessage={formState.errors.gameId?.message}
+              errorMessage={form.formState.errors.gameId?.message}
               loadGameItems={loadGameItems}
               onGameSelect={(game: GameOption | null) => {
                 setSelectedGame(game)
-                if (!game) {
-                  setValue('emulatorId', '')
-                  setValue('customFieldValues', [])
-                }
+                if (game) return
+                form.setValue('emulatorId', '')
+                form.setValue('customFieldValues', [])
               }}
               gameSearchTerm={gameSearchTerm}
             />
@@ -410,10 +403,10 @@ function AddListingPage() {
           {/* Device Selection */}
           <div>
             <DeviceSelector
-              control={control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control<FieldValues>}
               name="deviceId"
               selectedDevice={selectedDevice}
-              errorMessage={formState.errors.deviceId?.message}
+              errorMessage={form.formState.errors.deviceId?.message}
               loadDeviceItems={loadDeviceItems}
               onDeviceSelect={(device: DeviceOption | null) =>
                 setSelectedDevice(device)
@@ -425,15 +418,17 @@ function AddListingPage() {
           {/* Emulator Selection */}
           <div>
             <EmulatorSelector
-              control={control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control<FieldValues>}
               name="emulatorId"
               selectedGame={selectedGame}
               availableEmulators={availableEmulators}
               emulatorSearchTerm={emulatorSearchTerm}
               emulatorInputFocus={emulatorInputFocus}
-              errorMessage={formState.errors.emulatorId?.message}
+              errorMessage={form.formState.errors.emulatorId?.message}
               loadEmulatorItems={loadEmulatorItems}
-              setValue={setValue as unknown as UseFormSetValue<FieldValues>}
+              setValue={
+                form.setValue as unknown as UseFormSetValue<FieldValues>
+              }
               onFocus={() => setEmulatorInputFocus(true)}
               onBlur={() => setEmulatorInputFocus(false)}
               customFieldValuesFieldName="customFieldValues"
@@ -443,10 +438,10 @@ function AddListingPage() {
           {/* Performance Selection */}
           <div>
             <PerformanceSelector
-              control={control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control<FieldValues>}
               name="performanceId"
-              performanceScalesData={performanceScalesData}
-              errorMessage={formState.errors.performanceId?.message}
+              performanceScalesData={performanceScalesQuery.data}
+              errorMessage={form.formState.errors.performanceId?.message}
             />
           </div>
 
@@ -461,21 +456,21 @@ function AddListingPage() {
             <Input
               as="textarea"
               id="notes"
-              {...register('notes')}
+              {...form.register('notes')}
               leftIcon={<FileText className="w-5 h-5" />}
               rows={4}
               className="mt-1 w-full"
               placeholder="Share your experience, settings, or any additional details..."
             />
-            {formState.errors.notes && (
+            {form.formState.errors.notes && (
               <p className="text-red-500 text-xs mt-1">
-                {String(formState.errors.notes.message ?? '')}
+                {String(form.formState.errors.notes.message ?? '')}
               </p>
             )}
           </div>
 
           {/* Dynamic Custom Fields Section */}
-          {selectedEmulatorId && isLoadingCustomFields && (
+          {selectedEmulatorId && customFieldDefinitionsQuery.isLoading && (
             <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-center py-4 text-gray-500 dark:text-gray-400">
                 Loading emulator-specific fields...
@@ -483,40 +478,41 @@ function AddListingPage() {
             </div>
           )}
           {selectedEmulatorId &&
-            !isLoadingCustomFields &&
+            !customFieldDefinitionsQuery.isLoading &&
             parsedCustomFields.length > 0 && (
               <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
                   Emulator-Specific Details
-                  {customFieldDefinitionsData?.[0]?.emulator?.name && (
+                  {customFieldDefinitionsQuery.data?.[0]?.emulator?.name && (
                     <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                      ({customFieldDefinitionsData[0].emulator.name})
+                      ({customFieldDefinitionsQuery.data[0].emulator.name})
                     </span>
                   )}
                 </h2>
-                {parsedCustomFields.map((fieldDef, index) => (
-                  <CustomFieldRenderer
-                    key={fieldDef.id}
-                    fieldDef={fieldDef}
-                    fieldName={`customFieldValues.${index}.value` as const}
-                    index={index}
-                    control={control as unknown as Control<FieldValues>}
-                    errorMessage={
-                      formState.errors.customFieldValues?.[index]?.value
-                        ?.message &&
-                      typeof formState.errors.customFieldValues[index]?.value
-                        ?.message === 'string'
-                        ? (formState.errors.customFieldValues[index]?.value
-                            ?.message as string)
-                        : undefined
-                    }
-                  />
-                ))}
+                {parsedCustomFields.map((fieldDef, index) => {
+                  const errorMessage = isString(
+                    form.formState.errors.customFieldValues?.[index]?.value
+                      ?.message,
+                  )
+                    ? form.formState.errors.customFieldValues?.[index]?.value
+                        ?.message
+                    : undefined
+                  return (
+                    <CustomFieldRenderer
+                      key={fieldDef.id}
+                      fieldDef={fieldDef}
+                      fieldName={`customFieldValues.${index}.value` as const}
+                      index={index}
+                      control={form.control as unknown as Control<FieldValues>}
+                      errorMessage={errorMessage}
+                    />
+                  )
+                })}
               </div>
             )}
 
           {/* Form Validation Summary */}
-          <FormValidationSummary errors={formState.errors} />
+          <FormValidationSummary errors={form.formState.errors} />
 
           <div className="flex justify-end pt-8">
             <Button
@@ -524,7 +520,7 @@ function AddListingPage() {
               variant="primary"
               isLoading={createListingMutation.isPending}
               disabled={
-                formState.isSubmitting ?? createListingMutation.isPending
+                form.formState.isSubmitting ?? createListingMutation.isPending
               }
               size="lg"
             >

@@ -6,8 +6,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
-import EditButton from '@/app/admin/components/table-buttons/EditButton'
-import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
@@ -20,8 +18,12 @@ import {
   ApprovalStatusBadge,
   Pagination,
   LoadingSpinner,
+  useConfirmDialog,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
+import EditButton from '@/components/ui/table-buttons/EditButton'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -30,7 +32,7 @@ import useColumnVisibility, {
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { ApprovalStatus } from '@orm'
@@ -66,6 +68,7 @@ const statusOptions = [
 ]
 
 function AdminListingsPage() {
+  const confirm = useConfirmDialog()
   const table = useAdminTable<ListingSortField>({
     defaultLimit: 20,
     defaultSortField: 'createdAt',
@@ -85,9 +88,17 @@ function AdminListingsPage() {
     isHydrated: isEmulatorLogosHydrated,
   } = useEmulatorLogos()
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | ''>('')
   const [systemFilter, setSystemFilter] = useState('')
   const [emulatorFilter, setEmulatorFilter] = useState('')
+
+  const deleteListing = api.listings.delete.useMutation({
+    onSuccess: () => {
+      listingsQuery.refetch().catch(console.error)
+      setDeleteConfirmId(null)
+    },
+  })
 
   // Queries
   const listingsQuery = api.listings.getAllListings.useQuery({
@@ -111,6 +122,21 @@ function AdminListingsPage() {
     setSystemFilter('')
     setEmulatorFilter('')
     table.setPage(1)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (deleteConfirmId !== id) return setDeleteConfirmId(id)
+
+    const confirmed = await confirm({
+      title: 'Delete Listing',
+      description:
+        'Are you sure you want to delete this listing? This action cannot be undone.',
+    })
+
+    if (confirmed) {
+      deleteListing.mutate({ id } satisfies RouterInput['listings']['delete'])
+    }
+    setDeleteConfirmId(null)
   }
 
   if (listingsQuery.error) {
@@ -489,6 +515,10 @@ function AdminListingsPage() {
                             <ViewButton
                               href={`/listings/${listing.id}`}
                               title="View Details"
+                            />
+                            <DeleteButton
+                              title="Delete Listing"
+                              onClick={() => handleDelete(listing.id)}
                             />
                           </div>
                         </td>

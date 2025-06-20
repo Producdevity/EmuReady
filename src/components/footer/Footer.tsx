@@ -39,20 +39,22 @@ function Footer() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
                 <a
                   href={githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="EmuReady GitHub"
-                  className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="inline-flex items-center justify-center p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-105"
                 >
                   <GitHubIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </a>
 
-                <KofiFooterButton />
+                <div className="inline-flex">
+                  <KofiFooterButton />
+                </div>
 
-                <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                <div className="inline-flex p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
                   <ThemeSelect />
                 </div>
               </div>
@@ -190,9 +192,9 @@ function Footer() {
         </div>
       </div>
 
-      {/* Beta Badge */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <div className="px-3 py-1.5 bg-orange-500 text-white text-xs font-medium rounded-full shadow-lg hover:bg-orange-600 transition-colors">
+      {/* Beta Badge - Repositioned to prevent overlaps */}
+      <div className="fixed bottom-4 right-4 z-50 pointer-events-none">
+        <div className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm border border-orange-400/20 animate-pulse-slow">
           BETA
         </div>
       </div>

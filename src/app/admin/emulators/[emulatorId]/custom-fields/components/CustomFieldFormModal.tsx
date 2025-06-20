@@ -85,37 +85,29 @@ function CustomFieldFormModal(props: Props) {
   const utils = api.useUtils()
   const [userHasEditedName, setUserHasEditedName] = useState(false)
 
-  const { data: fieldToEditData, isLoading: isLoadingFieldToEdit } =
-    api.customFieldDefinitions.byId.useQuery(
-      { id: props.fieldIdToEdit! },
-      { enabled: !!props.fieldIdToEdit },
-    )
+  const customFieldDefinitionsQuery = api.customFieldDefinitions.byId.useQuery(
+    { id: props.fieldIdToEdit! },
+    { enabled: !!props.fieldIdToEdit },
+  )
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<CustomFieldFormValues>({
-    resolver: zodResolver(customFieldFormSchema),
-    defaultValues: {
-      name: '',
-      label: '',
-      type: CustomFieldType.TEXT,
-      options: [],
-      defaultValue: null,
-      placeholder: '',
-      rangeMin: 0,
-      rangeMax: 100,
-      rangeUnit: '',
-      rangeDecimals: 0,
-      isRequired: false,
-      displayOrder: 0,
-    },
-  })
+  const { control, register, handleSubmit, reset, watch, setValue, formState } =
+    useForm<CustomFieldFormValues>({
+      resolver: zodResolver(customFieldFormSchema),
+      defaultValues: {
+        name: '',
+        label: '',
+        type: CustomFieldType.TEXT,
+        options: [],
+        defaultValue: null,
+        placeholder: '',
+        rangeMin: 0,
+        rangeMax: 100,
+        rangeUnit: '',
+        rangeDecimals: 0,
+        isRequired: false,
+        displayOrder: 0,
+      },
+    })
 
   const selectedFieldType = watch('type')
   const watchedLabel = watch('label')
@@ -133,27 +125,30 @@ function CustomFieldFormModal(props: Props) {
   }, [watchedLabel, userHasEditedName, props.fieldIdToEdit, setValue])
 
   useEffect(() => {
-    if (fieldToEditData) {
-      const opts = Array.isArray(fieldToEditData.options)
-        ? (fieldToEditData.options as { value: string; label: string }[])
+    if (customFieldDefinitionsQuery.data) {
+      const opts = Array.isArray(customFieldDefinitionsQuery.data.options)
+        ? (customFieldDefinitionsQuery.data.options as {
+            value: string
+            label: string
+          }[])
         : []
       reset({
-        name: fieldToEditData.name,
-        label: fieldToEditData.label,
-        type: fieldToEditData.type,
+        name: customFieldDefinitionsQuery.data.name,
+        label: customFieldDefinitionsQuery.data.label,
+        type: customFieldDefinitionsQuery.data.type,
         options: opts,
-        defaultValue: fieldToEditData.defaultValue as
+        defaultValue: customFieldDefinitionsQuery.data.defaultValue as
           | string
           | boolean
           | number
           | null,
-        placeholder: fieldToEditData.placeholder || '',
-        rangeMin: fieldToEditData.rangeMin || 0,
-        rangeMax: fieldToEditData.rangeMax || 100,
-        rangeUnit: fieldToEditData.rangeUnit || '',
-        rangeDecimals: fieldToEditData.rangeDecimals || 0,
-        isRequired: fieldToEditData.isRequired,
-        displayOrder: fieldToEditData.displayOrder,
+        placeholder: customFieldDefinitionsQuery.data.placeholder || '',
+        rangeMin: customFieldDefinitionsQuery.data.rangeMin || 0,
+        rangeMax: customFieldDefinitionsQuery.data.rangeMax || 100,
+        rangeUnit: customFieldDefinitionsQuery.data.rangeUnit || '',
+        rangeDecimals: customFieldDefinitionsQuery.data.rangeDecimals || 0,
+        isRequired: customFieldDefinitionsQuery.data.isRequired,
+        displayOrder: customFieldDefinitionsQuery.data.displayOrder,
       })
       setUserHasEditedName(true) // Don't auto-populate when editing
     } else if (!props.fieldIdToEdit) {
@@ -173,7 +168,7 @@ function CustomFieldFormModal(props: Props) {
       })
       setUserHasEditedName(false)
     }
-  }, [fieldToEditData, props.fieldIdToEdit, reset])
+  }, [customFieldDefinitionsQuery.data, props.fieldIdToEdit, reset])
 
   const createMutation = api.customFieldDefinitions.create.useMutation({
     onSuccess: () => {
@@ -286,7 +281,7 @@ function CustomFieldFormModal(props: Props) {
   }
 
   if (!props.isOpen) return null
-  if (props.fieldIdToEdit && isLoadingFieldToEdit)
+  if (props.fieldIdToEdit && customFieldDefinitionsQuery.isLoading)
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <p>Loading field data...</p>
@@ -318,9 +313,9 @@ function CustomFieldFormModal(props: Props) {
               placeholder="e.g., Driver Version"
               className="mt-1"
             />
-            {errors.label && (
+            {formState.errors.label && (
               <p className="text-red-500 text-xs mt-1">
-                {errors.label.message}
+                {formState.errors.label.message}
               </p>
             )}
           </div>
@@ -337,13 +332,15 @@ function CustomFieldFormModal(props: Props) {
               {...register('name')}
               placeholder="e.g., driver_version"
               className="mt-1"
-              onChange={(e) => {
+              onChange={(ev) => {
                 setUserHasEditedName(true)
-                register('name').onChange(e)
+                register('name').onChange(ev).catch(console.error)
               }}
             />
-            {errors.name && (
-              <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+            {formState.errors.name && (
+              <p className="text-red-500 text-xs mt-1">
+                {formState.errors.name.message}
+              </p>
             )}
           </div>
 
@@ -371,8 +368,10 @@ function CustomFieldFormModal(props: Props) {
                 />
               )}
             />
-            {errors.type && (
-              <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>
+            {formState.errors.type && (
+              <p className="text-red-500 text-xs mt-1">
+                {formState.errors.type.message}
+              </p>
             )}
           </div>
 
@@ -391,9 +390,9 @@ function CustomFieldFormModal(props: Props) {
                 placeholder="e.g., Enter driver version..."
                 className="mt-1"
               />
-              {errors.placeholder && (
+              {formState.errors.placeholder && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.placeholder.message}
+                  {formState.errors.placeholder.message}
                 </p>
               )}
             </div>
@@ -421,9 +420,9 @@ function CustomFieldFormModal(props: Props) {
                     placeholder="0"
                     className="mt-1"
                   />
-                  {errors.rangeMin && (
+                  {formState.errors.rangeMin && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errors.rangeMin.message}
+                      {formState.errors.rangeMin.message}
                     </p>
                   )}
                 </div>
@@ -442,9 +441,9 @@ function CustomFieldFormModal(props: Props) {
                     placeholder="100"
                     className="mt-1"
                   />
-                  {errors.rangeMax && (
+                  {formState.errors.rangeMax && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errors.rangeMax.message}
+                      {formState.errors.rangeMax.message}
                     </p>
                   )}
                 </div>
@@ -463,9 +462,9 @@ function CustomFieldFormModal(props: Props) {
                     placeholder="e.g., %, GB, MB"
                     className="mt-1"
                   />
-                  {errors.rangeUnit && (
+                  {formState.errors.rangeUnit && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errors.rangeUnit.message}
+                      {formState.errors.rangeUnit.message}
                     </p>
                   )}
                 </div>
@@ -494,9 +493,9 @@ function CustomFieldFormModal(props: Props) {
                       />
                     )}
                   />
-                  {errors.rangeDecimals && (
+                  {formState.errors.rangeDecimals && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errors.rangeDecimals.message}
+                      {formState.errors.rangeDecimals.message}
                     </p>
                   )}
                 </div>
@@ -584,9 +583,9 @@ function CustomFieldFormModal(props: Props) {
                   Add options first to set a default value
                 </p>
               ) : null}
-              {errors.defaultValue && (
+              {formState.errors.defaultValue && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.defaultValue.message}
+                  {formState.errors.defaultValue.message}
                 </p>
               )}
             </div>
@@ -629,13 +628,13 @@ function CustomFieldFormModal(props: Props) {
                   </Button>
                 </div>
               ))}
-              {errors.options?.message && (
+              {formState.errors.options?.message && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.options.message}
+                  {formState.errors.options.message}
                 </p>
               )}
-              {Array.isArray(errors.options) &&
-                errors.options.map((optError, index) => (
+              {Array.isArray(formState.errors.options) &&
+                formState.errors.options.map((optError, index) => (
                   <div key={index} className="text-red-500 text-xs">
                     {optError?.value && (
                       <p>{`Option ${index + 1} Value: ${optError.value.message}`}</p>
@@ -677,9 +676,9 @@ function CustomFieldFormModal(props: Props) {
             >
               Is Required?
             </label>
-            {errors.isRequired && (
+            {formState.errors.isRequired && (
               <p className="text-red-500 text-xs mt-1">
-                {errors.isRequired.message}
+                {formState.errors.isRequired.message}
               </p>
             )}
           </div>
@@ -697,9 +696,9 @@ function CustomFieldFormModal(props: Props) {
               {...register('displayOrder')}
               className="mt-1"
             />
-            {errors.displayOrder && (
+            {formState.errors.displayOrder && (
               <p className="text-red-500 text-xs mt-1">
-                {errors.displayOrder.message}
+                {formState.errors.displayOrder.message}
               </p>
             )}
           </div>
@@ -709,15 +708,15 @@ function CustomFieldFormModal(props: Props) {
               type="button"
               variant="outline"
               onClick={props.onClose}
-              disabled={isSubmitting}
+              disabled={formState.isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               variant="primary"
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
+              isLoading={formState.isSubmitting}
+              disabled={formState.isSubmitting}
             >
               {props.fieldIdToEdit ? 'Update' : 'Create'} Field
             </Button>

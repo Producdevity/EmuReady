@@ -1,10 +1,9 @@
 'use client'
 
-import { CheckCircle, XCircle, Clock, Search } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, Search, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
@@ -26,6 +25,7 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
@@ -103,8 +103,16 @@ function AdminApprovalsPage() {
   }
 
   const approveMutation = api.listings.approveListing.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       toast.success('Listing approved successfully!')
+
+      analytics.admin.listingApproved({
+        listingId: variables.listingId,
+        adminId: 'current-admin', // TODO: Replace with user id
+        gameId: selectedListingForApproval?.game.id,
+        systemId: selectedListingForApproval?.game.system.id,
+      })
+
       await invalidateQueries()
       closeApprovalModal()
     },
@@ -115,8 +123,17 @@ function AdminApprovalsPage() {
   })
 
   const rejectMutation = api.listings.rejectListing.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       toast.success('Listing rejected successfully!')
+
+      analytics.admin.listingRejected({
+        listingId: variables.listingId,
+        adminId: 'current-admin', // TODO: Replace with user id
+        reason: variables.notes,
+        gameId: selectedListingForApproval?.game.id,
+        systemId: selectedListingForApproval?.game.system.id,
+      })
+
       await invalidateQueries()
       closeApprovalModal()
     },
@@ -127,8 +144,16 @@ function AdminApprovalsPage() {
   })
 
   const bulkApproveMutation = api.listings.bulkApproveListing.useMutation({
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables) => {
       toast.success(result.message)
+
+      analytics.admin.bulkOperation({
+        operation: 'approve',
+        entityType: 'listing',
+        count: variables.listingIds.length,
+        adminId: 'current-admin', // Replace with actual admin ID
+      })
+
       await invalidateQueries()
       setSelectedListingIds([])
     },
@@ -139,8 +164,16 @@ function AdminApprovalsPage() {
   })
 
   const bulkRejectMutation = api.listings.bulkRejectListing.useMutation({
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables) => {
       toast.success(result.message)
+
+      analytics.admin.bulkOperation({
+        operation: 'reject',
+        entityType: 'listing',
+        count: variables.listingIds.length,
+        adminId: 'current-admin', // Replace with actual admin ID
+      })
+
       await invalidateQueries()
       setSelectedListingIds([])
     },
@@ -301,7 +334,17 @@ function AdminApprovalsPage() {
               <Input
                 placeholder="Search listings, games, or authors..."
                 value={table.search}
-                onChange={table.handleSearchChange}
+                onChange={(e) => {
+                  table.handleSearchChange(e)
+                  if (e.target.value.length > 2) {
+                    analytics.contentDiscovery.searchPerformed({
+                      query: e.target.value,
+                      resultCount: listings.length,
+                      category: 'admin_approvals',
+                      page: 'admin/approvals',
+                    })
+                  }
+                }}
                 className="w-full pl-10"
               />
             </div>
@@ -519,37 +562,46 @@ function AdminApprovalsPage() {
                       )}
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
                               onClick={() =>
                                 openApprovalModal(
                                   listing,
                                   ApprovalStatus.APPROVED,
                                 )
                               }
+                              className="group relative inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 dark:from-green-400/20 dark:to-emerald-400/20 border border-green-200/50 dark:border-green-500/40 hover:border-green-300/70 dark:hover:border-green-400/60 hover:shadow-xl hover:shadow-green-500/30 dark:hover:shadow-green-400/25 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 backdrop-blur-sm"
+                              title="Approve"
                             >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
+                              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-all duration-300 relative z-10 drop-shadow-sm" />
+                              <div className="absolute inset-0 rounded-xl bg-green-500/10 dark:bg-green-400/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </button>
+                            <button
                               onClick={() =>
                                 openApprovalModal(
                                   listing,
                                   ApprovalStatus.REJECTED,
                                 )
                               }
+                              className="group relative inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-red-500/10 to-rose-500/10 dark:from-red-400/20 dark:to-rose-400/20 border border-red-200/50 dark:border-red-500/40 hover:border-red-300/70 dark:hover:border-red-400/60 hover:shadow-xl hover:shadow-red-500/30 dark:hover:shadow-red-400/25 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 backdrop-blur-sm"
+                              title="Reject"
                             >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                            <ViewButton
-                              href={`/listings/${listing.id}`}
+                              <XCircle className="w-4 h-4 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-all duration-300 relative z-10 drop-shadow-sm" />
+                              <div className="absolute inset-0 rounded-xl bg-red-500/10 dark:bg-red-400/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                window.open(`/listings/${listing.id}`, '_blank')
+                              }
+                              className="group relative inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-400/20 dark:to-indigo-400/20 border border-blue-200/50 dark:border-blue-500/40 hover:border-blue-300/70 dark:hover:border-blue-400/60 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/25 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 backdrop-blur-sm"
                               title="View Details"
-                            />
+                            >
+                              <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-all duration-300 relative z-10 drop-shadow-sm" />
+                              <div className="absolute inset-0 rounded-xl bg-blue-500/10 dark:bg-blue-400/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </button>
                           </div>
                         </td>
                       )}

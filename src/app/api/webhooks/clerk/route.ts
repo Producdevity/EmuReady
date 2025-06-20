@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Webhook } from 'svix'
+import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
 import { Role } from '@orm'
 import type { NextRequest } from 'next/server'
@@ -42,7 +43,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
   }
 
   try {
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         clerkId: data.id,
         email: primaryEmail.email_address,
@@ -50,6 +51,25 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
         profileImage: data.image_url ?? null,
         role: role,
       },
+    })
+
+    analytics.user.signedUp({
+      userId: user.id,
+    })
+
+    analytics.userJourney.registrationCompleted({
+      userId: user.id,
+    })
+
+    analytics.userJourney.registrationStarted({
+      userId: user.id,
+    })
+
+    analytics.conversion.funnelStepCompleted({
+      userId: user.id,
+      funnelName: 'user_registration',
+      stepName: 'registration_completed',
+      stepIndex: 1,
     })
   } catch (error) {
     console.error('❌ Failed to create user in database:', error)

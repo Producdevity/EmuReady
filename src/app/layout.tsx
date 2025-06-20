@@ -9,9 +9,12 @@ import { Inter } from 'next/font/google'
 import { type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
 import BetaWarningModal from '@/components/BetaWarningModal'
+import CookieConsent from '@/components/CookieConsent'
 import Footer from '@/components/footer/Footer'
 import Navbar from '@/components/navbar/Navbar'
+import PageViewTracker from '@/components/PageViewTracker'
 import Providers from '@/components/Providers'
+import SessionTracker from '@/components/SessionTracker'
 import KofiWidget from '@/components/ui/KofiWidget'
 import Main from './Main'
 
@@ -48,8 +51,11 @@ export default function RootLayout(props: PropsWithChildren) {
       <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
           <Providers>
+            <SessionTracker />
+            <PageViewTracker />
             <Toaster richColors closeButton />
             <BetaWarningModal />
+            <CookieConsent />
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Navbar />
               <Main>{props.children}</Main>

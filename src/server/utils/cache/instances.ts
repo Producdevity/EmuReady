@@ -5,11 +5,19 @@
 
 import MemoryCache from './MemoryCache'
 import type {
+  NotificationMetrics,
+  ChannelMetrics,
+  TypeMetrics,
+  UserEngagementMetrics,
+  TimeSeriesData,
+} from '@/server/notifications/analyticsService'
+import type {
   TGDBGamesByNameResponse,
   TGDBGamesImagesResponse,
   TGDBPlatformsResponse,
   GameImageOption,
 } from '@/types/tgdb'
+import type { NotificationType } from '@orm'
 
 // Game statistics cache
 export const gameStatsCache = new MemoryCache<{
@@ -31,6 +39,24 @@ export const listingStatsCache = new MemoryCache<{
 }>({
   ttl: 5 * 60 * 1000, // 5 minutes
   maxSize: 100, // Small cache for stats
+})
+
+// Notification analytics cache - for expensive analytics queries
+export const notificationAnalyticsCache = new MemoryCache<
+  | NotificationMetrics
+  | ChannelMetrics
+  | TypeMetrics
+  | UserEngagementMetrics[]
+  | TimeSeriesData[]
+  | Array<{
+      type: NotificationType
+      totalSent: number
+      openRate: number
+      clickRate: number
+    }>
+>({
+  ttl: 10 * 60 * 1000, // 10 minutes - analytics can be slightly stale
+  maxSize: 200, // Analytics queries with different date ranges and params
 })
 
 // TGDB-specific caches with proper typing

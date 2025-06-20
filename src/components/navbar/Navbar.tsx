@@ -9,6 +9,7 @@ import LoadingIcon from '@/components/icons/LoadingIcon'
 import LogoIcon from '@/components/icons/LogoIcon'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { navbarItems } from './data'
@@ -40,6 +41,17 @@ function Navbar() {
           ? 'text-white bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25'
           : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50/80 dark:hover:bg-gray-800/50'
       }`
+    },
+    [pathname],
+  )
+
+  const handleMenuItemClick = useCallback(
+    (item: { href: string; label: string }) => {
+      analytics.navigation.menuItemClicked({
+        menuItem: item.label,
+        section: 'main_navigation',
+        page: pathname,
+      })
     },
     [pathname],
   )
@@ -92,6 +104,7 @@ function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={getNavItemClass(item.href)}
+                  onClick={() => handleMenuItemClick(item)}
                 >
                   <span className="relative z-10">{item.label}</span>
                 </Link>
@@ -209,7 +222,10 @@ function Navbar() {
               key={item.href}
               href={item.href}
               className={getMobileNavItemClass(item.href)}
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                handleMenuItemClick(item)
+                setMobileMenuOpen(false)
+              }}
             >
               {item.label}
             </Link>

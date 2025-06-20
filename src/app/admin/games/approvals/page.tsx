@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
+import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
   LoadingSpinner,
@@ -22,14 +22,17 @@ import {
   BulkActions,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
 import useLocalStorage from '@/hooks/useLocalStorage'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -41,6 +44,7 @@ import GameDetailsModal from './components/GameDetailsModal'
 
 export type ProcessingAction = 'approve' | 'reject'
 type GameSortField = 'title' | 'submittedAt' | 'system.name'
+type Game = RouterOutput['games']['getPendingGames']['games'][number]
 
 interface ConfirmationModalState {
   isOpen: boolean
@@ -71,6 +75,11 @@ function GameApprovalsPage() {
       action: null,
       gameTitle: '',
     })
+
+  // Image preview state
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
+  const [selectedGameForImagePreview, setSelectedGameForImagePreview] =
+    useState<Game | null>(null)
 
   // Bulk selection state
   const [selectedGameIds, setSelectedGameIds] = useState<string[]>([])
@@ -108,8 +117,17 @@ function GameApprovalsPage() {
   // Mutation for approving/rejecting games
   const utils = api.useUtils()
   const approveGameMutation = api.games.approveGame.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
       toast.success(`Game ${data.status.toLowerCase()} successfully!`)
+
+      if (data.status === ApprovalStatus.APPROVED) {
+        analytics.admin.entityCreated({
+          entityType: 'game',
+          entityId: variables.id,
+          adminId: 'current-admin', // Replace with actual admin ID
+        })
+      }
+
       await pendingGamesQuery.refetch()
       await utils.games.getStats.invalidate()
       setIsModalOpen(false)
@@ -216,6 +234,11 @@ function GameApprovalsPage() {
   const openGameModal = (gameId: string) => {
     setSelectedGameId(gameId)
     setIsModalOpen(true)
+  }
+
+  const handleImageClick = (game: Game) => {
+    setSelectedGameForImagePreview(game)
+    setIsImagePreviewOpen(true)
   }
 
   const selectedGame = selectedGameId
@@ -426,35 +449,41 @@ function GameApprovalsPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center relative">
-                              <Image
-                                src={getGameImageUrl(game)}
-                                alt={game.title}
-                                width={80}
-                                height={64}
-                                className="rounded-md object-contain max-h-16 max-w-20"
-                                unoptimized
-                              />
-                              {/* Image type indicators */}
-                              <div className="absolute -bottom-1 -right-1 flex gap-0.5">
-                                {game.boxartUrl && (
-                                  <div
-                                    className="w-1.5 h-1.5 bg-blue-500 rounded-full"
-                                    title="Box Art available"
-                                  />
-                                )}
-                                {game.bannerUrl && (
-                                  <div
-                                    className="w-1.5 h-1.5 bg-green-500 rounded-full"
-                                    title="Banner available"
-                                  />
-                                )}
-                                {game.imageUrl && (
-                                  <div
-                                    className="w-1.5 h-1.5 bg-purple-500 rounded-full"
-                                    title="Main Image available"
-                                  />
-                                )}
-                              </div>
+                              <button
+                                onClick={() => handleImageClick(game)}
+                                className="group relative block"
+                              >
+                                <Image
+                                  src={getGameImageUrl(game)}
+                                  alt={game.title}
+                                  width={80}
+                                  height={64}
+                                  className="rounded-md object-contain max-h-16 cursor-pointer hover:opacity-80 transition-opacity"
+                                  style={{ width: 'auto', height: 'auto' }}
+                                  unoptimized
+                                />
+                                {/* Image type indicators */}
+                                <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                                  {game.boxartUrl && (
+                                    <div
+                                      className="w-1.5 h-1.5 bg-blue-500 rounded-full"
+                                      title="Box Art available"
+                                    />
+                                  )}
+                                  {game.bannerUrl && (
+                                    <div
+                                      className="w-1.5 h-1.5 bg-green-500 rounded-full"
+                                      title="Banner available"
+                                    />
+                                  )}
+                                  {game.imageUrl && (
+                                    <div
+                                      className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+                                      title="Main Image available"
+                                    />
+                                  )}
+                                </div>
+                              </button>
                             </div>
                             <div className="ml-4 flex-1 min-w-0">
                               {game.title.length > 30 ? (
@@ -643,6 +672,16 @@ function GameApprovalsPage() {
         gameTitle={confirmationModal.gameTitle}
         onConfirm={handleConfirmAction}
         isProcessing={approveGameMutation.isPending}
+      />
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={isImagePreviewOpen}
+        onClose={() => {
+          setIsImagePreviewOpen(false)
+          setSelectedGameForImagePreview(null)
+        }}
+        game={selectedGameForImagePreview}
       />
     </div>
   )

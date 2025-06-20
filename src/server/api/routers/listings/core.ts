@@ -1,5 +1,6 @@
 import { keys } from 'remeda'
 import { z } from 'zod'
+import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { ResourceError, AppError } from '@/lib/errors'
@@ -453,18 +454,16 @@ export const coreRouter = createTRPCRouter({
 
         // Create custom field values
         if (customFieldValues && customFieldValues.length > 0) {
-          for (const cfv of customFieldValues) {
-            await tx.listingCustomFieldValue.create({
-              data: {
-                listingId: newListing.id,
-                customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value:
-                  cfv.value === null
-                    ? Prisma.JsonNull
-                    : (cfv.value as Prisma.InputJsonValue),
-              },
-            })
-          }
+          await tx.listingCustomFieldValue.createMany({
+            data: customFieldValues.map((cfv) => ({
+              listingId: newListing.id,
+              customFieldDefinitionId: cfv.customFieldDefinitionId,
+              value:
+                cfv.value === null
+                  ? Prisma.JsonNull
+                  : (cfv.value as Prisma.InputJsonValue),
+            })),
+          })
         }
 
         // Apply trust action for creating a listing
@@ -490,6 +489,35 @@ export const coreRouter = createTRPCRouter({
             customFieldValues: customFieldValues,
           },
         })
+
+        // Get game system ID for analytics
+        const game = await tx.game.findUnique({
+          where: { id: gameId },
+          select: { systemId: true },
+        })
+
+        analytics.listing.created({
+          listingId: newListing.id,
+          gameId: gameId,
+          systemId: game?.systemId || 'unknown',
+          emulatorId: emulatorId,
+          deviceId: deviceId,
+          performanceId: performanceId,
+          hasCustomFields: (customFieldValues?.length || 0) > 0,
+          customFieldCount: customFieldValues?.length || 0,
+        })
+
+        // Check if this is user's first listing for journey analytics
+        const userListingCount = await tx.listing.count({
+          where: { authorId: authorId },
+        })
+
+        if (userListingCount === 1) {
+          analytics.userJourney.firstTimeAction({
+            userId: authorId,
+            action: 'first_listing',
+          })
+        }
 
         return newListing
       })
@@ -576,6 +604,23 @@ export const coreRouter = createTRPCRouter({
             voteValue: input.value,
           },
         })
+
+        analytics.engagement.vote({
+          listingId: input.listingId,
+          voteValue: input.value,
+        })
+
+        // Check if this is user's first vote for journey analytics
+        const userVoteCount = await ctx.prisma.vote.count({
+          where: { userId: userId },
+        })
+
+        if (userVoteCount === 1) {
+          analytics.userJourney.firstTimeAction({
+            userId: userId,
+            action: 'first_vote',
+          })
+        }
 
         return vote
       }

@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db'
-import type { NotificationType } from '@orm'
+import { NotificationType } from '@orm'
 
 interface RateLimitRule {
   type: NotificationType | 'GLOBAL'
@@ -45,25 +45,25 @@ class NotificationRateLimitService {
 
       // Engagement notifications (aggressive rate limiting)
       {
-        type: 'LISTING_COMMENT',
+        type: NotificationType.LISTING_COMMENT,
         maxRequests: 10,
         windowMs: 10 * 60 * 1000, // 10 minutes
         userSpecific: true,
       },
       {
-        type: 'LISTING_VOTE_UP',
+        type: NotificationType.LISTING_VOTE_UP,
         maxRequests: 20,
         windowMs: 15 * 60 * 1000, // 15 minutes
         userSpecific: true,
       },
       {
-        type: 'LISTING_VOTE_DOWN',
+        type: NotificationType.LISTING_VOTE_DOWN,
         maxRequests: 10,
         windowMs: 15 * 60 * 1000, // 15 minutes
         userSpecific: true,
       },
       {
-        type: 'COMMENT_REPLY',
+        type: NotificationType.COMMENT_REPLY,
         maxRequests: 15,
         windowMs: 10 * 60 * 1000, // 10 minutes
         userSpecific: true,
@@ -71,13 +71,13 @@ class NotificationRateLimitService {
 
       // Content notifications (moderate rate limiting)
       {
-        type: 'NEW_DEVICE_LISTING',
+        type: NotificationType.NEW_DEVICE_LISTING,
         maxRequests: 5,
         windowMs: 30 * 60 * 1000, // 30 minutes
         userSpecific: false,
       },
       {
-        type: 'GAME_ADDED',
+        type: NotificationType.GAME_ADDED,
         maxRequests: 10,
         windowMs: 60 * 60 * 1000, // 1 hour
         userSpecific: false,
@@ -85,13 +85,13 @@ class NotificationRateLimitService {
 
       // System notifications (conservative rate limiting)
       {
-        type: 'MAINTENANCE_NOTICE',
+        type: NotificationType.MAINTENANCE_NOTICE,
         maxRequests: 1,
         windowMs: 24 * 60 * 60 * 1000, // 24 hours
         userSpecific: false,
       },
       {
-        type: 'FEATURE_ANNOUNCEMENT',
+        type: NotificationType.FEATURE_ANNOUNCEMENT,
         maxRequests: 2,
         windowMs: 12 * 60 * 60 * 1000, // 12 hours
         userSpecific: false,
@@ -99,13 +99,13 @@ class NotificationRateLimitService {
 
       // Moderation notifications
       {
-        type: 'LISTING_APPROVED',
+        type: NotificationType.LISTING_APPROVED,
         maxRequests: 50,
         windowMs: 60 * 60 * 1000, // 1 hour
         userSpecific: true,
       },
       {
-        type: 'LISTING_REJECTED',
+        type: NotificationType.LISTING_REJECTED,
         maxRequests: 50,
         windowMs: 60 * 60 * 1000, // 1 hour
         userSpecific: true,

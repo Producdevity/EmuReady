@@ -1,9 +1,11 @@
 import { prisma } from '@/server/db'
+import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
+import { DeliveryChannel, NotificationCategory, NotificationType } from '@orm'
 import { createEmailService } from './emailService'
 import { realtimeNotificationService } from './realtimeService'
 import type { NotificationData } from './types'
 
-interface BatchedNotification {
+export interface BatchedNotification {
   id: string
   userId: string
   data: NotificationData
@@ -12,14 +14,14 @@ interface BatchedNotification {
   maxAttempts: number
 }
 
-interface BatchConfig {
+export interface BatchConfig {
   batchSize: number
   batchIntervalMs: number
   maxRetries: number
   retryDelayMs: number
 }
 
-class NotificationBatchingService {
+export class NotificationBatchingService {
   private queue: BatchedNotification[] = []
   private processing = false
   private batchTimer: NodeJS.Timeout | null = null
@@ -60,7 +62,7 @@ class NotificationBatchingService {
 
     // Process immediately if batch is full
     if (this.queue.length >= this.config.batchSize) {
-      this.processBatch()
+      this.processBatch().catch(console.error)
     }
 
     return id
@@ -97,7 +99,7 @@ class NotificationBatchingService {
         where: {
           notificationPreferences: {
             some: {
-              type: 'MAINTENANCE_NOTICE',
+              type: NotificationType.MAINTENANCE_NOTICE,
               inAppEnabled: true,
             },
           },
@@ -109,11 +111,11 @@ class NotificationBatchingService {
           this.scheduleNotification(
             {
               userId: user.id,
-              type: 'MAINTENANCE_NOTICE',
-              category: 'SYSTEM',
+              type: NotificationType.MAINTENANCE_NOTICE,
+              category: NotificationCategory.SYSTEM,
               title,
               message,
-              deliveryChannel: 'BOTH',
+              deliveryChannel: DeliveryChannel.BOTH,
             },
             scheduledFor,
           )
@@ -234,6 +236,11 @@ class NotificationBatchingService {
         },
       })
 
+      // Invalidate analytics cache when notifications are processed in batches
+      if (success) {
+        notificationAnalyticsService.clearCache()
+      }
+
       return success
     } catch (error) {
       console.error(`Error processing notification ${notification.id}:`, error)
@@ -316,7 +323,7 @@ class NotificationBatchingService {
   // Start batch processing timer
   private startBatchTimer(): void {
     this.batchTimer = setInterval(() => {
-      this.processBatch()
+      this.processBatch().catch(console.error)
     }, this.config.batchIntervalMs)
   }
 
@@ -349,6 +356,3 @@ class NotificationBatchingService {
 
 // Singleton instance
 export const notificationBatchingService = new NotificationBatchingService()
-
-export { NotificationBatchingService }
-export type { BatchedNotification, BatchConfig }

@@ -4,9 +4,6 @@ import { Search, ShieldUser, User } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
-import TableButton from '@/app/admin/components/table-buttons/TableButton'
-import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   Button,
   Input,
@@ -18,6 +15,9 @@ import {
   Pagination,
   useConfirmDialog,
 } from '@/components/ui'
+import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
+import TableButton from '@/components/ui/table-buttons/TableButton'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

@@ -3,8 +3,6 @@
 import { Search, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
-import EditButton from '@/app/admin/components/table-buttons/EditButton'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
@@ -17,6 +15,8 @@ import {
   useConfirmDialog,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
+import EditButton from '@/components/ui/table-buttons/EditButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

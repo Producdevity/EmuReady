@@ -3,6 +3,7 @@ import { initTRPC } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
+import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
@@ -95,6 +96,15 @@ export type TRPCContext = ReturnType<typeof createInnerTRPCContext>
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter(ctx) {
+    // Track errors for analytics
+    if (ctx.error.code !== 'UNAUTHORIZED' && ctx.error.code !== 'FORBIDDEN') {
+      analytics.performance.errorOccurred({
+        errorType: ctx.error.code || 'UNKNOWN',
+        errorMessage: ctx.error.message,
+        page: ctx.path || 'unknown',
+      })
+    }
+
     return {
       ...ctx.shape,
       data: {
@@ -111,73 +121,102 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 export const createTRPCRouter = t.router
 
 /**
+ * Middleware to track slow queries
+ */
+const performanceMiddleware = t.middleware(async ({ next, path }) => {
+  const start = Date.now()
+  const result = await next()
+  const duration = Date.now() - start
+
+  // Track slow queries (threshold: 2 seconds)
+  const THRESHOLD_MS = 2000
+  if (duration > THRESHOLD_MS) {
+    analytics.performance.slowQuery({
+      queryName: path || 'unknown',
+      duration,
+      threshold: THRESHOLD_MS,
+    })
+  }
+
+  return result
+})
+
+/**
  * Public (unauthed) procedure
  */
-export const publicProcedure = t.procedure
+export const publicProcedure = t.procedure.use(performanceMiddleware)
 
 /**
  * Middleware to check if a user is signed in
  */
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session?.user) AppError.unauthorized()
+export const protectedProcedure = t.procedure
+  .use(performanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) AppError.unauthorized()
 
-  return next({
-    ctx: { session: { ...ctx.session, user: ctx.session.user } },
+    return next({
+      ctx: { session: { ...ctx.session, user: ctx.session.user } },
+    })
   })
-})
 
 /**
  * Middleware to check if a user has at least Author role
  */
-export const authorProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    AppError.unauthorized()
-  }
+export const authorProcedure = t.procedure
+  .use(performanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      AppError.unauthorized()
+    }
 
-  // For now, we consider User as Author
-  if (!hasPermission(ctx.session.user.role, Role.USER)) {
-    AppError.forbidden()
-  }
+    // For now, we consider User as Author
+    if (!hasPermission(ctx.session.user.role, Role.USER)) {
+      AppError.forbidden()
+    }
 
-  return next({
-    ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
-    },
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
   })
-})
 
 /**
  * Middleware to check if a user has Admin role
  */
-export const adminProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    AppError.unauthorized()
-  }
+export const adminProcedure = t.procedure
+  .use(performanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      AppError.unauthorized()
+    }
 
-  if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-    AppError.insufficientPermissions(Role.ADMIN)
-  }
+    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+      AppError.insufficientPermissions(Role.ADMIN)
+    }
 
-  return next({
-    ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
-    },
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
   })
-})
 
 /**
  * Middleware to check if a user has SUPER_ADMIN role
  */
-export const superAdminProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session?.user) return AppError.unauthorized()
+export const superAdminProcedure = t.procedure
+  .use(performanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) return AppError.unauthorized()
 
-  if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-    AppError.insufficientPermissions(Role.SUPER_ADMIN)
-  }
+    if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+      AppError.insufficientPermissions(Role.SUPER_ADMIN)
+    }
 
-  return next({
-    ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
-    },
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
   })
-})

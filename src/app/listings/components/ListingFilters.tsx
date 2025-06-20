@@ -65,28 +65,53 @@ function ListingFilters(props: FiltersProps) {
 
   const handleSystemChange = (values: string[]) => {
     props.onSystemChange(values)
-    analytics.filter.system(values.join(','))
+    if (values.length === 0) return analytics.filter.clearSystemFilter()
+    analytics.filter.system(
+      values,
+      props.systems.filter((s) => values.includes(s.id)).map((s) => s.name),
+    )
   }
 
   const handleDeviceChange = (values: string[]) => {
     props.onDeviceChange(values)
-    analytics.filter.device(values.join(','))
+    if (values.length === 0) return analytics.filter.clearDeviceFilter()
+    analytics.filter.device(
+      values,
+      props.devices
+        .filter((d) => values.includes(d.id))
+        .map((d) => `${d.brand.name} ${d.modelName}`),
+    )
   }
 
   const handleSocChange = (values: string[]) => {
     props.onSocChange(values)
-    analytics.filter.system(values.join(',')) // Using system analytics for now
+    if (values.length === 0) return analytics.filter.clearSocFilter()
+    analytics.filter.soc(
+      values,
+      props.socs
+        .filter((s) => values.includes(s.id))
+        .map((s) => `${s.manufacturer} ${s.name}`),
+    )
   }
 
   const handleEmulatorChange = (values: string[]) => {
     props.onEmulatorChange(values)
-    analytics.filter.emulator(values.join(','))
+    if (values.length === 0) return analytics.filter.clearEmulatorFilter()
+    analytics.filter.emulator(
+      values,
+      props.emulators.filter((e) => values.includes(e.id)).map((e) => e.name),
+    )
   }
 
   const handlePerformanceChange = (values: string[]) => {
     const numericValues = values.map(Number)
     props.onPerformanceChange(numericValues)
-    analytics.filter.performance(values.join(','))
+    analytics.filter.performance(
+      numericValues,
+      props.performanceScales
+        .filter((p) => numericValues.includes(p.id))
+        .map((p) => p.label),
+    )
   }
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +126,7 @@ function ListingFilters(props: FiltersProps) {
     props.onEmulatorChange([])
     props.onPerformanceChange([])
     props.onSearchChange('')
+    analytics.filter.clearAll()
   }
 
   const hasActiveFilters =

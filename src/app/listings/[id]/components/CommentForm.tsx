@@ -2,6 +2,7 @@
 
 import { useUser, SignInButton } from '@clerk/nextjs'
 import { useState, type FormEvent } from 'react'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForComment } from '@/lib/captcha/hooks'
 import { cn } from '@/lib/utils'
@@ -17,6 +18,8 @@ interface Props {
   onCancelEdit?: () => void
   isEditing?: boolean
   isReply?: boolean
+  gameId?: string
+  systemId?: string
 }
 
 function CommentForm(props: Props) {
@@ -25,14 +28,35 @@ function CommentForm(props: Props) {
   const { executeForComment, isCaptchaEnabled } = useRecaptchaForComment()
 
   const createComment = api.listings.createComment.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      analytics.engagement.comment({
+        action: props.parentId ? 'reply' : 'created',
+        commentId: data.id,
+        listingId: props.listingId,
+        isReply: !!props.parentId,
+        contentLength: content.trim().length,
+        gameId: props.gameId,
+        systemId: props.systemId,
+      })
+
       setContent('')
       props.onCommentSuccess()
     },
   })
 
   const editComment = api.listings.editComment.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data) => {
+      if (props.commentId) {
+        analytics.engagement.comment({
+          action: 'edited',
+          commentId: props.commentId,
+          listingId: props.listingId,
+          contentLength: content.trim().length,
+          gameId: props.gameId,
+          systemId: props.systemId,
+        })
+      }
+
       props.onCommentSuccess()
       if (props.onCancelEdit) props.onCancelEdit()
     },

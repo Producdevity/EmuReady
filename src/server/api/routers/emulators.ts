@@ -44,10 +44,13 @@ export const emulatorsRouter = createTRPCRouter({
       // Always run count query for consistent pagination
       const total = await ctx.prisma.emulator.count({ where })
 
-      // Get emulators with pagination
+      // Get emulators with pagination and include systems data
       const emulators = await ctx.prisma.emulator.findMany({
         where,
-        include: { _count: { select: { listings: true, systems: true } } },
+        include: {
+          systems: true,
+          _count: { select: { listings: true, systems: true } },
+        },
         orderBy,
         skip: actualOffset,
         take: limit,

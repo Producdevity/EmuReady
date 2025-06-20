@@ -16,7 +16,7 @@ function KofiFooterButton() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Support us on Ko-fi"
-          className="group relative p-3 rounded-lg bg-gradient-to-br from-[#ff5e5b]/10 to-[#ff8e53]/10 dark:from-[#ff5e5b]/20 dark:to-[#ff8e53]/20 border border-[#ff5e5b]/20 dark:border-[#ff5e5b]/30 hover:border-[#ff5e5b]/40 dark:hover:border-[#ff5e5b]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#ff5e5b]/20 dark:hover:shadow-[#ff5e5b]/10"
+          className="group relative inline-flex items-center justify-center p-3 rounded-lg bg-gradient-to-br from-[#ff5e5b]/10 to-[#ff8e53]/10 dark:from-[#ff5e5b]/20 dark:to-[#ff8e53]/20 border border-[#ff5e5b]/20 dark:border-[#ff5e5b]/30 hover:border-[#ff5e5b]/40 dark:hover:border-[#ff5e5b]/50 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#ff5e5b]/20 dark:hover:shadow-[#ff5e5b]/10 flex-shrink-0"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >

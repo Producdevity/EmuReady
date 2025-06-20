@@ -18,12 +18,7 @@ const handler = async (req: NextRequest) => {
         // Fetch user data from database using clerkId
         const user = await prisma.user.findUnique({
           where: { clerkId: userId },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-          },
+          select: { id: true, email: true, name: true, role: true },
         })
 
         if (user) {

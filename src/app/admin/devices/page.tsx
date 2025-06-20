@@ -4,9 +4,6 @@ import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
-import DeleteButton from '@/app/admin/components/table-buttons/DeleteButton'
-import EditButton from '@/app/admin/components/table-buttons/EditButton'
-import ViewButton from '@/app/admin/components/table-buttons/ViewButton'
 import {
   Button,
   Input,
@@ -17,6 +14,9 @@ import {
   Pagination,
   useConfirmDialog,
 } from '@/components/ui'
+import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
+import EditButton from '@/components/ui/table-buttons/EditButton'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -267,7 +267,7 @@ function AdminDevicesPage() {
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <EditButton
                         onClick={() => openModal(dev)}
                         title="Edit Device"

@@ -1,3 +1,4 @@
+import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
@@ -88,7 +89,6 @@ export const commentsRouter = createTRPCRouter({
         },
       })
 
-      // Emit notification event
       notificationEventEmitter.emitNotificationEvent({
         eventType: parentId
           ? NOTIFICATION_EVENTS.COMMENT_REPLIED
@@ -103,6 +103,26 @@ export const commentsRouter = createTRPCRouter({
           commentText: content,
         },
       })
+
+      analytics.engagement.comment({
+        action: parentId ? 'reply' : 'created',
+        commentId: comment.id,
+        listingId: listingId,
+        isReply: !!parentId,
+        contentLength: content.length,
+      })
+
+      // Check if this is user's first comment for journey analytics
+      const userCommentCount = await ctx.prisma.comment.count({
+        where: { userId: userId },
+      })
+
+      if (userCommentCount === 1) {
+        analytics.userJourney.firstTimeAction({
+          userId: userId,
+          action: 'first_comment',
+        })
+      }
 
       return comment
     }),
@@ -396,6 +416,14 @@ export const commentsRouter = createTRPCRouter({
             },
           })
         }
+
+        const finalVoteValue = existingVote?.value === value ? null : value
+        analytics.engagement.commentVote({
+          commentId: commentId,
+          voteValue: finalVoteValue,
+          previousVote: existingVote?.value,
+          listingId: comment?.listingId,
+        })
 
         return voteResult
       })
