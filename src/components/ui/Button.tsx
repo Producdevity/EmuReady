@@ -19,7 +19,7 @@ export type ButtonVariant =
 
 // Extended shadcn variants with legacy mappings
 export const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive overflow-hidden",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors transition-shadow duration-200 ease-in-out disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive overflow-hidden",
   {
     variants: {
       variant: {
@@ -29,7 +29,7 @@ export const buttonVariants = cva(
         destructive:
           'bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
         outline:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50',
+          'border bg-transparent backdrop-blur-sm shadow-xs hover:bg-white/10 dark:hover:bg-white/5 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md',
         secondary:
           'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
         ghost:
@@ -37,7 +37,7 @@ export const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
 
         fancy:
-          'px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold shadow-lg transition-all duration-200 transform hover:scale-105',
+          'px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 text-white font-bold shadow-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl bg-[length:200%_200%] hover:animate-gradient-x',
 
         // Legacy variants mapped to modern design tokens
         primary:
@@ -103,7 +103,6 @@ function Button({
         rounded && 'rounded-xl',
         isFullWidth && 'w-full',
         (isLoading || disabled) && 'cursor-not-allowed',
-        'transition-all duration-200 ease-in-out',
       )}
       disabled={isLoading || disabled}
       {...props}
