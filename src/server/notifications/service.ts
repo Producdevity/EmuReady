@@ -318,6 +318,7 @@ export class NotificationService {
       'emulator.updated': NotificationType.EMULATOR_UPDATED,
       'maintenance.scheduled': NotificationType.MAINTENANCE_NOTICE,
       'feature.announced': NotificationType.FEATURE_ANNOUNCEMENT,
+      'user.role_changed': NotificationType.ROLE_CHANGED,
     }
 
     return eventTypeMap[eventType] || null
@@ -517,6 +518,13 @@ export class NotificationService {
         }
         break
 
+      case 'user.role_changed':
+        // Get the user whose role was changed
+        if (eventData.payload?.userId) {
+          userIds.push(eventData.payload.userId as string)
+        }
+        break
+
       default:
         // For system events, get all users with system notification preferences enabled
         const systemUsers = await prisma.user.findMany({
@@ -703,6 +711,21 @@ export class NotificationService {
         if (emulator) {
           context.emulatorId = emulator.id
           context.emulatorName = emulator.name
+        }
+      }
+
+      // Handle role change specific data
+      if (notificationType === NotificationType.ROLE_CHANGED) {
+        context.oldRole = payload.oldRole as string
+        context.newRole = payload.newRole as string
+        context.changedAt = payload.changedAt as string
+
+        if (payload.changedBy) {
+          const changer = await prisma.user.findUnique({
+            where: { id: payload.changedBy as string },
+            select: { name: true },
+          })
+          context.changedBy = changer?.name || undefined
         }
       }
 

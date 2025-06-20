@@ -9,6 +9,7 @@ export const UserSortField = z.enum([
   'listingsCount',
   'votesCount',
   'commentsCount',
+  'trustScore',
 ])
 export const SortDirection = z.enum(['asc', 'desc'])
 

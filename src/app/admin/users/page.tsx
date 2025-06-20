@@ -41,6 +41,7 @@ type UserSortField =
   | 'listingsCount'
   | 'votesCount'
   | 'commentsCount'
+  | 'trustScore'
 
 interface UserForModal {
   id: string
@@ -53,6 +54,7 @@ const USERS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },
   { key: 'email', label: 'Email', defaultVisible: true },
   { key: 'role', label: 'Role', defaultVisible: true },
+  { key: 'trustScore', label: 'Trust Score', defaultVisible: true },
   { key: 'createdAt', label: 'Joined', defaultVisible: true },
   { key: 'listingsCount', label: 'Listings', defaultVisible: false },
   { key: 'votesCount', label: 'Votes', defaultVisible: false },
@@ -243,6 +245,15 @@ function AdminUsersPage() {
                     onSort={table.handleSort}
                   />
                 )}
+                {columnVisibility.isColumnVisible('trustScore') && (
+                  <SortableHeader
+                    label="Trust Score"
+                    field="trustScore"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
+                )}
                 {columnVisibility.isColumnVisible('createdAt') && (
                   <SortableHeader
                     label="Joined"
@@ -312,6 +323,11 @@ function AdminUsersPage() {
                       <Badge variant={getRoleVariant(user.role)}>
                         {user.role}
                       </Badge>
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('trustScore') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {user.trustScore}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('createdAt') && (

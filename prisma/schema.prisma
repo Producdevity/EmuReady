@@ -423,6 +423,7 @@ enum NotificationType {
   LISTING_REJECTED
   CONTENT_FLAGGED
   ACCOUNT_WARNING
+  ROLE_CHANGED
 
   @@map("notification_type")
 }

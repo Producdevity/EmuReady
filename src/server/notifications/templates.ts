@@ -38,6 +38,10 @@ export interface TemplateContext {
   warningType?: string
   warningReason?: string
   issuedBy?: string
+  oldRole?: string
+  newRole?: string
+  changedBy?: string
+  changedAt?: string
   [key: string]: unknown
 }
 
@@ -263,6 +267,18 @@ class NotificationTemplateEngine {
         issuedBy: context.issuedBy,
       },
     }))
+
+    this.templates.set(NotificationType.ROLE_CHANGED, (context) => ({
+      title: 'Your role has been updated',
+      message: `Your account role has been changed from ${context.oldRole} to ${context.newRole}${context.changedBy ? ` by ${context.changedBy}` : ''}`,
+      actionUrl: '/profile',
+      metadata: {
+        oldRole: context.oldRole,
+        newRole: context.newRole,
+        changedBy: context.changedBy,
+        changedAt: context.changedAt,
+      },
+    }))
   }
 
   generateTemplate(
@@ -298,6 +314,7 @@ class NotificationTemplateEngine {
       [NotificationType.LISTING_REJECTED]: 'MODERATION',
       [NotificationType.CONTENT_FLAGGED]: 'MODERATION',
       [NotificationType.ACCOUNT_WARNING]: 'MODERATION',
+      [NotificationType.ROLE_CHANGED]: 'MODERATION',
     }
 
     return categoryMap[type] || 'SYSTEM'

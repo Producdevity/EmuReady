@@ -23,6 +23,7 @@ const allTypes = [
   NotificationType.NEW_DEVICE_LISTING,
   NotificationType.NEW_SOC_LISTING,
   NotificationType.POLICY_UPDATE,
+  NotificationType.ROLE_CHANGED,
   NotificationType.USER_MENTION,
 ]
 

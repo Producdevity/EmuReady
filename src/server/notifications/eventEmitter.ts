@@ -60,6 +60,7 @@ export const NOTIFICATION_EVENTS = {
   EMULATOR_UPDATED: 'emulator.updated',
   MAINTENANCE_SCHEDULED: 'maintenance.scheduled',
   FEATURE_ANNOUNCED: 'feature.announced',
+  USER_ROLE_CHANGED: 'user.role_changed',
 } as const
 
 export type NotificationEventType =

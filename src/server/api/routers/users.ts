@@ -15,6 +15,10 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import {
+  notificationEventEmitter,
+  NOTIFICATION_EVENTS,
+} from '@/server/notifications/eventEmitter'
 import { updateUserRole } from '@/server/utils/roleSync'
 import { hasPermission } from '@/utils/permissions'
 import { sanitizeBio } from '@/utils/sanitization'
@@ -496,6 +500,9 @@ export const usersRouter = createTRPCRouter({
           case 'commentsCount':
             orderBy.push({ comments: { _count: sortDirection } })
             break
+          case 'trustScore':
+            orderBy.push({ trustScore: sortDirection })
+            break
         }
       }
 
@@ -512,6 +519,7 @@ export const usersRouter = createTRPCRouter({
             name: true,
             email: true,
             role: true,
+            trustScore: true,
             createdAt: true,
             _count: { select: { listings: true, votes: true, comments: true } },
           },
@@ -601,6 +609,21 @@ export const usersRouter = createTRPCRouter({
         adminId: ctx.session.user.id,
         oldRole: targetUser.role,
         newRole: role,
+      })
+
+      // Emit notification event for role change
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.USER_ROLE_CHANGED,
+        entityType: 'user',
+        entityId: targetUser.id,
+        triggeredBy: ctx.session.user.id,
+        payload: {
+          userId: targetUser.id,
+          oldRole: targetUser.role,
+          newRole: role,
+          changedBy: ctx.session.user.id,
+          changedAt: new Date().toISOString(),
+        },
       })
 
       // Return updated user data
