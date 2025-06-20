@@ -1,4 +1,3 @@
-import { TRPCError } from '@trpc/server'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
@@ -403,11 +402,9 @@ export const usersRouter = createTRPCRouter({
         })
 
         if (existingUserWithName) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message:
-              'This username is already taken. Please choose a different one.',
-          })
+          AppError.conflict(
+            'This username is already taken. Please choose a different one.',
+          )
         }
       }
 
