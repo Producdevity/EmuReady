@@ -1,4 +1,5 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import { type Role } from '@orm'
 
 // Analytics Event Categories
 export const ANALYTICS_CATEGORIES = {
@@ -46,6 +47,9 @@ export const ENGAGEMENT_ACTIONS = {
   LISTING_VIEW: 'listing_view',
   GAME_VIEW: 'game_view',
   USER_PROFILE_VIEW: 'user_profile_view',
+  VOTE_REMINDER_SHOWN: 'vote_reminder_shown',
+  VOTE_REMINDER_CLICKED: 'vote_reminder_clicked',
+  VOTE_REMINDER_DISMISSED: 'vote_reminder_dismissed',
 } as const
 
 // Listing Actions
@@ -62,6 +66,7 @@ export const LISTING_ACTIONS = {
 export const USER_ACTIONS = {
   SIGNED_UP: 'signed_up',
   SIGNED_IN: 'signed_in',
+  NOT_IN_DATABASE: 'not_in_database',
   PROFILE_UPDATED: 'profile_updated',
   PREFERENCES_UPDATED: 'preferences_updated',
   DEVICE_PREFERENCE_ADDED: 'device_preference_added',
@@ -598,6 +603,48 @@ const analytics = {
         metadata,
       })
     },
+
+    voteReminderShown: (params: { listingId: string; timeOnPage: number }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_SHOWN,
+        entityType: 'listing',
+        entityId: params.listingId,
+        metadata: {
+          timeOnPage: params.timeOnPage,
+        },
+      })
+    },
+
+    voteReminderClicked: (params: {
+      listingId: string
+      timeOnPage: number
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_CLICKED,
+        entityType: 'listing',
+        entityId: params.listingId,
+        metadata: {
+          timeOnPage: params.timeOnPage,
+        },
+      })
+    },
+
+    voteReminderDismissed: (params: {
+      listingId: string
+      timeOnPage: number
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_DISMISSED,
+        entityType: 'listing',
+        entityId: params.listingId,
+        metadata: {
+          timeOnPage: params.timeOnPage,
+        },
+      })
+    },
   },
 
   // Listing events
@@ -739,6 +786,18 @@ const analytics = {
         metadata,
       })
     },
+
+    notInDatabase: (params: { userId: string; userRole: Role }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.USER,
+        action: USER_ACTIONS.NOT_IN_DATABASE,
+        userId: params.userId,
+        metadata: {
+          errorType: 'user_not_in_database',
+          userRole: params.userRole,
+        },
+      })
+    },
   },
 
   // Navigation events
@@ -807,6 +866,7 @@ const analytics = {
       errorMessage?: string
       page?: string
       userId?: string
+      reason?: string
     }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.PERFORMANCE,
@@ -814,6 +874,7 @@ const analytics = {
         errorType: params.errorType,
         metadata: filterUndefinedValues({
           errorMessage: params.errorMessage,
+          reason: params.reason ?? 'unknown',
           page: params.page,
           userId: params.userId,
         }),

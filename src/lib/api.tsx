@@ -37,10 +37,7 @@ export function TRPCProvider(props: PropsWithChildren) {
         httpBatchLink({
           url: '/api/trpc',
           transformer: superjson,
-          headers: () => {
-            // TODO: Add authorization (if needed)
-            return {}
-          },
+          headers: () => ({}),
           // Reduce batch size to minimize connection issues
           maxURLLength: 2000,
         }),
