@@ -19,7 +19,7 @@ describe('Button', () => {
     )
 
     rerender(<Button variant="outline">Outline</Button>)
-    expect(screen.getByRole('button')).toHaveClass('border', 'bg-background')
+    expect(screen.getByRole('button')).toHaveClass('border', 'bg-transparent')
 
     rerender(<Button variant="ghost">Ghost</Button>)
     expect(screen.getByRole('button')).toHaveClass('hover:bg-accent')
