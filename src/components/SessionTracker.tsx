@@ -29,7 +29,7 @@ function SessionTracker() {
     if (currentUserId && !previousUserId && hasTrackedSessionStart.current) {
       analytics.user.signedIn({
         userId: currentUserId,
-        method: 'clerk', // We know it's Clerk since we're using useUser from Clerk
+        method: 'clerk', // TODO: figure out if we can get the SSO method from Clerk
       })
     }
 
@@ -66,29 +66,10 @@ function SessionTracker() {
       return
     }
 
-    // Client-side: Send to Google Analytics via Next.js integration
     sendGAEvent('event', 'page_view', {
       page_location: pathname,
       page_load_time: loadTime,
       user_id: user?.id,
-    })
-
-    // Server-side: Send to analytics endpoint for additional processing
-    fetch('/api/analytics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'page_view',
-        category: 'navigation',
-        page: pathname,
-        session_id: sessionIdRef.current,
-        load_time: loadTime,
-      }),
-    }).catch((error) => {
-      // Silently fail - analytics shouldn't break the app
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Analytics endpoint failed:', error)
-      }
     })
 
     // Track feature discovery based on page visits
@@ -121,44 +102,14 @@ function SessionTracker() {
     const handleBeforeUnload = () => {
       const sessionDuration = Date.now() - sessionStartRef.current
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📊 Session End:', {
-          duration: sessionDuration,
-          userId: user?.id,
-        })
-        return
-      }
-
       // Track session end with analytics
       analytics.session.sessionEnded({
         userId: user?.id,
         sessionId: sessionIdRef.current,
         duration: sessionDuration,
-        pageViews: 1, // This would need to be tracked separately for accuracy
-        interactions: 0, // This would need to be tracked separately for accuracy
+        pageViews: 1, // TODO: Track page views separately
+        interactions: 0, // TODO: Track interactions separately
       })
-
-      // Use sendBeacon for reliable delivery on page unload
-      const data = JSON.stringify({
-        event: 'session_end',
-        category: 'engagement',
-        session_id: sessionIdRef.current,
-        session_duration: sessionDuration,
-      })
-
-      // Fallback to fetch if sendBeacon is not available
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon('/api/analytics', data)
-      } else {
-        fetch('/api/analytics', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: data,
-          keepalive: true,
-        }).catch(() => {
-          // Silently fail on page unload
-        })
-      }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
