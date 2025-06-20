@@ -1,7 +1,6 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
-import Link from 'next/link'
+import { useUser, SignInButton } from '@clerk/nextjs'
 import { useState, type FormEvent } from 'react'
 import { api } from '@/lib/api'
 import { useRecaptchaForComment } from '@/lib/captcha/hooks'
@@ -73,9 +72,11 @@ function CommentForm(props: Props) {
       <div className="mb-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <p className="text-gray-600 dark:text-gray-400">
           Please{' '}
-          <Link href="/sign-in" className="text-blue-600 hover:text-blue-700">
-            sign in
-          </Link>{' '}
+          <SignInButton mode="modal">
+            <button className="text-blue-600 hover:text-blue-700 cursor-pointer">
+              sign in
+            </button>
+          </SignInButton>{' '}
           to leave a comment.
         </p>
       </div>
