@@ -17,6 +17,7 @@ interface Props {
 }
 
 function SocModal(props: Props) {
+  const utils = api.useUtils()
   const createSoC = api.socs.create.useMutation()
   const updateSoC = api.socs.update.useMutation()
 
@@ -79,11 +80,13 @@ function SocModal(props: Props) {
           id: props.editId,
           ...socData,
         } satisfies RouterInput['socs']['update'])
+        await utils.socs.get.invalidate().catch(console.error)
         setSuccess('SoC updated!')
       } else {
         await createSoC.mutateAsync(
           socData satisfies RouterInput['socs']['create'],
         )
+        await utils.socs.get.invalidate().catch(console.error)
         setSuccess('SoC created!')
       }
 
