@@ -284,6 +284,97 @@ export async function applyMonthlyActiveBonus(): Promise<{
   return { processedUsers, errors }
 }
 
+export async function applyManualTrustAdjustment(params: {
+  userId: string
+  adjustment: number
+  reason: string
+  adminUserId: string
+}): Promise<void> {
+  const { userId, adjustment, reason, adminUserId } = params
+
+  if (adjustment === 0) {
+    throw new Error('Adjustment cannot be zero')
+  }
+
+  try {
+    // Get user's current trust score before applying adjustment
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { trustScore: true, name: true, email: true },
+    })
+
+    if (!currentUser) {
+      // TODO: use proper error later, now i just want to sleep
+      throw new Error('User not found')
+    }
+
+    const currentTrustLevel = getTrustLevel(currentUser.trustScore)
+    const newTrustScore = Math.max(0, currentUser.trustScore + adjustment) // Prevent negative trust scores
+    const newTrustLevel = getTrustLevel(newTrustScore)
+    const actualAdjustment = newTrustScore - currentUser.trustScore
+
+    // Determine action type based on adjustment direction
+    const action =
+      adjustment > 0
+        ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
+        : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
+
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // Update user's trust score
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: newTrustScore,
+          lastActiveAt: new Date(),
+        },
+      })
+
+      // Create audit log entry with admin context
+      await tx.trustActionLog.create({
+        data: {
+          userId,
+          action,
+          weight: actualAdjustment,
+          metadata: {
+            reason,
+            adminUserId,
+            adminName: await tx.user
+              .findUnique({
+                where: { id: adminUserId },
+                select: { name: true, email: true },
+              })
+              .then((admin) => admin?.name || admin?.email || 'Unknown Admin'),
+            originalAdjustment: adjustment,
+            actualAdjustment,
+          },
+        },
+      })
+    })
+
+    analytics.trust.trustScoreChanged({
+      userId,
+      oldScore: currentUser.trustScore,
+      newScore: newTrustScore,
+      action,
+      weight: actualAdjustment,
+    })
+
+    // Track trust level achievement if level changed
+    if (currentTrustLevel.name !== newTrustLevel.name) {
+      analytics.trust.trustLevelChanged({
+        userId,
+        oldLevel: currentTrustLevel.name,
+        newLevel: newTrustLevel.name,
+        score: newTrustScore,
+      })
+    }
+  } catch (error) {
+    console.error('Failed to apply manual trust adjustment:', error)
+    throw new Error('Failed to update trust score')
+  }
+}
+
 export async function getTrustActionStats(userId?: string) {
   const whereClause = userId ? { userId } : {}
 

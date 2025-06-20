@@ -27,6 +27,14 @@ export const TRUST_ACTIONS = {
     weight: -1,
     description: 'Received a downvote on a listing',
   },
+  [TrustAction.ADMIN_ADJUSTMENT_POSITIVE]: {
+    weight: 0, // Dynamic weight set by admin
+    description: 'Manual trust score increase by admin',
+  },
+  [TrustAction.ADMIN_ADJUSTMENT_NEGATIVE]: {
+    weight: 0, // Dynamic weight set by admin
+    description: 'Manual trust score decrease by admin',
+  },
 } as const
 
 export const TRUST_LEVELS = [

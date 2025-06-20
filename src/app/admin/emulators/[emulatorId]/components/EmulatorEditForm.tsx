@@ -106,11 +106,19 @@ function EmulatorEditForm(props: Props) {
   }
 
   const handleLogoSelect = (logoFileName: string) => {
-    setValue('logo', logoFileName, { shouldValidate: true })
+    setValue('logo', logoFileName, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    })
   }
 
   const handleLogoClear = () => {
-    setValue('logo', '', { shouldValidate: true })
+    setValue('logo', '', {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    })
   }
 
   return (

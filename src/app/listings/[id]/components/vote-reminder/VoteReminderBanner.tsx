@@ -95,9 +95,9 @@ function VoteReminderBanner(props: Props) {
             damping: 30,
             opacity: { duration: 0.2 },
           }}
-          className="fixed right-4 top-1/2 -translate-y-1/2 z-40 w-80 max-w-[calc(100vw-2rem)] md:max-w-sm"
+          className="fixed right-2 top-1/2 -translate-y-1/2 z-40 w-72 max-w-[calc(100vw-1rem)] sm:w-80 sm:right-4 sm:max-w-sm"
         >
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 relative overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 relative overflow-hidden">
             {/* Subtle gradient background */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10" />
 
@@ -128,7 +128,7 @@ function VoteReminderBanner(props: Props) {
 
                 <button
                   onClick={handleDismiss}
-                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ml-2"
+                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ml-1 sm:ml-2"
                   title={dismiss.label}
                 >
                   <X className="w-4 h-4" />
@@ -141,14 +141,14 @@ function VoteReminderBanner(props: Props) {
               </p>
 
               {/* Vote buttons - responsive layout */}
-              <div className="flex flex-col gap-2 sm:gap-3">
+              <div className="flex flex-col gap-2">
                 {/* Main vote buttons */}
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col gap-2">
                   <motion.button
                     onClick={() => handleVote(true)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm min-h-[48px] ${
+                    className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 shadow-sm min-h-[44px] ${
                       props.currentVote === true
                         ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'
                         : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400'

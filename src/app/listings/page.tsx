@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock } from 'lucide-react'
+import { Clock, GamepadIcon, CpuIcon, FunnelIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState, type MouseEvent } from 'react'
@@ -29,6 +29,7 @@ import useColumnVisibility, {
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
@@ -56,7 +57,7 @@ function ListingsPage() {
   const router = useRouter()
   const listingsState = useListingsState()
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, true)
 
@@ -208,7 +209,7 @@ function ListingsPage() {
   }
 
   // Handle game name click to navigate to game details (clicking on row navigates to listing details)
-  const handleGameClick = (gameId: string, ev: MouseEvent) => {
+  const _handleGameClick = (gameId: string, ev: MouseEvent) => {
     ev.stopPropagation()
     router.push(`/games/${gameId}`)
   }
@@ -221,48 +222,134 @@ function ListingsPage() {
     )
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
-      {/* Sidebar */}
-      <ListingFilters
-        systemIds={listingsState.systemIds}
-        deviceIds={listingsState.deviceIds}
-        socIds={listingsState.socIds}
-        emulatorIds={listingsState.emulatorIds}
-        performanceIds={listingsState.performanceIds}
-        searchTerm={listingsState.search}
-        systems={systemsQuery.data ?? []}
-        devices={devicesQuery.data?.devices ?? []}
-        socs={socsQuery.data?.socs ?? []}
-        emulators={emulatorsQuery.data?.emulators ?? []}
-        performanceScales={performanceScalesQuery.data ?? []}
-        onSystemChange={handleSystemChange}
-        onDeviceChange={handleDeviceChange}
-        onSocChange={handleSocChange}
-        onEmulatorChange={handleEmulatorChange}
-        onPerformanceChange={handlePerformanceChange}
-        onSearchChange={handleSearchChange}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        userPreferences={userPreferencesQuery.data}
-        shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
-        userDeviceIds={userDeviceIds}
-        shouldUseUserSocFilter={shouldUseUserSocFilter}
-        userSocIds={userSocIds}
-      />
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="lg:flex">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block">
+          <ListingFilters
+            systemIds={listingsState.systemIds}
+            deviceIds={listingsState.deviceIds}
+            socIds={listingsState.socIds}
+            emulatorIds={listingsState.emulatorIds}
+            performanceIds={listingsState.performanceIds}
+            searchTerm={listingsState.search}
+            systems={systemsQuery.data ?? []}
+            devices={devicesQuery.data?.devices ?? []}
+            socs={socsQuery.data?.socs ?? []}
+            emulators={emulatorsQuery.data?.emulators ?? []}
+            performanceScales={performanceScalesQuery.data ?? []}
+            onSystemChange={handleSystemChange}
+            onDeviceChange={handleDeviceChange}
+            onSocChange={handleSocChange}
+            onEmulatorChange={handleEmulatorChange}
+            onPerformanceChange={handlePerformanceChange}
+            onSearchChange={handleSearchChange}
+            isCollapsed={isMobileSidebarOpen}
+            onToggleCollapse={() =>
+              setIsMobileSidebarOpen((prevState) => !prevState)
+            }
+            userPreferences={userPreferencesQuery.data}
+            shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
+            userDeviceIds={userDeviceIds}
+            shouldUseUserSocFilter={shouldUseUserSocFilter}
+            userSocIds={userSocIds}
+          />
+        </div>
 
-      {/* Main Content - Listings */}
-      <section className="flex-1 overflow-x-auto py-4 px-4 lg:py-6 lg:pl-8">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 lg:mb-8 gap-4">
-          <div>
+        {/* Mobile Sidebar Overlay */}
+        {isMobileSidebarOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+
+            {/* Sidebar Content - Full width on mobile */}
+            <div className="relative w-full flex">
+              <div className="w-full bg-white dark:bg-gray-900 shadow-xl transform animate-slide-up">
+                {/* Close button header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 14.414V17a1 1 0 01-.553.894l-2 1A1 1 0 019 18v-3.586L1.293 6.707A1 1 0 011 6V4z"
+                      />
+                    </svg>
+                    Filters
+                  </h2>
+                  <button
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="h-full overflow-y-auto">
+                  <ListingFilters
+                    systemIds={listingsState.systemIds}
+                    deviceIds={listingsState.deviceIds}
+                    socIds={listingsState.socIds}
+                    emulatorIds={listingsState.emulatorIds}
+                    performanceIds={listingsState.performanceIds}
+                    searchTerm={listingsState.search}
+                    systems={systemsQuery.data ?? []}
+                    devices={devicesQuery.data?.devices ?? []}
+                    socs={socsQuery.data?.socs ?? []}
+                    emulators={emulatorsQuery.data?.emulators ?? []}
+                    performanceScales={performanceScalesQuery.data ?? []}
+                    onSystemChange={handleSystemChange}
+                    onDeviceChange={handleDeviceChange}
+                    onSocChange={handleSocChange}
+                    onEmulatorChange={handleEmulatorChange}
+                    onPerformanceChange={handlePerformanceChange}
+                    onSearchChange={handleSearchChange}
+                    isCollapsed={false}
+                    onToggleCollapse={() =>
+                      setIsMobileSidebarOpen(!isMobileSidebarOpen)
+                    }
+                    userPreferences={userPreferencesQuery.data}
+                    shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
+                    userDeviceIds={userDeviceIds}
+                    shouldUseUserSocFilter={shouldUseUserSocFilter}
+                    userSocIds={userSocIds}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content - Listings */}
+        <section className="flex-1 overflow-x-auto py-4 px-2 md:px-4 lg:py-6 lg:pl-8">
+          {/* Desktop Header */}
+          <div className="hidden lg:flex lg:justify-between lg:items-center mb-6 lg:mb-8">
             <h1 className="text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Game Listings
             </h1>
-          </div>
 
-          {/* Mobile-friendly controls */}
-          <div className="flex flex-col gap-3">
-            {/* Primary actions row */}
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-3">
               {userQuery.data && (
                 <Button
                   variant={listingsState.myListings ? 'primary' : 'outline'}
@@ -276,27 +363,14 @@ function ListingsPage() {
                       page: 1,
                     })
                   }}
-                  className="whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">
-                    {listingsState.myListings ? 'All Listings' : 'My Listings'}
-                  </span>
-                  <span className="sm:hidden">
-                    {listingsState.myListings ? 'All' : 'Mine'}
-                  </span>
+                  {listingsState.myListings ? 'All Listings' : 'My Listings'}
                 </Button>
               )}
-              <Button asChild variant="fancy" className="flex-shrink-0">
-                <Link href="/listings/new" className="whitespace-nowrap">
-                  <span className="hidden sm:inline">Add Listing</span>
-                  <span className="sm:hidden">Add</span>
-                </Link>
+              <Button asChild variant="fancy">
+                <Link href="/listings/new">Add Listing</Link>
               </Button>
-            </div>
-
-            {/* Secondary controls row */}
-            <div className="flex items-center gap-2 justify-end flex-wrap">
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-2">
                 <DisplayToggleButton
                   showLogos={showSystemIcons}
                   onToggle={() => setShowSystemIcons(!showSystemIcons)}
@@ -318,244 +392,350 @@ function ListingsPage() {
               />
             </div>
           </div>
-        </div>
 
-        <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
-          {listingsQuery.isLoading ? (
-            <LoadingSpinner text="Loading listings..." />
-          ) : (
-            <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-              <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-                <tr>
-                  {columnVisibility.isColumnVisible('game') && (
-                    <SortableHeader
-                      label="Game"
-                      field="game.title"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('system') && (
-                    <SortableHeader
-                      label="System"
-                      field="game.system.name"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('device') && (
-                    <SortableHeader
-                      label="Device"
-                      field="device"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('emulator') && (
-                    <SortableHeader
-                      label="Emulator"
-                      field="emulator.name"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('performance') && (
-                    <SortableHeader
-                      label="Performance"
-                      field="performance.rank"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('successRate') && (
-                    <SortableHeader
-                      label="Success Rate"
-                      field="successRate"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('author') && (
-                    <SortableHeader
-                      label="Author"
-                      field="author.name"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('posted') && (
-                    <SortableHeader
-                      label="Posted"
-                      field="createdAt"
-                      currentSortField={listingsState.sortField}
-                      currentSortDirection={listingsState.sortDirection}
-                      onSort={handleSort}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('actions') && (
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {listingsQuery.data?.listings.map((listing) => (
-                  <tr
-                    key={listing.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/listings/${listing.id}`)}
-                  >
+          {/* Mobile Header - Compact */}
+          <div className="flex lg:hidden items-center justify-between mb-4">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              Game Listings
+            </h1>
+
+            {/* Mobile Action Menu */}
+            <div className="flex items-center gap-2">
+              {userQuery.data && (
+                <Button
+                  variant={listingsState.myListings ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    const newValue = !listingsState.myListings
+                    listingsState.setMyListings(newValue)
+                    listingsState.setPage(1)
+                    listingsState.updateQuery({
+                      myListings: newValue ? 'true' : null,
+                      page: 1,
+                    })
+                  }}
+                  className="px-3 py-1.5 text-xs"
+                >
+                  {listingsState.myListings ? 'All' : 'My'} Listings
+                </Button>
+              )}
+              <Button
+                asChild
+                variant="fancy"
+                size="sm"
+                className="px-3 py-1.5 text-xs"
+              >
+                <Link href="/listings/new">Add</Link>
+              </Button>
+
+              {/* Compact View Options */}
+              <div className="flex items-center">
+                <button
+                  onClick={() => setShowSystemIcons(!showSystemIcons)}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                  title={
+                    showSystemIcons ? 'Show System Names' : 'Show System Icons'
+                  }
+                >
+                  <CpuIcon
+                    className={cn(
+                      'w-4 h-4',
+                      showSystemIcons ? 'text-blue-600 dark:text-blue-400' : '',
+                    )}
+                  />
+                </button>
+                <button
+                  onClick={toggleEmulatorLogos}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                  title={
+                    showEmulatorLogos
+                      ? 'Show Emulator Names'
+                      : 'Show Emulator Logos'
+                  }
+                >
+                  <GamepadIcon
+                    className={cn(
+                      'w-4 h-4',
+                      showEmulatorLogos
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : '',
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
+            {listingsQuery.isLoading ? (
+              <LoadingSpinner text="Loading listings..." />
+            ) : (
+              <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+                <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+                  <tr>
                     {columnVisibility.isColumnVisible('game') && (
-                      <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                        <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={(e) =>
-                                  handleGameClick(listing.game.id, e)
-                                }
-                                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
-                              >
-                                {listing.game.title.substring(0, 30)}
-                                {listing.game.title.length > 30 && '...'}
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              {listing.game.title}
-                            </TooltipContent>
-                          </Tooltip>
-
-                          {listing.status === ApprovalStatus.PENDING && (
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                              </TooltipTrigger>
-                              <TooltipContent>Under Review</TooltipContent>
-                            </Tooltip>
-                          )}
-                        </div>
-                      </td>
+                      <SortableHeader
+                        label="Game"
+                        field="game.title"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('system') && (
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {isSystemIconsHydrated &&
-                        showSystemIcons &&
-                        listing.game.system?.key ? (
-                          <div className="flex items-center gap-2">
-                            <SystemIcon
-                              name={listing.game.system.name}
-                              systemKey={listing.game.system.key}
-                              size="md"
-                            />
-                            <span className="sr-only">
-                              {listing.game.system?.name}
-                            </span>
-                          </div>
-                        ) : (
-                          (listing.game.system?.name ?? 'Unknown')
-                        )}
-                      </td>
+                      <SortableHeader
+                        label="System"
+                        field="game.system.name"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('device') && (
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.device
-                          ? `${listing.device.brand.name} ${listing.device.modelName}`
-                          : 'N/A'}
-                      </td>
+                      <SortableHeader
+                        label="Device"
+                        field="device"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.emulator ? (
-                          <EmulatorIcon
-                            name={listing.emulator.name}
-                            logo={listing.emulator.logo}
-                            showLogo={
-                              isEmulatorLogosHydrated && showEmulatorLogos
-                            }
-                            size="sm"
-                          />
-                        ) : (
-                          'N/A'
-                        )}
-                      </td>
+                      <SortableHeader
+                        label="Emulator"
+                        field="emulator.name"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('performance') && (
-                      <td className="px-4 py-2">
-                        <PerformanceBadge
-                          rank={listing.performance?.rank ?? 8}
-                          label={listing.performance?.label ?? 'N/A'}
-                          description={listing.performance?.description}
-                        />
-                      </td>
+                      <SortableHeader
+                        label="Performance"
+                        field="performance.rank"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('successRate') && (
-                      <td className="px-4 py-2">
-                        <SuccessRateBar
-                          rate={listing.successRate * 100}
-                          voteCount={listing._count.votes}
-                        />
-                      </td>
+                      <SortableHeader
+                        label="Success Rate"
+                        field="successRate"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('author') && (
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {listing.author?.name ?? 'Anonymous'}
-                      </td>
+                      <SortableHeader
+                        label="Author"
+                        field="author.name"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('posted') && (
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {formatTimeAgo(listing.createdAt)}
-                      </td>
+                      <SortableHeader
+                        label="Posted"
+                        field="createdAt"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={handleSort}
+                      />
                     )}
                     {columnVisibility.isColumnVisible('actions') && (
-                      <td
-                        className="px-4 py-2 whitespace-nowrap"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex items-center gap-2 flex-col">
-                          <ViewButton
-                            title="View Listing Details"
-                            href={`/listings/${listing.id}`}
-                          />
-
-                          {isAdmin && (
-                            <EditButton
-                              href={`/admin/listings/${listing.id}/edit`}
-                              title="Edit Listing"
-                            />
-                          )}
-                        </div>
-                      </td>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                        Actions
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {listingsQuery.data?.listings.map((listing) => (
+                    <tr
+                      key={listing.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      onClick={() => router.push(`/listings/${listing.id}`)}
+                    >
+                      {columnVisibility.isColumnVisible('game') && (
+                        <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
+                          <div className="flex items-center gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  // TODO: A/B test what users expect when they click a game name
+                                  // href={`/games/${listing.game.id}`}
+                                  href={`/listings/${listing.id}`}
+                                  className="hover:text-blue-600 dark:hover:text-blue-400"
+                                >
+                                  {listing.game.title.substring(0, 30)}
+                                  {listing.game.title.length > 30 && '...'}
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                {listing.game.title}
+                              </TooltipContent>
+                            </Tooltip>
+
+                            {listing.status === ApprovalStatus.PENDING && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                </TooltipTrigger>
+                                <TooltipContent>Under Review</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('system') && (
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                          {isSystemIconsHydrated &&
+                          showSystemIcons &&
+                          listing.game.system?.key ? (
+                            <div className="flex items-center gap-2">
+                              <SystemIcon
+                                name={listing.game.system.name}
+                                systemKey={listing.game.system.key}
+                                size="md"
+                              />
+                              <span className="sr-only">
+                                {listing.game.system?.name}
+                              </span>
+                            </div>
+                          ) : (
+                            (listing.game.system?.name ?? 'Unknown')
+                          )}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('device') && (
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                          {listing.device
+                            ? `${listing.device.brand.name} ${listing.device.modelName}`
+                            : 'N/A'}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('emulator') && (
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                          {listing.emulator ? (
+                            <EmulatorIcon
+                              name={listing.emulator.name}
+                              logo={listing.emulator.logo}
+                              showLogo={
+                                isEmulatorLogosHydrated && showEmulatorLogos
+                              }
+                              size="sm"
+                            />
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('performance') && (
+                        <td className="px-4 py-2">
+                          <PerformanceBadge
+                            rank={listing.performance?.rank ?? 8}
+                            label={listing.performance?.label ?? 'N/A'}
+                            description={listing.performance?.description}
+                          />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('successRate') && (
+                        <td className="px-4 py-2">
+                          <SuccessRateBar
+                            rate={listing.successRate * 100}
+                            voteCount={listing._count.votes}
+                          />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('author') && (
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                          {listing.author?.name ?? 'Anonymous'}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('posted') && (
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                          {formatTimeAgo(listing.createdAt)}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('actions') && (
+                        <td
+                          className="px-4 py-2 whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center gap-2 flex-col">
+                            <ViewButton
+                              title="View Listing Details"
+                              href={`/listings/${listing.id}`}
+                            />
+
+                            {isAdmin && (
+                              <EditButton
+                                href={`/admin/listings/${listing.id}/edit`}
+                                title="Edit Listing"
+                              />
+                            )}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {!listingsQuery.isLoading &&
+              listingsQuery.data?.listings.length === 0 && <NoListingsFound />}
+          </div>
+
+          {listingsQuery.data?.pagination &&
+            listingsQuery.data?.pagination?.pages > 1 && (
+              <Pagination
+                currentPage={listingsState.page}
+                totalPages={listingsQuery.data.pagination.pages}
+                onPageChange={(newPage) => {
+                  listingsState.setPage(newPage)
+                  listingsState.updateQuery({ page: newPage })
+                }}
+              />
+            )}
+        </section>
+      </div>
+
+      {/* Floating Action Button for Filters - Mobile Only */}
+      <div className="lg:hidden fixed bottom-14 right-6 z-40">
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-blue-500/25 transform hover:scale-110 transition-all duration-300 ease-out"
+          aria-label="Open Filters"
+        >
+          {/* Active filter count badge */}
+          {(listingsState.systemIds.length > 0 ||
+            listingsState.deviceIds.length > 0 ||
+            listingsState.socIds.length > 0 ||
+            listingsState.emulatorIds.length > 0 ||
+            listingsState.performanceIds.length > 0 ||
+            listingsState.search) && (
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg">
+              {[
+                listingsState.systemIds.length,
+                listingsState.deviceIds.length,
+                listingsState.socIds.length,
+                listingsState.emulatorIds.length,
+                listingsState.performanceIds.length,
+                listingsState.search ? 1 : 0,
+              ].reduce((sum, count) => sum + count, 0)}
+            </div>
           )}
 
-          {!listingsQuery.isLoading &&
-            listingsQuery.data?.listings.length === 0 && <NoListingsFound />}
-        </div>
+          <FunnelIcon className="w-6 h-6" />
 
-        {listingsQuery.data?.pagination &&
-          listingsQuery.data?.pagination?.pages > 1 && (
-            <Pagination
-              currentPage={listingsState.page}
-              totalPages={listingsQuery.data.pagination.pages}
-              onPageChange={(newPage) => {
-                listingsState.setPage(newPage)
-                listingsState.updateQuery({ page: newPage })
-              }}
-            />
-          )}
-      </section>
+          {/* Ripple effect */}
+          <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 group-hover:animate-ping" />
+        </button>
+      </div>
     </main>
   )
 }

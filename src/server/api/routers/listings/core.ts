@@ -240,11 +240,25 @@ export const coreRouter = createTRPCRouter({
         )
 
         // Sort by success rate
-        allListingsWithStats.sort((a, b) =>
-          input.sortDirection === 'asc'
-            ? a.successRate - b.successRate
-            : b.successRate - a.successRate,
-        )
+        allListingsWithStats.sort((a, b) => {
+          if (input.sortDirection === 'asc') {
+            // For ascending (low to high)
+            // 1. Listings with votes and low success rate first
+            // 2. Listings with no votes last
+            if (a._count.votes === 0 && b._count.votes === 0) return 0
+            if (a._count.votes === 0) return 1
+            if (b._count.votes === 0) return -1
+            return a.successRate - b.successRate
+          } else {
+            // For descending (high to low)
+            // 1. Listings with high success rate first
+            // 2. Listings with no votes last
+            if (a._count.votes === 0 && b._count.votes === 0) return 0
+            if (a._count.votes === 0) return 1
+            if (b._count.votes === 0) return -1
+            return b.successRate - a.successRate
+          }
+        })
 
         // Apply pagination manually
         const startIndex = skip

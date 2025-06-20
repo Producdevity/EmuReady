@@ -1,10 +1,18 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { ChevronLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, useParams } from 'next/navigation'
-import { Badge, LoadingSpinner, PerformanceBadge } from '@/components/ui'
+import { notFound, useParams, useRouter } from 'next/navigation'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import {
+  Badge,
+  Button,
+  LoadingSpinner,
+  PerformanceBadge,
+} from '@/components/ui'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
@@ -12,8 +20,11 @@ import GameBoxartImage from './components/GameBoxartImage'
 import GameEditForm from './components/GameEditForm'
 
 function GameDetailsPage() {
+  const router = useRouter()
   const params = useParams()
   const { user } = useUser()
+  const emulatorLogos = useEmulatorLogos()
+
   const gameQuery = api.games.byId.useQuery({ id: params.id as string })
 
   const userQuery = api.users.me.useQuery(undefined, {
@@ -37,13 +48,15 @@ function GameDetailsPage() {
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
-          <Link
-            href="/games"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.back()}
+            className="mb-6"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Games
-          </Link>
+          </Button>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
@@ -121,7 +134,19 @@ function GameDetailsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {listing.emulator?.name || 'N/A'}
+                        {listing.emulator ? (
+                          <EmulatorIcon
+                            name={listing.emulator.name}
+                            logo={listing.emulator.logo}
+                            showLogo={
+                              emulatorLogos.isHydrated &&
+                              emulatorLogos.showEmulatorLogos
+                            }
+                            size="sm"
+                          />
+                        ) : (
+                          'N/A'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <PerformanceBadge
@@ -134,15 +159,13 @@ function GameDetailsPage() {
                         {listing.author?.name ?? 'Anonymous'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {listing._count.comments || 0}
+                        <Badge>{listing._count.comments || 0}</Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
+                        <ViewButton
                           href={`/listings/${listing.id}`}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                        >
-                          View Details
-                        </Link>
+                          title="View Details"
+                        />
                       </td>
                     </tr>
                   ))}

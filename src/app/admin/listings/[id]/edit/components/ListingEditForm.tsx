@@ -409,7 +409,7 @@ function ListingEditForm(props: Props) {
             <Button
               type="submit"
               isLoading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !formState.isDirty}
             >
               Save Changes
             </Button>

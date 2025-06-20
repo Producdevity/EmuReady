@@ -253,17 +253,23 @@ interface LocalPreferences {
  */
 function isTrackingAllowed(category: string): boolean {
   // Server-side: always allow (no cookie consent needed)
-  if (typeof window === 'undefined') {
-    return true
-  }
+  if (typeof window === 'undefined') return true
 
   // Client-side: check cookie consent
   const necessaryCategories = ['performance'] as const
 
   try {
-    const consent = localStorage.getItem('cookieConsent')
-    if (consent) {
-      const preferences = JSON.parse(consent) as LocalPreferences
+    // Check if user has given consent
+    const hasConsented = localStorage.getItem('cookieConsent')
+    if (!hasConsented) {
+      // No consent given, only allow necessary events
+      return necessaryCategories.includes(category as 'performance')
+    }
+
+    // Get actual preferences
+    const preferencesString = localStorage.getItem('cookiePreferences')
+    if (preferencesString) {
+      const preferences = JSON.parse(preferencesString) as LocalPreferences
 
       // Always allow necessary performance events
       if (necessaryCategories.includes(category as 'performance')) {
@@ -273,7 +279,7 @@ function isTrackingAllowed(category: string): boolean {
       // Check analytics consent for other categories
       return preferences.analytics === true
     } else {
-      // No consent given, only allow necessary events
+      // Consent given but no preferences found, only allow necessary events
       return necessaryCategories.includes(category as 'performance')
     }
   } catch (error) {

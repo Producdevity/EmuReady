@@ -244,4 +244,99 @@ describe('EmulatorEditForm', () => {
     // Since we're using react-hook-form with zod, invalid logos would be caught
     expect(screen.getByText('No logo selected')).toBeInTheDocument()
   })
+
+  it('enables save button when logo is changed', async () => {
+    render(<EmulatorEditForm emulator={mockEmulator} />)
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i })
+
+    // Initially the button should be disabled (form not dirty)
+    expect(saveButton).toBeDisabled()
+
+    // Click a different logo to make the form dirty
+    const retroarchLogo = screen.getByTitle('retroarch')
+    fireEvent.click(retroarchLogo)
+
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled()
+    })
+
+    // Verify the logo was actually selected
+    expect(screen.getByText('Using: retroarch.png')).toBeInTheDocument()
+  })
+
+  it('enables save button when logo is cleared', async () => {
+    render(<EmulatorEditForm emulator={mockEmulator} />)
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i })
+
+    // Initially the button should be disabled (form not dirty)
+    expect(saveButton).toBeDisabled()
+
+    // Clear the current logo to make the form dirty
+    const clearButton = screen.getByText(/clear logo/i)
+    fireEvent.click(clearButton)
+
+    // The save button should now be enabled
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled()
+    })
+
+    // Verify the logo was actually cleared
+    expect(screen.getByText('No logo selected')).toBeInTheDocument()
+  })
+
+  it('submits form with logo changes only', async () => {
+    render(<EmulatorEditForm emulator={mockEmulator} />)
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i })
+
+    // Select a different logo
+    const retroarchLogo = screen.getByTitle('retroarch')
+    fireEvent.click(retroarchLogo)
+
+    // Wait for the button to be enabled
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled()
+    })
+
+    // Submit the form
+    fireEvent.click(saveButton)
+
+    // Verify the mutation was called with the new logo
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith({
+        id: 'test-emulator-id',
+        name: 'Test Emulator', // Name unchanged
+        logo: 'retroarch.png', // Logo changed
+      })
+    })
+  })
+
+  it('submits form with logo cleared', async () => {
+    render(<EmulatorEditForm emulator={mockEmulator} />)
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i })
+
+    // Clear the logo
+    const clearButton = screen.getByText(/clear logo/i)
+    fireEvent.click(clearButton)
+
+    // Wait for the button to be enabled
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled()
+    })
+
+    // Submit the form
+    fireEvent.click(saveButton)
+
+    // Verify the mutation was called with no logo (undefined)
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith({
+        id: 'test-emulator-id',
+        name: 'Test Emulator', // Name unchanged
+        logo: undefined, // Logo cleared (empty string becomes undefined)
+      })
+    })
+  })
 })

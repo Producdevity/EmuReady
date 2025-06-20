@@ -13,3 +13,9 @@ export const GetTrustLogsSchema = z.object({
 export const GetTrustStatsSchema = z.object({})
 
 export const RunMonthlyActiveBonusSchema = z.object({})
+
+export const ManualTrustAdjustmentSchema = z.object({
+  userId: z.string().uuid(),
+  adjustment: z.number().int().min(-1000).max(1000),
+  reason: z.string().min(1).max(500),
+})

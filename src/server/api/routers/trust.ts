@@ -1,15 +1,19 @@
 import { AppError } from '@/lib/errors'
 import { TRUST_LEVELS } from '@/lib/trust/config'
-import { applyMonthlyActiveBonus } from '@/lib/trust/service'
+import {
+  applyManualTrustAdjustment,
+  applyMonthlyActiveBonus,
+} from '@/lib/trust/service'
 import {
   GetTrustLogsSchema,
   GetTrustStatsSchema,
+  ManualTrustAdjustmentSchema,
   RunMonthlyActiveBonusSchema,
 } from '@/schemas/trust'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { hasPermission } from '@/utils/permissions'
-import { Role, type Prisma } from '@orm'
+import { type Prisma, Role } from '@orm'
 
 export const trustRouter = createTRPCRouter({
   // Get trust logs for admin dashboard (SUPER_ADMIN only)
@@ -133,8 +137,25 @@ export const trustRouter = createTRPCRouter({
         AppError.insufficientPermissions(Role.SUPER_ADMIN)
       }
 
-      const result = await applyMonthlyActiveBonus()
-      return result
+      return await applyMonthlyActiveBonus()
+    }),
+
+  // Manual trust score adjustment (SUPER_ADMIN only)
+  adjustTrustScore: protectedProcedure
+    .input(ManualTrustAdjustmentSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+      }
+
+      await applyManualTrustAdjustment({
+        userId: input.userId,
+        adjustment: input.adjustment,
+        reason: input.reason,
+        adminUserId: ctx.session.user.id,
+      })
+
+      return { success: true }
     }),
 
   // Trust level configuration
