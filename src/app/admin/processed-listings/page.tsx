@@ -15,6 +15,7 @@ import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,
 } from '@/hooks/useColumnVisibility'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
@@ -237,6 +238,13 @@ function ProcessedListingsPage() {
                           href={`/listings/${listing.id}`}
                           target="_blank"
                           className="font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center"
+                          onClick={() => {
+                            analytics.contentDiscovery.externalLinkClicked({
+                              url: `/listings/${listing.id}`,
+                              context: 'admin_processed_listings_view',
+                              entityId: listing.id,
+                            })
+                          }}
                         >
                           {listing.game.title}
                           <ExternalLink className="ml-1.5 h-3 w-3" />

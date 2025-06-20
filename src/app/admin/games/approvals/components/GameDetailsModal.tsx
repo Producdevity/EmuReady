@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
 import { Modal, Button, ApprovalStatusBadge } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -247,9 +248,15 @@ function GameDetailsModal(props: Props) {
                 )}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
-                    onClick={() =>
-                      window.open(getDisplayImage() ?? '', '_blank')
-                    }
+                    onClick={() => {
+                      const imageUrl = getDisplayImage() ?? ''
+                      analytics.contentDiscovery.externalLinkClicked({
+                        url: imageUrl,
+                        context: 'admin_game_details_image',
+                        entityId: props.selectedGame?.id,
+                      })
+                      window.open(imageUrl, '_blank')
+                    }}
                     className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
                     title="View full size"
                   >

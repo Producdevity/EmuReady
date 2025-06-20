@@ -31,6 +31,7 @@ import useColumnVisibility, {
 } from '@/hooks/useColumnVisibility'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
@@ -398,9 +399,14 @@ function AdminListingsPage() {
                     <tr
                       key={listing.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                      onClick={() =>
+                      onClick={() => {
+                        analytics.contentDiscovery.externalLinkClicked({
+                          url: `/listings/${listing.id}`,
+                          context: 'admin_listings_table_click',
+                          entityId: listing.id,
+                        })
                         window.open(`/listings/${listing.id}`, '_blank')
-                      }
+                      }}
                     >
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4">

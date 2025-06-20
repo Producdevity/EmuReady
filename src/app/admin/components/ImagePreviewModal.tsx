@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
 import { Modal, Button } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
 
@@ -110,7 +111,14 @@ function ImagePreviewModal(props: Props) {
               {/* Overlay with actions */}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
-                  onClick={() => window.open(currentImageUrl, '_blank')}
+                  onClick={() => {
+                    analytics.contentDiscovery.externalLinkClicked({
+                      url: currentImageUrl,
+                      context: 'admin_image_preview',
+                      entityId: props.game?.id,
+                    })
+                    window.open(currentImageUrl, '_blank')
+                  }}
                   className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
                   title="View full size"
                 >

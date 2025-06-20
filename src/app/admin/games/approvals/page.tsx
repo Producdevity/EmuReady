@@ -105,14 +105,10 @@ function GameApprovalsPage() {
     search: isEmpty(table.search) ? undefined : table.search,
   })
 
-  // Query for game stats
-  const { data: gameStats } = api.games.getStats.useQuery()
+  const gameStatsQuery = api.games.getStats.useQuery()
 
-  // Get current user to check permissions
-  const currentUserQuery = api.users.me.useQuery()
-  const isSuperAdmin = currentUserQuery.data?.role
-    ? hasPermission(currentUserQuery.data.role, Role.SUPER_ADMIN)
-    : false
+  const userQuery = api.users.me.useQuery()
+  const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   // Mutation for approving/rejecting games
   const utils = api.useUtils()
@@ -124,7 +120,7 @@ function GameApprovalsPage() {
         analytics.admin.entityCreated({
           entityType: 'game',
           entityId: variables.id,
-          adminId: 'current-admin', // Replace with actual admin ID
+          adminId: userQuery.data?.id ?? 'unknown',
         })
       }
 
@@ -170,19 +166,15 @@ function GameApprovalsPage() {
 
   // Bulk selection handlers
   const handleSelectAllGames = (selected: boolean) => {
-    if (selected) {
-      setSelectedGameIds(filteredGames.map((g) => g.id))
-    } else {
-      setSelectedGameIds([])
-    }
+    setSelectedGameIds(selected ? filteredGames.map((g) => g.id) : [])
   }
 
   const handleSelectGame = (gameId: string, selected: boolean) => {
-    if (selected) {
-      setSelectedGameIds((prev) => [...prev, gameId])
-    } else {
-      setSelectedGameIds((prev) => prev.filter((id) => id !== gameId))
-    }
+    setSelectedGameIds(
+      selected
+        ? (prev) => [...prev, gameId]
+        : (prev) => prev.filter((id) => id !== gameId),
+    )
   }
 
   const handleBulkApproveGames = async (ids: string[]) => {
@@ -195,14 +187,13 @@ function GameApprovalsPage() {
 
   const showConfirmation = (gameId: string, action: ProcessingAction) => {
     const game = pendingGamesQuery.data?.games.find((g) => g.id === gameId)
-    if (game) {
-      setConfirmationModal({
-        isOpen: true,
-        gameId,
-        action,
-        gameTitle: game.title,
-      })
-    }
+    if (!game) return
+    setConfirmationModal({
+      isOpen: true,
+      gameId,
+      action,
+      gameTitle: game.title,
+    })
   }
 
   const handleConfirmAction = async () => {
@@ -275,11 +266,11 @@ function GameApprovalsPage() {
             columns={GAME_APPROVALS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          {gameStats && (
+          {gameStatsQuery.data && (
             <div className="flex items-center gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {gameStats.pending}
+                  {gameStatsQuery.data.pending}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   Pending
@@ -287,7 +278,7 @@ function GameApprovalsPage() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {gameStats.approved}
+                  {gameStatsQuery.data.approved}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   Approved
@@ -295,7 +286,7 @@ function GameApprovalsPage() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {gameStats.rejected}
+                  {gameStatsQuery.data.rejected}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   Rejected

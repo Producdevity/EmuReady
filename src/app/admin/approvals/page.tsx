@@ -73,6 +73,7 @@ function AdminApprovalsPage() {
     isHydrated: isEmulatorLogosHydrated,
   } = useEmulatorLogos()
 
+  const currentUserQuery = api.users.me.useQuery()
   const pendingListingsQuery = api.listings.getPending.useQuery({
     page: table.page,
     limit: table.limit,
@@ -108,7 +109,7 @@ function AdminApprovalsPage() {
 
       analytics.admin.listingApproved({
         listingId: variables.listingId,
-        adminId: 'current-admin', // TODO: Replace with user id
+        adminId: currentUserQuery.data?.id ?? 'unknown',
         gameId: selectedListingForApproval?.game.id,
         systemId: selectedListingForApproval?.game.system.id,
       })
@@ -128,7 +129,7 @@ function AdminApprovalsPage() {
 
       analytics.admin.listingRejected({
         listingId: variables.listingId,
-        adminId: 'current-admin', // TODO: Replace with user id
+        adminId: currentUserQuery.data?.id ?? 'unknown',
         reason: variables.notes,
         gameId: selectedListingForApproval?.game.id,
         systemId: selectedListingForApproval?.game.system.id,
