@@ -9,10 +9,21 @@ import {
   ExternalLink,
   TrendingUp,
   Award,
+  Settings,
+  Plus,
+  Minus,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Modal, Button, Badge, LoadingSpinner } from '@/components/ui'
+import { useState } from 'react'
+import {
+  Modal,
+  Code,
+  Button,
+  Badge,
+  LoadingSpinner,
+  Input,
+} from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { TRUST_LEVELS } from '@/lib/trust/config'
@@ -21,6 +32,8 @@ import { type Nullable } from '@/types/utils'
 import { getRoleVariant, getTrustActionBadgeColor } from '@/utils/badgeColors'
 import { formatDate, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 interface Props {
   userId: string | null
@@ -29,10 +42,57 @@ interface Props {
 }
 
 function UserDetailsModal(props: Props) {
+  const utils = api.useUtils()
   const userQuery = api.users.getUserById.useQuery(
     { userId: props.userId! },
     { enabled: !!props.userId },
   )
+
+  // Get current user to check if they're SUPER_ADMIN
+  const currentUserQuery = api.users.me.useQuery()
+  const isSuperAdmin = hasPermission(
+    currentUserQuery.data?.role,
+    Role.SUPER_ADMIN,
+  )
+
+  // Trust score adjustment state
+  const [customAdjustment, setCustomAdjustment] = useState('')
+  const [adjustmentReason, setAdjustmentReason] = useState('')
+  const [isAdjusting, setIsAdjusting] = useState(false)
+
+  const adjustTrustScoreMutation = api.trust.adjustTrustScore.useMutation({
+    onSuccess: () => {
+      toast.success('Trust score adjusted successfully')
+      setCustomAdjustment('')
+      setAdjustmentReason('')
+      setIsAdjusting(false)
+      if (!props.userId) return
+      utils.users.getUserById
+        .invalidate({ userId: props.userId })
+        .catch(console.error)
+    },
+    onError: (error) => {
+      toast.error(`Failed to adjust trust score: ${getErrorMessage(error)}`)
+      setIsAdjusting(false)
+    },
+  })
+
+  const handleTrustScoreAdjustment = (adjustment: number) => {
+    if (!props.userId || !adjustmentReason.trim()) {
+      return toast.error('Please provide a reason for the adjustment')
+    }
+
+    if (Math.abs(adjustment) > 1000) {
+      return toast.error('Adjustment value must be between -1000 and 1000')
+    }
+
+    setIsAdjusting(true)
+    adjustTrustScoreMutation.mutate({
+      userId: props.userId,
+      adjustment,
+      reason: adjustmentReason.trim(),
+    })
+  }
 
   const copyToClipboard = (text: Nullable<string>) => {
     if (!text) return toast.error('No user ID to copy')
@@ -191,9 +251,9 @@ function UserDetailsModal(props: Props) {
                         User ID
                       </span>
                       <div className="flex items-center gap-2">
-                        <code className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
-                          {userQuery.data.id?.slice(0, 8) ?? 'N/A'}...
-                        </code>
+                        <Code>
+                          {userQuery.data.id?.slice(0, 10) ?? 'N/A'}...
+                        </Code>
                         <button
                           onClick={() =>
                             copyToClipboard(userQuery.data?.id ?? null)
@@ -394,6 +454,120 @@ function UserDetailsModal(props: Props) {
                       </p>
                     )}
                   </div>
+
+                  {/* Trust Score Adjustment - SUPER_ADMIN Only */}
+                  {isSuperAdmin && (
+                    <div className="p-4 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-900/10 dark:to-blue-900/10 rounded-lg border border-purple-200/30 dark:border-purple-800/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                          Trust Score Adjustment
+                        </span>
+                        <Badge variant="default" size="sm" className="text-xs">
+                          SUPER ADMIN
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Quick adjustment buttons */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium min-w-0 flex-shrink-0">
+                            Quick:
+                          </span>
+                          <div className="flex gap-1">
+                            {[-10, -1, 1, 10].map((value) => (
+                              <Button
+                                key={value}
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleTrustScoreAdjustment(value)
+                                }
+                                disabled={
+                                  isAdjusting || !adjustmentReason.trim()
+                                }
+                                className={cn(
+                                  'h-8 px-2 text-xs min-w-[44px] transition-all duration-200',
+                                  value > 0
+                                    ? 'border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20'
+                                    : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20',
+                                )}
+                              >
+                                {value > 0 ? (
+                                  <Plus className="w-3 h-3 mr-1" />
+                                ) : (
+                                  <Minus className="w-3 h-3 mr-1" />
+                                )}
+                                {Math.abs(value)}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Custom adjustment */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium min-w-0 flex-shrink-0">
+                            Custom:
+                          </span>
+                          <Input
+                            type="number"
+                            placeholder="±points"
+                            value={customAdjustment}
+                            onChange={(e) =>
+                              setCustomAdjustment(e.target.value)
+                            }
+                            disabled={isAdjusting}
+                            className="h-8 text-xs w-20"
+                            min="-1000"
+                            max="1000"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const adjustment = parseInt(customAdjustment)
+                              if (!isNaN(adjustment) && adjustment !== 0) {
+                                handleTrustScoreAdjustment(adjustment)
+                              } else {
+                                toast.error(
+                                  'Please enter a valid non-zero number',
+                                )
+                              }
+                            }}
+                            disabled={
+                              isAdjusting ||
+                              !customAdjustment.trim() ||
+                              !adjustmentReason.trim()
+                            }
+                            className="h-8 px-3 text-xs"
+                          >
+                            Apply
+                          </Button>
+                        </div>
+
+                        {/* Reason input */}
+                        <div>
+                          <Input
+                            placeholder="Reason for adjustment (required)"
+                            value={adjustmentReason}
+                            onChange={(e) =>
+                              setAdjustmentReason(e.target.value)
+                            }
+                            disabled={isAdjusting}
+                            className="h-8 text-xs"
+                            maxLength={500}
+                          />
+                        </div>
+
+                        {isAdjusting && (
+                          <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400">
+                            <LoadingSpinner />
+                            <span>Applying adjustment...</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

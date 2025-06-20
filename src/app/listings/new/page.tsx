@@ -58,7 +58,9 @@ function AddListingPage() {
   const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(
     null,
   )
-  const [availableEmulators] = useState<EmulatorOption[]>([])
+  const [availableEmulators, setAvailableEmulators] = useState<
+    EmulatorOption[]
+  >([])
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [parsedCustomFields, setParsedCustomFields] = useState<
     CustomFieldDefinitionWithOptions[]
@@ -126,13 +128,16 @@ function AddListingPage() {
     async (query: string): Promise<EmulatorOption[]> => {
       setEmulatorSearchTerm(query)
 
-      if (!selectedGame) return Promise.resolve([])
+      if (!selectedGame) {
+        setAvailableEmulators([])
+        return Promise.resolve([])
+      }
 
       try {
         const result = await utils.emulators.get.fetch({ search: query })
 
         // Filter to only emulators that support the selected game's system
-        return result.emulators
+        const filteredEmulators = result.emulators
           .filter((emulator) =>
             emulator.systems.some(
               (system) => system.id === selectedGame.system.id,
@@ -143,8 +148,13 @@ function AddListingPage() {
             name: emulator.name,
             systems: emulator.systems,
           }))
+
+        // Update the availableEmulators state for the warning logic
+        setAvailableEmulators(filteredEmulators)
+        return filteredEmulators
       } catch (error) {
         console.error('Error fetching emulators:', error)
+        setAvailableEmulators([])
         return []
       }
     },
@@ -223,12 +233,16 @@ function AddListingPage() {
     isInitialGameLoaded,
   ])
 
-  // Clear emulator when game changes
+  // Clear emulator when game changes and load initial emulators
   useEffect(() => {
     if (selectedGame) {
       form.setValue('emulatorId', '') // Clear emulator selection when game changes
+      // Load initial emulators for the selected game system
+      loadEmulatorItems('').catch(console.error)
+    } else {
+      setAvailableEmulators([])
     }
-  }, [selectedGame, form])
+  }, [selectedGame, form, loadEmulatorItems])
 
   useEffect(() => {
     if (!customFieldDefinitionsQuery.data) return

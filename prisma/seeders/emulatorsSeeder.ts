@@ -25,6 +25,11 @@ const emulators: EmulatorData[] = [
     logo: 'citron.png',
   },
   {
+    name: 'Cxbx-Reloaded',
+    supportedSystemNames: ['Microsoft Xbox'],
+    logo: 'cxbx.png',
+  },
+  {
     name: 'Dolphin',
     supportedSystemNames: ['Nintendo GameCube', 'Nintendo Wii'],
     logo: 'dolphin.png',
