@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { isNullish, isNumber } from 'remeda'
-import { Card, Badge } from '@/components/ui'
+import { Card, Badge, PerformanceBadge } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
@@ -35,9 +35,8 @@ function ListingDetailsClient(props: Props) {
 
   const scrollToVoteSection = () => {
     const voteSection = document.getElementById('vote-section')
-    if (voteSection) {
-      voteSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
+    if (!voteSection) return
+    voteSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   const voteMutation = api.listings.vote.useMutation({
@@ -114,20 +113,43 @@ function ListingDetailsClient(props: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-10 px-4 flex justify-center items-start">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-4 lg:py-10 px-4 flex justify-center items-start">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-3xl"
+        className="w-full max-w-4xl"
       >
-        <Card className="p-8 shadow-2xl rounded-3xl border-0 bg-white dark:bg-gray-900">
-          <div className="flex flex-col md:flex-row gap-8 items-start">
+        <Card className="p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900">
+          <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
             {/* Game Info */}
-            <div className="flex-1 pr-8 border-r border-gray-200 dark:border-gray-700 ">
-              <h1 className="text-3xl font-extrabold text-indigo-700 dark:text-indigo-300 mb-2">
-                {props.listing?.game.title}
-              </h1>
+            <div className="flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <h1 className="text-2xl lg:text-3xl font-extrabold text-indigo-700 dark:text-indigo-300">
+                  {props.listing?.game.title}
+                </h1>
+
+                {/* Game Navigation Button */}
+                <Link
+                  href={`/games/${props.listing?.game.id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md self-start sm:self-auto"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                  View Game
+                </Link>
+              </div>
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge variant="default">
                   System: {props.listing?.game.system?.name}
@@ -139,9 +161,12 @@ function ListingDetailsClient(props: Props) {
                 <Badge variant="default">
                   Emulator: {props.listing?.emulator?.name}
                 </Badge>
-                <Badge variant="default">
-                  Performance: {props.listing?.performance?.label}
-                </Badge>
+                <PerformanceBadge
+                  pill={false}
+                  rank={props.listing.performance.rank}
+                  label={props.listing.performance.label}
+                  description={props.listing.performance?.description}
+                />
               </div>
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
@@ -202,7 +227,7 @@ function ListingDetailsClient(props: Props) {
               </div>
             </div>
             {/* Author Info */}
-            <div className="flex flex-col items-center gap-2 min-w-[140px]">
+            <div className="flex flex-col items-center gap-2 w-full md:w-auto md:min-w-[140px]">
               <div className="relative w-16 h-16 rounded-full overflow-hidden bg-indigo-200 dark:bg-indigo-800">
                 {props.listing?.author?.profileImage ? (
                   <Image

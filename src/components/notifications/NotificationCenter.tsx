@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Check, Trash2, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect, type MouseEvent } from 'react'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -14,27 +14,25 @@ interface Props {
 }
 
 function NotificationCenter(props: Props) {
+  const utils = api.useUtils()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Fetch notifications and unread count
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
     { refetchInterval: 30000 }, // Refetch every 30 seconds
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(
     undefined,
-    {
-      refetchInterval: 10000, // Refetch unread count every 10 seconds
-    },
+    { refetchInterval: 10000 }, // Refetch unread count every 10 seconds
   )
 
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch()
-      unreadCountQuery.refetch()
+      utils.notifications.get.invalidate().catch(console.error)
+      utils.notifications.getUnreadCount.invalidate().catch(console.error)
     },
     onError: (error) => {
       toast.error(`Failed to mark as read: ${getErrorMessage(error)}`)
@@ -43,8 +41,8 @@ function NotificationCenter(props: Props) {
 
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch()
-      unreadCountQuery.refetch()
+      utils.notifications.get.invalidate().catch(console.error)
+      utils.notifications.getUnreadCount.invalidate().catch(console.error)
       toast.success('All notifications marked as read')
     },
     onError: (error) => {
@@ -54,8 +52,8 @@ function NotificationCenter(props: Props) {
 
   const deleteMutation = api.notifications.delete.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch().catch(console.error)
-      unreadCountQuery.refetch().catch(console.error)
+      utils.notifications.get.invalidate().catch(console.error)
+      utils.notifications.getUnreadCount.invalidate().catch(console.error)
       toast.success('Notification deleted')
     },
     onError: (error) => {
@@ -95,31 +93,54 @@ function NotificationCenter(props: Props) {
     router.push('/notifications')
   }
 
+  // Add escape key handler
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+    } else {
+      document.removeEventListener('keydown', handleEscape)
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen])
+
   const handleNotificationClick = (notification: (typeof notifications)[0]) => {
-    // Mark as read if not already read
+    // Mark as read if not already read (swallow error if it fails)
     if (!notification.isRead) {
-      handleMarkAsRead(notification.id)
+      handleMarkAsRead(notification.id).catch(console.error)
     }
 
     setIsOpen(false)
 
     // Navigate based on actionUrl if available
-    if (notification.actionUrl) {
-      router.push(notification.actionUrl)
+    if (notification.actionUrl) return router.push(notification.actionUrl)
+
+    // Try to extract route from metadata if actionUrl is not available
+    const metadata = notification.metadata as Record<string, unknown>
+    if (typeof metadata?.listingId === 'string') {
+      router.push(`/listings/${metadata.listingId}`)
+    } else if (typeof metadata?.gameId === 'string') {
+      router.push(`/games/${metadata.gameId}`)
+    } else if (typeof metadata?.userId === 'string') {
+      router.push(`/users/${metadata.userId}`)
     } else {
-      // Try to extract route from metadata if actionUrl is not available
-      const metadata = notification.metadata as Record<string, unknown>
-      if (typeof metadata?.listingId === 'string') {
-        router.push(`/listings/${metadata.listingId}`)
-      } else if (typeof metadata?.gameId === 'string') {
-        router.push(`/games/${metadata.gameId}`)
-      } else if (typeof metadata?.userId === 'string') {
-        router.push(`/users/${metadata.userId}`)
-      } else {
-        // Default to notifications page if no specific route
-        router.push('/notifications')
-      }
+      // Default to notifications page if no specific route
+      router.push('/notifications')
     }
+  }
+
+  const handleBackdropClick = (ev: MouseEvent) => {
+    // Only close if the click is directly on the backdrop, not bubbling from child elements
+    if (ev.target !== ev.currentTarget) return
+    setIsOpen(false)
   }
 
   const unreadCount = unreadCountQuery.data || 0
@@ -154,6 +175,7 @@ function NotificationCenter(props: Props) {
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-hidden"
+            onClick={(ev) => ev.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -285,7 +307,7 @@ function NotificationCenter(props: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => setIsOpen(false)}
+          onClick={handleBackdropClick}
           className="fixed inset-0 z-40"
         />
       )}

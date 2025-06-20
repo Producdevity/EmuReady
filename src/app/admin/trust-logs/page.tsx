@@ -13,6 +13,7 @@ import {
   AdminTableContainer,
   LoadingSpinner,
   Badge,
+  Code,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
@@ -299,11 +300,11 @@ function AdminTrustLogsPage() {
                       )}
                       {columnVisibility.isColumnVisible('metadata') && (
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          <code className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
+                          <Code>
                             {log.metadata && typeof log.metadata === 'object'
                               ? JSON.stringify(log.metadata)
                               : log.metadata || '-'}
-                          </code>
+                          </Code>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('timestamp') && (

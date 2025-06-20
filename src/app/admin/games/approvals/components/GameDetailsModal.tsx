@@ -13,8 +13,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { isNumber } from 'remeda'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
-import { Modal, Button, ApprovalStatusBadge } from '@/components/ui'
+import { Modal, Button, ApprovalStatusBadge, Code } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -100,10 +101,11 @@ function GameDetailsModal(props: Props) {
       props.selectedGame.imageUrl && !imageError.main,
     ].filter(Boolean).length === 1
 
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = (text: string | number, label: string) => {
+    const value = isNumber(text) ? text.toString() : text
     navigator.clipboard
-      .writeText(text)
-      .then(() => toast.success(`Copied ${label} to clipboard (${text})`))
+      .writeText(value)
+      .then(() => toast.success(`Copied ${label} to clipboard (${value})`))
       .catch((error) => {
         console.error('Copy to clipboard failed:', error)
         toast.error('Failed to copy to clipboard. Please try again.')
@@ -395,12 +397,10 @@ function GameDetailsModal(props: Props) {
                         Game ID:
                       </span>
                       <div className="flex items-center gap-1 ml-4">
-                        <code className="text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">
-                          {props.selectedGame.id.slice(0, 8)}...
-                        </code>
+                        <Code>{props.selectedGame.id.slice(0, 10)}...</Code>
                         <button
                           onClick={() => {
-                            if (!props.selectedGame?.id) return
+                            if (!props.selectedGame) return
                             copyToClipboard(props.selectedGame.id, 'Game ID')
                           }}
                           className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -416,9 +416,20 @@ function GameDetailsModal(props: Props) {
                           TGDB ID:
                         </span>
                         <div className="flex items-center gap-1 ml-4">
-                          <code className="text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">
-                            {props.selectedGame.tgdbGameId}
-                          </code>
+                          <Code>{props.selectedGame.tgdbGameId}</Code>
+                          <button
+                            onClick={() => {
+                              if (!props.selectedGame?.tgdbGameId) return
+                              copyToClipboard(
+                                props.selectedGame?.tgdbGameId,
+                                'TheGamesDB ID',
+                              )
+                            }}
+                            className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="Copy Game ID"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                     )}
