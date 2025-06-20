@@ -11,6 +11,7 @@ import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { CustomFieldType } from '@orm'
 import CommentThread from './CommentThread'
 import EditListingButton from './EditListingButton'
+import VoteReminderBanner from './vote-reminder/VoteReminderBanner'
 import VoteButtons from './VoteButtons'
 
 export type Listing = NonNullable<RouterOutput['listings']['byId']>
@@ -30,6 +31,26 @@ function ListingDetailsClient(props: Props) {
   const refreshData = () => {
     // TODO: handle errors
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
+  }
+
+  const scrollToVoteSection = () => {
+    const voteSection = document.getElementById('vote-section')
+    if (voteSection) {
+      voteSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+
+  const voteMutation = api.listings.vote.useMutation({
+    onSuccess: () => {
+      refreshData()
+    },
+  })
+
+  const handleVote = (value: boolean | null) => {
+    voteMutation.mutate({
+      listingId: props.listing.id,
+      value: value === null ? false : value, // Convert null to false for API
+    })
   }
 
   const renderCustomFieldValue = (
@@ -163,7 +184,7 @@ function ListingDetailsClient(props: Props) {
                     </div>
                   </div>
                 )}
-              <div className="mb-6">
+              <div id="vote-section" className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   Success Rate
                 </h2>
@@ -245,6 +266,14 @@ function ListingDetailsClient(props: Props) {
           </div>
         </Card>
       </motion.div>
+
+      {/* Vote Reminder Banner */}
+      <VoteReminderBanner
+        listingId={props.listing.id}
+        onVoteClick={scrollToVoteSection}
+        currentVote={props.userVote}
+        onVote={handleVote}
+      />
     </div>
   )
 }
