@@ -3,7 +3,13 @@
 import Script from 'next/script'
 
 function KofiWidget() {
-  return (
+  const isMobile =
+    window.innerWidth <= 768 ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    )
+
+  return isMobile ? null : (
     <Script
       src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
       onLoad={() => {
