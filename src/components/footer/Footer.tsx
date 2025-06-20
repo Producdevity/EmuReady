@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import KofiFooterButton from '@/components/footer/KofiFooterButton'
 import GitHubIcon from '@/components/icons/GitHubIcon'
