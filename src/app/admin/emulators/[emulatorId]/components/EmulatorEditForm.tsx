@@ -27,6 +27,7 @@ const logoOptions = [
   'cemu.png',
   'citra.png',
   'citron.png',
+  'cxbx.png',
   'dolphin.png',
   'drastic.png',
   'duckstation.png',

@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
+import { notFound, useParams, useRouter } from 'next/navigation'
 import { Button, PageLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import EmulatorEditForm from './components/EmulatorEditForm'
@@ -34,21 +34,7 @@ function EditEmulatorPage() {
     )
   }
 
-  if (!emulatorsQuery.data) {
-    return (
-      <div className="container mx-auto p-4">
-        <p>Emulator not found.</p>
-      </div>
-    )
-  }
-
-  if (!systemsQuery.data) {
-    return (
-      <div className="container mx-auto p-4">
-        <p>No systems found to configure.</p>
-      </div>
-    )
-  }
+  if (!emulatorsQuery.data || !systemsQuery.data) return notFound()
 
   return (
     <div className="container mx-auto p-4 md:p-8">

@@ -1,3 +1,4 @@
+import { isNullish } from 'remeda'
 import {
   Tooltip,
   TooltipContent,
@@ -8,6 +9,7 @@ import Badge from './Badge'
 interface Props {
   rank: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | number
   label: string
+  pill?: boolean
   description?: string | null
 }
 
@@ -32,7 +34,10 @@ function PerformanceBadge(props: Props) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge className={customColorClass} pill>
+        <Badge
+          className={customColorClass}
+          pill={isNullish(props.pill) ? true : props.pill}
+        >
           {props.label}
         </Badge>
       </TooltipTrigger>
