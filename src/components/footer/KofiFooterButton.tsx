@@ -30,6 +30,7 @@ function KofiFooterButton() {
               alt="Ko-fi"
               width={20}
               height={20}
+              style={{ width: '20px', height: '20px' }}
               className={cn(
                 'transition-all duration-300',
                 isHovered ? 'scale-110 brightness-110' : '',
