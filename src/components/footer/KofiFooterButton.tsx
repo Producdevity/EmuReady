@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
 function KofiFooterButton() {
@@ -19,6 +20,12 @@ function KofiFooterButton() {
           className="group relative inline-flex items-center justify-center p-3 rounded-lg bg-gradient-to-br from-[#ff5e5b]/10 to-[#ff8e53]/10 dark:from-[#ff5e5b]/20 dark:to-[#ff8e53]/20 border border-[#ff5e5b]/20 dark:border-[#ff5e5b]/30 hover:border-[#ff5e5b]/40 dark:hover:border-[#ff5e5b]/50 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#ff5e5b]/20 dark:hover:shadow-[#ff5e5b]/10 flex-shrink-0"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          onClick={() => {
+            analytics.contentDiscovery.externalLinkClicked({
+              url: 'https://ko-fi.com/producdevity',
+              context: 'footer_kofi_button',
+            })
+          }}
         >
           {/* Background glow effect */}
           <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[#ff5e5b]/20 to-[#ff8e53]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />

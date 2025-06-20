@@ -16,6 +16,26 @@ function SessionTracker() {
   const sessionIdRef = useRef<string>(crypto.randomUUID())
   const hasTrackedSessionStart = useRef<boolean>(false)
   const discoveredFeatures = useRef<Set<string>>(new Set())
+  const previousUserIdRef = useRef<string | undefined>(undefined)
+
+  // Track user sign-in when user transitions from null/undefined to having a user
+  useEffect(() => {
+    if (!analyticsAllowed) return
+
+    const currentUserId = user?.id
+    const previousUserId = previousUserIdRef.current
+
+    // If we now have a user but didn't before, and it's not the first load, track sign-in
+    if (currentUserId && !previousUserId && hasTrackedSessionStart.current) {
+      analytics.user.signedIn({
+        userId: currentUserId,
+        method: 'clerk', // We know it's Clerk since we're using useUser from Clerk
+      })
+    }
+
+    // Update the previous user ID for next comparison
+    previousUserIdRef.current = currentUserId
+  }, [analyticsAllowed, user?.id])
 
   // Track session start on first load
   useEffect(() => {

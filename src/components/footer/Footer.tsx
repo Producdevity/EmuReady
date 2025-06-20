@@ -2,6 +2,7 @@ import Link from 'next/link'
 import KofiFooterButton from '@/components/footer/KofiFooterButton'
 import GitHubIcon from '@/components/icons/GitHubIcon'
 import { ThemeSelect } from '@/components/ui'
+import analytics from '@/lib/analytics'
 
 const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
 const githubUrl = process.env.NEXT_PUBLIC_GITHUB_URL
@@ -46,6 +47,12 @@ function Footer() {
                   rel="noopener noreferrer"
                   aria-label="EmuReady GitHub"
                   className="inline-flex items-center justify-center p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-105"
+                  onClick={() => {
+                    analytics.contentDiscovery.externalLinkClicked({
+                      url: githubUrl || '',
+                      context: 'footer_github_link',
+                    })
+                  }}
                 >
                   <GitHubIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </a>
@@ -74,6 +81,12 @@ function Footer() {
                     rel="noopener noreferrer"
                     aria-label="EmuReady Documentation"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
+                    onClick={() => {
+                      analytics.contentDiscovery.externalLinkClicked({
+                        url: githubReadmeUrl,
+                        context: 'footer_about_link',
+                      })
+                    }}
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     About
@@ -86,6 +99,12 @@ function Footer() {
                     rel="noopener noreferrer"
                     aria-label="EmuReady Support"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
+                    onClick={() => {
+                      analytics.contentDiscovery.externalLinkClicked({
+                        url: githubSupportUrl,
+                        context: 'footer_support_link',
+                      })
+                    }}
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Support
@@ -128,6 +147,12 @@ function Footer() {
                     rel="noopener noreferrer"
                     aria-label="Contribute to EmuReady"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
+                    onClick={() => {
+                      analytics.contentDiscovery.externalLinkClicked({
+                        url: githubContributingUrl,
+                        context: 'footer_contribute_link',
+                      })
+                    }}
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Contribute
@@ -140,6 +165,12 @@ function Footer() {
                     rel="noopener noreferrer"
                     aria-label="Add your Emulator"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
+                    onClick={() => {
+                      analytics.contentDiscovery.externalLinkClicked({
+                        url: githubRequestEmulatorUrl,
+                        context: 'footer_add_emulator_link',
+                      })
+                    }}
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     Add Your Emulator
@@ -152,6 +183,12 @@ function Footer() {
                     rel="noopener noreferrer"
                     aria-label="EmuReady GitHub"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
+                    onClick={() => {
+                      analytics.contentDiscovery.externalLinkClicked({
+                        url: githubUrl || '',
+                        context: 'footer_github_community_link',
+                      })
+                    }}
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                     GitHub
@@ -165,6 +202,12 @@ function Footer() {
                       rel="noopener noreferrer"
                       aria-label="EmuReady Discord"
                       className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
+                      onClick={() => {
+                        analytics.contentDiscovery.externalLinkClicked({
+                          url: discordUrl,
+                          context: 'footer_discord_link',
+                        })
+                      }}
                     >
                       <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
                       Discord

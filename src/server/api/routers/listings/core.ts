@@ -414,8 +414,13 @@ export const coreRouter = createTRPCRouter({
         select: { id: true },
       })
 
-      // TODO: consider logging this error
-      if (!userExists) return ResourceError.user.notInDatabase(authorId)
+      if (!userExists) {
+        analytics.user.notInDatabase({
+          userId: authorId,
+          userRole: ctx.session.user.role ?? 'UNKNOWN',
+        })
+        return ResourceError.user.notInDatabase(authorId)
+      }
 
       return ctx.prisma.$transaction(async (tx) => {
         // Validate custom fields
