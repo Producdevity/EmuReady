@@ -46,7 +46,7 @@ export class NotificationBatchingService {
     scheduledFor: Date = new Date(),
     maxAttempts: number = this.config.maxRetries,
   ): string {
-    const id = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const id = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
 
     const batchedNotification: BatchedNotification = {
       id,
@@ -346,11 +346,10 @@ export class NotificationBatchingService {
   }
 
   // Cleanup
-  destroy(): void {
-    if (this.batchTimer) {
-      clearInterval(this.batchTimer)
-      this.batchTimer = null
-    }
+  destroy() {
+    if (!this.batchTimer) return
+    clearInterval(this.batchTimer)
+    this.batchTimer = null
   }
 }
 
