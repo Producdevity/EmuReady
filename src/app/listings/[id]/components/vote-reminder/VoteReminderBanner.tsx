@@ -15,10 +15,10 @@ interface Props {
   onVote: (value: boolean | null) => void
 }
 
+// Reduced time for easier testing - change to 60 in production
 const TIME_ON_PAGE_SECONDS = 60
 
 function VoteReminderBanner(props: Props) {
-  const [showReminder, setShowReminder] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [hasBeenDismissed, setHasBeenDismissed] = useLocalStorage(
     storageKeys.voteReminderDismissed,
@@ -43,12 +43,11 @@ function VoteReminderBanner(props: Props) {
     if (hasBeenDismissed) return
 
     const timer = setTimeout(() => {
-      setShowReminder(true)
+      setIsVisible(true)
       analytics.engagement.voteReminderShown({
         listingId: props.listingId,
         timeOnPage: getTimeOnPage(),
       })
-      setTimeout(() => setIsVisible(true), 100)
     }, TIME_ON_PAGE_SECONDS * 1000)
 
     return () => clearTimeout(timer)
@@ -61,10 +60,7 @@ function VoteReminderBanner(props: Props) {
     })
 
     setIsVisible(false)
-    setTimeout(() => {
-      setShowReminder(false)
-      setHasBeenDismissed(true)
-    }, 300) // Wait for exit animation
+    setHasBeenDismissed(true)
   }
 
   const handleVote = (voteValue: boolean | null) => {
@@ -75,137 +71,96 @@ function VoteReminderBanner(props: Props) {
 
     props.onVote(voteValue)
     setIsVisible(false)
-    setTimeout(() => setShowReminder(false), 300)
   }
 
-  if (!showReminder || hasBeenDismissed || !selectedMessage) return null
+  if (!isVisible || hasBeenDismissed || !selectedMessage) return null
 
   const { upVote, downVote, dismiss } = selectedMessage
 
   return (
     <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ x: 400, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 400, opacity: 0 }}
-          transition={{
-            type: 'spring',
-            stiffness: 300,
-            damping: 30,
-            opacity: { duration: 0.2 },
-          }}
-          className="fixed right-2 top-1/2 -translate-y-1/2 z-50 w-72 max-w-[calc(100vw-1rem)] sm:w-80 sm:right-4 sm:max-w-sm"
-        >
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 relative overflow-hidden">
-            {/* Subtle gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10" />
+      <motion.div
+        initial={{ x: 400, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 400, opacity: 0 }}
+        transition={{
+          type: 'spring',
+          stiffness: 300,
+          damping: 30,
+        }}
+        className="fixed right-4 top-1/2 -translate-y-1/2 z-[9999] w-80 max-w-[calc(100vw-2rem)] pointer-events-auto"
+        style={{ zIndex: 9999 }}
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 relative">
+          {/* Subtle gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-blue-900/10 dark:to-purple-900/10 rounded-xl pointer-events-none" />
 
-            {/* Content */}
-            <div className="relative">
-              {/* Header with icon and close button */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <motion.div
-                    animate={{
-                      rotate: [0, -10, 10, -5, 5, 0],
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatDelay: 5,
-                      ease: 'easeInOut',
-                    }}
-                    className="flex-shrink-0"
-                  >
-                    <upVote.Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </motion.div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                    {selectedMessage.label}
-                  </span>
-                </div>
-
-                <button
-                  onClick={handleDismiss}
-                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ml-1 sm:ml-2"
-                  title={dismiss.label}
-                >
-                  <X className="w-4 h-4" />
-                </button>
+          {/* Content */}
+          <div className="relative z-10">
+            {/* Header with icon and close button */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <upVote.Icon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedMessage.label}
+                </span>
               </div>
 
-              {/* Message */}
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                {selectedMessage.text}
-              </p>
-
-              {/* Vote buttons - responsive layout */}
-              <div className="flex flex-col gap-2">
-                {/* Main vote buttons */}
-                <div className="flex flex-col gap-2">
-                  <motion.button
-                    onClick={() => handleVote(true)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm min-h-[48px] ${
-                      props.currentVote === true
-                        ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'
-                        : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 hover:shadow-md'
-                    }`}
-                  >
-                    <upVote.Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center leading-tight">
-                      {upVote.label}
-                    </span>
-                  </motion.button>
-
-                  <motion.button
-                    onClick={() => handleVote(false)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm min-h-[48px] ${
-                      props.currentVote === false
-                        ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white'
-                        : 'bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 hover:shadow-md'
-                    }`}
-                  >
-                    <downVote.Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center leading-tight">
-                      {downVote.label}
-                    </span>
-                  </motion.button>
-                </div>
-
-                {/* Dismiss button */}
-                <motion.button
-                  onClick={handleDismiss}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="w-full px-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-center leading-tight"
-                  title="Dismiss reminder"
-                >
-                  {dismiss.label}
-                </motion.button>
-              </div>
+              <button
+                onClick={handleDismiss}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                title={dismiss.label}
+                type="button"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Subtle pulse border animation */}
-            <motion.div
-              className="absolute inset-0 rounded-xl border-2 border-blue-200 dark:border-blue-800"
-              animate={{
-                opacity: [0.3, 0.6, 0.3],
-                scale: [1, 1.005, 1],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            />
+            {/* Message */}
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+              {selectedMessage.text}
+            </p>
+
+            {/* Vote buttons */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleVote(true)}
+                type="button"
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm cursor-pointer hover:shadow-md ${
+                  props.currentVote === true
+                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'
+                    : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700'
+                }`}
+              >
+                <upVote.Icon className="w-4 h-4 flex-shrink-0" />
+                <span>{upVote.label}</span>
+              </button>
+
+              <button
+                onClick={() => handleVote(false)}
+                type="button"
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm cursor-pointer hover:shadow-md ${
+                  props.currentVote === false
+                    ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white'
+                    : 'bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700'
+                }`}
+              >
+                <downVote.Icon className="w-4 h-4 flex-shrink-0" />
+                <span>{downVote.label}</span>
+              </button>
+
+              {/* Dismiss button */}
+              <button
+                onClick={handleDismiss}
+                type="button"
+                className="w-full px-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                {dismiss.label}
+              </button>
+            </div>
           </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
     </AnimatePresence>
   )
 }
