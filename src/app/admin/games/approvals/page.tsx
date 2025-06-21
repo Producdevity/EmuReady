@@ -3,13 +3,12 @@
 import { CheckCircle, XCircle, Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { AdminTableContainer } from '@/components/admin'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
-  LoadingSpinner,
   Button,
   Input,
   ApprovalStatusBadge,
@@ -20,6 +19,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   BulkActions,
+  LoadingSpinner,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import { ViewButton } from '@/components/ui/table-buttons'
@@ -238,12 +238,7 @@ function GameApprovalsPage() {
       ) ?? null)
     : null
 
-  const filteredGames = useMemo(
-    () => pendingGamesQuery.data?.games ?? [],
-    [pendingGamesQuery.data?.games],
-  )
-
-  if (pendingGamesQuery.isLoading) return <LoadingSpinner />
+  const filteredGames = pendingGamesQuery.data?.games ?? []
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -351,7 +346,9 @@ function GameApprovalsPage() {
 
       {/* Games Table */}
       <AdminTableContainer>
-        {filteredGames.length === 0 ? (
+        {pendingGamesQuery.isLoading ? (
+          <LoadingSpinner text="Loading pending games..." />
+        ) : filteredGames.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               {table.search

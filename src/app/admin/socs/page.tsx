@@ -1,18 +1,18 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
-import { AdminTableContainer } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
 import {
   Button,
-  Input,
-  LoadingSpinner,
   ColumnVisibilityControl,
   SortableHeader,
-  Pagination,
   useConfirmDialog,
+  LoadingSpinner,
 } from '@/components/ui'
 import {
   DeleteButton,
@@ -35,41 +35,37 @@ type SocSortField = 'name' | 'manufacturer' | 'devicesCount'
 type SocData = RouterOutput['socs']['get']['socs'][number]
 
 const SOCS_COLUMNS: ColumnDefinition[] = [
-  { key: 'name', label: 'Name', defaultVisible: true },
+  { key: 'name', label: 'SoC Name', defaultVisible: true },
   { key: 'manufacturer', label: 'Manufacturer', defaultVisible: true },
-  { key: 'architecture', label: 'Architecture', defaultVisible: false },
-  { key: 'processNode', label: 'Process Node', defaultVisible: false },
-  { key: 'cpuCores', label: 'CPU Cores', defaultVisible: false },
-  { key: 'gpuModel', label: 'GPU Model', defaultVisible: false },
   { key: 'devicesCount', label: 'Devices', defaultVisible: true },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
 function AdminSoCsPage() {
-  const table = useAdminTable<SocSortField>()
-  const confirm = useConfirmDialog()
+  const table = useAdminTable<SocSortField>({
+    defaultSortField: 'name',
+    defaultSortDirection: 'asc',
+  })
+
   const columnVisibility = useColumnVisibility(SOCS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSoCs,
   })
 
-  const socQuery = api.socs.get.useQuery({
-    search: isEmpty(table.search) ? undefined : table.search,
+  const socsQuery = api.socs.get.useQuery({
+    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
-    page: table.page,
-    limit: table.limit,
   })
   const socsStatsQuery = api.socs.stats.useQuery()
-  const deleteSoC = api.socs.delete.useMutation()
+  const deleteSoc = api.socs.delete.useMutation()
+  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [viewModalOpen, setViewModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [socData, setSocData] = useState<SocData | null>(null)
 
-  const socs = socQuery.data?.socs ?? []
-  const pagination = socQuery.data?.pagination
-  const isLoading = socQuery.isLoading
+  const utils = api.useUtils()
 
   const openModal = (soc?: SocData) => {
     setEditId(soc?.id ?? null)
@@ -94,7 +90,8 @@ function AdminSoCsPage() {
   }
 
   const handleModalSuccess = () => {
-    socQuery.refetch().catch(console.error)
+    utils.socs.get.invalidate().catch(console.error)
+    utils.socs.stats.invalidate().catch(console.error)
     closeModal()
   }
 
@@ -107,10 +104,12 @@ function AdminSoCsPage() {
     if (!confirmed) return
 
     try {
-      await deleteSoC.mutateAsync({
+      await deleteSoc.mutateAsync({
         id,
       } satisfies RouterInput['socs']['delete'])
-      socQuery.refetch().catch(console.error)
+      utils.socs.get.invalidate().catch(console.error)
+      utils.socs.stats.invalidate().catch(console.error)
+      toast.success('SoC deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete SoC: ${getErrorMessage(err)}`)
     }
@@ -118,6 +117,7 @@ function AdminSoCsPage() {
 
   const clearFilters = () => {
     table.setSearch('')
+    table.setPage(1)
   }
 
   return (
@@ -129,7 +129,7 @@ function AdminSoCsPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <AdminStatsBar
+          <AdminStatsDisplay
             stats={[
               {
                 label: 'Total',
@@ -157,45 +157,23 @@ function AdminSoCsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            placeholder="Search SoCs..."
-            value={table.search}
-            onChange={table.handleSearchChange}
-            className="pl-10"
-          />
-        </div>
-        <Button variant="outline" onClick={clearFilters}>
-          Clear Filters
-        </Button>
-      </div>
+      <AdminSearchFilters
+        searchValue={table.search}
+        onSearchChange={(value) => table.setSearch(value)}
+        searchPlaceholder="Search SoCs..."
+        onClear={clearFilters}
+      />
 
-      {isLoading && (
-        <div className="flex justify-center py-8">
+      <AdminTableContainer>
+        {socsQuery.isLoading ? (
           <LoadingSpinner text="Loading SoCs..." />
-        </div>
-      )}
-
-      {!isLoading && socs.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">
-            {table.search
-              ? 'No SoCs match your search criteria.'
-              : 'No SoCs found.'}
-          </p>
-        </div>
-      )}
-
-      {!isLoading && socs.length > 0 && (
-        <AdminTableContainer>
+        ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
                 {columnVisibility.isColumnVisible('name') && (
                   <SortableHeader
-                    label="Name"
+                    label="SoC Name"
                     field="name"
                     currentSortField={table.sortField}
                     currentSortDirection={table.sortDirection}
@@ -210,26 +188,6 @@ function AdminSoCsPage() {
                     currentSortDirection={table.sortDirection}
                     onSort={table.handleSort}
                   />
-                )}
-                {columnVisibility.isColumnVisible('architecture') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Architecture
-                  </th>
-                )}
-                {columnVisibility.isColumnVisible('processNode') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Process Node
-                  </th>
-                )}
-                {columnVisibility.isColumnVisible('cpuCores') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    CPU Cores
-                  </th>
-                )}
-                {columnVisibility.isColumnVisible('gpuModel') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    GPU Model
-                  </th>
                 )}
                 {columnVisibility.isColumnVisible('devicesCount') && (
                   <SortableHeader
@@ -248,13 +206,13 @@ function AdminSoCsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {socs.map((soc) => (
+              {socsQuery.data?.socs.map((soc) => (
                 <tr
                   key={soc.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                 >
                   {columnVisibility.isColumnVisible('name') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {soc.name}
                     </td>
                   )}
@@ -263,63 +221,49 @@ function AdminSoCsPage() {
                       {soc.manufacturer}
                     </td>
                   )}
-                  {columnVisibility.isColumnVisible('architecture') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {soc.architecture ?? '-'}
-                    </td>
-                  )}
-                  {columnVisibility.isColumnVisible('processNode') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {soc.processNode ?? '-'}
-                    </td>
-                  )}
-                  {columnVisibility.isColumnVisible('cpuCores') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {soc.cpuCores ?? '-'}
-                    </td>
-                  )}
-                  {columnVisibility.isColumnVisible('gpuModel') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {soc.gpuModel ?? '-'}
-                    </td>
-                  )}
                   {columnVisibility.isColumnVisible('devicesCount') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {soc._count?.devices ?? 0}
+                      {soc._count.devices} devices
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <EditButton
-                        onClick={() => openModal(soc)}
-                        title="Edit SoC"
-                      />
-                      <ViewButton
-                        onClick={() => openViewModal(soc)}
-                        title="View SoC"
-                      />
-                      <DeleteButton
-                        onClick={() => handleDelete(soc.id, soc.name)}
-                        title="Delete SoC"
-                        isLoading={deleteSoC.isPending}
-                        disabled={deleteSoC.isPending}
-                      />
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <ViewButton
+                          onClick={() => openViewModal(soc)}
+                          title="View SoC Details"
+                        />
+                        <EditButton
+                          onClick={() => openModal(soc)}
+                          title="Edit SoC"
+                        />
+                        <DeleteButton
+                          onClick={() => handleDelete(soc.id, soc.name)}
+                          title="Delete SoC"
+                          isLoading={deleteSoc.isPending}
+                          disabled={deleteSoc.isPending}
+                        />
+                      </div>
                     </td>
                   )}
                 </tr>
               ))}
+              {!socsQuery.isLoading && socsQuery.data?.socs.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    {table.search
+                      ? 'No SoCs found matching your search.'
+                      : 'No SoCs found. Add your first SoC.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-        </AdminTableContainer>
-      )}
-
-      {pagination && pagination.pages > 1 && (
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.pages}
-          onPageChange={table.setPage}
-        />
-      )}
+        )}
+      </AdminTableContainer>
 
       <SocModal
         isOpen={modalOpen}

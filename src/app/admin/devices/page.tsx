@@ -1,18 +1,19 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
-import { AdminTableContainer } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
 import {
   Button,
-  Input,
-  LoadingSpinner,
   ColumnVisibilityControl,
   SortableHeader,
-  Pagination,
   useConfirmDialog,
+  Dropdown,
+  LoadingSpinner,
 } from '@/components/ui'
 import {
   DeleteButton,
@@ -42,33 +43,36 @@ const DEVICES_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminDevicesPage() {
-  const table = useAdminTable<DeviceSortField>()
-  const confirm = useConfirmDialog()
+  const table = useAdminTable<DeviceSortField>({
+    defaultSortField: 'brand',
+    defaultSortDirection: 'asc',
+  })
+
   const columnVisibility = useColumnVisibility(DEVICES_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminDevices,
   })
 
-  const [selectedBrandId, setSelectedBrandId] = useState<string>('')
+  const [brandFilter, setBrandFilter] = useState('')
 
   const devicesQuery = api.devices.get.useQuery({
-    search: isEmpty(table.search) ? undefined : table.search,
-    brandId: selectedBrandId || undefined,
+    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
-    page: table.page,
     limit: table.limit,
+    brandId: brandFilter || undefined,
   })
+
   const devicesStatsQuery = api.devices.stats.useQuery()
   const brandsQuery = api.deviceBrands.get.useQuery({ limit: 1000 })
   const deleteDevice = api.devices.delete.useMutation()
+  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [viewModalOpen, setViewModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deviceData, setDeviceData] = useState<DeviceData | null>(null)
 
-  const devices = devicesQuery.data?.devices ?? []
-  const pagination = devicesQuery.data?.pagination
+  const utils = api.useUtils()
 
   const openModal = (device?: DeviceData) => {
     setEditId(device?.id ?? null)
@@ -93,19 +97,19 @@ function AdminDevicesPage() {
   }
 
   const handleModalSuccess = () => {
-    devicesQuery.refetch().catch(console.error)
-    devicesStatsQuery.refetch().catch(console.error)
+    utils.devices.get.invalidate().catch(console.error)
+    utils.devices.stats.invalidate().catch(console.error)
     closeModal()
   }
 
   const handleBrandChange = (value: string) => {
-    setSelectedBrandId(value)
-    table.setPage(1) // Reset to first page when filtering
+    setBrandFilter(value)
+    table.setPage(1)
   }
 
   const clearFilters = () => {
     table.setSearch('')
-    setSelectedBrandId('')
+    setBrandFilter('')
     table.setPage(1)
   }
 
@@ -122,24 +126,32 @@ function AdminDevicesPage() {
       await deleteDevice.mutateAsync({
         id,
       } satisfies RouterInput['devices']['delete'])
-      devicesQuery.refetch().catch(console.error)
+      utils.devices.get.invalidate().catch(console.error)
+      utils.devices.stats.invalidate().catch(console.error)
+      toast.success('Device deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete device: ${getErrorMessage(err)}`)
     }
   }
 
-  const isLoading = devicesQuery.isLoading
+  const brandOptions = [
+    { value: '', label: 'All Brands' },
+    ...(brandsQuery.data?.map((brand) => ({
+      value: brand.id,
+      label: brand.name,
+    })) ?? []),
+  ]
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Manage Devices
+            Devices
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <AdminStatsBar
+          <AdminStatsDisplay
             stats={[
               {
                 label: 'Total',
@@ -167,153 +179,121 @@ function AdminDevicesPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search devices..."
-                value={table.search}
-                onChange={table.handleSearchChange}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              as="select"
-              value={selectedBrandId}
-              onChange={(e) => handleBrandChange(e.target.value)}
-              className="min-w-[200px]"
-            >
-              <option value="">All Brands</option>
-              {brandsQuery.data?.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </Input>
-            <Button variant="outline" onClick={clearFilters} className="h-full">
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminSearchFilters
+        searchValue={table.search}
+        onSearchChange={(value) => table.setSearch(value)}
+        searchPlaceholder="Search devices..."
+        onClear={clearFilters}
+      >
+        <Dropdown
+          options={brandOptions}
+          value={brandFilter}
+          onChange={handleBrandChange}
+          placeholder="Filter by brand"
+        />
+      </AdminSearchFilters>
 
       <AdminTableContainer>
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700/50">
-            <tr>
-              {columnVisibility.isColumnVisible('brand') && (
-                <SortableHeader
-                  label="Brand"
-                  field="brand"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('model') && (
-                <SortableHeader
-                  label="Model"
-                  field="modelName"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('soc') && (
-                <SortableHeader
-                  label="SoC"
-                  field="soc"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('actions') && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {isLoading && (
+        {devicesQuery.isLoading ? (
+          <LoadingSpinner text="Loading devices..." />
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <td colSpan={4} className="text-center py-12">
-                  <LoadingSpinner size="lg" text="Loading..." />
-                </td>
-              </tr>
-            )}
-            {devices?.map((dev) => (
-              <tr
-                key={dev.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-              >
                 {columnVisibility.isColumnVisible('brand') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {dev.brand.name}
-                  </td>
+                  <SortableHeader
+                    label="Brand"
+                    field="brand"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('model') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {dev.modelName}
-                  </td>
+                  <SortableHeader
+                    label="Model"
+                    field="modelName"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('soc') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {dev.soc?.name}
-                  </td>
+                  <SortableHeader
+                    label="SoC"
+                    field="soc"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <EditButton
-                        onClick={() => openModal(dev)}
-                        title="Edit Device"
-                      />
-                      <ViewButton
-                        onClick={() => openViewModal(dev)}
-                        title="View Device"
-                      />
-                      <DeleteButton
-                        onClick={() => handleDelete(dev.id)}
-                        title="Delete Device"
-                        isLoading={deleteDevice.isPending}
-                        disabled={deleteDevice.isPending}
-                      />
-                    </div>
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
                 )}
               </tr>
-            ))}
-            {!isLoading && devices.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {devicesQuery.data?.devices.map((device) => (
+                <tr
+                  key={device.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                 >
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {table.search
-                      ? 'No devices match your search criteria.'
-                      : 'No devices found.'}
-                  </p>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  {columnVisibility.isColumnVisible('brand') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {device.brand.name}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('model') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {device.modelName}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('soc') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {device.soc?.name ?? 'No SoC assigned'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <ViewButton
+                          onClick={() => openViewModal(device)}
+                          title="View Device Details"
+                        />
+                        <EditButton
+                          onClick={() => openModal(device)}
+                          title="Edit Device"
+                        />
+                        <DeleteButton
+                          onClick={() => handleDelete(device.id)}
+                          title="Delete Device"
+                          isLoading={deleteDevice.isPending}
+                          disabled={deleteDevice.isPending}
+                        />
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+              {!devicesQuery.isLoading &&
+                devicesQuery.data?.devices.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                    >
+                      {table.search || brandFilter
+                        ? 'No devices found matching your search.'
+                        : 'No devices found. Add your first device.'}
+                    </td>
+                  </tr>
+                )}
+            </tbody>
+          </table>
+        )}
       </AdminTableContainer>
-
-      {pagination && pagination.pages > 1 && (
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.pages}
-          onPageChange={table.setPage}
-        />
-      )}
 
       <DeviceModal
         isOpen={modalOpen}

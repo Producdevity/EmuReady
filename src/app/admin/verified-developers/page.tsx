@@ -1,17 +1,21 @@
 'use client'
 
-import { Search, Shield, UserCheck } from 'lucide-react'
+import { Shield, UserCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
-import { AdminTableContainer } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
+import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
   Button,
-  Input,
   ColumnVisibilityControl,
   SortableHeader,
-  LoadingSpinner,
   VerifiedDeveloperBadge,
   useConfirmDialog,
+  LoadingSpinner,
 } from '@/components/ui'
 import { DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
@@ -37,6 +41,7 @@ const VERIFIED_DEVELOPERS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminVerifiedDevelopersPage() {
+  const utils = api.useUtils()
   const table = useAdminTable<VerifiedDeveloperSortField>({
     defaultLimit: 20,
     defaultSortField: 'verifiedAt',
@@ -49,7 +54,6 @@ function AdminVerifiedDevelopersPage() {
 
   const confirm = useConfirmDialog()
   const [showAddModal, setShowAddModal] = useState(false)
-  const utils = api.useUtils()
 
   const verifiedDevelopersQuery =
     api.verifiedDevelopers.getVerifiedDevelopers.useQuery({
@@ -107,6 +111,17 @@ function AdminVerifiedDevelopersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <AdminStatsDisplay
+            stats={[
+              {
+                label: 'Total',
+                value:
+                  verifiedDevelopersQuery.data?.verifiedDevelopers.length ?? 0,
+                color: 'blue',
+              },
+            ]}
+            isLoading={verifiedDevelopersQuery.isLoading}
+          />
           <ColumnVisibilityControl
             columns={VERIFIED_DEVELOPERS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -121,17 +136,15 @@ function AdminVerifiedDevelopersPage() {
         </div>
       </div>
 
-      <div>
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            placeholder="Search developers..."
-            value={table.search}
-            onChange={table.handleSearchChange}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      <AdminSearchFilters
+        searchValue={table.search}
+        onSearchChange={(value) => table.setSearch(value)}
+        searchPlaceholder="Search developers..."
+        onClear={() => {
+          table.setSearch('')
+          table.setPage(1)
+        }}
+      />
 
       <AdminTableContainer>
         {verifiedDevelopersQuery.isLoading ? (
@@ -224,12 +237,11 @@ function AdminVerifiedDevelopersPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {verifiedDev.emulator.logo && (
-                            <Image
-                              src={verifiedDev.emulator.logo}
-                              alt={verifiedDev.emulator.name}
-                              width={24}
-                              height={24}
-                              className="rounded mr-2"
+                            <EmulatorIcon
+                              logo={verifiedDev.emulator.logo}
+                              name={verifiedDev.emulator.name}
+                              showLogo={true}
+                              size="md"
                             />
                           )}
                           <span className="text-sm text-gray-900 dark:text-white">
