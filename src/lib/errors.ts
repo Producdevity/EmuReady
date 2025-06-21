@@ -207,6 +207,12 @@ export class ResourceError {
     inUse: (count: number) => AppError.resourceInUse('device', count),
   }
 
+  static soc = {
+    notFound: () => AppError.notFound('SoC'),
+    alreadyExists: (name: string) =>
+      AppError.alreadyExists('SoC', `name "${name}"`),
+  }
+
   static system = {
     notFound: () => AppError.notFound('System'),
     alreadyExists: (name: string) =>

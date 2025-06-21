@@ -1,4 +1,4 @@
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
   GetSoCsSchema,
   GetSoCByIdSchema,
@@ -111,9 +111,7 @@ export const socsRouter = createTRPCRouter({
     // Get SoCs with pagination
     const socs = await ctx.prisma.soC.findMany({
       where,
-      include: {
-        _count: { select: { devices: true } },
-      },
+      include: { _count: { select: { devices: true } } },
       orderBy,
       skip: actualOffset,
       take: limit,
@@ -136,20 +134,10 @@ export const socsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const soc = await ctx.prisma.soC.findUnique({
         where: { id: input.id },
-        include: {
-          _count: {
-            select: {
-              devices: true,
-            },
-          },
-        },
+        include: { _count: { select: { devices: true } } },
       })
 
-      if (!soc) {
-        AppError.notFound('SoC')
-      }
-
-      return soc
+      return soc || ResourceError.soc.notFound()
     }),
 
   create: adminProcedure
@@ -165,13 +153,7 @@ export const socsRouter = createTRPCRouter({
 
       return ctx.prisma.soC.create({
         data: input,
-        include: {
-          _count: {
-            select: {
-              devices: true,
-            },
-          },
-        },
+        include: { _count: { select: { devices: true } } },
       })
     }),
 
@@ -184,9 +166,7 @@ export const socsRouter = createTRPCRouter({
         where: { id },
       })
 
-      if (!existingSoC) {
-        AppError.notFound('SoC')
-      }
+      if (!existingSoC) return ResourceError.soc.notFound()
 
       // Check if name is being updated to a name that already exists
       if (updateData.name !== existingSoC.name) {
@@ -202,13 +182,7 @@ export const socsRouter = createTRPCRouter({
       return ctx.prisma.soC.update({
         where: { id },
         data: updateData,
-        include: {
-          _count: {
-            select: {
-              devices: true,
-            },
-          },
-        },
+        include: { _count: { select: { devices: true } } },
       })
     }),
 
@@ -226,9 +200,7 @@ export const socsRouter = createTRPCRouter({
         },
       })
 
-      if (!existingSoC) {
-        AppError.notFound('SoC')
-      }
+      if (!existingSoC) return ResourceError.soc.notFound()
 
       if (existingSoC._count.devices > 0) {
         AppError.conflict(
@@ -236,9 +208,7 @@ export const socsRouter = createTRPCRouter({
         )
       }
 
-      return ctx.prisma.soC.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.soC.delete({ where: { id: input.id } })
     }),
 
   getManufacturers: publicProcedure.query(async ({ ctx }) => {

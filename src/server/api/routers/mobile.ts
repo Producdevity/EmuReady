@@ -1,4 +1,4 @@
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateCommentSchema,
   CreateListingSchema,
@@ -421,9 +421,7 @@ export const mobileRouter = createTRPCRouter({
         select: { userId: true },
       })
 
-      if (!existing) {
-        return AppError.notFound('Comment')
-      }
+      if (!existing) return ResourceError.comment.notFound()
 
       if (existing.userId !== ctx.session.user.id) {
         return AppError.forbidden('You can only edit your own comments')
@@ -445,7 +443,7 @@ export const mobileRouter = createTRPCRouter({
         select: { userId: true },
       })
 
-      if (!existing) return AppError.notFound('Comment')
+      if (!existing) return ResourceError.comment.notFound()
 
       if (existing.userId !== ctx.session.user.id) {
         return AppError.forbidden('You can only delete your own comments')
