@@ -3,11 +3,7 @@
 import { Shield, UserCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
-import {
-  AdminTableContainer,
-  AdminStatsDisplay,
-  AdminSearchFilters,
-} from '@/components/admin'
+import { AdminTableContainer, AdminSearchFilters } from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
   Button,
@@ -100,28 +96,17 @@ function AdminVerifiedDevelopersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Verified Developers
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage verified developers for emulators
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <AdminStatsDisplay
-            stats={[
-              {
-                label: 'Total',
-                value:
-                  verifiedDevelopersQuery.data?.verifiedDevelopers.length ?? 0,
-                color: 'blue',
-              },
-            ]}
-            isLoading={verifiedDevelopersQuery.isLoading}
-          />
+        <div className="flex items-center gap-4">
           <ColumnVisibilityControl
             columns={VERIFIED_DEVELOPERS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -135,6 +120,47 @@ function AdminVerifiedDevelopersPage() {
           </Button>
         </div>
       </div>
+
+      {verifiedDevelopersQuery.data && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {verifiedDevelopersQuery.data.verifiedDevelopers.length}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Total Verified
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              {
+                new Set(
+                  verifiedDevelopersQuery.data.verifiedDevelopers.map(
+                    (vd) => vd.emulator.id,
+                  ),
+                ).size
+              }
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Emulators Covered
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              {
+                new Set(
+                  verifiedDevelopersQuery.data.verifiedDevelopers.map(
+                    (vd) => vd.user.id,
+                  ),
+                ).size
+              }
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Unique Developers
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminSearchFilters
         searchValue={table.search}

@@ -2,11 +2,7 @@
 
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import {
-  AdminTableContainer,
-  AdminStatsDisplay,
-  AdminSearchFilters,
-} from '@/components/admin'
+import { AdminTableContainer, AdminSearchFilters } from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -143,34 +139,17 @@ function AdminDevicesPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Devices
           </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage all gaming devices and hardware
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <AdminStatsDisplay
-            stats={[
-              {
-                label: 'Total',
-                value: devicesStatsQuery.data?.total ?? 0,
-                color: 'blue',
-              },
-              {
-                label: 'With Listings',
-                value: devicesStatsQuery.data?.withListings ?? 0,
-                color: 'green',
-              },
-              {
-                label: 'No Listings',
-                value: devicesStatsQuery.data?.withoutListings ?? 0,
-                color: 'gray',
-              },
-            ]}
-            isLoading={devicesStatsQuery.isLoading}
-          />
+        <div className="flex items-center gap-4">
           <ColumnVisibilityControl
             columns={DEVICES_COLUMNS}
             columnVisibility={columnVisibility}
@@ -178,6 +157,35 @@ function AdminDevicesPage() {
           <Button onClick={() => openModal()}>Add Device</Button>
         </div>
       </div>
+
+      {devicesStatsQuery.data && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {devicesStatsQuery.data.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Total
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {devicesStatsQuery.data.withListings}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              With Listings
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              {devicesStatsQuery.data.withoutListings}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              No Listings
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminSearchFilters
         searchValue={table.search}

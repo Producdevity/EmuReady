@@ -2,11 +2,7 @@
 
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import {
-  AdminTableContainer,
-  AdminStatsDisplay,
-  AdminSearchFilters,
-} from '@/components/admin'
+import { AdminTableContainer, AdminSearchFilters } from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -98,34 +94,17 @@ function AdminSystemsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Gaming Systems
           </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage all gaming systems in the database
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <AdminStatsDisplay
-            stats={[
-              {
-                label: 'Total',
-                value: systemsStatsQuery.data?.total ?? 0,
-                color: 'blue',
-              },
-              {
-                label: 'With Games',
-                value: systemsStatsQuery.data?.withGames ?? 0,
-                color: 'green',
-              },
-              {
-                label: 'No Games',
-                value: systemsStatsQuery.data?.withoutGames ?? 0,
-                color: 'gray',
-              },
-            ]}
-            isLoading={systemsStatsQuery.isLoading}
-          />
+        <div className="flex items-center gap-4">
           <ColumnVisibilityControl
             columns={SYSTEMS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -133,6 +112,35 @@ function AdminSystemsPage() {
           <Button onClick={() => openModal()}>Add System</Button>
         </div>
       </div>
+
+      {systemsStatsQuery.data && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {systemsStatsQuery.data.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Total
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {systemsStatsQuery.data.withGames}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              With Games
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              {systemsStatsQuery.data.withoutGames}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              No Games
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminSearchFilters
         searchValue={table.search}

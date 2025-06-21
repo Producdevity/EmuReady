@@ -2,11 +2,7 @@
 
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import {
-  AdminTableContainer,
-  AdminStatsDisplay,
-  AdminSearchFilters,
-} from '@/components/admin'
+import { AdminTableContainer, AdminSearchFilters } from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -121,34 +117,17 @@ function AdminSoCsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             System on Chips (SoCs)
           </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage all processors and system on chips
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <AdminStatsDisplay
-            stats={[
-              {
-                label: 'Total',
-                value: socsStatsQuery.data?.total ?? 0,
-                color: 'blue',
-              },
-              {
-                label: 'With Devices',
-                value: socsStatsQuery.data?.withDevices ?? 0,
-                color: 'green',
-              },
-              {
-                label: 'No Devices',
-                value: socsStatsQuery.data?.withoutDevices ?? 0,
-                color: 'gray',
-              },
-            ]}
-            isLoading={socsStatsQuery.isLoading}
-          />
+        <div className="flex items-center gap-4">
           <ColumnVisibilityControl
             columns={SOCS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -156,6 +135,35 @@ function AdminSoCsPage() {
           <Button onClick={() => openModal()}>Add SoC</Button>
         </div>
       </div>
+
+      {socsStatsQuery.data && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {socsStatsQuery.data.total}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Total
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {socsStatsQuery.data.withDevices}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              With Devices
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              {socsStatsQuery.data.withoutDevices}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              No Devices
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminSearchFilters
         searchValue={table.search}
