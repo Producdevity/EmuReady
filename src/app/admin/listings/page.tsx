@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
+import { AdminTableContainer } from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
@@ -14,16 +15,17 @@ import {
   SelectInput,
   ColumnVisibilityControl,
   SortableHeader,
-  AdminTableContainer,
   ApprovalStatusBadge,
   Pagination,
   LoadingSpinner,
   useConfirmDialog,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
-import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
-import EditButton from '@/components/ui/table-buttons/EditButton'
-import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import {
+  DeleteButton,
+  EditButton,
+  ViewButton,
+} from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

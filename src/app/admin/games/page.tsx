@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
 import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
+import { AdminTableContainer } from '@/components/admin'
 import {
   Button,
   Input,
@@ -13,7 +14,6 @@ import {
   Badge,
   SortableHeader,
   Pagination,
-  AdminTableContainer,
   ApprovalStatusBadge,
   useConfirmDialog,
   Tooltip,
@@ -21,8 +21,7 @@ import {
   TooltipContent,
   SelectInput,
 } from '@/components/ui'
-import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
-import EditButton from '@/components/ui/table-buttons/EditButton'
+import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

@@ -10,7 +10,7 @@ import {
   Pagination,
   SelectInput,
 } from '@/components/ui'
-import EditButton from '@/components/ui/table-buttons/EditButton'
+import { EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,

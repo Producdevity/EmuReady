@@ -71,6 +71,7 @@ node_modules/
 .claude
 
 # Notes
+CHECKS.md
 CLAUDE.md
 CLERK_SETUP.md
 CLERK_WEBHOOKS_SETUP.md

@@ -11,8 +11,7 @@ import {
   SortableHeader,
   useConfirmDialog,
 } from '@/components/ui'
-import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
-import EditButton from '@/components/ui/table-buttons/EditButton'
+import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

@@ -3,9 +3,10 @@
 import { CheckCircle, XCircle, Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
+import { AdminTableContainer } from '@/components/admin'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
   LoadingSpinner,
@@ -14,7 +15,6 @@ import {
   ApprovalStatusBadge,
   Pagination,
   SortableHeader,
-  AdminTableContainer,
   ColumnVisibilityControl,
   Tooltip,
   TooltipTrigger,
@@ -22,7 +22,7 @@ import {
   BulkActions,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
-import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import { ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -238,7 +238,10 @@ function GameApprovalsPage() {
       ) ?? null)
     : null
 
-  const filteredGames = pendingGamesQuery.data?.games ?? []
+  const filteredGames = useMemo(
+    () => pendingGamesQuery.data?.games ?? [],
+    [pendingGamesQuery.data?.games],
+  )
 
   if (pendingGamesQuery.isLoading) return <LoadingSpinner />
 

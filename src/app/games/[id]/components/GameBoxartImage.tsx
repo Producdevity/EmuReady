@@ -26,7 +26,7 @@ const DEFAULT_HEIGHT = 400
 
 type ImageField = 'imageUrl' | 'boxartUrl' | 'bannerUrl'
 
-function GameBoxartImage(props: Props) {
+export function GameBoxartImage(props: Props) {
   const { user } = useUser()
   const [activeImageType, setActiveImageType] = useState<ImageField>('imageUrl')
   const [showImageSelector, setShowImageSelector] = useState(false)

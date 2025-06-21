@@ -4,23 +4,27 @@ import { Clock, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import {
+  AdminTableContainer,
+  AdminNotificationBanner,
+} from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
   Button,
   Input,
   ColumnVisibilityControl,
-  AdminTableContainer,
-  AdminNotificationBanner,
   SortableHeader,
   Pagination,
   LoadingSpinner,
   BulkActions,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
-import ApproveButton from '@/components/ui/table-buttons/ApproveButton'
-import RejectButton from '@/components/ui/table-buttons/RejectButton'
-import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import {
+  ApproveButton,
+  RejectButton,
+  ViewButton,
+} from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -604,6 +608,8 @@ function AdminApprovalsPage() {
                 <Pagination
                   currentPage={table.page}
                   totalPages={pagination.pages}
+                  totalItems={pagination.total}
+                  itemsPerPage={pagination.limit}
                   onPageChange={table.setPage}
                 />
               </div>

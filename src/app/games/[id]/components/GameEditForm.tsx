@@ -33,7 +33,7 @@ interface Props {
   }
 }
 
-function GameEditForm(props: Props) {
+export function GameEditForm(props: Props) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(props.gameData.title)
   const [imageUrl, setImageUrl] = useState(props.gameData.imageUrl ?? '')
@@ -413,5 +413,3 @@ function GameEditForm(props: Props) {
     </div>
   )
 }
-
-export default GameEditForm
