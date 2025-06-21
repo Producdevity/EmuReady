@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle, XCircle, Clock, Search, Eye } from 'lucide-react'
+import { Clock, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -18,6 +18,9 @@ import {
   BulkActions,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
+import ApproveButton from '@/components/ui/table-buttons/ApproveButton'
+import RejectButton from '@/components/ui/table-buttons/RejectButton'
+import ViewButton from '@/components/ui/table-buttons/ViewButton'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -564,45 +567,29 @@ function AdminApprovalsPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
+                            <ApproveButton
+                              title="Approve Listing"
                               onClick={() =>
                                 openApprovalModal(
                                   listing,
                                   ApprovalStatus.APPROVED,
                                 )
                               }
-                              className="group relative inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 dark:from-green-400/20 dark:to-emerald-400/20 border border-green-200/50 dark:border-green-500/40 hover:border-green-300/70 dark:hover:border-green-400/60 hover:shadow-xl hover:shadow-green-500/30 dark:hover:shadow-green-400/25 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 backdrop-blur-sm"
-                              title="Approve"
-                            >
-                              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-all duration-300 relative z-10 drop-shadow-sm" />
-                              <div className="absolute inset-0 rounded-xl bg-green-500/10 dark:bg-green-400/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                              <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </button>
-                            <button
+                            />
+
+                            <RejectButton
                               onClick={() =>
                                 openApprovalModal(
                                   listing,
                                   ApprovalStatus.REJECTED,
                                 )
                               }
-                              className="group relative inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-red-500/10 to-rose-500/10 dark:from-red-400/20 dark:to-rose-400/20 border border-red-200/50 dark:border-red-500/40 hover:border-red-300/70 dark:hover:border-red-400/60 hover:shadow-xl hover:shadow-red-500/30 dark:hover:shadow-red-400/25 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 backdrop-blur-sm"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-all duration-300 relative z-10 drop-shadow-sm" />
-                              <div className="absolute inset-0 rounded-xl bg-red-500/10 dark:bg-red-400/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                              <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                window.open(`/listings/${listing.id}`, '_blank')
-                              }
-                              className="group relative inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-400/20 dark:to-indigo-400/20 border border-blue-200/50 dark:border-blue-500/40 hover:border-blue-300/70 dark:hover:border-blue-400/60 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/25 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 backdrop-blur-sm"
+                              title="Reject Listing"
+                            />
+                            <ViewButton
+                              href={`/listings/${listing.id}`}
                               title="View Details"
-                            >
-                              <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-all duration-300 relative z-10 drop-shadow-sm" />
-                              <div className="absolute inset-0 rounded-xl bg-blue-500/10 dark:bg-blue-400/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                              <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </button>
+                            />
                           </div>
                         </td>
                       )}
