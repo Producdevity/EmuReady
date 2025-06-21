@@ -29,7 +29,6 @@ function ListingDetailsClient(props: Props) {
   const utils = api.useUtils()
 
   const refreshData = () => {
-    // TODO: handle errors
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
   }
 
@@ -46,10 +45,21 @@ function ListingDetailsClient(props: Props) {
   })
 
   const handleVote = (value: boolean | null) => {
-    voteMutation.mutate({
-      listingId: props.listing.id,
-      value: value === null ? false : value, // Convert null to false for API
-    })
+    if (value !== null) {
+      // Normal vote - send the value directly, API handles toggle logic
+      return voteMutation.mutate({
+        listingId: props.listing.id,
+        value: value,
+      })
+    }
+    // For vote removal, we need to know what the current vote is and send that same value
+    // The API handles toggle logic - if same value is sent, it removes the vote
+    if (props.userVote !== null) {
+      voteMutation.mutate({
+        listingId: props.listing.id,
+        value: props.userVote, // Send current vote value to toggle it off
+      })
+    }
   }
 
   const renderCustomFieldValue = (

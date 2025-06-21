@@ -95,7 +95,7 @@ function VoteReminderBanner(props: Props) {
             damping: 30,
             opacity: { duration: 0.2 },
           }}
-          className="fixed right-2 top-1/2 -translate-y-1/2 z-40 w-72 max-w-[calc(100vw-1rem)] sm:w-80 sm:right-4 sm:max-w-sm"
+          className="fixed right-2 top-1/2 -translate-y-1/2 z-50 w-72 max-w-[calc(100vw-1rem)] sm:w-80 sm:right-4 sm:max-w-sm"
         >
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 relative overflow-hidden">
             {/* Subtle gradient background */}
@@ -148,10 +148,10 @@ function VoteReminderBanner(props: Props) {
                     onClick={() => handleVote(true)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 shadow-sm min-h-[44px] ${
+                    className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm min-h-[48px] ${
                       props.currentVote === true
                         ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'
-                        : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400'
+                        : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 hover:shadow-md'
                     }`}
                   >
                     <upVote.Icon className="w-4 h-4 flex-shrink-0" />
@@ -164,10 +164,10 @@ function VoteReminderBanner(props: Props) {
                     onClick={() => handleVote(false)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm min-h-[48px] ${
+                    className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm min-h-[48px] ${
                       props.currentVote === false
                         ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white'
-                        : 'bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400'
+                        : 'bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 hover:shadow-md'
                     }`}
                   >
                     <downVote.Icon className="w-4 h-4 flex-shrink-0" />
