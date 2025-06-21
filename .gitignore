@@ -45,6 +45,7 @@ yarn-error.log*
 .env.staging.local
 .env.test
 .env.test.local
+.env.docker
 
 prisma/generated
 
@@ -73,7 +74,9 @@ node_modules/
 CLAUDE.md
 CLERK_SETUP.md
 CLERK_WEBHOOKS_SETUP.md
-DEVELOPMENT_SETUP.md
 DESCRIPTION.md
 NOTES_README.md
 
+
+# clerk configuration (can include secrets)
+/.clerk/

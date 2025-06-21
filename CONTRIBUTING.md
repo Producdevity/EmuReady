@@ -219,12 +219,6 @@ Try to avoid destructuring props in React Components. This is open for discussio
 - [Breaking the Habit: The Overuse of Object Destructuring in React](https://medium.com/@Producdevity/breaking-the-habit-the-overuse-of-object-destructuring-in-react-5404ab53eb6d)
 - [Destructuring Props in React: The Quiet Problem That Keeps Growing](https://medium.com/@Producdevity/destructuring-props-in-react-the-quiet-problem-that-keeps-growing-c58ab3bf2ce2)
 
-#### Default exports vs Named exports
-
-- Default exports are used for the main component or function in a file
-- Named exports are used for helper functions, types, and other supporting elements
-- Use `export default` when the file contains a single main component or function
-
 #### File Naming Conventions
 
 - Use `PascalCase` for component filenames (e.g., `MyComponent.tsx`)
@@ -264,12 +258,6 @@ npm run test:e2e:headless
 # Debug mode
 npm run test:e2e:debug
 ```
-
-**Important**: E2E tests require:
-
-- Local development server running (`npm run dev`)
-- Proper Clerk authentication configuration
-- Playwright browsers installed (`npx playwright install`)
 
 ---
 

@@ -1,0 +1,115 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: emuready-postgres
+    environment:
+      POSTGRES_DB: emuready_dev
+      POSTGRES_USER: emuready
+      POSTGRES_PASSWORD: emuready_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emuready -d emuready_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - emuready-network
+
+  # Main Next.js Application
+  app:
+    build:
+      context: .
+      target: dev
+    container_name: emuready-app
+    ports:
+      - "3000:3000"
+      - "5555:5555"  # Prisma Studio
+    environment:
+      # Docker identifier
+      DOCKER_CONTAINER: "true"
+      
+      # Database
+      DATABASE_URL: "postgresql://emuready:emuready_dev_password@postgres:5432/emuready_dev"
+      DATABASE_DIRECT_URL: "postgresql://emuready:emuready_dev_password@postgres:5432/emuready_dev"
+      
+      # Node Environment
+      NODE_ENV: development
+      
+      # External URLs (will be overridden by .env.docker)
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      
+      # Clerk Configuration (loaded from .env.docker)
+      
+      # External APIs (placeholder - will be overridden by .env.docker)
+      RAWG_API_KEY: ""
+      THE_GAMES_DB_API_KEY: ""
+    volumes:
+      # Source code for hot reload
+      - .:/app
+      - /app/node_modules
+      # Persistent uploads
+      - uploads_data:/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - emuready-network
+    env_file:
+      - .env.docker
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        npm run dev
+      "
+
+  # Cloudflared Tunnel for Clerk Webhooks
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: emuready-tunnel
+    restart: unless-stopped
+    command: tunnel run emuready-tunnel
+    env_file:
+      - .env.docker
+    depends_on:
+      - app
+    networks:
+      - emuready-network
+    profiles:
+      - webhooks  # Optional service, only run when needed
+
+  # pgAdmin for Database Management (Optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: emuready-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@emuready.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - emuready-network
+    profiles:
+      - tools  # Optional service
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  emuready-network:
+    driver: bridge 
