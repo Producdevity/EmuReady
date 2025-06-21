@@ -192,9 +192,11 @@ function Pagination(props: Props) {
           </button>
         </div>
 
-        <div className="text-xs text-gray-500 dark:text-gray-400 sm:hidden">
-          Page {props.currentPage} of {props.totalPages}
-        </div>
+        {showLabel && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 sm:hidden">
+            Page {props.currentPage} of {props.totalPages}
+          </div>
+        )}
       </div>
     </nav>
   )
