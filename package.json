@@ -1,6 +1,6 @@
 {
   "name": "emuready",
-  "version": "0.6.56",
+  "version": "0.7.0",
   "private": false,
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
@@ -33,6 +33,8 @@
     "db:migrate:create": "./scripts/db-cmd.sh prisma migrate dev --create-only",
     "db:migrate:status": "./scripts/db-cmd.sh prisma migrate status",
     "db:generate": "prisma generate",
+    "docs:generate": "tsx src/scripts/api/generate-api-docs.ts",
+    "docs:watch": "nodemon --watch src/server/api/routers/mobile.ts --watch src/schemas/mobile.ts --exec \"npm run docs:generate\"",
     "prepare": "husky"
   },
   "prisma": {
@@ -118,6 +120,7 @@
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.0.0",
+    "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
     "prisma": "^6.9.0",
     "tailwindcss": "^4",

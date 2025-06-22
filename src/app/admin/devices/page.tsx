@@ -195,6 +195,7 @@ function AdminDevicesPage() {
           options={brandOptions}
           value={brandFilter}
           onChange={handleBrandChange}
+          className="w-full md:w-48"
           placeholder="Filter by brand"
         />
       </AdminSearchFilters>
