@@ -1,5 +1,34 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
+// Common image extensions and their corresponding MIME types
+const IMAGE_EXTENSIONS = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.bmp': 'image/bmp',
+  '.ico': 'image/x-icon',
+  '.tiff': 'image/tiff',
+  '.tif': 'image/tiff',
+}
+
+function isImageUrl(url: string): boolean {
+  const urlLower = url.toLowerCase()
+  return Object.keys(IMAGE_EXTENSIONS).some((ext) => urlLower.includes(ext))
+}
+
+function getContentTypeFromUrl(url: string): string | null {
+  const urlLower = url.toLowerCase()
+  for (const [ext, mimeType] of Object.entries(IMAGE_EXTENSIONS)) {
+    if (urlLower.includes(ext)) {
+      return mimeType
+    }
+  }
+  return null
+}
+
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url')
 
@@ -21,15 +50,26 @@ export async function GET(request: NextRequest) {
     }
 
     const contentType = response.headers.get('content-type')
-    if (!contentType || !contentType.startsWith('image/')) {
+
+    // Check if it's an image by content-type OR by file extension
+    const isImageByContentType = contentType && contentType.startsWith('image/')
+    const isImageByUrl = isImageUrl(url)
+
+    if (!isImageByContentType && !isImageByUrl) {
       return new NextResponse('Not an image', { status: 400 })
     }
 
     const imageData = await response.arrayBuffer()
 
+    // Use the proper content-type from the response, or determine it from the URL
+    let finalContentType = contentType
+    if (!isImageByContentType && isImageByUrl) {
+      finalContentType = getContentTypeFromUrl(url) || 'image/jpeg'
+    }
+
     return new NextResponse(imageData, {
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': finalContentType || 'image/jpeg',
         'Cache-Control': 'public, max-age=86400',
       },
     })
