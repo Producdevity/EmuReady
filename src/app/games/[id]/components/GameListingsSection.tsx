@@ -101,17 +101,19 @@ export function GameListingsSection(props: Props) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{listing._count.comments || 0}</Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {props.isAdmin && (
-                      <EditButton
-                        href={`/admin/listings/${listing.id}/edit`}
-                        title="Edit Listing"
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {props.isAdmin && (
+                        <EditButton
+                          href={`/admin/listings/${listing.id}/edit`}
+                          title="Edit Listing"
+                        />
+                      )}
+                      <ViewButton
+                        href={`/listings/${listing.id}`}
+                        title="View Details"
                       />
-                    )}
-                    <ViewButton
-                      href={`/listings/${listing.id}`}
-                      title="View Details"
-                    />
+                    </div>
                   </td>
                 </tr>
               ))}

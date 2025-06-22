@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import {
   forwardRef,
   type Ref,
@@ -32,6 +33,14 @@ const Input = forwardRef<HTMLElement, Props>(
     const commonInputStyling =
       'w-full outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent'
 
+    // For select elements, we need a dropdown icon if no rightIcon is provided
+    const selectRightIcon =
+      as === 'select' && !rightIcon ? (
+        <ChevronDown className="w-4 h-4" />
+      ) : (
+        rightIcon
+      )
+
     return (
       <div className="relative">
         <div
@@ -63,10 +72,10 @@ const Input = forwardRef<HTMLElement, Props>(
               ref={ref as Ref<HTMLSelectElement>}
               className={cn(
                 commonInputStyling,
-                'appearance-none',
+                'appearance-none cursor-pointer',
                 'py-2 px-3',
                 leftIcon ? 'pl-10' : '',
-                rightIcon ? 'pr-10' : '',
+                selectRightIcon ? 'pr-10' : '',
               )}
               {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
             >
@@ -78,16 +87,16 @@ const Input = forwardRef<HTMLElement, Props>(
               ref={ref as Ref<HTMLTextAreaElement>}
               className={cn(
                 commonInputStyling,
-                'py-2 px-3',
+                'py-2 px-3 resize-vertical',
                 leftIcon ? 'pl-10' : '',
                 rightIcon ? 'pr-10' : '',
               )}
               {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
             />
           )}
-          {rightIcon && (
-            <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500">
-              {rightIcon}
+          {(selectRightIcon || rightIcon) && (
+            <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500 pointer-events-none">
+              {as === 'select' ? selectRightIcon : rightIcon}
             </span>
           )}
         </div>

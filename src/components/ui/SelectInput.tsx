@@ -30,9 +30,18 @@ function SelectInput(props: Props) {
         onChange={props.onChange}
         className={props.className}
       >
-        <option value="">Select {props.label}</option>
+        <option
+          value=""
+          className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        >
+          Select {props.label}
+        </option>
         {props.options?.map((option) => (
-          <option key={option.id} value={option.id}>
+          <option
+            key={option.id}
+            value={option.id}
+            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          >
             {option.name}
           </option>
         ))}
