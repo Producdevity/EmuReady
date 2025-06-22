@@ -1,10 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { isNullish, isNumber } from 'remeda'
-import { Card, Badge, PerformanceBadge } from '@/components/ui'
+import { Card, Badge, PerformanceBadge, Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
@@ -27,6 +29,7 @@ interface Props {
 function ListingDetailsClient(props: Props) {
   const listingId = props.listing.id
   const utils = api.useUtils()
+  const router = useRouter()
 
   const refreshData = () => {
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
@@ -130,6 +133,19 @@ function ListingDetailsClient(props: Props) {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="w-full max-w-4xl"
       >
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.back()}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
+
         <Card className="p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900">
           <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
             {/* Game Info */}

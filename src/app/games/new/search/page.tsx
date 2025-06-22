@@ -123,8 +123,7 @@ function GameSearchContent() {
   const handleSelectGame = useCallback(
     async (game: TGDBGame) => {
       if (!userQuery.data || !systemsQuery.data) {
-        toast.error('Please sign in to add games')
-        return
+        return toast.error('Please sign in to add games')
       }
 
       setIsSelecting(true)
@@ -196,7 +195,6 @@ function GameSearchContent() {
           router.push(`/games/${newGame.id}`)
         }
 
-        // Close modal if open
         setIsModalOpen(false)
         setSelectedGame(null)
       } catch (error) {
@@ -221,7 +219,7 @@ function GameSearchContent() {
               cause.existingGameTitle &&
               cause.systemName
             ) {
-              toast.error(
+              return toast.error(
                 `Game already exists: "${cause.existingGameTitle}" on ${cause.systemName}`,
                 {
                   duration: 10000,
@@ -232,7 +230,6 @@ function GameSearchContent() {
                   },
                 },
               )
-              return
             }
           }
 
