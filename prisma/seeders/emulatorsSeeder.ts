@@ -166,6 +166,11 @@ const emulators: EmulatorData[] = [
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'winlator.png',
   },
+  {
+    name: 'Xenia',
+    supportedSystemNames: ['Microsoft Xbox 360'],
+    logo: 'xenia.png',
+  },
   { name: 'Xemu', supportedSystemNames: ['Microsoft Xbox'], logo: 'xemu.png' },
   {
     name: 'Yaba Sanshiro',
