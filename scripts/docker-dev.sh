@@ -57,8 +57,8 @@ start_dev() {
     print_status "Waiting for database to be ready..."
     sleep 5
 
-    print_status "Starting application..."
-    docker-compose up --build app
+    print_status "Starting application and Prisma Studio..."
+    docker-compose up --build app prisma-studio
 }
 
 # Start with webhooks (including cloudflared tunnel)
@@ -86,6 +86,14 @@ stop() {
     print_status "Stopping EmuReady services..."
     docker-compose down
     print_success "Services stopped"
+}
+
+# Restart just the app service
+restart() {
+    print_status "Restarting Next.js app service..."
+    docker-compose restart app
+    print_success "App service restarted"
+    print_status "App available at: http://localhost:3000"
 }
 
 # Stop and remove everything (including volumes)
@@ -124,11 +132,13 @@ seed() {
     print_success "Database seeded"
 }
 
-# Seed the database
-prisma_studio() {
-    print_status "Starting Prisma Studio..."
-    docker-compose exec app npm run db:studio
-    print_success "Prisma Studio started"
+# Force reseed by removing the flag file
+reseed() {
+    print_status "Removing seed flag and reseeding database..."
+    docker-compose exec app rm -f .setup/seeded
+    docker-compose exec app npx prisma db seed
+    docker-compose exec app touch .setup/seeded
+    print_success "Database reseeded"
 }
 
 # Reset database
@@ -139,6 +149,7 @@ reset_db() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_status "Resetting database..."
         docker-compose exec app npx prisma migrate reset --force
+        docker-compose exec app rm -f .setup/seeded
         print_success "Database reset"
     else
         print_status "Cancelled"
@@ -153,6 +164,17 @@ db_admin() {
     print_status "Login: admin@emuready.dev / admin"
 }
 
+# Show service status
+status() {
+    print_status "Service status:"
+    docker-compose ps
+    echo ""
+    print_status "Available services:"
+    echo "  🚀 App: http://localhost:3000"
+    echo "  📊 Prisma Studio: http://localhost:5555"
+    echo "  🗄️  pgAdmin: http://localhost:5050 (if enabled)"
+}
+
 # Show help
 show_help() {
     echo "EmuReady Docker Development Helper"
@@ -162,19 +184,29 @@ show_help() {
     echo "Commands:"
     echo "  start       Start development environment (default)"
     echo "  webhooks    Start with webhook support (cloudflared tunnel)"
+    echo "  restart     Restart just the Next.js app (keep DB running)"
     echo "  stop        Stop all services"
     echo "  clean       Stop and remove everything (including data)"
-    echo "  logs [svc]  Show logs (default: app)"
+    echo "  status      Show service status and URLs"
+    echo "  logs [svc]  Show logs (default: app, options: app, prisma-studio, postgres)"
     echo "  migrate     Run database migrations"
-    echo "  seed        Seed the database"
+    echo "  seed        Seed the database (manual)"
+    echo "  reseed      Force reseed the database"
     echo "  reset-db    Reset database (destructive)"
     echo "  db-admin    Start pgAdmin database interface"
     echo "  help        Show this help"
     echo ""
     echo "Examples:"
-    echo "  ./scripts/docker-dev.sh                 # Start development"
-    echo "  ./scripts/docker-dev.sh webhooks        # Start with webhooks"
-    echo "  ./scripts/docker-dev.sh logs postgres   # Show database logs"
+    echo "  ./scripts/docker-dev.sh                    # Start development"
+    echo "  ./scripts/docker-dev.sh restart            # Restart just the app"
+    echo "  ./scripts/docker-dev.sh webhooks           # Start with webhooks"
+    echo "  ./scripts/docker-dev.sh logs prisma-studio # Show Prisma Studio logs"
+    echo "  ./scripts/docker-dev.sh status             # Show all service URLs"
+    echo ""
+    echo "Services:"
+    echo "  📱 App:           http://localhost:3000"
+    echo "  🔍 Prisma Studio: http://localhost:5555  (runs automatically)"
+    echo "  🗄️  pgAdmin:       http://localhost:5050  (use 'db-admin' command)"
 }
 
 # Main command handler
@@ -185,11 +217,17 @@ case "${1:-start}" in
 "webhooks")
     start_webhooks
     ;;
+"restart")
+    restart
+    ;;
 "stop")
     stop
     ;;
 "clean")
     clean
+    ;;
+"status")
+    status
     ;;
 "logs")
     logs "$@"
@@ -200,11 +238,11 @@ case "${1:-start}" in
 "seed")
     seed
     ;;
+"reseed")
+    reseed
+    ;;
 "reset-db")
     reset_db
-    ;;
-"prisma-studio")
-    prisma_studio
     ;;
 "db-admin")
     db_admin

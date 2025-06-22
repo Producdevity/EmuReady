@@ -37,9 +37,11 @@ The script will:
 When you run the Docker setup, you'll have:
 
 - ✅ **Next.js app** running at http://localhost:3000
+- ✅ **Prisma Studio** running at http://localhost:5555 (database admin interface)
 - ✅ **PostgreSQL database** with sample data
 - ✅ **Hot reload** for development
 - ✅ **Persistent data** (your changes survive restarts)
+- ✅ **One-time seeding** (only runs on first setup, not every restart)
 - ✅ **Test users** ready to use (see [Test Users](#test-users))
 - ✅ **File uploads** working correctly
 - ✅ **All environment dependencies** managed automatically
@@ -142,6 +144,7 @@ For testing Clerk webhooks (user creation/deletion), you can enable the webhook 
 Once Docker is running, access your application at:
 
 - **🎮 Main Application**: http://localhost:3000
+- **🔍 Prisma Studio**: http://localhost:5555 (runs automatically)
 - **📊 Database Admin (pgAdmin)**: http://localhost:5050 (when enabled)
 
 ## 📋 **Viewing Logs (Your New `npm run dev`)**
@@ -196,6 +199,9 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 # Start development environment
 ./scripts/docker-dev.sh start
 
+# Restart just the Next.js app (keep database running)
+./scripts/docker-dev.sh restart
+
 # Start with webhook support
 ./scripts/docker-dev.sh webhooks
 
@@ -204,7 +210,8 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 
 # View logs
 ./scripts/docker-dev.sh logs
-./scripts/docker-dev.sh logs postgres  # specific service
+./scripts/docker-dev.sh logs postgres      # database logs
+./scripts/docker-dev.sh logs prisma-studio # Prisma Studio logs
 ```
 
 ### Database Commands
@@ -212,20 +219,24 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 # Run new migrations
 ./scripts/docker-dev.sh migrate
 
-# Seed database with test data
+# Seed database with test data (manual)
 ./scripts/docker-dev.sh seed
+
+# Force reseed database (removes seed flag and reseeds)
+./scripts/docker-dev.sh reseed
 
 # Reset database (destructive!)
 ./scripts/docker-dev.sh reset-db
 
 # Open database admin interface
 ./scripts/docker-dev.sh db-admin
-
-./scripts/docker-dev.sh prisma-studio
 ```
 
 ### Maintenance Commands
 ```bash
+# Show service status and URLs
+./scripts/docker-dev.sh status
+
 # Clean everything (no, seriously. everything.)
 ./scripts/docker-dev.sh clean
 
@@ -235,20 +246,35 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 
 ## 📊 Database Management
 
-### Local PostgreSQL vs Supabase
-**The Docker setup uses local PostgreSQL** instead of Supabase for development:
+### Database Admin Interfaces
 
-### pgAdmin Access
-Access the database admin interface at http://localhost:5050:
+**The Docker setup uses local PostgreSQL** instead of Supabase for development and provides two admin interfaces:
+
+#### Prisma Studio (Recommended)
+Access the modern database admin interface at http://localhost:5555:
+- **Automatically starts** with the development environment
+- **Visual schema explorer** and data editor
+- **Real-time updates** and easy data manipulation
+- No additional configuration required
+
+#### pgAdmin (Alternative)
+Access the traditional database admin interface at http://localhost:5050:
 - **Email**: `admin@emuready.dev`
 - **Password**: `admin`
 
-To connect to the database:
+To connect to the database in pgAdmin:
 - **Host**: `postgres`
 - **Port**: `5432`
 - **Database**: `emuready_dev`
 - **Username**: `emuready`
 - **Password**: `emuready_dev_password`
+
+### Database Seeding Behavior
+🎯 **Smart seeding system**:
+- **First run**: Database is automatically seeded with test data
+- **Subsequent runs**: Seeding is skipped (faster startups)
+- **Force reseed**: Use `./scripts/docker-dev.sh reseed` to reseed manually
+- **Reset**: Use `./scripts/docker-dev.sh reset-db` to start fresh
 
 ### Database Safety
 🔒 **Your remote/production databases are completely safe!**
@@ -371,10 +397,13 @@ When contributing:
 ## 💡 Tips
 
 - **Use the helper script**: `./scripts/docker-dev.sh` handles most tasks
+- **Check service status**: Use `./scripts/docker-dev.sh status` to see all running services and URLs
 - **Keep `.env.docker`**: It's gitignored but stores your personal config
-- **Monitor logs**: Use `./scripts/docker-dev.sh logs` to debug issues
+- **Monitor logs**: Use `./scripts/docker-dev.sh logs [service]` to debug issues
 - **Database persistence**: Your data survives container restarts
 - **Hot reload works**: No need to restart containers when editing code
+- **Prisma Studio**: Access your database visually at http://localhost:5555 (starts automatically)
+- **Smart seeding**: Only runs once on first setup, use `reseed` command to reseed manually
 
 ## 🆘 Need Help?
 

@@ -27,7 +27,6 @@ services:
     container_name: emuready-app
     ports:
       - "3000:3000"
-      - "5555:5555"  # Prisma Studio
     environment:
       # Docker identifier
       DOCKER_CONTAINER: "true"
@@ -53,6 +52,8 @@ services:
       - /app/node_modules
       # Persistent uploads
       - uploads_data:/app/public/uploads
+      # Flag file to track if initial setup has been done
+      - setup_data:/app/.setup
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,8 +65,47 @@ services:
       sh -c "
         echo 'Waiting for database...' &&
         npx prisma migrate deploy &&
-        npx prisma db seed &&
+        if [ ! -f .setup/seeded ]; then
+          echo 'Running initial database seed...' &&
+          npx prisma db seed &&
+          mkdir -p .setup &&
+          touch .setup/seeded &&
+          echo 'Initial setup completed';
+        else
+          echo 'Database already seeded, skipping seed step';
+        fi &&
         npm run dev
+      "
+
+  # Prisma Studio - Database Admin Interface
+  prisma-studio:
+    build:
+      context: .
+      target: dev
+    container_name: emuready-prisma-studio
+    ports:
+      - "5555:5555"
+    environment:
+      # Database
+      DATABASE_URL: "postgresql://emuready:emuready_dev_password@postgres:5432/emuready_dev"
+      DATABASE_DIRECT_URL: "postgresql://emuready:emuready_dev_password@postgres:5432/emuready_dev"
+    volumes:
+      # Source code for schema access
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      app:
+        condition: service_started
+    networks:
+      - emuready-network
+    env_file:
+      - .env.docker
+    command: >
+      sh -c "
+        echo 'Starting Prisma Studio...' &&
+        npx prisma studio --hostname 0.0.0.0 --port 5555
       "
 
   # Cloudflared Tunnel for Clerk Webhooks
@@ -108,6 +148,8 @@ volumes:
   uploads_data:
     driver: local
   pgadmin_data:
+    driver: local
+  setup_data:
     driver: local
 
 networks:
