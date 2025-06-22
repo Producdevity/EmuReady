@@ -56,7 +56,9 @@ function useListingsState() {
   // Helper to update URL and state
   const updateQuery = (
     params: Record<string, string | number | string[] | number[] | null>,
+    options: { pushHistory?: boolean } = {},
   ) => {
+    const { pushHistory = false } = options
     const newParams = new URLSearchParams(searchParams.toString())
     Object.entries(params).forEach(([key, value]) => {
       if (value === null || value === '' || value === undefined) {
@@ -71,7 +73,12 @@ function useListingsState() {
         newParams.set(key, String(value))
       }
     })
-    router.replace(`?${newParams.toString()}`)
+    const url = `?${newParams.toString()}`
+    if (pushHistory) {
+      router.push(url)
+    } else {
+      router.replace(url)
+    }
   }
 
   const handleSort = (field: string) => {

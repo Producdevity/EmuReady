@@ -698,7 +698,10 @@ function ListingsPage() {
                 itemsPerPage={listingsQuery.data.pagination.limit}
                 onPageChange={(newPage) => {
                   listingsState.setPage(newPage)
-                  listingsState.updateQuery({ page: newPage })
+                  listingsState.updateQuery(
+                    { page: newPage },
+                    { pushHistory: true },
+                  )
                 }}
               />
             )}
