@@ -239,7 +239,7 @@ export const coreRouter = createTRPCRouter({
           }),
         )
 
-        // Sort by success rate
+        // Sort by success rate / verified
         allListingsWithStats.sort((a, b) => {
           if (input.sortDirection === 'asc') {
             // For ascending (low to high)

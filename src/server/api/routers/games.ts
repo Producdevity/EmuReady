@@ -115,6 +115,7 @@ export const gamesRouter = createTRPCRouter({
     // Build where clause with optimized search pattern
     let where: Prisma.GameWhereInput = {
       ...(systemId ? { systemId } : {}),
+      ...(hideGamesWithNoListings ? { listings: { some: {} } } : {}),
     }
 
     // Handle game approval status filtering
@@ -243,28 +244,11 @@ export const gamesRouter = createTRPCRouter({
 
     const games = await gamesQuery
 
-    // Filter out games with no listings if requested
-    const filteredGames = hideGamesWithNoListings
-      ? games.filter((game) => game._count.listings > 0)
-      : games
-
-    // Adjust pagination if filtering removed games
-    const actualTotal = hideGamesWithNoListings
-      ? await ctx.prisma.game.count({
-          where: {
-            ...where,
-            listings: {
-              some: {},
-            },
-          },
-        })
-      : total
-
     return {
-      games: filteredGames,
+      games,
       pagination: {
-        total: actualTotal,
-        pages: Math.ceil(actualTotal / limit),
+        total,
+        pages: Math.ceil(total / limit),
         page: page ?? Math.floor(actualOffset / limit) + 1,
         offset: actualOffset,
         limit: effectiveLimit,

@@ -519,7 +519,7 @@ function ListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('successRate') && (
                       <SortableHeader
-                        label="Success Rate"
+                        label="Verified"
                         field="successRate"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}

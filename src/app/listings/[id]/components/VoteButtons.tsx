@@ -179,7 +179,7 @@ function VoteButtons(props: Props) {
           </button>
         </div>
 
-        {/* Progress bar showing success rate */}
+        {/* Progress bar showing success rate / verified */}
         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-green-500"
