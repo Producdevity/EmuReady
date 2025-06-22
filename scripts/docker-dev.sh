@@ -124,6 +124,13 @@ seed() {
     print_success "Database seeded"
 }
 
+# Seed the database
+prisma_studio() {
+    print_status "Starting Prisma Studio..."
+    docker-compose exec app npm run db:studio
+    print_success "Prisma Studio started"
+}
+
 # Reset database
 reset_db() {
     print_warning "This will reset the database and lose all data!"
@@ -195,6 +202,9 @@ case "${1:-start}" in
     ;;
 "reset-db")
     reset_db
+    ;;
+"prisma-studio")
+    prisma_studio
     ;;
 "db-admin")
     db_admin

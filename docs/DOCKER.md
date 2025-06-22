@@ -220,6 +220,8 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 
 # Open database admin interface
 ./scripts/docker-dev.sh db-admin
+
+./scripts/docker-dev.sh prisma-studio
 ```
 
 ### Maintenance Commands
