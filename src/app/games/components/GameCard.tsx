@@ -1,7 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { type MouseEvent } from 'react'
 import { Badge, ApprovalStatusBadge } from '@/components/ui'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { type Game, ApprovalStatus } from '@orm'
@@ -14,19 +12,11 @@ interface Props {
 }
 
 function GameCard(props: Props) {
-  const router = useRouter()
-
-  const handleClick = (ev: MouseEvent) => {
-    ev.preventDefault()
-    router.push(`/games/${props.game.id}`)
-  }
-
   return (
     <Link
       key={props.game.id}
       href={`/games/${props.game.id}`}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-      onClick={handleClick}
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
         <Image
