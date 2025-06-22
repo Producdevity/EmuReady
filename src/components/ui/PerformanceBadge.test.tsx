@@ -11,7 +11,7 @@ describe('PerformanceBadge', () => {
 
     expect(badge).toBeInTheDocument()
     expect(badge.closest('span')).toHaveClass('bg-green-100', 'text-green-800')
-    expect(badge.closest('span')).toHaveClass('rounded-full') // pill shape
+    expect(badge.closest('span')).toHaveClass('rounded')
   })
 
   it('renders correctly with rank 2 (Great)', () => {
