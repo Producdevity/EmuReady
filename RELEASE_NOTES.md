@@ -1,3 +1,158 @@
+# 🚀 EmuReady Release Notes - 22 June 2025 (v0.7.0)
+
+## 🌟 What's New
+
+**🎮 More Gaming Options**
+
+- **50+ New Devices Added**: Find your exact device model for better compatibility matching
+- **Xbox 360 Emulation**: New Xenia emulator support for testing Xbox 360 games
+
+**🖼️ No More Broken Images**
+
+- **Fixed Image Loading**: Game images now load reliably from all sources (including RAWG)
+- **Faster Performance**: Images load quicker with better caching
+
+**📱 Fixes**
+
+- **Mobile design**: All the pages are now accessible on mobile devices
+- **Reduced Request sizes**: Faster page loads and less data usage.
+
+**📱 Mobile App Coming Soon**
+
+- **New API Platform**: Backend foundation for upcoming mobile app
+- **Better Performance**: Faster page loads and smoother interactions throughout the site
+
+**Early teaser of the new mobile-first listings page**
+
+- Early in development, but feel free to take a look at https://emuready.com/v2/listings and provide your feedback.
+- This is a **Proof of Concept** and not all buttons/filters work, the focus was mainly on a better UI/UX on smaller screens.
+
+## 📱 Mobile API Platform
+
+**✨ Complete Mobile API Documentation System**
+
+- **Auto-Generated Documentation**: Interactive Swagger UI at `/docs/mobile-api` with live API testing
+- **26 API Endpoints**: Comprehensive mobile API covering listings, games, devices, emulators, and user management
+- **OpenAPI 3.0 Specification**: Full schema definitions with proper authentication handling
+- **Real-Time Updates**: Documentation automatically regenerates when API changes are made
+- **Public & Protected Routes**: Clear distinction between endpoints requiring authentication
+
+**🔧 Developer Tools**
+
+- **CLI Documentation Generator**: `npm run docs:generate` creates up-to-date API docs
+- **Watch Mode**: `npm run docs:watch` automatically regenerates docs when router files change
+- **Static File Generation**: OpenAPI spec available at `/api/docs/mobile/openapi.json`
+
+## 🐳 Docker Development Environment
+
+**🚀 One-Command Setup**
+
+- **Complete Docker Support**: Full development environment with `./scripts/docker-dev.sh`
+- **Database Integration**: PostgreSQL with automatic migrations and seeding
+- **Prisma Studio**: Built-in database admin interface at `localhost:5555`
+- **Hot Reload**: Live development with file watching and automatic restarts
+- **Webhook Testing**: Cloudflare tunnel integration for Clerk webhook development
+
+**⚙️ Developer Experience**
+
+- **Test Users**: Pre-seeded accounts for all user roles (admin, author, user)
+- **Persistent Data**: Database changes survive container restarts
+- **Environment Management**: Automatic `.env.docker` configuration
+- **Command Integration**: Run any npm script inside containers with ease
+
+## 🖼️ Enhanced Image Handling
+
+**🔍 Smart Image Proxy**
+
+- **CORS Protection**: Server-side image fetching to bypass browser restrictions
+- **MIME Type Detection**: Intelligent content-type detection for various image formats
+- **Robust Validation**: Dual validation using both headers and file extensions
+- **CDN Optimization**: Proper caching headers for improved performance
+- **Error Resilience**: Graceful handling of problematic image servers (like RAWG.io)
+
+## 📊 Analytics & Tracking Improvements
+
+**📈 Enhanced User Analytics**
+
+- **Filter Action Tracking**: Monitor how users interact with search and filter options
+- **URL State Management**: Better query parameter handling with push state support
+- **User Journey Insights**: Track content discovery patterns and filter effectiveness
+- **Performance Monitoring**: Improved tracking of user engagement with platform features
+
+**Important note regarding Analytics:**
+
+All tracking is opt-in and will only be used better understand user behaviour to improve the platform.
+
+- EmuReady does not track when you don't consent.
+- EmuReady will never sell data
+- EmuReady will only track what it needs to improve the experience.
+
+## 🛠️ Admin Panel Enhancements
+
+**🎨 Improved Admin Interface**
+
+- **Standardized Admin Layout**: Consistent header and navigation across all admin pages
+- **Better Button Components**: Reusable table action buttons with improved styling
+- **Image Management**: Enhanced image preview and indicator components
+- **Navigation Icons**: Clear visual hierarchy in admin navigation
+
+## 🐛 Bug Fixes & Performance
+
+**🔧 Image Loading Fixes**
+
+- **RAWG Image Support**: Fixed issues with RAWG.io images returning incorrect MIME types
+- **Content Type Detection**: Robust image validation that works across different CDNs
+- **Proxy Reliability**: Better error handling for external image sources
+
+**⚡ Performance Optimizations**
+
+- **URL Parameter Handling**: Streamlined query management without page reloads
+- **Component Optimization**: Better state management in listings and filter components
+- **API Efficiency**: Optimized mobile API endpoints with proper pagination and filtering
+
+## 🔧 Technical Improvements
+
+**🏗️ Development Infrastructure**
+
+- **Docker-First Development**: Complete containerized development workflow
+- **API Documentation Pipeline**: Automated documentation generation and deployment
+- **Enhanced TypeScript**: Better type safety across API and component layers
+- **Improved Error Handling**: More robust error boundaries and user feedback
+
+**📦 Dependency Management**
+
+- **Cleaner Dependencies**: Removed unused packages and optimized imports
+- **Security Updates**: Latest versions of core dependencies
+- **Build Optimization**: Faster builds with improved Docker layer caching
+
+---
+
+## 🔄 Migration Notes
+
+**For Contributors:**
+
+- Docker development environment is now the recommended setup method
+- Mobile API documentation is automatically generated - no manual updates needed
+- Use `./scripts/docker-dev.sh` for fastest onboarding experience
+
+**For Users:**
+
+- All existing functionality preserved (+ more) with enhanced performance
+- New mobile API provides programmatic access to platform features
+- Image loading is now more reliable across different sources
+
+---
+
+_This release is the start of establising EmuReady as a true platform with comprehensive API access and streamlined development workflows. The Docker integration makes contributing easier._
+
+_API is currenlty only used for the mobile app that is in the making but can potentially be opened up when requested. Reach out on Discord if you would like to know more._
+
+**Need help or found an issue?** Report it in our support channels or GitHub repository.
+
+🎮 **Happy Gaming!** - The EmuReady Team
+
+---
+
 # 🚀 EmuReady Release Notes - 17 June 2025 (v0.6.0)
 
 ## 🔐 Authentication & Security Enhancements
