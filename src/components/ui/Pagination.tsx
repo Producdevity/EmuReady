@@ -58,11 +58,13 @@ function Pagination(props: Props) {
       ? Math.ceil(props.totalItems / props.totalPages)
       : 10)
 
-  const itemsStart = (props.currentPage - 1) * itemsPerPage + 1
-  const itemsEnd = Math.min(
-    props.currentPage * itemsPerPage,
-    props.totalItems || 0,
-  )
+  const itemsStart = !props.totalItems
+    ? 0
+    : (props.currentPage - 1) * itemsPerPage + 1
+
+  const itemsEnd = !props.totalItems
+    ? 0
+    : Math.min(props.currentPage * itemsPerPage, props.totalItems)
 
   return (
     <nav className="mt-12" aria-label="Pagination navigation" role="navigation">
