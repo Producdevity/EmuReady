@@ -204,9 +204,9 @@ show_help() {
     echo "  ./scripts/docker-dev.sh status             # Show all service URLs"
     echo ""
     echo "Services:"
-    echo "  📱 App:           http://localhost:3000"
+    echo "  🖥️ App:           http://localhost:3000"
     echo "  🔍 Prisma Studio: http://localhost:5555  (runs automatically)"
-    echo "  🗄️  pgAdmin:       http://localhost:5050  (use 'db-admin' command)"
+    echo "  🗄️ pgAdmin:       http://localhost:5050  (use 'db-admin' command)"
 }
 
 # Main command handler
