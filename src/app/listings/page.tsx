@@ -34,11 +34,7 @@ import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
 import useListingsState from './hooks/useListingsState'
-import {
-  type ListingsFilter,
-  type SortDirection,
-  type SortField,
-} from './types'
+import { type ListingsFilter } from './types'
 
 const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -145,63 +141,28 @@ function ListingsPage() {
 
   const handleSystemChange = (values: string[]) => {
     listingsState.setSystemIds(values)
-    listingsState.setPage(1)
   }
 
   const handleDeviceChange = (values: string[]) => {
     listingsState.setDeviceIds(values)
-    listingsState.setPage(1)
     setUserDeviceFilterDisabled(values.length <= 0)
   }
 
   const handleSocChange = (values: string[]) => {
     listingsState.setSocIds(values)
-    listingsState.setPage(1)
     setUserSocFilterDisabled(values.length <= 0)
   }
 
   const handleEmulatorChange = (values: string[]) => {
     listingsState.setEmulatorIds(values)
-    listingsState.setPage(1)
   }
 
   const handlePerformanceChange = (values: number[]) => {
     listingsState.setPerformanceIds(values)
-    listingsState.setPage(1)
   }
 
   const handleSearchChange = (value: string) => {
     listingsState.setSearch(value)
-    listingsState.setPage(1)
-  }
-
-  const handleSort = (field: string) => {
-    let newSortField: SortField | null = listingsState.sortField
-    let newSortDirection: SortDirection
-    if (listingsState.sortField === field) {
-      if (listingsState.sortDirection === 'asc') {
-        newSortDirection = 'desc'
-      } else if (listingsState.sortDirection === 'desc') {
-        newSortField = null
-        newSortDirection = null
-      } else {
-        newSortDirection = 'asc'
-      }
-    } else {
-      newSortField = field as SortField
-      newSortDirection = 'asc'
-    }
-    listingsState.setSortField(newSortField)
-    listingsState.setSortDirection(newSortDirection)
-    listingsState.setPage(1)
-    listingsState.updateQuery(
-      {
-        sortField: newSortField,
-        sortDirection: newSortDirection,
-        page: 1,
-      },
-      { push: true },
-    )
   }
 
   if (listingsQuery?.error) {
@@ -392,13 +353,7 @@ function ListingsPage() {
                   variant={listingsState.myListings ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => {
-                    const newValue = !listingsState.myListings
-                    listingsState.setMyListings(newValue)
-                    listingsState.setPage(1)
-                    listingsState.updateQuery({
-                      myListings: newValue ? 'true' : null,
-                      page: 1,
-                    })
+                    listingsState.setMyListings(!listingsState.myListings)
                   }}
                   className="px-3 py-1.5 text-xs"
                 >
@@ -465,7 +420,7 @@ function ListingsPage() {
                         field="game.title"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('system') && (
@@ -474,7 +429,7 @@ function ListingsPage() {
                         field="game.system.name"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('device') && (
@@ -483,7 +438,7 @@ function ListingsPage() {
                         field="device"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (
@@ -492,7 +447,7 @@ function ListingsPage() {
                         field="emulator.name"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('performance') && (
@@ -501,7 +456,7 @@ function ListingsPage() {
                         field="performance.rank"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('successRate') && (
@@ -510,7 +465,7 @@ function ListingsPage() {
                         field="successRate"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('author') && (
@@ -519,7 +474,7 @@ function ListingsPage() {
                         field="author.name"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('posted') && (
@@ -528,7 +483,7 @@ function ListingsPage() {
                         field="createdAt"
                         currentSortField={listingsState.sortField}
                         currentSortDirection={listingsState.sortDirection}
-                        onSort={handleSort}
+                        onSort={listingsState.handleSort}
                       />
                     )}
                     {columnVisibility.isColumnVisible('actions') && (

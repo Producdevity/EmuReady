@@ -1,129 +1,213 @@
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import analytics from '@/lib/analytics'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
 import type { SortDirection, SortField } from '@/app/listings/types'
 
+interface FilterParams {
+  systemIds?: string[] | null
+  search?: string | null
+  page?: number | null
+  deviceIds?: string[] | null
+  socIds?: string[] | null
+  emulatorIds?: string[] | null
+  performanceIds?: number[] | null
+  sortField?: SortField | null
+  sortDirection?: SortDirection | null
+  myListings?: boolean | null
+}
+
+/**
+ * Hook for managing listings filter state through URL parameters
+ * Uses URL as source of truth with local state only for search input to improve UX
+ */
 function useListingsState() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Read directly from URL - this ensures we always have the current URL state
-  const systemIds = parseArrayParam(searchParams.get('systemIds'))
-  const search = searchParams.get('search') ?? ''
-  const pageParam = Number(searchParams.get('page'))
-  const page = pageParam > 0 ? pageParam : 1
-  const deviceIds = parseArrayParam(searchParams.get('deviceIds'))
-  const socIds = parseArrayParam(searchParams.get('socIds'))
-  const emulatorIds = parseArrayParam(searchParams.get('emulatorIds'))
-  const performanceIds = parseNumberArrayParam(
-    searchParams.get('performanceIds'),
-  )
-  const sortField = (searchParams.get('sortField') as SortField) ?? null
-  const sortDirection =
-    (searchParams.get('sortDirection') as SortDirection) ?? null
-  const myListings = searchParams.get('myListings') === 'true'
+  // Read all filter values from URL
+  const filters = {
+    systemIds: parseArrayParam(searchParams.get('systemIds')),
+    search: searchParams.get('search') ?? '',
+    page: Math.max(1, Number(searchParams.get('page')) || 1),
+    deviceIds: parseArrayParam(searchParams.get('deviceIds')),
+    socIds: parseArrayParam(searchParams.get('socIds')),
+    emulatorIds: parseArrayParam(searchParams.get('emulatorIds')),
+    performanceIds: parseNumberArrayParam(searchParams.get('performanceIds')),
+    sortField: (searchParams.get('sortField') as SortField) ?? null,
+    sortDirection: (searchParams.get('sortDirection') as SortDirection) ?? null,
+    myListings: searchParams.get('myListings') === 'true',
+  }
 
-  // Helper to update URL and state
-  const updateQuery = (
-    params: Record<
-      string,
-      string | number | string[] | number[] | boolean | null
-    >,
-    opts: { push?: boolean } = { push: false },
-  ) => {
-    const newParams = new URLSearchParams(searchParams.toString())
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === null || value === '' || value === undefined) {
-        return newParams.delete(key)
+  // Local state only for search input, the rest is derived from URL
+  const [searchInput, setSearchInput] = useState(filters.search)
+
+  // Sync local search state when URL changes (e.g., back/forward navigation)
+  useEffect(() => {
+    setSearchInput(filters.search)
+  }, [filters.search])
+
+  // Helper to update URL with new filters
+  const updateFilters = useCallback(
+    (newFilters: FilterParams, shouldPush = false) => {
+      // Create a new URLSearchParams object
+      const newParams = new URLSearchParams(searchParams.toString())
+
+      // Reset to page 1 when changing filters (unless explicitly setting page)
+      if (newFilters.page === undefined && Object.keys(newFilters).length > 0) {
+        newFilters.page = 1
       }
-      if (Array.isArray(value)) {
-        if (value.length === 0) {
-          return newParams.delete(key)
+
+      // Update params
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value === null || value === '' || value === undefined) {
+          newParams.delete(key)
+        } else if (Array.isArray(value)) {
+          if (value.length === 0) {
+            newParams.delete(key)
+          } else {
+            newParams.set(key, JSON.stringify(value))
+          }
+        } else {
+          newParams.set(key, String(value))
         }
-        newParams.set(key, JSON.stringify(value))
+      })
+
+      // Navigate
+      const url = `?${newParams.toString()}`
+      if (shouldPush) {
+        router.push(url)
       } else {
-        newParams.set(key, String(value))
+        router.replace(url)
       }
-    })
-    return opts.push
-      ? router.push(`?${newParams.toString()}`)
-      : router.replace(`?${newParams.toString()}`)
-  }
+    },
+    [router, searchParams],
+  )
 
-  // Setters that update URL directly
-  const setSystemIds = (values: string[]) => {
-    analytics.filter.system(values)
-    updateQuery({ systemIds: values })
-  }
-  const setSearch = (value: string) => updateQuery({ search: value })
-  const setPage = (value: number) => {
-    analytics.filter.page({ prevPage: page, nextPage: value })
-    updateQuery({ page: value }, { push: true })
-  }
-  const setDeviceIds = (values: string[]) => {
-    analytics.filter.device(values)
-    updateQuery({ deviceIds: values })
-  }
-  const setSocIds = (values: string[]) => {
-    analytics.filter.soc(values)
-    updateQuery({ socIds: values })
-  }
-  const setEmulatorIds = (values: string[]) => {
-    analytics.filter.emulator(values)
-    updateQuery({ emulatorIds: values })
-  }
-  const setPerformanceIds = (values: number[]) => {
-    analytics.filter.performance(values)
-    updateQuery({ performanceIds: values })
-  }
-  const setSortField = (value: SortField | null) => {
-    analytics.filter.sort(value)
-    updateQuery({ sortField: value })
-  }
-  const setSortDirection = (value: SortDirection) =>
-    updateQuery({ sortDirection: value })
-  const setMyListings = (value: boolean) => {
-    analytics.filter.myListings(value)
-    updateQuery({ myListings: value ? 'true' : null })
-  }
+  const setSearch = useCallback(
+    (value: string) => {
+      // Update local state immediately
+      setSearchInput(value)
+      analytics.filter.search(value)
 
-  const handleSort = (field: string) => {
-    let newSortField: SortField | null = sortField
-    let newSortDirection: SortDirection
-    if (sortField === field) {
-      if (sortDirection === 'asc') {
-        newSortDirection = 'desc'
-      } else if (sortDirection === 'desc') {
-        newSortField = null
-        newSortDirection = null
+      // Debounce URL update
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+
+      searchTimeoutRef.current = setTimeout(() => {
+        updateFilters({ search: value })
+      }, 300)
+    },
+    [updateFilters],
+  )
+
+  const setSystemIds = useCallback(
+    (values: string[]) => {
+      updateFilters({ systemIds: values })
+      analytics.filter.system(values)
+    },
+    [updateFilters],
+  )
+
+  const setPage = useCallback(
+    (value: number) => {
+      updateFilters({ page: value }, true) // Use push for pagination
+      analytics.filter.page({ prevPage: filters.page, nextPage: value })
+    },
+    [filters.page, updateFilters],
+  )
+
+  const setDeviceIds = useCallback(
+    (values: string[]) => {
+      updateFilters({ deviceIds: values })
+      analytics.filter.device(values)
+    },
+    [updateFilters],
+  )
+
+  const setSocIds = useCallback(
+    (values: string[]) => {
+      updateFilters({ socIds: values })
+      analytics.filter.soc(values)
+    },
+    [updateFilters],
+  )
+
+  const setEmulatorIds = useCallback(
+    (values: string[]) => {
+      updateFilters({ emulatorIds: values })
+      analytics.filter.emulator(values)
+    },
+    [updateFilters],
+  )
+
+  const setPerformanceIds = useCallback(
+    (values: number[]) => {
+      updateFilters({ performanceIds: values })
+      analytics.filter.performance(values)
+    },
+    [updateFilters],
+  )
+
+  const setSortField = useCallback(
+    (value: SortField | null) => {
+      updateFilters({ sortField: value })
+      analytics.filter.sort(value)
+    },
+    [updateFilters],
+  )
+
+  const setSortDirection = useCallback(
+    (value: SortDirection | null) => {
+      updateFilters({ sortDirection: value })
+    },
+    [updateFilters],
+  )
+
+  const setMyListings = useCallback(
+    (value: boolean) => {
+      updateFilters({ myListings: value ? true : null })
+      analytics.filter.myListings(value)
+    },
+    [updateFilters],
+  )
+
+  // Helper for toggling sort direction
+  const handleSort = useCallback(
+    (field: string) => {
+      let newSortField: SortField | null = filters.sortField
+      let newSortDirection: SortDirection | null = filters.sortDirection
+
+      if (filters.sortField === field) {
+        if (filters.sortDirection === 'asc') {
+          newSortDirection = 'desc'
+        } else if (filters.sortDirection === 'desc') {
+          newSortField = null
+          newSortDirection = null
+        } else {
+          newSortDirection = 'asc'
+        }
       } else {
+        newSortField = field as SortField
         newSortDirection = 'asc'
       }
-    } else {
-      newSortField = field as SortField
-      newSortDirection = 'asc'
-    }
-    updateQuery({
-      sortField: newSortField,
-      sortDirection: newSortDirection,
-      page: 1,
-    })
-  }
+
+      updateFilters({
+        sortField: newSortField,
+        sortDirection: newSortDirection,
+      })
+    },
+    [filters.sortDirection, filters.sortField, updateFilters],
+  )
 
   return {
-    // State (read directly from URL)
-    systemIds,
-    search,
-    page,
-    deviceIds,
-    socIds,
-    emulatorIds,
-    performanceIds,
-    sortField,
-    sortDirection,
-    myListings,
+    // Current filter values (with search from local state)
+    ...filters,
+    search: searchInput,
 
-    // Setters (update URL directly)
+    // Individual setter functions
     setSystemIds,
     setSearch,
     setPage,
@@ -136,8 +220,8 @@ function useListingsState() {
     setMyListings,
 
     // Helpers
-    updateQuery,
     handleSort,
+    updateQuery: updateFilters, // For backward compatibility TODO: delete later
   }
 }
 
