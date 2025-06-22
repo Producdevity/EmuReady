@@ -392,6 +392,8 @@ class NotificationRateLimitService {
       },
       5 * 60 * 1000,
     ) // Cleanup every 5 minutes
+    // Let process exit if this is the only timer
+    this.cleanupInterval.unref?.()
   }
 
   // Clean up expired entries

@@ -325,6 +325,8 @@ export class NotificationBatchingService {
     this.batchTimer = setInterval(() => {
       this.processBatch().catch(console.error)
     }, this.config.batchIntervalMs)
+    // Allow process to exit if no other tasks are queued
+    this.batchTimer.unref?.()
   }
 
   // Get queue status

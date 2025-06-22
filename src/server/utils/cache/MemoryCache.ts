@@ -173,6 +173,8 @@ class MemoryCache<T> {
     this.cleanupTimer = setInterval(() => {
       this.cleanup()
     }, this.options.cleanupInterval)
+    // Allow process to exit if this is the only active timer
+    this.cleanupTimer.unref?.()
   }
 
   private cleanup(): void {

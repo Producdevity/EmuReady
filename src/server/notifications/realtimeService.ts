@@ -121,6 +121,8 @@ class RealtimeNotificationService {
         console.log(`Removed stale SSE connection for user: ${userId}`)
       }
     }, 30000) // Ping every 30 seconds
+    // Let process exit if this is the only timer
+    this.pingInterval.unref?.()
   }
 
   // Get connection status

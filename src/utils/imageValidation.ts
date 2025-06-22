@@ -8,7 +8,7 @@ export type ImageExtension = (typeof IMAGE_EXTENSIONS)[number]
 // Regex patterns for validation
 export const IMAGE_EXTENSION_REGEX = /\.(jpg|jpeg|png|gif|webp)$/i
 export const IMAGE_FILENAME_REGEX =
-  /^[a-zA-Z0-9-_.]+\.(png|jpg|jpeg|gif|webp)$/i
+  /^[a-zA-Z0-9._-]+\.(png|jpg|jpeg|gif|webp)$/i
 
 /**
  * Validates if a URL is a valid image URL
@@ -99,12 +99,10 @@ export function validateImageUrl(
 } {
   const isValid = isValidImageUrl(url, requireHttps)
 
-  if (isValid) {
-    return { isValid: true }
-  }
-
-  return {
-    isValid: false,
-    error: getImageValidationError(url, requireHttps),
-  }
+  return isValid
+    ? { isValid: true }
+    : {
+        isValid: false,
+        error: getImageValidationError(url, requireHttps),
+      }
 }
