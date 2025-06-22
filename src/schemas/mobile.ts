@@ -88,3 +88,50 @@ export const UpdateProfileSchema = z.object({
   name: z.string().optional(),
   bio: z.string().optional(),
 })
+
+export const GetListingsSchema = z.object({
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(50).default(20),
+  gameId: z.string().uuid().optional(),
+  systemId: z.string().uuid().optional(),
+  deviceId: z.string().uuid().optional(),
+  emulatorId: z.string().uuid().optional(),
+  search: z.string().optional(),
+})
+
+export const GetGamesSchema = z.object({
+  search: z.string().optional(),
+  systemId: z.string().uuid().optional(),
+  limit: z.number().min(1).max(50).default(20),
+})
+
+export const GetDevicesSchema = z.object({
+  search: z.string().optional(),
+  brandId: z.string().uuid().optional(),
+  limit: z.number().min(1).max(100).default(50),
+})
+
+export const GetEmulatorsSchema = z.object({
+  systemId: z.string().uuid().optional(),
+  search: z.string().optional(),
+  limit: z.number().min(1).max(100).default(50),
+})
+
+export const GetNotificationsSchema = z.object({
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(50).default(20),
+  unreadOnly: z.boolean().default(false),
+})
+
+export const MarkNotificationReadSchema = z.object({
+  notificationId: z.string().uuid(),
+})
+
+export const SearchSuggestionsSchema = z.object({
+  query: z.string().min(1),
+  limit: z.number().min(1).max(20).default(10),
+})
+
+export const GetUserVoteSchema = z.object({
+  listingId: z.string().uuid(),
+})
