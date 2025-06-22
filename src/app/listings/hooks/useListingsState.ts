@@ -28,6 +28,7 @@ function useListingsState() {
       string,
       string | number | string[] | number[] | boolean | null
     >,
+    opts: { push?: boolean } = { push: false },
   ) => {
     const newParams = new URLSearchParams(searchParams.toString())
     Object.entries(params).forEach(([key, value]) => {
@@ -43,7 +44,9 @@ function useListingsState() {
         newParams.set(key, String(value))
       }
     })
-    router.replace(`?${newParams.toString()}`)
+    return opts.push
+      ? router.push(`?${newParams.toString()}`)
+      : router.replace(`?${newParams.toString()}`)
   }
 
   // Setters that update URL directly

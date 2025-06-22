@@ -57,12 +57,15 @@ function GamesContent() {
 
   // Update URL params whenever state changes
   const updateUrlParams = useCallback(
-    (updates: {
-      search?: string
-      systemId?: string
-      page?: number
-      hideNoListings?: boolean
-    }) => {
+    (
+      updates: {
+        search?: string
+        systemId?: string
+        page?: number
+        hideNoListings?: boolean
+      },
+      opts: { push?: boolean } = { push: false },
+    ) => {
       const params = new URLSearchParams(searchParams.toString())
 
       // Update or remove search param
@@ -102,7 +105,9 @@ function GamesContent() {
       }
 
       const newUrl = `${pathname}?${params.toString()}`
-      router.replace(newUrl, { scroll: false })
+      return opts.push
+        ? router.push(newUrl, { scroll: false })
+        : router.replace(newUrl, { scroll: false })
     },
     [searchParams, pathname, router],
   )
@@ -135,18 +140,18 @@ function GamesContent() {
       .value
     setSystemId(newSystemId)
     setPage(1)
-    updateUrlParams({ systemId: newSystemId, page: 1 })
+    updateUrlParams({ systemId: newSystemId, page: 1 }, { push: true })
   }
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
-    updateUrlParams({ page: newPage })
+    updateUrlParams({ page: newPage }, { push: true })
   }
 
   const handleHideGamesWithNoListingsChange = (hide: boolean) => {
     setHideGamesWithNoListings(hide)
     setPage(1)
-    updateUrlParams({ hideNoListings: hide, page: 1 })
+    updateUrlParams({ hideNoListings: hide, page: 1 }, { push: true })
   }
 
   const isAuthor = hasPermission(userQuery.data?.role, Role.AUTHOR)

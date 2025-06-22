@@ -3,7 +3,7 @@
 import { Clock, GamepadIcon, CpuIcon, FunnelIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Suspense, useState, type MouseEvent } from 'react'
+import { Suspense, useState } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
@@ -146,33 +146,36 @@ function ListingsPage() {
   const handleSystemChange = (values: string[]) => {
     listingsState.setSystemIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ systemIds: values, page: 1 })
+    listingsState.updateQuery({ systemIds: values, page: 1 }, { push: true })
   }
 
   const handleDeviceChange = (values: string[]) => {
     listingsState.setDeviceIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ deviceIds: values, page: 1 })
+    listingsState.updateQuery({ deviceIds: values, page: 1 }, { push: true })
     setUserDeviceFilterDisabled(values.length <= 0)
   }
 
   const handleSocChange = (values: string[]) => {
     listingsState.setSocIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ socIds: values, page: 1 })
+    listingsState.updateQuery({ socIds: values, page: 1 }, { push: true })
     setUserSocFilterDisabled(values.length <= 0)
   }
 
   const handleEmulatorChange = (values: string[]) => {
     listingsState.setEmulatorIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ emulatorIds: values, page: 1 })
+    listingsState.updateQuery({ emulatorIds: values, page: 1 }, { push: true })
   }
 
   const handlePerformanceChange = (values: number[]) => {
     listingsState.setPerformanceIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ performanceIds: values, page: 1 })
+    listingsState.updateQuery(
+      { performanceIds: values, page: 1 },
+      { push: true },
+    )
   }
 
   const handleSearchChange = (value: string) => {
@@ -200,25 +203,23 @@ function ListingsPage() {
     listingsState.setSortField(newSortField)
     listingsState.setSortDirection(newSortDirection)
     listingsState.setPage(1)
-    listingsState.updateQuery({
-      sortField: newSortField,
-      sortDirection: newSortDirection,
-      page: 1,
-    })
+    listingsState.updateQuery(
+      {
+        sortField: newSortField,
+        sortDirection: newSortDirection,
+        page: 1,
+      },
+      { push: true },
+    )
   }
 
-  // Handle game name click to navigate to game details (clicking on row navigates to listing details)
-  const _handleGameClick = (gameId: string, ev: MouseEvent) => {
-    ev.stopPropagation()
-    router.push(`/games/${gameId}`)
-  }
-
-  if (listingsQuery?.error)
+  if (listingsQuery?.error) {
     return (
       <div className="p-8 text-center text-red-500">
         Failed to load listings.
       </div>
     )
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -357,10 +358,13 @@ function ListingsPage() {
                     const newValue = !listingsState.myListings
                     listingsState.setMyListings(newValue)
                     listingsState.setPage(1)
-                    listingsState.updateQuery({
-                      myListings: newValue ? 'true' : null,
-                      page: 1,
-                    })
+                    listingsState.updateQuery(
+                      {
+                        myListings: newValue ? 'true' : null,
+                        page: 1,
+                      },
+                      { push: true },
+                    )
                   }}
                 >
                   {listingsState.myListings ? 'All Listings' : 'My Listings'}
@@ -698,7 +702,7 @@ function ListingsPage() {
                 itemsPerPage={listingsQuery.data.pagination.limit}
                 onPageChange={(newPage) => {
                   listingsState.setPage(newPage)
-                  listingsState.updateQuery({ page: newPage })
+                  listingsState.updateQuery({ page: newPage }, { push: true })
                 }}
               />
             )}
