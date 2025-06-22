@@ -1,13 +1,18 @@
 'use client'
 
-import { Search, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
+import {
+  AdminPageLayout,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+  AdminTableContainer,
+} from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
   Button,
-  Input,
   LoadingSpinner,
   ColumnVisibilityControl,
   SortableHeader,
@@ -40,7 +45,7 @@ const EMULATORS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminEmulatorsPage() {
-  const table = useAdminTable<EmulatorSortField>()
+  const table = useAdminTable<EmulatorSortField>({ defaultLimit: 20 })
 
   const columnVisibility = useColumnVisibility(EMULATORS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminEmulators,
@@ -60,10 +65,22 @@ function AdminEmulatorsPage() {
     limit: table.limit,
   })
 
+  const emulatorsStatsQuery = api.emulators.getStats.useQuery()
+
   const emulators = emulatorsQuery.data?.emulators ?? []
   const pagination = emulatorsQuery.data?.pagination
+  const utils = api.useUtils()
 
-  const deleteEmulator = api.emulators.delete.useMutation()
+  const deleteEmulator = api.emulators.delete.useMutation({
+    onSuccess: () => {
+      toast.success('Emulator deleted successfully!')
+      utils.emulators.get.invalidate().catch(console.error)
+      utils.emulators.getStats.invalidate().catch(console.error)
+    },
+    onError: (err) => {
+      toast.error(`Failed to delete emulator: ${getErrorMessage(err)}`)
+    },
+  })
   const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -91,29 +108,19 @@ function AdminEmulatorsPage() {
 
     if (!confirmed) return
 
-    try {
-      await deleteEmulator.mutateAsync({
-        id,
-      } satisfies RouterInput['emulators']['delete'])
-      emulatorsQuery.refetch().catch(console.error)
-      toast.success('Emulator deleted successfully!')
-    } catch (err) {
-      toast.error(`Failed to delete emulator: ${getErrorMessage(err)}`)
-    }
+    deleteEmulator.mutate({
+      id,
+    } satisfies RouterInput['emulators']['delete'])
   }
 
+  if (emulatorsQuery.isLoading) return <LoadingSpinner />
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Manage Emulators
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage emulator software for various gaming systems
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+    <AdminPageLayout
+      title="Manage Emulators"
+      description="Manage emulator software for various gaming systems"
+      headerActions={
+        <>
           <DisplayToggleButton
             showLogos={showEmulatorLogos}
             onToggle={toggleEmulatorLogos}
@@ -126,152 +133,174 @@ function AdminEmulatorsPage() {
             columnVisibility={columnVisibility}
           />
           <Button onClick={() => openModal()}>Add Emulator</Button>
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
-              type="text"
-              placeholder="Search emulators by name..."
-              value={table.search}
-              onChange={table.handleSearchChange}
-              className="w-full pl-10"
-            />
-          </div>
-        </div>
-        {table.search && (
-          <Button variant="outline" onClick={() => table.setSearch('')}>
-            Clear Filters
-          </Button>
-        )}
-      </div>
-
-      {emulatorsQuery.isLoading && (
-        <LoadingSpinner text="Loading emulators..." />
-      )}
-
-      {!emulatorsQuery.isLoading && emulators.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">
-            {table.search
-              ? 'No emulators match your search criteria.'
-              : 'No emulators found.'}
-          </p>
-        </div>
-      )}
-
-      {!emulatorsQuery.isLoading && emulators.length > 0 && (
-        <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-            <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-              <tr>
-                {columnVisibility.isColumnVisible('name') && (
-                  <SortableHeader
-                    label="Name"
-                    field="name"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('systemCount') && (
-                  <SortableHeader
-                    label="Systems"
-                    field="systemCount"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('listingCount') && (
-                  <SortableHeader
-                    label="Listings"
-                    field="listingCount"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('actions') && (
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {emulators.map((emulator) => (
-                <tr
-                  key={emulator.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  {columnVisibility.isColumnVisible('name') && (
-                    <td className="px-4 py-2">
-                      <Link
-                        href={`/admin/emulators/${emulator.id}`}
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
-                      >
-                        <EmulatorIcon
-                          name={emulator.name}
-                          logo={emulator.logo}
-                          showLogo={
-                            isEmulatorLogosHydrated && showEmulatorLogos
-                          }
-                        />
-                      </Link>
-                    </td>
-                  )}
-                  {columnVisibility.isColumnVisible('systemCount') && (
-                    <td className="px-4 py-2">{emulator._count.systems}</td>
-                  )}
-                  {columnVisibility.isColumnVisible('listingCount') && (
-                    <td className="px-4 py-2">{emulator._count.listings}</td>
-                  )}
-                  {columnVisibility.isColumnVisible('actions') && (
-                    <td className="px-4 py-2 flex gap-2 justify-end">
-                      <Link
-                        href={`/admin/emulators/${emulator.id}/custom-fields`}
-                        className={actionButtonClasses}
-                      >
-                        <Settings className="mr-2 h-4 w-4" /> Custom Fields
-                      </Link>
-                      <EditButton
-                        href={`/admin/emulators/${emulator.id}`}
-                        title="Edit Emulator"
-                      />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => openModal(emulator)}
-                      >
-                        Quick Edit
-                      </Button>
-                      <DeleteButton
-                        onClick={() => handleDelete(emulator.id)}
-                        title="Delete Emulator"
-                        isLoading={deleteEmulator.isPending}
-                        disabled={deleteEmulator.isPending}
-                      />
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {pagination && pagination.pages > 1 && (
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.pages}
-          onPageChange={table.setPage}
+        </>
+      }
+    >
+      {emulatorsStatsQuery.data && (
+        <AdminStatsDisplay
+          stats={[
+            {
+              label: 'Total Emulators',
+              value: emulatorsStatsQuery.data.total,
+              color: 'blue',
+            },
+            {
+              label: 'With Listings',
+              value: emulatorsStatsQuery.data.withListings,
+              color: 'green',
+            },
+            {
+              label: 'With Systems',
+              value: emulatorsStatsQuery.data.withSystems,
+              color: 'purple',
+            },
+          ]}
+          isLoading={emulatorsStatsQuery.isLoading}
+          className="mb-6"
         />
       )}
+
+      <AdminSearchFilters
+        searchValue={table.search}
+        onSearchChange={table.setSearch}
+        searchPlaceholder="Search emulators by name..."
+        onClear={table.search ? () => table.setSearch('') : undefined}
+      />
+
+      <AdminTableContainer>
+        {emulators.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              {table.search
+                ? 'No emulators found matching your search.'
+                : 'No emulators found.'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    {columnVisibility.isColumnVisible('name') && (
+                      <SortableHeader
+                        label="Name"
+                        field="name"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                        className="px-6 py-3 text-left"
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('systemCount') && (
+                      <SortableHeader
+                        label="Systems"
+                        field="systemCount"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                        className="px-6 py-3 text-left"
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('listingCount') && (
+                      <SortableHeader
+                        label="Listings"
+                        field="listingCount"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={table.handleSort}
+                        className="px-6 py-3 text-left"
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {emulators.map((emulator) => (
+                    <tr
+                      key={emulator.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      {columnVisibility.isColumnVisible('name') && (
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/admin/emulators/${emulator.id}`}
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
+                          >
+                            <EmulatorIcon
+                              name={emulator.name}
+                              logo={emulator.logo}
+                              showLogo={
+                                isEmulatorLogosHydrated && showEmulatorLogos
+                              }
+                            />
+                          </Link>
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('systemCount') && (
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          {emulator._count.systems}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('listingCount') && (
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          {emulator._count.listings}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('actions') && (
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/admin/emulators/${emulator.id}/custom-fields`}
+                              className={actionButtonClasses}
+                            >
+                              <Settings className="mr-2 h-4 w-4" /> Custom
+                              Fields
+                            </Link>
+                            <EditButton
+                              href={`/admin/emulators/${emulator.id}`}
+                              title="Edit Emulator"
+                            />
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => openModal(emulator)}
+                            >
+                              Quick Edit
+                            </Button>
+                            <DeleteButton
+                              onClick={() => handleDelete(emulator.id)}
+                              title="Delete Emulator"
+                              isLoading={deleteEmulator.isPending}
+                              disabled={deleteEmulator.isPending}
+                            />
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {pagination && pagination.pages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={pagination.pages}
+                  totalItems={pagination.total}
+                  itemsPerPage={pagination.limit}
+                  onPageChange={table.setPage}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </AdminTableContainer>
 
       {modalOpen && (
         <EmulatorModal
@@ -279,12 +308,13 @@ function AdminEmulatorsPage() {
           emulatorName={emulatorName}
           onClose={closeModal}
           onSuccess={() => {
-            emulatorsQuery.refetch().catch(console.error)
+            utils.emulators.get.invalidate().catch(console.error)
+            utils.emulators.getStats.invalidate().catch(console.error)
             closeModal()
           }}
         />
       )}
-    </div>
+    </AdminPageLayout>
   )
 }
 

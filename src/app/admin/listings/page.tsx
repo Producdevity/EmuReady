@@ -5,8 +5,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
-import { AdminTableContainer } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminStatsDisplay,
+} from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
@@ -169,42 +172,11 @@ function AdminListingsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Manage Listings
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Edit and manage all performance listings in the system
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <AdminStatsBar
-            stats={[
-              {
-                label: 'Total',
-                value: listingStatsQuery.data?.total ?? 0,
-                color: 'blue',
-              },
-              {
-                label: 'Approved',
-                value: listingStatsQuery.data?.approved ?? 0,
-                color: 'green',
-              },
-              {
-                label: 'Pending',
-                value: listingStatsQuery.data?.pending ?? 0,
-                color: 'yellow',
-              },
-              {
-                label: 'Rejected',
-                value: listingStatsQuery.data?.rejected ?? 0,
-                color: 'red',
-              },
-            ]}
-            isLoading={listingStatsQuery.isLoading}
-          />
+    <AdminPageLayout
+      title="Manage Listings"
+      description="Edit and manage all performance listings in the system"
+      headerActions={
+        <>
           <DisplayToggleButton
             showLogos={showSystemIcons}
             onToggle={() => setShowSystemIcons(!showSystemIcons)}
@@ -223,8 +195,37 @@ function AdminListingsPage() {
             columns={LISTINGS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-        </div>
-      </div>
+        </>
+      }
+    >
+      {listingStatsQuery.data && (
+        <AdminStatsDisplay
+          stats={[
+            {
+              label: 'Total',
+              value: listingStatsQuery.data.total,
+              color: 'blue',
+            },
+            {
+              label: 'Approved',
+              value: listingStatsQuery.data.approved,
+              color: 'green',
+            },
+            {
+              label: 'Pending',
+              value: listingStatsQuery.data.pending,
+              color: 'yellow',
+            },
+            {
+              label: 'Rejected',
+              value: listingStatsQuery.data.rejected,
+              color: 'red',
+            },
+          ]}
+          isLoading={listingStatsQuery.isLoading}
+          className="mb-6"
+        />
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
@@ -549,7 +550,7 @@ function AdminListingsPage() {
           </>
         )}
       </AdminTableContainer>
-    </div>
+    </AdminPageLayout>
   )
 }
 

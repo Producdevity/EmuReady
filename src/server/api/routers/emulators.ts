@@ -16,6 +16,25 @@ import {
 import type { Prisma } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
+  getStats: adminProcedure.query(async ({ ctx }) => {
+    const [total, withListings, withSystems] = await Promise.all([
+      ctx.prisma.emulator.count(),
+      ctx.prisma.emulator.count({
+        where: { listings: { some: {} } },
+      }),
+      ctx.prisma.emulator.count({
+        where: { systems: { some: {} } },
+      }),
+    ])
+
+    return {
+      total,
+      withListings,
+      withSystems,
+      withoutListings: total - withListings,
+    }
+  }),
+
   get: publicProcedure
     .input(GetEmulatorsSchema)
     .query(async ({ ctx, input }) => {

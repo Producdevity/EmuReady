@@ -6,7 +6,11 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
-import { AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminStatsDisplay,
+} from '@/components/admin'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
   Button,
@@ -241,18 +245,11 @@ function GameApprovalsPage() {
   const filteredGames = pendingGamesQuery.data?.games ?? []
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Game Approvals
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Review and approve submitted games
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
+    <AdminPageLayout
+      title="Game Approvals"
+      description="Review and approve submitted games"
+      headerActions={
+        <>
           <DisplayToggleButton
             showLogos={showSystemIcons}
             onToggle={() => setShowSystemIcons(!showSystemIcons)}
@@ -264,29 +261,32 @@ function GameApprovalsPage() {
             columns={GAME_APPROVALS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          {gameStatsQuery.data && (
-            <AdminStatsDisplay
-              stats={[
-                {
-                  label: 'Pending',
-                  value: gameStatsQuery.data.pending,
-                  color: 'yellow',
-                },
-                {
-                  label: 'Approved',
-                  value: gameStatsQuery.data.approved,
-                  color: 'green',
-                },
-                {
-                  label: 'Rejected',
-                  value: gameStatsQuery.data.rejected,
-                  color: 'red',
-                },
-              ]}
-            />
-          )}
-        </div>
-      </div>
+        </>
+      }
+    >
+      {gameStatsQuery.data && (
+        <AdminStatsDisplay
+          stats={[
+            {
+              label: 'Pending',
+              value: gameStatsQuery.data.pending,
+              color: 'yellow',
+            },
+            {
+              label: 'Approved',
+              value: gameStatsQuery.data.approved,
+              color: 'green',
+            },
+            {
+              label: 'Rejected',
+              value: gameStatsQuery.data.rejected,
+              color: 'red',
+            },
+          ]}
+          isLoading={gameStatsQuery.isLoading}
+          className="mb-6"
+        />
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
@@ -667,7 +667,7 @@ function GameApprovalsPage() {
         }}
         game={selectedGameForImagePreview}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import {
+  AdminPageLayout,
   AdminTableContainer,
   AdminNotificationBanner,
   AdminStatsDisplay,
@@ -264,38 +265,11 @@ function AdminApprovalsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Listing Approvals
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Review and approve or reject pending listing submissions
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {listingStatsQuery.data && (
-            <AdminStatsDisplay
-              stats={[
-                {
-                  label: 'Pending',
-                  value: listingStatsQuery.data.pending,
-                  color: 'yellow',
-                },
-                {
-                  label: 'Approved',
-                  value: listingStatsQuery.data.approved,
-                  color: 'green',
-                },
-                {
-                  label: 'Rejected',
-                  value: listingStatsQuery.data.rejected,
-                  color: 'red',
-                },
-              ]}
-            />
-          )}
+    <AdminPageLayout
+      title="Listing Approvals"
+      description="Review and approve or reject pending listing submissions"
+      headerActions={
+        <>
           <DisplayToggleButton
             showLogos={showSystemIcons}
             onToggle={() => setShowSystemIcons(!showSystemIcons)}
@@ -314,8 +288,32 @@ function AdminApprovalsPage() {
             columns={APPROVALS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-        </div>
-      </div>
+        </>
+      }
+    >
+      {listingStatsQuery.data && (
+        <AdminStatsDisplay
+          stats={[
+            {
+              label: 'Pending',
+              value: listingStatsQuery.data.pending,
+              color: 'yellow',
+            },
+            {
+              label: 'Approved',
+              value: listingStatsQuery.data.approved,
+              color: 'green',
+            },
+            {
+              label: 'Rejected',
+              value: listingStatsQuery.data.rejected,
+              color: 'red',
+            },
+          ]}
+          isLoading={listingStatsQuery.isLoading}
+          className="mb-6"
+        />
+      )}
 
       {gameStatsQuery.data && gameStatsQuery.data.pending > 0 && (
         <AdminNotificationBanner
@@ -626,7 +624,7 @@ function AdminApprovalsPage() {
           rejectMutation={rejectMutation}
         />
       )}
-    </div>
+    </AdminPageLayout>
   )
 }
 

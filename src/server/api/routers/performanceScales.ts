@@ -13,6 +13,21 @@ import {
 } from '@/server/api/trpc'
 
 export const performanceScalesRouter = createTRPCRouter({
+  getStats: adminProcedure.query(async ({ ctx }) => {
+    const [total, usedInListings] = await Promise.all([
+      ctx.prisma.performanceScale.count(),
+      ctx.prisma.performanceScale.count({
+        where: { listings: { some: {} } },
+      }),
+    ])
+
+    return {
+      total,
+      usedInListings,
+      unused: total - usedInListings,
+    }
+  }),
+
   get: publicProcedure
     .input(GetPerformanceScalesSchema)
     .query(async ({ ctx, input }) => {

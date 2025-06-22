@@ -2,6 +2,7 @@
 
 import { PlusCircle } from 'lucide-react'
 import { useState } from 'react'
+import { AdminPageLayout, AdminStatsDisplay } from '@/components/admin'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormModal'
@@ -52,27 +53,39 @@ function CustomFieldTemplatesPage() {
     )
   }
 
+  const templates = customFieldTemplatesQuery.data ?? []
+  const totalTemplates = templates.length
+  const templatesWithFields = templates.filter(
+    (t) => t.fields.length > 0,
+  ).length
+  const templatesWithoutFields = totalTemplates - templatesWithFields
+
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Custom Field Templates
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Create reusable templates for custom fields that can be applied to
-            multiple emulators
-          </p>
-        </div>
+    <AdminPageLayout
+      title="Custom Field Templates"
+      description="Create reusable templates for custom fields that can be applied to multiple emulators"
+      headerActions={
         <Button onClick={handleOpenCreateModal}>
           <PlusCircle className="mr-2 h-4 w-4" /> Create Template
         </Button>
-      </div>
+      }
+    >
+      <AdminStatsDisplay
+        stats={[
+          { label: 'Total Templates', value: totalTemplates, color: 'blue' },
+          { label: 'With Fields', value: templatesWithFields, color: 'green' },
+          {
+            label: 'Empty Templates',
+            value: templatesWithoutFields,
+            color: 'gray',
+          },
+        ]}
+        isLoading={customFieldTemplatesQuery.isLoading}
+      />
 
-      {customFieldTemplatesQuery.data &&
-      customFieldTemplatesQuery.data.length > 0 ? (
+      {templates.length > 0 ? (
         <CustomFieldTemplateList
-          templates={customFieldTemplatesQuery.data}
+          templates={templates}
           onEdit={handleOpenEditModal}
           onDeleteSuccess={customFieldTemplatesQuery.refetch}
         />
@@ -95,7 +108,7 @@ function CustomFieldTemplatesPage() {
         isOpen={isFormModalOpen}
         onClose={handleCloseModal}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 
