@@ -648,21 +648,20 @@ function ListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('actions') && (
                         <td
-                          className="px-4 py-2 whitespace-nowrap"
+                          className="px-6 py-4 text-right"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex items-center gap-2 flex-col">
-                            <ViewButton
-                              title="View Listing Details"
-                              href={`/listings/${listing.id}`}
-                            />
-
+                          <div className="flex items-center justify-end gap-2">
                             {isAdmin && (
                               <EditButton
                                 href={`/admin/listings/${listing.id}/edit`}
                                 title="Edit Listing"
                               />
                             )}
+                            <ViewButton
+                              href={`/listings/${listing.id}`}
+                              title="View Listing Details"
+                            />
                           </div>
                         </td>
                       )}

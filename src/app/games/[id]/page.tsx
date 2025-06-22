@@ -39,14 +39,9 @@ function GameDetailsPage() {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="mb-6"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+        <div className="mb-4 md:mb-6">
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
         </div>

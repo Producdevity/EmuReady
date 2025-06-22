@@ -44,8 +44,8 @@ function EditEmulatorPage() {
         onClick={() => router.back()}
         className="mb-6"
       >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Emulators
+        <ArrowLeft className="h-4 w-4" />
+        Back
       </Button>
 
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">

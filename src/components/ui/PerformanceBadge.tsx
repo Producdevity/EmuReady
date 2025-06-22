@@ -34,14 +34,16 @@ function PerformanceBadge(props: Props) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge
-          className={customColorClass}
-          pill={isNullish(props.pill) ? true : props.pill}
-        >
-          {props.label}
-        </Badge>
+        <div className="flex justify-center items-center">
+          <Badge
+            className={customColorClass}
+            pill={isNullish(props.pill) ? false : props.pill}
+          >
+            {props.label}
+          </Badge>
+        </div>
       </TooltipTrigger>
-      <TooltipContent side="top">
+      <TooltipContent>
         {props.description ?? 'No description available'}
       </TooltipContent>
     </Tooltip>
