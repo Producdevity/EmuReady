@@ -13,8 +13,8 @@ import { GameEditForm } from './components/GameEditForm'
 import { GameListingsSection } from './components/GameListingsSection'
 
 function GameDetailsPage() {
-  const router = useRouter()
   const params = useParams()
+  const router = useRouter()
   const { user } = useUser()
 
   const gameQuery = api.games.byId.useQuery({ id: params.id as string })
@@ -47,7 +47,7 @@ function GameDetailsPage() {
             className="mb-6"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Games
+            Back
           </Button>
         </div>
 
