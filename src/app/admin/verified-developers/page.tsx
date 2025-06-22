@@ -3,7 +3,11 @@
 import { Shield, UserCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
-import { AdminTableContainer, AdminSearchFilters } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+} from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import {
   Button,
@@ -122,44 +126,34 @@ function AdminVerifiedDevelopersPage() {
       </div>
 
       {verifiedDevelopersQuery.data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {verifiedDevelopersQuery.data.verifiedDevelopers.length}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total Verified
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-              {
-                new Set(
-                  verifiedDevelopersQuery.data.verifiedDevelopers.map(
-                    (vd) => vd.emulator.id,
-                  ),
-                ).size
-              }
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Emulators Covered
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-              {
-                new Set(
-                  verifiedDevelopersQuery.data.verifiedDevelopers.map(
-                    (vd) => vd.user.id,
-                  ),
-                ).size
-              }
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Unique Developers
-            </div>
-          </div>
-        </div>
+        <AdminStatsDisplay
+          className="mb-6"
+          stats={[
+            {
+              label: 'Total Verified',
+              value: verifiedDevelopersQuery.data.verifiedDevelopers.length,
+              color: 'blue',
+            },
+            {
+              label: 'Emulators Covered',
+              value: new Set(
+                verifiedDevelopersQuery.data.verifiedDevelopers.map(
+                  (vd) => vd.emulator.id,
+                ),
+              ).size,
+              color: 'gray',
+            },
+            {
+              label: 'Unique Developers',
+              value: new Set(
+                verifiedDevelopersQuery.data.verifiedDevelopers.map(
+                  (vd) => vd.user.id,
+                ),
+              ).size,
+              color: 'gray',
+            },
+          ]}
+        />
       )}
 
       <AdminSearchFilters

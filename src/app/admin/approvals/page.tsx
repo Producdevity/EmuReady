@@ -7,6 +7,7 @@ import { isEmpty } from 'remeda'
 import {
   AdminTableContainer,
   AdminNotificationBanner,
+  AdminStatsDisplay,
 } from '@/components/admin'
 import EmulatorIcon from '@/components/icons/EmulatorIcon'
 import SystemIcon from '@/components/icons/SystemIcon'
@@ -275,32 +276,25 @@ function AdminApprovalsPage() {
         </div>
         <div className="flex items-center gap-3">
           {listingStatsQuery.data && (
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {listingStatsQuery.data.pending}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Pending
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {listingStatsQuery.data.approved}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Approved
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {listingStatsQuery.data.rejected}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Rejected
-                </div>
-              </div>
-            </div>
+            <AdminStatsDisplay
+              stats={[
+                {
+                  label: 'Pending',
+                  value: listingStatsQuery.data.pending,
+                  color: 'yellow',
+                },
+                {
+                  label: 'Approved',
+                  value: listingStatsQuery.data.approved,
+                  color: 'green',
+                },
+                {
+                  label: 'Rejected',
+                  value: listingStatsQuery.data.rejected,
+                  color: 'red',
+                },
+              ]}
+            />
           )}
           <DisplayToggleButton
             showLogos={showSystemIcons}

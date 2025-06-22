@@ -23,9 +23,14 @@ interface Props {
 function AdminStatsDisplay(props: Props) {
   if (props.isLoading) {
     return (
-      <div className={`flex items-center gap-6 ${props.className || ''}`}>
+      <div
+        className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${props.className || ''}`}
+      >
         {[1, 2, 3].map((i) => (
-          <div key={i} className="text-center">
+          <div
+            key={i}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
+          >
             <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
             <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
           </div>
@@ -35,9 +40,14 @@ function AdminStatsDisplay(props: Props) {
   }
 
   return (
-    <div className={`flex items-center gap-6 ${props.className || ''}`}>
+    <div
+      className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${props.className || ''}`}
+    >
       {props.stats.map((stat) => (
-        <div key={stat.label} className="text-center">
+        <div
+          key={stat.label}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
+        >
           <div
             className={`text-2xl font-bold ${colorClasses[stat.color] || colorClasses.gray}`}
             title={stat.description}

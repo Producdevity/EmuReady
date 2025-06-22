@@ -2,7 +2,11 @@
 
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { AdminTableContainer, AdminSearchFilters } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+} from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -137,32 +141,26 @@ function AdminSoCsPage() {
       </div>
 
       {socsStatsQuery.data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {socsStatsQuery.data.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {socsStatsQuery.data.withDevices}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              With Devices
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-              {socsStatsQuery.data.withoutDevices}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              No Devices
-            </div>
-          </div>
-        </div>
+        <AdminStatsDisplay
+          className="mb-6"
+          stats={[
+            {
+              label: 'Total',
+              value: socsStatsQuery.data.total,
+              color: 'blue',
+            },
+            {
+              label: 'With Devices',
+              value: socsStatsQuery.data.withDevices,
+              color: 'green',
+            },
+            {
+              label: 'No Devices',
+              value: socsStatsQuery.data.withoutDevices,
+              color: 'gray',
+            },
+          ]}
+        />
       )}
 
       <AdminSearchFilters

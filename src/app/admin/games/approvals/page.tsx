@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
-import { AdminTableContainer } from '@/components/admin'
+import { AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
   Button,
@@ -265,32 +265,25 @@ function GameApprovalsPage() {
             columnVisibility={columnVisibility}
           />
           {gameStatsQuery.data && (
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {gameStatsQuery.data.pending}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Pending
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {gameStatsQuery.data.approved}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Approved
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {gameStatsQuery.data.rejected}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Rejected
-                </div>
-              </div>
-            </div>
+            <AdminStatsDisplay
+              stats={[
+                {
+                  label: 'Pending',
+                  value: gameStatsQuery.data.pending,
+                  color: 'yellow',
+                },
+                {
+                  label: 'Approved',
+                  value: gameStatsQuery.data.approved,
+                  color: 'green',
+                },
+                {
+                  label: 'Rejected',
+                  value: gameStatsQuery.data.rejected,
+                  color: 'red',
+                },
+              ]}
+            />
           )}
         </div>
       </div>
