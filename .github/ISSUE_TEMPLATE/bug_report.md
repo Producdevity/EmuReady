@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-title: '[Bug]: '
+title: '[Bug]: {bug_description}'
 about: Create a report to help us improve EmuReady
 labels: bug
 ---
@@ -42,3 +42,4 @@ Steps to reproduce the behavior:
 - [ ] I have checked that this issue has not already been reported
 - [ ] I have checked that this issue exists on the production version
 - [ ] I have provided sufficient information for reproduction
+- [ ] I am willing to help investigate or fix this issue if needed

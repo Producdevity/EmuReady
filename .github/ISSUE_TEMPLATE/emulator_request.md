@@ -1,6 +1,6 @@
 ---
 name: Emulator Request
-title: '[Emulator Request]: '
+title: '[Emulator Request]: {emulator_name}'
 about: Request to add a new emulator to EmuReady
 labels: emulator-request
 ---

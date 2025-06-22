@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-title: '[Feature Request]: '
+title: '[Feature Request]: {feature_name}'
 about: Suggest an idea or enhancement for EmuReady
 labels: enhancement
 ---

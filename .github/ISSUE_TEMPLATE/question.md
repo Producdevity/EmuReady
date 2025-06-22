@@ -1,6 +1,6 @@
 ---
 name: Question / Support
-title: '[Help]: '
+title: '[Help]: {question_title}'
 about: Ask a question or request support for EmuReady
 labels: question
 ---
