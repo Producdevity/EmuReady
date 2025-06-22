@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import TrustStatsOverview from '@/app/admin/trust-logs/components/TrustStatsOverview'
+import { AdminTableContainer } from '@/components/admin'
 import {
   Button,
   Input,
   SortableHeader,
   ColumnVisibilityControl,
-  AdminTableContainer,
   LoadingSpinner,
   Badge,
   Code,

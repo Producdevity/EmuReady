@@ -49,6 +49,20 @@ export default function RootLayout(props: PropsWithChildren) {
   return (
     <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>
       <html lang="en" suppressHydrationWarning>
+        <head>
+          {/* Initialize dataLayer before Google Analytics loads */}
+          {GA_ID && (
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                `,
+              }}
+            />
+          )}
+        </head>
         <body className={inter.className}>
           <Providers>
             <SessionTracker />

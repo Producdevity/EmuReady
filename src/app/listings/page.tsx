@@ -20,8 +20,7 @@ import {
   TooltipContent,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
-import EditButton from '@/components/ui/table-buttons/EditButton'
-import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
   type ColumnDefinition,
@@ -695,6 +694,8 @@ function ListingsPage() {
               <Pagination
                 currentPage={listingsState.page}
                 totalPages={listingsQuery.data.pagination.pages}
+                totalItems={listingsQuery.data.pagination.total}
+                itemsPerPage={listingsQuery.data.pagination.limit}
                 onPageChange={(newPage) => {
                   listingsState.setPage(newPage)
                   listingsState.updateQuery({ page: newPage })

@@ -1,5 +1,3 @@
-export { default as AdminNotificationBanner } from './AdminNotificationBanner'
-export { default as AdminTableContainer } from './AdminTableContainer'
 export { default as ApprovalStatusBadge } from './ApprovalStatusBadge'
 export {
   default as Autocomplete,
@@ -33,4 +31,5 @@ export { default as ThemeToggle } from './ThemeToggle'
 export { default as Toggle } from './Toggle'
 export * from './Tooltip'
 export { default as TrustLevelBadge } from './TrustLevelBadge'
+export { default as VerifiedDeveloperBadge } from './VerifiedDeveloperBadge'
 export { default as AnimatedToggle } from './AnimatedToggle'

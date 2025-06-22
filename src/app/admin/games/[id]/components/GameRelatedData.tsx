@@ -1,10 +1,9 @@
 'use client'
 
-import Link from 'next/link'
-import { PerformanceBadge } from '@/components/ui'
+import { PerformanceBadge, ApprovalStatusBadge } from '@/components/ui'
+import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import { formatTimeAgo } from '@/utils/date'
 import { type Prisma } from '@orm'
-import ApprovalStatusBadge from '../../../../../components/ui/ApprovalStatusBadge'
 
 type GameWithRelations = Prisma.GameGetPayload<{
   include: {
@@ -31,7 +30,7 @@ interface Props {
   game: GameWithRelations
 }
 
-function GameRelatedData(props: Props) {
+export function GameRelatedData(props: Props) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
@@ -98,13 +97,15 @@ function GameRelatedData(props: Props) {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatTimeAgo(listing.createdAt)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <Link
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <EditButton
+                      href={`/admin/listings/${listing.id}/edit`}
+                      title="Edit Listing"
+                    />
+                    <ViewButton
                       href={`/listings/${listing.id}`}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      View
-                    </Link>
+                      title="View Details"
+                    />
                   </td>
                 </tr>
               ))}
@@ -115,5 +116,3 @@ function GameRelatedData(props: Props) {
     </div>
   )
 }
-
-export default GameRelatedData

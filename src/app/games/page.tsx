@@ -2,10 +2,11 @@
 
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import {
   useState,
   useEffect,
+  useCallback,
   Suspense,
   type SyntheticEvent,
   type ChangeEvent,
@@ -20,6 +21,8 @@ import GameFilters from './components/GameFilters'
 
 function GamesContent() {
   const { user } = useUser()
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const [search, setSearch] = useState('')
@@ -33,6 +36,7 @@ function GamesContent() {
     const urlSearch = searchParams.get('search')
     const urlSystemId = searchParams.get('systemId')
     const urlPage = searchParams.get('page')
+    const urlHideGames = searchParams.get('hideNoListings')
 
     if (urlSearch && urlSearch !== 'undefined') {
       setSearch(urlSearch)
@@ -46,7 +50,62 @@ function GamesContent() {
         setPage(pageNum)
       }
     }
+    if (urlHideGames !== null) {
+      setHideGamesWithNoListings(urlHideGames === 'true')
+    }
   }, [searchParams])
+
+  // Update URL params whenever state changes
+  const updateUrlParams = useCallback(
+    (updates: {
+      search?: string
+      systemId?: string
+      page?: number
+      hideNoListings?: boolean
+    }) => {
+      const params = new URLSearchParams(searchParams.toString())
+
+      // Update or remove search param
+      if (updates.search !== undefined) {
+        if (updates.search.trim()) {
+          params.set('search', updates.search.trim())
+        } else {
+          params.delete('search')
+        }
+      }
+
+      // Update or remove systemId param
+      if (updates.systemId !== undefined) {
+        if (updates.systemId) {
+          params.set('systemId', updates.systemId)
+        } else {
+          params.delete('systemId')
+        }
+      }
+
+      // Update or remove page param
+      if (updates.page !== undefined) {
+        if (updates.page > 1) {
+          params.set('page', updates.page.toString())
+        } else {
+          params.delete('page')
+        }
+      }
+
+      // Update or remove hideNoListings param
+      if (updates.hideNoListings !== undefined) {
+        if (updates.hideNoListings) {
+          params.set('hideNoListings', 'true')
+        } else {
+          params.delete('hideNoListings')
+        }
+      }
+
+      const newUrl = `${pathname}?${params.toString()}`
+      router.replace(newUrl, { scroll: false })
+    },
+    [searchParams, pathname, router],
+  )
 
   const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
@@ -65,13 +124,29 @@ function GamesContent() {
   const pagination = gamesQuery.data?.pagination
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    setSearch(ev.target.value)
+    const newSearch = ev.target.value
+    setSearch(newSearch)
     setPage(1)
+    updateUrlParams({ search: newSearch, page: 1 })
   }
 
   const handleSystemChange = (ev: SyntheticEvent) => {
-    setSystemId((ev as unknown as ChangeEvent<HTMLSelectElement>).target.value)
+    const newSystemId = (ev as unknown as ChangeEvent<HTMLSelectElement>).target
+      .value
+    setSystemId(newSystemId)
     setPage(1)
+    updateUrlParams({ systemId: newSystemId, page: 1 })
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    updateUrlParams({ page: newPage })
+  }
+
+  const handleHideGamesWithNoListingsChange = (hide: boolean) => {
+    setHideGamesWithNoListings(hide)
+    setPage(1)
+    updateUrlParams({ hideNoListings: hide, page: 1 })
   }
 
   const isAuthor = hasPermission(userQuery.data?.role, Role.AUTHOR)
@@ -97,10 +172,7 @@ function GamesContent() {
           systems={systemsQuery.data}
           onSearchChange={handleSearchChange}
           onSystemChange={handleSystemChange}
-          onHideGamesWithNoListingsChange={(hide) => {
-            setHideGamesWithNoListings(hide)
-            setPage(1) // Reset to first page when filtering
-          }}
+          onHideGamesWithNoListingsChange={handleHideGamesWithNoListingsChange}
         />
 
         {gamesQuery.isLoading ? (
@@ -127,7 +199,9 @@ function GamesContent() {
           <Pagination
             currentPage={page}
             totalPages={pagination.pages}
-            onPageChange={(newPage) => setPage(newPage)}
+            totalItems={pagination.total}
+            itemsPerPage={limit}
+            onPageChange={handlePageChange}
           />
         )}
 

@@ -1,13 +1,13 @@
 'use client'
 
 import { Search } from 'lucide-react'
+import { AdminTableContainer } from '@/components/admin'
 import {
   ColumnVisibilityControl,
   Input,
   Button,
   LoadingSpinner,
   SortableHeader,
-  AdminTableContainer,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'

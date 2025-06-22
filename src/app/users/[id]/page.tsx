@@ -424,6 +424,8 @@ function UserDetailsPage() {
                       <Pagination
                         currentPage={user.listings.pagination.page}
                         totalPages={user.listings.pagination.pages}
+                        totalItems={user.listings.pagination.total}
+                        itemsPerPage={user.listings.pagination.limit}
                         onPageChange={handleListingsPageChange}
                       />
                     </div>
@@ -498,6 +500,8 @@ function UserDetailsPage() {
                       <Pagination
                         currentPage={user.votes.pagination.page}
                         totalPages={user.votes.pagination.pages}
+                        totalItems={user.votes.pagination.total}
+                        itemsPerPage={user.votes.pagination.limit}
                         onPageChange={handleVotesPageChange}
                       />
                     </div>

@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "./generated/client"
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -62,6 +63,10 @@ model User {
   listingNotificationPrefs    ListingNotificationPreference[]
   triggeredNotificationEvents NotificationEvent[]
   trustActionLogs             TrustActionLog[]
+  // Verified developer relations
+  verifiedDeveloperFor        VerifiedDeveloper[] @relation("UserVerifiedDeveloper")
+  verifiedDeveloperBy         VerifiedDeveloper[] @relation("VerifiedBy")
+  developerVerifications      ListingDeveloperVerification[]
 }
 
 model UserDevicePreference {
@@ -227,6 +232,7 @@ model Emulator {
   listings              Listing[]
   customFieldDefinitions CustomFieldDefinition[]
   systems               System[]
+  verifiedDevelopers    VerifiedDeveloper[]
 }
 
 model PerformanceScale {
@@ -261,6 +267,7 @@ model Listing {
   votes                 Vote[]
   customFieldValues     ListingCustomFieldValue[]
   notificationPrefs     ListingNotificationPreference[]
+  developerVerifications ListingDeveloperVerification[]
 
   @@unique([gameId, deviceId, emulatorId])
   @@index([processedByUserId])
@@ -484,4 +491,38 @@ model TrustActionLog {
   @@index([createdAt])
   @@index([userId, createdAt])
   @@map("trust_action_logs")
+}
+
+model VerifiedDeveloper {
+  id          String   @id @default(uuid())
+  userId      String
+  emulatorId  String
+  verifiedAt  DateTime @default(now())
+  verifiedBy  String
+  notes       String?
+  
+  user        User     @relation("UserVerifiedDeveloper", fields: [userId], references: [id], onDelete: Cascade)
+  emulator    Emulator @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
+  verifier    User     @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+  
+  @@unique([userId, emulatorId])
+  @@index([userId])
+  @@index([emulatorId])
+  @@map("verified_developers")
+}
+
+model ListingDeveloperVerification {
+  id          String   @id @default(uuid())
+  listingId   String
+  verifiedBy  String
+  verifiedAt  DateTime @default(now())
+  notes       String?
+  
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  developer   User     @relation(fields: [verifiedBy], references: [id], onDelete: Cascade)
+  
+  @@unique([listingId, verifiedBy])
+  @@index([listingId])
+  @@index([verifiedBy])
+  @@map("listing_developer_verifications")
 }

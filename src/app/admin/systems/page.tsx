@@ -1,18 +1,20 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import AdminStatsBar from '@/app/admin/components/AdminStatsBar'
+import {
+  AdminTableContainer,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+} from '@/components/admin'
 import {
   Button,
-  Input,
   ColumnVisibilityControl,
   SortableHeader,
   useConfirmDialog,
+  LoadingSpinner,
 } from '@/components/ui'
-import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
-import EditButton from '@/components/ui/table-buttons/EditButton'
+import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -33,23 +35,29 @@ const SYSTEMS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminSystemsPage() {
-  const table = useAdminTable<SystemSortField>()
-  const confirm = useConfirmDialog()
+  const table = useAdminTable<SystemSortField>({
+    defaultSortField: 'name',
+    defaultSortDirection: 'asc',
+  })
+
   const columnVisibility = useColumnVisibility(SYSTEMS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSystems,
   })
 
   const systemsQuery = api.systems.get.useQuery({
-    search: isEmpty(table.search) ? undefined : table.search,
+    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
   const systemsStatsQuery = api.systems.stats.useQuery()
   const deleteSystem = api.systems.delete.useMutation()
+  const confirm = useConfirmDialog()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [systemName, setSystemName] = useState('')
+
+  const utils = api.useUtils()
 
   const openModal = (system?: { id: string; name: string }) => {
     setEditId(system?.id ?? null)
@@ -64,7 +72,8 @@ function AdminSystemsPage() {
   }
 
   const handleModalSuccess = () => {
-    systemsQuery.refetch().catch(console.error)
+    utils.systems.get.invalidate().catch(console.error)
+    utils.systems.stats.invalidate().catch(console.error)
     closeModal()
   }
 
@@ -81,41 +90,25 @@ function AdminSystemsPage() {
       await deleteSystem.mutateAsync({
         id,
       } satisfies RouterInput['systems']['delete'])
-      systemsQuery.refetch().catch(console.error)
+      utils.systems.get.invalidate().catch(console.error)
+      utils.systems.stats.invalidate().catch(console.error)
     } catch (err) {
       toast.error(`Failed to delete system: ${getErrorMessage(err)}`)
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Systems
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Gaming Systems
           </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage all gaming systems in the database
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <AdminStatsBar
-            stats={[
-              {
-                label: 'Total',
-                value: systemsStatsQuery.data?.total ?? 0,
-                color: 'blue',
-              },
-              {
-                label: 'With Games',
-                value: systemsStatsQuery.data?.withGames ?? 0,
-                color: 'green',
-              },
-              {
-                label: 'No Games',
-                value: systemsStatsQuery.data?.withoutGames ?? 0,
-                color: 'gray',
-              },
-            ]}
-            isLoading={systemsStatsQuery.isLoading}
-          />
+        <div className="flex items-center gap-4">
           <ColumnVisibilityControl
             columns={SYSTEMS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -124,84 +117,121 @@ function AdminSystemsPage() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            placeholder="Search systems..."
-            value={table.search}
-            onChange={table.handleSearchChange}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      {systemsStatsQuery.data && (
+        <AdminStatsDisplay
+          className="mb-6"
+          stats={[
+            {
+              label: 'Total',
+              value: systemsStatsQuery.data.total,
+              color: 'blue',
+            },
+            {
+              label: 'With Games',
+              value: systemsStatsQuery.data.withGames,
+              color: 'green',
+            },
+            {
+              label: 'No Games',
+              value: systemsStatsQuery.data.withoutGames,
+              color: 'gray',
+            },
+          ]}
+        />
+      )}
 
-      <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-          <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-            <tr>
-              {columnVisibility.isColumnVisible('name') && (
-                <SortableHeader
-                  label="System Name"
-                  field="name"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('gamesCount') && (
-                <SortableHeader
-                  label="Games"
-                  field="gamesCount"
-                  currentSortField={table.sortField}
-                  currentSortDirection={table.sortDirection}
-                  onSort={table.handleSort}
-                />
-              )}
-              {columnVisibility.isColumnVisible('actions') && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {systemsQuery.data?.map(
-              (system: {
-                id: string
-                name: string
-                _count: { games: number }
-              }) => (
+      <AdminSearchFilters
+        searchValue={table.search}
+        onSearchChange={(value) => table.setSearch(value)}
+        searchPlaceholder="Search systems..."
+        onClear={() => {
+          table.setSearch('')
+          table.setPage(1)
+        }}
+      />
+
+      <AdminTableContainer>
+        {systemsQuery.isLoading ? (
+          <LoadingSpinner text="Loading systems..." />
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <tr>
+                {columnVisibility.isColumnVisible('name') && (
+                  <SortableHeader
+                    label="System Name"
+                    field="name"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
+                )}
+                {columnVisibility.isColumnVisible('gamesCount') && (
+                  <SortableHeader
+                    label="Games"
+                    field="gamesCount"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
+                )}
+                {columnVisibility.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {systemsQuery.data?.map((system) => (
                 <tr
                   key={system.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                 >
                   {columnVisibility.isColumnVisible('name') && (
-                    <td className="px-4 py-2">{system.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {system.name}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('gamesCount') && (
-                    <td className="px-4 py-2">{system._count.games} games</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {system._count.games} games
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
-                    <td className="px-4 py-2 flex gap-2 justify-end">
-                      <EditButton
-                        title="Edit System"
-                        onClick={() => openModal(system)}
-                      />
-                      <DeleteButton
-                        title="Delete System"
-                        onClick={() => handleDelete(system.id)}
-                        isLoading={deleteSystem.isPending}
-                        disabled={deleteSystem.isPending}
-                      />
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <EditButton
+                          onClick={() => openModal(system)}
+                          title="Edit System"
+                        />
+                        <DeleteButton
+                          onClick={() => handleDelete(system.id)}
+                          title="Delete System"
+                          isLoading={deleteSystem.isPending}
+                          disabled={deleteSystem.isPending}
+                        />
+                      </div>
                     </td>
                   )}
                 </tr>
-              ),
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+              {!systemsQuery.isLoading && systemsQuery.data?.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    {table.search
+                      ? 'No systems found matching your search.'
+                      : 'No systems found. Add your first system.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </AdminTableContainer>
 
       <SystemModal
         isOpen={modalOpen}

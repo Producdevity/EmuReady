@@ -79,7 +79,7 @@ export type TableButtonWrapperProps =
  * @param props
  * @constructor
  */
-function TableButton(props: Props) {
+export function TableButton(props: Props) {
   const colorClass = colorClassMap[props.color]
 
   const buttonClasses = cn(
@@ -130,5 +130,3 @@ function TableButton(props: Props) {
     </Tooltip>
   )
 }
-
-export default TableButton

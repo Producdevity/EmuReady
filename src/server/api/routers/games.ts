@@ -300,6 +300,7 @@ export const gamesRouter = createTRPCRouter({
       const game = await ctx.prisma.game.findUnique({
         where: { id: input.id },
         include: {
+          submitter: { select: { id: true, name: true } },
           system: { include: { emulators: true } },
           listings: {
             include: {

@@ -51,7 +51,7 @@ class EmailService {
   private generateEmailTemplate(notification: NotificationData): EmailTemplate {
     const subject = `[EmuReady] ${notification.title}`
 
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const actionUrl = notification.actionUrl
       ? `${baseUrl}${notification.actionUrl}`
       : null
@@ -320,9 +320,12 @@ Having trouble? View this email in your browser: ${baseUrl}
  */
 export function createEmailService(): EmailService | null {
   const provider = process.env.EMAIL_PROVIDER as EmailConfig['provider']
+  const emailEnabled = process.env.EMAIL_ENABLED
   const apiKey = process.env.EMAIL_API_KEY
   const fromEmail = process.env.EMAIL_FROM_ADDRESS
   const fromName = process.env.EMAIL_FROM_NAME || 'EmuReady'
+
+  if (!emailEnabled || emailEnabled !== 'true') return null
 
   if (!provider || !apiKey || !fromEmail) {
     console.warn(

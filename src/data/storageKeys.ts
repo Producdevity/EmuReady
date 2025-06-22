@@ -24,6 +24,7 @@ const storageKeys = {
     adminSystems: `${PREFIX}admin_systems_column_visibility`,
     adminTrustLogs: `${PREFIX}admin_trust_logs_column_visibility`,
     adminUsers: `${PREFIX}admin_users_column_visibility`,
+    adminVerifiedDevelopers: `${PREFIX}admin_verified_developers_column_visibility`,
   },
 } as const
 

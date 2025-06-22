@@ -4,20 +4,22 @@ import { Search, ShieldUser, User } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import { AdminTableContainer } from '@/components/admin'
 import {
   Button,
   Input,
   SortableHeader,
   Badge,
   ColumnVisibilityControl,
-  AdminTableContainer,
   LoadingSpinner,
   Pagination,
   useConfirmDialog,
 } from '@/components/ui'
-import DeleteButton from '@/components/ui/table-buttons/DeleteButton'
-import TableButton from '@/components/ui/table-buttons/TableButton'
-import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import {
+  DeleteButton,
+  TableButton,
+  ViewButton,
+} from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {

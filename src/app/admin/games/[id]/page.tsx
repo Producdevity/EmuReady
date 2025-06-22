@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { notFound, useParams } from 'next/navigation'
 import { Button, PageLoading } from '@/components/ui'
 import { api } from '@/lib/api'
-import GameEditForm from './components/GameEditForm'
-import GameRelatedData from './components/GameRelatedData'
+import { GameEditForm } from './components/GameEditForm'
+import { GameRelatedData } from './components/GameRelatedData'
 
 function AdminGameEditPage() {
   const params = useParams()

@@ -142,6 +142,10 @@ Please note that this project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md)
 
 If you discover a security vulnerability, please follow our [Security Policy](SECURITY.md) for reporting.
 
+## Support
+
+If you have any questions or want to reach out for anything else, please open an issue on GitHub or join our [Discord server](https://discord.gg/YyWueNxmzM).
+
 ## Acknowledgements
 
 - All our [Contributors](https://github.com/Producdevity/emuready/graphs/contributors)

@@ -6,23 +6,23 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
+import { AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import SystemIcon from '@/components/icons/SystemIcon'
 import {
-  LoadingSpinner,
   Button,
   Input,
   ApprovalStatusBadge,
   Pagination,
   SortableHeader,
-  AdminTableContainer,
   ColumnVisibilityControl,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   BulkActions,
+  LoadingSpinner,
 } from '@/components/ui'
 import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
-import ViewButton from '@/components/ui/table-buttons/ViewButton'
+import { ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -240,8 +240,6 @@ function GameApprovalsPage() {
 
   const filteredGames = pendingGamesQuery.data?.games ?? []
 
-  if (pendingGamesQuery.isLoading) return <LoadingSpinner />
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -267,32 +265,25 @@ function GameApprovalsPage() {
             columnVisibility={columnVisibility}
           />
           {gameStatsQuery.data && (
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {gameStatsQuery.data.pending}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Pending
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {gameStatsQuery.data.approved}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Approved
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {gameStatsQuery.data.rejected}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Rejected
-                </div>
-              </div>
-            </div>
+            <AdminStatsDisplay
+              stats={[
+                {
+                  label: 'Pending',
+                  value: gameStatsQuery.data.pending,
+                  color: 'yellow',
+                },
+                {
+                  label: 'Approved',
+                  value: gameStatsQuery.data.approved,
+                  color: 'green',
+                },
+                {
+                  label: 'Rejected',
+                  value: gameStatsQuery.data.rejected,
+                  color: 'red',
+                },
+              ]}
+            />
           )}
         </div>
       </div>
@@ -348,7 +339,9 @@ function GameApprovalsPage() {
 
       {/* Games Table */}
       <AdminTableContainer>
-        {filteredGames.length === 0 ? (
+        {pendingGamesQuery.isLoading ? (
+          <LoadingSpinner text="Loading pending games..." />
+        ) : filteredGames.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               {table.search

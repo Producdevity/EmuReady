@@ -20,7 +20,7 @@ interface Props {
   game: Game
 }
 
-function GameEditForm(props: Props) {
+export function GameEditForm(props: Props) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const utils = api.useUtils()
@@ -201,5 +201,3 @@ function GameEditForm(props: Props) {
     </form>
   )
 }
-
-export default GameEditForm

@@ -6,6 +6,7 @@ import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { gamesRouter } from './routers/games'
 import { listingsRouter } from './routers/listings'
+import { listingVerificationsRouter } from './routers/listingVerifications'
 import { mobileRouter } from './routers/mobile'
 import { notificationsRouter } from './routers/notifications'
 import { performanceScalesRouter } from './routers/performanceScales'
@@ -16,6 +17,7 @@ import { tgdbRouter } from './routers/tgdb'
 import { trustRouter } from './routers/trust'
 import { userPreferencesRouter } from './routers/userPreferences'
 import { usersRouter } from './routers/users'
+import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 
 export const appRouter = createTRPCRouter({
   listings: listingsRouter,
@@ -35,6 +37,8 @@ export const appRouter = createTRPCRouter({
   rawg: rawgRouter,
   tgdb: tgdbRouter,
   mobile: mobileRouter,
+  verifiedDevelopers: verifiedDevelopersRouter,
+  listingVerifications: listingVerificationsRouter,
 })
 
 export type AppRouter = typeof appRouter
