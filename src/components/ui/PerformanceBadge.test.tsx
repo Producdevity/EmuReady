@@ -113,8 +113,18 @@ describe('PerformanceBadge', () => {
     expect(badge).toBeInTheDocument()
   })
 
-  it('always renders as pill shape (rounded-full)', () => {
+  it('always renders as badge shape (not pill)', () => {
     render(<PerformanceBadge rank={1} label="Test" description="description" />)
+    const badge = screen.getByText('Test')
+
+    expect(badge.closest('span')).toHaveClass('rounded')
+    expect(badge.closest('span')).not.toHaveClass('rounded-full')
+  })
+
+  it('should render pill shaped bade only when pill prop is passed', () => {
+    render(
+      <PerformanceBadge rank={1} label="Test" description="description" pill />,
+    )
     const badge = screen.getByText('Test')
 
     expect(badge.closest('span')).toHaveClass('rounded-full')
