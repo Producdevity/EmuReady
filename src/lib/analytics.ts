@@ -1,4 +1,5 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import { type SortField } from '@/app/listings/types'
 import { type Role } from '@orm'
 
 // Analytics Event Categories
@@ -20,6 +21,9 @@ export const ANALYTICS_CATEGORIES = {
 
 // Filter Actions
 export const FILTER_ACTIONS = {
+  PAGE: 'page',
+  SORT: 'sort',
+  MY_LISTINGS: 'my_listings',
   SYSTEM: 'system',
   DEVICE: 'device',
   SOC: 'soc',
@@ -366,6 +370,33 @@ function sendAnalyticsEvent(params: AnalyticsEventData) {
 const analytics = {
   // Filter events
   filter: {
+    sort: (sortField: string | SortField | null) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.SORT,
+        value: sortField || 'none',
+        metadata: { field: sortField || 'none' },
+      })
+    },
+
+    page: ({ prevPage, nextPage }: { prevPage: number; nextPage: number }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.PAGE,
+        value: nextPage,
+        metadata: { prevPage, nextPage },
+      })
+    },
+
+    myListings: (isMyListings: boolean) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.MY_LISTINGS,
+        value: isMyListings.toString(),
+        metadata: { isMyListings },
+      })
+    },
+
     system: (systemIds: string[], systemNames?: string[]) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.FILTER,

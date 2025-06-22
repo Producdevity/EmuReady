@@ -146,42 +146,33 @@ function ListingsPage() {
   const handleSystemChange = (values: string[]) => {
     listingsState.setSystemIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ systemIds: values, page: 1 }, { push: true })
   }
 
   const handleDeviceChange = (values: string[]) => {
     listingsState.setDeviceIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ deviceIds: values, page: 1 }, { push: true })
     setUserDeviceFilterDisabled(values.length <= 0)
   }
 
   const handleSocChange = (values: string[]) => {
     listingsState.setSocIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ socIds: values, page: 1 }, { push: true })
     setUserSocFilterDisabled(values.length <= 0)
   }
 
   const handleEmulatorChange = (values: string[]) => {
     listingsState.setEmulatorIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery({ emulatorIds: values, page: 1 }, { push: true })
   }
 
   const handlePerformanceChange = (values: number[]) => {
     listingsState.setPerformanceIds(values)
     listingsState.setPage(1)
-    listingsState.updateQuery(
-      { performanceIds: values, page: 1 },
-      { push: true },
-    )
   }
 
   const handleSearchChange = (value: string) => {
     listingsState.setSearch(value)
     listingsState.setPage(1)
-    listingsState.updateQuery({ search: value, page: 1 })
   }
 
   const handleSort = (field: string) => {
@@ -355,16 +346,8 @@ function ListingsPage() {
                   variant={listingsState.myListings ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => {
-                    const newValue = !listingsState.myListings
-                    listingsState.setMyListings(newValue)
+                    listingsState.setMyListings(!listingsState.myListings)
                     listingsState.setPage(1)
-                    listingsState.updateQuery(
-                      {
-                        myListings: newValue ? 'true' : null,
-                        page: 1,
-                      },
-                      { push: true },
-                    )
                   }}
                 >
                   {listingsState.myListings ? 'All Listings' : 'My Listings'}
@@ -702,7 +685,6 @@ function ListingsPage() {
                 itemsPerPage={listingsQuery.data.pagination.limit}
                 onPageChange={(newPage) => {
                   listingsState.setPage(newPage)
-                  listingsState.updateQuery({ page: newPage }, { push: true })
                 }}
               />
             )}

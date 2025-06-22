@@ -1,6 +1,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
+import analytics from '@/lib/analytics'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
-import { type SortDirection, type SortField } from '../types'
+import type { SortDirection, SortField } from '@/app/listings/types'
 
 function useListingsState() {
   const router = useRouter()
@@ -50,20 +51,41 @@ function useListingsState() {
   }
 
   // Setters that update URL directly
-  const setSystemIds = (values: string[]) => updateQuery({ systemIds: values })
+  const setSystemIds = (values: string[]) => {
+    analytics.filter.system(values)
+    updateQuery({ systemIds: values })
+  }
   const setSearch = (value: string) => updateQuery({ search: value })
-  const setPage = (value: number) => updateQuery({ page: value })
-  const setDeviceIds = (values: string[]) => updateQuery({ deviceIds: values })
-  const setSocIds = (values: string[]) => updateQuery({ socIds: values })
-  const setEmulatorIds = (values: string[]) =>
+  const setPage = (value: number) => {
+    analytics.filter.page({ prevPage: page, nextPage: value })
+    updateQuery({ page: value }, { push: true })
+  }
+  const setDeviceIds = (values: string[]) => {
+    analytics.filter.device(values)
+    updateQuery({ deviceIds: values })
+  }
+  const setSocIds = (values: string[]) => {
+    analytics.filter.soc(values)
+    updateQuery({ socIds: values })
+  }
+  const setEmulatorIds = (values: string[]) => {
+    analytics.filter.emulator(values)
     updateQuery({ emulatorIds: values })
-  const setPerformanceIds = (values: number[]) =>
+  }
+  const setPerformanceIds = (values: number[]) => {
+    analytics.filter.performance(values)
     updateQuery({ performanceIds: values })
-  const setSortField = (value: SortField | null) =>
+  }
+  const setSortField = (value: SortField | null) => {
+    analytics.filter.sort(value)
     updateQuery({ sortField: value })
+  }
   const setSortDirection = (value: SortDirection) =>
     updateQuery({ sortDirection: value })
-  const setMyListings = (value: boolean) => updateQuery({ myListings: value })
+  const setMyListings = (value: boolean) => {
+    analytics.filter.myListings(value)
+    updateQuery({ myListings: value ? 'true' : null })
+  }
 
   const handleSort = (field: string) => {
     let newSortField: SortField | null = sortField

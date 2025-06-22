@@ -95,8 +95,6 @@ function V2ListingsPage() {
       listingsState.setSystemIds(values)
       listingsState.setPage(1)
       listingsState.updateQuery({ systemIds: values, page: 1 })
-
-      analytics.filter.system(values)
     },
     [listingsState],
   )
@@ -106,8 +104,6 @@ function V2ListingsPage() {
       listingsState.setDeviceIds(values)
       listingsState.setPage(1)
       listingsState.updateQuery({ deviceIds: values, page: 1 })
-
-      analytics.filter.device(values)
     },
     [listingsState],
   )
@@ -117,8 +113,6 @@ function V2ListingsPage() {
       listingsState.setSocIds(values)
       listingsState.setPage(1)
       listingsState.updateQuery({ socIds: values, page: 1 })
-
-      analytics.filter.soc(values)
     },
     [listingsState],
   )
@@ -128,8 +122,6 @@ function V2ListingsPage() {
       listingsState.setEmulatorIds(values)
       listingsState.setPage(1)
       listingsState.updateQuery({ emulatorIds: values, page: 1 })
-
-      analytics.filter.emulator(values)
     },
     [listingsState],
   )
@@ -139,8 +131,6 @@ function V2ListingsPage() {
       listingsState.setPerformanceIds(values)
       listingsState.setPage(1)
       listingsState.updateQuery({ performanceIds: values, page: 1 })
-
-      analytics.filter.performance(values)
     },
     [listingsState],
   )
