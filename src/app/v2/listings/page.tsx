@@ -64,7 +64,7 @@ function V2ListingsPage() {
   const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const devicesQuery = api.devices.get.useQuery(
     {
-      limit: 20,
+      limit: deviceSearchTerm ? 20 : 100, // Show more when not searching
       search: deviceSearchTerm || undefined,
     },
     {
@@ -75,7 +75,7 @@ function V2ListingsPage() {
   const [socSearchTerm, setSocSearchTerm] = useState('')
   const socsQuery = api.socs.get.useQuery(
     {
-      limit: 20,
+      limit: socSearchTerm ? 20 : 100, // Show more when not searching
       search: socSearchTerm || undefined,
     },
     {
@@ -86,7 +86,7 @@ function V2ListingsPage() {
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const emulatorsQuery = api.emulators.get.useQuery(
     {
-      limit: 20,
+      limit: emulatorSearchTerm ? 20 : 100, // Show more when not searching
       search: emulatorSearchTerm || undefined,
     },
     {
@@ -473,6 +473,20 @@ function V2ListingsPage() {
                             }
                             className="mb-2"
                           />
+                          {deviceSearchTerm && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+                              <span>
+                                Showing results for &ldquo;{deviceSearchTerm}
+                                &rdquo;
+                              </span>
+                              <button
+                                onClick={() => setDeviceSearchTerm('')}
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                Show all
+                              </button>
+                            </div>
+                          )}
                         </div>
                         {devicesQuery.isLoading ? (
                           <div className="py-2 flex justify-center">
@@ -493,6 +507,14 @@ function V2ListingsPage() {
                             maxDisplayed={3}
                           />
                         )}
+                        {devicesQuery.data?.devices &&
+                          devicesQuery.data.devices.length >= 100 &&
+                          !deviceSearchTerm && (
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                              Showing first 100 devices. Use search for more
+                              specific results.
+                            </div>
+                          )}
                       </div>
 
                       {/* Emulators - With search */}
@@ -509,6 +531,20 @@ function V2ListingsPage() {
                             }
                             className="mb-2"
                           />
+                          {emulatorSearchTerm && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+                              <span>
+                                Showing results for &ldquo;{emulatorSearchTerm}
+                                &rdquo;
+                              </span>
+                              <button
+                                onClick={() => setEmulatorSearchTerm('')}
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                Show all
+                              </button>
+                            </div>
+                          )}
                         </div>
                         {emulatorsQuery.isLoading ? (
                           <div className="py-2 flex justify-center">
@@ -530,6 +566,14 @@ function V2ListingsPage() {
                             placeholder="Select emulators..."
                           />
                         )}
+                        {emulatorsQuery.data?.emulators &&
+                          emulatorsQuery.data.emulators.length >= 100 &&
+                          !emulatorSearchTerm && (
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                              Showing first 100 emulators. Use search for more
+                              specific results.
+                            </div>
+                          )}
                       </div>
 
                       {/* SoCs - With search */}
@@ -544,6 +588,20 @@ function V2ListingsPage() {
                             onChange={(e) => setSocSearchTerm(e.target.value)}
                             className="mb-2"
                           />
+                          {socSearchTerm && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+                              <span>
+                                Showing results for &ldquo;{socSearchTerm}
+                                &rdquo;
+                              </span>
+                              <button
+                                onClick={() => setSocSearchTerm('')}
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                Show all
+                              </button>
+                            </div>
+                          )}
                         </div>
                         {socsQuery.isLoading ? (
                           <div className="py-2 flex justify-center">
@@ -564,6 +622,14 @@ function V2ListingsPage() {
                             maxDisplayed={3}
                           />
                         )}
+                        {socsQuery.data?.socs &&
+                          socsQuery.data.socs.length >= 100 &&
+                          !socSearchTerm && (
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                              Showing first 100 SoCs. Use search for more
+                              specific results.
+                            </div>
+                          )}
                       </div>
                     </motion.div>
                   )}
