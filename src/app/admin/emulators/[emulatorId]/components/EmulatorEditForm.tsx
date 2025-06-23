@@ -56,6 +56,7 @@ const logoOptions = [
   'shadps4.png',
   'sudachi.png',
   'torzu.png',
+  'utm.png',
   'vita3k.png',
   'winlator.png',
   'xemu.png',

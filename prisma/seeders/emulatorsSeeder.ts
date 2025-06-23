@@ -157,6 +157,11 @@ const emulators: EmulatorData[] = [
     logo: 'torzu.png',
   },
   {
+    name: 'UTM',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'utm.png',
+  },
+  {
     name: 'Vita3K',
     supportedSystemNames: ['Sony PlayStation Vita'],
     logo: 'vita3k.png',
