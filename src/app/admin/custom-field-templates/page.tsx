@@ -2,13 +2,18 @@
 
 import { PlusCircle } from 'lucide-react'
 import { useState } from 'react'
-import { AdminPageLayout, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+} from '@/components/admin'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormModal'
 import CustomFieldTemplateList from './components/CustomFieldTemplateList'
 
 function CustomFieldTemplatesPage() {
+  const [searchQuery, setSearchQuery] = useState('')
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
     null,
@@ -83,9 +88,20 @@ function CustomFieldTemplatesPage() {
         isLoading={customFieldTemplatesQuery.isLoading}
       />
 
+      <AdminSearchFilters
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search templates..."
+        onClear={() => setSearchQuery('')}
+      />
+
       {templates.length > 0 ? (
         <CustomFieldTemplateList
-          templates={templates}
+          templates={templates.filter((template) =>
+            template.name
+              .toLowerCase()
+              .includes(searchQuery.trim().toLowerCase()),
+          )}
           onEdit={handleOpenEditModal}
           onDeleteSuccess={customFieldTemplatesQuery.refetch}
         />

@@ -1,11 +1,13 @@
 'use client'
 
 import { useMemo } from 'react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   rate: number
   voteCount?: number
   hideVoteCount?: boolean
+  compact?: boolean
 }
 
 // Determine color based on success rate
@@ -16,22 +18,26 @@ function getBarColor(rate: number) {
   return 'bg-red-500'
 }
 
-function SuccessRateBar(props: Props) {
+export function SuccessRateBar(props: Props) {
+  const { compact = false } = props
   const voteCount = props.voteCount ?? 0
   const roundedRate = useMemo(() => Math.round(props.rate), [props.rate])
   const barColor = useMemo(() => getBarColor(roundedRate), [roundedRate])
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className={cn('flex flex-col gap-1', compact ? 'w-20' : 'w-full')}>
       <div
-        className={`w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden`}
+        className={cn(
+          'w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden',
+          compact ? 'h-1.5' : 'h-2',
+        )}
       >
         <div
-          className={`h-2 rounded-full ${barColor}`}
+          className={cn('rounded-full', barColor, compact ? 'h-1.5' : 'h-2')}
           style={{ width: `${roundedRate}%`, transition: 'width 0.3s' }}
         />
       </div>
-      {!props.hideVoteCount && (
+      {!props.hideVoteCount && !compact && (
         <span className="text-xs text-gray-600 dark:text-gray-400">
           {roundedRate}%{' '}
           {voteCount > 0 &&
@@ -41,5 +47,3 @@ function SuccessRateBar(props: Props) {
     </div>
   )
 }
-
-export default SuccessRateBar

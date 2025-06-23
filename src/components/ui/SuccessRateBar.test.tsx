@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import SuccessRateBar from './SuccessRateBar'
+import { SuccessRateBar } from './SuccessRateBar'
 
 describe('SuccessRateBar', () => {
   it('should render with basic rate', () => {

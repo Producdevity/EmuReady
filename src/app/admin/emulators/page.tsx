@@ -113,8 +113,6 @@ function AdminEmulatorsPage() {
     } satisfies RouterInput['emulators']['delete'])
   }
 
-  if (emulatorsQuery.isLoading) return <LoadingSpinner />
-
   return (
     <AdminPageLayout
       title="Manage Emulators"
@@ -168,7 +166,9 @@ function AdminEmulatorsPage() {
       />
 
       <AdminTableContainer>
-        {emulators.length === 0 ? (
+        {emulatorsQuery.isLoading ? (
+          <LoadingSpinner text="Loading emulators..." />
+        ) : emulators.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               {table.search
