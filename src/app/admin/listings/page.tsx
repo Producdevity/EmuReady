@@ -22,8 +22,8 @@ import {
   Pagination,
   LoadingSpinner,
   useConfirmDialog,
+  DisplayToggleButton,
 } from '@/components/ui'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import {
   DeleteButton,
   EditButton,

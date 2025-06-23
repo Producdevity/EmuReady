@@ -1,5 +1,26 @@
 'use client'
 
+import { cn } from '@/lib/utils'
+
+// Size-based styling
+const sizeClasses = {
+  sm: {
+    toggle: 'w-8 h-4',
+    circle: 'w-2.5 h-2.5',
+    translate: 'translate-x-4',
+  },
+  md: {
+    toggle: 'w-11 h-6',
+    circle: 'w-4 h-4',
+    translate: 'translate-x-5',
+  },
+  lg: {
+    toggle: 'w-14 h-7',
+    circle: 'w-5 h-5',
+    translate: 'translate-x-7',
+  },
+}
+
 interface Props {
   checked: boolean
   onChange: (checked: boolean) => void
@@ -9,31 +30,16 @@ interface Props {
   size?: 'sm' | 'md' | 'lg'
 }
 
-function Toggle(props: Props) {
+export function Toggle(props: Props) {
   const size = props.size ?? 'md'
-
-  // Size-based styling
-  const sizeClasses = {
-    sm: {
-      toggle: 'w-8 h-4',
-      circle: 'w-2.5 h-2.5',
-      translate: 'translate-x-4',
-    },
-    md: {
-      toggle: 'w-11 h-6',
-      circle: 'w-4 h-4',
-      translate: 'translate-x-5',
-    },
-    lg: {
-      toggle: 'w-14 h-7',
-      circle: 'w-5 h-5',
-      translate: 'translate-x-7',
-    },
-  }
 
   return (
     <label
-      className={`inline-flex items-center cursor-pointer ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${props.className ?? ''}`}
+      className={cn(
+        'inline-flex items-center cursor-pointer',
+        props.disabled ? 'opacity-50 cursor-not-allowed' : '',
+        props.className,
+      )}
     >
       <div className="relative">
         <input
@@ -53,13 +59,13 @@ function Toggle(props: Props) {
           }`}
         />
         <div
-          className={`absolute left-1 top-1/2 -translate-y-1/2 ${sizeClasses[size].circle} 
-          bg-white rounded-full 
-          shadow-md
-          transition-all duration-300 ease-in-out
-          ${props.checked ? sizeClasses[size].translate : 'translate-x-0'}
-          ${props.checked ? 'scale-110' : 'scale-100'}
-          `}
+          className={cn(
+            'absolute left-1 top-1/2 -translate-y-1/2',
+            sizeClasses[size].circle,
+            'bg-white rounded-full shadow-md transition-all duration-300 ease-in-out',
+            props.checked ? sizeClasses[size].translate : 'translate-x-0',
+            props.checked ? 'scale-110' : 'scale-100',
+          )}
         />
       </div>
       {props.label && (
@@ -70,5 +76,3 @@ function Toggle(props: Props) {
     </label>
   )
 }
-
-export default Toggle

@@ -20,8 +20,8 @@ import {
   Pagination,
   LoadingSpinner,
   BulkActions,
+  DisplayToggleButton,
 } from '@/components/ui'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import {
   ApproveButton,
   RejectButton,

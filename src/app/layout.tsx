@@ -4,8 +4,9 @@ import { shadesOfPurple } from '@clerk/themes'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { type Metadata } from 'next'
+import { type Metadata, type Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import { type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
 import BetaWarningModal from '@/components/BetaWarningModal'
@@ -16,18 +17,33 @@ import PageViewTracker from '@/components/PageViewTracker'
 import Providers from '@/components/Providers'
 import SessionTracker from '@/components/SessionTracker'
 import KofiWidget from '@/components/ui/KofiWidget'
+import { cn } from '@/lib/utils'
 import Main from './Main'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
 
 export const metadata: Metadata = {
   applicationName: 'EmuReady',
   title: {
     template: '%s | EmuReady',
-    default: 'EmuReady - Know before you load',
+    default: 'EmuReady',
   },
-  description: 'Community-driven emulation compatibility hub',
-  manifest: '/manifest.webmanifest',
+  description: 'Find the perfect emulator settings for your games and devices',
+  creator: 'EmuReady Team',
+  other: {
+    'theme-color': '#3b82f6',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'EmuReady',
+  },
   icons: {
     icon: [
       { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
@@ -50,20 +66,15 @@ export default function RootLayout(props: PropsWithChildren) {
     <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>
       <html lang="en" suppressHydrationWarning>
         <head>
-          {/* Initialize dataLayer before Google Analytics loads */}
-          {GA_ID && (
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                `,
-              }}
-            />
-          )}
+          {/* Service Worker Registration */}
+          <Script src="/sw-register.js" strategy="afterInteractive" />
         </head>
-        <body className={inter.className}>
+        <body
+          className={cn(
+            inter.className,
+            'min-h-screen bg-background font-sans antialiased',
+          )}
+        >
           <Providers>
             <SessionTracker />
             <PageViewTracker />
@@ -79,9 +90,8 @@ export default function RootLayout(props: PropsWithChildren) {
           <Analytics />
           <SpeedInsights />
           <KofiWidget />
+          {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
         </body>
-        {/* TODO: show annoying cookie banner? */}
-        {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
       </html>
     </ClerkProvider>
   )

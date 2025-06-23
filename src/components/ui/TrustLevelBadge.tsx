@@ -17,13 +17,6 @@ import {
 } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 
-interface Props {
-  trustScore: number
-  showProgress?: boolean
-  className?: string
-  size?: 'sm' | 'md' | 'lg'
-}
-
 const TRUST_LEVEL_ICONS: Record<string, LucideIcon> = {
   New: Users,
   Contributor: UserCheck,
@@ -45,25 +38,32 @@ const TRUST_LEVEL_COLORS: Record<
   Core: 'danger',
 }
 
-function TrustLevelBadge(props: Props) {
+const sizeClasses = {
+  sm: 'text-xs px-2 py-1',
+  md: 'text-sm px-3 py-1.5',
+  lg: 'text-base px-4 py-2',
+}
+
+const iconSizes = {
+  sm: 'h-3 w-3',
+  md: 'h-4 w-4',
+  lg: 'h-5 w-5',
+}
+
+interface Props {
+  trustScore: number
+  showProgress?: boolean
+  className?: string
+  size?: 'sm' | 'md' | 'lg'
+}
+
+export function TrustLevelBadge(props: Props) {
   const trustLevel = getTrustLevel(props.trustScore)
   const nextLevel = getNextTrustLevel(props.trustScore)
   const progress = getProgressToNextLevel(props.trustScore)
 
   const Icon = TRUST_LEVEL_ICONS[trustLevel.name] || Users
   const color = TRUST_LEVEL_COLORS[trustLevel.name] || 'default'
-
-  const sizeClasses = {
-    sm: 'text-xs px-2 py-1',
-    md: 'text-sm px-3 py-1.5',
-    lg: 'text-base px-4 py-2',
-  }
-
-  const iconSizes = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
-  }
 
   const size = props.size ?? 'md'
 
@@ -97,5 +97,3 @@ function TrustLevelBadge(props: Props) {
     </div>
   )
 }
-
-export default TrustLevelBadge

@@ -9,7 +9,7 @@ interface Props {
   nameLabel: string
 }
 
-function DisplayToggleButton(props: Props) {
+export function DisplayToggleButton(props: Props) {
   return (
     <Button
       variant="outline"
@@ -31,5 +31,3 @@ function DisplayToggleButton(props: Props) {
     </Button>
   )
 }
-
-export default DisplayToggleButton

@@ -18,8 +18,8 @@ import {
   SortableHeader,
   Pagination,
   useConfirmDialog,
+  DisplayToggleButton,
 } from '@/components/ui'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'

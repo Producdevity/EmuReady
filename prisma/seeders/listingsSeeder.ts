@@ -235,24 +235,6 @@ async function listingsSeeder(prisma: PrismaClient) {
           : null
 
       try {
-        // Check if this combination already exists
-        const existingListing = await prisma.listing.findUnique({
-          where: {
-            gameId_deviceId_emulatorId: {
-              gameId: game.id,
-              deviceId: device.id,
-              emulatorId: selectedEmulator.id,
-            },
-          },
-        })
-
-        if (existingListing) {
-          console.info(
-            `Listing already exists for ${game.title} on ${device.brand.name} ${device.modelName} with ${selectedEmulator.name}`,
-          )
-          continue
-        }
-
         const listing = await prisma.listing.create({
           data: {
             gameId: game.id,

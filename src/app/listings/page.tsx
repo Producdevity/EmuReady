@@ -18,8 +18,8 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
+  DisplayToggleButton,
 } from '@/components/ui'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {

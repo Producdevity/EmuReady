@@ -24,8 +24,8 @@ import {
   TooltipContent,
   BulkActions,
   LoadingSpinner,
+  DisplayToggleButton,
 } from '@/components/ui'
-import DisplayToggleButton from '@/components/ui/DisplayToggleButton'
 import { ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
