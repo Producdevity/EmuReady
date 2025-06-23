@@ -2,8 +2,7 @@
 
 import { CheckCircle, XCircle, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import Button from './Button'
-import Input from './Input'
+import { Button, Input } from '@/components/ui'
 
 interface BulkActionsProps {
   selectedIds: string[]
@@ -29,7 +28,7 @@ interface BulkActionsProps {
   }
 }
 
-function BulkActions(props: BulkActionsProps) {
+export function BulkActions(props: BulkActionsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [rejectionNotes, setRejectionNotes] = useState('')
   const [showRejectInput, setShowRejectInput] = useState(false)
@@ -164,5 +163,3 @@ function BulkActions(props: BulkActionsProps) {
     </div>
   )
 }
-
-export default BulkActions

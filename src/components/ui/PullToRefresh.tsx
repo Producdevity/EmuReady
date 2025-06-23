@@ -18,7 +18,7 @@ interface Props extends PropsWithChildren {
   enableHaptics?: boolean
 }
 
-function PullToRefresh({
+export function PullToRefresh({
   onRefresh,
   children,
   pullDistance = 100,
@@ -162,5 +162,3 @@ function PullToRefresh({
     </div>
   )
 }
-
-export default PullToRefresh

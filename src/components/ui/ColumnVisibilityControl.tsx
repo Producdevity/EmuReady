@@ -18,7 +18,7 @@ interface Props {
   className?: string
 }
 
-function ColumnVisibilityControl(props: Props) {
+export function ColumnVisibilityControl(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -205,5 +205,3 @@ function ColumnVisibilityControl(props: Props) {
     </div>
   )
 }
-
-export default ColumnVisibilityControl

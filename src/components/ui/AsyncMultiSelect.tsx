@@ -1,436 +1,233 @@
-import { Check, ChevronsUpDown, X } from 'lucide-react'
+import { Command as CommandPrimitive } from 'cmdk'
+import { ChevronsUpDown, X, Search } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
+import {
+  Button,
+  Badge,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  LoadingSpinner,
+} from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { LoadingSpinner } from './LoadingSpinner'
-
-// Temporary type definitions until we can properly import the components
-type CommandProps = React.HTMLAttributes<HTMLDivElement>
-type CommandEmptyProps = React.HTMLAttributes<HTMLDivElement>
-type CommandGroupProps = React.HTMLAttributes<HTMLDivElement>
-type CommandInputProps = React.HTMLAttributes<HTMLInputElement> & {
-  value?: string
-  onValueChange?: (value: string) => void
-  placeholder?: string
-}
-type CommandItemProps = React.HTMLAttributes<HTMLDivElement> & {
-  value: string
-}
-
-type CommandListProps = React.HTMLAttributes<HTMLDivElement>
-
-type PopoverProps = {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  children: React.ReactNode
-}
-
-type PopoverTriggerProps = {
-  asChild?: boolean
-  children: React.ReactNode
-}
-
-type PopoverContentProps = React.HTMLAttributes<HTMLDivElement> & {
-  align?: 'start' | 'center' | 'end'
-  children: React.ReactNode
-}
-
-// Simple component implementations
-const Command = (props: CommandProps) => <div {...props} />
-const CommandEmpty = (props: CommandEmptyProps) => <div {...props} />
-const CommandGroup = (props: CommandGroupProps) => <div {...props} />
-const CommandInput = (props: CommandInputProps) => {
-  const { onValueChange, ...inputProps } = props
-  return (
-    <input onChange={(e) => onValueChange?.(e.target.value)} {...inputProps} />
-  )
-}
-
-// Fixed implementation that doesn't use the conflicting onSelect prop
-const CommandItem = (props: CommandItemProps) => {
-  const { value, ...itemProps } = props
-  return <div data-value={value} {...itemProps} />
-}
-
-// TODO: add shadCN
-const CommandList = (props: CommandListProps) => <div {...props} />
-
-const Popover = (props: PopoverProps) => <div {...props} />
-const PopoverTrigger = (props: PopoverTriggerProps) => <div {...props} />
-const PopoverContent = (props: PopoverContentProps) => <div {...props} />
 
 export interface AsyncOption {
   id: string
   name: string
 }
 
-interface AsyncMultiSelectProps {
+export interface AsyncMultiSelectProps {
   label: string
   value: string[]
   onChange: (value: string[]) => void
+  loadOptions: (inputValue: string) => Promise<AsyncOption[]>
   placeholder?: string
   emptyMessage?: string
-  loadingMessage?: string
-  maxDisplayed?: number
   className?: string
-  disabled?: boolean
-
-  // Async props
-  fetchOptions: (params: {
-    search?: string
-    page: number
-    limit: number
-  }) => Promise<{
-    items: AsyncOption[]
-    hasMore: boolean
-    total?: number
-  }>
-  debounceMs?: number
-  pageSize?: number
+  maxSelected?: number
 }
 
-function AsyncMultiSelect(props: AsyncMultiSelectProps) {
-  const {
-    label,
-    value,
-    onChange,
-    placeholder = 'Select items...',
-    emptyMessage = 'No items found.',
-    loadingMessage = 'Loading items...',
-    maxDisplayed = 2,
-    className,
-    disabled = false,
-    fetchOptions,
-    debounceMs = 300,
-    pageSize = 20,
-  } = props
-
-  const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState('')
+export function AsyncMultiSelect({
+  label,
+  value = [],
+  onChange,
+  loadOptions,
+  placeholder = 'Select options',
+  emptyMessage = 'No options found.',
+  className,
+  maxSelected,
+}: AsyncMultiSelectProps) {
   const [options, setOptions] = useState<AsyncOption[]>([])
-  const [selectedOptions, setSelectedOptions] = useState<AsyncOption[]>([])
-  const [loading, setLoading] = useState(false)
+  const [inputValue, setInputValue] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [_total, setTotal] = useState(0) // Prefix with _ since it's not used directly
+  const [open, setOpen] = useState<boolean>(false)
+  const debouncedFetchRef = useRef<NodeJS.Timeout | null>(null)
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const observerRef = useRef<IntersectionObserver | null>(null)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const fetchOptions = useCallback(
+    async (query: string) => {
+      setLoading(true)
+      setError(null)
 
-  // Load options function
-  const loadOptions = useCallback(
-    async (pageToLoad: number, replace = false) => {
       try {
-        setLoading(true)
-        setError(null)
-
-        const result = await fetchOptions({
-          search: inputValue,
-          page: pageToLoad,
-          limit: pageSize,
-        })
-
-        setOptions((prev) =>
-          replace ? result.items : [...prev, ...result.items],
-        )
-        setHasMore(result.hasMore)
-        setTotal(result.total || 0)
-        setPage(pageToLoad)
+        const results = await loadOptions(query)
+        setOptions(results)
       } catch (err) {
-        console.error('Error loading options:', err)
         setError('Failed to load options')
+        console.error('Error loading options:', err)
       } finally {
         setLoading(false)
       }
     },
-    [fetchOptions, inputValue, pageSize],
+    [loadOptions],
   )
 
-  // Reset pagination when search changes
   useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
+    if (open) {
+      fetchOptions(inputValue)
     }
 
-    debounceTimerRef.current = setTimeout(() => {
-      setPage(1)
-      setOptions([])
-      loadOptions(1, true)
-    }, debounceMs)
-
+    const ref = debouncedFetchRef.current
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
+      if (ref) {
+        clearTimeout(ref)
       }
     }
-  }, [inputValue, debounceMs, loadOptions])
+  }, [open, inputValue, fetchOptions])
 
-  // Set up intersection observer for infinite scrolling
-  useEffect(() => {
-    if (!open) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries
-        if (entry.isIntersecting && hasMore && !loading) {
-          loadOptions(page + 1)
-        }
-      },
-      { threshold: 0.5 },
-    )
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current)
-    }
-
-    observerRef.current = observer
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-      }
-    }
-  }, [open, hasMore, loading, page, loadOptions])
-
-  // Fetch selected options when value changes
-  useEffect(() => {
-    const fetchSelectedOptions = async () => {
-      if (!value.length) {
-        setSelectedOptions([])
-        return
-      }
-
-      try {
-        // We need to fetch all selected options, even if they're not in the current search results
-        const selectedIds = new Set(value)
-        const missingIds = value.filter(
-          (id) => !options.some((option) => option.id === id),
-        )
-
-        if (missingIds.length === 0) {
-          // All selected options are already in the options list
-          setSelectedOptions(
-            options.filter((option) => selectedIds.has(option.id)),
-          )
-          return
-        }
-
-        // Fetch the missing options - this assumes your API supports fetching by IDs
-        // You might need to adapt this to your actual API
-        const result = await fetchOptions({
-          page: 1,
-          limit: 100,
-          search: missingIds.join(','),
-        })
-
-        const newSelectedOptions = [
-          ...options.filter((option) => selectedIds.has(option.id)),
-          ...result.items.filter((option) => selectedIds.has(option.id)),
-        ]
-
-        setSelectedOptions(newSelectedOptions)
-      } catch (err) {
-        console.error('Error fetching selected options:', err)
-        setError('Failed to load selected options')
-      }
-    }
-
-    fetchSelectedOptions()
-  }, [value, options, fetchOptions])
-
-  // Handle selection
   const handleSelect = useCallback(
     (optionId: string) => {
-      onChange(
-        value.includes(optionId)
-          ? value.filter((id) => id !== optionId)
-          : [...value, optionId],
-      )
-    },
-    [value, onChange],
-  )
-
-  // Handle removing a selected item
-  const handleRemove = useCallback(
-    (optionId: string) => {
-      onChange(value.filter((id) => id !== optionId))
-    },
-    [value, onChange],
-  )
-
-  // Handle clearing all selected items
-  const handleClear = useCallback(() => {
-    onChange([])
-  }, [onChange])
-
-  // Open the popover and load initial options
-  const handleOpenChange = useCallback(
-    (newOpen: boolean) => {
-      setOpen(newOpen)
-
-      if (newOpen && options.length === 0) {
-        loadOptions(1, true)
+      if (value.includes(optionId)) {
+        onChange(value.filter((item) => item !== optionId))
+      } else {
+        if (maxSelected && value.length >= maxSelected) {
+          return
+        }
+        onChange([...value, optionId])
       }
     },
-    [loadOptions, options.length],
+    [onChange, value, maxSelected],
   )
 
+  const handleRemove = useCallback(
+    (optionId: string) => {
+      onChange(value.filter((item) => item !== optionId))
+    },
+    [onChange, value],
+  )
+
+  const selectedOptions = options.filter((option) => value.includes(option.id))
+
   return (
-    <div className={cn('space-y-2', className)}>
-      <Popover open={open} onOpenChange={handleOpenChange}>
+    <div className={className}>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className={cn(
-              'w-full justify-between',
-              disabled && 'opacity-50 cursor-not-allowed',
-            )}
-            disabled={disabled}
+            className="w-full justify-between"
           >
-            {value.length > 0 ? (
-              <div className="flex items-center gap-1 flex-wrap">
-                <span className="text-sm text-muted-foreground mr-1">
-                  {label}:
-                </span>
-                {value.length > maxDisplayed ? (
-                  <Badge variant="default" className="rounded-md">
-                    {value.length} selected
-                  </Badge>
-                ) : (
-                  selectedOptions.map((option) => (
-                    <Badge
-                      key={option.id}
-                      variant="default"
-                      className="rounded-md"
-                    >
-                      {option.name}
-                    </Badge>
-                  ))
-                )}
-              </div>
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
-            )}
+            <span className="truncate">
+              {value.length > 0 ? `${value.length} selected` : placeholder}
+            </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full min-w-[200px] p-0" align="start">
-          <Command className="w-full">
-            <CommandInput
-              placeholder={`Search ${label.toLowerCase()}...`}
-              value={inputValue}
-              onValueChange={setInputValue}
-              className="h-9"
-            />
-            <CommandList className="max-h-[300px]">
+          <div className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
+            <div
+              className="flex items-center border-b px-3"
+              cmdk-input-wrapper=""
+            >
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <CommandPrimitive.Input
+                placeholder={`Search ${label.toLowerCase()}...`}
+                value={inputValue}
+                onValueChange={setInputValue}
+                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <CommandPrimitive.List className="max-h-[300px] overflow-y-auto overflow-x-hidden">
               {error ? (
-                <CommandEmpty className="py-6 text-center text-sm">
+                <CommandPrimitive.Empty className="py-6 text-center text-sm">
                   <div className="text-red-500">{error}</div>
                   <Button
                     variant="outline"
                     size="sm"
                     className="mt-2"
-                    onClick={() => loadOptions(1, true)}
+                    onClick={() => fetchOptions(inputValue)}
                   >
                     Retry
                   </Button>
-                </CommandEmpty>
+                </CommandPrimitive.Empty>
               ) : options.length === 0 && !loading ? (
-                <CommandEmpty className="py-6 text-center text-sm">
+                <CommandPrimitive.Empty className="py-6 text-center text-sm">
                   {emptyMessage}
-                </CommandEmpty>
+                </CommandPrimitive.Empty>
               ) : (
-                <CommandGroup>
+                <CommandPrimitive.Group>
                   {value.length > 0 && (
                     <div className="flex items-center justify-between px-2 py-1.5 text-sm border-b">
-                      <span className="text-muted-foreground">
-                        {value.length} selected
-                      </span>
+                      <span className="font-medium">Selected</span>
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => onChange([])}
                         className="h-auto p-1"
-                        onClick={handleClear}
                       >
                         Clear all
                       </Button>
                     </div>
                   )}
 
-                  {options.map((option) => (
-                    <CommandItem
-                      key={option.id}
-                      value={option.id}
-                      onClick={() => handleSelect(option.id)}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          value.includes(option.id)
-                            ? 'opacity-100'
-                            : 'opacity-0',
-                        )}
-                      />
-                      {option.name}
-                    </CommandItem>
-                  ))}
-
-                  {/* Load more indicator */}
-                  {hasMore && (
-                    <div
-                      ref={loadMoreRef}
-                      className="py-2 text-center text-sm text-muted-foreground"
-                    >
-                      {loading && <LoadingSpinner size="sm" />}
+                  {loading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <LoadingSpinner />
                     </div>
+                  ) : (
+                    options.map((option) => (
+                      <CommandPrimitive.Item
+                        key={option.id}
+                        value={option.id}
+                        onSelect={() => handleSelect(option.id)}
+                        className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                      >
+                        <div
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            value.includes(option.id)
+                              ? 'opacity-100'
+                              : 'opacity-0',
+                          )}
+                        >
+                          {value.includes(option.id) && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                        {option.name}
+                      </CommandPrimitive.Item>
+                    ))
                   )}
 
-                  {/* Show loading state */}
-                  {loading && options.length === 0 && (
-                    <div className="py-6 text-center">
-                      <LoadingSpinner size="md" />
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {loadingMessage}
-                      </p>
+                  {maxSelected && value.length >= maxSelected && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      Max {maxSelected} items selected
                     </div>
                   )}
-                </CommandGroup>
+                </CommandPrimitive.Group>
               )}
-            </CommandList>
-          </Command>
+            </CommandPrimitive.List>
+          </div>
         </PopoverContent>
       </Popover>
-
-      {/* Selected items display (outside popover) */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1.5">
+        <div className="flex flex-wrap gap-1 mt-2">
           {selectedOptions.map((option) => (
-            <Badge
-              key={option.id}
-              variant="default"
-              className="flex items-center gap-1 rounded-md"
-            >
+            <Badge key={option.id}>
               {option.name}
-              <X
-                className="h-3 w-3 cursor-pointer"
+              <button
+                className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 onClick={() => handleRemove(option.id)}
-              />
+              >
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove {option.name}</span>
+              </button>
             </Badge>
           ))}
-          {value.length > selectedOptions.length && (
-            <Badge variant="default" className="rounded-md">
-              +{value.length - selectedOptions.length} more
-            </Badge>
-          )}
         </div>
       )}
     </div>
   )
 }
-
-export default AsyncMultiSelect

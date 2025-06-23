@@ -5,7 +5,7 @@ interface Props {
   resetErrorBoundary: () => void
 }
 
-function ErrorFallback(props: Props) {
+export function ErrorFallback(props: Props) {
   return (
     <div className="m-6 p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg shadow-sm">
       <h2 className="text-lg font-semibold text-red-800 dark:text-red-400 mb-2">
@@ -23,5 +23,3 @@ function ErrorFallback(props: Props) {
     </div>
   )
 }
-
-export default ErrorFallback

@@ -17,7 +17,7 @@ import {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
-} from '@/components/ui/AlertDialog'
+} from '@/components/ui'
 
 interface ConfirmDialogOptions {
   title?: string
@@ -32,7 +32,7 @@ const ConfirmDialogContext = createContext<ConfirmFn>(() =>
   Promise.resolve(false),
 )
 
-function ConfirmDialogProvider(props: PropsWithChildren) {
+export function ConfirmDialogProvider(props: PropsWithChildren) {
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<ConfirmDialogOptions>({})
   const resolveRef = useRef<(result: boolean) => void>(() => {})
@@ -87,5 +87,3 @@ function ConfirmDialogProvider(props: PropsWithChildren) {
 export function useConfirmDialog() {
   return useContext(ConfirmDialogContext)
 }
-
-export default ConfirmDialogProvider

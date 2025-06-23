@@ -4,6 +4,24 @@ import { motion } from 'framer-motion'
 import { type KeyboardEvent } from 'react'
 import { cn } from '@/lib/utils'
 
+const sizeClasses = {
+  sm: {
+    container: 'h-5 w-9',
+    thumb: 'h-4 w-4',
+    translate: 16, // 4 * 4px (translate-x-4)
+  },
+  md: {
+    container: 'h-6 w-11',
+    thumb: 'h-5 w-5',
+    translate: 20, // 5 * 4px (translate-x-5)
+  },
+  lg: {
+    container: 'h-7 w-14',
+    thumb: 'h-6 w-6',
+    translate: 28, // 7 * 4px (translate-x-7)
+  },
+}
+
 interface Props {
   checked: boolean
   onChange: (checked: boolean) => void
@@ -14,25 +32,7 @@ interface Props {
   size?: 'sm' | 'md' | 'lg'
 }
 
-function AnimatedToggle(props: Props) {
-  const sizeClasses = {
-    sm: {
-      container: 'h-5 w-9',
-      thumb: 'h-4 w-4',
-      translate: 16, // 4 * 4px (translate-x-4)
-    },
-    md: {
-      container: 'h-6 w-11',
-      thumb: 'h-5 w-5',
-      translate: 20, // 5 * 4px (translate-x-5)
-    },
-    lg: {
-      container: 'h-7 w-14',
-      thumb: 'h-6 w-6',
-      translate: 28, // 7 * 4px (translate-x-7)
-    },
-  }
-
+export function AnimatedToggle(props: Props) {
   const sizeConfig = sizeClasses[props.size ?? 'md']
 
   function handleToggle() {
@@ -109,5 +109,3 @@ function AnimatedToggle(props: Props) {
     </div>
   )
 }
-
-export default AnimatedToggle

@@ -11,6 +11,7 @@ import {
   Button,
   Input,
   LoadingSpinner,
+  Card,
   Badge,
   SortableHeader,
   Pagination,
@@ -168,38 +169,38 @@ function AdminGamesPage() {
 
       {gameStatsQuery.data && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <Card>
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {gameStatsQuery.data.total}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Total Games
             </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          </Card>
+          <Card>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {gameStatsQuery.data.approved}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Approved
             </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          </Card>
+          <Card>
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {gameStatsQuery.data.pending}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Pending
             </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          </Card>
+          <Card>
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {gameStatsQuery.data.rejected}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Rejected
             </div>
-          </div>
+          </Card>
         </div>
       )}
 

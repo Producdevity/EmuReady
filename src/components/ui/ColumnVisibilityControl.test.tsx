@@ -4,7 +4,7 @@ import {
   type ColumnDefinition,
   type UseColumnVisibilityReturn,
 } from '@/hooks/useColumnVisibility'
-import ColumnVisibilityControl from './ColumnVisibilityControl'
+import { ColumnVisibilityControl } from './ColumnVisibilityControl'
 
 describe('ColumnVisibilityControl', () => {
   const mockColumns: ColumnDefinition[] = [

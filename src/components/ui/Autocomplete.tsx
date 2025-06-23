@@ -46,7 +46,7 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   debounceTime?: number // Renamed from searchDebounce
 }
 
-function Autocomplete<T extends AutocompleteOptionBase>({
+export function Autocomplete<T extends AutocompleteOptionBase>({
   value,
   onChange,
   onFocus,
@@ -555,5 +555,3 @@ function Autocomplete<T extends AutocompleteOptionBase>({
     </div>
   )
 }
-
-export default Autocomplete

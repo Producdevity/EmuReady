@@ -78,7 +78,7 @@ export type ButtonProps = ComponentProps<'button'> &
     asChild?: boolean
   }
 
-function Button({
+export function Button({
   className,
   variant,
   size,
@@ -124,5 +124,3 @@ function Button({
     </Comp>
   )
 }
-
-export default Button

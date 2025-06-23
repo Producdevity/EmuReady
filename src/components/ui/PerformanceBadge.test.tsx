@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import PerformanceBadge from './PerformanceBadge'
+import { PerformanceBadge } from './PerformanceBadge'
 
 describe('PerformanceBadge', () => {
   it('renders correctly with rank 1 (Perfect)', () => {

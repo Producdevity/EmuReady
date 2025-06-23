@@ -35,7 +35,7 @@ interface Props extends PropsWithChildren {
   pill?: boolean
 }
 
-function Badge(props: Props) {
+export function Badge(props: Props) {
   const variant = props.variant ?? 'default'
   const size = props.size ?? 'md'
 
@@ -53,5 +53,3 @@ function Badge(props: Props) {
     </span>
   )
 }
-
-export default Badge

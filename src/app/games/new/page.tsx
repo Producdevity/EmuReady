@@ -5,14 +5,19 @@ import { Search, Edit } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, type FormEvent } from 'react'
-import { LoadingSpinner, Button, Autocomplete, Input } from '@/components/ui'
+import {
+  LoadingSpinner,
+  Button,
+  Input,
+  Autocomplete,
+  type AutocompleteOptionBase,
+} from '@/components/ui'
 import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import NotSignedInMessage from './components/NotSignedInMessage'
-import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
 
 export const dynamic = 'force-dynamic'
 

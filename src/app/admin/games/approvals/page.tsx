@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle, XCircle, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -26,7 +26,11 @@ import {
   LoadingSpinner,
   DisplayToggleButton,
 } from '@/components/ui'
-import { ViewButton } from '@/components/ui/table-buttons'
+import {
+  ApproveButton,
+  RejectButton,
+  ViewButton,
+} from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -566,10 +570,7 @@ function GameApprovalsPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
+                            <ApproveButton
                               onClick={() =>
                                 showConfirmation(game.id, 'approve')
                               }
@@ -581,13 +582,9 @@ function GameApprovalsPage() {
                                 processingAction === 'approve' &&
                                 processingGameId === game.id
                               }
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600 border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-700/20"
+                              title="Approve Game"
+                            />
+                            <RejectButton
                               onClick={() =>
                                 showConfirmation(game.id, 'reject')
                               }
@@ -599,9 +596,8 @@ function GameApprovalsPage() {
                                 processingAction === 'reject' &&
                                 processingGameId === game.id
                               }
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
+                              title="Reject Game"
+                            />
                             <ViewButton
                               onClick={() => openGameModal(game.id)}
                               title="View Details"

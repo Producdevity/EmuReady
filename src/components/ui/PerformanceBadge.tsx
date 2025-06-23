@@ -1,10 +1,5 @@
 import { isNullish } from 'remeda'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/Tooltip'
-import Badge from './Badge'
+import { Tooltip, TooltipContent, TooltipTrigger, Badge } from '@/components/ui'
 
 interface Props {
   rank: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | number
@@ -27,7 +22,7 @@ const performanceColorMap: Record<number, string> = {
 const defaultPerformanceColor =
   'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
 
-function PerformanceBadge(props: Props) {
+export function PerformanceBadge(props: Props) {
   const customColorClass =
     performanceColorMap[props.rank] ?? defaultPerformanceColor
 
@@ -49,5 +44,3 @@ function PerformanceBadge(props: Props) {
     </Tooltip>
   )
 }
-
-export default PerformanceBadge

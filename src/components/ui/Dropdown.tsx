@@ -17,7 +17,7 @@ interface Props {
   className?: string
 }
 
-function Dropdown(props: Props) {
+export function Dropdown(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -97,5 +97,3 @@ function Dropdown(props: Props) {
     </div>
   )
 }
-
-export default Dropdown

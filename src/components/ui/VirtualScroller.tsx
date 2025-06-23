@@ -65,6 +65,9 @@ export function VirtualScroller<T>({
       currentOffset += height
     }
 
+    // Ensure we don't start beyond the last item
+    startIndex = Math.min(startIndex, items.length - 1)
+
     // Find end index
     currentOffset = 0
     for (let i = 0; i < items.length; i++) {

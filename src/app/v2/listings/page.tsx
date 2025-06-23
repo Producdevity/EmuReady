@@ -21,9 +21,14 @@ import {
   type SortDirection,
   type SortField,
 } from '@/app/listings/types'
-import { Button, Input, LoadingSpinner, VirtualScroller } from '@/components/ui'
-import AsyncMultiSelect from '@/components/ui/AsyncMultiSelect'
-import PullToRefresh from '@/components/ui/PullToRefresh'
+import {
+  Button,
+  Input,
+  LoadingSpinner,
+  VirtualScroller,
+  AsyncMultiSelect,
+  PullToRefresh,
+} from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -96,20 +101,72 @@ function V2ListingsPage() {
     sortDirection: listingsState.sortDirection ?? undefined,
   }
 
-  // Base listings query
-  const listingsQuery = api.listings.get.useQuery(filterParams)
+  // Async fetch functions for multiselect components
+  const fetchSystems = useCallback(
+    async ({
+      search,
+      page,
+      limit,
+    }: {
+      search?: string
+      page: number
+      limit: number
+    }) => {
+      try {
+        // Use a simpler approach with direct API calls
+        const response = await fetch(
+          `/api/trpc/systems.get?input=${encodeURIComponent(
+            JSON.stringify({
+              search: search || undefined,
+              page,
+              limit,
+            }),
+          )}`,
+        )
 
-  // Handle successful query results
-  useEffect(() => {
-    if (listingsQuery.data) {
-      if (currentPage === 1) {
-        setAllListings(listingsQuery.data.listings)
-      } else {
-        setAllListings((prev) => [...prev, ...listingsQuery.data.listings])
+        const data = await response.json()
+        const systems = data.result.data as SystemData[]
+
+        return {
+          items: systems.map((system) => ({
+            id: system.id,
+            name: system.name,
+          })),
+          hasMore: systems.length === limit,
+          total: systems.length,
+        }
+      } catch (error) {
+        console.error('Error fetching systems:', error)
+        return { items: [], hasMore: false, total: 0 }
       }
+    },
+    [],
+  )
 
-      setHasMoreItems(currentPage < (listingsQuery.data.pagination?.pages || 1))
-    }
+  // Base listings query with enabled flag to prevent unnecessary fetches
+  const listingsQuery = api.listings.get.useQuery(filterParams, {
+    keepPreviousData: true,
+    staleTime: 30000, // 30 seconds
+  })
+
+  // Handle successful query results with optimized state updates
+  useEffect(() => {
+    if (!listingsQuery.data) return
+
+    setAllListings((prev) => {
+      if (currentPage === 1) {
+        return listingsQuery.data.listings
+      } else {
+        // Avoid duplicate listings by checking IDs
+        const existingIds = new Set(prev.map((item) => item.id))
+        const newListings = listingsQuery.data.listings.filter(
+          (item) => !existingIds.has(item.id),
+        )
+        return [...prev, ...newListings]
+      }
+    })
+
+    setHasMoreItems(currentPage < (listingsQuery.data.pagination?.pages || 1))
   }, [listingsQuery.data, currentPage])
 
   // Track search analytics when results are loaded
@@ -172,8 +229,6 @@ function V2ListingsPage() {
   const handleSystemChange = useCallback(
     (values: string[]) => {
       listingsState.setSystemIds(values)
-      setCurrentPage(1)
-      setAllListings([])
     },
     [listingsState],
   )
@@ -181,8 +236,6 @@ function V2ListingsPage() {
   const handleDeviceChange = useCallback(
     (values: string[]) => {
       listingsState.setDeviceIds(values)
-      setCurrentPage(1)
-      setAllListings([])
     },
     [listingsState],
   )
@@ -190,8 +243,6 @@ function V2ListingsPage() {
   const handleSocChange = useCallback(
     (values: string[]) => {
       listingsState.setSocIds(values)
-      setCurrentPage(1)
-      setAllListings([])
     },
     [listingsState],
   )
@@ -199,8 +250,6 @@ function V2ListingsPage() {
   const handleEmulatorChange = useCallback(
     (values: string[]) => {
       listingsState.setEmulatorIds(values)
-      setCurrentPage(1)
-      setAllListings([])
     },
     [listingsState],
   )
@@ -208,8 +257,6 @@ function V2ListingsPage() {
   const handlePerformanceChange = useCallback(
     (values: number[]) => {
       listingsState.setPerformanceIds(values)
-      setCurrentPage(1)
-      setAllListings([])
     },
     [listingsState],
   )
@@ -217,8 +264,6 @@ function V2ListingsPage() {
   const handleSearchChange = useCallback(
     (value: string) => {
       listingsState.setSearch(value)
-      setCurrentPage(1)
-      setAllListings([])
       // Analytics are now tracked in the useEffect above
     },
     [listingsState],
@@ -232,8 +277,6 @@ function V2ListingsPage() {
 
       listingsState.setSortField(newSortField)
       listingsState.setSortDirection(newSortDirection)
-      setCurrentPage(1)
-      setAllListings([])
     },
     [listingsState],
   )
@@ -247,8 +290,6 @@ function V2ListingsPage() {
     listingsState.setSearch('')
     listingsState.setSortField(null)
     listingsState.setSortDirection(null)
-    setCurrentPage(1)
-    setAllListings([])
 
     analytics.filter.clearAll()
   }, [listingsState])
@@ -304,45 +345,6 @@ function V2ListingsPage() {
     listingsState.search.length > 0
 
   // Async fetch functions for multiselect components
-  const fetchSystems = useCallback(
-    async ({
-      search,
-      page: _page,
-      limit,
-    }: {
-      search?: string
-      page: number
-      limit: number
-    }) => {
-      try {
-        // Use a simpler approach with direct API calls
-        const response = await fetch(
-          `/api/trpc/systems.get?input=${encodeURIComponent(
-            JSON.stringify({
-              search: search || undefined,
-            }),
-          )}`,
-        )
-
-        const data = await response.json()
-        const systems = data.result.data as SystemData[]
-
-        return {
-          items: systems.map((system) => ({
-            id: system.id,
-            name: system.name,
-          })),
-          hasMore: systems.length === limit,
-          total: systems.length,
-        }
-      } catch (error) {
-        console.error('Error fetching systems:', error)
-        return { items: [], hasMore: false, total: 0 }
-      }
-    },
-    [],
-  )
-
   const fetchDevices = useCallback(
     async ({
       search,
@@ -647,7 +649,14 @@ function V2ListingsPage() {
                       value={listingsState.systemIds}
                       onChange={handleSystemChange}
                       placeholder="Select systems..."
-                      fetchOptions={fetchSystems}
+                      loadOptions={async (search) => {
+                        const result = await fetchSystems({
+                          search,
+                          page: 1,
+                          limit: 20,
+                        })
+                        return result.items
+                      }}
                       emptyMessage="No systems found"
                     />
                   </div>
@@ -664,7 +673,7 @@ function V2ListingsPage() {
                         handlePerformanceChange(values.map(Number))
                       }
                       placeholder="Select performance levels..."
-                      fetchOptions={async ({ search }) => {
+                      loadOptions={async (search) => {
                         const scales = performanceScalesQuery.data || []
                         const filtered = search
                           ? scales.filter(
@@ -679,14 +688,10 @@ function V2ListingsPage() {
                             )
                           : scales
 
-                        return {
-                          items: filtered.map((scale) => ({
-                            id: scale.id.toString(),
-                            name: `${scale.label} ${scale.description ? `- ${scale.description}` : ''}`,
-                          })),
-                          hasMore: false,
-                          total: filtered.length,
-                        }
+                        return filtered.map((scale) => ({
+                          id: scale.id.toString(),
+                          name: `${scale.label} ${scale.description ? `- ${scale.description}` : ''}`,
+                        }))
                       }}
                       emptyMessage="No performance levels found"
                     />
@@ -711,8 +716,15 @@ function V2ListingsPage() {
                             value={listingsState.deviceIds}
                             onChange={handleDeviceChange}
                             placeholder="Select devices..."
-                            fetchOptions={fetchDevices}
-                            maxDisplayed={3}
+                            loadOptions={async (search) => {
+                              const result = await fetchDevices({
+                                search,
+                                page: 1,
+                                limit: 20,
+                              })
+                              return result.items
+                            }}
+                            maxSelected={3}
                             emptyMessage="No devices found"
                           />
                         </div>
@@ -727,7 +739,14 @@ function V2ListingsPage() {
                             value={listingsState.emulatorIds}
                             onChange={handleEmulatorChange}
                             placeholder="Select emulators..."
-                            fetchOptions={fetchEmulators}
+                            loadOptions={async (search) => {
+                              const result = await fetchEmulators({
+                                search,
+                                page: 1,
+                                limit: 20,
+                              })
+                              return result.items
+                            }}
                             emptyMessage="No emulators found"
                           />
                         </div>
@@ -742,8 +761,15 @@ function V2ListingsPage() {
                             value={listingsState.socIds}
                             onChange={handleSocChange}
                             placeholder="Select SoCs..."
-                            fetchOptions={fetchSocs}
-                            maxDisplayed={3}
+                            loadOptions={async (search) => {
+                              const result = await fetchSocs({
+                                search,
+                                page: 1,
+                                limit: 20,
+                              })
+                              return result.items
+                            }}
+                            maxSelected={3}
                             emptyMessage="No SoCs found"
                           />
                         </div>

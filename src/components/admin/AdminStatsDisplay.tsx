@@ -1,3 +1,6 @@
+import { Card } from '@/components/ui'
+import { cn } from '@/lib/utils'
+
 interface StatItem {
   label: string
   value: number
@@ -27,13 +30,10 @@ export function AdminStatsDisplay(props: Props) {
         className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${props.className || ''}`}
       >
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
-          >
+          <Card key={i}>
             <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
             <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-          </div>
+          </Card>
         ))}
       </div>
     )
@@ -41,15 +41,15 @@ export function AdminStatsDisplay(props: Props) {
 
   return (
     <div
-      className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${props.className || ''}`}
+      className={cn('grid grid-cols-1 md:grid-cols-3 gap-4', props.className)}
     >
       {props.stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
-        >
+        <Card key={stat.label}>
           <div
-            className={`text-2xl font-bold ${colorClasses[stat.color] || colorClasses.gray}`}
+            className={cn(
+              'text-2xl font-bold',
+              colorClasses[stat.color] || colorClasses.gray,
+            )}
             title={stat.description}
           >
             {stat.value.toLocaleString()}
@@ -57,7 +57,7 @@ export function AdminStatsDisplay(props: Props) {
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {stat.label}
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   )

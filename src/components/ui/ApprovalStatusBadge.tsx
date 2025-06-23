@@ -5,8 +5,7 @@ import {
   HelpCircle,
   type LucideIcon,
 } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
-import Badge from '@/components/ui/Badge'
+import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { getApprovalStatusVariant } from '@/utils/badgeColors'
 import { ApprovalStatus } from '@orm'
@@ -45,7 +44,7 @@ interface Props {
   className?: string
 }
 
-function ApprovalStatusBadge(props: Props) {
+export function ApprovalStatusBadge(props: Props) {
   const statusConfig = statusMap[props.status] || statusMap.UNKNOWN
   const IconComponent = statusConfig.icon
 
@@ -62,5 +61,3 @@ function ApprovalStatusBadge(props: Props) {
     </Tooltip>
   )
 }
-
-export default ApprovalStatusBadge

@@ -5,7 +5,7 @@ interface Props extends PropsWithChildren {
   className?: string
 }
 
-function Code(props: Props) {
+export function Code(props: Props) {
   return (
     <code
       className={cn(
@@ -17,5 +17,3 @@ function Code(props: Props) {
     </code>
   )
 }
-
-export default Code
