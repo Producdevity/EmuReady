@@ -56,12 +56,43 @@ function V2ListingsPage() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [showSystemIcons, _setShowSystemIcons] = useState(false)
 
-  // API Queries - Using correct endpoints from working page
+  // API Queries - Using correct endpoints with optimized loading
   const systemsQuery = api.systems.get.useQuery()
-  const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
-  const socsQuery = api.socs.get.useQuery({ limit: 10000 })
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 10000 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
+
+  // Lazy-loaded queries for better performance
+  const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
+  const devicesQuery = api.devices.get.useQuery(
+    {
+      limit: 20,
+      search: deviceSearchTerm || undefined,
+    },
+    {
+      enabled: showFilters && showAdvancedFilters,
+    },
+  )
+
+  const [socSearchTerm, setSocSearchTerm] = useState('')
+  const socsQuery = api.socs.get.useQuery(
+    {
+      limit: 20,
+      search: socSearchTerm || undefined,
+    },
+    {
+      enabled: showFilters && showAdvancedFilters,
+    },
+  )
+
+  const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
+  const emulatorsQuery = api.emulators.get.useQuery(
+    {
+      limit: 20,
+      search: emulatorSearchTerm || undefined,
+    },
+    {
+      enabled: showFilters,
+    },
+  )
 
   // Filter params - matching working page structure
   const filterParams: ListingsFilter = {
@@ -94,7 +125,6 @@ function V2ListingsPage() {
     (values: string[]) => {
       listingsState.setSystemIds(values)
       listingsState.setPage(1)
-      listingsState.updateQuery({ systemIds: values, page: 1 })
     },
     [listingsState],
   )
@@ -103,7 +133,6 @@ function V2ListingsPage() {
     (values: string[]) => {
       listingsState.setDeviceIds(values)
       listingsState.setPage(1)
-      listingsState.updateQuery({ deviceIds: values, page: 1 })
     },
     [listingsState],
   )
@@ -112,7 +141,6 @@ function V2ListingsPage() {
     (values: string[]) => {
       listingsState.setSocIds(values)
       listingsState.setPage(1)
-      listingsState.updateQuery({ socIds: values, page: 1 })
     },
     [listingsState],
   )
@@ -121,7 +149,6 @@ function V2ListingsPage() {
     (values: string[]) => {
       listingsState.setEmulatorIds(values)
       listingsState.setPage(1)
-      listingsState.updateQuery({ emulatorIds: values, page: 1 })
     },
     [listingsState],
   )
@@ -130,7 +157,6 @@ function V2ListingsPage() {
     (values: number[]) => {
       listingsState.setPerformanceIds(values)
       listingsState.setPage(1)
-      listingsState.updateQuery({ performanceIds: values, page: 1 })
     },
     [listingsState],
   )
@@ -139,7 +165,6 @@ function V2ListingsPage() {
     (value: string) => {
       listingsState.setSearch(value)
       listingsState.setPage(1)
-      listingsState.updateQuery({ search: value, page: 1 })
 
       if (value.length > 2) {
         analytics.contentDiscovery.searchPerformed({
@@ -162,11 +187,6 @@ function V2ListingsPage() {
       listingsState.setSortField(newSortField)
       listingsState.setSortDirection(newSortDirection)
       listingsState.setPage(1)
-      listingsState.updateQuery({
-        sortField: newSortField,
-        sortDirection: newSortDirection,
-        page: 1,
-      })
     },
     [listingsState],
   )
@@ -181,17 +201,6 @@ function V2ListingsPage() {
     listingsState.setSortField(null)
     listingsState.setSortDirection(null)
     listingsState.setPage(1)
-    listingsState.updateQuery({
-      systemIds: [],
-      deviceIds: [],
-      socIds: [],
-      emulatorIds: [],
-      performanceIds: [],
-      search: '',
-      sortField: null,
-      sortDirection: null,
-      page: 1,
-    })
 
     analytics.filter.clearAll()
   }, [listingsState])
@@ -364,31 +373,41 @@ function V2ListingsPage() {
           </div>
         </div>
 
-        {/* Advanced Filters Overlay */}
+        {/* Advanced Filters Overlay - Bottom Sheet on Mobile */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-6"
+              exit={{ opacity: 0, y: 100 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50 lg:relative lg:mb-6"
             >
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border">
+              <div className="bg-white dark:bg-gray-800 rounded-t-xl lg:rounded-xl p-4 shadow-lg border max-h-[80vh] overflow-y-auto">
+                {/* Handle for bottom sheet */}
+                <div className="lg:hidden flex justify-center mb-2">
+                  <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                </div>
+
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium">Filters</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                    className="flex items-center gap-1"
-                  >
-                    Advanced
-                    {showAdvancedFilters ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setShowAdvancedFilters(!showAdvancedFilters)
+                      }
+                      className="flex items-center gap-1"
+                    >
+                      Advanced
+                      {showAdvancedFilters ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Systems - Always visible */}
@@ -440,63 +459,111 @@ function V2ListingsPage() {
                       exit={{ opacity: 0, height: 0 }}
                       className="space-y-4"
                     >
-                      {/* Devices */}
+                      {/* Devices - With search */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           Devices
                         </label>
-                        <MultiSelect
-                          label="Devices"
-                          options={
-                            devicesQuery.data?.devices.map((device) => ({
-                              id: device.id,
-                              name: `${device.brand.name} ${device.modelName}`,
-                            })) ?? []
-                          }
-                          value={listingsState.deviceIds}
-                          onChange={handleDeviceChange}
-                          placeholder="Select devices..."
-                          maxDisplayed={3}
-                        />
+                        <div className="mb-2">
+                          <Input
+                            placeholder="Search devices..."
+                            value={deviceSearchTerm}
+                            onChange={(e) =>
+                              setDeviceSearchTerm(e.target.value)
+                            }
+                            className="mb-2"
+                          />
+                        </div>
+                        {devicesQuery.isLoading ? (
+                          <div className="py-2 flex justify-center">
+                            <LoadingSpinner size="sm" />
+                          </div>
+                        ) : (
+                          <MultiSelect
+                            label="Devices"
+                            options={
+                              devicesQuery.data?.devices.map((device) => ({
+                                id: device.id,
+                                name: `${device.brand.name} ${device.modelName}`,
+                              })) ?? []
+                            }
+                            value={listingsState.deviceIds}
+                            onChange={handleDeviceChange}
+                            placeholder="Select devices..."
+                            maxDisplayed={3}
+                          />
+                        )}
                       </div>
 
-                      {/* Emulators */}
+                      {/* Emulators - With search */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           Emulators
                         </label>
-                        <MultiSelect
-                          label="Emulators"
-                          options={
-                            emulatorsQuery.data?.emulators.map((emulator) => ({
-                              id: emulator.id,
-                              name: emulator.name,
-                            })) ?? []
-                          }
-                          value={listingsState.emulatorIds}
-                          onChange={handleEmulatorChange}
-                          placeholder="Select emulators..."
-                        />
+                        <div className="mb-2">
+                          <Input
+                            placeholder="Search emulators..."
+                            value={emulatorSearchTerm}
+                            onChange={(e) =>
+                              setEmulatorSearchTerm(e.target.value)
+                            }
+                            className="mb-2"
+                          />
+                        </div>
+                        {emulatorsQuery.isLoading ? (
+                          <div className="py-2 flex justify-center">
+                            <LoadingSpinner size="sm" />
+                          </div>
+                        ) : (
+                          <MultiSelect
+                            label="Emulators"
+                            options={
+                              emulatorsQuery.data?.emulators.map(
+                                (emulator) => ({
+                                  id: emulator.id,
+                                  name: emulator.name,
+                                }),
+                              ) ?? []
+                            }
+                            value={listingsState.emulatorIds}
+                            onChange={handleEmulatorChange}
+                            placeholder="Select emulators..."
+                          />
+                        )}
                       </div>
 
-                      {/* SoCs */}
+                      {/* SoCs - With search */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           System on Chips (SoCs)
                         </label>
-                        <MultiSelect
-                          label="SoCs"
-                          options={
-                            socsQuery.data?.socs.map((soc) => ({
-                              id: soc.id,
-                              name: `${soc.name} (${soc.manufacturer})`,
-                            })) ?? []
-                          }
-                          value={listingsState.socIds}
-                          onChange={handleSocChange}
-                          placeholder="Select SoCs..."
-                          maxDisplayed={3}
-                        />
+                        <div className="mb-2">
+                          <Input
+                            placeholder="Search SoCs..."
+                            value={socSearchTerm}
+                            onChange={(e) => setSocSearchTerm(e.target.value)}
+                            className="mb-2"
+                          />
+                        </div>
+                        {socsQuery.isLoading ? (
+                          <div className="py-2 flex justify-center">
+                            <LoadingSpinner size="sm" />
+                          </div>
+                        ) : (
+                          <MultiSelect
+                            label="SoCs"
+                            options={
+                              socsQuery.data?.socs.map((soc) => ({
+                                id: soc.id,
+                                name: `${soc.name} (${soc.manufacturer})`,
+                              })) ?? []
+                            }
+                            value={listingsState.socIds}
+                            onChange={handleSocChange}
+                            placeholder="Select SoCs..."
+                            maxDisplayed={3}
+                          />
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -507,7 +574,7 @@ function V2ListingsPage() {
                     variant="outline"
                     onClick={() => setShowFilters(false)}
                   >
-                    Close
+                    Apply Filters
                   </Button>
                   {hasActiveFilters && (
                     <Button
@@ -515,19 +582,72 @@ function V2ListingsPage() {
                       onClick={clearAllFilters}
                       className="text-red-600"
                     >
-                      Clear All Filters
+                      Clear All
                     </Button>
                   )}
                 </div>
               </div>
+              {/* Backdrop for mobile */}
+              <div
+                className="fixed inset-0 bg-black/60 -z-10 lg:hidden"
+                onClick={() => setShowFilters(false)}
+              />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Loading State */}
+        {/* Loading State - Skeleton Loader */}
         {listingsQuery.isLoading && (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner text="Loading listings..." />
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                : 'space-y-4'
+            }
+          >
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-pulse',
+                  viewMode === 'list' ? 'flex items-center p-4' : 'p-6',
+                )}
+              >
+                {viewMode === 'grid' ? (
+                  <>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 mb-4">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                      <div className="flex gap-4">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
@@ -734,7 +854,6 @@ function V2ListingsPage() {
                   totalPages={pagination.pages}
                   onPageChange={(newPage) => {
                     listingsState.setPage(newPage)
-                    listingsState.updateQuery({ page: newPage })
                   }}
                 />
               </div>

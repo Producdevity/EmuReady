@@ -221,7 +221,6 @@ function useListingsState() {
 
     // Helpers
     handleSort,
-    updateQuery: updateFilters, // For backward compatibility TODO: delete later
   }
 }
 
