@@ -80,26 +80,44 @@ function V2ListingsPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   // Filter params - matching working page structure
-  const filterParams: ListingsFilter = {
-    systemIds:
-      listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
-    deviceIds:
-      listingsState.deviceIds.length > 0 ? listingsState.deviceIds : undefined,
-    socIds: listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
-    emulatorIds:
-      listingsState.emulatorIds.length > 0
-        ? listingsState.emulatorIds
-        : undefined,
-    performanceIds:
-      listingsState.performanceIds.length > 0
-        ? listingsState.performanceIds
-        : undefined,
-    searchTerm: listingsState.search || undefined,
-    page: currentPage,
-    limit: 12, // Good for grid layout
-    sortField: listingsState.sortField ?? undefined,
-    sortDirection: listingsState.sortDirection ?? undefined,
-  }
+  const filterParams: ListingsFilter = useMemo(
+    () => ({
+      systemIds:
+        listingsState.systemIds.length > 0
+          ? listingsState.systemIds
+          : undefined,
+      deviceIds:
+        listingsState.deviceIds.length > 0
+          ? listingsState.deviceIds
+          : undefined,
+      socIds:
+        listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
+      emulatorIds:
+        listingsState.emulatorIds.length > 0
+          ? listingsState.emulatorIds
+          : undefined,
+      performanceIds:
+        listingsState.performanceIds.length > 0
+          ? listingsState.performanceIds
+          : undefined,
+      searchTerm: listingsState.search || undefined,
+      page: currentPage,
+      limit: 12, // Good for grid layout
+      sortField: listingsState.sortField ?? undefined,
+      sortDirection: listingsState.sortDirection ?? undefined,
+    }),
+    [
+      listingsState.systemIds,
+      listingsState.deviceIds,
+      listingsState.socIds,
+      listingsState.emulatorIds,
+      listingsState.performanceIds,
+      listingsState.search,
+      listingsState.sortField,
+      listingsState.sortDirection,
+      currentPage,
+    ],
+  )
 
   // Async fetch functions for multiselect components
   const fetchSystems = useCallback(
@@ -145,8 +163,9 @@ function V2ListingsPage() {
 
   // Base listings query with enabled flag to prevent unnecessary fetches
   const listingsQuery = api.listings.get.useQuery(filterParams, {
-    keepPreviousData: true,
-    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1,
   })
 
   // Handle successful query results with optimized state updates
@@ -189,10 +208,10 @@ function V2ListingsPage() {
 
   // Load more listings when reaching the end
   const loadMoreListings = useCallback(() => {
-    if (hasMoreItems && !listingsQuery.isLoading) {
+    if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
       setCurrentPage((prev) => prev + 1)
     }
-  }, [hasMoreItems, listingsQuery.isLoading])
+  }, [hasMoreItems, listingsQuery.isLoading, listingsQuery.isFetching])
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -210,7 +229,11 @@ function V2ListingsPage() {
   ])
 
   // Refresh handler for pull-to-refresh
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
+    if (listingsQuery.isLoading || listingsQuery.isFetching) {
+      return
+    }
+
     try {
       await listingsQuery.refetch()
       setCurrentPage(1)
@@ -223,7 +246,7 @@ function V2ListingsPage() {
     } finally {
       // Reset refreshing state
     }
-  }
+  }, [listingsQuery])
 
   // Handlers - Properly updating state and URL
   const handleSystemChange = useCallback(
@@ -916,22 +939,27 @@ function V2ListingsPage() {
                       onEndReached={loadMoreListings}
                       endReachedThreshold={300}
                       getItemKey={(item) => item.id}
+                      overscan={5}
                     />
                   </div>
 
                   {/* Loading indicator for infinite scroll */}
-                  {listingsQuery.isLoading && currentPage > 1 && (
-                    <div className="flex justify-center py-4">
-                      <LoadingSpinner size="md" />
-                    </div>
-                  )}
+                  {(listingsQuery.isLoading || listingsQuery.isFetching) &&
+                    currentPage > 1 && (
+                      <div className="flex justify-center py-4">
+                        <LoadingSpinner size="md" />
+                      </div>
+                    )}
 
                   {/* End of results message */}
-                  {!hasMoreItems && allListings.length > 0 && (
-                    <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                      You&apos;ve reached the end of the listings
-                    </div>
-                  )}
+                  {!hasMoreItems &&
+                    allListings.length > 0 &&
+                    !listingsQuery.isLoading &&
+                    !listingsQuery.isFetching && (
+                      <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                        You&apos;ve reached the end of the listings
+                      </div>
+                    )}
                 </div>
               )}
             </>
