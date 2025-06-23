@@ -1,14 +1,13 @@
-import { type ReactNode } from 'react'
+import { type PropsWithChildren, type ReactNode } from 'react'
 
-interface Props {
+interface Props extends PropsWithChildren {
   title: string
   description: string
-  children: ReactNode
   headerActions?: ReactNode
   className?: string
 }
 
-function AdminPageLayout(props: Props) {
+export function AdminPageLayout(props: Props) {
   return (
     <div
       className={`container mx-auto px-2 md:px-4 py-8 ${props.className || ''}`}
@@ -30,5 +29,3 @@ function AdminPageLayout(props: Props) {
     </div>
   )
 }
-
-export default AdminPageLayout

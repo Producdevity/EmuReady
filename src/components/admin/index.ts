@@ -1,5 +1,5 @@
 export * from './AdminNotificationBanner'
 export * from './AdminTableContainer'
-export { default as AdminStatsDisplay } from './AdminStatsDisplay'
-export { default as AdminSearchFilters } from './AdminSearchFilters'
-export { default as AdminPageLayout } from './AdminPageLayout'
+export * from './AdminStatsDisplay'
+export * from './AdminSearchFilters'
+export * from './AdminPageLayout'

@@ -1,17 +1,16 @@
 import { Search } from 'lucide-react'
-import { type ReactNode } from 'react'
+import { type PropsWithChildren } from 'react'
 import { Button, Input } from '@/components/ui'
 
-interface Props {
+interface Props extends PropsWithChildren {
   searchValue: string
   onSearchChange: (value: string) => void
   searchPlaceholder?: string
-  children?: ReactNode
   onClear?: () => void
   className?: string
 }
 
-function AdminSearchFilters(props: Props) {
+export function AdminSearchFilters(props: Props) {
   return (
     <div
       className={`bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4 ${props.className || ''}`}
@@ -46,5 +45,3 @@ function AdminSearchFilters(props: Props) {
     </div>
   )
 }
-
-export default AdminSearchFilters

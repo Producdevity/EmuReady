@@ -20,7 +20,7 @@ interface Props {
   className?: string
 }
 
-function AdminStatsDisplay(props: Props) {
+export function AdminStatsDisplay(props: Props) {
   if (props.isLoading) {
     return (
       <div
@@ -62,5 +62,3 @@ function AdminStatsDisplay(props: Props) {
     </div>
   )
 }
-
-export default AdminStatsDisplay

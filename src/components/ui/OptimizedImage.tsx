@@ -2,8 +2,8 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import { LoadingSpinner } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import LoadingSpinner from './LoadingSpinner'
 
 type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 

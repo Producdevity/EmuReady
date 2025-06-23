@@ -1,17 +1,18 @@
 'use client'
 
 interface Props {
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   text?: string
 }
 
-const sizeClasses = {
+const sizeClasses: Record<NonNullable<Props['size']>, string> = {
+  xs: 'h-3 w-3',
   sm: 'h-5 w-5',
   md: 'h-8 w-8',
   lg: 'h-12 w-12',
 }
 
-function LoadingSpinner(props: Props) {
+export function LoadingSpinner(props: Props) {
   return (
     <div className="flex flex-col items-center justify-center p-4">
       <svg
@@ -64,5 +65,3 @@ function LoadingSpinner(props: Props) {
     </div>
   )
 }
-
-export default LoadingSpinner
