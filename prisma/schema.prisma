@@ -269,7 +269,6 @@ model Listing {
   notificationPrefs     ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
 
-  @@unique([gameId, deviceId, emulatorId])
   @@index([processedByUserId])
 }
 
