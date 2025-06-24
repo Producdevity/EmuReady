@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Eye, Edit3, HelpCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { hasMarkdownSyntax } from '@/utils/markdown'
 
@@ -32,21 +32,8 @@ export function MarkdownEditor(props: Props) {
   const [hasMarkdown, setHasMarkdown] = useState(false)
 
   useEffect(() => {
-    if (props.value && hasMarkdownSyntax(props.value)) {
-      setHasMarkdown(true)
-    } else {
-      setHasMarkdown(false)
-    }
+    setHasMarkdown(hasMarkdownSyntax(props.value || ''))
   }, [props.value])
-
-  const handleModeToggle = useCallback(() => {
-    setIsMarkdownMode(!isMarkdownMode)
-    setShowPreview(false) // Reset preview when switching modes
-  }, [isMarkdownMode])
-
-  const handlePreviewToggle = useCallback(() => {
-    setShowPreview(!showPreview)
-  }, [showPreview])
 
   const renderContent = () => {
     if (isMarkdownMode) {
@@ -63,7 +50,7 @@ export function MarkdownEditor(props: Props) {
             <MDEditor
               value={props.value}
               onChange={(val) => props.onChange(val || '')}
-              preview={showPreview ? 'edit' : 'edit'}
+              preview="edit"
               hideToolbar={false}
               height={props.rows ? props.rows * 24 + 80 : 200}
               data-color-mode="light"
@@ -78,7 +65,7 @@ export function MarkdownEditor(props: Props) {
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={handlePreviewToggle}
+              onClick={() => setShowPreview((prevState) => !prevState)}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             >
               {showPreview ? (
@@ -159,7 +146,10 @@ export function MarkdownEditor(props: Props) {
           {/* Mode Toggle Button */}
           <motion.button
             type="button"
-            onClick={handleModeToggle}
+            onClick={() => {
+              setIsMarkdownMode((prevState) => !prevState)
+              setShowPreview(false) // Reset preview when switching modes
+            }}
             className={cn(
               'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200',
               'border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
