@@ -21,7 +21,6 @@ import type { RouterOutput } from '@/types/trpc'
 type ListingType = RouterOutput['listings']['get']['listings'][number]
 
 function V2ListingsPage() {
-  // Use the standard listings state hook
   const listingsState = useListingsState()
 
   // UI State - specific to v2
@@ -34,7 +33,6 @@ function V2ListingsPage() {
   const [hasMoreItems, setHasMoreItems] = useState(true)
   const [allListings, setAllListings] = useState<ListingType[]>([])
 
-  // Performance scales query
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   // Filter params for API call
@@ -122,14 +120,12 @@ function V2ListingsPage() {
     }
   }, [listingsQuery.data, listingsQuery.isLoading, listingsState.search])
 
-  // Load more listings
   const loadMoreListings = useCallback(() => {
     if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
       setCurrentPage((prev) => prev + 1)
     }
   }, [hasMoreItems, listingsQuery.isLoading, listingsQuery.isFetching])
 
-  // Refresh handler
   const handleRefresh = useCallback(async () => {
     if (listingsQuery.isLoading || listingsQuery.isFetching) return
 
