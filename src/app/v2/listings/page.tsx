@@ -122,21 +122,6 @@ function V2ListingsPage() {
     }
   }, [listingsQuery.data, listingsQuery.isLoading, listingsState.search])
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-    setAllListings([])
-  }, [
-    listingsState.systemIds,
-    listingsState.deviceIds,
-    listingsState.socIds,
-    listingsState.emulatorIds,
-    listingsState.performanceIds,
-    listingsState.search,
-    listingsState.sortField,
-    listingsState.sortDirection,
-  ])
-
   // Load more listings
   const loadMoreListings = useCallback(() => {
     if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
