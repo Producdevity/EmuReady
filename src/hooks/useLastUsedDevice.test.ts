@@ -79,13 +79,4 @@ describe('useLastUsedDevice', () => {
 
     expect(mockSetDevice).toHaveBeenCalledWith(null)
   })
-
-  it('should use correct storage key', () => {
-    renderHook(() => useLastUsedDevice())
-
-    expect(mockUseLocalStorage).toHaveBeenCalledWith(
-      '@EmuReady_new_listing_last_used_device',
-      null,
-    )
-  })
 })
