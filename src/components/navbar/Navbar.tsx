@@ -125,7 +125,7 @@ function Navbar() {
               <>
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    {userRole && hasPermission(userRole, Role.USER) && (
+                    {hasPermission(userRole, Role.USER) && (
                       <Link
                         href="/listings/new"
                         className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-105"
@@ -133,7 +133,7 @@ function Navbar() {
                         Create Listing
                       </Link>
                     )}
-                    {userRole && hasPermission(userRole, Role.ADMIN) && (
+                    {hasPermission(userRole, Role.ADMIN) && (
                       <Link
                         href="/admin"
                         className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
@@ -141,6 +141,19 @@ function Navbar() {
                         Admin
                       </Link>
                     )}
+                    {hasPermission(userRole, Role.ADMIN) && (
+                      <Link
+                        href="/v2/listings"
+                        className="px-4 py-2.5 bg-gradient-to-r
+                        from-lime-500 to-teal-600
+                        hover:from-lime-600 hover:to-teal-700
+                        text-white font-semibold text-sm rounded-xl transition-all duration-300
+                        shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
+                      >
+                        Listings V2
+                      </Link>
+                    )}
+
                     <Link
                       href="/profile"
                       className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-sm rounded-xl transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800"
