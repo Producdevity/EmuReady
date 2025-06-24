@@ -312,7 +312,6 @@ function ListingsPage() {
                   size="sm"
                   onClick={() => {
                     listingsState.setMyListings(!listingsState.myListings)
-                    listingsState.setPage(1)
                   }}
                 >
                   {listingsState.myListings ? 'All Listings' : 'My Listings'}
