@@ -17,7 +17,7 @@ export const RECAPTCHA_CONFIG = {
 // Validate configuration
 if (typeof window === 'undefined') {
   // Server-side validation
-  if (!RECAPTCHA_CONFIG.secretKey) {
+  if (!RECAPTCHA_CONFIG.secretKey && process.env.NODE_ENV !== 'test') {
     console.warn(
       'RECAPTCHA_SECRET_KEY is not set. CAPTCHA verification will be disabled.',
     )
