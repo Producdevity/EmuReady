@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import KofiFooterButton from '@/components/footer/KofiFooterButton'
-import GitHubIcon from '@/components/icons/GitHubIcon'
+import { KofiFooterButton } from '@/components/footer/KofiFooterButton'
+import { GitHubIcon } from '@/components/icons'
 import { ThemeSelect } from '@/components/ui'
 import analytics from '@/lib/analytics'
 
@@ -13,7 +13,7 @@ const githubSupportUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?templ
 const githubContributingUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/CONTRIBUTING.md`
 const githubRequestEmulatorUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=emulator_request.md`
 
-function Footer() {
+export function Footer() {
   return (
     <footer className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -246,5 +246,3 @@ function Footer() {
     </footer>
   )
 }
-
-export default Footer

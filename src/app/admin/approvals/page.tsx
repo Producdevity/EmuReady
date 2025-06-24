@@ -10,8 +10,7 @@ import {
   AdminNotificationBanner,
   AdminStatsDisplay,
 } from '@/components/admin'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
-import SystemIcon from '@/components/icons/SystemIcon'
+import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   Button,
   Input,

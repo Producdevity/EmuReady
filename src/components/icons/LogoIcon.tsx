@@ -6,7 +6,7 @@ interface Props {
   animation?: boolean
 }
 
-function LogoIcon(props: Props) {
+export function LogoIcon(props: Props) {
   return (
     <Image
       src="/logo/460x460_rounded.png"
@@ -24,5 +24,3 @@ function LogoIcon(props: Props) {
     />
   )
 }
-
-export default LogoIcon

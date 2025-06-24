@@ -67,12 +67,23 @@ const nextConfig: NextConfig = {
     },
   },
 
-  serverExternalPackages: ['@prisma/client'],
+  serverExternalPackages: [
+    '@prisma/client',
+    'jsdom',
+    'markdown-it',
+    'dompurify',
+  ],
 
   webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
+    })
+    // support for importing markdown files for server-side processing
+    // TODO: probably need just this https://nextjs.org/docs/app/guides/mdx
+    config.module.rules.push({
+      test: /\.md$/,
+      type: 'asset/source',
     })
     return config
   },

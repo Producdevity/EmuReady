@@ -10,7 +10,7 @@ const md = new MarkdownIt({
   typographer: false, // Disable smart quotes for security
 })
 
-// Configure DOMPurify with safe settings for markdown
+//  DOMPurify with safe settings for markdown
 const ALLOWED_TAGS = [
   'p',
   'br',
@@ -60,24 +60,38 @@ const PURIFY_CONFIG = {
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
 }
 
-// Set up DOMPurify for server-side usage
-let purify: typeof DOMPurify
-if (typeof window !== 'undefined') {
-  // Client-side
+/**
+ * Simple sanitization for server-side or when DOMPurify is not available
+ * @param html - The HTML string to sanitize
+ * @returns The sanitized HTML string
+ */
+function basicSanitize(html: string): string {
+  // TODO: there must be a better way to do this
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+    .replace(/javascript:/gi, '') // Remove javascript
+    .replace(/vbscript:/gi, '') // Remove vbscript
+    .replace(/data:(?!image\/)/gi, '') // Remove data URLs
+    .replace(/on\w+\s*=\s*[^>\s]+/gi, '') // Remove event handlers
+    .replace(/<\/?[^>]+(>|$)/g, '') // Remove all HTML tags
+}
+
+// DOMPurify for client-side usage only
+const isClient = typeof window !== 'undefined'
+
+// needs to work in both environments
+let purify:
+  | typeof DOMPurify
+  | { sanitize: (html: string, options?: unknown) => string }
+
+if (isClient) {
+  // Client-side - use standard DOMPurify
   purify = DOMPurify
 } else {
-  // Server-side - use JSDOM
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { JSDOM } = require('jsdom')
-    const window = new JSDOM('').window
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    purify = DOMPurify(window as any)
-  } catch {
-    // Fallback if JSDOM is not available
-    purify = {
-      sanitize: (html: string) => basicSanitize(html),
-    } as typeof DOMPurify
+  // Server-side - use basic sanitization for now since JSDOM is being a little whiny bitch
+  // TODO: Fix this
+  purify = {
+    sanitize: (html: string) => basicSanitize(html),
   }
 }
 
@@ -89,16 +103,6 @@ const DANGEROUS_PATTERNS = [
   /<script\b/gi,
   /on\w+\s*=/gi,
 ]
-
-// Simple additional sanitization for extra security
-function basicSanitize(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/vbscript:/gi, '')
-    .replace(/data:(?!image\/)/gi, '')
-    .replace(/on\w+\s*=\s*[^>\s]+/gi, '')
-}
 
 /**
  * Parse markdown text to HTML with security sanitization
@@ -122,13 +126,18 @@ export function parseMarkdown(markdownText: string): string {
     // Parse markdown to HTML
     const html = md.render(markdownText)
 
-    // Sanitize the HTML using DOMPurify
-    const cleanHtml = purify.sanitize(html, PURIFY_CONFIG)
+    // Sanitize the HTML using DOMPurify or basic sanitization
+    const cleanHtml = isClient
+      ? purify.sanitize(html, PURIFY_CONFIG)
+      : purify.sanitize(html)
 
     return cleanHtml
-  } catch {
+  } catch (error) {
+    console.warn('Markdown parsing failed:', error)
     // Return escaped plain text as fallback
-    return purify.sanitize(markdownText, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+    return isClient
+      ? purify.sanitize(markdownText, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+      : purify.sanitize(markdownText)
   }
 }
 
@@ -167,14 +176,14 @@ export function stripMarkdown(markdownText: string): string {
   try {
     // Parse to HTML then strip all tags to get plain text
     const html = md.render(markdownText)
-    const textOnly = purify.sanitize(html, {
-      ALLOWED_TAGS: [],
-      ALLOWED_ATTR: [],
-    })
+    const textOnly = isClient
+      ? purify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+      : purify.sanitize(html)
 
     // Clean up extra whitespace
     return textOnly.replace(/\s+/g, ' ').trim()
-  } catch {
+  } catch (error) {
+    console.warn('Stripping markdown failed:', error)
     return markdownText
   }
 }
@@ -218,7 +227,8 @@ export function validateMarkdown(markdownText: string): {
       cleanText,
       errors,
     }
-  } catch {
+  } catch (error) {
+    console.warn('Markdown validation failed:', error)
     errors.push('Invalid markdown syntax')
     return {
       isValid: false,

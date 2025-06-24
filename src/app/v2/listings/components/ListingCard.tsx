@@ -6,9 +6,8 @@ import {
   ThumbsUp,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
-import SystemIcon from '@/components/icons/SystemIcon'
+import { useState, type MouseEvent } from 'react'
+import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   Button,
   PerformanceBadge,
@@ -64,8 +63,8 @@ export function ListingCard({
     router.push(`/listings/${listing.id}`)
   }
 
-  const navigateToGame = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const navigateToGame = (ev: MouseEvent) => {
+    ev.stopPropagation()
     router.push(`/games/${listing.game.id}`)
   }
 

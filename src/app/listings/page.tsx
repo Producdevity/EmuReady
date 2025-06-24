@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
-import SystemIcon from '@/components/icons/SystemIcon'
+import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   PerformanceBadge,
   Pagination,

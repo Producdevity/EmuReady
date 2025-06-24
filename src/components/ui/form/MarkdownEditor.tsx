@@ -8,14 +8,11 @@ import { cn } from '@/lib/utils'
 import { hasMarkdownSyntax } from '@/utils/markdown'
 
 // Dynamically import MDEditor to avoid SSR issues
-const MDEditor = dynamic(
-  () => import('@uiw/react-md-editor').then((mod) => mod.default),
-  { ssr: false },
-)
+const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })
 
 interface Props {
-  value: string
   onChange: (value: string) => void
+  value?: string
   placeholder?: string
   className?: string
   rows?: number
@@ -68,7 +65,7 @@ export function MarkdownEditor(props: Props) {
               onChange={(val) => props.onChange(val || '')}
               preview={showPreview ? 'edit' : 'edit'}
               hideToolbar={false}
-              toolbarHeight={40}
+              toolbarHeight={40} // TODO: deprecated,  look into this
               height={props.rows ? props.rows * 24 + 80 : 200}
               data-color-mode="light"
               className={cn(
@@ -227,12 +224,12 @@ export function MarkdownEditor(props: Props) {
           <span
             className={cn(
               'text-xs',
-              props.value.length > props.maxLength * 0.9
+              (props.value || '').length > props.maxLength! * 0.9
                 ? 'text-red-500'
                 : 'text-gray-500 dark:text-gray-400',
             )}
           >
-            {props.value.length}/{props.maxLength}
+            {(props.value || '').length}/{props.maxLength}
           </span>
         </div>
       )}

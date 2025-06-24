@@ -8,7 +8,7 @@ import {
   AdminSearchFilters,
   AdminStatsDisplay,
 } from '@/components/admin'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
   ColumnVisibilityControl,

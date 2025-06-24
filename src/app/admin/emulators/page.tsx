@@ -10,7 +10,7 @@ import {
   AdminSearchFilters,
   AdminTableContainer,
 } from '@/components/admin'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
   LoadingSpinner,
