@@ -4,6 +4,7 @@ import { MonitorSmartphone, Info } from 'lucide-react'
 import { Controller } from 'react-hook-form'
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
+import { cn } from '@/lib/utils'
 import { type Nullable } from '@/types/utils'
 
 export interface DeviceOption extends AutocompleteOptionBase {
@@ -48,10 +49,13 @@ function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
               // Find and set the selected device
               if (!value) return props.onDeviceSelect(null)
 
-              props.loadDeviceItems(props.deviceSearchTerm).then((devices) => {
-                const device = devices.find((d) => d.id === value)
-                if (device) props.onDeviceSelect(device)
-              })
+              props
+                .loadDeviceItems(props.deviceSearchTerm)
+                .then((devices) => {
+                  const device = devices.find((d) => d.id === value)
+                  if (device) props.onDeviceSelect(device)
+                })
+                .catch(console.error)
             }}
             loadItems={props.loadDeviceItems}
             optionToValue={(item) => item.id}
@@ -62,11 +66,12 @@ function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
                   {item.brand.name} {item.modelName}
                 </span>
                 <span
-                  className={`text-sm italic ml-2 ${
+                  className={cn(
+                    'text-sm italic ml-2',
                     isHighlighted
                       ? 'text-blue-600 dark:text-blue-300'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}
+                      : 'text-gray-500 dark:text-gray-400',
+                  )}
                 >
                   {item.soc.manufacturer} {item.soc.name}
                 </span>
