@@ -2,7 +2,6 @@
 const CACHE_NAME = 'emuready-v1';
 const urlsToCache = [
   '/',
-  '/manifest.json',
   '/favicon/favicon-16x16.png',
   '/favicon/favicon-32x32.png',
   '/favicon/apple-touch-icon.png',
@@ -14,7 +13,16 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // Handle each URL separately to prevent failing the entire batch
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(error => {
+              console.error(`Failed to cache ${url}:`, error);
+              // Continue despite error
+              return Promise.resolve();
+            })
+          )
+        );
       })
   );
 });
@@ -67,7 +75,14 @@ self.addEventListener('fetch', (event) => {
               
             return response;
           }
-        );
+        ).catch(error => {
+          console.error('Fetch failed:', error);
+          // Could return a custom offline page here
+          return new Response('Network error occurred', {
+            status: 503,
+            statusText: 'Service Unavailable'
+          });
+        });
       })
   );
 });

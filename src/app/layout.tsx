@@ -68,6 +68,15 @@ export default function RootLayout(props: PropsWithChildren) {
         <head>
           {/* Service Worker Registration */}
           <Script src="/sw-register.js" strategy="afterInteractive" />
+
+          {/* Initialize dataLayer for Google Analytics */}
+          <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+            `}
+          </Script>
         </head>
         <body
           className={cn(
