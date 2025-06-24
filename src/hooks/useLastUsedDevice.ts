@@ -1,7 +1,6 @@
+import storageKeys from '@/data/storageKeys'
 import useLocalStorage from './useLocalStorage'
 import type { DeviceOption } from '@/app/listings/components/shared'
-
-const STORAGE_KEY = 'emuready:last-used-device'
 
 interface UseLastUsedDeviceReturn {
   lastUsedDevice: DeviceOption | null
@@ -9,9 +8,12 @@ interface UseLastUsedDeviceReturn {
   isLoading: boolean
 }
 
-function useLastUsedDevice(): UseLastUsedDeviceReturn {
+export function useLastUsedDevice(): UseLastUsedDeviceReturn {
   const [lastUsedDevice, setLastUsedDevice, isHydrated] =
-    useLocalStorage<DeviceOption | null>(STORAGE_KEY, null)
+    useLocalStorage<DeviceOption | null>(
+      storageKeys.newListing.lastUsedDevice,
+      null,
+    )
 
   return {
     lastUsedDevice,
@@ -19,5 +21,3 @@ function useLastUsedDevice(): UseLastUsedDeviceReturn {
     isLoading: !isHydrated,
   }
 }
-
-export default useLastUsedDevice

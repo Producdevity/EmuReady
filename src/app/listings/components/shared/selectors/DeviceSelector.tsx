@@ -5,7 +5,7 @@ import { useRef } from 'react'
 import { Controller } from 'react-hook-form'
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
-import useLastUsedDevice from '@/hooks/useLastUsedDevice'
+import { useLastUsedDevice } from '@/hooks/useLastUsedDevice'
 import { type Nullable } from '@/types/utils'
 import LastUsedDeviceSelector from './LastUsedDeviceSelector'
 

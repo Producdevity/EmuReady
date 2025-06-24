@@ -1,10 +1,9 @@
 import { renderHook, act } from '@testing-library/react'
 import { vi, describe, beforeEach, it, expect } from 'vitest'
-import useLastUsedDevice from './useLastUsedDevice'
+import { useLastUsedDevice } from './useLastUsedDevice'
 import mockUseLocalStorage from './useLocalStorage'
 import type { DeviceOption } from '@/app/listings/components/shared'
 
-// Mock the useLocalStorage hook
 vi.mock('./useLocalStorage', () => ({
   default: vi.fn(() => [null, vi.fn(), true]),
 }))
