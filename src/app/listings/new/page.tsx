@@ -1,7 +1,6 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
@@ -13,7 +12,8 @@ import {
 } from 'react-hook-form'
 import { isString } from 'remeda'
 import { type z } from 'zod'
-import { Button, Input, LoadingSpinner } from '@/components/ui'
+import { Button, LoadingSpinner } from '@/components/ui'
+import { MarkdownEditor } from '@/components/ui/form'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -461,26 +461,15 @@ function AddListingPage() {
 
           {/* Notes */}
           <div>
-            <label
-              htmlFor="notes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Notes
-            </label>
-            <Input
-              as="textarea"
-              id="notes"
-              {...form.register('notes')}
-              leftIcon={<FileText className="w-5 h-5" />}
-              rows={4}
-              className="mt-1 w-full"
+            <MarkdownEditor
+              value={form.watch('notes') || ''}
+              onChange={(value) => form.setValue('notes', value)}
               placeholder="Share your experience, settings, or any additional details..."
+              rows={4}
+              label="Notes"
+              id="notes"
+              error={form.formState.errors.notes?.message}
             />
-            {form.formState.errors.notes && (
-              <p className="text-red-500 text-xs mt-1">
-                {String(form.formState.errors.notes.message ?? '')}
-              </p>
-            )}
           </div>
 
           {/* Dynamic Custom Fields Section */}

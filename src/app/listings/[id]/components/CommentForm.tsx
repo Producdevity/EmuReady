@@ -2,11 +2,13 @@
 
 import { useUser, SignInButton } from '@clerk/nextjs'
 import { useState, type FormEvent } from 'react'
+import { MarkdownEditor } from '@/components/ui/form'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForComment } from '@/lib/captcha/hooks'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
+import { validateMarkdown } from '@/utils/markdown'
 import { sanitizeString } from '@/utils/validation'
 
 interface Props {
@@ -66,9 +68,15 @@ function CommentForm(props: Props) {
     ev.preventDefault()
     if (!content.trim()) return
 
-    const sanitizedContent = sanitizeString(content)
+    // Validate and sanitize markdown content
+    const { isValid, cleanText } = validateMarkdown(content)
+    if (!isValid || !cleanText.trim()) {
+      // Fall back to string sanitization for backward compatibility
+      const sanitizedContent = sanitizeString(content)
+      if (sanitizedContent.trim().length === 0) return
+    }
 
-    if (sanitizedContent.trim().length === 0) return
+    const finalContent = isValid ? cleanText : sanitizeString(content)
 
     // Get CAPTCHA token for new comments (not for edits)
     let recaptchaToken: string | null = null
@@ -79,12 +87,12 @@ function CommentForm(props: Props) {
     if (props.isEditing && props.commentId) {
       editComment.mutate({
         commentId: props.commentId,
-        content: sanitizedContent,
+        content: finalContent,
       } satisfies RouterInput['listings']['editComment'])
     } else {
       createComment.mutate({
         listingId: props.listingId,
-        content: sanitizedContent,
+        content: finalContent,
         parentId: props.parentId,
         ...(recaptchaToken && { recaptchaToken }),
       } satisfies RouterInput['listings']['createComment'])
@@ -111,21 +119,16 @@ function CommentForm(props: Props) {
 
   return (
     <form onSubmit={handleSubmit} className={props.isReply ? 'mb-2' : 'mb-6'}>
-      <div className="mb-4">
-        <textarea
-          value={content}
-          onChange={(ev) => setContent(ev.target.value)}
-          className={cn(
-            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white',
-            props.isReply && 'text-sm',
-          )}
-          rows={rows}
-          placeholder={
-            props.isReply ? 'Write your reply...' : 'Write your comment...'
-          }
-          maxLength={1000}
-        />
-      </div>
+      <MarkdownEditor
+        value={content}
+        onChange={setContent}
+        placeholder={
+          props.isReply ? 'Write your reply...' : 'Write your comment...'
+        }
+        rows={rows}
+        maxLength={1000}
+        className={cn(props.isReply && 'text-sm')}
+      />
       <div className="flex justify-end gap-2">
         {(!!props.isEditing || !!props.isReply) && props.onCancelEdit && (
           <button

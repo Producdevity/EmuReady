@@ -84,7 +84,7 @@ describe('useLastUsedDevice', () => {
     renderHook(() => useLastUsedDevice())
 
     expect(mockUseLocalStorage).toHaveBeenCalledWith(
-      'emuready:last-used-device',
+      '@EmuReady_new_listing_last_used_device',
       null,
     )
   })

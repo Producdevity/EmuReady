@@ -11,6 +11,7 @@ import {
   renderCustomField,
 } from '@/app/listings/components/shared'
 import { Button, Modal, SelectInput, LoadingSpinner } from '@/components/ui'
+import { MarkdownEditor } from '@/components/ui/form'
 import { api } from '@/lib/api'
 import { UpdateListingUserSchema } from '@/schemas/listing'
 import type { z } from 'zod'
@@ -255,31 +256,21 @@ function EditListingModal(props: Props) {
 
                 {/* Notes */}
                 <div>
-                  <label
-                    htmlFor="notes"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
-                    Notes (Optional)
-                  </label>
                   <Controller
                     name="notes"
                     control={control}
                     render={({ field }) => (
-                      <textarea
-                        id="notes"
+                      <MarkdownEditor
                         value={field.value || ''}
                         onChange={field.onChange}
                         placeholder="Enter your notes about this listing..."
                         rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        label="Notes (Optional)"
+                        id="notes"
+                        error={formState.errors.notes?.message}
                       />
                     )}
                   />
-                  {formState.errors.notes && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                      {formState.errors.notes.message}
-                    </p>
-                  )}
                 </div>
 
                 {/* Form Validation Summary */}
