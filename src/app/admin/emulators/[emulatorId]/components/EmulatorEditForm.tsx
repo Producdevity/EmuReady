@@ -54,6 +54,7 @@ const logoOptions = [
   'rpcsx.png',
   'ryujinx.png',
   'shadps4.png',
+  'skyline.png',
   'sudachi.png',
   'torzu.png',
   'utm.png',
