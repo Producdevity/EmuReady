@@ -1,77 +1,34 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
-import {
-  Search,
-  Filter,
-  X,
-  Grid,
-  List,
-  Zap,
-  Calendar,
-  Heart,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react'
-import Link from 'next/link'
-import { Suspense, useState, useMemo, useCallback, useEffect } from 'react'
+import { Suspense, useState, useEffect, useMemo, useCallback } from 'react'
 import useListingsState from '@/app/listings/hooks/useListingsState'
-import {
-  type ListingsFilter,
-  type SortDirection,
-  type SortField,
-} from '@/app/listings/types'
-import {
-  Button,
-  Input,
-  LoadingSpinner,
-  VirtualScroller,
-  AsyncMultiSelect,
-  PullToRefresh,
-} from '@/components/ui'
+import { LoadingSpinner, PullToRefresh } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { cn } from '@/lib/utils'
-import ListingCard from './components/ListingCard'
+import { ListingFilters } from './components/ListingFilters'
+import { ListingsContent } from './components/ListingsContent'
+import { ListingsHeader } from './components/ListingsHeader'
+import { QuickFilters } from './components/QuickFilters'
+import { SearchBar } from './components/SearchBar'
+import type {
+  ListingsFilter,
+  SortDirection,
+  SortField,
+} from '@/app/listings/types'
 import type { RouterOutput } from '@/types/trpc'
 
-type ViewMode = 'grid' | 'list'
 type ListingType = RouterOutput['listings']['get']['listings'][number]
 
-// Define interfaces for the API responses
-interface SystemData {
-  id: string
-  name: string
-}
-
-interface DeviceData {
-  id: string
-  brand: {
-    name: string
-  }
-  modelName: string
-}
-
-interface EmulatorData {
-  id: string
-  name: string
-}
-
-interface SocData {
-  id: string
-  name: string
-  manufacturer: string
-}
-
 function V2ListingsPage() {
-  // UI State
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const [showFilters, setShowFilters] = useState(false)
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [showSystemIcons, _setShowSystemIcons] = useState(false)
+  // Use the standard listings state hook
   const listingsState = useListingsState()
 
-  // Pagination state for infinite scrolling
+  // UI State - specific to v2
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showFilters, setShowFilters] = useState(false)
+  const [showSystemIcons, _setShowSystemIcons] = useState(false)
+
+  // Infinite scrolling state
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMoreItems, setHasMoreItems] = useState(true)
   const [allListings, setAllListings] = useState<ListingType[]>([])
@@ -79,7 +36,7 @@ function V2ListingsPage() {
   // Performance scales query
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
-  // Filter params - matching working page structure
+  // Filter params for API call
   const filterParams: ListingsFilter = useMemo(
     () => ({
       systemIds:
@@ -102,7 +59,7 @@ function V2ListingsPage() {
           : undefined,
       searchTerm: listingsState.search || undefined,
       page: currentPage,
-      limit: 12, // Good for grid layout
+      limit: 12,
       sortField: listingsState.sortField ?? undefined,
       sortDirection: listingsState.sortDirection ?? undefined,
     }),
@@ -119,56 +76,14 @@ function V2ListingsPage() {
     ],
   )
 
-  // Async fetch functions for multiselect components
-  const fetchSystems = useCallback(
-    async ({
-      search,
-      page,
-      limit,
-    }: {
-      search?: string
-      page: number
-      limit: number
-    }) => {
-      try {
-        // Use a simpler approach with direct API calls
-        const response = await fetch(
-          `/api/trpc/systems.get?input=${encodeURIComponent(
-            JSON.stringify({
-              search: search || undefined,
-              page,
-              limit,
-            }),
-          )}`,
-        )
-
-        const data = await response.json()
-        const systems = data.result.data as SystemData[]
-
-        return {
-          items: systems.map((system) => ({
-            id: system.id,
-            name: system.name,
-          })),
-          hasMore: systems.length === limit,
-          total: systems.length,
-        }
-      } catch (error) {
-        console.error('Error fetching systems:', error)
-        return { items: [], hasMore: false, total: 0 }
-      }
-    },
-    [],
-  )
-
-  // Base listings query with enabled flag to prevent unnecessary fetches
+  // Main listings query
   const listingsQuery = api.listings.get.useQuery(filterParams, {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     retry: 1,
   })
 
-  // Handle successful query results with optimized state updates
+  // Handle query results for infinite scrolling
   useEffect(() => {
     if (!listingsQuery.data) return
 
@@ -176,7 +91,6 @@ function V2ListingsPage() {
       if (currentPage === 1) {
         return listingsQuery.data.listings
       } else {
-        // Avoid duplicate listings by checking IDs
         const existingIds = new Set(prev.map((item) => item.id))
         const newListings = listingsQuery.data.listings.filter(
           (item) => !existingIds.has(item.id),
@@ -188,9 +102,8 @@ function V2ListingsPage() {
     setHasMoreItems(currentPage < (listingsQuery.data.pagination?.pages || 1))
   }, [listingsQuery.data, currentPage])
 
-  // Track search analytics when results are loaded
+  // Track search analytics
   useEffect(() => {
-    // Only track analytics when search is performed and results are loaded
     if (
       listingsState.search &&
       listingsState.search.length > 2 &&
@@ -205,13 +118,6 @@ function V2ListingsPage() {
       })
     }
   }, [listingsQuery.data, listingsQuery.isLoading, listingsState.search])
-
-  // Load more listings when reaching the end
-  const loadMoreListings = useCallback(() => {
-    if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
-      setCurrentPage((prev) => prev + 1)
-    }
-  }, [hasMoreItems, listingsQuery.isLoading, listingsQuery.isFetching])
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -228,82 +134,31 @@ function V2ListingsPage() {
     listingsState.sortDirection,
   ])
 
-  // Refresh handler for pull-to-refresh
-  const handleRefresh = useCallback(async () => {
-    if (listingsQuery.isLoading || listingsQuery.isFetching) {
-      return
+  // Load more listings
+  const loadMoreListings = useCallback(() => {
+    if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
+      setCurrentPage((prev) => prev + 1)
     }
+  }, [hasMoreItems, listingsQuery.isLoading, listingsQuery.isFetching])
+
+  // Refresh handler
+  const handleRefresh = useCallback(async () => {
+    if (listingsQuery.isLoading || listingsQuery.isFetching) return
 
     try {
       await listingsQuery.refetch()
       setCurrentPage(1)
       setAllListings([])
 
-      // Trigger haptic feedback on refresh complete
       if (navigator.vibrate) {
         navigator.vibrate(100)
       }
-    } finally {
-      // Reset refreshing state
+    } catch (error) {
+      console.error('Error refreshing listings:', error)
     }
   }, [listingsQuery])
 
-  // Handlers - Properly updating state and URL
-  const handleSystemChange = useCallback(
-    (values: string[]) => {
-      listingsState.setSystemIds(values)
-    },
-    [listingsState],
-  )
-
-  const handleDeviceChange = useCallback(
-    (values: string[]) => {
-      listingsState.setDeviceIds(values)
-    },
-    [listingsState],
-  )
-
-  const handleSocChange = useCallback(
-    (values: string[]) => {
-      listingsState.setSocIds(values)
-    },
-    [listingsState],
-  )
-
-  const handleEmulatorChange = useCallback(
-    (values: string[]) => {
-      listingsState.setEmulatorIds(values)
-    },
-    [listingsState],
-  )
-
-  const handlePerformanceChange = useCallback(
-    (values: number[]) => {
-      listingsState.setPerformanceIds(values)
-    },
-    [listingsState],
-  )
-
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      listingsState.setSearch(value)
-      // Analytics are now tracked in the useEffect above
-    },
-    [listingsState],
-  )
-
-  const handleSort = useCallback(
-    (field: SortField, direction?: SortDirection) => {
-      const newSortField = field
-      const newSortDirection =
-        direction || (listingsState.sortDirection === 'asc' ? 'desc' : 'asc')
-
-      listingsState.setSortField(newSortField)
-      listingsState.setSortDirection(newSortDirection)
-    },
-    [listingsState],
-  )
-
+  // Clear all filters
   const clearAllFilters = useCallback(() => {
     listingsState.setSystemIds([])
     listingsState.setDeviceIds([])
@@ -313,52 +168,10 @@ function V2ListingsPage() {
     listingsState.setSearch('')
     listingsState.setSortField(null)
     listingsState.setSortDirection(null)
-
     analytics.filter.clearAll()
   }, [listingsState])
 
-  // Quick filters with proper performance scale integration
-  const quickFilters = useMemo(() => {
-    const performanceScales = performanceScalesQuery.data ?? []
-    const topPerformanceIds = performanceScales
-      .filter((scale) => scale.rank <= 3) // Get top 3 performance levels
-      .map((scale) => scale.id)
-
-    return [
-      {
-        label: 'Runs Well',
-        action: () => handlePerformanceChange(topPerformanceIds),
-        icon: Zap,
-        isActive: topPerformanceIds.some((id) =>
-          listingsState.performanceIds.includes(id),
-        ),
-      },
-      {
-        label: 'Recent',
-        action: () => handleSort('createdAt', 'desc'),
-        icon: Calendar,
-        isActive:
-          listingsState.sortField === 'createdAt' &&
-          listingsState.sortDirection === 'desc',
-      },
-      {
-        label: 'Top Verified',
-        action: () => handleSort('successRate', 'desc'),
-        icon: Heart,
-        isActive:
-          listingsState.sortField === 'successRate' &&
-          listingsState.sortDirection === 'desc',
-      },
-    ]
-  }, [
-    performanceScalesQuery.data,
-    listingsState.performanceIds,
-    listingsState.sortField,
-    listingsState.sortDirection,
-    handlePerformanceChange,
-    handleSort,
-  ])
-
+  // Check if any filters are active
   const hasActiveFilters =
     listingsState.systemIds.length > 0 ||
     listingsState.deviceIds.length > 0 ||
@@ -367,137 +180,154 @@ function V2ListingsPage() {
     listingsState.performanceIds.length > 0 ||
     listingsState.search.length > 0
 
-  // Async fetch functions for multiselect components
-  const fetchDevices = useCallback(
-    async ({
-      search,
-      page,
-      limit,
-    }: {
-      search?: string
-      page: number
-      limit: number
-    }) => {
-      try {
-        // Use a simpler approach with direct API calls
-        const response = await fetch(
-          `/api/trpc/devices.get?input=${encodeURIComponent(
-            JSON.stringify({
-              search: search || undefined,
-              page,
-              limit,
-            }),
-          )}`,
-        )
+  // Properly typed handleSort function
+  const handleSort = (field: SortField, direction?: SortDirection) => {
+    listingsState.setSortField(field)
+    listingsState.setSortDirection(direction || null)
+  }
 
-        const data = await response.json()
-        const result = data.result.data as {
-          devices: DeviceData[]
-          pagination?: { total: number }
-        }
+  // State for async fetch functions (for multiselect components)
+  const [systemSearchTerm, setSystemSearchTerm] = useState('')
+  const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
+  const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
+  const [socSearchTerm, setSocSearchTerm] = useState('')
 
-        return {
-          items: result.devices.map((device) => ({
-            id: device.id,
-            name: `${device.brand.name} ${device.modelName}`,
-          })),
-          hasMore: result.devices.length === limit,
-          total: result.pagination?.total || result.devices.length,
-        }
-      } catch (error) {
-        console.error('Error fetching devices:', error)
-        return { items: [], hasMore: false, total: 0 }
-      }
+  // Queries for async data fetching
+  const systemsQuery = api.systems.get.useQuery(
+    { search: systemSearchTerm || undefined },
+    { enabled: systemSearchTerm.length > 0, refetchOnWindowFocus: false },
+  )
+
+  const devicesQuery = api.devices.get.useQuery(
+    { search: deviceSearchTerm || undefined, limit: 50, offset: 0 },
+    { enabled: deviceSearchTerm.length > 0, refetchOnWindowFocus: false },
+  )
+
+  const emulatorsQuery = api.emulators.get.useQuery(
+    { search: emulatorSearchTerm || undefined, limit: 50, offset: 0 },
+    { enabled: emulatorSearchTerm.length > 0, refetchOnWindowFocus: false },
+  )
+
+  const socsQuery = api.socs.get.useQuery(
+    { search: socSearchTerm || undefined, limit: 50, offset: 0 },
+    { enabled: socSearchTerm.length > 0, refetchOnWindowFocus: false },
+  )
+
+  // Debounced fetch functions
+  const fetchSystems = useCallback(
+    async (search: string): Promise<{ id: string; name: string }[]> => {
+      if (!search.trim()) return []
+
+      return new Promise((resolve) => {
+        const timeoutId = setTimeout(async () => {
+          setSystemSearchTerm(search)
+          setTimeout(async () => {
+            try {
+              const result = await systemsQuery.refetch()
+              resolve(
+                result.data?.map((system) => ({
+                  id: system.id,
+                  name: system.name,
+                })) || [],
+              )
+            } catch (error) {
+              console.error('Error fetching systems:', error)
+              resolve([])
+            }
+          }, 50)
+        }, 150)
+
+        return () => clearTimeout(timeoutId)
+      })
     },
-    [],
+    [systemsQuery],
+  )
+
+  const fetchDevices = useCallback(
+    async (search: string): Promise<{ id: string; name: string }[]> => {
+      if (!search.trim()) return []
+
+      return new Promise((resolve) => {
+        const timeoutId = setTimeout(async () => {
+          setDeviceSearchTerm(search)
+          setTimeout(async () => {
+            try {
+              const result = await devicesQuery.refetch()
+              resolve(
+                result.data?.devices.map((device) => ({
+                  id: device.id,
+                  name: `${device.brand.name} ${device.modelName}`,
+                })) || [],
+              )
+            } catch (error) {
+              console.error('Error fetching devices:', error)
+              resolve([])
+            }
+          }, 50)
+        }, 150)
+
+        return () => clearTimeout(timeoutId)
+      })
+    },
+    [devicesQuery],
   )
 
   const fetchEmulators = useCallback(
-    async ({
-      search,
-      page,
-      limit,
-    }: {
-      search?: string
-      page: number
-      limit: number
-    }) => {
-      try {
-        // Use a simpler approach with direct API calls
-        const response = await fetch(
-          `/api/trpc/emulators.get?input=${encodeURIComponent(
-            JSON.stringify({
-              search: search || undefined,
-              page,
-              limit,
-            }),
-          )}`,
-        )
+    async (search: string): Promise<{ id: string; name: string }[]> => {
+      if (!search.trim()) return []
 
-        const data = await response.json()
-        const result = data.result.data as {
-          emulators: EmulatorData[]
-          pagination?: { total: number }
-        }
+      return new Promise((resolve) => {
+        const timeoutId = setTimeout(async () => {
+          setEmulatorSearchTerm(search)
+          setTimeout(async () => {
+            try {
+              const result = await emulatorsQuery.refetch()
+              resolve(
+                result.data?.emulators.map((emulator) => ({
+                  id: emulator.id,
+                  name: emulator.name,
+                })) || [],
+              )
+            } catch (error) {
+              console.error('Error fetching emulators:', error)
+              resolve([])
+            }
+          }, 50)
+        }, 150)
 
-        return {
-          items: result.emulators.map((emulator) => ({
-            id: emulator.id,
-            name: emulator.name,
-          })),
-          hasMore: result.emulators.length === limit,
-          total: result.pagination?.total || result.emulators.length,
-        }
-      } catch (error) {
-        console.error('Error fetching emulators:', error)
-        return { items: [], hasMore: false, total: 0 }
-      }
+        return () => clearTimeout(timeoutId)
+      })
     },
-    [],
+    [emulatorsQuery],
   )
 
   const fetchSocs = useCallback(
-    async ({
-      search,
-      page,
-      limit,
-    }: {
-      search?: string
-      page: number
-      limit: number
-    }) => {
-      try {
-        // Use a simpler approach with direct API calls
-        const response = await fetch(
-          `/api/trpc/socs.get?input=${encodeURIComponent(
-            JSON.stringify({
-              search: search || undefined,
-              page,
-              limit,
-            }),
-          )}`,
-        )
+    async (search: string): Promise<{ id: string; name: string }[]> => {
+      if (!search.trim()) return []
 
-        const data = await response.json()
-        const result = data.result.data as {
-          socs: SocData[]
-          pagination?: { total: number }
-        }
+      return new Promise((resolve) => {
+        const timeoutId = setTimeout(async () => {
+          setSocSearchTerm(search)
+          setTimeout(async () => {
+            try {
+              const result = await socsQuery.refetch()
+              resolve(
+                result.data?.socs.map((soc) => ({
+                  id: soc.id,
+                  name: `${soc.name} (${soc.manufacturer})`,
+                })) || [],
+              )
+            } catch (error) {
+              console.error('Error fetching SoCs:', error)
+              resolve([])
+            }
+          }, 50)
+        }, 150)
 
-        return {
-          items: result.socs.map((soc) => ({
-            id: soc.id,
-            name: `${soc.name} (${soc.manufacturer})`,
-          })),
-          hasMore: result.socs.length === limit,
-          total: result.pagination?.total || result.socs.length,
-        }
-      } catch (error) {
-        console.error('Error fetching SOCs:', error)
-        return { items: [], hasMore: false, total: 0 }
-      }
+        return () => clearTimeout(timeoutId)
+      })
     },
-    [],
+    [socsQuery],
   )
 
   // Handle errors
@@ -512,7 +342,12 @@ function V2ListingsPage() {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               {listingsQuery.error.message}
             </p>
-            <Button onClick={() => listingsQuery.refetch()}>Try Again</Button>
+            <button
+              onClick={() => listingsQuery.refetch()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       </div>
@@ -531,439 +366,76 @@ function V2ListingsPage() {
         <div className="container mx-auto px-4 py-6">
           {/* Mobile-First Header */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                  Game Listings
-                  <span className="text-sm font-normal text-blue-600 dark:text-blue-400 ml-2">
-                    V2
-                  </span>
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {listingsQuery.isLoading && currentPage === 1
-                    ? 'Loading...'
-                    : `${allListings.length} listings found`}
-                </p>
-              </div>
-
-              {/* View Mode & Add Listing */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className="p-2"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="p-2"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
-                <Button asChild variant="fancy" size="sm">
-                  <Link href="/listings/new">
-                    <span className="hidden sm:inline">Add Listing</span>
-                    <span className="sm:hidden">Add</span>
-                  </Link>
-                </Button>
-              </div>
-            </div>
+            <ListingsHeader
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              listingsCount={allListings.length}
+              isLoading={listingsQuery.isLoading && currentPage === 1}
+            />
 
             {/* Search Bar */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                placeholder="Search games, devices, emulators..."
-                value={listingsState.search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10 pr-12 h-12 text-base rounded-xl border-2 focus:border-blue-500 dark:focus:border-blue-400"
-              />
-              <Button
-                variant={showFilters ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2"
-              >
-                {showFilters ? (
-                  <X className="w-4 h-4" />
-                ) : (
-                  <Filter className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
+            <SearchBar
+              search={listingsState.search}
+              onSearchChange={(value) => listingsState.setSearch(value)}
+              showFilters={showFilters}
+              onToggleFilters={() => setShowFilters(!showFilters)}
+            />
 
             {/* Quick Filter Chips */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {quickFilters.map((filter, index) => (
-                <Button
-                  key={index}
-                  variant={filter.isActive ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={filter.action}
-                  className="flex items-center gap-2 whitespace-nowrap flex-shrink-0"
-                >
-                  <filter.icon className="w-4 h-4" />
-                  {filter.label}
-                </Button>
-              ))}
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-red-600 hover:text-red-700 flex-shrink-0"
-                >
-                  Clear All
-                </Button>
-              )}
-            </div>
+            <QuickFilters
+              performanceScales={performanceScalesQuery.data}
+              performanceIds={listingsState.performanceIds}
+              handlePerformanceChange={(values) =>
+                listingsState.setPerformanceIds(values)
+              }
+              sortField={listingsState.sortField}
+              sortDirection={listingsState.sortDirection}
+              handleSort={handleSort}
+              hasActiveFilters={hasActiveFilters}
+              clearAllFilters={clearAllFilters}
+            />
           </div>
 
           {/* Advanced Filters Overlay - Bottom Sheet on Mobile */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, y: 100 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 100 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="fixed inset-x-0 bottom-0 z-50 lg:relative lg:mb-6"
-              >
-                <div className="bg-white dark:bg-gray-800 rounded-t-xl lg:rounded-xl p-4 shadow-lg border max-h-[80vh] overflow-y-auto">
-                  {/* Handle for bottom sheet */}
-                  <div className="lg:hidden flex justify-center mb-2">
-                    <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium">Filters</h3>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setShowAdvancedFilters(!showAdvancedFilters)
-                        }
-                        className="flex items-center gap-1"
-                      >
-                        Advanced
-                        {showAdvancedFilters ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Systems - Always visible with AsyncMultiSelect */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">
-                      Systems
-                    </label>
-                    <AsyncMultiSelect
-                      label="Systems"
-                      value={listingsState.systemIds}
-                      onChange={handleSystemChange}
-                      placeholder="Select systems..."
-                      loadOptions={async (search) => {
-                        const result = await fetchSystems({
-                          search,
-                          page: 1,
-                          limit: 20,
-                        })
-                        return result.items
-                      }}
-                      emptyMessage="No systems found"
-                    />
-                  </div>
-
-                  {/* Performance - Always visible */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">
-                      Performance
-                    </label>
-                    <AsyncMultiSelect
-                      label="Performance"
-                      value={listingsState.performanceIds.map(String)}
-                      onChange={(values) =>
-                        handlePerformanceChange(values.map(Number))
-                      }
-                      placeholder="Select performance levels..."
-                      loadOptions={async (search) => {
-                        const scales = performanceScalesQuery.data || []
-                        const filtered = search
-                          ? scales.filter(
-                              (s) =>
-                                s.label
-                                  .toLowerCase()
-                                  .includes(search.toLowerCase()) ||
-                                (s.description &&
-                                  s.description
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase())),
-                            )
-                          : scales
-
-                        return filtered.map((scale) => ({
-                          id: scale.id.toString(),
-                          name: `${scale.label} ${scale.description ? `- ${scale.description}` : ''}`,
-                        }))
-                      }}
-                      emptyMessage="No performance levels found"
-                    />
-                  </div>
-
-                  {/* Advanced Filters */}
-                  <AnimatePresence>
-                    {showAdvancedFilters && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4"
-                      >
-                        {/* Devices - With AsyncMultiSelect */}
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Devices
-                          </label>
-                          <AsyncMultiSelect
-                            label="Devices"
-                            value={listingsState.deviceIds}
-                            onChange={handleDeviceChange}
-                            placeholder="Select devices..."
-                            loadOptions={async (search) => {
-                              const result = await fetchDevices({
-                                search,
-                                page: 1,
-                                limit: 20,
-                              })
-                              return result.items
-                            }}
-                            maxSelected={3}
-                            emptyMessage="No devices found"
-                          />
-                        </div>
-
-                        {/* Emulators - With AsyncMultiSelect */}
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Emulators
-                          </label>
-                          <AsyncMultiSelect
-                            label="Emulators"
-                            value={listingsState.emulatorIds}
-                            onChange={handleEmulatorChange}
-                            placeholder="Select emulators..."
-                            loadOptions={async (search) => {
-                              const result = await fetchEmulators({
-                                search,
-                                page: 1,
-                                limit: 20,
-                              })
-                              return result.items
-                            }}
-                            emptyMessage="No emulators found"
-                          />
-                        </div>
-
-                        {/* SoCs - With AsyncMultiSelect */}
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            System on Chips (SoCs)
-                          </label>
-                          <AsyncMultiSelect
-                            label="SoCs"
-                            value={listingsState.socIds}
-                            onChange={handleSocChange}
-                            placeholder="Select SoCs..."
-                            loadOptions={async (search) => {
-                              const result = await fetchSocs({
-                                search,
-                                page: 1,
-                                limit: 20,
-                              })
-                              return result.items
-                            }}
-                            maxSelected={3}
-                            emptyMessage="No SoCs found"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div className="flex justify-between pt-4 border-t mt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowFilters(false)}
-                    >
-                      Apply Filters
-                    </Button>
-                    {hasActiveFilters && (
-                      <Button
-                        variant="outline"
-                        onClick={clearAllFilters}
-                        className="text-red-600"
-                      >
-                        Clear All
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {/* Backdrop for mobile */}
-                <div
-                  className="fixed inset-0 bg-black/60 -z-10 lg:hidden"
-                  onClick={() => setShowFilters(false)}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Loading State - Skeleton Loader */}
-          {listingsQuery.isLoading && currentPage === 1 && (
-            <div
-              className={
-                viewMode === 'grid'
-                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
-                  : 'space-y-4'
-              }
-            >
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-pulse',
-                    viewMode === 'list' ? 'flex items-center p-4' : 'p-0',
-                  )}
-                >
-                  {viewMode === 'grid' ? (
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                      <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-                      <div className="space-y-2 mb-4">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex-1 min-w-0">
-                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                        <div className="flex gap-4">
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
-                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <ListingFilters
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            hasActiveFilters={hasActiveFilters}
+            clearAllFilters={clearAllFilters}
+            systemIds={listingsState.systemIds}
+            handleSystemChange={(values) => listingsState.setSystemIds(values)}
+            fetchSystems={fetchSystems}
+            performanceIds={listingsState.performanceIds.map(String)}
+            handlePerformanceChange={(values) =>
+              listingsState.setPerformanceIds(values.map(Number))
+            }
+            performanceScales={performanceScalesQuery.data}
+            deviceIds={listingsState.deviceIds}
+            handleDeviceChange={(values) => listingsState.setDeviceIds(values)}
+            fetchDevices={fetchDevices}
+            emulatorIds={listingsState.emulatorIds}
+            handleEmulatorChange={(values) =>
+              listingsState.setEmulatorIds(values)
+            }
+            fetchEmulators={fetchEmulators}
+            socIds={listingsState.socIds}
+            handleSocChange={(values) => listingsState.setSocIds(values)}
+            fetchSocs={fetchSocs}
+          />
 
           {/* Listings Content */}
-          {(!listingsQuery.isLoading || currentPage > 1) && (
-            <>
-              {allListings.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 mb-4">
-                    <Search className="w-16 h-16 mx-auto mb-4" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    No listings found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {hasActiveFilters
-                      ? 'Try adjusting your filters or search terms'
-                      : 'Be the first to add a listing!'}
-                  </p>
-                  {hasActiveFilters ? (
-                    <Button onClick={clearAllFilters} variant="outline">
-                      Clear All Filters
-                    </Button>
-                  ) : (
-                    <Button asChild>
-                      <Link href="/listings/new">Add First Listing</Link>
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="relative" style={{ minHeight: '500px' }}>
-                  <div
-                    className={cn(
-                      'pb-12',
-                      viewMode === 'grid'
-                        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'
-                        : '',
-                    )}
-                  >
-                    <VirtualScroller
-                      items={allListings}
-                      renderItem={(listing) => (
-                        <div
-                          className={cn(
-                            'py-3',
-                            viewMode === 'grid' ? 'px-3' : 'px-0',
-                          )}
-                        >
-                          <ListingCard
-                            listing={listing}
-                            viewMode={viewMode}
-                            showSystemIcons={showSystemIcons}
-                          />
-                        </div>
-                      )}
-                      itemHeight={viewMode === 'grid' ? 450 : 120}
-                      onEndReached={loadMoreListings}
-                      endReachedThreshold={300}
-                      getItemKey={(item) => item.id}
-                      overscan={5}
-                    />
-                  </div>
-
-                  {/* Loading indicator for infinite scroll */}
-                  {(listingsQuery.isLoading || listingsQuery.isFetching) &&
-                    currentPage > 1 && (
-                      <div className="flex justify-center py-4">
-                        <LoadingSpinner size="md" />
-                      </div>
-                    )}
-
-                  {/* End of results message */}
-                  {!hasMoreItems &&
-                    allListings.length > 0 &&
-                    !listingsQuery.isLoading &&
-                    !listingsQuery.isFetching && (
-                      <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                        You&apos;ve reached the end of the listings
-                      </div>
-                    )}
-                </div>
-              )}
-            </>
-          )}
+          <ListingsContent
+            allListings={allListings}
+            viewMode={viewMode}
+            showSystemIcons={showSystemIcons}
+            isLoading={listingsQuery.isLoading}
+            isFetching={listingsQuery.isFetching}
+            hasMoreItems={hasMoreItems}
+            currentPage={currentPage}
+            loadMoreListings={loadMoreListings}
+            hasActiveFilters={hasActiveFilters}
+            clearAllFilters={clearAllFilters}
+          />
         </div>
       </div>
     </PullToRefresh>

@@ -27,7 +27,7 @@ import type { RouterOutput } from '@/types/trpc'
 
 type Listing = RouterOutput['listings']['get']['listings'][number]
 
-interface ListingCardProps {
+interface Props {
   listing: Listing
   viewMode: 'grid' | 'list'
   showSystemIcons?: boolean
@@ -35,13 +35,13 @@ interface ListingCardProps {
   onComment?: () => void
 }
 
-function ListingCard({
+export function ListingCard({
   listing,
   viewMode,
   showSystemIcons = false,
   onLike,
   onComment,
-}: ListingCardProps) {
+}: Props) {
   const router = useRouter()
   const [isLiked, setIsLiked] = useState(false)
 
@@ -306,5 +306,3 @@ function ListingCard({
     </SwipeableCard>
   )
 }
-
-export default ListingCard
