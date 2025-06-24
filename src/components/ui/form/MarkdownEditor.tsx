@@ -65,7 +65,6 @@ export function MarkdownEditor(props: Props) {
               onChange={(val) => props.onChange(val || '')}
               preview={showPreview ? 'edit' : 'edit'}
               hideToolbar={false}
-              toolbarHeight={40} // TODO: deprecated,  look into this
               height={props.rows ? props.rows * 24 + 80 : 200}
               data-color-mode="light"
               className={cn(
