@@ -129,8 +129,16 @@ npm install
 4. Set up environment variables
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
+
+**Important:** For production deployments, you must also set the `INTERNAL_API_KEY` environment variable to protect against API abuse. Generate a secure key with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+For local development, this key is optional as localhost origins are automatically allowed. See [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) for complete environment variable documentation.
 
 5. Setup database
 

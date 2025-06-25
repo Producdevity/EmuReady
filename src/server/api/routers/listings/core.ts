@@ -201,7 +201,7 @@ export const coreRouter = createTRPCRouter({
             device: { include: { brand: true, soc: true } },
             emulator: true,
             performance: true,
-            author: { select: { id: true, name: true, email: true } },
+            author: { select: { id: true, name: true } },
             _count: { select: { votes: true, comments: true } },
             votes: ctx.session
               ? {
@@ -287,7 +287,7 @@ export const coreRouter = createTRPCRouter({
           device: { include: { brand: true, soc: true } },
           emulator: true,
           performance: true,
-          author: { select: { id: true, name: true, email: true } },
+          author: { select: { id: true, name: true } },
           _count: { select: { votes: true, comments: true } },
           votes: ctx.session
             ? {
@@ -349,7 +349,7 @@ export const coreRouter = createTRPCRouter({
           emulator: true,
           performance: true,
           author: {
-            select: { id: true, name: true, email: true, profileImage: true },
+            select: { id: true, name: true, profileImage: true },
           },
           customFieldValues: {
             include: { customFieldDefinition: true },

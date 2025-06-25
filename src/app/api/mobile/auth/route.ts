@@ -25,7 +25,6 @@ export async function GET(_request: NextRequest) {
       where: { clerkId: userId },
       select: {
         id: true,
-        email: true,
         name: true,
         role: true,
         bio: true,

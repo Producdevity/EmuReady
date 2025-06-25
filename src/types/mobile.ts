@@ -3,7 +3,6 @@ import type { ApprovalStatus, CustomFieldType } from '@orm'
 // Base mobile types
 export interface MobileUser {
   id: string
-  email: string | null
   name: string | null
   role: string
   bio: string | null
