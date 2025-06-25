@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { generateOpenAPISpec } from '@/scripts/api/auto-generate-mobile-api-spec'
+import { generateOpenAPISpec } from '@/scripts/api/auto-generate-api-spec'
 
 // Since we can't easily import from scripts directory in Next.js routes,
-// we'll inline the spec generation or move it to a lib file
+// we'll inline the spec generation for now or move it to a lib file
 export async function GET() {
   try {
     const spec = generateOpenAPISpec()

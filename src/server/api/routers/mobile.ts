@@ -672,7 +672,7 @@ export const mobileRouter = createTRPCRouter({
     async ({ ctx, input }) =>
       await ctx.prisma.comment.findMany({
         where: { listingId: input.listingId },
-        include: { user: { select: { id: true, name: true, email: true } } },
+        include: { user: { select: { id: true, name: true } } },
         orderBy: { createdAt: 'desc' },
       }),
   ),
@@ -685,7 +685,7 @@ export const mobileRouter = createTRPCRouter({
           listingId: input.listingId,
           userId: ctx.session.user.id,
         },
-        include: { user: { select: { id: true, name: true, email: true } } },
+        include: { user: { select: { id: true, name: true } } },
       }),
   ),
 
@@ -724,7 +724,6 @@ export const mobileRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
-          email: true,
           bio: true,
           createdAt: true,
           _count: {
@@ -942,7 +941,7 @@ export const mobileRouter = createTRPCRouter({
       return await ctx.prisma.comment.update({
         where: { id: input.commentId },
         data: { content: input.content },
-        include: { user: { select: { id: true, name: true, email: true } } },
+        include: { user: { select: { id: true, name: true } } },
       })
     }),
 
@@ -972,7 +971,6 @@ export const mobileRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
-          email: true,
           bio: true,
           createdAt: true,
         },

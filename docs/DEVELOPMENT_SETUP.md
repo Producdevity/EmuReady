@@ -108,7 +108,7 @@ curl -X POST http://localhost:3000/api/admin/sync-roles
 Make sure you have these in your `.env.local`:
 
 ```env
-# Clerk
+# Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
 CLERK_SECRET_KEY=sk_test_your_key
 CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret
@@ -116,7 +116,45 @@ CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret
 # Database
 DATABASE_URL=your_database_url
 DATABASE_DIRECT_URL=your_direct_database_url
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# API Protection (Required for production, optional for development)
+# Generate with: 
+```js
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+```env
+INTERNAL_API_KEY=your_secure_random_api_key_here
+```
+
+# Optional: Additional services
+RAWG_API_KEY=your_rawg_api_key_here
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
+RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
+TGDB_API_KEY=your_tgdb_api_key_here
+```
+
+#### API Protection
+
+The `INTERNAL_API_KEY` is used to protect against API abuse and unauthorized access. While optional for local development, it's **required for production deployment**. 
+
+**For Development:**
+- The app allows requests from `localhost:3000` and `localhost:3001` automatically
+- You can skip setting `INTERNAL_API_KEY` during local development
+- Rate limiting is still active (100 requests per 3 minutes per IP)
+
+**For Production:**
+- `INTERNAL_API_KEY` is **mandatory** to prevent API abuse
+- Only requests from your domain or with valid API keys are allowed
+- Generate a secure key using: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+**API Protection Features:**
+- Rate limiting: 100 requests per 3-minute window per IP
+- Origin validation: Only allows requests from authorized domains
+- Security headers: Adds appropriate security headers to responses
 
 ### Troubleshooting
 

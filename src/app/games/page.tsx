@@ -14,6 +14,7 @@ import {
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import { api } from '@/lib/api'
+import { filterNullAndEmpty } from '@/utils/filter'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import GameCard from './components/GameCard'
@@ -117,13 +118,15 @@ function GamesContent() {
   })
   const systemsQuery = api.systems.get.useQuery()
 
-  const gamesQuery = api.games.get.useQuery({
-    search: search.trim() || undefined,
-    systemId: systemId || undefined,
-    hideGamesWithNoListings,
-    limit,
-    offset: (page - 1) * limit,
-  })
+  const gamesQuery = api.games.get.useQuery(
+    filterNullAndEmpty({
+      search: search.trim() || undefined,
+      systemId: systemId || undefined,
+      hideGamesWithNoListings,
+      limit,
+      offset: (page - 1) * limit,
+    }),
+  )
 
   const games = gamesQuery.data?.games ?? []
   const pagination = gamesQuery.data?.pagination

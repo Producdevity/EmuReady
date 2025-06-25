@@ -20,7 +20,7 @@ export const listingVerificationsRouter = createTRPCRouter({
         include: {
           emulator: { select: { id: true, name: true } },
           game: { select: { title: true } },
-          author: { select: { name: true, email: true } },
+          author: { select: { name: true } },
         },
       })
 
@@ -71,7 +71,6 @@ export const listingVerificationsRouter = createTRPCRouter({
               select: {
                 id: true,
                 name: true,
-                email: true,
                 profileImage: true,
               },
             },
@@ -119,7 +118,6 @@ export const listingVerificationsRouter = createTRPCRouter({
               select: {
                 id: true,
                 name: true,
-                email: true,
                 profileImage: true,
               },
             },

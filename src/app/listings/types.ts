@@ -35,6 +35,7 @@ export interface PerformanceScale {
 export interface Author {
   id: string
   name: string | null
+  /** Email – present only in admin contexts */
   email?: string | null
 }
 

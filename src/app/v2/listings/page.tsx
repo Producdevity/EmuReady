@@ -5,6 +5,7 @@ import useListingsState from '@/app/listings/hooks/useListingsState'
 import { LoadingSpinner, PullToRefresh } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { filterNullAndEmpty } from '@/utils/filter'
 import { ListingFilters } from './components/ListingFilters'
 import { ListingsContent } from './components/ListingsContent'
 import { ListingsHeader } from './components/ListingsHeader'
@@ -39,29 +40,31 @@ function V2ListingsPage() {
   // Filter params for API call
   const filterParams: ListingsFilter = useMemo(
     () => ({
-      systemIds:
-        listingsState.systemIds.length > 0
-          ? listingsState.systemIds
-          : undefined,
-      deviceIds:
-        listingsState.deviceIds.length > 0
-          ? listingsState.deviceIds
-          : undefined,
-      socIds:
-        listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
-      emulatorIds:
-        listingsState.emulatorIds.length > 0
-          ? listingsState.emulatorIds
-          : undefined,
-      performanceIds:
-        listingsState.performanceIds.length > 0
-          ? listingsState.performanceIds
-          : undefined,
-      searchTerm: listingsState.search || undefined,
       page: currentPage,
       limit: 12,
-      sortField: listingsState.sortField ?? undefined,
-      sortDirection: listingsState.sortDirection ?? undefined,
+      ...filterNullAndEmpty({
+        systemIds:
+          listingsState.systemIds.length > 0
+            ? listingsState.systemIds
+            : undefined,
+        deviceIds:
+          listingsState.deviceIds.length > 0
+            ? listingsState.deviceIds
+            : undefined,
+        socIds:
+          listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
+        emulatorIds:
+          listingsState.emulatorIds.length > 0
+            ? listingsState.emulatorIds
+            : undefined,
+        performanceIds:
+          listingsState.performanceIds.length > 0
+            ? listingsState.performanceIds
+            : undefined,
+        searchTerm: listingsState.search || undefined,
+        sortField: listingsState.sortField ?? undefined,
+        sortDirection: listingsState.sortDirection ?? undefined,
+      }),
     }),
     [
       listingsState.systemIds,

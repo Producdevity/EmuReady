@@ -2,7 +2,7 @@
 
 import { writeFileSync } from 'fs'
 import { join } from 'path'
-import { generateOpenAPISpec } from './auto-generate-mobile-api-spec'
+import { generateOpenAPISpec } from './auto-generate-api-spec'
 
 /**
  * Script to generate the mobile API documentation in OpenAPI format
@@ -21,7 +21,7 @@ export async function generateApiDocs() {
       process.cwd(),
       'public',
       'api-docs',
-      'mobile-openapi.json',
+      'api-openapi.json',
     )
     writeFileSync(outputPath, JSON.stringify(spec, null, 2))
 
@@ -56,7 +56,7 @@ Most endpoints require Bearer token authentication using Clerk JWT.
 
 ## Interactive Documentation
 - **Swagger UI**: [/docs/mobile-api/swagger](/docs/mobile-api/swagger)
-- **OpenAPI JSON**: [/api/docs/mobile/openapi.json](/api/docs/mobile/openapi.json)
+- **OpenAPI JSON**: [/api/docs/api/openapi.json](/api/docs/api/openapi.json)
 
 ---
 *This documentation is automatically generated from TRPC procedures and Zod schemas.*

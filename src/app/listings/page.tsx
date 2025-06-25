@@ -30,6 +30,7 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'
+import { filterNullAndEmpty } from '@/utils/filter'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
@@ -107,34 +108,38 @@ function ListingsPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
-    systemIds:
-      listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
-    deviceIds:
-      listingsState.deviceIds.length > 0
-        ? listingsState.deviceIds
-        : shouldUseUserDeviceFilter
-          ? userDeviceIds
-          : undefined,
-    socIds:
-      listingsState.socIds.length > 0
-        ? listingsState.socIds
-        : shouldUseUserSocFilter
-          ? userSocIds
-          : undefined,
-    emulatorIds:
-      listingsState.emulatorIds.length > 0
-        ? listingsState.emulatorIds
-        : undefined,
-    performanceIds:
-      listingsState.performanceIds.length > 0
-        ? listingsState.performanceIds
-        : undefined,
-    searchTerm: listingsState.search || undefined,
     page: listingsState.page,
     limit: 10,
-    sortField: listingsState.sortField ?? undefined,
-    sortDirection: listingsState.sortDirection ?? undefined,
-    myListings: listingsState.myListings || undefined,
+    ...filterNullAndEmpty({
+      systemIds:
+        listingsState.systemIds.length > 0
+          ? listingsState.systemIds
+          : undefined,
+      deviceIds:
+        listingsState.deviceIds.length > 0
+          ? listingsState.deviceIds
+          : shouldUseUserDeviceFilter
+            ? userDeviceIds
+            : undefined,
+      socIds:
+        listingsState.socIds.length > 0
+          ? listingsState.socIds
+          : shouldUseUserSocFilter
+            ? userSocIds
+            : undefined,
+      emulatorIds:
+        listingsState.emulatorIds.length > 0
+          ? listingsState.emulatorIds
+          : undefined,
+      performanceIds:
+        listingsState.performanceIds.length > 0
+          ? listingsState.performanceIds
+          : undefined,
+      searchTerm: listingsState.search || undefined,
+      sortField: listingsState.sortField ?? undefined,
+      sortDirection: listingsState.sortDirection ?? undefined,
+      myListings: listingsState.myListings || undefined,
+    }),
   }
 
   const listingsQuery = api.listings.get.useQuery(filterParams)
