@@ -20,7 +20,6 @@ import {
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
-import { type Prisma } from '@orm'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure
@@ -171,41 +170,14 @@ export const commentsRouter = createTRPCRouter({
   getSorted: publicProcedure
     .input(GetSortedCommentsSchema)
     .query(async ({ ctx, input }) => {
-      // Build appropriate order by clause based on sort selection
-      let orderBy: Prisma.CommentOrderByWithRelationInput
-
-      switch (input.sortBy) {
-        case 'newest':
-          orderBy = { createdAt: 'desc' }
-          break
-        case 'oldest':
-          orderBy = { createdAt: 'asc' }
-          break
-        case 'popular':
-          orderBy = { score: 'desc' }
-          break
-        default:
-          orderBy = { createdAt: 'desc' }
-      }
-
-      // Get all top-level comments
-      const comments = await ctx.prisma.comment.findMany({
+      // Get ALL comments for this listing (not just top-level)
+      const allComments = await ctx.prisma.comment.findMany({
         where: {
           listingId: input.listingId,
-          parentId: null, // Only get top-level comments
         },
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
-          replies: {
-            include: {
-              user: { select: { id: true, name: true, profileImage: true } },
-              _count: { select: { replies: true } },
-            },
-            orderBy: { createdAt: 'asc' },
-          },
-          _count: { select: { replies: true } },
         },
-        orderBy,
       })
 
       // Get all comment votes for the user if logged in
@@ -230,25 +202,83 @@ export const commentsRouter = createTRPCRouter({
         )
       }
 
-      // Transform comments to include user vote and reply count
-      const transformedComments = comments.map((comment) => {
-        const transformedReplies = comment.replies.map((reply) => {
-          return {
-            ...reply,
-            userVote: userCommentVotes[reply.id] ?? null,
-            replyCount: reply._count.replies,
-          }
-        })
+      type CommentWithExtras = (typeof allComments)[0] & {
+        userVote: boolean | null
+        replies: CommentWithExtras[]
+        replyCount: number
+      }
 
-        return {
-          ...comment,
-          userVote: userCommentVotes[comment.id] ?? null,
-          replyCount: comment._count.replies,
-          replies: transformedReplies,
+      // Build the tree structure
+      const buildCommentTree = (
+        comments: typeof allComments,
+      ): CommentWithExtras[] => {
+        const topLevelComments: CommentWithExtras[] = []
+        const childrenMap = new Map<string, CommentWithExtras[]>()
+
+        // First pass: organize comments by parent
+        for (const comment of comments) {
+          const commentWithExtras: CommentWithExtras = {
+            ...comment,
+            userVote: userCommentVotes[comment.id] ?? null,
+            replies: [], // Will be populated below
+            replyCount: 0, // Will be calculated below
+          }
+
+          if (!comment.parentId) {
+            topLevelComments.push(commentWithExtras)
+          } else {
+            if (!childrenMap.has(comment.parentId)) {
+              childrenMap.set(comment.parentId, [])
+            }
+            childrenMap.get(comment.parentId)!.push(commentWithExtras)
+          }
+        }
+
+        // Second pass: attach children to parents recursively
+        const attachReplies = (
+          comment: CommentWithExtras,
+        ): CommentWithExtras => {
+          const children = childrenMap.get(comment.id) || []
+
+          // Sort children by creation date (ascending for replies)
+          children.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          )
+
+          // Recursively attach replies to children
+          comment.replies = children.map(attachReplies)
+          comment.replyCount = children.length
+
+          return comment
+        }
+
+        return topLevelComments.map(attachReplies)
+      }
+
+      const commentsTree = buildCommentTree(allComments)
+
+      // Sort top-level comments according to the sort criteria
+      commentsTree.sort((a, b) => {
+        switch (input.sortBy) {
+          case 'newest':
+            return (
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            )
+          case 'oldest':
+            return (
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            )
+          case 'popular':
+            return (b.score ?? 0) - (a.score ?? 0)
+          default:
+            return (
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            )
         }
       })
 
-      return { comments: transformedComments }
+      return { comments: commentsTree }
     }),
 
   edit: protectedProcedure
