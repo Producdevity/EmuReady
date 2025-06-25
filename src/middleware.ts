@@ -99,7 +99,7 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
       {
         status: 429,
         headers: {
-          'Retry-After': '900', // 15 minutes
+          'Retry-After': Math.floor(RATE_LIMIT_WINDOW / 1000).toString(),
           'X-RateLimit-Limit': RATE_LIMIT_REQUESTS.toString(),
           'X-RateLimit-Window': RATE_LIMIT_WINDOW.toString(),
         },
