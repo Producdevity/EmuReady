@@ -41,7 +41,7 @@
 
 - **CLI Documentation Generator**: `npm run docs:generate` creates up-to-date API docs
 - **Watch Mode**: `npm run docs:watch` automatically regenerates docs when router files change
-- **Static File Generation**: OpenAPI spec available at `/api/docs/mobile/openapi.json`
+- **Static File Generation**: OpenAPI spec available at `/api/docs/api/openapi.json`
 
 ## 🐳 Docker Development Environment
 

@@ -6,10 +6,10 @@ function MobileApiDocsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-300 mb-4">
           EmuReady Mobile API Documentation
         </h1>
-        <p className="text-lg text-gray-600 mb-6">
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
           Complete API documentation for EmuReady mobile applications with 30+
           endpoints covering listings, games, devices, user management, and
           more.
@@ -19,7 +19,7 @@ function MobileApiDocsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-3">📚 Documentation</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
             Complete API reference with examples, authentication, and usage
             patterns.
           </p>
@@ -33,12 +33,12 @@ function MobileApiDocsPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-3">🔧 Interactive Testing</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
             Swagger UI for testing API endpoints with live requests and
             responses.
           </p>
           <Link
-            href="/docs/mobile-api/swagger"
+            href="/docs/api/swagger"
             className="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
           >
             Open Swagger UI
@@ -54,7 +54,7 @@ function MobileApiDocsPage() {
         <div className="space-y-4">
           <div>
             <h3 className="font-semibold mb-2">Base URL</h3>
-            <code className="bg-gray-100 px-3 py-1 rounded text-sm text-gray-900 dark:text-white">
+            <code className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300  px-3 py-1 rounded text-sm">
               /api/mobile/trpc/[procedure]
             </code>
           </div>
@@ -63,7 +63,7 @@ function MobileApiDocsPage() {
             <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">
               Authentication
             </h3>
-            <code className="bg-gray-100 px-3 py-1 rounded text-sm text-gray-900 dark:text-white">
+            <code className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300  px-3 py-1 rounded text-sm">
               Authorization: Bearer &lt;clerk-jwt-token&gt;
             </code>
           </div>
@@ -94,15 +94,15 @@ function MobileApiDocsPage() {
             <h3 className="font-semibold text-green-600 mb-2">
               📄 OpenAPI Spec
             </h3>
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 dark:text-white mb-2">
               Machine-readable API specification
             </p>
             <Link
-              href="/api/docs/mobile/openapi.json"
+              href="/api/docs/api/openapi.json"
               target="_blank"
               className="text-blue-500 hover:underline text-sm"
             >
-              Download JSON
+              Download OpenAPI JSON
             </Link>
           </div>
 
@@ -111,7 +111,9 @@ function MobileApiDocsPage() {
             <p className="text-sm text-gray-600 dark:text-white mb-2">
               30+ endpoints for complete mobile functionality
             </p>
-            <span className="text-sm text-gray-500">Public & Protected</span>
+            <span className="text-sm text-gray-500 dark:text-white">
+              Public & Protected
+            </span>
           </div>
 
           <div>
@@ -128,12 +130,17 @@ function MobileApiDocsPage() {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold mb-4">Key Features</h2>
+        <p>
+          Note that some features may be in development, or require an API Key:
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ul className="space-y-2">
             <li className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
-              <span className="text-sm">Comprehensive CRUD operations</span>
+              <span className="text-sm">
+                CRUD operations for most resources
+              </span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
@@ -166,7 +173,7 @@ function MobileApiDocsPage() {
             </li>
             <li className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
-              <span className="text-sm">Rate limiting & security</span>
+              <span className="text-sm">Reasonable rate limits</span>
             </li>
           </ul>
         </div>

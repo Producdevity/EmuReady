@@ -8,7 +8,7 @@ The EmuReady Mobile API provides comprehensive access to all mobile app function
 
 - **TRPC API**: `/api/mobile/trpc/[procedure]`
 - **REST API**: `/api/mobile/[endpoint]`
-- **OpenAPI Spec**: `/api/docs/mobile/openapi.json`
+- **OpenAPI Spec**: `/api/docs/api/openapi.json`
 
 ## Authentication
 
@@ -345,11 +345,11 @@ const getListings = async (params: GetListingsParams) => {
 
 ## Interactive Documentation
 
-For interactive API testing, visit: `/docs/mobile-api/swagger`
+For interactive API testing, visit: `/docs/api/swagger`
 
 ## OpenAPI Specification
 
-Download the complete OpenAPI 3.0 specification: `/api/docs/mobile/openapi.json`
+Download the complete OpenAPI 3.0 specification: `/api/docs/api/openapi.json`
 
 ## Support
 

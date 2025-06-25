@@ -33,7 +33,7 @@ pnpm-lock.yaml
 .cache/
 dist/
 build/
-public/
+public/api-docs/
 prisma/generated/
 
 # Logs

@@ -14,8 +14,9 @@ Auto-generated on: 2025-06-22T17:17:56.445Z
 Most endpoints require Bearer token authentication using Clerk JWT.
 
 ## Interactive Documentation
-- **Swagger UI**: [/docs/mobile-api/swagger](/docs/mobile-api/swagger)
-- **OpenAPI JSON**: [/api/docs/mobile/openapi.json](/api/docs/mobile/openapi.json)
+- **Swagger UI**: [/docs/mobile/swagger](/docs/api/swagger)
+- **OpenAPI JSON**: [/api/docs/api/openapi.json](/api/docs/api/openapi.json)
 
 ---
+TODO
 *This documentation is automatically generated from TRPC procedures and Zod schemas.*
