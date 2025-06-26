@@ -172,6 +172,11 @@ const emulators: EmulatorData[] = [
     logo: 'winlator.png',
   },
   {
+    name: 'XBSX2',
+    supportedSystemNames: ['Sony PlayStation 2'],
+    logo: 'xbsx2.png',
+  },
+  {
     name: 'Xenia',
     supportedSystemNames: ['Microsoft Xbox 360'],
     logo: 'xenia.png',

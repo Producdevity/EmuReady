@@ -59,6 +59,7 @@ const logoOptions = [
   'utm.png',
   'vita3k.png',
   'winlator.png',
+  'xbsx2.png',
   'xemu.png',
   'xenia.png',
   'yaba.png',
