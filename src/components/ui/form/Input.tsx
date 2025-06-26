@@ -25,7 +25,7 @@ type Props = BaseInputProps &
     | { as: 'textarea'; rows?: number }
   )
 
-const Input = forwardRef<HTMLElement, Props>(
+export const Input = forwardRef<HTMLElement, Props>(
   (
     { leftIcon, rightIcon, className = '', as = 'input', children, ...props },
     ref,
@@ -106,5 +106,3 @@ const Input = forwardRef<HTMLElement, Props>(
 )
 
 Input.displayName = 'Input'
-
-export default Input

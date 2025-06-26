@@ -5,7 +5,7 @@ import { Search, Info } from 'lucide-react'
 import { useState, useEffect, type FormEvent, type KeyboardEvent } from 'react'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import { api } from '@/lib/api'
-import type { AutocompleteOptionBase } from '@/components/ui/Autocomplete'
+import type { AutocompleteOptionBase } from '@/components/ui/form/Autocomplete'
 
 interface SystemOption extends AutocompleteOptionBase {
   id: string

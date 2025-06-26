@@ -1,5 +1,6 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Check, Trash2, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -14,6 +15,7 @@ interface Props {
 }
 
 function NotificationCenter(props: Props) {
+  const { user } = useUser()
   const utils = api.useUtils()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
@@ -21,11 +23,17 @@ function NotificationCenter(props: Props) {
 
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
-    { refetchInterval: 30000 }, // Refetch every 30 seconds
+    {
+      enabled: !!user,
+      refetchInterval: 30000,
+    },
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(
     undefined,
-    { refetchInterval: 10000 }, // Refetch unread count every 10 seconds
+    {
+      enabled: !!user,
+      refetchInterval: 30000,
+    },
   )
 
   // Mutations
@@ -111,6 +119,9 @@ function NotificationCenter(props: Props) {
       document.removeEventListener('keydown', handleEscape)
     }
   }, [isOpen])
+
+  // Don't render anything if user is not authenticated
+  if (!user) return null
 
   const handleNotificationClick = (notification: (typeof notifications)[0]) => {
     // Mark as read if not already read (swallow error if it fails)

@@ -22,7 +22,7 @@ interface Props {
   showSelectedBadges?: boolean
 }
 
-function MultiSelect(props: Props) {
+export function MultiSelect(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>(
@@ -357,5 +357,3 @@ function MultiSelect(props: Props) {
     </div>
   )
 }
-
-export default MultiSelect

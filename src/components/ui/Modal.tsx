@@ -26,7 +26,7 @@ interface Props {
   closeOnEscape?: boolean
 }
 
-function Modal({ onClose, ...props }: Props) {
+export function Modal({ onClose, ...props }: Props) {
   const size = props.size ?? 'md'
   const hideCloseButton = props.hideCloseButton ?? false
   const isNested = props.isNested ?? false
@@ -101,5 +101,3 @@ function Modal({ onClose, ...props }: Props) {
     </div>
   )
 }
-
-export default Modal

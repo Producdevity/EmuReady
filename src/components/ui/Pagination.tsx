@@ -13,7 +13,7 @@ interface Props {
   showLabel?: boolean
 }
 
-function Pagination(props: Props) {
+export function Pagination(props: Props) {
   const showLabel = props.showLabel ?? true
   const onPageChange = props.onPageChange
 
@@ -203,5 +203,3 @@ function Pagination(props: Props) {
     </nav>
   )
 }
-
-export default Pagination

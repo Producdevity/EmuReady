@@ -28,7 +28,7 @@ interface Props {
   objectFit?: ObjectFit
 }
 
-function OptimizedImage(props: Props) {
+export function OptimizedImage(props: Props) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -64,5 +64,3 @@ function OptimizedImage(props: Props) {
     </div>
   )
 }
-
-export default OptimizedImage

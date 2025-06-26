@@ -1,4 +1,4 @@
-function PageLoading() {
+export function PageLoading() {
   return (
     <div
       className="container mx-auto px-4 py-12"
@@ -13,5 +13,3 @@ function PageLoading() {
     </div>
   )
 }
-
-export default PageLoading
