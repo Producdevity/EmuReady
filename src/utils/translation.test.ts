@@ -3,6 +3,7 @@ import {
   detectLanguage,
   shouldShowTranslation,
   getUserLocale,
+  getLanguageName,
 } from './translation'
 
 // Mock the getUserLocale function
@@ -120,6 +121,35 @@ describe('translation utilities', () => {
       const dutchText = 'Iets met oliebollen, pindakaas en frikandellen of zo.'
       const result = shouldShowTranslation(dutchText)
       expect(result).toBe(true)
+    })
+  })
+
+  describe('getLanguageName', () => {
+    it('should return full language name for known ISO codes', () => {
+      expect(getLanguageName('pt')).toBe('Portuguese')
+      expect(getLanguageName('es')).toBe('Spanish')
+      expect(getLanguageName('fr')).toBe('French')
+      expect(getLanguageName('de')).toBe('German')
+      expect(getLanguageName('it')).toBe('Italian')
+      expect(getLanguageName('ru')).toBe('Russian')
+      expect(getLanguageName('ja')).toBe('Japanese')
+      expect(getLanguageName('zh')).toBe('Chinese')
+      expect(getLanguageName('en')).toBe('English')
+    })
+
+    it('should handle case insensitive input', () => {
+      expect(getLanguageName('PT')).toBe('Portuguese')
+      expect(getLanguageName('Es')).toBe('Spanish')
+      expect(getLanguageName('FR')).toBe('French')
+    })
+
+    it('should return uppercase code for unknown languages', () => {
+      expect(getLanguageName('xx')).toBe('XX')
+      expect(getLanguageName('unknown')).toBe('UNKNOWN')
+    })
+
+    it('should handle empty string', () => {
+      expect(getLanguageName('')).toBe('')
     })
   })
 })

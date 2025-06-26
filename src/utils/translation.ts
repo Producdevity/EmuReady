@@ -34,7 +34,36 @@ const LANG_MAP: Record<string, string> = {
   lit: 'lt',
 }
 
-// MyMemory’s supported ISO-639-1 set
+// Language names mapping for display
+const LANGUAGE_NAMES: Record<string, string> = {
+  ar: 'Arabic',
+  bg: 'Bulgarian',
+  cs: 'Czech',
+  da: 'Danish',
+  de: 'German',
+  el: 'Greek',
+  en: 'English',
+  es: 'Spanish',
+  et: 'Estonian',
+  fi: 'Finnish',
+  fr: 'French',
+  hu: 'Hungarian',
+  it: 'Italian',
+  ja: 'Japanese',
+  lt: 'Lithuanian',
+  lv: 'Latvian',
+  nl: 'Dutch',
+  pl: 'Polish',
+  pt: 'Portuguese',
+  ro: 'Romanian',
+  ru: 'Russian',
+  sk: 'Slovak',
+  sl: 'Slovenian',
+  sv: 'Swedish',
+  zh: 'Chinese',
+}
+
+// MyMemory's supported ISO-639-1 set
 const SUPPORTED_LANGUAGES = new Set([
   'ar',
   'bg',
@@ -195,4 +224,13 @@ export function shouldShowTranslation(text: string): boolean {
     (!detection.isEnglish && userLocale === 'en') ||
     (detection.detectedLanguage !== userLocale && detection.confidence > 0.5)
   )
+}
+
+/**
+ * Get the full language name from ISO language code.
+ * @param isoCode - The ISO 639-1 language code.
+ * @return {string} The full language name or the original code if not found.
+ */
+export function getLanguageName(isoCode: string): string {
+  return LANGUAGE_NAMES[isoCode.toLowerCase()] || isoCode.toUpperCase()
 }

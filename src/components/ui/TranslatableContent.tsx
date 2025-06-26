@@ -4,7 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Languages, Eye, EyeOff } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui'
-import { translateTextCached, shouldShowTranslation } from '@/utils/translation'
+import {
+  translateTextCached,
+  shouldShowTranslation,
+  getLanguageName,
+} from '@/utils/translation'
 import type { TranslationResult } from '@/utils/translation.types'
 
 interface Props {
@@ -115,7 +119,7 @@ export function TranslatableContent(props: Props) {
               className="text-xs text-gray-500 dark:text-gray-400 mt-1"
             >
               {showTranslated
-                ? `Translated from ${translation.originalLanguage.toUpperCase()}`
+                ? `Translated from ${getLanguageName(translation.originalLanguage)}`
                 : `Translation available`}
             </motion.div>
           )}

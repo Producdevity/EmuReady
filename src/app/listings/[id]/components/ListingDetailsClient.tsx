@@ -257,6 +257,7 @@ function ListingDetailsClient(props: Props) {
                     fill
                     sizes="64px"
                     className="object-cover"
+                    priority
                     unoptimized
                   />
                 ) : (
