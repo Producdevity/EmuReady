@@ -95,17 +95,31 @@ self.addEventListener(
 
 /**
  * Fetch event: serve from cache, else network, then cache result.
- * Handles same-origin GET over HTTP(S) only.
+ * Only handles same-origin GET requests to avoid CSP violations.
  * @param {SWFetchEvent} event
  */
 self.addEventListener(
   'fetch',
   /** @param {SWFetchEvent} event */ (event) => {
+    // Only handle GET requests
+    if (event.request.method !== 'GET') {
+      return
+    }
+
+    // Only handle HTTP(S) requests
     if (
-      event.request.method !== 'GET' ||
-      (!event.request.url.startsWith('http://') &&
-        !event.request.url.startsWith('https://'))
+      !event.request.url.startsWith('http://') &&
+      !event.request.url.startsWith('https://')
     ) {
+      return
+    }
+
+    // Only handle same-origin requests to avoid CSP violations
+    const requestUrl = new URL(event.request.url)
+    const isSameOrigin = requestUrl.origin === self.location.origin
+
+    if (!isSameOrigin) {
+      // For external requests, just pass through without caching
       return
     }
 
@@ -126,17 +140,18 @@ self.addEventListener(
               return networkResponse
             }
 
-            const responseClone = networkResponse.clone()
+            // Only cache if it's a same-origin request and not an API call
+            if (isSameOrigin && !event.request.url.includes('/api/')) {
+              const responseClone = networkResponse.clone()
 
-            caches.open(CACHE_NAME).then((cache) => {
-              if (!event.request.url.includes('/api/')) {
+              caches.open(CACHE_NAME).then((cache) => {
                 cache
                   .put(event.request, responseClone)
                   .catch((err) =>
                     console.error('Failed to cache response:', err),
                   )
-              }
-            })
+              })
+            }
 
             return networkResponse
           })

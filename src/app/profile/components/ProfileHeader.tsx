@@ -28,7 +28,6 @@ function ProfileHeader(props: Props) {
       className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 rounded-2xl shadow-2xl overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-      <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
 
       <div className="relative p-8 lg:p-12">
         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
