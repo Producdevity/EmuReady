@@ -29,3 +29,15 @@ export interface MyMemoryMatch {
   match: number
   penalty: number
 }
+
+export interface LanguageDetectionResult {
+  isEnglish: boolean
+  detectedLanguage: string
+  confidence: number
+}
+
+export interface TranslationResult {
+  translatedText: string
+  originalLanguage: string
+  targetLanguage: string
+}

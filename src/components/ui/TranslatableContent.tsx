@@ -4,11 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Languages, Eye, EyeOff } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui'
-import {
-  translateTextCached,
-  shouldShowTranslation,
-  type TranslationResult,
-} from '@/utils/translation'
+import { translateTextCached, shouldShowTranslation } from '@/utils/translation'
+import type { TranslationResult } from '@/utils/translation.types'
 
 interface Props {
   content: string

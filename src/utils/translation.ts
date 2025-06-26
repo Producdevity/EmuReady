@@ -1,173 +1,166 @@
 import { franc } from 'franc'
 import http from '@/rest/http'
-import { type MyMemoryTranslationResponse } from '@/utils/translation.types'
+import type {
+  MyMemoryTranslationResponse,
+  LanguageDetectionResult,
+  TranslationResult,
+} from '@/utils/translation.types'
 
-export interface LanguageDetectionResult {
-  isEnglish: boolean
-  detectedLanguage: string
-  confidence: number
+const LANG_MAP: Record<string, string> = {
+  eng: 'en',
+  spa: 'es',
+  fra: 'fr',
+  deu: 'de',
+  ita: 'it',
+  por: 'pt',
+  rus: 'ru',
+  jpn: 'ja',
+  zho: 'zh',
+  ara: 'ar',
+  nld: 'nl',
+  pol: 'pl',
+  swe: 'sv',
+  dan: 'da',
+  fin: 'fi',
+  hun: 'hu',
+  ces: 'cs',
+  slk: 'sk',
+  slv: 'sl',
+  ron: 'ro',
+  bul: 'bg',
+  ell: 'el',
+  est: 'et',
+  lav: 'lv',
+  lit: 'lt',
 }
 
-export interface TranslationResult {
-  translatedText: string
-  originalLanguage: string
-  targetLanguage: string
-}
+// MyMemory’s supported ISO-639-1 set
+const SUPPORTED_LANGUAGES = new Set([
+  'ar',
+  'bg',
+  'cs',
+  'da',
+  'de',
+  'el',
+  'en',
+  'es',
+  'et',
+  'fi',
+  'fr',
+  'hu',
+  'it',
+  'ja',
+  'lt',
+  'lv',
+  'nl',
+  'pl',
+  'pt',
+  'ro',
+  'ru',
+  'sk',
+  'sl',
+  'sv',
+  'zh',
+])
 
-// ISO 639-1 language codes supported by MyMemory
-const SUPPORTED_LANGUAGES = {
-  ar: 'Arabic',
-  bg: 'Bulgarian',
-  cs: 'Czech',
-  da: 'Danish',
-  de: 'German',
-  el: 'Greek',
-  en: 'English',
-  es: 'Spanish',
-  et: 'Estonian',
-  fi: 'Finnish',
-  fr: 'French',
-  hu: 'Hungarian',
-  it: 'Italian',
-  ja: 'Japanese',
-  lt: 'Lithuanian',
-  lv: 'Latvian',
-  nl: 'Dutch',
-  pl: 'Polish',
-  pt: 'Portuguese',
-  ro: 'Romanian',
-  ru: 'Russian',
-  sk: 'Slovak',
-  sl: 'Slovenian',
-  sv: 'Swedish',
-  zh: 'Chinese',
-}
-
-function getUserLocale(): string {
-  // Get user's locale, fallback to 'en' if not supported
+/**
+ * Get the user's locale.
+ * @return {string} The user's locale.
+ */
+export function getUserLocale(): string {
   const locale =
     typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en'
-
-  return Object.keys(SUPPORTED_LANGUAGES).includes(locale) ? locale : 'en'
+  return SUPPORTED_LANGUAGES.has(locale) ? locale : 'en'
 }
 
+/**
+ * Detect the language of the text.
+ * @param text - The text to detect the language of.
+ * @return {LanguageDetectionResult} The language detection result.
+ */
 export function detectLanguage(text: string): LanguageDetectionResult {
-  if (!text || text.trim().length < 10) {
-    return {
-      isEnglish: true,
-      detectedLanguage: 'en',
-      confidence: 0,
-    }
+  if (text.trim().length < 10) {
+    return { isEnglish: true, detectedLanguage: 'en', confidence: 0 }
   }
 
-  try {
-    // Use franc to detect language
-    const detectedLang = franc(text)
+  const francCode = franc(text)
+  const iso = LANG_MAP[francCode] ?? 'und'
+  const isEnglish = iso === 'en'
 
-    // Map franc language codes to ISO 639-1
-    const langMap: Record<string, string> = {
-      eng: 'en',
-      spa: 'es',
-      fra: 'fr',
-      deu: 'de',
-      ita: 'it',
-      por: 'pt',
-      rus: 'ru',
-      jpn: 'ja',
-      zho: 'zh',
-      ara: 'ar',
-      nld: 'nl',
-      pol: 'pl',
-      swe: 'sv',
-      dan: 'da',
-      fin: 'fi',
-      hun: 'hu',
-      ces: 'cs',
-      slk: 'sk',
-      slv: 'sl',
-      ron: 'ro',
-      bul: 'bg',
-      ell: 'el',
-      est: 'et',
-      lav: 'lv',
-      lit: 'lt',
-    }
-
-    const mappedLang = langMap[detectedLang] || 'en'
-    const isEnglish = mappedLang === 'en'
-
-    return {
-      isEnglish,
-      detectedLanguage: mappedLang,
-      confidence: isEnglish ? 1 : 0.8, // Simplified confidence scoring
-    }
-  } catch (error) {
-    console.warn('Language detection failed:', error)
-    return {
-      isEnglish: true,
-      detectedLanguage: 'en',
-      confidence: 0,
-    }
+  return {
+    isEnglish,
+    detectedLanguage: iso === 'und' ? 'en' : iso,
+    confidence: iso === 'und' ? 0.3 : isEnglish ? 1 : 0.8,
   }
 }
 
+/**
+ * Translate text using MyMemory API.
+ * @param text - The text to translate.
+ * @param fromLang - Optional source language (ISO 639-1 code).
+ * @param toLang - Optional target language (ISO 639-1 code).
+ * @return {Promise<TranslationResult>} A promise that resolves to the translation result.
+ */
 export async function translateText(
   text: string,
   fromLang?: string,
   toLang?: string,
 ): Promise<TranslationResult> {
-  const targetLang = toLang || getUserLocale()
-  const sourceLang = fromLang || detectLanguage(text).detectedLanguage
+  const target = toLang ?? getUserLocale()
+  const source = fromLang ?? detectLanguage(text).detectedLanguage
 
-  // Don't translate if source and target are the same
-  if (sourceLang === targetLang) {
+  // No need to request if languages already match
+  if (source === target) {
     return {
       translatedText: text,
-      originalLanguage: sourceLang,
-      targetLanguage: targetLang,
+      originalLanguage: source,
+      targetLanguage: target,
     }
   }
 
+  const safeTarget = SUPPORTED_LANGUAGES.has(target) ? target : 'en'
+  // Use MyMemory API (free tier: 1000 requests/day)
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${safeTarget}`
+
   try {
-    // Use MyMemory API (free tier: 1000 requests/day)
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
-    const response = await http.get<MyMemoryTranslationResponse>(url, {
-      timeout: 10000,
+    const { data } = await http.get<MyMemoryTranslationResponse>(url, {
+      timeout: 10_000,
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'EmuReady-Translation-Service/1.0',
       },
     })
-
-    if (!response) {
-      throw new Error('Translation failed: No response received')
-    }
-
-    const data = response.data
 
     if (data.responseStatus === 200 && data.responseData) {
       return {
         translatedText: data.responseData.translatedText,
-        originalLanguage: sourceLang,
-        targetLanguage: targetLang,
+        originalLanguage: source,
+        targetLanguage: safeTarget,
       }
     }
 
-    throw new Error('Translation failed: Invalid response')
-  } catch (error) {
-    console.error('Translation error:', error)
-    // Return original text if translation fails
-    return {
-      translatedText: text,
-      originalLanguage: sourceLang,
-      targetLanguage: targetLang,
-    }
+    // Non-200 or malformed: fall through to return-original
+  } catch (err) {
+    console.error('Translation request failed:', err)
+  }
+
+  // Fallback – return original text unchanged
+  return {
+    translatedText: text,
+    originalLanguage: source,
+    targetLanguage: target,
   }
 }
 
-// Cache for translations to avoid repeated API calls
+/** Cache for translations to avoid repeated API calls */
 const translationCache = new Map<string, TranslationResult>()
 
+/**
+ * Translate text with caching.
+ * @param text - The text to translate.
+ * @param fromLang - Optional source language (ISO 639-1 code).
+ * @param toLang - Optional target language (ISO 639-1 code).
+ * @return {Promise<TranslationResult>} A promise that resolves to the translation result.
+ */
 export async function translateTextCached(
   text: string,
   fromLang?: string,
@@ -185,6 +178,11 @@ export async function translateTextCached(
   return result
 }
 
+/**
+ * Check if translation should be shown based on text length and language detection.
+ * @param text - The text to check.
+ * @return {boolean} True if translation should be shown, false otherwise.
+ */
 export function shouldShowTranslation(text: string): boolean {
   if (!text || text.trim().length < 10) return false
 
