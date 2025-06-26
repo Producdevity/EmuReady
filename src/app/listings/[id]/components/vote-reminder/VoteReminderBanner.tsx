@@ -22,7 +22,7 @@ const TIME_ON_PAGE_SECONDS = 60
 function VoteReminderBanner(props: Props) {
   const [isVisible, setIsVisible] = useState(false)
   const [hasBeenDismissed, setHasBeenDismissed] = useLocalStorage(
-    storageKeys.voteReminderDismissed,
+    storageKeys.popups.voteReminderDismissed,
     false,
   )
   const [showHelpModal, setShowHelpModal] = useState(false)

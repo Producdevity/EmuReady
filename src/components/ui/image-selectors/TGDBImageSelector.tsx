@@ -15,6 +15,7 @@ import { api } from '@/lib/api'
 import { getImageDisplayName, getImageTypeDisplayName } from '@/lib/tgdb-utils'
 import { cn } from '@/lib/utils'
 import { type GameImageOption, type GameImageType } from '@/types/tgdb'
+import getImageUrl from '@/utils/getImageUrl'
 
 function getImageTypeClassName(imageType: GameImageType) {
   return imageType === 'boxart'
@@ -230,8 +231,8 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
               </p>
               <div className="w-full max-w-xs mx-auto aspect-square relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                 <OptimizedImage
-                  src={selectedImage.url}
-                  alt="Custom image preview"
+                  src={getImageUrl(selectedImage.url, selectedImage.gameName)}
+                  alt={selectedImage.gameName}
                   width={200}
                   height={200}
                   objectFit="cover"
@@ -320,7 +321,7 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                   >
                     <div className="aspect-square relative bg-gray-100 dark:bg-gray-800">
                       <OptimizedImage
-                        src={image.url}
+                        src={getImageUrl(image.url, image.gameName)}
                         alt={getImageDisplayName(image)}
                         width={200}
                         height={200}

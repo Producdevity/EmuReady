@@ -39,21 +39,22 @@ export const FILTER_ACTIONS = {
 
 // Engagement Actions
 export const ENGAGEMENT_ACTIONS = {
-  VOTE_UP: 'vote_up',
-  VOTE_DOWN: 'vote_down',
-  VOTE_REMOVED: 'vote_removed',
   COMMENT_CREATED: 'comment_created',
-  COMMENT_REPLY: 'comment_reply',
-  COMMENT_EDITED: 'comment_edited',
   COMMENT_DELETED: 'comment_deleted',
-  COMMENT_VOTE_UP: 'comment_vote_up',
+  COMMENT_EDITED: 'comment_edited',
+  COMMENT_REPLY: 'comment_reply',
   COMMENT_VOTE_DOWN: 'comment_vote_down',
-  LISTING_VIEW: 'listing_view',
+  COMMENT_VOTE_UP: 'comment_vote_up',
   GAME_VIEW: 'game_view',
+  LISTING_VIEW: 'listing_view',
+  STOP_KILLING_GAMES_CTA: 'stop_killing_games_cta',
   USER_PROFILE_VIEW: 'user_profile_view',
-  VOTE_REMINDER_SHOWN: 'vote_reminder_shown',
+  VOTE_DOWN: 'vote_down',
   VOTE_REMINDER_CLICKED: 'vote_reminder_clicked',
   VOTE_REMINDER_DISMISSED: 'vote_reminder_dismissed',
+  VOTE_REMINDER_SHOWN: 'vote_reminder_shown',
+  VOTE_REMOVED: 'vote_removed',
+  VOTE_UP: 'vote_up',
 } as const
 
 // Listing Actions
@@ -668,6 +669,17 @@ const analytics = {
       })
     },
 
+    stopKillingGamesCTA: (params: { timeOnPage: number }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_CTA,
+        entityType: 'popup',
+        metadata: {
+          timeOnPage: params.timeOnPage,
+        },
+      })
+    },
+
     voteReminderDismissed: (params: {
       listingId: string
       timeOnPage: number
@@ -675,7 +687,7 @@ const analytics = {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_DISMISSED,
-        entityType: 'listing',
+        entityType: 'popup',
         entityId: params.listingId,
         metadata: {
           timeOnPage: params.timeOnPage,

@@ -9,11 +9,11 @@ import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import { type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
-import BetaWarningModal from '@/components/BetaWarningModal'
 import CookieConsent from '@/components/CookieConsent'
 import Footer from '@/components/footer/Footer'
 import Navbar from '@/components/navbar/Navbar'
 import PageViewTracker from '@/components/PageViewTracker'
+import { StopKillingGamesPopup } from '@/components/popups'
 import Providers from '@/components/Providers'
 import SessionTracker from '@/components/SessionTracker'
 import KofiWidget from '@/components/ui/KofiWidget'
@@ -88,7 +88,7 @@ export default function RootLayout(props: PropsWithChildren) {
             <SessionTracker />
             <PageViewTracker />
             <Toaster richColors closeButton />
-            <BetaWarningModal />
+            <StopKillingGamesPopup />
             <CookieConsent />
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Navbar />
