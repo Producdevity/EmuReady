@@ -31,14 +31,10 @@ function SocModal(props: Props) {
   const [success, setSuccess] = useState('')
 
   // Common values for quick selection
-  const commonManufacturers = [
-    'Qualcomm',
-    'MediaTek',
-    'Apple',
-    'Samsung',
-    'NVIDIA',
-  ]
+  const commonManufacturers = ['Qualcomm', 'MediaTek', 'Apple', 'AMD', 'NVIDIA']
   const commonArchitectures = ['ARM64', 'x86_64']
+
+  const commonProcessNodes = ['4nm', '5nm', '7nm', '10nm', '12nm']
 
   // Update form fields when socData changes
   useEffect(() => {
@@ -211,6 +207,22 @@ function SocModal(props: Props) {
               className="w-full"
               placeholder="e.g., 4nm"
             />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {commonProcessNodes.map((node) => (
+                <button
+                  key={node}
+                  type="button"
+                  onClick={() => setProcessNode(node)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    processNode === node
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-600'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+                  }`}
+                >
+                  {node}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

@@ -1443,6 +1443,30 @@ const socs: SoCData[] = [
     cpuCores: 6,
     gpuModel: 'Radeon Vega 7',
   },
+  {
+    name: 'Durango (Xbox One)',
+    manufacturer: 'AMD',
+    architecture: 'x86_64',
+    processNode: '28nm',
+    cpuCores: 8,
+    gpuModel: 'GCN-based GPU (~1.31 TFLOPS)',
+  },
+  {
+    name: 'Edmonton (Xbox One S)',
+    manufacturer: 'AMD',
+    architecture: 'x86_64',
+    processNode: '16nm',
+    cpuCores: 8,
+    gpuModel: 'GCN-based GPU (~1.4 TFLOPS)',
+  },
+  {
+    name: 'Scorpio Engine (Xbox One X)',
+    manufacturer: 'AMD',
+    architecture: 'x86_64',
+    processNode: '16nm',
+    cpuCores: 8,
+    gpuModel: 'Custom GCN GPU (~6.0 TFLOPS, 40 CUs)',
+  },
 
   // Additional Unisoc SoCs
   {
