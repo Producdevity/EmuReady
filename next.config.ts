@@ -58,10 +58,6 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
   },
 
-  eslint: {
-    ignoreDuringBuilds: process.env.NODE_ENV !== 'production',
-  },
-
   turbopack: {
     rules: {
       '*.svg': {
@@ -79,10 +75,6 @@ const nextConfig: NextConfig = {
       use: ['@svgr/webpack'],
     })
     return config
-  },
-
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 
   async headers() {
