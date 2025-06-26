@@ -4,7 +4,7 @@ export async function uploadProfileImage(file: File): Promise<string> {
   const formData = new FormData()
   formData.append('file', file)
 
-  const res = await http.post('/upload/profile', formData, {
+  const res = await http.post('/api/upload/profile', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
