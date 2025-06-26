@@ -88,11 +88,7 @@ function AdminListingsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, false)
 
-  const {
-    showEmulatorLogos,
-    toggleEmulatorLogos,
-    isHydrated: isEmulatorLogosHydrated,
-  } = useEmulatorLogos()
+  const emulatorLogos = useEmulatorLogos()
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | ''>('')
@@ -185,9 +181,9 @@ function AdminListingsPage() {
             nameLabel="Show System Names"
           />
           <DisplayToggleButton
-            showLogos={showEmulatorLogos}
-            onToggle={toggleEmulatorLogos}
-            isHydrated={isEmulatorLogosHydrated}
+            showLogos={emulatorLogos.showEmulatorLogos}
+            onToggle={emulatorLogos.toggleEmulatorLogos}
+            isHydrated={emulatorLogos.isHydrated}
             logoLabel="Show Emulator Logos"
             nameLabel="Show Emulator Names"
           />
@@ -296,258 +292,261 @@ function AdminListingsPage() {
 
       {/* Listings Table */}
       <AdminTableContainer>
-        {listings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || statusFilter || systemFilter || emulatorFilter
-                ? 'No listings found matching your filters.'
-                : 'No listings found.'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                {columnVisibility.isColumnVisible('game') && (
+                  <SortableHeader
+                    label="Game"
+                    field="game.title"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('system') && (
+                  <SortableHeader
+                    label="System"
+                    field="game.system.name"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('device') && (
+                  <SortableHeader
+                    label="Device"
+                    field="device"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('emulator') && (
+                  <SortableHeader
+                    label="Emulator"
+                    field="emulator.name"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('performance') && (
+                  <SortableHeader
+                    label="Performance"
+                    field="performance.rank"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('author') && (
+                  <SortableHeader
+                    label="Author"
+                    field="author.name"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('status') && (
+                  <SortableHeader
+                    label="Status"
+                    field="status"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('createdAt') && (
+                  <SortableHeader
+                    label="Created"
+                    field="createdAt"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {listingsQuery.isLoading ? (
+                <LoadingSpinner text="Loading Listings..." />
+              ) : listings.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    {table.search ||
+                    statusFilter ||
+                    systemFilter ||
+                    emulatorFilter
+                      ? 'No listings found matching your filters.'
+                      : 'No listings found.'}
+                  </p>
+                </div>
+              ) : (
+                listings.map((listing: Listing) => (
+                  <tr
+                    key={listing.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                  >
                     {columnVisibility.isColumnVisible('game') && (
-                      <SortableHeader
-                        label="Game"
-                        field="game.title"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center">
+                            <Image
+                              src={getGameImageUrl(listing.game)}
+                              alt={listing.game.title}
+                              width={80}
+                              height={64}
+                              className="rounded-md object-contain max-h-16 max-w-20"
+                              unoptimized
+                            />
+                          </div>
+                          <div className="ml-4 flex-1 min-w-0">
+                            <Link
+                              href={`/games/${listing.game.id}`}
+                              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {listing.game.title}
+                            </Link>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              ID: {listing.id.slice(0, 8)}...
+                            </p>
+                          </div>
+                        </div>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('system') && (
-                      <SortableHeader
-                        label="System"
-                        field="game.system.name"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        {isSystemIconsHydrated &&
+                        showSystemIcons &&
+                        listing.game.system?.key ? (
+                          <div className="flex items-center gap-2">
+                            <SystemIcon
+                              name={listing.game.system.name}
+                              systemKey={listing.game.system.key}
+                              size="md"
+                            />
+                            <span className="sr-only">
+                              {listing.game.system.name}
+                            </span>
+                          </div>
+                        ) : (
+                          listing.game.system.name
+                        )}
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('device') && (
-                      <SortableHeader
-                        label="Device"
-                        field="device"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <div>
+                          <div className="font-medium">
+                            {listing.device.brand.name}{' '}
+                            {listing.device.modelName}
+                          </div>
+                          {listing.device.soc && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {listing.device.soc.name}
+                            </div>
+                          )}
+                        </div>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (
-                      <SortableHeader
-                        label="Emulator"
-                        field="emulator.name"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <EmulatorIcon
+                          name={listing.emulator.name}
+                          logo={listing.emulator.logo}
+                          showLogo={
+                            emulatorLogos.isHydrated &&
+                            emulatorLogos.showEmulatorLogos
+                          }
+                          size="sm"
+                        />
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('performance') && (
-                      <SortableHeader
-                        label="Performance"
-                        field="performance.rank"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <div className="font-medium">
+                          {listing.performance.label}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Rank: {listing.performance.rank}
+                        </div>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('author') && (
-                      <SortableHeader
-                        label="Author"
-                        field="author.name"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        {listing.author?.name ?? 'Unknown'}
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('status') && (
-                      <SortableHeader
-                        label="Status"
-                        field="status"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4">
+                        <ApprovalStatusBadge status={listing.status} />
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('createdAt') && (
-                      <SortableHeader
-                        label="Created"
-                        field="createdAt"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td
+                        className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
+                        title={formatDateTime(listing.createdAt)}
+                      >
+                        {formatTimeAgo(listing.createdAt)}
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <EditButton
+                            href={`/admin/listings/${listing.id}/edit`}
+                            title="Edit Listing"
+                          />
+                          <ViewButton
+                            onClick={() => {
+                              analytics.contentDiscovery.externalLinkClicked({
+                                url: `/listings/${listing.id}`,
+                                context: 'admin_listings_table_click',
+                                entityId: listing.id,
+                              })
+                              window.open(`/listings/${listing.id}`, '_blank')
+                            }}
+                            title="View Details"
+                          />
+                          <DeleteButton
+                            title="Delete Listing"
+                            onClick={() => handleDelete(listing.id)}
+                          />
+                        </div>
+                      </td>
                     )}
                   </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {listings.map((listing: Listing) => (
-                    <tr
-                      key={listing.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                      onClick={() => {
-                        analytics.contentDiscovery.externalLinkClicked({
-                          url: `/listings/${listing.id}`,
-                          context: 'admin_listings_table_click',
-                          entityId: listing.id,
-                        })
-                        window.open(`/listings/${listing.id}`, '_blank')
-                      }}
-                    >
-                      {columnVisibility.isColumnVisible('game') && (
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center">
-                              <Image
-                                src={getGameImageUrl(listing.game)}
-                                alt={listing.game.title}
-                                width={80}
-                                height={64}
-                                className="rounded-md object-contain max-h-16 max-w-20"
-                                unoptimized
-                              />
-                            </div>
-                            <div className="ml-4 flex-1 min-w-0">
-                              <Link
-                                href={`/games/${listing.game.id}`}
-                                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {listing.game.title}
-                              </Link>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                                ID: {listing.id.slice(0, 8)}...
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('system') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {isSystemIconsHydrated &&
-                          showSystemIcons &&
-                          listing.game.system?.key ? (
-                            <div className="flex items-center gap-2">
-                              <SystemIcon
-                                name={listing.game.system.name}
-                                systemKey={listing.game.system.key}
-                                size="md"
-                              />
-                              <span className="sr-only">
-                                {listing.game.system.name}
-                              </span>
-                            </div>
-                          ) : (
-                            listing.game.system.name
-                          )}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('device') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <div>
-                            <div className="font-medium">
-                              {listing.device.brand.name}{' '}
-                              {listing.device.modelName}
-                            </div>
-                            {listing.device.soc && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {listing.device.soc.name}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('emulator') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <EmulatorIcon
-                            name={listing.emulator.name}
-                            logo={listing.emulator.logo}
-                            showLogo={
-                              isEmulatorLogosHydrated && showEmulatorLogos
-                            }
-                            size="sm"
-                          />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('performance') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <div className="font-medium">
-                            {listing.performance.label}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Rank: {listing.performance.rank}
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('author') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {listing.author?.name ?? 'Unknown'}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('status') && (
-                        <td className="px-6 py-4">
-                          <ApprovalStatusBadge status={listing.status} />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('createdAt') && (
-                        <td
-                          className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
-                          title={formatDateTime(listing.createdAt)}
-                        >
-                          {formatTimeAgo(listing.createdAt)}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('actions') && (
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <EditButton
-                              href={`/admin/listings/${listing.id}/edit`}
-                              title="Edit Listing"
-                            />
-                            <ViewButton
-                              href={`/listings/${listing.id}`}
-                              title="View Details"
-                            />
-                            <DeleteButton
-                              title="Delete Listing"
-                              onClick={() => handleDelete(listing.id)}
-                            />
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {pagination && pagination.totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <Pagination
-                  currentPage={table.page}
-                  totalPages={pagination.totalPages}
-                  onPageChange={table.setPage}
-                />
-              </div>
-            )}
-          </>
+        {pagination && pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <Pagination
+              currentPage={table.page}
+              totalPages={pagination.totalPages}
+              onPageChange={table.setPage}
+            />
+          </div>
         )}
       </AdminTableContainer>
     </AdminPageLayout>
