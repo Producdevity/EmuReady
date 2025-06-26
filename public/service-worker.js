@@ -39,7 +39,7 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.7.25'
+const CACHE_NAME = 'emuready_v0.7.26'
 
 /** URLs cached during the installation step. */
 const urlsToCache = [
@@ -52,7 +52,7 @@ const urlsToCache = [
 
 /**
  * Install event: pre-cache static assets.
- * Fails the install if **any** listed asset cannot be cached so that
+ * Fails the installation if **any** listed asset cannot be cached so that
  * a bad deploy rolls back automatically.
  * @param {SWExtendableEvent} event
  */
