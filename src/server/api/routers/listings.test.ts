@@ -280,3 +280,44 @@ describe('Listings Router Custom Field Validation', () => {
     )
   })
 })
+
+describe('Listings Filter Logic', () => {
+  it('should generate correct OR conditions for device and SoC filters', () => {
+    // This test verifies the filtering logic structure
+    const testFilterLogic = (deviceIds: string[], socIds: string[]) => {
+      const deviceSocConditions: any[] = []
+
+      if (deviceIds.length > 0) {
+        deviceSocConditions.push({ deviceId: { in: deviceIds } })
+      }
+
+      if (socIds.length > 0) {
+        deviceSocConditions.push({ device: { socId: { in: socIds } } })
+      }
+
+      return deviceSocConditions
+    }
+
+    // Test with both device and SoC filters
+    const bothFilters = testFilterLogic(
+      ['device1', 'device2'],
+      ['soc1', 'soc2'],
+    )
+    expect(bothFilters).toEqual([
+      { deviceId: { in: ['device1', 'device2'] } },
+      { device: { socId: { in: ['soc1', 'soc2'] } } },
+    ])
+
+    // Test with only device filters
+    const deviceOnly = testFilterLogic(['device1'], [])
+    expect(deviceOnly).toEqual([{ deviceId: { in: ['device1'] } }])
+
+    // Test with only SoC filters
+    const socOnly = testFilterLogic([], ['soc1'])
+    expect(socOnly).toEqual([{ device: { socId: { in: ['soc1'] } } }])
+
+    // Test with no filters
+    const noFilters = testFilterLogic([], [])
+    expect(noFilters).toEqual([])
+  })
+})

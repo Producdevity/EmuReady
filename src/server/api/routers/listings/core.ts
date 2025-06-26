@@ -60,18 +60,28 @@ export const coreRouter = createTRPCRouter({
       }
 
       const filters: Prisma.ListingWhereInput = {
-        ...(input.deviceIds && input.deviceIds.length > 0
-          ? { deviceId: { in: input.deviceIds } }
-          : {}),
-        ...(input.socIds && input.socIds.length > 0
-          ? { device: { socId: { in: input.socIds } } }
-          : {}),
         ...(input.emulatorIds && input.emulatorIds.length > 0
           ? { emulatorId: { in: input.emulatorIds } }
           : {}),
         ...(input.performanceIds && input.performanceIds.length > 0
           ? { performanceId: { in: input.performanceIds } }
           : {}),
+      }
+
+      // Handle device and SoC filters with OR logic
+      const deviceSocConditions: Prisma.ListingWhereInput[] = []
+
+      if (input.deviceIds && input.deviceIds.length > 0) {
+        deviceSocConditions.push({ deviceId: { in: input.deviceIds } })
+      }
+
+      if (input.socIds && input.socIds.length > 0) {
+        deviceSocConditions.push({ device: { socId: { in: input.socIds } } })
+      }
+
+      // Add OR condition for devices/SoCs if any are specified
+      if (deviceSocConditions.length > 0) {
+        filters.OR = deviceSocConditions
       }
 
       // Status filtering: show approved listings for everyone, plus pending listings for the current user
@@ -139,12 +149,36 @@ export const coreRouter = createTRPCRouter({
           },
         ]
 
-        // Combine status filter with search filters
-        combinedFilters.AND = [statusFilter, { OR: searchFilters }]
+        // Build AND conditions array
+        const andConditions: Prisma.ListingWhereInput[] = [
+          statusFilter,
+          { OR: searchFilters },
+        ]
 
-        // Remove the duplicate status filters from the root level
+        // Add device/SoC OR conditions if they exist
+        if (deviceSocConditions.length > 0) {
+          andConditions.push({ OR: deviceSocConditions })
+        }
+
+        // Add other filters (emulators, performance) to AND conditions
+        if (input.emulatorIds && input.emulatorIds.length > 0) {
+          andConditions.push({ emulatorId: { in: input.emulatorIds } })
+        }
+        if (input.performanceIds && input.performanceIds.length > 0) {
+          andConditions.push({ performanceId: { in: input.performanceIds } })
+        }
+        if (input.myListings && ctx.session?.user?.id) {
+          andConditions.push({ authorId: ctx.session.user.id })
+        }
+
+        combinedFilters.AND = andConditions
+
+        // Remove the duplicate filters from the root level
         delete combinedFilters.status
         delete combinedFilters.OR
+        delete combinedFilters.emulatorId
+        delete combinedFilters.performanceId
+        delete combinedFilters.authorId
       } else if (keys(gameFilter).length) {
         combinedFilters.game = { is: gameFilter }
       }
