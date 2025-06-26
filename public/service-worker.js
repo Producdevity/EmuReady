@@ -39,17 +39,15 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.7.23'
+const CACHE_NAME = 'emuready_v0.7.24'
 
 /** URLs cached during the installation step. */
 const urlsToCache = [
-  '/logo/460x460.png',
-  '/logo/460x460_rounded.png',
-  '/favicon.ico',
   '/favicon/favicon-16x16.png',
   '/favicon/favicon-32x32.png',
   '/favicon/apple-touch-icon.png',
   '/favicon/android-chrome-192x192.png',
+  '/favicon/android-chrome-512x512.png',
 ]
 
 /**
