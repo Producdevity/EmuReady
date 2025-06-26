@@ -32,10 +32,10 @@ export function StopKillingGamesPopup() {
 
     if (hasBeenDismissed) return
 
-    // Small delay to ensure page has loaded
+    // Show popup after 20 seconds
     const timer = setTimeout(() => {
       setIsOpen(true)
-    }, 1000)
+    }, 20000)
 
     return () => clearTimeout(timer)
   }, [])
@@ -70,7 +70,8 @@ export function StopKillingGamesPopup() {
 
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              The Community needs your help to “Stop Killing Games”
+              The Community needs your help to{' '}
+              <strong>&#34;Stop Killing Games&#34;</strong>
             </h2>
 
             <div className="text-gray-600 dark:text-gray-300 space-y-3 mb-6">
