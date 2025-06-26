@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import MultiSelect from './MultiSelect'
+import { MultiSelect } from './MultiSelect'
 
 const mockOptions = [
   { id: '1', name: 'Option 1' },
