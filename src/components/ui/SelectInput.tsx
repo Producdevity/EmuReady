@@ -1,7 +1,7 @@
 import { type ChangeEventHandler, type ReactNode } from 'react'
 import { Input } from '@/components/ui'
 
-type Option = {
+interface Option {
   id: string
   name: string
 }
@@ -16,7 +16,7 @@ interface Props {
   options: Option[]
 }
 
-function SelectInput(props: Props) {
+export function SelectInput(props: Props) {
   return (
     <div>
       {!props.hideLabel && (
@@ -49,5 +49,3 @@ function SelectInput(props: Props) {
     </div>
   )
 }
-
-export default SelectInput

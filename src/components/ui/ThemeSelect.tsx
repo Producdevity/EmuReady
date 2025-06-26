@@ -8,7 +8,7 @@ interface Props {
   className?: string
 }
 
-function ThemeSelect(props: Props) {
+export function ThemeSelect(props: Props) {
   const { theme, setTheme } = useTheme()
   const mounted = useMounted()
 
@@ -39,5 +39,3 @@ function ThemeSelect(props: Props) {
     </div>
   )
 }
-
-export default ThemeSelect

@@ -13,7 +13,7 @@ interface Props {
   className?: string
 }
 
-function SortableHeader(props: Props) {
+export function SortableHeader(props: Props) {
   const isActive = props.currentSortField === props.field
 
   return (
@@ -38,5 +38,3 @@ function SortableHeader(props: Props) {
     </th>
   )
 }
-
-export default SortableHeader

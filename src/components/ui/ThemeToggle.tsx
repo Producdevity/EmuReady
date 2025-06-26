@@ -15,7 +15,7 @@ interface Props {
   className?: string
 }
 
-function ThemeToggle(props: Props) {
+export function ThemeToggle(props: Props) {
   const { theme, setTheme } = useTheme()
   const mounted = useMounted()
 
@@ -42,5 +42,3 @@ function ThemeToggle(props: Props) {
     </button>
   )
 }
-
-export default ThemeToggle
