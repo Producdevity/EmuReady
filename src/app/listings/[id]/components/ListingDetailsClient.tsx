@@ -6,7 +6,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { isNullish, isNumber } from 'remeda'
-import { Card, Badge, PerformanceBadge, Button } from '@/components/ui'
+import {
+  Card,
+  Badge,
+  PerformanceBadge,
+  Button,
+  TranslatableContent,
+} from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
@@ -185,9 +191,11 @@ function ListingDetailsClient(props: Props) {
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   Notes
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
-                  {props.listing?.notes ?? 'No notes provided.'}
-                </p>
+                <TranslatableContent
+                  content={props.listing?.notes ?? 'No notes provided.'}
+                  className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
+                  preserveWhitespace={true}
+                />
               </div>
 
               {/* Custom Fields Section */}

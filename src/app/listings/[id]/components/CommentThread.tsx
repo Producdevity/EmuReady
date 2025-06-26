@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
-import { useConfirmDialog } from '@/components/ui'
+import { useConfirmDialog, TranslatableContent } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
@@ -214,13 +214,17 @@ function CommentThread(props: Props) {
             </div>
 
             {/* Comment content */}
-            <div className="text-gray-700 dark:text-gray-300 mb-3">
+            <div className="mb-3">
               {isDeleted ? (
                 <em className="text-gray-500 dark:text-gray-400">
                   This comment has been deleted.
                 </em>
               ) : (
-                comment.content
+                <TranslatableContent
+                  content={comment.content}
+                  className="text-gray-700 dark:text-gray-300"
+                  preserveWhitespace={false}
+                />
               )}
             </div>
 
