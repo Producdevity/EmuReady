@@ -52,6 +52,7 @@ export const ENGAGEMENT_ACTIONS = {
   VOTE_DOWN: 'vote_down',
   VOTE_REMINDER_CLICKED: 'vote_reminder_clicked',
   VOTE_REMINDER_DISMISSED: 'vote_reminder_dismissed',
+  STOP_KILLING_GAMES_DISMISSED: 'stop_killing_games_dismissed',
   VOTE_REMINDER_SHOWN: 'vote_reminder_shown',
   VOTE_REMOVED: 'vote_removed',
   VOTE_UP: 'vote_up',
@@ -663,6 +664,17 @@ const analytics = {
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_CLICKED,
         entityType: 'listing',
         entityId: params.listingId,
+        metadata: {
+          timeOnPage: params.timeOnPage,
+        },
+      })
+    },
+
+    stopKillingGamesDismissed: (params: { timeOnPage: number }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_DISMISSED,
+        entityType: 'popup',
         metadata: {
           timeOnPage: params.timeOnPage,
         },
