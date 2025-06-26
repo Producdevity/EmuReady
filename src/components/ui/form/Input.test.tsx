@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { createRef } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { CustomFieldType } from '@orm'
-import Input from './Input'
+import { Input } from './Input'
 
 describe('Input', () => {
   it('renders input element by default', () => {
