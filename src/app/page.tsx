@@ -1,6 +1,6 @@
 'use client'
 
-import { SignUpButton } from '@clerk/nextjs'
+import { SignUpButton, useUser } from '@clerk/nextjs'
 import {
   ThumbsUp,
   MessageCircle,
@@ -22,6 +22,7 @@ import { api } from '@/lib/api'
 import getImageUrl from '@/utils/getImageUrl'
 
 function Home() {
+  const { user } = useUser()
   const listingsQuery = api.listings.featured.useQuery()
   const statisticsQuery = api.listings.statistics.useQuery()
 
@@ -84,7 +85,7 @@ function Home() {
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16">
+            <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16 px-2 sm:px-4">
               <Link
                 href="/listings"
                 className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 hover:shadow-blue-500/40"
@@ -97,15 +98,17 @@ function Home() {
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-600 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
               </Link>
 
-              <SignUpButton>
-                <button className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
-                  <span className="relative z-10 flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Join the Community
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </span>
-                </button>
-              </SignUpButton>
+              {!user && (
+                <SignUpButton>
+                  <button className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
+                    <span className="relative z-10 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Join the Community
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                    </span>
+                  </button>
+                </SignUpButton>
+              )}
             </div>
 
             {/* Feature Highlights */}
@@ -151,7 +154,7 @@ function Home() {
 
         {/* Statistics */}
         <section className="mb-20">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-2 sm:px-4">
             <Link
               href="/listings"
               className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
@@ -259,7 +262,7 @@ function Home() {
               <LoadingSpinner text="Loading featured content..." />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-2 sm:px-4">
               {(listingsQuery.data ?? []).map((listing) => (
                 <div
                   key={listing.id}
@@ -404,16 +407,18 @@ function Home() {
                 Submit your own compatibility reports and help others find the
                 best gaming experience on their devices.
               </p>
-              <SignUpButton>
-                <button className="group relative px-10 py-5 bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 hover:from-blue-600 hover:via-purple-600 hover:to-blue-700 text-white font-bold text-xl rounded-2xl shadow-2xl shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 hover:shadow-blue-500/40">
-                  <span className="relative z-10 flex items-center gap-3">
-                    <Users className="w-6 h-6" />
-                    Create an Account
-                    <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
-                  </span>
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-purple-500 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
-                </button>
-              </SignUpButton>
+              {!user && (
+                <SignUpButton>
+                  <button className="group relative px-10 py-5 bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 hover:from-blue-600 hover:via-purple-600 hover:to-blue-700 text-white font-bold text-xl rounded-2xl shadow-2xl shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 hover:shadow-blue-500/40">
+                    <span className="relative z-10 flex items-center gap-3">
+                      <Users className="w-6 h-6" />
+                      Create an Account
+                      <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+                    </span>
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-purple-500 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
+                  </button>
+                </SignUpButton>
+              )}
             </div>
           </div>
         </section>
