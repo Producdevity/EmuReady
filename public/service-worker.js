@@ -1,5 +1,47 @@
-// Service Worker for EmuReady PWA
+/* eslint-env serviceworker */
+/* global self, caches, clients */
+// @ts-check
+/// <reference lib="webworker" />
+
+/* ------------------------------------------------------------------ */
+/* Custom typedefs so the IDE knows about Service-Worker-only fields. */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Base event for Service Worker listeners (adds waitUntil).
+ * @typedef {Event & { waitUntil(promise: Promise<any>): void }} SWExtendableEvent
+ */
+
+/**
+ * Fetch event (adds request and respondWith).
+ * @typedef {SWExtendableEvent & {
+ *   request: Request,
+ *   respondWith(value: Response|Promise<Response>): void
+ * }} SWFetchEvent
+ */
+
+/**
+ * Push event (adds data with json()).
+ * @typedef {SWExtendableEvent & {
+ *   data: { json(): any }
+ * }} SWPushEvent
+ */
+
+/**
+ * Notification-click event (adds notification).
+ * @typedef {SWExtendableEvent & {
+ *   notification: Notification
+ * }} SWNotificationClickEvent
+ */
+
+/* ------------------------------------------------------------------ */
+/* EmuReady Service Worker.                                           */
+/* ------------------------------------------------------------------ */
+
+/** Name of the runtime cache used by this Service Worker. */
 const CACHE_NAME = 'emuready-v1'
+
+/** URLs cached during the installation step. */
 const urlsToCache = [
   '/',
   '/favicon/favicon-16x16.png',
@@ -7,114 +49,142 @@ const urlsToCache = [
   '/favicon/apple-touch-icon.png',
 ]
 
-// Install event - cache assets
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Opened cache')
-      // Handle each URL separately to prevent failing the entire batch
-      return Promise.allSettled(
-        urlsToCache.map((url) =>
-          cache.add(url).catch((error) => {
-            console.error(`Failed to cache ${url}:`, error)
-            // Continue despite error
-            return Promise.resolve()
-          }),
+/**
+ * Install event: pre-cache static assets.
+ * @param {SWExtendableEvent} event
+ */
+self.addEventListener(
+  'install',
+  /** @param {SWExtendableEvent} event */ (event) => {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        console.log('Opened cache')
+        return Promise.allSettled(
+          urlsToCache.map((url) =>
+            cache.add(url).catch((error) => {
+              console.error(`Failed to cache ${url}:`, error)
+              return Promise.resolve()
+            }),
+          ),
+        )
+      }),
+    )
+  },
+)
+
+/**
+ * Activate event: delete old caches.
+ * @param {SWExtendableEvent} event
+ */
+self.addEventListener(
+  'activate',
+  /** @param {SWExtendableEvent} event */ (event) => {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((cacheNames) =>
+          Promise.all(
+            cacheNames.map((cacheName) =>
+              cacheName !== CACHE_NAME ? caches.delete(cacheName) : undefined,
+            ),
+          ),
         ),
-      )
-    }),
-  )
-})
+    )
+  },
+)
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName)
-          }
-        }),
-      )
-    }),
-  )
-})
+/**
+ * Fetch event: serve from cache, else network, then cache result.
+ * Handles same-origin GET over HTTP(S) only.
+ * @param {SWFetchEvent} event
+ */
+self.addEventListener(
+  'fetch',
+  /** @param {SWFetchEvent} event */ (event) => {
+    if (
+      event.request.method !== 'GET' ||
+      (!event.request.url.startsWith('http://') &&
+        !event.request.url.startsWith('https://'))
+    ) {
+      return
+    }
 
-// Fetch event - serve from cache or network
-self.addEventListener('fetch', (event) => {
-  // Only handle HTTP and HTTPS requests
-  if (
-    !event.request.url.startsWith('http://') &&
-    !event.request.url.startsWith('https://')
-  ) {
-    return
-  }
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse
 
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Cache hit - return response
-      if (response) return response
+        /** Clone because a Request can be used only once. */
+        const fetchRequest = event.request.clone()
 
-      // Clone the request because it's a stream that can only be consumed once
-      const fetchRequest = event.request.clone()
+        return fetch(fetchRequest)
+          .then((networkResponse) => {
+            if (
+              !networkResponse ||
+              networkResponse.status !== 200 ||
+              networkResponse.type !== 'basic'
+            ) {
+              return networkResponse
+            }
 
-      return fetch(fetchRequest)
-        .then((response) => {
-          // Check if we received a valid response
-          if (
-            !response ||
-            response.status !== 200 ||
-            response.type !== 'basic'
-          ) {
-            return response
-          }
+            const responseClone = networkResponse.clone()
 
-          // Clone the response because it's a stream that can only be consumed once
-          const responseToCache = response.clone()
-
-          caches
-            .open(CACHE_NAME)
-            .then((cache) => {
-              // Don't cache API calls or other dynamic content
+            caches.open(CACHE_NAME).then((cache) => {
               if (!event.request.url.includes('/api/')) {
-                cache.put(event.request, responseToCache)
+                cache
+                  .put(event.request, responseClone)
+                  .catch((err) =>
+                    console.error('Failed to cache response:', err),
+                  )
               }
             })
-            .catch((error) => console.error('Failed to cache response:', error))
 
-          return response
-        })
-        .catch((error) => {
-          console.error('Fetch failed:', error)
-          // Could return a custom offline page here
-          return new Response('Network error occurred', {
-            status: 503,
-            statusText: 'Service Unavailable',
+            return networkResponse
           })
-        })
-    }),
-  )
-})
+          .catch((err) => {
+            console.error('Fetch failed:', err)
+            return new Response('Network error occurred', {
+              status: 503,
+              statusText: 'Service Unavailable',
+            })
+          })
+      }),
+    )
+  },
+)
 
-// Handle push notifications
-self.addEventListener('push', (event) => {
-  const data = event.data.json()
-  const options = {
-    body: data.body,
-    icon: '/favicon/android-chrome-192x192.png',
-    badge: '/favicon/android-chrome-192x192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/',
-    },
-  }
+/**
+ * Push event: display a notification.
+ * @param {SWPushEvent} event
+ */
+self.addEventListener(
+  'push',
+  /** @param {SWPushEvent} event */ (event) => {
+    /** @type {{title: string, body: string, url?: string}} */
+    const data = event.data.json()
 
-  event.waitUntil(self.registration.showNotification(data.title, options))
-})
+    /** @type {NotificationOptions} */
+    const options = {
+      body: data.body,
+      icon: '/favicon/android-chrome-192x192.png',
+      badge: '/favicon/android-chrome-192x192.png',
+      vibrate: [100, 50, 100],
+      data: {
+        url: data.url || '/',
+      },
+    }
 
-// Handle notification click
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  event.waitUntil(clients.openWindow(event.notification.data.url))
-})
+    event.waitUntil(self.registration.showNotification(data.title, options))
+  },
+)
+
+/**
+ * Notification-click event: open the URL stored in the notification.
+ * @param {SWNotificationClickEvent} event
+ */
+self.addEventListener(
+  'notificationclick',
+  /** @param {SWNotificationClickEvent} event */ (event) => {
+    event.notification.close()
+    event.waitUntil(clients.openWindow(event.notification.data.url))
+  },
+)
