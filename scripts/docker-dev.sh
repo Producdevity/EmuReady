@@ -52,13 +52,13 @@ start_dev() {
     check_env_file
 
     print_status "Building and starting services..."
-    docker-compose up --build -d postgres
+    docker compose up --build -d postgres
 
     print_status "Waiting for database to be ready..."
     sleep 5
 
     print_status "Starting application and Prisma Studio..."
-    docker-compose up --build app prisma-studio
+    docker compose up --build app prisma-studio
 }
 
 # Start with webhooks (including cloudflared tunnel)
@@ -78,20 +78,20 @@ start_webhooks() {
     fi
 
     print_status "Building and starting all services including webhooks..."
-    docker-compose --profile webhooks up --build
+    docker compose --profile webhooks up --build
 }
 
 # Stop all services
 stop() {
     print_status "Stopping EmuReady services..."
-    docker-compose down
+    docker compose down
     print_success "Services stopped"
 }
 
 # Restart just the app service
 restart() {
     print_status "Restarting Next.js app service..."
-    docker-compose restart app
+    docker compose restart app
     print_success "App service restarted"
     print_status "App available at: http://localhost:3000"
 }
@@ -103,7 +103,7 @@ clean() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_status "Stopping and removing all containers, volumes, and networks..."
-        docker-compose down -v --remove-orphans
+        docker compose down -v --remove-orphans
         docker system prune -f
         print_success "Environment cleaned"
     else
@@ -115,29 +115,29 @@ clean() {
 logs() {
     service=${2:-app}
     print_status "Showing logs for $service..."
-    docker-compose logs -f "$service"
+    docker compose logs -f "$service"
 }
 
 # Run database migrations
 migrate() {
     print_status "Running database migrations..."
-    docker-compose exec app npx prisma migrate dev
+    docker compose exec app npx prisma migrate dev
     print_success "Migrations completed"
 }
 
 # Seed the database
 seed() {
     print_status "Seeding database..."
-    docker-compose exec app npx prisma db seed
+    docker compose exec app npx prisma db seed
     print_success "Database seeded"
 }
 
 # Force reseed by removing the flag file
 reseed() {
     print_status "Removing seed flag and reseeding database..."
-    docker-compose exec app rm -f .setup/seeded
-    docker-compose exec app npx prisma db seed
-    docker-compose exec app touch .setup/seeded
+    docker compose exec app rm -f .setup/seeded
+    docker compose exec app npx prisma db seed
+    docker compose exec app touch .setup/seeded
     print_success "Database reseeded"
 }
 
@@ -148,8 +148,8 @@ reset_db() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_status "Resetting database..."
-        docker-compose exec app npx prisma migrate reset --force
-        docker-compose exec app rm -f .setup/seeded
+        docker compose exec app npx prisma migrate reset --force
+        docker compose exec app rm -f .setup/seeded
         print_success "Database reset"
     else
         print_status "Cancelled"
@@ -159,7 +159,7 @@ reset_db() {
 # Open database admin
 db_admin() {
     print_status "Starting pgAdmin..."
-    docker-compose --profile tools up -d pgadmin
+    docker compose --profile tools up -d pgadmin
     print_success "pgAdmin started at http://localhost:5050"
     print_status "Login: admin@emuready.dev / admin"
 }
@@ -167,7 +167,7 @@ db_admin() {
 # Show service status
 status() {
     print_status "Service status:"
-    docker-compose ps
+    docker compose ps
     echo ""
     print_status "Available services:"
     echo "  🚀 App: http://localhost:3000"
