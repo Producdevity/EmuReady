@@ -820,6 +820,14 @@ export const coreRouter = createTRPCRouter({
   canEdit: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      if (hasPermission(ctx.session.user.role, Role.ADMIN)) {
+        return {
+          canEdit: true,
+          isOwner: true,
+          reason: 'Admin can edit any listing',
+        }
+      }
+
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: input.id },
         select: {
