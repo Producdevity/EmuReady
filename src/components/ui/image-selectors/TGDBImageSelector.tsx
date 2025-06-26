@@ -411,7 +411,7 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
           <div className="space-y-4">
             <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
               <OptimizedImage
-                src={previewImage.url}
+                src={getImageUrl(previewImage.url, previewImage.gameName)}
                 alt={getImageDisplayName(previewImage)}
                 width={600}
                 height={400}
