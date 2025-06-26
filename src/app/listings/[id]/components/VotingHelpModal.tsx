@@ -55,18 +55,19 @@ function VotingHelpModal(props: Props) {
             </ul>
           </div>
 
-          {/* Dispute */}
+          {/* Inaccurate */}
           <div className="border border-red-200 dark:border-red-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
               <h4 className="font-semibold text-red-900 dark:text-red-100">
-                Dispute
+                Inaccurate
               </h4>
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-              Vote to dispute when:
+              Vote to &#34;Inaccurate&#34; when:
             </p>
             <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <li>• Emulator doesn&#39;t exist for this device</li>
               <li>• Your results differ significantly</li>
               <li>• The settings appear incorrect</li>
               <li>• Information seems inaccurate</li>
@@ -98,7 +99,7 @@ function VotingHelpModal(props: Props) {
               </div>
             </div>
 
-            {/* Dispute Example */}
+            {/* Inaccurate Example */}
             <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
               <div className="flex items-start gap-2">
                 <XCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
@@ -108,8 +109,8 @@ function VotingHelpModal(props: Props) {
                     for a device you know can run it
                   </p>
                   <p className="text-red-800 dark:text-red-200 mt-1">
-                    <strong>Dispute</strong> if your testing shows it actually
-                    runs, indicating possible configuration issues.
+                    <strong>Inaccurate</strong> if your testing shows it
+                    actually runs, indicating possible configuration issues.
                   </p>
                 </div>
               </div>

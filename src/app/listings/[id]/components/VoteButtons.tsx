@@ -170,12 +170,12 @@ function VoteButtons(props: Props) {
             }`}
             title={
               isAuthenticated
-                ? "Dispute - This doesn't match my experience"
+                ? "Inaccurate - This doesn't match my experience"
                 : 'Login to verify'
             }
           >
             <XCircle className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium">Dispute</span>
+            <span className="text-xs font-medium">Inaccurate</span>
           </button>
         </div>
 

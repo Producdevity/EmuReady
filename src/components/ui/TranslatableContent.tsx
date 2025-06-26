@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Languages, Eye, EyeOff } from 'lucide-react'
+import { Languages, Earth, Globe } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui'
 import {
@@ -67,14 +67,12 @@ export function TranslatableContent(props: Props) {
   const getButtonIcon = () => {
     if (isTranslating) return Languages
     if (!translation) return Languages
-    return showTranslated ? EyeOff : Eye
+    return showTranslated ? Globe : Earth
   }
 
   const ButtonIcon = getButtonIcon()
 
-  if (!props.content?.trim()) {
-    return null
-  }
+  if (!props.content?.trim()) return null
 
   return (
     <div className="relative">
@@ -102,7 +100,7 @@ export function TranslatableContent(props: Props) {
           className="mt-2"
         >
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleTranslate}
             disabled={isTranslating}
