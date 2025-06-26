@@ -35,7 +35,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 const actionButtonClasses =
   'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
 
-type EmulatorSortField = 'name'
+type EmulatorSortField = 'name' | 'systemCount' | 'listingCount'
 
 const EMULATORS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },

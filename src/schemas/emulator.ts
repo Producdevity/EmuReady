@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SortDirection } from '@/schemas/soc'
 
-export const EmulatorSortField = z.enum(['name'])
+export const EmulatorSortField = z.enum(['name', 'systemCount', 'listingCount'])
 
 export const GetEmulatorsSchema = z
   .object({

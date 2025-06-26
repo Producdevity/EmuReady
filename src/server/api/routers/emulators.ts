@@ -50,12 +50,18 @@ export const emulatorsRouter = createTRPCRouter({
         : undefined
 
       // Build orderBy based on sortField and sortDirection
-      let orderBy: { name: 'asc' | 'desc' } = { name: 'asc' }
+      let orderBy: Prisma.EmulatorOrderByWithRelationInput = { name: 'asc' }
 
       if (input?.sortField && input?.sortDirection) {
         switch (input.sortField) {
           case 'name':
             orderBy = { name: input.sortDirection }
+            break
+          case 'systemCount':
+            orderBy = { systems: { _count: input.sortDirection } }
+            break
+          case 'listingCount':
+            orderBy = { listings: { _count: input.sortDirection } }
             break
         }
       }
