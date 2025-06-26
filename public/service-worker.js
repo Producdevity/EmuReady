@@ -23,7 +23,7 @@
 /**
  * Push event (adds data with json()).
  * @typedef {SWExtendableEvent & {
- *   data: { json(): any }
+ *   data: { json(): any } | null
  * }} SWPushEvent
  */
 
@@ -39,141 +39,108 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready-v1'
+const CACHE_NAME = 'emuready_v0.7.23'
 
 /** URLs cached during the installation step. */
 const urlsToCache = [
-  '/',
+  '/logo/460x460.png',
+  '/logo/460x460_rounded.png',
+  '/favicon.ico',
   '/favicon/favicon-16x16.png',
   '/favicon/favicon-32x32.png',
   '/favicon/apple-touch-icon.png',
+  '/favicon/android-chrome-192x192.png',
 ]
 
 /**
  * Install event: pre-cache static assets.
+ * Fails the install if **any** listed asset cannot be cached so that
+ * a bad deploy rolls back automatically.
  * @param {SWExtendableEvent} event
  */
 self.addEventListener(
   'install',
   /** @param {SWExtendableEvent} event */ (event) => {
+    self.skipWaiting()
     event.waitUntil(
-      caches.open(CACHE_NAME).then((cache) => {
-        console.log('Opened cache')
-        return Promise.allSettled(
-          urlsToCache.map((url) =>
-            cache.add(url).catch((error) => {
-              console.error(`Failed to cache ${url}:`, error)
-              return Promise.resolve()
-            }),
-          ),
-        )
-      }),
+      caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)),
     )
   },
 )
 
 /**
- * Activate event: delete old caches.
+ * Activate event: delete old caches and take control immediately.
  * @param {SWExtendableEvent} event
  */
 self.addEventListener(
   'activate',
   /** @param {SWExtendableEvent} event */ (event) => {
     event.waitUntil(
-      caches
-        .keys()
-        .then((cacheNames) =>
-          Promise.all(
-            cacheNames.map((cacheName) =>
-              cacheName !== CACHE_NAME ? caches.delete(cacheName) : undefined,
-            ),
-          ),
-        ),
+      (async () => {
+        const cacheNames = await caches.keys()
+        await Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName !== CACHE_NAME)
+            .map((cacheName) => caches.delete(cacheName)),
+        )
+        await clients.claim()
+      })(),
     )
   },
 )
 
 /**
- * Fetch event: serve from cache, else network, then cache result.
- * Only handles same-origin GET requests to avoid CSP violations.
- * @param {SWFetchEvent} event
+ * Fetch event:
+ *   • Navigations (HTML) are left to the network (no caching).
+ *   • Same‑origin asset GETs use cache‑first, then network.
+ * @param {SWFetchEvent} event - The fetch event triggered by the browser.
  */
 self.addEventListener(
   'fetch',
   /** @param {SWFetchEvent} event */ (event) => {
-    // Only handle GET requests
-    if (event.request.method !== 'GET') {
-      return
-    }
-
-    // Only handle HTTP(S) requests
+    // Only handle GET for http(s) and same‑origin assets.
+    if (event.request.method !== 'GET') return
     if (
       !event.request.url.startsWith('http://') &&
       !event.request.url.startsWith('https://')
-    ) {
+    )
       return
-    }
 
-    // Only handle same-origin requests to avoid CSP violations
-    const requestUrl = new URL(event.request.url)
-    const isSameOrigin = requestUrl.origin === self.location.origin
+    const url = new URL(event.request.url)
+    if (url.origin !== self.location.origin) return
 
-    if (!isSameOrigin) {
-      // For external requests, just pass through without caching
-      return
-    }
+    // Never cache navigations (dynamic HTML).
+    if (event.request.mode === 'navigate') return
 
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached
 
-        /** Clone because a Request can be used only once. */
         const fetchRequest = event.request.clone()
+        return fetch(fetchRequest).then((netRes) => {
+          if (!netRes || netRes.status !== 200 || netRes.type !== 'basic')
+            return netRes
 
-        return fetch(fetchRequest)
-          .then((networkResponse) => {
-            if (
-              !networkResponse ||
-              networkResponse.status !== 200 ||
-              networkResponse.type !== 'basic'
-            ) {
-              return networkResponse
-            }
-
-            // Only cache if it's a same-origin request and not an API call
-            if (isSameOrigin && !event.request.url.includes('/api/')) {
-              const responseClone = networkResponse.clone()
-
-              caches.open(CACHE_NAME).then((cache) => {
-                cache
-                  .put(event.request, responseClone)
-                  .catch((err) =>
-                    console.error('Failed to cache response:', err),
-                  )
-              })
-            }
-
-            return networkResponse
+          const resClone = netRes.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, resClone).catch(() => {})
           })
-          .catch((err) => {
-            console.error('Fetch failed:', err)
-            return new Response('Network error occurred', {
-              status: 503,
-              statusText: 'Service Unavailable',
-            })
-          })
+          return netRes
+        })
       }),
     )
   },
 )
 
 /**
- * Push event: display a notification.
+ * Push event: display a notification (no‑op if payload missing).
  * @param {SWPushEvent} event
  */
 self.addEventListener(
   'push',
   /** @param {SWPushEvent} event */ (event) => {
+    if (!event.data) return
+
     /** @type {{title: string, body: string, url?: string}} */
     const data = event.data.json()
 
@@ -183,9 +150,7 @@ self.addEventListener(
       icon: '/favicon/android-chrome-192x192.png',
       badge: '/favicon/android-chrome-192x192.png',
       vibrate: [100, 50, 100],
-      data: {
-        url: data.url || '/',
-      },
+      data: { url: data.url || '/' },
     }
 
     event.waitUntil(self.registration.showNotification(data.title, options))
@@ -193,13 +158,24 @@ self.addEventListener(
 )
 
 /**
- * Notification-click event: open the URL stored in the notification.
+ * Notification‑click event: focus an existing window if one is open, else open
+ * a new one.
  * @param {SWNotificationClickEvent} event
  */
 self.addEventListener(
   'notificationclick',
   /** @param {SWNotificationClickEvent} event */ (event) => {
     event.notification.close()
-    event.waitUntil(clients.openWindow(event.notification.data.url))
+    event.waitUntil(
+      clients
+        .matchAll({ type: 'window', includeUncontrolled: true })
+        .then((wins) => {
+          for (const winClient of wins) {
+            if (winClient.url === event.notification.data.url)
+              return winClient.focus()
+          }
+          return clients.openWindow(event.notification.data.url)
+        }),
+    )
   },
 )
