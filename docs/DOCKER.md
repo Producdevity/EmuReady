@@ -202,6 +202,9 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 # Restart just the Next.js app (keep database running)
 ./scripts/docker-dev.sh restart
 
+# Rebuild app container (installs new npm packages, skips database seeding)
+./scripts/docker-dev.sh rebuild
+
 # Start with webhook support
 ./scripts/docker-dev.sh webhooks
 
@@ -404,6 +407,7 @@ When contributing:
 - **Hot reload works**: No need to restart containers when editing code
 - **Prisma Studio**: Access your database visually at http://localhost:5555 (starts automatically)
 - **Smart seeding**: Only runs once on first setup, use `reseed` command to reseed manually
+- **New packages**: Use `./scripts/docker-dev.sh rebuild` after adding npm packages to install them without reseeding
 
 ## 🆘 Need Help?
 
@@ -413,6 +417,48 @@ When contributing:
    - Your OS and Docker version
    - Error messages or logs
    - Steps you tried
+
+## 🔄 Restarting Your Development Environment
+
+Different situations require different restart approaches:
+
+### Quick Restart (Code Changes)
+```bash
+./scripts/docker-dev.sh restart
+```
+**Use when:** You've made code changes and need a quick restart  
+**What it does:** Restarts the Next.js app container only  
+**Speed:** ~5 seconds  
+**Database:** Untouched  
+
+### Rebuild (New Dependencies)
+```bash
+./scripts/docker-dev.sh rebuild
+```
+**Use when:** You've added new npm packages or changed dependencies  
+**What it does:** Rebuilds the app container, installs new packages, skips database seeding  
+**Speed:** ~30-60 seconds  
+**Database:** Preserves existing data and seeding state  
+
+### Full Restart (Clean Start)
+```bash
+./scripts/docker-dev.sh stop
+./scripts/docker-dev.sh start
+```
+**Use when:** Something is broken or you want a completely fresh start  
+**What it does:** Stops everything, starts from scratch, preserves database data  
+**Speed:** ~60-90 seconds  
+**Database:** Preserves data, skips seeding (already done)  
+
+### Nuclear Option (Reset Everything)
+```bash
+./scripts/docker-dev.sh clean
+./scripts/docker-dev.sh start
+```
+**Use when:** You want to completely reset to initial state  
+**What it does:** Removes all containers, volumes, and data  
+**Speed:** ~2-3 minutes  
+**Database:** Completely reset, will reseed on startup  
 
 ---
 

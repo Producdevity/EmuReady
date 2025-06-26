@@ -96,6 +96,16 @@ restart() {
     print_status "App available at: http://localhost:3000"
 }
 
+# Rebuild app container (for new npm packages)
+rebuild() {
+    print_status "Rebuilding Next.js app with new packages..."
+    print_status "This will install new npm packages but skip database seeding"
+    docker compose up --build -d app
+    print_success "App rebuilt and started"
+    print_status "App available at: http://localhost:3000"
+    print_status "Use './scripts/docker-dev.sh logs' to monitor startup"
+}
+
 # Stop and remove everything (including volumes)
 clean() {
     print_warning "This will remove all data including the database!"
@@ -185,6 +195,7 @@ show_help() {
     echo "  start       Start development environment (default)"
     echo "  webhooks    Start with webhook support (cloudflared tunnel)"
     echo "  restart     Restart just the Next.js app (keep DB running)"
+    echo "  rebuild     Rebuild app container (for new npm packages)"
     echo "  stop        Stop all services"
     echo "  clean       Stop and remove everything (including data)"
     echo "  status      Show service status and URLs"
@@ -199,6 +210,7 @@ show_help() {
     echo "Examples:"
     echo "  ./scripts/docker-dev.sh                    # Start development"
     echo "  ./scripts/docker-dev.sh restart            # Restart just the app"
+    echo "  ./scripts/docker-dev.sh rebuild            # Rebuild with new packages"
     echo "  ./scripts/docker-dev.sh webhooks           # Start with webhooks"
     echo "  ./scripts/docker-dev.sh logs prisma-studio # Show Prisma Studio logs"
     echo "  ./scripts/docker-dev.sh status             # Show all service URLs"
@@ -246,6 +258,9 @@ case "${1:-start}" in
     ;;
 "db-admin")
     db_admin
+    ;;
+"rebuild")
+    rebuild
     ;;
 "help" | "-h" | "--help")
     show_help
