@@ -60,6 +60,7 @@ export const metadata: Metadata = {
 }
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
@@ -67,7 +68,9 @@ export default function RootLayout(props: PropsWithChildren) {
       <html lang="en" suppressHydrationWarning>
         <head>
           {/* Service Worker Registration */}
-          <Script src="/sw-register.js" strategy="afterInteractive" />
+          {ENABLE_SW && (
+            <Script src="/sw-register.js" strategy="afterInteractive" />
+          )}
 
           {/* Initialize dataLayer for Google Analytics */}
           <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
