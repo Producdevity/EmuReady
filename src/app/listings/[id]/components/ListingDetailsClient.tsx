@@ -11,8 +11,7 @@ import {
   Badge,
   PerformanceBadge,
   Button,
-  TranslatableContent,
-  MarkdownRenderer,
+  TranslatableMarkdown,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
@@ -193,18 +192,11 @@ function ListingDetailsClient(props: Props) {
                   Notes
                 </h2>
                 {props.listing?.notes ? (
-                  <>
-                    <MarkdownRenderer
-                      content={props.listing.notes}
-                      fallbackToPlainText={true}
-                      className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
-                    />
-                    <TranslatableContent
-                      content={props.listing?.notes ?? 'No notes provided.'}
-                      className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
-                      preserveWhitespace={true}
-                    />
-                  </>
+                  <TranslatableMarkdown
+                    content={props.listing.notes}
+                    className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
+                    preserveWhitespace={true}
+                  />
                 ) : (
                   <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
                     No notes provided.

@@ -11,11 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
-import {
-  useConfirmDialog,
-  TranslatableContent,
-  MarkdownRenderer,
-} from '@/components/ui'
+import { useConfirmDialog, TranslatableMarkdown } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
@@ -224,19 +220,11 @@ function CommentThread(props: Props) {
                   This comment has been deleted.
                 </em>
               ) : (
-                <>
-                  {/*TODO: check how to combine the two */}
-                  <TranslatableContent
-                    content={comment.content}
-                    className="text-gray-700 dark:text-gray-300"
-                    preserveWhitespace={false}
-                  />
-                  <MarkdownRenderer
-                    content={comment.content}
-                    fallbackToPlainText={true}
-                    className="text-gray-700 dark:text-gray-300"
-                  />
-                </>
+                <TranslatableMarkdown
+                  content={comment.content}
+                  className="text-gray-700 dark:text-gray-300"
+                  preserveWhitespace={false}
+                />
               )}
             </div>
 
