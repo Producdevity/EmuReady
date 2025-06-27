@@ -11,21 +11,26 @@ interface Props {
 }
 
 export function MarkdownRenderer(props: Props) {
+  const hasMarkdown = useMemo(
+    () => hasMarkdownSyntax(props.content),
+    [props.content],
+  )
+
   const renderedContent = useMemo(() => {
     if (!props.content) return ''
 
     // If content doesn't have Markdown syntax and fallbackToPlainText is true,
     // render as plain text to maintain backward compatibility
-    if (props.fallbackToPlainText && !hasMarkdownSyntax(props.content)) {
+    if (props.fallbackToPlainText && !hasMarkdown) {
       return props.content
     }
 
     // Parse and sanitize markdown
     return parseMarkdown(props.content)
-  }, [props.content, props.fallbackToPlainText])
+  }, [hasMarkdown, props.content, props.fallbackToPlainText])
 
   // If no markdown detected and fallback is enabled, render as plain text
-  if (props.fallbackToPlainText && !hasMarkdownSyntax(props.content)) {
+  if (props.fallbackToPlainText && !hasMarkdown) {
     return (
       <div
         className={cn(

@@ -73,7 +73,7 @@ export function MarkdownEditor(props: Props) {
               ) : (
                 <Eye className="w-3 h-3" />
               )}
-              {showPreview ? 'Edit' : 'Preview'}
+              {showPreview ? 'Preview' : 'Edit'}
             </button>
 
             <button

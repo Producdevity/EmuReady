@@ -105,14 +105,12 @@ const DANGEROUS_PATTERNS = [
 ]
 
 /**
- * Parse markdown text to HTML with security sanitization
- * @param markdownText - The markdown text to parse
+ * Parse Markdown text to HTML with security sanitization
+ * @param markdownText - The Markdown text to parse
  * @returns Sanitized HTML string
  */
 export function parseMarkdown(markdownText: string): string {
-  if (!markdownText || typeof markdownText !== 'string') {
-    return ''
-  }
+  if (!markdownText) return ''
 
   try {
     // Check for dangerous patterns first
@@ -127,11 +125,9 @@ export function parseMarkdown(markdownText: string): string {
     const html = md.render(markdownText)
 
     // Sanitize the HTML using DOMPurify or basic sanitization
-    const cleanHtml = isClient
+    return isClient
       ? purify.sanitize(html, PURIFY_CONFIG)
       : purify.sanitize(html)
-
-    return cleanHtml
   } catch (error) {
     console.warn('Markdown parsing failed:', error)
     // Return escaped plain text as fallback
@@ -142,7 +138,7 @@ export function parseMarkdown(markdownText: string): string {
 }
 
 /**
- * Check if text contains markdown syntax
+ * Check if text contains Markdown syntax
  * @param text - Text to check
  * @returns true if text appears to contain markdown
  */
@@ -155,7 +151,7 @@ export function hasMarkdownSyntax(text: string): boolean {
     /\*.*?\*/, // Italic
     /`.*?`/, // Inline code
     /^#{1,6}\s/, // Headers
-    /^\s*[\-\*\+]\s/, // Lists
+    /^\s*[\-*+]\s/, // Lists
     /^\s*\d+\.\s/, // Numbered lists
     /\[.*?\]\(.*?\)/, // Links
     /^>\s/, // Blockquotes
@@ -166,9 +162,9 @@ export function hasMarkdownSyntax(text: string): boolean {
 }
 
 /**
- * Strip markdown syntax and return plain text
+ * Strip Markdown syntax and return plain text
  * @param markdownText - Markdown text
- * @returns Plain text without markdown syntax
+ * @returns Plain text without Markdown syntax
  */
 export function stripMarkdown(markdownText: string): string {
   if (!markdownText) return ''
