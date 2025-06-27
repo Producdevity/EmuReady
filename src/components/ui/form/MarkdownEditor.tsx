@@ -161,7 +161,9 @@ export function MarkdownEditor(props: Props) {
             whileTap={{ scale: 0.98 }}
           >
             <FileText className="w-3 h-3" />
-            {isMarkdownMode ? 'Switch to Rich Text' : 'Switch to Markdown'}
+            {isMarkdownMode
+              ? 'Switch to Rich Text'
+              : 'Switch to Markdown (BETA)'}
           </motion.button>
         </div>
       </div>

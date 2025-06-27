@@ -51,8 +51,8 @@ export function useTranslation(content: string) {
 
   const getButtonLabel = () => {
     if (isTranslating) return 'Translating...'
-    if (!translation) return 'Translate'
-    return showTranslated ? 'Show Original' : 'Show Translation'
+    if (!translation) return 'Translate (BETA)'
+    return showTranslated ? 'Show Original' : 'Show Translation (BETA)'
   }
 
   const getTranslationInfo = () => {

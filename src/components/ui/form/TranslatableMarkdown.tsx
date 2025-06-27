@@ -15,11 +15,6 @@ interface Props {
 }
 
 export function TranslatableMarkdown(props: Props) {
-  const hasMarkdown = useMemo(
-    () => hasMarkdownSyntax(props.content),
-    [props.content],
-  )
-
   const {
     displayedContent,
     showTranslated,
@@ -30,61 +25,68 @@ export function TranslatableMarkdown(props: Props) {
     getTranslationInfo,
   } = useTranslation(props.content)
 
-  // Memoize the parsed markdown to avoid expensive recomputation
+  // Check if the currently displayed content (original or translated) has markdown
+  const displayedContentHasMarkdown = useMemo(
+    () => hasMarkdownSyntax(displayedContent || ''),
+    [displayedContent],
+  )
+
+  // Parse markdown for the currently displayed content if it has markdown syntax
   const parsedMarkdown = useMemo(() => {
-    return !displayedContent?.trim() || !hasMarkdown
-      ? null
-      : parseMarkdown(displayedContent)
-  }, [displayedContent, hasMarkdown])
+    if (!displayedContentHasMarkdown || !displayedContent?.trim()) {
+      return null
+    }
+    return parseMarkdown(displayedContent)
+  }, [displayedContent, displayedContentHasMarkdown])
 
   // Use useCallback to avoid recreating this function on every render
   const renderContent = useCallback(() => {
     if (!displayedContent?.trim()) return null
 
-    // If no markdown detected or content is plain text
-    if (!hasMarkdown) {
+    // If the displayed content (original or translated) has markdown, parse and render it
+    if (displayedContentHasMarkdown && parsedMarkdown) {
       return (
         <div
           className={cn(
-            'max-w-none',
-            props.preserveWhitespace ? 'whitespace-pre-wrap' : '',
+            'prose dark:prose-invert max-w-none',
+            'prose-headings:text-gray-800 dark:prose-headings:text-gray-200',
+            'prose-p:text-gray-700 dark:prose-p:text-gray-300',
+            'prose-strong:text-gray-800 dark:prose-strong:text-gray-200',
+            'prose-code:text-blue-600 dark:prose-code:text-blue-400',
+            'prose-code:bg-gray-100 dark:prose-code:bg-gray-800',
+            'prose-code:px-1 prose-code:py-0.5 prose-code:rounded',
+            'prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800',
+            'prose-blockquote:border-blue-200 dark:prose-blockquote:border-blue-700',
+            'prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-900/20',
+            'prose-a:text-blue-600 dark:prose-a:text-blue-400',
+            'prose-a:hover:text-blue-700 dark:prose-a:hover:text-blue-300',
+            'prose-ul:text-gray-700 dark:prose-ul:text-gray-300',
+            'prose-ol:text-gray-700 dark:prose-ol:text-gray-300',
+            'prose-li:text-gray-700 dark:prose-li:text-gray-300',
+            // Size adjustments for comments
+            'prose-sm sm:prose-base',
             props.className,
           )}
-        >
-          {displayedContent}
-        </div>
+          dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
+        />
       )
     }
 
-    // Use the memoized parsed markdown
+    // If no markdown detected, render as plain text
     return (
       <div
         className={cn(
-          'prose dark:prose-invert max-w-none',
-          'prose-headings:text-gray-800 dark:prose-headings:text-gray-200',
-          'prose-p:text-gray-700 dark:prose-p:text-gray-300',
-          'prose-strong:text-gray-800 dark:prose-strong:text-gray-200',
-          'prose-code:text-blue-600 dark:prose-code:text-blue-400',
-          'prose-code:bg-gray-100 dark:prose-code:bg-gray-800',
-          'prose-code:px-1 prose-code:py-0.5 prose-code:rounded',
-          'prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800',
-          'prose-blockquote:border-blue-200 dark:prose-blockquote:border-blue-700',
-          'prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-900/20',
-          'prose-a:text-blue-600 dark:prose-a:text-blue-400',
-          'prose-a:hover:text-blue-700 dark:prose-a:hover:text-blue-300',
-          'prose-ul:text-gray-700 dark:prose-ul:text-gray-300',
-          'prose-ol:text-gray-700 dark:prose-ol:text-gray-300',
-          'prose-li:text-gray-700 dark:prose-li:text-gray-300',
-          // Size adjustments for comments
-          'prose-sm sm:prose-base',
+          'max-w-none',
+          props.preserveWhitespace ? 'whitespace-pre-wrap' : '',
           props.className,
         )}
-        dangerouslySetInnerHTML={{ __html: parsedMarkdown || '' }}
-      />
+      >
+        {displayedContent}
+      </div>
     )
   }, [
     displayedContent,
-    hasMarkdown,
+    displayedContentHasMarkdown,
     parsedMarkdown,
     props.className,
     props.preserveWhitespace,

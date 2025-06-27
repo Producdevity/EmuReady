@@ -66,14 +66,24 @@ const PURIFY_CONFIG = {
  * @returns The sanitized HTML string
  */
 function basicSanitize(html: string): string {
-  // TODO: there must be a better way to do this
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-    .replace(/javascript:/gi, '') // Remove javascript
-    .replace(/vbscript:/gi, '') // Remove vbscript
-    .replace(/data:(?!image\/)/gi, '') // Remove data URLs
-    .replace(/on\w+\s*=\s*[^>\s]+/gi, '') // Remove event handlers
-    .replace(/<\/?[^>]+(>|$)/g, '') // Remove all HTML tags
+  // Remove dangerous content but preserve safe HTML tags
+  return (
+    html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .replace(/javascript:/gi, '') // Remove javascript
+      .replace(/vbscript:/gi, '') // Remove vbscript
+      .replace(/data:(?!image\/)/gi, '') // Remove data URLs except images
+      .replace(/on\w+\s*=\s*[^>\s]+/gi, '') // Remove event handlers
+      // Remove dangerous tags but keep safe ones
+      .replace(
+        /<(script|object|embed|form|input|iframe|link|meta|style)[^>]*>/gi,
+        '',
+      )
+      .replace(
+        /<\/(script|object|embed|form|input|iframe|link|meta|style)>/gi,
+        '',
+      )
+  )
 }
 
 // DOMPurify for client-side usage only
