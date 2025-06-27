@@ -130,7 +130,7 @@ export function MarkdownEditor(props: Props) {
         )}
       >
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div className="flex items-center gap-1">
             <ToolbarButton onClick={handleBold} icon={Bold} title="Bold" />
             <ToolbarButton

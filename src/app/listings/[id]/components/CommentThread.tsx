@@ -52,12 +52,9 @@ function CommentThread(props: Props) {
 
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
-      // TODO: handle errors
+      // Invalidate all comment queries for this listing to update vote counts
       utils.listings.getSortedComments
-        .invalidate({
-          listingId: props.listingId,
-          sortBy,
-        })
+        .invalidate({ listingId: props.listingId })
         .catch(console.error)
     },
   })
@@ -71,8 +68,9 @@ function CommentThread(props: Props) {
   const utils = api.useUtils()
 
   const refreshData = () => {
+    // Invalidate all comment queries for this listing, regardless of sort order
     utils.listings.getSortedComments
-      .invalidate({ listingId: props.listingId, sortBy })
+      .invalidate({ listingId: props.listingId })
       .catch(console.error)
     setReplyingTo(null)
     setEditingCommentId(null)

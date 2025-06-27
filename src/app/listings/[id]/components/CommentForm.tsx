@@ -68,15 +68,14 @@ function CommentForm(props: Props) {
     ev.preventDefault()
     if (!content.trim()) return
 
-    // Validate and sanitize markdown content
-    const { isValid, cleanText } = validateMarkdown(content)
+    // Validate and sanitize markdown content (but store the original markdown, not the parsed HTML)
+    validateMarkdown(content) // Just validate, don't use the parsed result
     const sanitizedContent = sanitizeString(content)
-    if (!isValid || !cleanText.trim()) {
-      // Fall back to string sanitization for backward compatibility
-      if (sanitizedContent.trim().length === 0) return
-    }
 
-    const finalContent = isValid ? cleanText : sanitizedContent
+    if (!sanitizedContent.trim()) return
+
+    // Always use the sanitized original content, not the parsed HTML
+    const finalContent = sanitizedContent
 
     // Get CAPTCHA token for new comments (not for edits)
     let recaptchaToken: string | null = null
