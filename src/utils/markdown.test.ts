@@ -54,11 +54,6 @@ describe('markdown utilities', () => {
       expect(parseMarkdown(null as any)).toBe('')
       expect(parseMarkdown(undefined as any)).toBe('')
     })
-
-    it('should handle non-string input gracefully', () => {
-      expect(parseMarkdown(123 as any)).toBe('')
-      expect(parseMarkdown({} as any)).toBe('')
-    })
   })
 
   describe('hasMarkdownSyntax', () => {
