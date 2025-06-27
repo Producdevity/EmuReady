@@ -11,6 +11,7 @@
     "build": "next build",
     "check": "npm run lint && npm run typecheck",
     "clean": "rm -rf .next && rm -rf node_modules/.cache && rm -rf .eslintcache && rm -rf tsconfig.tsbuildinfo",
+    "clean:all": "npm run clean && rm -rf node_modules",
     "db:generate": "prisma generate",
     "db:migrate:create": "./scripts/db-cmd.sh prisma migrate dev --create-only",
     "db:migrate:deploy": "./scripts/db-cmd.sh npx prisma migrate deploy",
