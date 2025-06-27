@@ -27,6 +27,10 @@
   },
   "tags": [
     {
+      "name": "Health",
+      "description": "Server health monitoring and status checks"
+    },
+    {
       "name": "Authentication",
       "description": "User authentication and session management"
     },
@@ -80,6 +84,134 @@
     }
   ],
   "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Server health check",
+        "description": "Returns the current health status of the server and its dependencies",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "healthy",
+                        "unhealthy"
+                      ]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "uptime": {
+                      "type": "number",
+                      "description": "Server uptime in seconds"
+                    },
+                    "version": {
+                      "type": "string",
+                      "description": "Application version"
+                    },
+                    "environment": {
+                      "type": "string",
+                      "description": "Current environment"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "connected",
+                                "disconnected"
+                              ]
+                            },
+                            "latency": {
+                              "type": "number",
+                              "description": "Database response time in ms"
+                            }
+                          }
+                        },
+                        "auth": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "available",
+                                "unavailable"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "system": {
+                      "type": "object",
+                      "properties": {
+                        "memory": {
+                          "type": "object",
+                          "properties": {
+                            "used": {
+                              "type": "number"
+                            },
+                            "total": {
+                              "type": "number"
+                            },
+                            "percentage": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "nodeVersion": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Server is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "unhealthy"
+                      ]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/api/mobile/trpc/getListings": {
       "post": {
         "tags": [
@@ -193,6 +325,59 @@
         ],
         "summary": "Get games with filtering",
         "description": "Retrieve games with optional search and system filtering",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/getPopularGames": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Get popular games",
+        "description": "Retrieve the most popular games based on listing count",
         "requestBody": {
           "required": true,
           "content": {
@@ -1005,6 +1190,219 @@
         ]
       }
     },
+    "/api/mobile/trpc/getListingsByGame": {
+      "post": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "Get listings by game",
+        "description": "Get all listings for a specific game",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/searchGames": {
+      "post": {
+        "tags": [
+          "Games",
+          "Search"
+        ],
+        "summary": "Search games",
+        "description": "Search games by title with text matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/getGameById": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Get game by ID",
+        "description": "Get detailed game information by ID",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/getListingComments": {
+      "post": {
+        "tags": [
+          "Comments"
+        ],
+        "summary": "Get listing comments",
+        "description": "Get all comments for a specific listing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": []
+      }
+    },
     "/api/mobile/trpc/createComment": {
       "post": {
         "tags": [
@@ -1232,6 +1630,59 @@
             "BearerAuth": []
           }
         ]
+      }
+    },
+    "/api/mobile/trpc/getListingById": {
+      "post": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "Get listing by ID",
+        "description": "Get detailed listing information by ID with custom fields and stats",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": []
       }
     },
     "/api/mobile/trpc/createListing": {
@@ -1469,6 +1920,63 @@
         ],
         "summary": "Delete comment",
         "description": "Delete a comment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "object",
+                    "description": "Input parameters for the procedure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "Procedure result data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/mobile/trpc/updateProfile": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Update user profile",
+        "description": "Update current user profile information",
         "requestBody": {
           "required": true,
           "content": {
