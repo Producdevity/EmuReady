@@ -70,13 +70,13 @@ function CommentForm(props: Props) {
 
     // Validate and sanitize markdown content
     const { isValid, cleanText } = validateMarkdown(content)
+    const sanitizedContent = sanitizeString(content)
     if (!isValid || !cleanText.trim()) {
       // Fall back to string sanitization for backward compatibility
-      const sanitizedContent = sanitizeString(content)
       if (sanitizedContent.trim().length === 0) return
     }
 
-    const finalContent = isValid ? cleanText : sanitizeString(content)
+    const finalContent = isValid ? cleanText : sanitizedContent
 
     // Get CAPTCHA token for new comments (not for edits)
     let recaptchaToken: string | null = null
