@@ -158,14 +158,6 @@ function AdminListingsPage() {
   const listings = listingsQuery.data?.listings ?? []
   const pagination = listingsQuery.data?.pagination
 
-  if (listingsQuery.isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <LoadingSpinner text="Loading listings..." />
-      </div>
-    )
-  }
-
   return (
     <AdminPageLayout
       title="Manage Listings"

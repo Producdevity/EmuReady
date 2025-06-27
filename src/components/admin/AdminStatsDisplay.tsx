@@ -41,7 +41,10 @@ export function AdminStatsDisplay(props: Props) {
 
   return (
     <div
-      className={cn('grid grid-cols-1 md:grid-cols-3 gap-4', props.className)}
+      className={cn(
+        'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4',
+        props.className,
+      )}
     >
       {props.stats.map((stat) => (
         <Card key={stat.label}>
