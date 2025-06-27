@@ -55,7 +55,7 @@ Auto-generated on: ${new Date().toISOString()}
 Most endpoints require Bearer token authentication using Clerk JWT.
 
 ## Interactive Documentation
-- **Swagger UI**: [/docs/mobile-api/swagger](/docs/mobile-api/swagger)
+- **Swagger UI**: [/docs/api/swagger](/docs/api/swagger)
 - **OpenAPI JSON**: [/api/docs/api/openapi.json](/api/docs/api/openapi.json)
 
 ---
