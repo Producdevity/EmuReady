@@ -4,7 +4,7 @@ interface Props {
   className?: string
 }
 
-function LoadingIcon(props: Props) {
+export function LoadingIcon(props: Props) {
   return (
     <div
       className={cn(
@@ -14,5 +14,3 @@ function LoadingIcon(props: Props) {
     />
   )
 }
-
-export default LoadingIcon

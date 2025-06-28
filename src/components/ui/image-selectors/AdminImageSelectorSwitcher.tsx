@@ -81,7 +81,6 @@ function AdminImageSelectorSwitcher(props: Props) {
       x: 0,
       opacity: 1,
       transition: {
-        type: 'spring',
         stiffness: 300,
         damping: 30,
       },
@@ -90,7 +89,6 @@ function AdminImageSelectorSwitcher(props: Props) {
       x: direction < 0 ? 300 : -300,
       opacity: 0,
       transition: {
-        type: 'spring',
         stiffness: 300,
         damping: 30,
       },

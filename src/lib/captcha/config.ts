@@ -24,7 +24,7 @@ if (typeof window === 'undefined') {
   }
 } else {
   // Client-side validation
-  if (!RECAPTCHA_CONFIG.siteKey) {
+  if (!RECAPTCHA_CONFIG.siteKey && process.env.NODE_ENV !== 'test') {
     console.warn(
       'NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set. CAPTCHA will be disabled.',
     )

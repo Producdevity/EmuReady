@@ -8,7 +8,10 @@ import { Role } from '@orm'
  * @param userRole - The role of the user attempting to perform the action
  * @param requiredRole - The minimum role required to perform the action
  */
-export function hasPermission(userRole?: Role, requiredRole?: Role): boolean {
+export function hasPermission(
+  userRole?: Role | null,
+  requiredRole?: Role,
+): boolean {
   if (!userRole) return false
   if (!requiredRole) return true
 

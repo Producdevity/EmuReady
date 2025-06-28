@@ -8,7 +8,7 @@ import {
   type FieldPath,
   type FieldValues,
 } from 'react-hook-form'
-import GitHubIcon from '@/components/icons/GitHubIcon'
+import { GitHubIcon } from '@/components/icons'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
 

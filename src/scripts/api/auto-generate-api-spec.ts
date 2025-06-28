@@ -51,6 +51,18 @@ const procedureMetadata: Record<
     tags: ['Games'],
     isPublic: true,
   },
+  getPopularGames: {
+    summary: 'Get popular games',
+    description: 'Retrieve the most popular games based on listing count',
+    tags: ['Games'],
+    isPublic: true,
+  },
+  getAppStats: {
+    summary: 'Get application statistics',
+    description: 'Get comprehensive application statistics',
+    tags: ['Statistics'],
+    isPublic: true,
+  },
   getEmulators: {
     summary: 'Get emulators',
     description: 'Retrieve emulators with optional filtering',
@@ -94,29 +106,6 @@ const procedureMetadata: Record<
     tags: ['Search'],
     isPublic: true,
   },
-  getGame: {
-    summary: 'Get game details',
-    description: 'Get detailed game information by ID',
-    tags: ['Games'],
-    isPublic: true,
-  },
-  getListing: {
-    summary: 'Get listing details',
-    description: 'Get detailed listing information by ID',
-    tags: ['Listings'],
-    isPublic: true,
-  },
-  getAppStats: {
-    summary: 'Get application statistics',
-    description: 'Get comprehensive application statistics',
-    tags: ['Statistics'],
-    isPublic: true,
-  },
-  getAuthenticatedUser: {
-    summary: 'Get authenticated user',
-    description: 'Get current user information and preferences',
-    tags: ['Authentication'],
-  },
   getNotifications: {
     summary: 'Get user notifications',
     description: 'Get user notifications with pagination',
@@ -142,10 +131,61 @@ const procedureMetadata: Record<
     description: "Get user's vote on a specific listing",
     tags: ['Voting'],
   },
+  getUserPreferences: {
+    summary: 'Get user preferences',
+    description: 'Get user device and SOC preferences',
+    tags: ['User'],
+  },
+  getListingsByGame: {
+    summary: 'Get listings by game',
+    description: 'Get all listings for a specific game',
+    tags: ['Listings'],
+    isPublic: true,
+  },
+  searchGames: {
+    summary: 'Search games',
+    description: 'Search games by title with text matching',
+    tags: ['Games', 'Search'],
+    isPublic: true,
+  },
+  getGameById: {
+    summary: 'Get game by ID',
+    description: 'Get detailed game information by ID',
+    tags: ['Games'],
+    isPublic: true,
+  },
+  getListingComments: {
+    summary: 'Get listing comments',
+    description: 'Get all comments for a specific listing',
+    tags: ['Comments'],
+    isPublic: true,
+  },
+  createComment: {
+    summary: 'Create comment',
+    description: 'Add a comment to a listing',
+    tags: ['Comments'],
+  },
   voteListing: {
     summary: 'Vote on listing',
     description: 'Cast or update a vote on a listing',
     tags: ['Voting'],
+  },
+  getUserProfile: {
+    summary: 'Get user profile',
+    description: 'Get user profile information by ID',
+    tags: ['User'],
+  },
+  getUserListings: {
+    summary: 'Get user listings',
+    description: 'Get listings created by the current user',
+    tags: ['Listings', 'User'],
+  },
+  getListingById: {
+    summary: 'Get listing by ID',
+    description:
+      'Get detailed listing information by ID with custom fields and stats',
+    tags: ['Listings'],
+    isPublic: true,
   },
   createListing: {
     summary: 'Create listing',
@@ -162,11 +202,6 @@ const procedureMetadata: Record<
     description: 'Delete a listing',
     tags: ['Listings'],
   },
-  createComment: {
-    summary: 'Create comment',
-    description: 'Add a comment to a listing',
-    tags: ['Comments'],
-  },
   updateComment: {
     summary: 'Update comment',
     description: 'Update an existing comment',
@@ -177,21 +212,12 @@ const procedureMetadata: Record<
     description: 'Delete a comment',
     tags: ['Comments'],
   },
-  getUserListings: {
-    summary: 'Get user listings',
-    description: 'Get listings created by the current user',
-    tags: ['Listings', 'User'],
-  },
-  getUserProfile: {
-    summary: 'Get user profile',
-    description: 'Get user profile information by ID',
+  updateProfile: {
+    summary: 'Update user profile',
+    description: 'Update current user profile information',
     tags: ['User'],
   },
-  getUserPreferences: {
-    summary: 'Get user preferences',
-    description: 'Get user device and SOC preferences',
-    tags: ['User'],
-  },
+
   updateUserPreferences: {
     summary: 'Update user preferences',
     description: 'Update user device and SOC preferences',
@@ -410,7 +436,126 @@ export function generateOpenAPISpec() {
 
   const paths: Record<string, Record<string, unknown>> = {}
 
-  // Generate paths for each procedure
+  // Add REST endpoints first
+  // Health endpoint
+  paths['/api/health'] = {
+    get: {
+      tags: ['Health'],
+      summary: 'Server health check',
+      description:
+        'Returns the current health status of the server and its dependencies',
+      responses: {
+        '200': {
+          description: 'Server is healthy',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  status: {
+                    type: 'string',
+                    enum: ['healthy', 'unhealthy'],
+                  },
+                  timestamp: {
+                    type: 'string',
+                    format: 'date-time',
+                  },
+                  uptime: {
+                    type: 'number',
+                    description: 'Server uptime in seconds',
+                  },
+                  version: {
+                    type: 'string',
+                    description: 'Application version',
+                  },
+                  environment: {
+                    type: 'string',
+                    description: 'Current environment',
+                  },
+                  services: {
+                    type: 'object',
+                    properties: {
+                      database: {
+                        type: 'object',
+                        properties: {
+                          status: {
+                            type: 'string',
+                            enum: ['connected', 'disconnected'],
+                          },
+                          latency: {
+                            type: 'number',
+                            description: 'Database response time in ms',
+                          },
+                        },
+                      },
+                      auth: {
+                        type: 'object',
+                        properties: {
+                          status: {
+                            type: 'string',
+                            enum: ['available', 'unavailable'],
+                          },
+                        },
+                      },
+                    },
+                  },
+                  system: {
+                    type: 'object',
+                    properties: {
+                      memory: {
+                        type: 'object',
+                        properties: {
+                          used: {
+                            type: 'number',
+                          },
+                          total: {
+                            type: 'number',
+                          },
+                          percentage: {
+                            type: 'number',
+                          },
+                        },
+                      },
+                      nodeVersion: {
+                        type: 'string',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        '503': {
+          description: 'Server is unhealthy',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  status: {
+                    type: 'string',
+                    enum: ['unhealthy'],
+                  },
+                  timestamp: {
+                    type: 'string',
+                    format: 'date-time',
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'Error message',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      security: [], // Public endpoint
+    },
+  }
+
+  // Generate paths for each TRPC procedure
   Object.entries(procedures).forEach(([procedureName, _procedureDef]) => {
     const metadata = procedureMetadata[procedureName]
     if (!metadata) return
@@ -508,6 +653,10 @@ export function generateOpenAPISpec() {
       },
     },
     tags: [
+      {
+        name: 'Health',
+        description: 'Server health monitoring and status checks',
+      },
       {
         name: 'Authentication',
         description: 'User authentication and session management',

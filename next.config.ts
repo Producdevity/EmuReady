@@ -1,3 +1,4 @@
+import NextBundleAnalyzer from '@next/bundle-analyzer'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
@@ -47,6 +48,8 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  allowedDevOrigins: ['dev.emuready.com'],
+
   experimental: {
     optimizePackageImports: [
       '@clerk/nextjs',
@@ -67,12 +70,23 @@ const nextConfig: NextConfig = {
     },
   },
 
-  serverExternalPackages: ['@prisma/client'],
+  serverExternalPackages: [
+    '@prisma/client',
+    'jsdom',
+    'markdown-it',
+    'dompurify',
+  ],
 
   webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
+    })
+    // support for importing markdown files for server-side processing
+    // TODO: probably need just this https://nextjs.org/docs/app/guides/mdx
+    config.module.rules.push({
+      test: /\.md$/,
+      type: 'asset/source',
     })
     return config
   },
@@ -115,7 +129,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://storage.ko-fi.com https://fonts.googleapis.com https://unpkg.com",
               "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com https://cdn.thegamesdb.net https://media.rawg.io https://www.googletagmanager.com https://assets.nintendo.com https://*.google-analytics.com https://storage.ko-fi.com https://vercel.com",
               "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://fonts.gstatic.com https://fonts.googleapis.com https://vercel.live data:",
-              "connect-src 'self' https://*.google-analytics.com https://www.googletagmanager.com https://api.mymemory.translated.net https://fonts.googleapis.com https://fonts.gstatic.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://va.vercel-scripts.com https://challenges.cloudflare.com https://clerk-telemetry.com https://storage.ko-fi.com https://vercel.live https://*.vercel.live wss://ws-us3.pusher.com",
+              "connect-src 'self' https://*.google-analytics.com https://www.googletagmanager.com https://api.mymemory.translated.net https://fonts.googleapis.com https://fonts.gstatic.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://va.vercel-scripts.com https://challenges.cloudflare.com https://storage.ko-fi.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live wss://ws-us3.pusher.com",
               "frame-src 'self' blob: https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live https://ko-fi.com",
               "worker-src 'self' blob:",
               "object-src 'none'",
@@ -144,4 +158,8 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+const withBundleAnalyzer = NextBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+export default withBundleAnalyzer(nextConfig)

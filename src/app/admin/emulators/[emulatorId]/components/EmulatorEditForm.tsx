@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Save, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import { EmulatorIcon } from '@/components/icons'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -54,6 +54,7 @@ const logoOptions = [
   'rpcsx.png',
   'ryujinx.png',
   'shadps4.png',
+  'skyline.png',
   'sudachi.png',
   'torzu.png',
   'utm.png',

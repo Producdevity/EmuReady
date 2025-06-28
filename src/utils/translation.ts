@@ -6,91 +6,42 @@ import type {
   TranslationResult,
 } from '@/utils/translation.types'
 
-const LANG_MAP: Record<string, string> = {
-  eng: 'en',
-  spa: 'es',
-  fra: 'fr',
-  deu: 'de',
-  ita: 'it',
-  por: 'pt',
-  rus: 'ru',
-  jpn: 'ja',
-  zho: 'zh',
-  ara: 'ar',
-  nld: 'nl',
-  pol: 'pl',
-  swe: 'sv',
-  dan: 'da',
-  fin: 'fi',
-  hun: 'hu',
-  ces: 'cs',
-  slk: 'sk',
-  slv: 'sl',
-  ron: 'ro',
-  bul: 'bg',
-  ell: 'el',
-  est: 'et',
-  lav: 'lv',
-  lit: 'lt',
+// Language data: franc ISO 639-3 codes mapped to MyMemory-supported ISO 639-1 codes with names
+// Only includes languages that MyMemory API actually supports for translation
+const SUPPORTED_LANGUAGES: Record<string, { code: string; name: string }> = {
+  eng: { code: 'en', name: 'English' },
+  spa: { code: 'es', name: 'Spanish' },
+  fra: { code: 'fr', name: 'French' },
+  deu: { code: 'de', name: 'German' },
+  ita: { code: 'it', name: 'Italian' },
+  por: { code: 'pt', name: 'Portuguese' },
+  rus: { code: 'ru', name: 'Russian' },
+  jpn: { code: 'ja', name: 'Japanese' },
+  zho: { code: 'zh', name: 'Chinese' },
+  cmn: { code: 'zh', name: 'Chinese (Mandarin)' },
+  ara: { code: 'ar', name: 'Arabic' },
+  arb: { code: 'ar', name: 'Arabic (Standard)' },
+  nld: { code: 'nl', name: 'Dutch' },
+  pol: { code: 'pl', name: 'Polish' },
+  swe: { code: 'sv', name: 'Swedish' },
+  dan: { code: 'da', name: 'Danish' },
+  fin: { code: 'fi', name: 'Finnish' },
+  hun: { code: 'hu', name: 'Hungarian' },
+  ces: { code: 'cs', name: 'Czech' },
+  slk: { code: 'sk', name: 'Slovak' },
+  slv: { code: 'sl', name: 'Slovenian' },
+  ron: { code: 'ro', name: 'Romanian' },
+  bul: { code: 'bg', name: 'Bulgarian' },
+  ell: { code: 'el', name: 'Greek' },
+  est: { code: 'et', name: 'Estonian' },
+  lav: { code: 'lv', name: 'Latvian' },
+  lit: { code: 'lt', name: 'Lithuanian' },
 }
 
-// Language names mapping for display
-const LANGUAGE_NAMES: Record<string, string> = {
-  ar: 'Arabic',
-  bg: 'Bulgarian',
-  cs: 'Czech',
-  da: 'Danish',
-  de: 'German',
-  el: 'Greek',
-  en: 'English',
-  es: 'Spanish',
-  et: 'Estonian',
-  fi: 'Finnish',
-  fr: 'French',
-  hu: 'Hungarian',
-  it: 'Italian',
-  ja: 'Japanese',
-  lt: 'Lithuanian',
-  lv: 'Latvian',
-  nl: 'Dutch',
-  pl: 'Polish',
-  pt: 'Portuguese',
-  ro: 'Romanian',
-  ru: 'Russian',
-  sk: 'Slovak',
-  sl: 'Slovenian',
-  sv: 'Swedish',
-  zh: 'Chinese',
-}
-
-// MyMemory's supported ISO-639-1 set
-const SUPPORTED_LANGUAGES = new Set([
-  'ar',
-  'bg',
-  'cs',
-  'da',
-  'de',
-  'el',
-  'en',
-  'es',
-  'et',
-  'fi',
-  'fr',
-  'hu',
-  'it',
-  'ja',
-  'lt',
-  'lv',
-  'nl',
-  'pl',
-  'pt',
-  'ro',
-  'ru',
-  'sk',
-  'sl',
-  'sv',
-  'zh',
-])
+// Set of supported ISO 639-1 language codes for quick lookup
+const SUPPORTED_LANGUAGE_CODES = new Set(
+  Object.values(SUPPORTED_LANGUAGES).map(({ code }) => code),
+)
 
 /**
  * Get the user's locale.
@@ -99,7 +50,7 @@ const SUPPORTED_LANGUAGES = new Set([
 export function getUserLocale(): string {
   const locale =
     typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en'
-  return SUPPORTED_LANGUAGES.has(locale) ? locale : 'en'
+  return SUPPORTED_LANGUAGE_CODES.has(locale) ? locale : 'en'
 }
 
 /**
@@ -113,13 +64,20 @@ export function detectLanguage(text: string): LanguageDetectionResult {
   }
 
   const francCode = franc(text)
-  const iso = LANG_MAP[francCode] ?? 'und'
+  const languageData = SUPPORTED_LANGUAGES[francCode]
+  const iso = languageData?.code ?? 'und'
   const isEnglish = iso === 'en'
+
+  // If franc returns 'und' (undetermined), treat as English with low confidence
+  // Only offer translation for clearly detected non-English languages
+  if (iso === 'und') {
+    return { isEnglish: true, detectedLanguage: 'en', confidence: 0.1 }
+  }
 
   return {
     isEnglish,
-    detectedLanguage: iso === 'und' ? 'en' : iso,
-    confidence: iso === 'und' ? 0.3 : isEnglish ? 1 : 0.8,
+    detectedLanguage: iso,
+    confidence: isEnglish ? 1 : 0.9, // High confidence for detected languages
   }
 }
 
@@ -147,7 +105,7 @@ export async function translateText(
     }
   }
 
-  const safeTarget = SUPPORTED_LANGUAGES.has(target) ? target : 'en'
+  const safeTarget = SUPPORTED_LANGUAGE_CODES.has(target) ? target : 'en'
   // Use MyMemory API (free tier: 1000 requests/day)
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${safeTarget}`
 
@@ -218,11 +176,12 @@ export function shouldShowTranslation(text: string): boolean {
   const detection = detectLanguage(text)
   const userLocale = getUserLocale()
 
-  // Show translation if text is not in English AND user locale is English
-  // OR if text is not in user's locale
+  // Only show translation for high-confidence non-English detection
+  // AND when the detected language is different from user's locale
   return (
-    (!detection.isEnglish && userLocale === 'en') ||
-    (detection.detectedLanguage !== userLocale && detection.confidence > 0.5)
+    !detection.isEnglish &&
+    detection.confidence > 0.8 &&
+    detection.detectedLanguage !== userLocale
   )
 }
 
@@ -232,5 +191,9 @@ export function shouldShowTranslation(text: string): boolean {
  * @return {string} The full language name or the original code if not found.
  */
 export function getLanguageName(isoCode: string): string {
-  return LANGUAGE_NAMES[isoCode.toLowerCase()] || isoCode.toUpperCase()
+  // Find the language name by looking for the ISO code in our supported languages
+  const languageEntry = Object.values(SUPPORTED_LANGUAGES).find(
+    ({ code }) => code === isoCode.toLowerCase(),
+  )
+  return languageEntry?.name ?? isoCode.toUpperCase()
 }

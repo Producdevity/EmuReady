@@ -147,6 +147,11 @@ const emulators: EmulatorData[] = [
     logo: 'shadps4.png',
   },
   {
+    name: 'Skyline',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'skyline.png',
+  },
+  {
     name: 'Sudachi',
     supportedSystemNames: ['Nintendo Switch'],
     logo: 'sudachi.png',

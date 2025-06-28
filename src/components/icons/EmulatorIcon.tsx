@@ -27,7 +27,7 @@ interface Props {
   showLogo?: boolean
 }
 
-function EmulatorIcon(props: Props) {
+export function EmulatorIcon(props: Props) {
   const sizeClass = props.size ? sizeClasses[props.size] : sizeClasses.md
 
   if (!props.showLogo || !props.logo) {
@@ -71,5 +71,3 @@ function EmulatorIcon(props: Props) {
     </Tooltip>
   )
 }
-
-export default EmulatorIcon

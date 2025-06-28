@@ -1,19 +1,25 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  type KeyboardEvent,
+} from 'react'
+import {
+  useForm,
+  Controller,
   type Control,
   type FieldValues,
-  useForm,
   type UseFormSetValue,
 } from 'react-hook-form'
 import { isString } from 'remeda'
-import { type z } from 'zod'
-import { Button, Input, LoadingSpinner } from '@/components/ui'
+import { Button, LoadingSpinner } from '@/components/ui'
+import { MarkdownEditor } from '@/components/ui/form'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -28,10 +34,10 @@ import {
   DeviceSelector,
   type EmulatorOption,
   EmulatorSelector,
-  FormValidationSummary,
   type GameOption,
   GameSelector,
   PerformanceSelector,
+  FormValidationSummary,
 } from '../components/shared'
 import createDynamicListingSchema, {
   type CustomFieldDefinitionWithOptions,
@@ -66,12 +72,12 @@ function AddListingPage() {
     CustomFieldDefinitionWithOptions[]
   >([])
   const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
-
-  const [currentSchema, setCurrentSchema] =
-    useState<z.ZodType<ListingFormValues>>(listingFormSchema)
+  const [schemaState, setSchemaState] = useState<
+    typeof listingFormSchema | ReturnType<typeof createDynamicListingSchema>
+  >(listingFormSchema)
 
   const form = useForm<ListingFormValues>({
-    resolver: zodResolver(currentSchema),
+    resolver: zodResolver(schemaState),
     defaultValues: {
       gameId: gameIdFromUrl ?? '',
       deviceId: '',
@@ -286,8 +292,20 @@ function AddListingPage() {
       },
     )
     setParsedCustomFields(parsed)
+
+    // Create and set the dynamic schema
     const dynamicSchema = createDynamicListingSchema(parsed)
-    setCurrentSchema(dynamicSchema)
+    setSchemaState(dynamicSchema)
+
+    // Store the form values before updating the resolver
+    const currentValues = form.getValues()
+
+    // Release form state first
+    form.reset()
+
+    // Update the form with new schema and restore values
+    form.reset(currentValues)
+
     const currentCustomValues = form.watch('customFieldValues') ?? []
     const newCustomValues = parsed.map((field) => {
       const existingValueObj = currentCustomValues.find(
@@ -363,7 +381,7 @@ function AddListingPage() {
   }
 
   // Prevent form submission on Enter key press
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
     if (event.key === 'Enter' && event.target instanceof HTMLElement) {
       // Allow Enter key in textareas for line breaks
       if (event.target.tagName.toLowerCase() === 'textarea') {
@@ -390,7 +408,7 @@ function AddListingPage() {
           {/* Game Selection */}
           <div>
             <GameSelector
-              control={form.control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control}
               name="gameId"
               selectedGame={selectedGame}
               errorMessage={form.formState.errors.gameId?.message}
@@ -417,7 +435,7 @@ function AddListingPage() {
           {/* Device Selection */}
           <div>
             <DeviceSelector
-              control={form.control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control}
               name="deviceId"
               selectedDevice={selectedDevice}
               errorMessage={form.formState.errors.deviceId?.message}
@@ -432,7 +450,7 @@ function AddListingPage() {
           {/* Emulator Selection */}
           <div>
             <EmulatorSelector
-              control={form.control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control}
               name="emulatorId"
               selectedGame={selectedGame}
               availableEmulators={availableEmulators}
@@ -452,7 +470,7 @@ function AddListingPage() {
           {/* Performance Selection */}
           <div>
             <PerformanceSelector
-              control={form.control as unknown as Control<FieldValues>}
+              control={form.control as unknown as Control}
               name="performanceId"
               performanceScalesData={performanceScalesQuery.data}
               errorMessage={form.formState.errors.performanceId?.message}
@@ -461,26 +479,20 @@ function AddListingPage() {
 
           {/* Notes */}
           <div>
-            <label
-              htmlFor="notes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Notes
-            </label>
-            <Input
-              as="textarea"
-              id="notes"
-              {...form.register('notes')}
-              leftIcon={<FileText className="w-5 h-5" />}
-              rows={4}
-              className="mt-1 w-full"
-              placeholder="Share your experience, settings, or any additional details..."
+            <Controller
+              name="notes"
+              control={form.control}
+              render={({ field }) => (
+                <MarkdownEditor
+                  {...field}
+                  placeholder="Share your experience, settings, or any additional details..."
+                  rows={4}
+                  label="Notes"
+                  id="notes"
+                  error={form.formState.errors.notes?.message}
+                />
+              )}
             />
-            {form.formState.errors.notes && (
-              <p className="text-red-500 text-xs mt-1">
-                {String(form.formState.errors.notes.message ?? '')}
-              </p>
-            )}
           </div>
 
           {/* Dynamic Custom Fields Section */}
@@ -517,7 +529,7 @@ function AddListingPage() {
                       fieldDef={fieldDef}
                       fieldName={`customFieldValues.${index}.value` as const}
                       index={index}
-                      control={form.control as unknown as Control<FieldValues>}
+                      control={form.control as unknown as Control}
                       errorMessage={errorMessage}
                     />
                   )

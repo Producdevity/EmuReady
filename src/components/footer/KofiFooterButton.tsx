@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
-function KofiFooterButton() {
+export function KofiFooterButton() {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -68,5 +68,3 @@ function KofiFooterButton() {
     </Tooltip>
   )
 }
-
-export default KofiFooterButton

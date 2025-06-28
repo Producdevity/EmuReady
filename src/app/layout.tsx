@@ -10,7 +10,7 @@ import Script from 'next/script'
 import { type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
 import CookieConsent from '@/components/CookieConsent'
-import Footer from '@/components/footer/Footer'
+import { Footer } from '@/components/footer/Footer'
 import Navbar from '@/components/navbar/Navbar'
 import PageViewTracker from '@/components/PageViewTracker'
 import { StopKillingGamesPopup } from '@/components/popups'
@@ -60,6 +60,7 @@ export const metadata: Metadata = {
 }
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
@@ -67,7 +68,9 @@ export default function RootLayout(props: PropsWithChildren) {
       <html lang="en" suppressHydrationWarning>
         <head>
           {/* Service Worker Registration */}
-          <Script src="/sw-register.js" strategy="afterInteractive" />
+          {ENABLE_SW && (
+            <Script src="/sw-register.js" strategy="afterInteractive" />
+          )}
 
           {/* Initialize dataLayer for Google Analytics */}
           <Script id="google-analytics-dataLayer" strategy="beforeInteractive">

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import { EmulatorIcon } from '@/components/icons'
 import { Badge, PerformanceBadge } from '@/components/ui'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'

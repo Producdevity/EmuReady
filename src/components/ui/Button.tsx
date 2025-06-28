@@ -1,7 +1,7 @@
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { type ComponentProps } from 'react'
-import LoadingIcon from '@/components/icons/LoadingIcon'
+import { LoadingIcon } from '@/components/icons'
 import { cn } from '@/lib/utils'
 
 // Legacy types for backward compatibility

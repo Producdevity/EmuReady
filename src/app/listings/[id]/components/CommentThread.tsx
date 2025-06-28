@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
-import { useConfirmDialog, TranslatableContent } from '@/components/ui'
+import { useConfirmDialog, TranslatableMarkdown } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
@@ -52,12 +52,9 @@ function CommentThread(props: Props) {
 
   const voteComment = api.listings.voteComment.useMutation({
     onSuccess: () => {
-      // TODO: handle errors
+      // Invalidate all comment queries for this listing to update vote counts
       utils.listings.getSortedComments
-        .invalidate({
-          listingId: props.listingId,
-          sortBy,
-        })
+        .invalidate({ listingId: props.listingId })
         .catch(console.error)
     },
   })
@@ -71,8 +68,9 @@ function CommentThread(props: Props) {
   const utils = api.useUtils()
 
   const refreshData = () => {
+    // Invalidate all comment queries for this listing, regardless of sort order
     utils.listings.getSortedComments
-      .invalidate({ listingId: props.listingId, sortBy })
+      .invalidate({ listingId: props.listingId })
       .catch(console.error)
     setReplyingTo(null)
     setEditingCommentId(null)
@@ -220,7 +218,7 @@ function CommentThread(props: Props) {
                   This comment has been deleted.
                 </em>
               ) : (
-                <TranslatableContent
+                <TranslatableMarkdown
                   content={comment.content}
                   className="text-gray-700 dark:text-gray-300"
                   preserveWhitespace={false}

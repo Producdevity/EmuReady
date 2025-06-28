@@ -4,7 +4,9 @@ const storageKeys = {
   theme: `${PREFIX}theme`,
   showSystemIcons: `${PREFIX}show_system_icons`,
   showEmulatorLogos: `${PREFIX}show_emulator_logos`,
-  voteReminderDismissed: `${PREFIX}vote_reminder_dismissed`,
+  newListing: {
+    lastUsedDevice: `${PREFIX}new_listing_last_used_device`,
+  },
   popups: {
     stopKillingGamesDismissed: `${PREFIX}stop_killing_games_dismissed`,
     voteReminderDismissed: `${PREFIX}vote_reminder_dismissed`,

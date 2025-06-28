@@ -4,7 +4,7 @@ import { Search, Monitor } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
+import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
   Input,

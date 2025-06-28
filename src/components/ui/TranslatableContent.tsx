@@ -2,14 +2,9 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Languages, Earth, Globe } from 'lucide-react'
-import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui'
-import {
-  translateTextCached,
-  shouldShowTranslation,
-  getLanguageName,
-} from '@/utils/translation'
-import type { TranslationResult } from '@/utils/translation.types'
+import { useTranslation } from '@/hooks/useTranslation'
+import { cn } from '@/lib/utils'
 
 interface Props {
   content: string
@@ -18,59 +13,17 @@ interface Props {
 }
 
 export function TranslatableContent(props: Props) {
-  const [showTranslated, setShowTranslated] = useState(false)
-  const [translation, setTranslation] = useState<TranslationResult | null>(null)
-  const [isTranslating, setIsTranslating] = useState(false)
-  const [showTranslationOption, setShowTranslationOption] = useState(false)
+  const {
+    displayedContent,
+    showTranslated,
+    isTranslating,
+    showTranslationOption,
+    toggleTranslation,
+    getButtonLabel,
+    getTranslationInfo,
+  } = useTranslation(props.content)
 
-  useEffect(() => {
-    // Check if translation should be offered
-    const shouldTranslate = shouldShowTranslation(props.content)
-    setShowTranslationOption(shouldTranslate)
-
-    // Reset state when content changes
-    setShowTranslated(false)
-    setTranslation(null)
-  }, [props.content])
-
-  const handleTranslate = async () => {
-    if (translation) {
-      setShowTranslated(!showTranslated)
-      return
-    }
-
-    setIsTranslating(true)
-    try {
-      const result = await translateTextCached(props.content)
-      setTranslation(result)
-      setShowTranslated(true)
-    } catch (error) {
-      console.error('Translation failed:', error)
-    } finally {
-      setIsTranslating(false)
-    }
-  }
-
-  const getDisplayContent = () => {
-    if (showTranslated && translation) {
-      return translation.translatedText
-    }
-    return props.content
-  }
-
-  const getButtonLabel = () => {
-    if (isTranslating) return 'Translating...'
-    if (!translation) return 'Translate'
-    return showTranslated ? 'Show Original' : 'Show Translation'
-  }
-
-  const getButtonIcon = () => {
-    if (isTranslating) return Languages
-    if (!translation) return Languages
-    return showTranslated ? Globe : Earth
-  }
-
-  const ButtonIcon = getButtonIcon()
+  const ButtonIcon = isTranslating ? Languages : showTranslated ? Globe : Earth
 
   if (!props.content?.trim()) return null
 
@@ -83,12 +36,12 @@ export function TranslatableContent(props: Props) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          className={props.className}
-          style={
-            props.preserveWhitespace ? { whiteSpace: 'pre-wrap' } : undefined
-          }
+          className={cn(
+            props.className,
+            props.preserveWhitespace ? 'whitespace-pre-wrap' : '',
+          )}
         >
-          {getDisplayContent()}
+          {displayedContent}
         </motion.div>
       </AnimatePresence>
 
@@ -102,7 +55,7 @@ export function TranslatableContent(props: Props) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleTranslate}
+            onClick={toggleTranslation}
             disabled={isTranslating}
             className="text-xs h-7 px-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
           >
@@ -110,15 +63,13 @@ export function TranslatableContent(props: Props) {
             {getButtonLabel()}
           </Button>
 
-          {translation && (
+          {showTranslated && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-xs text-gray-500 dark:text-gray-400 mt-1"
             >
-              {showTranslated
-                ? `Translated from ${getLanguageName(translation.originalLanguage)}`
-                : `Translation available`}
+              {getTranslationInfo()}
             </motion.div>
           )}
         </motion.div>
