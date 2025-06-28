@@ -1,5 +1,8 @@
 import { AppError, ResourceError } from '@/lib/errors'
 import {
+  AddDevicePreferenceSchema,
+  BulkUpdateDevicePreferencesSchema,
+  BulkUpdateSocPreferencesSchema,
   CreateCommentSchema,
   CreateListingSchema,
   DeleteCommentSchema,
@@ -10,18 +13,25 @@ import {
   GetGamesSchema,
   GetListingByIdSchema,
   GetListingCommentsSchema,
+  GetListingVerificationsSchema,
   GetListingsByGameSchema,
   GetListingsSchema,
+  GetMyVerificationsSchema,
   GetNotificationsSchema,
   GetUserListingsSchema,
   GetUserProfileSchema,
   GetUserVoteSchema,
+  IsVerifiedDeveloperSchema,
   MarkNotificationReadSchema,
+  RemoveDevicePreferenceSchema,
+  RemoveVerificationSchema,
   SearchGamesSchema,
   SearchSuggestionsSchema,
   UpdateCommentSchema,
   UpdateListingSchema,
   UpdateProfileSchema,
+  UpdateUserPreferencesSchema,
+  VerifyListingSchema,
   VoteListingSchema,
 } from '@/schemas/mobile'
 import {
@@ -29,6 +39,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { sanitizeBio } from '@/utils/sanitization'
 import { ApprovalStatus } from '@orm'
 
 export const mobileRouter = createTRPCRouter({
@@ -371,7 +382,7 @@ export const mobileRouter = createTRPCRouter({
   // Systems
   getSystems: publicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.system.findMany({
-      select: { id: true, name: true, key: true },
+      select: { id: true, name: true, key: true, tgdbPlatformId: true },
       orderBy: { name: 'asc' },
     })
   }),
@@ -579,8 +590,196 @@ export const mobileRouter = createTRPCRouter({
     return {
       devicePreferences: user.devicePreferences,
       socPreferences: user.socPreferences,
+      defaultToUserDevices: user.defaultToUserDevices,
+      defaultToUserSocs: user.defaultToUserSocs,
+      notifyOnNewListings: user.notifyOnNewListings,
     }
   }),
+
+  updateUserPreferences: protectedProcedure
+    .input(UpdateUserPreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      // Sanitize bio if provided
+      const updateData: {
+        defaultToUserDevices?: boolean
+        defaultToUserSocs?: boolean
+        notifyOnNewListings?: boolean
+        bio?: string
+      } = {}
+
+      if (input.defaultToUserDevices !== undefined) {
+        updateData.defaultToUserDevices = input.defaultToUserDevices
+      }
+      if (input.defaultToUserSocs !== undefined) {
+        updateData.defaultToUserSocs = input.defaultToUserSocs
+      }
+      if (input.notifyOnNewListings !== undefined) {
+        updateData.notifyOnNewListings = input.notifyOnNewListings
+      }
+      if (input.bio !== undefined) {
+        updateData.bio = sanitizeBio(input.bio)
+      }
+
+      return ctx.prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+        select: {
+          id: true,
+          bio: true,
+          defaultToUserDevices: true,
+          defaultToUserSocs: true,
+          notifyOnNewListings: true,
+        },
+      })
+    }),
+
+  addDevicePreference: protectedProcedure
+    .input(AddDevicePreferenceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      // Check if device exists
+      const device = await ctx.prisma.device.findUnique({
+        where: { id: input.deviceId },
+      })
+
+      if (!device) return ResourceError.device.notFound()
+
+      // Check if preference already exists
+      const existingPreference =
+        await ctx.prisma.userDevicePreference.findUnique({
+          where: {
+            userId_deviceId: {
+              userId: user.id,
+              deviceId: input.deviceId,
+            },
+          },
+        })
+
+      if (existingPreference)
+        return ResourceError.userDevicePreference.alreadyExists()
+
+      return ctx.prisma.userDevicePreference.create({
+        data: { userId: user.id, deviceId: input.deviceId },
+        include: { device: { include: { brand: true, soc: true } } },
+      })
+    }),
+
+  removeDevicePreference: protectedProcedure
+    .input(RemoveDevicePreferenceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      const preference = await ctx.prisma.userDevicePreference.findUnique({
+        where: {
+          userId_deviceId: { userId: user.id, deviceId: input.deviceId },
+        },
+      })
+
+      if (!preference) {
+        return ResourceError.userDevicePreference.notInPreferences()
+      }
+
+      await ctx.prisma.userDevicePreference.delete({
+        where: { id: preference.id },
+      })
+
+      return { success: true }
+    }),
+
+  bulkUpdateDevicePreferences: protectedProcedure
+    .input(BulkUpdateDevicePreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      // Validate all devices exist
+      const devices = await ctx.prisma.device.findMany({
+        where: { id: { in: input.deviceIds } },
+      })
+
+      if (devices.length !== input.deviceIds.length) {
+        return ResourceError.userDevicePreference.notFound()
+      }
+
+      // Remove existing preferences
+      await ctx.prisma.userDevicePreference.deleteMany({
+        where: { userId: user.id },
+      })
+
+      // Add new preferences
+      if (input.deviceIds.length > 0) {
+        await ctx.prisma.userDevicePreference.createMany({
+          data: input.deviceIds.map((deviceId) => ({
+            userId: user.id,
+            deviceId,
+          })),
+        })
+      }
+
+      // Return updated preferences
+      return ctx.prisma.userDevicePreference.findMany({
+        where: { userId: user.id },
+        include: { device: { include: { brand: true, soc: true } } },
+      })
+    }),
+
+  bulkUpdateSocPreferences: protectedProcedure
+    .input(BulkUpdateSocPreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      // Validate all SOCs exist
+      const socs = await ctx.prisma.soC.findMany({
+        where: { id: { in: input.socIds } },
+      })
+
+      if (socs.length !== input.socIds.length) {
+        return ResourceError.userSocPreference.notFound()
+      }
+
+      // Remove existing preferences
+      await ctx.prisma.userSocPreference.deleteMany({
+        where: { userId: user.id },
+      })
+
+      // Add new preferences
+      if (input.socIds.length > 0) {
+        await ctx.prisma.userSocPreference.createMany({
+          data: input.socIds.map((socId) => ({
+            userId: user.id,
+            socId,
+          })),
+        })
+      }
+
+      // Return updated preferences
+      return ctx.prisma.userSocPreference.findMany({
+        where: { userId: user.id },
+        include: { soc: true },
+      })
+    }),
 
   // Existing endpoints...
   getListingsByGame: publicProcedure
@@ -988,4 +1187,202 @@ export const mobileRouter = createTRPCRouter({
         },
       }),
   ),
+
+  // Verified Developers functionality
+  getMyVerifiedEmulators: protectedProcedure.query(async ({ ctx }) => {
+    const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
+      where: { userId: ctx.session.user.id },
+      include: { emulator: { select: { id: true, name: true, logo: true } } },
+      orderBy: { verifiedAt: 'desc' },
+    })
+
+    return verifiedDevelopers.map((vd) => vd.emulator)
+  }),
+
+  isVerifiedDeveloper: protectedProcedure
+    .input(IsVerifiedDeveloperSchema)
+    .query(async ({ ctx, input }) => {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: input.userId,
+            emulatorId: input.emulatorId,
+          },
+        },
+      })
+
+      return !!verifiedDeveloper
+    }),
+
+  // Listing Verifications functionality
+  verifyListing: protectedProcedure
+    .input(VerifyListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingId, notes } = input
+      const userId = ctx.session.user.id
+
+      // Get the listing to check the emulator
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: listingId },
+        include: {
+          emulator: { select: { id: true, name: true } },
+          game: { select: { title: true } },
+          author: { select: { name: true } },
+        },
+      })
+
+      if (!listing) {
+        throw AppError.notFound('Listing not found')
+      }
+
+      // Check if user is a verified developer for this emulator
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId,
+            emulatorId: listing.emulatorId,
+          },
+        },
+      })
+
+      if (!verifiedDeveloper) {
+        throw AppError.forbidden(
+          `You are not a verified developer for ${listing.emulator.name}`,
+        )
+      }
+
+      // Check if already verified by this developer
+      const existingVerification =
+        await ctx.prisma.listingDeveloperVerification.findUnique({
+          where: {
+            listingId_verifiedBy: {
+              listingId,
+              verifiedBy: userId,
+            },
+          },
+        })
+
+      if (existingVerification) {
+        throw AppError.conflict('You have already verified this listing')
+      }
+
+      const verification = await ctx.prisma.listingDeveloperVerification.create(
+        {
+          data: {
+            listingId,
+            verifiedBy: userId,
+            notes,
+          },
+          include: {
+            developer: {
+              select: {
+                id: true,
+                name: true,
+                profileImage: true,
+              },
+            },
+          },
+        },
+      )
+
+      return verification
+    }),
+
+  removeVerification: protectedProcedure
+    .input(RemoveVerificationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      // Find the verification and ensure it belongs to the current user
+      const verification =
+        await ctx.prisma.listingDeveloperVerification.findUnique({
+          where: { id: input.verificationId },
+        })
+
+      if (!verification) {
+        throw AppError.notFound('Verification not found')
+      }
+
+      if (verification.verifiedBy !== userId) {
+        throw AppError.forbidden('You can only remove your own verifications')
+      }
+
+      await ctx.prisma.listingDeveloperVerification.delete({
+        where: { id: input.verificationId },
+      })
+
+      return { message: 'Verification removed successfully' }
+    }),
+
+  getListingVerifications: protectedProcedure
+    .input(GetListingVerificationsSchema)
+    .query(async ({ ctx, input }) => {
+      const verifications =
+        await ctx.prisma.listingDeveloperVerification.findMany({
+          where: { listingId: input.listingId },
+          include: {
+            developer: {
+              select: {
+                id: true,
+                name: true,
+                profileImage: true,
+              },
+            },
+          },
+          orderBy: { verifiedAt: 'desc' },
+        })
+
+      return verifications
+    }),
+
+  getMyVerifications: protectedProcedure
+    .input(GetMyVerificationsSchema)
+    .query(async ({ ctx, input }) => {
+      const { limit, page } = input ?? {}
+      const actualLimit = limit ?? 20
+      const actualPage = page ?? 1
+      const skip = (actualPage - 1) * actualLimit
+      const userId = ctx.session.user.id
+
+      const [verifications, total] = await Promise.all([
+        ctx.prisma.listingDeveloperVerification.findMany({
+          where: { verifiedBy: userId },
+          include: {
+            listing: {
+              include: {
+                game: { select: { title: true } },
+                emulator: { select: { name: true } },
+                device: {
+                  include: {
+                    brand: { select: { name: true } },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { verifiedAt: 'desc' },
+          skip,
+          take: actualLimit,
+        }),
+        ctx.prisma.listingDeveloperVerification.count({
+          where: { verifiedBy: userId },
+        }),
+      ])
+
+      return {
+        verifications,
+        pagination: {
+          page: actualPage,
+          pages: Math.ceil(total / actualLimit),
+          total,
+          limit: actualLimit,
+        },
+      }
+    }),
+
+  // Trust system functionality
+  getTrustLevels: protectedProcedure.query(async () => {
+    const { TRUST_LEVELS } = await import('@/lib/trust/config')
+    return TRUST_LEVELS
+  }),
 })

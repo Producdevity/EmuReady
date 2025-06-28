@@ -173,8 +173,8 @@ function GameSearchContent() {
         const gameData = {
           title: game.game_title,
           systemId: matchingSystem.id,
-          imageUrl: imageResponse?.boxartUrl, // Use boxartUrl as the primary image
-          boxartUrl: imageResponse?.boxartUrl,
+          imageUrl: imageResponse?.bannerUrl, // temporary  fix for now (use bannerUrl)
+          boxartUrl: imageResponse?.bannerUrl, // temporary  fix for now (use bannerUrl)
           bannerUrl: imageResponse?.bannerUrl,
           tgdbGameId: game.id, // Store the TGDB game ID
         }

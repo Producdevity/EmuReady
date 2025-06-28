@@ -135,3 +135,51 @@ export const SearchSuggestionsSchema = z.object({
 export const GetUserVoteSchema = z.object({
   listingId: z.string().uuid(),
 })
+
+export const UpdateUserPreferencesSchema = z.object({
+  defaultToUserDevices: z.boolean().optional(),
+  defaultToUserSocs: z.boolean().optional(),
+  notifyOnNewListings: z.boolean().optional(),
+  bio: z.string().optional(),
+})
+
+export const AddDevicePreferenceSchema = z.object({
+  deviceId: z.string().uuid(),
+})
+
+export const RemoveDevicePreferenceSchema = z.object({
+  deviceId: z.string().uuid(),
+})
+
+export const BulkUpdateDevicePreferencesSchema = z.object({
+  deviceIds: z.array(z.string().uuid()),
+})
+
+export const BulkUpdateSocPreferencesSchema = z.object({
+  socIds: z.array(z.string().uuid()),
+})
+
+// New schemas for verified developers
+export const IsVerifiedDeveloperSchema = z.object({
+  userId: z.string().uuid(),
+  emulatorId: z.string().uuid(),
+})
+
+// New schemas for listing verifications
+export const VerifyListingSchema = z.object({
+  listingId: z.string().uuid(),
+  notes: z.string().optional(),
+})
+
+export const RemoveVerificationSchema = z.object({
+  verificationId: z.string().uuid(),
+})
+
+export const GetListingVerificationsSchema = z.object({
+  listingId: z.string().uuid(),
+})
+
+export const GetMyVerificationsSchema = z.object({
+  limit: z.number().min(1).max(100).optional(),
+  page: z.number().min(1).optional(),
+})
