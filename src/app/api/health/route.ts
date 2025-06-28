@@ -120,7 +120,7 @@ export async function GET(_request: NextRequest) {
     // Get memory usage
     const memUsage = process.memoryUsage()
     const memoryUsed = memUsage.rss
-    const memoryTotal = memUsage.rss + memUsage.external + memUsage.heapTotal
+    const memoryTotal = memUsage.rss + memUsage.external
     const memoryPercentage = Math.round((memoryUsed / memoryTotal) * 100)
 
     // Check if Clerk environment variables are set
