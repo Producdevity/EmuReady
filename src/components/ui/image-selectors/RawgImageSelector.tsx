@@ -320,6 +320,7 @@ function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
 
                       {/* Preview Button - Shows on hover */}
                       <button
+                        type="button"
                         onClick={(e) => handlePreviewImage(e, image)}
                         className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         aria-label="Preview image"

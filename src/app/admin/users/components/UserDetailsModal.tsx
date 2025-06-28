@@ -255,6 +255,7 @@ function UserDetailsModal(props: Props) {
                           {userQuery.data.id?.slice(0, 10) ?? 'N/A'}...
                         </Code>
                         <button
+                          type="button"
                           onClick={() =>
                             copyToClipboard(userQuery.data?.id ?? null)
                           }

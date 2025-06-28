@@ -30,6 +30,7 @@ export function ThemeToggle(props: Props) {
 
   return (
     <button
+      type="button"
       onClick={handleToggle}
       className={cn(
         'p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ',

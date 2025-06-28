@@ -193,6 +193,7 @@ function CommentThread(props: Props) {
                 <div className="flex gap-2">
                   {canEdit && (
                     <button
+                      type="button"
                       onClick={() => setEditingCommentId(comment.id)}
                       className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                     >
@@ -201,6 +202,7 @@ function CommentThread(props: Props) {
                   )}
                   {canDelete && (
                     <button
+                      type="button"
                       onClick={() => handleDeleteComment(comment.id)}
                       className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                     >
@@ -232,6 +234,7 @@ function CommentThread(props: Props) {
                 {/* Vote controls */}
                 <div className="flex items-center space-x-1">
                   <button
+                    type="button"
                     onClick={() => handleVote(comment.id, true)}
                     className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
                       comment.userVote === true
@@ -255,6 +258,7 @@ function CommentThread(props: Props) {
                   </span>
 
                   <button
+                    type="button"
                     onClick={() => handleVote(comment.id, false)}
                     className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
                       comment.userVote === false
@@ -270,6 +274,7 @@ function CommentThread(props: Props) {
                 <div className="flex items-center space-x-2">
                   {/* Reply toggle button */}
                   <button
+                    type="button"
                     onClick={() =>
                       setReplyingTo(
                         replyingTo === comment.id ? null : comment.id,
@@ -284,6 +289,7 @@ function CommentThread(props: Props) {
                   {/* Show collapse/expand button if comment has replies */}
                   {hasReplies && (
                     <button
+                      type="button"
                       onClick={() => toggleCommentExpanded(comment.id)}
                       className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center ml-2"
                     >
@@ -357,6 +363,7 @@ function CommentThread(props: Props) {
     <div className="flex justify-start mb-4">
       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg inline-flex p-1">
         <button
+          type="button"
           onClick={() => setSortBy('newest')}
           className={`px-3 py-1 rounded text-sm ${
             sortBy === 'newest'
@@ -367,6 +374,7 @@ function CommentThread(props: Props) {
           Newest
         </button>
         <button
+          type="button"
           onClick={() => setSortBy('oldest')}
           className={`px-3 py-1 rounded text-sm ${
             sortBy === 'oldest'
@@ -377,6 +385,7 @@ function CommentThread(props: Props) {
           Oldest
         </button>
         <button
+          type="button"
           onClick={() => setSortBy('popular')}
           className={`px-3 py-1 rounded text-sm ${
             sortBy === 'popular'

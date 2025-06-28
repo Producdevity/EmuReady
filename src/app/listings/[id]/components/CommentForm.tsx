@@ -104,7 +104,10 @@ function CommentForm(props: Props) {
         <p className="text-gray-600 dark:text-gray-400">
           Please{' '}
           <SignInButton mode="modal">
-            <button className="text-blue-600 hover:text-blue-700 cursor-pointer">
+            <button
+              type="button"
+              className="text-blue-600 hover:text-blue-700 cursor-pointer"
+            >
               sign in
             </button>
           </SignInButton>{' '}

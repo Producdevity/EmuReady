@@ -30,19 +30,19 @@ services:
     environment:
       # Docker identifier
       DOCKER_CONTAINER: "true"
-      
+
       # Database
       DATABASE_URL: "postgresql://emuready:emuready_dev_password@postgres:5432/emuready_dev"
       DATABASE_DIRECT_URL: "postgresql://emuready:emuready_dev_password@postgres:5432/emuready_dev"
-      
+
       # Node Environment
       NODE_ENV: development
-      
+
       # External URLs (will be overridden by .env.docker)
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      
+
       # Clerk Configuration (loaded from .env.docker)
-      
+
       # External APIs (placeholder - will be overridden by .env.docker)
       RAWG_API_KEY: ""
       THE_GAMES_DB_API_KEY: ""
@@ -121,7 +121,7 @@ services:
     networks:
       - emuready-network
     profiles:
-      - webhooks  # Optional service, only run when needed
+      - webhooks # Optional service, only run when needed
 
   # pgAdmin for Database Management (Optional)
   pgadmin:
@@ -130,7 +130,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@emuready.dev
       PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "5050:80"
     depends_on:
@@ -138,7 +138,7 @@ services:
     networks:
       - emuready-network
     profiles:
-      - tools  # Optional service
+      - tools # Optional service
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
@@ -154,4 +154,4 @@ volumes:
 
 networks:
   emuready-network:
-    driver: bridge 
+    driver: bridge

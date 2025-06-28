@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, GamepadIcon, CpuIcon, FunnelIcon } from 'lucide-react'
+import { Clock, GamepadIcon, CpuIcon, X, FunnelIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
@@ -227,38 +227,15 @@ function ListingsPage() {
                 {/* Close button header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5 text-blue-600 dark:text-blue-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 14.414V17a1 1 0 01-.553.894l-2 1A1 1 0 019 18v-3.586L1.293 6.707A1 1 0 011 6V4z"
-                      />
-                    </svg>
+                    <FunnelIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     Filters
                   </h2>
                   <button
+                    type="button"
                     onClick={() => setIsMobileSidebarOpen(false)}
                     className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
 
@@ -375,6 +352,7 @@ function ListingsPage() {
               {/* Compact View Options */}
               <div className="flex items-center">
                 <button
+                  type="button"
                   onClick={() => setShowSystemIcons(!showSystemIcons)}
                   className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                   title={
@@ -389,6 +367,7 @@ function ListingsPage() {
                   />
                 </button>
                 <button
+                  type="button"
                   onClick={toggleEmulatorLogos}
                   className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                   title={
@@ -651,6 +630,7 @@ function ListingsPage() {
       {/* Floating Action Button for Filters - Mobile Only */}
       <div className="lg:hidden fixed bottom-14 right-6 z-40">
         <button
+          type="button"
           onClick={() => setIsMobileSidebarOpen(true)}
           className="group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-blue-500/25 transform hover:scale-110 transition-all duration-300 ease-out"
           aria-label="Open Filters"

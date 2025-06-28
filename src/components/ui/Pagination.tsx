@@ -165,6 +165,7 @@ export function Pagination(props: Props) {
                 </span>
               )}
               <button
+                type="button"
                 onClick={() => props.onPageChange(props.totalPages)}
                 onKeyDown={(e) => handleKeyDown(e, props.totalPages)}
                 className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
@@ -176,6 +177,7 @@ export function Pagination(props: Props) {
           )}
 
           <button
+            type="button"
             onClick={() =>
               props.onPageChange(
                 Math.min(props.totalPages, props.currentPage + 1),

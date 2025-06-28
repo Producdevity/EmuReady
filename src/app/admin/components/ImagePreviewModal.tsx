@@ -78,6 +78,7 @@ function ImagePreviewModal(props: Props) {
           <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-4">
             {availableImageTypes.map((type) => (
               <button
+                type="button"
                 key={type}
                 onClick={() => setActiveTab(type)}
                 className={cn(
@@ -111,6 +112,7 @@ function ImagePreviewModal(props: Props) {
               {/* Overlay with actions */}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
+                  type="button"
                   onClick={() => {
                     analytics.contentDiscovery.externalLinkClicked({
                       url: currentImageUrl,

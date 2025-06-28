@@ -77,6 +77,7 @@ const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300">
           <div className="absolute top-3 right-3 flex flex-col gap-2">
             <button
+              type="button"
               onClick={(ev) => {
                 ev.stopPropagation()
                 props.onPreview(props.game)

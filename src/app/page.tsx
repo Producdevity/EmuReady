@@ -100,7 +100,10 @@ function Home() {
 
               {!user && (
                 <SignUpButton>
-                  <button className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
+                  <button
+                    type="button"
+                    className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 transform hover:scale-105"
+                  >
                     <span className="relative z-10 flex items-center gap-2">
                       <Users className="w-5 h-5" />
                       Join the Community

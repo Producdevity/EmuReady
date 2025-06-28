@@ -28,11 +28,11 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/emuready_test'
-      DATABASE_DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/emuready_test'
-      NODE_ENV: 'test'
-      CI: 'true'
-      NEXT_TELEMETRY_DISABLED: '1'
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
+      DATABASE_DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
+      NODE_ENV: "test"
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
       IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}

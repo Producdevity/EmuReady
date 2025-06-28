@@ -94,6 +94,8 @@ export function TableButton(props: Props) {
 
   const common = (
     <button
+      type="button"
+      aria-label={props.title}
       className={buttonClasses}
       disabled={props.disabled || props.isLoading}
       title={props.title}

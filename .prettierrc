@@ -18,6 +18,12 @@
     {
       "files": [".md"],
       "options": { "parser": "markdown" }
+    },
+    {
+      "files": ["*.yml", "*.yaml"],
+      "options": {
+        "singleQuote": false
+      }
     }
   ]
 }

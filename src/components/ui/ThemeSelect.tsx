@@ -22,6 +22,7 @@ export function ThemeSelect(props: Props) {
           return (
             <button
               key={option.value}
+              type="button"
               onClick={() => setTheme(option.value)}
               className={`p-1.5 transition-colors ${
                 theme === option.value

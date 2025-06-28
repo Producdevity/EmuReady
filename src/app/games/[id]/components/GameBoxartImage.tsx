@@ -104,6 +104,7 @@ export function GameBoxartImage(props: Props) {
               return (
                 <button
                   key={type}
+                  type="button"
                   onClick={() => handleImageTypeChange(type)}
                   className={cn(
                     'flex items-center gap-1 text-xs px-2 py-1 rounded transition-all',

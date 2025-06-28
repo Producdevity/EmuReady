@@ -438,6 +438,7 @@ function GameApprovalsPage() {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center relative">
                               <button
+                                type="button"
                                 onClick={() => handleImageClick(game)}
                                 className="group relative block"
                               >

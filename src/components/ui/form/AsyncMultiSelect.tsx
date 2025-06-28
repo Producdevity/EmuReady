@@ -218,6 +218,7 @@ export function AsyncMultiSelect({
             <Badge key={option.id}>
               {option.name}
               <button
+                type="button"
                 className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 onClick={() => handleRemove(option.id)}
               >

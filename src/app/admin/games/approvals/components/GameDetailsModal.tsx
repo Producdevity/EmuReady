@@ -185,6 +185,7 @@ function GameDetailsModal(props: Props) {
                 <div className="flex gap-2">
                   {props.selectedGame.boxartUrl && !imageError.boxart && (
                     <button
+                      type="button"
                       onClick={() => setActiveImageTab('boxart')}
                       className={cn(
                         'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
@@ -198,6 +199,7 @@ function GameDetailsModal(props: Props) {
                   )}
                   {props.selectedGame.bannerUrl && !imageError.banner && (
                     <button
+                      type="button"
                       onClick={() => setActiveImageTab('banner')}
                       className={cn(
                         'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
@@ -211,6 +213,7 @@ function GameDetailsModal(props: Props) {
                   )}
                   {props.selectedGame.imageUrl && !imageError.main && (
                     <button
+                      type="button"
                       onClick={() => setActiveImageTab('main')}
                       className={cn(
                         'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200',
@@ -229,6 +232,7 @@ function GameDetailsModal(props: Props) {
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
                 {displayImage && (
                   <button
+                    type="button"
                     onClick={() =>
                       handleImageClick(
                         activeImageTab === 'main' ? 'imageUrl' : activeImageTab,
@@ -250,6 +254,7 @@ function GameDetailsModal(props: Props) {
                 )}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
+                    type="button"
                     onClick={() => {
                       const imageUrl = getDisplayImage() ?? ''
                       analytics.contentDiscovery.externalLinkClicked({
@@ -323,6 +328,7 @@ function GameDetailsModal(props: Props) {
                   </div>
                   {props.selectedGame.submitter?.id && (
                     <button
+                      type="button"
                       onClick={() => {
                         if (!props.selectedGame?.submitter?.id) return
                         copyToClipboard(
@@ -399,6 +405,7 @@ function GameDetailsModal(props: Props) {
                       <div className="flex items-center gap-1 ml-4">
                         <Code>{props.selectedGame.id.slice(0, 10)}...</Code>
                         <button
+                          type="button"
                           onClick={() => {
                             if (!props.selectedGame) return
                             copyToClipboard(props.selectedGame.id, 'Game ID')
@@ -418,6 +425,7 @@ function GameDetailsModal(props: Props) {
                         <div className="flex items-center gap-1 ml-4">
                           <Code>{props.selectedGame.tgdbGameId}</Code>
                           <button
+                            type="button"
                             onClick={() => {
                               if (!props.selectedGame?.tgdbGameId) return
                               copyToClipboard(

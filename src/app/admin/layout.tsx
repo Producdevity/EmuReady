@@ -99,6 +99,7 @@ function AdminLayout(props: PropsWithChildren) {
                   </h2>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsCollapsed(!isCollapsed)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 flex-shrink-0 group"
                   aria-label={

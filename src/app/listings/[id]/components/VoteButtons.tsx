@@ -124,6 +124,7 @@ function VoteButtons(props: Props) {
             Community Verification
           </h3>
           <button
+            type="button"
             onClick={() => setShowHelpModal(true)}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             title="How does verification work?"
@@ -134,6 +135,7 @@ function VoteButtons(props: Props) {
 
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => handleVote(true)}
             disabled={!isAuthenticated || voteMutation.isPending}
             className={`flex flex-col items-center p-3 rounded-lg transition-colors border-2 ${

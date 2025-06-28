@@ -32,6 +32,7 @@ export default function NotFound() {
 
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <button
+            type="button"
             onClick={() => router.back()}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-indigo-600 border border-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors"
           >

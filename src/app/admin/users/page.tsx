@@ -308,6 +308,7 @@ function AdminUsersPage() {
                   {columnVisibility.isColumnVisible('name') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
+                        type="button"
                         onClick={() => openUserDetailsModal(user.id)}
                         className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 font-medium"
                       >
