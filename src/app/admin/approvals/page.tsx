@@ -375,12 +375,14 @@ function AdminApprovalsPage() {
               label: 'Approve Selected',
               onAction: async (listingIds) => {
                 await bulkApproveMutation.mutateAsync({ listingIds })
+                await invalidateQueries()
               },
             },
             reject: {
               label: 'Reject Selected',
               onAction: async (listingIds, notes) => {
                 await bulkRejectMutation.mutateAsync({ listingIds, notes })
+                await invalidateQueries()
               },
             },
           }}
