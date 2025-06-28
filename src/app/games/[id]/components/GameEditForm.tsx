@@ -5,8 +5,9 @@ import { Pencil, Image as ImageIcon, X } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, Badge } from '@/components/ui'
 import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
@@ -15,6 +16,12 @@ import { sanitizeString } from '@/utils/validation'
 import { ApprovalStatus, Role } from '@orm'
 
 type ImageType = 'imageUrl' | 'boxartUrl' | 'bannerUrl'
+
+const imageTypeToLabel: Record<ImageType, string> = {
+  imageUrl: 'Cover Image',
+  boxartUrl: 'Box Art',
+  bannerUrl: 'Banner',
+}
 
 interface Props {
   gameData: {
@@ -164,19 +171,6 @@ export function GameEditForm(props: Props) {
     }
   }
 
-  const getImageTypeLabel = (type: ImageType) => {
-    switch (type) {
-      case 'imageUrl':
-        return 'Cover Image'
-      case 'boxartUrl':
-        return 'Box Art'
-      case 'bannerUrl':
-        return 'Banner'
-      default:
-        return 'Image'
-    }
-  }
-
   const clearCurrentImage = () => {
     switch (activeImageTab) {
       case 'imageUrl':
@@ -221,7 +215,12 @@ export function GameEditForm(props: Props) {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg flex flex-col max-w-2xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <h2 className="text-xl font-bold">Edit Game</h2>
+              <h2 className="text-xl font-bold">Edit Game </h2>
+              <div className="flex items-center gap-2">
+                <Badge variant="default">
+                  System: {props.gameData.system?.name ?? 'Unknown System'}
+                </Badge>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -269,7 +268,7 @@ export function GameEditForm(props: Props) {
                             : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
                         )}
                       >
-                        {getImageTypeLabel(type)}
+                        {imageTypeToLabel[type]}
                       </button>
                     ))}
                   </div>
@@ -278,7 +277,7 @@ export function GameEditForm(props: Props) {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <label className="block text-sm font-medium">
-                        {getImageTypeLabel(activeImageTab)} URL
+                        {imageTypeToLabel[activeImageTab]} URL
                       </label>
                       {getCurrentImageUrl() && (
                         <button
@@ -307,7 +306,7 @@ export function GameEditForm(props: Props) {
                             break
                         }
                       }}
-                      placeholder={`Enter ${getImageTypeLabel(activeImageTab).toLowerCase()} URL`}
+                      placeholder={`Enter ${imageTypeToLabel[activeImageTab]?.toLowerCase() ?? ''} URL`}
                     />
 
                     {/* Image Preview */}
@@ -315,14 +314,17 @@ export function GameEditForm(props: Props) {
                       <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                         <Image
                           src={getImageUrl(getCurrentImageUrl(), title) ?? ''}
-                          alt={`${title} - ${getImageTypeLabel(activeImageTab)}`}
+                          alt={`${title} - ${imageTypeToLabel[activeImageTab]}`}
                           width={400}
                           height={200}
                           className="w-full h-48 object-contain"
                           unoptimized
-                          onError={() => {
-                            // Handle image load error silently
-                          }}
+                          onError={() =>
+                            analytics.error.imageLoadError({
+                              imageUrl: getCurrentImageUrl(),
+                              id: props.gameData.id,
+                            })
+                          }
                         />
                       </div>
                     )}
@@ -335,7 +337,7 @@ export function GameEditForm(props: Props) {
                         onClick={() => setShowImageSelector(true)}
                         className="flex-1"
                       >
-                        Search for {getImageTypeLabel(activeImageTab)}
+                        Search for {imageTypeToLabel[activeImageTab]}
                       </Button>
                     </div>
                   </div>
@@ -385,7 +387,7 @@ export function GameEditForm(props: Props) {
           <div className="bg-white dark:bg-gray-800 rounded-lg flex flex-col max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h2 className="text-xl font-bold">
-                Select {getImageTypeLabel(activeImageTab)}
+                Select {imageTypeToLabel[activeImageTab]}
               </h2>
               <Button
                 variant="ghost"

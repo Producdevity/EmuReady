@@ -50,7 +50,7 @@ export function StopKillingGamesPopup() {
 
   const handleClick = () => {
     analytics.engagement.stopKillingGamesCTA({ timeOnPage: getTimeOnPage() })
-    window.open(signPetitionUrl, '_blank')
+    window.open(signPetitionUrl, '_blank', 'noopener,noreferrer')
   }
 
   if (process.env.NODE_ENV !== 'production' || !isOpen) return null

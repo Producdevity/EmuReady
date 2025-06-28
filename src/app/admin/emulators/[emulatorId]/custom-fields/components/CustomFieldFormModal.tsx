@@ -635,7 +635,10 @@ function CustomFieldFormModal(props: Props) {
               )}
               {Array.isArray(formState.errors.options) &&
                 formState.errors.options.map((optError, index) => (
-                  <div key={index} className="text-red-500 text-xs">
+                  <div
+                    key={fields[index]?.id ?? index}
+                    className="text-red-500 text-xs"
+                  >
                     {optError?.value && (
                       <p>{`Option ${index + 1} Value: ${optError.value.message}`}</p>
                     )}

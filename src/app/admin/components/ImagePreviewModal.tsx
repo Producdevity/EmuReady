@@ -119,7 +119,11 @@ function ImagePreviewModal(props: Props) {
                       context: 'admin_image_preview',
                       entityId: props.game?.id,
                     })
-                    window.open(currentImageUrl, '_blank')
+                    window.open(
+                      currentImageUrl,
+                      '_blank',
+                      'noopener,noreferrer',
+                    )
                   }}
                   className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
                   title="View full size"

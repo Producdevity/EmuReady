@@ -4,6 +4,7 @@ import { type Role } from '@orm'
 
 // Analytics Event Categories
 export const ANALYTICS_CATEGORIES = {
+  ERROR: 'error',
   FILTER: 'filter',
   ENGAGEMENT: 'engagement',
   LISTING: 'listing',
@@ -17,6 +18,11 @@ export const ANALYTICS_CATEGORIES = {
   CONVERSION: 'conversion',
   CONTENT_QUALITY: 'content_quality',
   SESSION: 'session',
+} as const
+
+// Error Actions
+export const ERROR_ACTIONS = {
+  IMAGE_LOAD_ERROR: 'image_load_error',
 } as const
 
 // Filter Actions
@@ -370,6 +376,25 @@ function sendAnalyticsEvent(params: AnalyticsEventData) {
 
 // Main analytics object with typesafe methods
 const analytics = {
+  error: {
+    imageLoadError: ({
+      imageUrl,
+      error,
+      id,
+    }: {
+      imageUrl: string
+      error?: Error
+      id?: string
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ERROR,
+        action: ERROR_ACTIONS.IMAGE_LOAD_ERROR,
+        value: imageUrl,
+        metadata: { error: error?.message ?? 'unknown', id: id ?? 'unknown' },
+      })
+    },
+  },
+
   // Filter events
   filter: {
     sort: (sortField: string | SortField | null) => {

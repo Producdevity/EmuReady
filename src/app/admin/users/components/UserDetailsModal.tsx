@@ -465,7 +465,7 @@ function UserDetailsModal(props: Props) {
                           Trust Score Adjustment
                         </span>
                         <Badge variant="default" size="sm" className="text-xs">
-                          SUPER ADMIN
+                          {userQuery.data.role}
                         </Badge>
                       </div>
 

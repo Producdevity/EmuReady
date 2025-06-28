@@ -262,7 +262,7 @@ function GameDetailsModal(props: Props) {
                         context: 'admin_game_details_image',
                         entityId: props.selectedGame?.id,
                       })
-                      window.open(imageUrl, '_blank')
+                      window.open(imageUrl, '_blank', 'noopener,noreferrer')
                     }}
                     className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
                     title="View full size"

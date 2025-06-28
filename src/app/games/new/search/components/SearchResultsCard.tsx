@@ -123,7 +123,13 @@ const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
         <div className="flex-shrink-0">
           {isExisting ? (
             <Button
-              onClick={() => window.open(`/games/${existingGame.id}`, '_blank')}
+              onClick={() =>
+                window.open(
+                  `/games/${existingGame.id}`,
+                  '_blank',
+                  'noopener,noreferrer',
+                )
+              }
               variant="outline"
               size="sm"
               className="w-full border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"

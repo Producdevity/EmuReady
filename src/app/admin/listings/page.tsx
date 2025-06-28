@@ -512,7 +512,11 @@ function AdminListingsPage() {
                                 context: 'admin_listings_table_click',
                                 entityId: listing.id,
                               })
-                              window.open(`/listings/${listing.id}`, '_blank')
+                              window.open(
+                                `/listings/${listing.id}`,
+                                '_blank',
+                                'noopener,noreferrer',
+                              )
                             }}
                             title="View Details"
                           />
