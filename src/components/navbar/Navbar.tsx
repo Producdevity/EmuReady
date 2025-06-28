@@ -144,12 +144,12 @@ function Navbar() {
                       <Link
                         href="/v2/listings"
                         className="px-4 py-2.5 bg-gradient-to-r
-                        from-lime-500 to-teal-600
-                        hover:from-lime-600 hover:to-teal-700
+                        from-cyan-500 to-blue-600
+                        hover:from-cyan-600 hover:to-blue-700
                         text-white font-semibold text-sm rounded-xl transition-all duration-300
-                        shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
+                        shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105"
                       >
-                        Listings V2
+                        Listings V2 (BETA)
                       </Link>
                     )}
 
