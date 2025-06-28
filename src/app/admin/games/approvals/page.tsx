@@ -11,7 +11,7 @@ import {
   AdminTableContainer,
   AdminStatsDisplay,
 } from '@/components/admin'
-import SystemIcon from '@/components/icons/SystemIcon'
+import { SystemIcon } from '@/components/icons'
 import {
   Button,
   Input,

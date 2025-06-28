@@ -143,8 +143,6 @@ function AdminGamesPage() {
     { id: ApprovalStatus.REJECTED, name: 'Rejected' },
   ]
 
-  if (gamesQuery.isLoading) return <LoadingSpinner />
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -246,7 +244,11 @@ function AdminGamesPage() {
       </div>
 
       <AdminTableContainer>
-        {gamesQuery.data?.games.length === 0 ? (
+        {gamesQuery.isLoading ? (
+          <div className="flex justify-center items-center py-16">
+            <LoadingSpinner text="Loading games..." />
+          </div>
+        ) : gamesQuery.data?.games.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               {table.search || systemId || statusFilter

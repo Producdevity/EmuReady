@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useState, useCallback } from 'react'
 import { isArray, isString } from 'remeda'
-import SystemIcon from '@/components/icons/SystemIcon'
+import { SystemIcon } from '@/components/icons'
 import {
   Badge,
   Button,

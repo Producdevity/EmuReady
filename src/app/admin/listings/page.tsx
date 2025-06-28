@@ -10,8 +10,7 @@ import {
   AdminTableContainer,
   AdminStatsDisplay,
 } from '@/components/admin'
-import EmulatorIcon from '@/components/icons/EmulatorIcon'
-import SystemIcon from '@/components/icons/SystemIcon'
+import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   Button,
   Input,
@@ -158,14 +157,6 @@ function AdminListingsPage() {
 
   const listings = listingsQuery.data?.listings ?? []
   const pagination = listingsQuery.data?.pagination
-
-  if (listingsQuery.isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <LoadingSpinner text="Loading listings..." />
-      </div>
-    )
-  }
 
   return (
     <AdminPageLayout

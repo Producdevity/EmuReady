@@ -63,7 +63,7 @@ Create the Cloudflare Tunnel config file at `~/.cloudflared/config.yml` with the
 
 ```yaml
 tunnel: <your-tunnel-name>
-credentials-file: /Users/<your-username>/.cloudflared/<your-credentials-file>.json
+credentials-file: ~/.cloudflared/<your-credentials-file>.json
 
 ingress:
   - hostname: dev.emuready.com
@@ -138,7 +138,7 @@ If you encounter issues or need help, please reach out to the maintainers.
 
 ---
 
-## Using ngrok (Quick setup and doesn't require a domain)
+## Using ngrok (Quick setup and doesn't require owning a domain)
 
 If you don’t have a domain or Cloudflare account, you can use [ngrok](https://ngrok.com/) to expose your local development server.
 

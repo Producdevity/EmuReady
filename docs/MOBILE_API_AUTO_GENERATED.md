@@ -1,10 +1,10 @@
 # Mobile API Documentation
 
-Auto-generated on: 2025-06-22T17:17:56.445Z
+Auto-generated on: 2025-06-27T15:20:20.085Z
 
 ## Summary
-- **Total Endpoints**: 26
-- **Categories**: Authentication, Listings, Games, Devices, Emulators, Systems, Performance, Notifications, Voting, Comments, User, Search, Statistics
+- **Total Endpoints**: 34
+- **Categories**: Health, Authentication, Listings, Games, Devices, Emulators, Systems, Performance, Notifications, Voting, Comments, User, Search, Statistics
 - **OpenAPI Version**: 3.0.0
 
 ## Base URL
@@ -14,9 +14,8 @@ Auto-generated on: 2025-06-22T17:17:56.445Z
 Most endpoints require Bearer token authentication using Clerk JWT.
 
 ## Interactive Documentation
-- **Swagger UI**: [/docs/mobile/swagger](/docs/api/swagger)
+- **Swagger UI**: [/docs/api/swagger](/docs/api/swagger)
 - **OpenAPI JSON**: [/api/docs/api/openapi.json](/api/docs/api/openapi.json)
 
 ---
-TODO
 *This documentation is automatically generated from TRPC procedures and Zod schemas.*

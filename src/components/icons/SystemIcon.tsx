@@ -18,7 +18,7 @@ interface Props {
   name: string
 }
 
-function SystemIcon(props: Props) {
+export function SystemIcon(props: Props) {
   const IconComponent = getSystemIcon(props.systemKey)
 
   return IconComponent ? (
@@ -40,5 +40,3 @@ function SystemIcon(props: Props) {
     props.name
   )
 }
-
-export default SystemIcon
