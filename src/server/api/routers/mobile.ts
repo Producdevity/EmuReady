@@ -112,6 +112,9 @@ export const mobileRouter = createTRPCRouter({
           return {
             ...listing,
             successRate,
+            upVotes,
+            downVotes,
+            totalVotes,
             userVote: userVote?.value ?? null,
           }
         }),
@@ -180,6 +183,9 @@ export const mobileRouter = createTRPCRouter({
         return {
           ...listing,
           successRate,
+          upVotes,
+          downVotes,
+          totalVotes,
           userVote: userVote?.value ?? null,
         }
       }),
@@ -619,6 +625,9 @@ export const mobileRouter = createTRPCRouter({
           return {
             ...listing,
             successRate,
+            upVotes,
+            downVotes,
+            totalVotes,
             userVote: userVote?.value ?? null,
           }
         }),
@@ -817,6 +826,9 @@ export const mobileRouter = createTRPCRouter({
       return {
         ...listing,
         successRate,
+        upVotes,
+        downVotes,
+        totalVotes,
         userVote: userVote?.value ?? null,
       }
     }),

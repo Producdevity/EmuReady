@@ -256,6 +256,7 @@ export const coreRouter = createTRPCRouter({
             })
 
             const totalVotes = listing._count.votes
+            const downVotes = totalVotes - upVotes
             const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
             const userVote =
@@ -266,6 +267,9 @@ export const coreRouter = createTRPCRouter({
             return {
               ...listing,
               successRate,
+              upVotes,
+              downVotes,
+              totalVotes,
               userVote,
               // Remove the raw votes array from the response
               votes: undefined,
@@ -273,24 +277,46 @@ export const coreRouter = createTRPCRouter({
           }),
         )
 
-        // Sort by success rate / verified
+        // Sort by success rate with vote count as secondary criteria
         allListingsWithStats.sort((a, b) => {
           if (input.sortDirection === 'asc') {
-            // For ascending (low to high)
-            // 1. Listings with votes and low success rate first
-            // 2. Listings with no votes last
-            if (a._count.votes === 0 && b._count.votes === 0) return 0
-            if (a._count.votes === 0) return 1
-            if (b._count.votes === 0) return -1
-            return a.successRate - b.successRate
+            // For ascending (low to high success rate = most negative first)
+            // 1. Listings with no votes go last
+            if (a.totalVotes === 0 && b.totalVotes === 0) return 0
+            if (a.totalVotes === 0) return 1
+            if (b.totalVotes === 0) return -1
+
+            // 2. Compare success rates first
+            if (Math.abs(a.successRate - b.successRate) > 0.001) {
+              return a.successRate - b.successRate
+            }
+
+            // 3. If success rates are equal, prioritize by total vote count (more votes = more significant)
+            if (a.totalVotes !== b.totalVotes) {
+              return b.totalVotes - a.totalVotes
+            }
+
+            // 4. If vote counts are equal, prioritize by downvotes (more downvotes = more negative)
+            return b.downVotes - a.downVotes
           } else {
-            // For descending (high to low)
-            // 1. Listings with high success rate first
-            // 2. Listings with no votes last
-            if (a._count.votes === 0 && b._count.votes === 0) return 0
-            if (a._count.votes === 0) return 1
-            if (b._count.votes === 0) return -1
-            return b.successRate - a.successRate
+            // For descending (high to low success rate = most positive first)
+            // 1. Listings with no votes go last
+            if (a.totalVotes === 0 && b.totalVotes === 0) return 0
+            if (a.totalVotes === 0) return 1
+            if (b.totalVotes === 0) return -1
+
+            // 2. Compare success rates first
+            if (Math.abs(a.successRate - b.successRate) > 0.001) {
+              return b.successRate - a.successRate
+            }
+
+            // 3. If success rates are equal, prioritize by total vote count (more votes = more significant)
+            if (a.totalVotes !== b.totalVotes) {
+              return b.totalVotes - a.totalVotes
+            }
+
+            // 4. If vote counts are equal, prioritize by upvotes (more upvotes = more positive)
+            return b.upVotes - a.upVotes
           }
         })
 
@@ -344,6 +370,7 @@ export const coreRouter = createTRPCRouter({
           })
 
           const totalVotes = listing._count.votes
+          const downVotes = totalVotes - upVotes
           const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
           const userVote =
@@ -354,6 +381,9 @@ export const coreRouter = createTRPCRouter({
           return {
             ...listing,
             successRate,
+            upVotes,
+            downVotes,
+            totalVotes,
             userVote,
             // Remove the raw votes array from the response
             votes: undefined,
@@ -414,8 +444,9 @@ export const coreRouter = createTRPCRouter({
         where: { listingId: listing.id, value: true },
       })
 
-      const successRate =
-        listing._count.votes > 0 ? upVotes / listing._count.votes : 0
+      const totalVotes = listing._count.votes
+      const downVotes = totalVotes - upVotes
+      const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
       const userVote =
         ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
@@ -423,6 +454,9 @@ export const coreRouter = createTRPCRouter({
       return {
         ...listing,
         successRate,
+        upVotes,
+        downVotes,
+        totalVotes,
         userVote,
         // Remove the raw votes array from the response
         votes: undefined,
@@ -844,8 +878,9 @@ export const coreRouter = createTRPCRouter({
         where: { listingId: listing.id, value: true },
       })
       const totalVotes = listing._count.votes
+      const downVotes = totalVotes - upVotes
       const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-      return { ...listing, successRate }
+      return { ...listing, successRate, upVotes, downVotes, totalVotes }
     }
 
     return await Promise.all(listings.map(calculateSuccessRate))
