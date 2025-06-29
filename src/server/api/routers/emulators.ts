@@ -73,7 +73,12 @@ export const emulatorsRouter = createTRPCRouter({
       const emulators = await ctx.prisma.emulator.findMany({
         where,
         include: {
-          systems: true,
+          systems: { select: { id: true, name: true, key: true } },
+          verifiedDevelopers: {
+            include: {
+              user: { select: { id: true, name: true, profileImage: true } },
+            },
+          },
           _count: { select: { listings: true, systems: true } },
         },
         orderBy,
@@ -99,7 +104,12 @@ export const emulatorsRouter = createTRPCRouter({
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: input.id },
         include: {
-          systems: true,
+          systems: { select: { id: true, name: true, key: true } },
+          verifiedDevelopers: {
+            include: {
+              user: { select: { id: true, name: true, profileImage: true } },
+            },
+          },
           customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
           _count: { select: { listings: true } },
         },
@@ -142,6 +152,9 @@ export const emulatorsRouter = createTRPCRouter({
         data: {
           name: input.name,
           logo: input.logo || null,
+          description: input.description || null,
+          repositoryUrl: input.repositoryUrl || null,
+          officialUrl: input.officialUrl || null,
         },
       })
     }),

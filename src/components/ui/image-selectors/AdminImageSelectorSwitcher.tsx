@@ -10,8 +10,8 @@ import {
   getImageValidationError,
   IMAGE_EXTENSIONS,
 } from '@/utils/imageValidation'
-import RawgImageSelector from './RawgImageSelector'
-import TGDBImageSelector from './TGDBImageSelector'
+import { RawgImageSelector } from './RawgImageSelector'
+import { TGDBImageSelector } from './TGDBImageSelector'
 
 interface Props {
   gameTitle?: string
@@ -33,7 +33,7 @@ const imageServiceMap: Record<ImageService, ImageService> = {
   tgdb: 'tgdb',
 }
 
-function AdminImageSelectorSwitcher(props: Props) {
+export function AdminImageSelectorSwitcher(props: Props) {
   const [selectedService, setSelectedService] = useState<ImageService>(
     imageServiceMap.url,
   )
@@ -321,5 +321,3 @@ function AdminImageSelectorSwitcher(props: Props) {
     </div>
   )
 }
-
-export default AdminImageSelectorSwitcher

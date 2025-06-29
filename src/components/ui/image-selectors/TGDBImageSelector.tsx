@@ -40,7 +40,7 @@ interface Props {
   className?: string
 }
 
-function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
+export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(
     null,
@@ -463,5 +463,3 @@ function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     </div>
   )
 }
-
-export default TGDBImageSelector

@@ -1,8 +1,9 @@
 'use client'
 
-import { Search, Smartphone } from 'lucide-react'
+import { Search, Smartphone, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useState, type ChangeEvent } from 'react'
 import { isEmpty } from 'remeda'
 import {
   Button,
@@ -11,6 +12,7 @@ import {
   ColumnVisibilityControl,
   SortableHeader,
   Pagination,
+  Badge,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
@@ -31,6 +33,7 @@ const DEVICES_COLUMNS: ColumnDefinition[] = [
 ]
 
 function DevicesPage() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<DeviceSortField>('brand')
@@ -74,14 +77,20 @@ function DevicesPage() {
     setPage(1)
   }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value)
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setSearch(ev.target.value)
     setPage(1)
   }
 
   return (
     <div className="container mx-auto px-4 py-8 pt-24">
       {/* Header */}
+      <div className="mb-4 md:mb-6">
+        <Button variant="outline" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
           Browse Devices
@@ -203,12 +212,12 @@ function DevicesPage() {
                     {columnVisibility.isColumnVisible('listings') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         <div className="flex items-center gap-2">
-                          <span>{device._count?.listings ?? 0}</span>
+                          <Badge>{device._count?.listings ?? 0}</Badge>
                           {(device._count?.listings ?? 0) > 0 && (
                             <Link
                               href={`/listings?deviceIds=${device.id}`}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(ev) => ev.stopPropagation()}
                             >
                               View
                             </Link>
@@ -250,16 +259,6 @@ function DevicesPage() {
           />
         </div>
       )}
-
-      {/* Back to Dashboard */}
-      <div className="text-center mt-12">
-        <Link
-          href="/"
-          className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-300"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
 
       {/* Device Modal */}
       <DeviceViewModal

@@ -9,10 +9,10 @@ import {
   LoadingSpinner,
   Button,
   Input,
+  ImageSelectorSwitcher,
   Autocomplete,
   type AutocompleteOptionBase,
 } from '@/components/ui'
-import ImageSelectorSwitcher from '@/components/ui/image-selectors/ImageSelectorSwitcher'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'

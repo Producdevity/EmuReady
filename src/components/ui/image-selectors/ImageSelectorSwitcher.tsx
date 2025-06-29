@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Database, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Toggle } from '@/components/ui'
-import RawgImageSelector from './RawgImageSelector'
-import TGDBImageSelector from './TGDBImageSelector'
+import { RawgImageSelector } from './RawgImageSelector'
+import { TGDBImageSelector } from './TGDBImageSelector'
 
 interface Props {
   gameTitle?: string
@@ -24,7 +24,7 @@ const imageServiceMap: Record<ImageService, ImageService> = {
   tgdb: 'tgdb',
 }
 
-function ImageSelectorSwitcher(props: Props) {
+export function ImageSelectorSwitcher(props: Props) {
   const [selectedService, setSelectedService] = useState<ImageService>(
     imageServiceMap.tgdb,
   )
@@ -144,5 +144,3 @@ function ImageSelectorSwitcher(props: Props) {
     </div>
   )
 }
-
-export default ImageSelectorSwitcher

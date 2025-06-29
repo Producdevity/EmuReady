@@ -19,12 +19,18 @@ export const GetEmulatorByIdSchema = z.object({ id: z.string().uuid() })
 export const CreateEmulatorSchema = z.object({
   name: z.string().min(1),
   logo: z.string().optional(),
+  description: z.string().optional(),
+  repositoryUrl: z.string().url().optional(),
+  officialUrl: z.string().url().optional(),
 })
 
 export const UpdateEmulatorSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   logo: z.string().optional(),
+  description: z.string().optional(),
+  repositoryUrl: z.string().url().optional(),
+  officialUrl: z.string().url().optional(),
 })
 
 export const DeleteEmulatorSchema = z.object({ id: z.string().uuid() })

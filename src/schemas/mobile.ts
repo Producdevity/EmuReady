@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const GetGameByIdSchema = z.object({
-  gameId: z.string().uuid(),
+  id: z.string().uuid(),
 })
 
 export const GetListingByIdSchema = z.object({
@@ -115,6 +115,10 @@ export const GetEmulatorsSchema = z.object({
   systemId: z.string().uuid().optional(),
   search: z.string().optional(),
   limit: z.number().min(1).max(100).default(50),
+})
+
+export const GetEmulatorByIdSchema = z.object({
+  id: z.string().uuid(),
 })
 
 export const GetNotificationsSchema = z.object({
