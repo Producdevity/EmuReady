@@ -1,4 +1,4 @@
-import { ResourceError } from '@/lib/errors'
+import { ResourceError, AppError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
   ApproveListingSchema,
@@ -412,7 +412,7 @@ export const adminRouter = createTRPCRouter({
         )
 
         if (listingsToApprove.length === 0) {
-          throw new Error(
+          return AppError.badRequest(
             'No valid pending listings found to approve. The listings may have already been processed.',
           )
         }
@@ -503,7 +503,7 @@ export const adminRouter = createTRPCRouter({
         )
 
         if (listingsToReject.length === 0) {
-          throw new Error(
+          return AppError.badRequest(
             'No valid pending listings found to reject. The listings may have already been processed.',
           )
         }

@@ -38,7 +38,9 @@ export const commentsRouter = createTRPCRouter({
         })
 
         if (!captchaResult.success) {
-          throw new Error(`CAPTCHA verification failed: ${captchaResult.error}`)
+          return AppError.badRequest(
+            `CAPTCHA verification failed: ${captchaResult.error}`,
+          )
         }
       }
 

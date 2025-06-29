@@ -638,7 +638,7 @@ export const gamesRouter = createTRPCRouter({
         })
 
         if (gamesToApprove.length === 0) {
-          throw new Error('No valid pending games found to approve')
+          return AppError.badRequest('No valid pending games found to approve')
         }
 
         // Update all games to approved
@@ -678,7 +678,7 @@ export const gamesRouter = createTRPCRouter({
         })
 
         if (gamesToReject.length === 0) {
-          throw new Error('No valid pending games found to reject')
+          return AppError.badRequest('No valid pending games found to reject')
         }
 
         // Update all games to rejected

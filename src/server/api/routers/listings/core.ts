@@ -524,7 +524,9 @@ export const coreRouter = createTRPCRouter({
         })
 
         if (!captchaResult.success) {
-          throw new Error(`CAPTCHA verification failed: ${captchaResult.error}`)
+          return AppError.badRequest(
+            `CAPTCHA verification failed: ${captchaResult.error}`,
+          )
         }
       }
 
@@ -662,7 +664,9 @@ export const coreRouter = createTRPCRouter({
         })
 
         if (!captchaResult.success) {
-          throw new Error(`CAPTCHA verification failed: ${captchaResult.error}`)
+          return AppError.badRequest(
+            `CAPTCHA verification failed: ${captchaResult.error}`,
+          )
         }
       }
 
