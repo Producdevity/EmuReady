@@ -53,7 +53,7 @@ interface LinkBehavior {
 }
 
 interface ClickBehavior {
-  onClick: () => void
+  onClick: (ev: MouseEvent<HTMLButtonElement>) => void
   href?: never
 }
 
