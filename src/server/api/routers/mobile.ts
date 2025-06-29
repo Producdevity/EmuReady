@@ -8,6 +8,7 @@ import {
   DeleteCommentSchema,
   DeleteListingSchema,
   GetDevicesSchema,
+  GetEmulatorByIdSchema,
   GetEmulatorsSchema,
   GetGameByIdSchema,
   GetGamesSchema,
@@ -317,16 +318,26 @@ export const mobileRouter = createTRPCRouter({
       return emulators
     }),
 
-  // Enhanced devices endpoint
+  // Emulator details
+  getEmulatorById: publicProcedure
+    .input(GetEmulatorByIdSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.emulator.findUnique({
+        where: { id: input.id },
+        include: {
+          systems: { select: { id: true, name: true, key: true } },
+          _count: { select: { listings: true } },
+        },
+      })
+    }),
+
   getDevices: publicProcedure
     .input(GetDevicesSchema)
     .query(async ({ ctx, input }) => {
-      const { search, brandId, limit } = input
-
       const baseWhere = {}
-      if (brandId) Object.assign(baseWhere, { brandId })
+      if (input.brandId) Object.assign(baseWhere, { brandId: input.brandId })
 
-      let devices = await ctx.prisma.device.findMany({
+      const devices = await ctx.prisma.device.findMany({
         where: baseWhere,
         include: {
           brand: { select: { id: true, name: true } },
@@ -338,24 +349,24 @@ export const mobileRouter = createTRPCRouter({
           },
         },
         orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-        take: search ? undefined : limit,
+        take: input.search ? undefined : input.limit,
       })
 
-      // Filter by search if provided
-      if (search) {
-        devices = devices
-          .filter(
-            (device) =>
-              device.modelName.toLowerCase().includes(search.toLowerCase()) ||
-              device.brand.name.toLowerCase().includes(search.toLowerCase()),
-          )
-          .slice(0, limit)
-      }
+      const searchTerm = input.search?.toLowerCase()
 
-      return devices
+      // Filter by search if provided
+      // TODO: do this in the query instead
+      return searchTerm
+        ? devices
+            .filter((device) =>
+              `${device.modelName} ${device.brand.name}`
+                .toLowerCase()
+                .includes(searchTerm),
+            )
+            .slice(0, input.limit)
+        : devices
     }),
 
-  // Device brands
   getDeviceBrands: publicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.deviceBrand.findMany({
       select: { id: true, name: true },
@@ -363,7 +374,6 @@ export const mobileRouter = createTRPCRouter({
     })
   }),
 
-  // SOCs
   getSocs: publicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.soC.findMany({
       select: { id: true, name: true, manufacturer: true },
@@ -371,7 +381,6 @@ export const mobileRouter = createTRPCRouter({
     })
   }),
 
-  // Performance scales
   getPerformanceScales: publicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.performanceScale.findMany({
       select: { id: true, label: true, rank: true },
@@ -379,7 +388,6 @@ export const mobileRouter = createTRPCRouter({
     })
   }),
 
-  // Systems
   getSystems: publicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.system.findMany({
       select: { id: true, name: true, key: true, tgdbPlatformId: true },
@@ -387,7 +395,6 @@ export const mobileRouter = createTRPCRouter({
     })
   }),
 
-  // Search suggestions
   getSearchSuggestions: publicProcedure
     .input(SearchSuggestionsSchema)
     .query(async ({ ctx, input }) => {
@@ -451,7 +458,6 @@ export const mobileRouter = createTRPCRouter({
       return suggestions.slice(0, limit)
     }),
 
-  // Notifications
   getNotifications: protectedProcedure
     .input(GetNotificationsSchema)
     .query(async ({ ctx, input }) => {
@@ -545,7 +551,6 @@ export const mobileRouter = createTRPCRouter({
     return { success: true }
   }),
 
-  // Get user's vote on a listing
   getUserVote: protectedProcedure
     .input(GetUserVoteSchema)
     .query(async ({ ctx, input }) => {
@@ -562,7 +567,6 @@ export const mobileRouter = createTRPCRouter({
       return vote?.value ?? null
     }),
 
-  // User preferences
   getUserPreferences: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
@@ -864,7 +868,7 @@ export const mobileRouter = createTRPCRouter({
   getGameById: publicProcedure.input(GetGameByIdSchema).query(
     async ({ ctx, input }) =>
       await ctx.prisma.game.findUnique({
-        where: { id: input.gameId },
+        where: { id: input.id },
         include: {
           system: { select: { id: true, name: true, key: true } },
           _count: {

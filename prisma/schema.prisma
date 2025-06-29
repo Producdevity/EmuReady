@@ -233,6 +233,9 @@ model Emulator {
   id                    String                  @id @default(uuid())
   name                  String                  @unique
   logo                  String?                 // Logo filename (e.g., "aethersx2.png")
+  description           String?                 // Markdown description/notes
+  repositoryUrl         String?                 // Repository/source code URL
+  officialUrl           String?                 // Official website URL
   listings              Listing[]
   customFieldDefinitions CustomFieldDefinition[]
   systems               System[]

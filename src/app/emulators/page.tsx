@@ -1,17 +1,20 @@
 'use client'
 
-import { Search, Monitor } from 'lucide-react'
+import { Search, Monitor, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { EmulatorIcon } from '@/components/icons'
 import {
+  Badge,
   Button,
   Input,
   LoadingSpinner,
   ColumnVisibilityControl,
   SortableHeader,
   Pagination,
+  ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import useColumnVisibility, {
@@ -28,9 +31,11 @@ const EMULATORS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Emulator', defaultVisible: true },
   { key: 'systems', label: 'Systems', defaultVisible: true },
   { key: 'listings', label: 'Reports', defaultVisible: true },
+  { key: 'actions', label: 'Actions', defaultVisible: true },
 ]
 
 function EmulatorsPage() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<EmulatorSortField>('name')
@@ -84,6 +89,12 @@ function EmulatorsPage() {
   return (
     <div className="container mx-auto px-4 py-8 pt-24">
       {/* Header */}
+      <div className="mb-4 md:mb-6">
+        <Button variant="outline" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
           Browse Emulators
@@ -154,6 +165,11 @@ function EmulatorsPage() {
                       Reports
                     </th>
                   )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -172,7 +188,13 @@ function EmulatorsPage() {
                             showLogo={true}
                             size="md"
                           />
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div
+                            className="text-sm font-medium text-gray-900 dark:text-white"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              openModal(emulator)
+                            }}
+                          >
                             {emulator.name}
                           </div>
                         </div>
@@ -186,17 +208,28 @@ function EmulatorsPage() {
                     {columnVisibility.isColumnVisible('listings') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         <div className="flex items-center gap-2">
-                          <span>{emulator._count?.listings ?? 0}</span>
+                          <Badge>{emulator._count?.listings ?? 0}</Badge>
                           {(emulator._count?.listings ?? 0) > 0 && (
                             <Link
                               href={`/listings?emulatorIds=${emulator.id}`}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(ev) => ev.stopPropagation()}
                             >
-                              View
+                              View Listings
                             </Link>
                           )}
                         </div>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        <ViewButton
+                          onClick={(ev) => {
+                            ev.stopPropagation()
+                            openModal(emulator)
+                          }}
+                          title="View Emulator Details"
+                        />
                       </td>
                     )}
                   </tr>
@@ -233,16 +266,6 @@ function EmulatorsPage() {
           />
         </div>
       )}
-
-      {/* Back to Dashboard */}
-      <div className="text-center mt-12">
-        <Link
-          href="/"
-          className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-300"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
 
       {/* Emulator Modal */}
       <EmulatorViewModal

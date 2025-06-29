@@ -30,4 +30,8 @@ export * from './TranslatableContent'
 export * from './TrustLevelBadge'
 export * from './VerifiedDeveloperBadge'
 export * from './VirtualScroller'
+
+// Collection of components
 export * from './form'
+export * from './image-selectors'
+export * from './table-buttons'

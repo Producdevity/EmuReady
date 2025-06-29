@@ -411,7 +411,7 @@ function AdminListingsPage() {
                             <Link
                               href={`/games/${listing.game.id}`}
                               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(ev) => ev.stopPropagation()}
                             >
                               {listing.game.title}
                             </Link>

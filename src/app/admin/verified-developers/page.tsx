@@ -316,6 +316,7 @@ function AdminVerifiedDevelopersPage() {
                               width={32}
                               height={32}
                               className="rounded-full mr-3"
+                              unoptimized
                             />
                           )}
                           <div>

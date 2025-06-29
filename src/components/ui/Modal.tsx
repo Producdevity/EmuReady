@@ -5,12 +5,12 @@ import { useEffect, type ReactNode, type MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  '2xl': 'max-w-2xl',
-  '3xl': 'max-w-3xl',
+  sm: 'w-full max-w-sm',
+  md: 'w-full max-w-md',
+  lg: 'w-full max-w-lg',
+  xl: 'w-full max-w-xl',
+  '2xl': 'w-full max-w-2xl',
+  '3xl': 'w-full max-w-3xl',
 }
 
 interface Props {
@@ -60,14 +60,14 @@ export function Modal({ onClose, ...props }: Props) {
   return (
     <div
       className={cn(
-        'fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in',
+        'fixed inset-0 flex items-center justify-center px-4 py-6 sm:px-6 bg-black/70 backdrop-blur-sm animate-fade-in',
         isNested ? 'z-[60]' : 'z-50',
       )}
       onClick={handleBackdropClick}
     >
       <div
         className={cn(
-          'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col w-full max-h-[90vh] transform transition-all duration-300 ease-out animate-slide-up',
+          'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out animate-slide-up',
           sizeClasses[size],
           props.className,
         )}

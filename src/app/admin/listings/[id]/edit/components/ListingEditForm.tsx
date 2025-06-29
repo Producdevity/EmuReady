@@ -41,6 +41,10 @@ function ListingEditForm(props: Props) {
   const loadGameItems = useCallback(
     async (query: string): Promise<GameOption[]> => {
       try {
+        // If query is empty, don't call the API since it requires min 1 character
+        if (!query || query.trim().length === 0) {
+          return []
+        }
         const result = await utils.client.mobile.searchGames.query({
           query: query,
         })
@@ -62,7 +66,7 @@ function ListingEditForm(props: Props) {
     async (query: string): Promise<EmulatorOption[]> => {
       try {
         const result = await utils.client.emulators.get.query({
-          search: query,
+          search: query || undefined, // Pass undefined instead of empty string
           limit: 50,
         })
         return result.emulators.map((emulator) => ({
@@ -82,7 +86,7 @@ function ListingEditForm(props: Props) {
     async (query: string): Promise<DeviceOption[]> => {
       try {
         const result = await utils.client.devices.get.query({
-          search: query,
+          search: query || undefined, // Pass undefined instead of empty string
           limit: 50,
         })
         return result.devices.map((device) => ({

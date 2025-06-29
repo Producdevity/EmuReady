@@ -63,13 +63,18 @@ vi.mock('framer-motion', () => ({
       ...props
     }: any) => <div {...props}>{children}</div>,
   },
+  AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
 const mockEmulator = {
   id: 'test-emulator-id',
   name: 'Test Emulator',
   logo: 'test-logo.png',
+  description: null,
+  repositoryUrl: null,
+  officialUrl: null,
   systems: [],
+  verifiedDevelopers: [],
   customFieldDefinitions: [],
   _count: { listings: 0 },
 }
@@ -194,6 +199,9 @@ describe('EmulatorEditForm', () => {
         id: 'test-emulator-id',
         name: 'Updated Emulator',
         logo: 'test-logo.png',
+        description: undefined,
+        repositoryUrl: undefined,
+        officialUrl: undefined,
       })
     })
   })

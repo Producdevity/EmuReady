@@ -54,6 +54,8 @@ interface FiltersProps {
   userDeviceIds: string[]
   shouldUseUserSocFilter: boolean | undefined
   userSocIds: string[]
+  onEnableUserDeviceFilter?: () => void
+  onEnableUserSocFilter?: () => void
 }
 
 function ListingFilters(props: FiltersProps) {
@@ -580,6 +582,39 @@ function ListingFilters(props: FiltersProps) {
                     </motion.div>
                   )}
 
+                  {/* User Device Preferences Available but Disabled */}
+                  {!props.shouldUseUserDeviceFilter &&
+                    props.userPreferences?.defaultToUserDevices &&
+                    props.userDeviceIds.length > 0 &&
+                    props.deviceIds.length === 0 &&
+                    props.onEnableUserDeviceFilter && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-blue-900/10 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Your device preferences available
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                          You have {props.userDeviceIds.length} preferred
+                          devices. Enable filtering to show only listings for
+                          your devices.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={props.onEnableUserDeviceFilter}
+                          className="text-xs h-7 px-3"
+                        >
+                          Use my device preferences
+                        </Button>
+                      </motion.div>
+                    )}
+
                   <MultiSelect
                     label="SoCs"
                     leftIcon={<Cpu className="w-5 h-5" />}
@@ -630,6 +665,38 @@ function ListingFilters(props: FiltersProps) {
                       </div>
                     </motion.div>
                   )}
+
+                  {/* User SoC Preferences Available but Disabled */}
+                  {!props.shouldUseUserSocFilter &&
+                    props.userPreferences?.defaultToUserSocs &&
+                    props.userSocIds.length > 0 &&
+                    props.socIds.length === 0 &&
+                    props.onEnableUserSocFilter && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-gray-50 to-purple-50 dark:from-gray-800/50 dark:to-purple-900/10 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Your SoC preferences available
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                          You have {props.userSocIds.length} preferred SoCs.
+                          Enable filtering to show only listings for your SoCs.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={props.onEnableUserSocFilter}
+                          className="text-xs h-7 px-3"
+                        >
+                          Use my SoC preferences
+                        </Button>
+                      </motion.div>
+                    )}
 
                   <MultiSelect
                     label="Emulators"

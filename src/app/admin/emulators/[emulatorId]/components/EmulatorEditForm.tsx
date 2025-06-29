@@ -2,11 +2,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
-import { Save, X } from 'lucide-react'
+import { Save, X, ExternalLink, Github } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { EmulatorIcon } from '@/components/icons'
 import { Button, Input } from '@/components/ui'
+import { MarkdownEditor } from '@/components/ui/form/MarkdownEditor'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
@@ -95,6 +96,9 @@ function EmulatorEditForm(props: Props) {
       defaultValues: {
         name: props.emulator.name,
         logo: props.emulator.logo ?? '',
+        description: props.emulator.description ?? '',
+        repositoryUrl: props.emulator.repositoryUrl ?? '',
+        officialUrl: props.emulator.officialUrl ?? '',
       },
     })
 
@@ -106,6 +110,9 @@ function EmulatorEditForm(props: Props) {
       id: props.emulator.id,
       name: data.name,
       logo: data.logo || undefined,
+      description: data.description || undefined,
+      repositoryUrl: data.repositoryUrl || undefined,
+      officialUrl: data.officialUrl || undefined,
     })
   }
 
@@ -243,6 +250,90 @@ function EmulatorEditForm(props: Props) {
             {formState.errors.logo.message}
           </motion.p>
         )}
+      </div>
+
+      {/* Description Field */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Description
+        </label>
+        <MarkdownEditor
+          value={watch('description') || ''}
+          onChange={(value) =>
+            setValue('description', value, {
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true,
+            })
+          }
+          placeholder="Enter a description for this emulator (supports Markdown)..."
+          rows={6}
+          maxLength={5000}
+        />
+        {formState.errors.description && (
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-sm text-red-600 dark:text-red-400"
+          >
+            {formState.errors.description.message}
+          </motion.p>
+        )}
+      </div>
+
+      {/* URL Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Repository URL */}
+        <div className="space-y-2">
+          <label
+            htmlFor="repositoryUrl"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Repository URL
+          </label>
+          <Input
+            id="repositoryUrl"
+            {...register('repositoryUrl')}
+            placeholder="https://github.com/..."
+            leftIcon={<Github className="w-4 h-4" />}
+            className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+          />
+          {formState.errors.repositoryUrl && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-600 dark:text-red-400"
+            >
+              {formState.errors.repositoryUrl.message}
+            </motion.p>
+          )}
+        </div>
+
+        {/* Official URL */}
+        <div className="space-y-2">
+          <label
+            htmlFor="officialUrl"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Official URL
+          </label>
+          <Input
+            id="officialUrl"
+            {...register('officialUrl')}
+            placeholder="https://emulator-official-site.com"
+            leftIcon={<ExternalLink className="w-4 h-4" />}
+            className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+          />
+          {formState.errors.officialUrl && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-600 dark:text-red-400"
+            >
+              {formState.errors.officialUrl.message}
+            </motion.p>
+          )}
+        </div>
       </div>
 
       {/* Submit Button */}

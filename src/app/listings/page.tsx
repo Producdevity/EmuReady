@@ -150,12 +150,26 @@ function ListingsPage() {
 
   const handleDeviceChange = (values: string[]) => {
     listingsState.setDeviceIds(values)
-    setUserDeviceFilterDisabled(values.length <= 0)
+    // When user manually selects devices, disable user preference filtering
+    setUserDeviceFilterDisabled(values.length > 0)
+    if (values.length > 0) {
+      // Also disable SoC preferences when manually selecting devices
+      setUserSocFilterDisabled(true)
+    }
+    // Note: We don't automatically re-enable preferences when clearing selections
+    // This allows users to see ALL listings when they clear everything
   }
 
   const handleSocChange = (values: string[]) => {
     listingsState.setSocIds(values)
-    setUserSocFilterDisabled(values.length <= 0)
+    // When user manually selects SoCs, disable user preference filtering
+    setUserSocFilterDisabled(values.length > 0)
+    if (values.length > 0) {
+      // Also disable device preferences when manually selecting SoCs
+      setUserDeviceFilterDisabled(true)
+    }
+    // Note: We don't automatically re-enable preferences when clearing selections
+    // This allows users to see ALL listings when they clear everything
   }
 
   const handleEmulatorChange = (values: string[]) => {
@@ -168,6 +182,18 @@ function ListingsPage() {
 
   const handleSearchChange = (value: string) => {
     listingsState.setSearch(value)
+  }
+
+  const handleEnableUserDeviceFilter = () => {
+    setUserDeviceFilterDisabled(false)
+    // Clear any manual device selections to allow user preferences to take effect
+    listingsState.setDeviceIds([])
+  }
+
+  const handleEnableUserSocFilter = () => {
+    setUserSocFilterDisabled(false)
+    // Clear any manual SoC selections to allow user preferences to take effect
+    listingsState.setSocIds([])
   }
 
   if (listingsQuery?.error) {
@@ -210,6 +236,8 @@ function ListingsPage() {
             userDeviceIds={userDeviceIds}
             shouldUseUserSocFilter={shouldUseUserSocFilter}
             userSocIds={userSocIds}
+            onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
+            onEnableUserSocFilter={handleEnableUserSocFilter}
           />
         </div>
 
@@ -269,6 +297,8 @@ function ListingsPage() {
                     userDeviceIds={userDeviceIds}
                     shouldUseUserSocFilter={shouldUseUserSocFilter}
                     userSocIds={userSocIds}
+                    onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
+                    onEnableUserSocFilter={handleEnableUserSocFilter}
                   />
                 </div>
               </div>

@@ -116,6 +116,26 @@ export const coreRouter = createTRPCRouter({
         ...statusFilter,
       }
 
+      // If we have device/SoC OR conditions and status OR conditions, combine them properly
+      if (deviceSocConditions.length > 0 && statusFilter.OR) {
+        combinedFilters.AND = [
+          { OR: deviceSocConditions },
+          statusFilter,
+          // Add other filters from the filters object
+          ...(filters.emulatorId ? [{ emulatorId: filters.emulatorId }] : []),
+          ...(filters.performanceId
+            ? [{ performanceId: filters.performanceId }]
+            : []),
+          ...(filters.authorId ? [{ authorId: filters.authorId }] : []),
+        ]
+        // Remove the conflicting OR properties
+        delete combinedFilters.OR
+        delete combinedFilters.status
+        delete combinedFilters.emulatorId
+        delete combinedFilters.performanceId
+        delete combinedFilters.authorId
+      }
+
       // Add search filters if provided
       if (input.searchTerm) {
         const searchFilters: Prisma.ListingWhereInput[] = [

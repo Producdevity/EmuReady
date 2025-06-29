@@ -1,8 +1,9 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Pencil, Trash2 } from 'lucide-react'
+import { GripVertical } from 'lucide-react'
 import { type CSSProperties, Fragment, type ReactNode } from 'react'
-import { Badge, Button } from '@/components/ui'
+import { Badge } from '@/components/ui'
+import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import { type Maybe } from '@/types/utils'
 import { type CustomFieldDefinition, CustomFieldType, type Prisma } from '@orm'
 
@@ -75,23 +76,14 @@ function CustomFieldSortableRow(props: Props) {
         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
           {!props.isReorderMode && (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
+              <EditButton
+                title="Edit Custom Field"
                 onClick={() => props.onEdit(props.field.id)}
-                aria-label="Edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
+              />
+              <DeleteButton
                 onClick={() => props.handleDelete(props.field.id)}
-                aria-label="Delete"
-                className="text-red-500 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                title="Delete Custom Field"
+              />
             </>
           )}
         </td>

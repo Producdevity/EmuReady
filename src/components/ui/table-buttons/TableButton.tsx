@@ -1,5 +1,6 @@
 import { type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
+import { type MouseEvent } from 'react'
 import { isString } from 'remeda'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -52,7 +53,7 @@ interface LinkBehavior {
 }
 
 interface ClickBehavior {
-  onClick: () => void
+  onClick: (ev: MouseEvent<HTMLButtonElement>) => void
   href?: never
 }
 
@@ -60,7 +61,7 @@ type Props = XOR<LinkBehavior, ClickBehavior> & CommonProps
 
 export type TableButtonWrapperProps =
   | {
-      onClick: () => void
+      onClick: (ev: MouseEvent<HTMLButtonElement>) => void
       href?: never
       title: string
       isLoading?: boolean
