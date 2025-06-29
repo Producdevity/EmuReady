@@ -17,6 +17,10 @@ const roleColorMap: Record<Role, string> = {
   [Role.USER]: 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
   [Role.SUPER_ADMIN]:
     'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+  [Role.MODERATOR]:
+    'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
+  [Role.DEVELOPER]:
+    'bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300',
 }
 
 function UserRoleButton(props: Props) {

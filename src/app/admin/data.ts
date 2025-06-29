@@ -101,3 +101,48 @@ export const superAdminNavItems: AdminNavItem[] = [
     description: 'Monitor trust system activity and scores.',
   },
 ]
+
+export const moderatorNavItems: AdminNavItem[] = [
+  {
+    href: '/admin/devices',
+    label: 'Devices',
+    exact: true,
+    description: 'Manage devices.',
+  },
+  {
+    href: '/admin/socs',
+    label: 'SoCs',
+    exact: true,
+    description: 'Manage System on Chip specifications.',
+  },
+]
+
+/**
+ * Returns navigation items for a developer based on their emulator access
+ * @param emulatorIds - Array of emulator IDs the developer has access to
+ */
+export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
+  if (!emulatorIds.length) return []
+
+  // If multiple emulators, show the main emulators page
+  if (emulatorIds.length > 1) {
+    return [
+      {
+        href: '/admin/emulators',
+        label: 'My Emulators',
+        exact: false,
+        description: 'Manage your emulators.',
+      },
+    ]
+  }
+
+  // If single emulator, direct link to that emulator
+  return [
+    {
+      href: `/admin/emulators/${emulatorIds[0]}`,
+      label: 'My Emulator',
+      exact: true,
+      description: 'Manage your emulator.',
+    },
+  ]
+}

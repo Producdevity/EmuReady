@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   DisplayToggleButton,
+  VerifiedDeveloperBadge,
 } from '@/components/ui'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
@@ -547,18 +548,23 @@ function ListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('emulator') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.emulator ? (
-                            <EmulatorIcon
-                              name={listing.emulator.name}
-                              logo={listing.emulator.logo}
-                              showLogo={
-                                isEmulatorLogosHydrated && showEmulatorLogos
-                              }
-                              size="sm"
-                            />
-                          ) : (
-                            'N/A'
-                          )}
+                          <div className="flex items-center gap-2">
+                            {listing.emulator ? (
+                              <EmulatorIcon
+                                name={listing.emulator.name}
+                                logo={listing.emulator.logo}
+                                showLogo={
+                                  isEmulatorLogosHydrated && showEmulatorLogos
+                                }
+                                size="sm"
+                              />
+                            ) : (
+                              'N/A'
+                            )}
+                            {listing.isVerifiedDeveloper && (
+                              <VerifiedDeveloperBadge size="sm" />
+                            )}
+                          </div>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('performance') && (

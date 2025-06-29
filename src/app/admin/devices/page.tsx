@@ -12,7 +12,7 @@ import {
   ColumnVisibilityControl,
   SortableHeader,
   useConfirmDialog,
-  Dropdown,
+  Autocomplete,
   LoadingSpinner,
 } from '@/components/ui'
 import {
@@ -52,14 +52,13 @@ function AdminDevicesPage() {
     storageKey: storageKeys.columnVisibility.adminDevices,
   })
 
-  const [brandFilter, setBrandFilter] = useState('')
-
   const devicesQuery = api.devices.get.useQuery({
     search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     limit: table.limit,
-    brandId: brandFilter || undefined,
+    page: table.page,
+    brandId: table.additionalParams.brandId || undefined,
   })
 
   const devicesStatsQuery = api.devices.stats.useQuery()
@@ -102,14 +101,13 @@ function AdminDevicesPage() {
     closeModal()
   }
 
-  const handleBrandChange = (value: string) => {
-    setBrandFilter(value)
-    table.setPage(1)
+  const handleBrandChange = (value: string | null) => {
+    table.setAdditionalParam('brandId', value || '')
   }
 
   const clearFilters = () => {
     table.setSearch('')
-    setBrandFilter('')
+    table.setAdditionalParam('brandId', '')
     table.setPage(1)
   }
 
@@ -133,14 +131,6 @@ function AdminDevicesPage() {
       toast.error(`Failed to delete device: ${getErrorMessage(err)}`)
     }
   }
-
-  const brandOptions = [
-    { value: '', label: 'All Brands' },
-    ...(brandsQuery.data?.map((brand) => ({
-      value: brand.id,
-      label: brand.name,
-    })) ?? []),
-  ]
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -191,12 +181,15 @@ function AdminDevicesPage() {
         searchPlaceholder="Search devices..."
         onClear={clearFilters}
       >
-        <Dropdown
-          options={brandOptions}
-          value={brandFilter}
+        <Autocomplete
+          value={table.additionalParams.brandId || ''}
           onChange={handleBrandChange}
-          className="w-full md:w-48"
+          items={[{ id: '', name: 'All Brands' }, ...(brandsQuery.data || [])]}
+          optionToValue={(brand) => brand.id}
+          optionToLabel={(brand) => brand.name}
+          className="w-full md:w-64"
           placeholder="Filter by brand"
+          filterKeys={['name']}
         />
       </AdminSearchFilters>
 
@@ -291,7 +284,7 @@ function AdminDevicesPage() {
                       colSpan={4}
                       className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                     >
-                      {table.search || brandFilter
+                      {table.search || table.additionalParams.brandId
                         ? 'No devices found matching your search.'
                         : 'No devices found. Add your first device.'}
                     </td>
@@ -301,6 +294,32 @@ function AdminDevicesPage() {
           </table>
         )}
       </AdminTableContainer>
+
+      {devicesQuery.data && devicesQuery.data.pagination.pages > 1 && (
+        <div className="mt-6 flex justify-center">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPage(table.page - 1)}
+              disabled={table.page === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Page {table.page} of {devicesQuery.data.pagination.pages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPage(table.page + 1)}
+              disabled={table.page === devicesQuery.data.pagination.pages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       <DeviceModal
         isOpen={modalOpen}

@@ -10,6 +10,7 @@ export interface UseAdminTableOptions<TSortField extends string> {
   defaultSortDirection?: SortDirection
   enableUrlState?: boolean
   searchDebounceMs?: number
+  additionalParams?: Record<string, string>
 }
 
 export interface UseAdminTableReturn<TSortField extends string> {
@@ -31,6 +32,10 @@ export interface UseAdminTableReturn<TSortField extends string> {
   sortDirection: SortDirection
   setSortDirection: (direction: SortDirection) => void
   handleSort: (field: string) => void
+
+  // Additional parameters
+  additionalParams: Record<string, string>
+  setAdditionalParam: (key: string, value: string) => void
 
   // URL state management
   updateUrl: () => void
@@ -79,6 +84,31 @@ function useAdminTable<TSortField extends string>(
     return opts.defaultSortDirection ?? null
   })
 
+  // Initialize additional parameters from URL
+  const [additionalParams, setAdditionalParams] = useState<
+    Record<string, string>
+  >(() => {
+    const initialParams: Record<string, string> = {}
+
+    // First, set from defaults if provided
+    if (opts.additionalParams) {
+      Object.assign(initialParams, opts.additionalParams)
+    }
+
+    // Then override with URL params if present
+    if (enableUrlState) {
+      // Get all search params
+      searchParams.forEach((value, key) => {
+        // Skip standard params that are handled separately
+        if (!['search', 'page', 'sortField', 'sortDirection'].includes(key)) {
+          initialParams[key] = value
+        }
+      })
+    }
+
+    return initialParams
+  })
+
   // Debounced search for API calls
   const debouncedSearch = useDebouncedValue(search, searchDebounceMs)
   const isSearching = search !== debouncedSearch
@@ -94,9 +124,24 @@ function useAdminTable<TSortField extends string>(
     if (sortField) params.set('sortField', sortField)
     if (sortDirection) params.set('sortDirection', sortDirection)
 
+    // Add additional params to URL
+    Object.entries(additionalParams).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value)
+      }
+    })
+
     const url = params.toString() ? `?${params.toString()}` : ''
     router.replace(url, { scroll: false })
-  }, [enableUrlState, debouncedSearch, page, sortField, sortDirection, router])
+  }, [
+    enableUrlState,
+    debouncedSearch,
+    page,
+    sortField,
+    sortDirection,
+    additionalParams,
+    router,
+  ])
 
   // Update URL when relevant state changes
   useEffect(() => {
@@ -108,6 +153,7 @@ function useAdminTable<TSortField extends string>(
     page,
     sortField,
     sortDirection,
+    additionalParams,
     enableUrlState,
     updateUrl,
   ])
@@ -129,6 +175,22 @@ function useAdminTable<TSortField extends string>(
   const setSortDirection = (direction: SortDirection) => {
     setSortDirectionState(direction)
     setPageState(1) // Reset to first page when sorting
+  }
+
+  const setAdditionalParam = (key: string, value: string) => {
+    setAdditionalParams((prev) => {
+      const newParams = { ...prev }
+
+      if (value === '') {
+        // Remove param if empty
+        delete newParams[key]
+      } else {
+        newParams[key] = value
+      }
+
+      return newParams
+    })
+    setPageState(1) // Reset to first page when changing filters
   }
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
@@ -159,9 +221,10 @@ function useAdminTable<TSortField extends string>(
 
   const resetFilters = () => {
     setSearch('')
-    setPage(1)
+    setPageState(1)
     setSortField(opts.defaultSortField ?? null)
     setSortDirection(opts.defaultSortDirection ?? null)
+    setAdditionalParams({})
   }
 
   return {
@@ -178,6 +241,8 @@ function useAdminTable<TSortField extends string>(
     sortDirection,
     setSortDirection,
     handleSort,
+    additionalParams,
+    setAdditionalParam,
     updateUrl,
     resetFilters,
   }

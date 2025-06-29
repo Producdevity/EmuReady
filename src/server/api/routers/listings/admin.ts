@@ -406,8 +406,15 @@ export const adminRouter = createTRPCRouter({
           include: { author: { select: { id: true } } },
         })
 
+        // Get the IDs of listings that were not found or not pending
+        const notFoundOrNotPendingIds = listingIds.filter(
+          (id) => !listingsToApprove.some((listing) => listing.id === id),
+        )
+
         if (listingsToApprove.length === 0) {
-          throw new Error('No valid pending listings found to approve')
+          throw new Error(
+            'No valid pending listings found to approve. The listings may have already been processed.',
+          )
         }
 
         // Update all listings to approved
@@ -453,10 +460,16 @@ export const adminRouter = createTRPCRouter({
         // Invalidate listing stats cache
         listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
+        const message =
+          notFoundOrNotPendingIds.length > 0
+            ? `Successfully approved ${listingsToApprove.length} listing(s). ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
+            : `Successfully approved ${listingsToApprove.length} listing(s).`
+
         return {
           success: true,
           approvedCount: listingsToApprove.length,
-          message: `Successfully approved ${listingsToApprove.length} listing(s)`,
+          skippedCount: notFoundOrNotPendingIds.length,
+          message,
         }
       })
     }),
@@ -484,8 +497,15 @@ export const adminRouter = createTRPCRouter({
           include: { author: { select: { id: true } } },
         })
 
+        // Get the IDs of listings that were not found or not pending
+        const notFoundOrNotPendingIds = listingIds.filter(
+          (id) => !listingsToReject.some((listing) => listing.id === id),
+        )
+
         if (listingsToReject.length === 0) {
-          throw new Error('No valid pending listings found to reject')
+          throw new Error(
+            'No valid pending listings found to reject. The listings may have already been processed.',
+          )
         }
 
         // Update all listings to rejected
@@ -532,10 +552,16 @@ export const adminRouter = createTRPCRouter({
         // Invalidate listing stats cache
         listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
+        const message =
+          notFoundOrNotPendingIds.length > 0
+            ? `Successfully rejected ${listingsToReject.length} listing(s). ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
+            : `Successfully rejected ${listingsToReject.length} listing(s).`
+
         return {
           success: true,
           rejectedCount: listingsToReject.length,
-          message: `Successfully rejected ${listingsToReject.length} listing(s)`,
+          skippedCount: notFoundOrNotPendingIds.length,
+          message,
         }
       })
     }),

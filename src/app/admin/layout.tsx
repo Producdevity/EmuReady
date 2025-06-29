@@ -1,7 +1,8 @@
 'use client'
 
 import { RedirectToSignIn, SignedIn, SignedOut, useUser } from '@clerk/nextjs'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Home } from 'lucide-react'
+import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, type PropsWithChildren } from 'react'
 import { LoadingSpinner } from '@/components/ui'
@@ -10,7 +11,13 @@ import { cn } from '@/lib/utils'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import AdminNavbar from './components/AdminNavbar'
-import { adminNavItems, superAdminNavItems } from './data'
+import {
+  adminNavItems,
+  superAdminNavItems,
+  moderatorNavItems,
+  getDeveloperNavItems,
+  type AdminNavItem,
+} from './data'
 
 function AdminLayout(props: PropsWithChildren) {
   const pathname = usePathname()
@@ -22,12 +29,21 @@ function AdminLayout(props: PropsWithChildren) {
     enabled: !!user,
   })
 
+  // For developers, fetch their verified emulators
+  const verifiedEmulatorsQuery =
+    api.verifiedDevelopers.getMyVerifiedEmulators.useQuery(undefined, {
+      enabled: !!userQuery.data && userQuery.data.role === Role.DEVELOPER,
+    })
+
   // Get pending games count for admin navigation
   const gameStatsQuery = api.games.getStats.useQuery(undefined, {
     enabled:
       !!userQuery.data &&
       hasPermission(userQuery.data.role as Role, Role.ADMIN),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
+    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   })
 
   // Get pending listings count for admin navigation
@@ -36,15 +52,25 @@ function AdminLayout(props: PropsWithChildren) {
       !!userQuery.data &&
       hasPermission(userQuery.data.role as Role, Role.ADMIN),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
+    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   })
 
   const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
+  const isDeveloper = userQuery.data?.role === Role.DEVELOPER // Exact match, not hierarchical
 
   useEffect(() => {
     if (!isLoaded || userQuery.isLoading || !user) return
 
     // Check if user has admin permissions once data is loaded
-    if (userQuery.data && !hasPermission(userQuery.data?.role, Role.ADMIN)) {
+    // Now allow access to MODERATOR and DEVELOPER roles as well
+    if (
+      userQuery.data &&
+      !hasPermission(userQuery.data?.role, Role.MODERATOR)
+    ) {
       router.replace('/')
     }
   }, [
@@ -56,12 +82,21 @@ function AdminLayout(props: PropsWithChildren) {
     userQuery.isLoading,
   ])
 
+  // Hydrate URL state on initial load
+  useEffect(() => {
+    // This effect ensures that when the page loads with URL parameters,
+    // the component state is properly initialized from those parameters
+    // We don't need to do anything specific here since the useAdminTable hook
+    // will handle reading from URL parameters on its own initialization
+    // This is just a placeholder effect to document the behavior
+  }, [])
+
   if (!isLoaded || userQuery.isLoading) return <LoadingSpinner size="lg" />
 
   if (!user || !userQuery.data) return null
 
-  // Don't render admin content if user doesn't have admin role
-  if (!hasPermission(userQuery.data?.role, Role.ADMIN)) return null
+  // Don't render admin content if user doesn't have required role
+  if (!hasPermission(userQuery.data?.role, Role.MODERATOR)) return null
 
   // Create navigation items with counts
   const adminNavItemsWithCounts = adminNavItems.map((item) => {
@@ -74,6 +109,22 @@ function AdminLayout(props: PropsWithChildren) {
     return item
   })
 
+  // Select appropriate nav items based on user role
+  let navItems: AdminNavItem[] = []
+  let superAdminItems: AdminNavItem[] = []
+
+  if (isSuperAdmin) {
+    navItems = adminNavItemsWithCounts
+    superAdminItems = superAdminNavItems
+  } else if (isAdmin) {
+    navItems = adminNavItemsWithCounts
+  } else if (isModerator) {
+    navItems = moderatorNavItems
+  } else if (isDeveloper && verifiedEmulatorsQuery.data) {
+    const emulatorIds = verifiedEmulatorsQuery.data.map((e) => e.id)
+    navItems = getDeveloperNavItems(emulatorIds)
+  }
+
   return (
     <>
       <SignedIn>
@@ -85,46 +136,50 @@ function AdminLayout(props: PropsWithChildren) {
               isCollapsed ? 'w-20' : 'w-64',
             )}
           >
-            {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div
-                  className={cn(
-                    'transition-all duration-300 ease-in-out overflow-hidden',
-                    isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100',
-                  )}
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              {!isCollapsed && (
+                <Link
+                  href="/admin"
+                  className="font-bold text-gray-900 dark:text-white text-xl"
                 >
-                  <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                    Admin Dashboard
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 flex-shrink-0 group"
-                  aria-label={
-                    isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
-                  }
-                >
-                  <ChevronLeft
-                    className={cn(
-                      'w-5 h-5 text-gray-600 dark:text-gray-400 transition-all duration-500 ease-out group-hover:scale-110 group-active:scale-95',
-                      isCollapsed
-                        ? 'rotate-180 transform'
-                        : 'rotate-0 transform',
-                    )}
-                  />
-                </button>
-              </div>
+                  Admin
+                </Link>
+              )}
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-colors"
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
+            {/* Navigation */}
             <AdminNavbar
+              pathname={pathname}
               isCollapsed={isCollapsed}
               isSuperAdmin={isSuperAdmin}
-              pathname={pathname}
-              adminNavItems={adminNavItemsWithCounts}
-              superAdminNavItems={superAdminNavItems}
+              adminNavItems={navItems}
+              superAdminNavItems={superAdminItems}
             />
+
+            {/* Back to Site Link */}
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+              <Link
+                href="/"
+                className={cn(
+                  'flex items-center p-2 text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
+                  isCollapsed ? 'justify-center' : 'justify-start',
+                )}
+              >
+                <Home className="w-5 h-5 min-w-5" />
+                {!isCollapsed && <span className="ml-3">Back to Site</span>}
+              </Link>
+            </div>
           </aside>
 
           {/* Main Content Area */}

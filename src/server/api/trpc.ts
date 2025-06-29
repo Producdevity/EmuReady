@@ -7,6 +7,7 @@ import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
+import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
@@ -182,6 +183,48 @@ export const authorProcedure = t.procedure
   })
 
 /**
+ * Middleware to check if a user has Moderator role
+ */
+export const moderatorProcedure = t.procedure
+  .use(performanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      AppError.unauthorized()
+    }
+
+    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      AppError.insufficientPermissions(Role.MODERATOR)
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+
+/**
+ * Middleware to check if a user has Developer role
+ */
+export const developerProcedure = t.procedure
+  .use(performanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      AppError.unauthorized()
+    }
+
+    if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
+      AppError.insufficientPermissions(Role.DEVELOPER)
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+
+/**
  * Middleware to check if a user has Admin role
  */
 export const adminProcedure = t.procedure
@@ -220,3 +263,34 @@ export const superAdminProcedure = t.procedure
       },
     })
   })
+
+/**
+ * Middleware to check if a developer has access to a specific emulator
+ * This procedure ensures that a developer can only access emulators they're verified for,
+ * while admins and super admins retain access to all emulators.
+ *
+ * @param emulatorId The ID of the emulator to check access for
+ * @returns A procedure that can be used to create router endpoints requiring emulator-specific access
+ */
+export function developerEmulatorProcedure(emulatorId: string) {
+  return protectedProcedure.use(async ({ ctx, next }) => {
+    const userId = ctx.session.user.id
+
+    const hasAccess = await hasDeveloperAccessToEmulator(
+      userId,
+      emulatorId,
+      ctx.prisma,
+    )
+
+    if (!hasAccess) {
+      AppError.forbidden(`You don't have developer access to this emulator`)
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        emulatorId,
+      },
+    })
+  })
+}

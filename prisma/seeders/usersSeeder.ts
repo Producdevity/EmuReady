@@ -29,6 +29,22 @@ const users: UserData[] = [
     role: Role.ADMIN,
   },
   {
+    email: 'moderator@emuready.com',
+    name: 'Moderator User',
+    firstName: 'Moderator',
+    lastName: 'User',
+    username: 'moderator',
+    role: Role.MODERATOR,
+  },
+  {
+    email: 'developer@emuready.com',
+    name: 'Developer User',
+    firstName: 'Developer',
+    lastName: 'User',
+    username: 'developer',
+    role: Role.DEVELOPER,
+  },
+  {
     email: 'author@emuready.com',
     name: 'Author User',
     firstName: 'Author',

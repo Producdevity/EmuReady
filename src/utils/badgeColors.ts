@@ -33,6 +33,8 @@ export function getApprovalStatusColor(status: ApprovalStatus | null) {
 const roleVariantsMap: Record<Role, BadgeVariant> = {
   [Role.SUPER_ADMIN]: 'primary',
   [Role.ADMIN]: 'primary',
+  [Role.DEVELOPER]: 'info',
+  [Role.MODERATOR]: 'warning',
   [Role.AUTHOR]: 'success',
   [Role.USER]: 'default',
 }
@@ -42,11 +44,18 @@ export function getRoleVariant(role: Role): BadgeVariant {
 }
 
 const roleColorMap: Record<Role | 'UNKNOWN', string> = {
-  [Role.USER]: 'bg-green-500/90 backdrop-blur-sm',
-  [Role.AUTHOR]: 'bg-blue-500/90 backdrop-blur-sm',
-  [Role.ADMIN]: 'bg-orange-500/90 backdrop-blur-sm',
-  [Role.SUPER_ADMIN]: 'bg-red-500/90 backdrop-blur-sm',
-  UNKNOWN: 'bg-gray-500/90 backdrop-blur-sm',
+  [Role.USER]: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
+  [Role.AUTHOR]:
+    'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  [Role.MODERATOR]:
+    'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300',
+  [Role.DEVELOPER]:
+    'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300',
+  [Role.ADMIN]:
+    'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  [Role.SUPER_ADMIN]:
+    'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
+  UNKNOWN: 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
 }
 
 export function getRoleColor(role: Role): string {

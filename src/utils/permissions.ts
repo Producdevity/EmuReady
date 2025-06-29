@@ -15,7 +15,14 @@ export function hasPermission(
   if (!userRole) return false
   if (!requiredRole) return true
 
-  const roles: Role[] = [Role.USER, Role.AUTHOR, Role.ADMIN, Role.SUPER_ADMIN]
+  const roles: Role[] = [
+    Role.USER,
+    Role.AUTHOR,
+    Role.DEVELOPER,
+    Role.MODERATOR,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+  ]
   const userRoleIndex = roles.indexOf(userRole)
   const requiredRoleIndex = roles.indexOf(requiredRole)
 

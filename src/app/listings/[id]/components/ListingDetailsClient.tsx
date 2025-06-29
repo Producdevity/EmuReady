@@ -12,6 +12,7 @@ import {
   PerformanceBadge,
   Button,
   TranslatableMarkdown,
+  VerifiedDeveloperBadge,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
@@ -186,6 +187,11 @@ function ListingDetailsClient(props: Props) {
                   label={props.listing.performance.label}
                   description={props.listing.performance?.description}
                 />
+                {props.listing.isVerifiedDeveloper && (
+                  <div className="ml-1">
+                    <VerifiedDeveloperBadge showText />
+                  </div>
+                )}
               </div>
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">

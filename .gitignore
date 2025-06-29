@@ -81,3 +81,6 @@ NOTES_README.md
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Database backups
+/backups/

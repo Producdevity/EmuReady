@@ -96,25 +96,38 @@ function UserRoleModal(props: Props) {
                 onClick={() => setRole(Role.AUTHOR)}
               />
               <UserRoleButton
+                role={Role.MODERATOR}
+                currentRole={role}
+                onClick={() => setRole(Role.MODERATOR)}
+              />
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <UserRoleButton
+                role={Role.DEVELOPER}
+                currentRole={role}
+                onClick={() => setRole(Role.DEVELOPER)}
+              />
+              <UserRoleButton
                 role={Role.ADMIN}
                 currentRole={role}
                 onClick={() => setRole(Role.ADMIN)}
               />
+              {isSuperAdmin && (
+                <UserRoleButton
+                  role={Role.SUPER_ADMIN}
+                  currentRole={role}
+                  onClick={() => setRole(Role.SUPER_ADMIN)}
+                />
+              )}
             </div>
-            {isSuperAdmin && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                <div className="grid grid-cols-1 gap-2">
-                  <UserRoleButton
-                    role={Role.SUPER_ADMIN}
-                    currentRole={role}
-                    onClick={() => setRole(Role.SUPER_ADMIN)}
-                  />
-                </div>
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                  Super Admin role can assign and revoke all permissions
-                </p>
-              </div>
+
+            {role === Role.DEVELOPER && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                Note: Remember to verify this user for specific emulators after
+                assigning the Developer role.
+              </p>
             )}
+
             {!isSuperAdmin && props.user.role === Role.SUPER_ADMIN && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                 Note: Only Super Admins can modify Super Admin roles

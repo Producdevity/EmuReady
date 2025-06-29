@@ -19,6 +19,8 @@ export const ApprovalStatus = {
 export const Role = {
   USER: 'USER',
   AUTHOR: 'AUTHOR',
+  MODERATOR: 'MODERATOR',
+  DEVELOPER: 'DEVELOPER',
   ADMIN: 'ADMIN',
   SUPER_ADMIN: 'SUPER_ADMIN',
 } as const

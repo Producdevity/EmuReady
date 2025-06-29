@@ -1,13 +1,9 @@
 'use client'
 
-import { Shield, UserCheck } from 'lucide-react'
+import { Shield, UserCheck, Search } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
-import {
-  AdminTableContainer,
-  AdminSearchFilters,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
@@ -16,8 +12,10 @@ import {
   VerifiedDeveloperBadge,
   useConfirmDialog,
   LoadingSpinner,
+  SelectInput,
+  Input,
 } from '@/components/ui'
-import { DeleteButton } from '@/components/ui/table-buttons'
+import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import useAdminTable from '@/hooks/useAdminTable'
 import useColumnVisibility, {
@@ -27,6 +25,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
+import EditVerifiedDeveloperModal from './components/EditVerifiedDeveloperModal'
 import VerifyDeveloperModal from './components/VerifyDeveloperModal'
 
 type VerifiedDeveloperSortField = 'verifiedAt' | 'user.name' | 'emulator.name'
@@ -39,6 +38,29 @@ const VERIFIED_DEVELOPERS_COLUMNS: ColumnDefinition[] = [
   { key: 'notes', label: 'Notes', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
+
+type VerifiedDeveloper = {
+  id: string
+  emulatorId: string
+  notes: string | null
+  user: {
+    id: string
+    name: string | null
+    email: string
+    profileImage: string | null
+  }
+  emulator: {
+    id: string
+    name: string
+    logo: string | null
+  }
+  verifier: {
+    id: string
+    name: string | null
+    email: string
+  }
+  verifiedAt: Date
+}
 
 function AdminVerifiedDevelopersPage() {
   const utils = api.useUtils()
@@ -54,11 +76,23 @@ function AdminVerifiedDevelopersPage() {
 
   const confirm = useConfirmDialog()
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedDeveloper, setSelectedDeveloper] =
+    useState<VerifiedDeveloper | null>(null)
+  const [emulatorFilter, setEmulatorFilter] = useState('')
+
+  const emulatorsQuery = api.emulators.get.useQuery({
+    limit: 100,
+    sortField: 'name',
+    sortDirection: 'asc',
+  })
 
   const verifiedDevelopersQuery =
     api.verifiedDevelopers.getVerifiedDevelopers.useQuery({
       page: table.page,
       limit: table.limit,
+      search: table.search || undefined,
+      emulatorFilter: emulatorFilter || undefined,
     })
 
   const removeVerifiedDeveloperMutation =
@@ -86,10 +120,31 @@ function AdminVerifiedDevelopersPage() {
     removeVerifiedDeveloperMutation.mutate({ id })
   }
 
+  const handleEdit = (developer: VerifiedDeveloper) => {
+    setSelectedDeveloper(developer)
+    setShowEditModal(true)
+  }
+
   const handleModalSuccess = () => {
     utils.verifiedDevelopers.getVerifiedDevelopers.invalidate()
     setShowAddModal(false)
+    setShowEditModal(false)
+    setSelectedDeveloper(null)
   }
+
+  const handleClearFilters = () => {
+    table.setSearch('')
+    setEmulatorFilter('')
+    table.setPage(1)
+  }
+
+  const emulatorFilterOptions = [
+    { id: '', name: 'All Emulators' },
+    ...(emulatorsQuery.data?.emulators.map((emulator) => ({
+      id: emulator.id,
+      name: emulator.name,
+    })) ?? []),
+  ]
 
   if (verifiedDevelopersQuery.error) {
     return (
@@ -156,15 +211,40 @@ function AdminVerifiedDevelopersPage() {
         />
       )}
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={(value) => table.setSearch(value)}
-        searchPlaceholder="Search developers..."
-        onClear={() => {
-          table.setSearch('')
-          table.setPage(1)
-        }}
-      />
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                placeholder="Search developers, emulators, or notes..."
+                value={table.search}
+                onChange={(e) => table.setSearch(e.target.value)}
+                className="w-full pl-10"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <SelectInput
+              label="Emulator Filter"
+              hideLabel={true}
+              value={emulatorFilter}
+              onChange={(ev) => {
+                setEmulatorFilter(ev.target.value)
+                table.setPage(1)
+              }}
+              options={emulatorFilterOptions}
+            />
+            <Button
+              variant="outline"
+              onClick={handleClearFilters}
+              className="h-full"
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <AdminTableContainer>
         {verifiedDevelopersQuery.isLoading ? (
@@ -241,10 +321,7 @@ function AdminVerifiedDevelopersPage() {
                           <div>
                             <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                               {verifiedDev.user.name || verifiedDev.user.email}
-                              <VerifiedDeveloperBadge
-                                type="verified-by-dev"
-                                size="sm"
-                              />
+                              <VerifiedDeveloperBadge size="sm" />
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                               {verifiedDev.user.email}
@@ -290,12 +367,20 @@ function AdminVerifiedDevelopersPage() {
                     )}
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <DeleteButton
-                          onClick={() => handleRemove(verifiedDev.id)}
-                          title="Remove Verification"
-                          isLoading={removeVerifiedDeveloperMutation.isPending}
-                          disabled={removeVerifiedDeveloperMutation.isPending}
-                        />
+                        <div className="flex items-center gap-2">
+                          <EditButton
+                            onClick={() => handleEdit(verifiedDev)}
+                            title="Edit Verified Developer"
+                          />
+                          <DeleteButton
+                            onClick={() => handleRemove(verifiedDev.id)}
+                            title="Remove Verification"
+                            isLoading={
+                              removeVerifiedDeveloperMutation.isPending
+                            }
+                            disabled={removeVerifiedDeveloperMutation.isPending}
+                          />
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -312,7 +397,9 @@ function AdminVerifiedDevelopersPage() {
                       <Shield className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
                       <p>No verified developers found.</p>
                       <p className="text-sm mt-1">
-                        Add your first verified developer.
+                        {table.search || emulatorFilter
+                          ? 'Try adjusting your search or filters.'
+                          : 'Add your first verified developer.'}
                       </p>
                     </div>
                   </td>
@@ -327,6 +414,16 @@ function AdminVerifiedDevelopersPage() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleModalSuccess}
+      />
+
+      <EditVerifiedDeveloperModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false)
+          setSelectedDeveloper(null)
+        }}
+        onSuccess={handleModalSuccess}
+        verifiedDeveloper={selectedDeveloper}
       />
     </div>
   )

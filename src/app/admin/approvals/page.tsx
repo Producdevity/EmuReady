@@ -104,11 +104,17 @@ function AdminApprovalsPage() {
   const utils = api.useUtils()
 
   const invalidateQueries = async () => {
-    await pendingListingsQuery.refetch()
-    await utils.listings.getProcessed.invalidate()
-    await utils.listings.get.invalidate()
-    await utils.listings.getStats.invalidate()
-    await utils.games.getStats.invalidate()
+    // Invalidate all related queries
+    await Promise.all([
+      pendingListingsQuery.refetch(),
+      utils.listings.getProcessed.invalidate(),
+      utils.listings.get.invalidate(),
+      utils.listings.getStats.invalidate(),
+      utils.games.getStats.invalidate(),
+      // Force refetch the stats
+      utils.listings.getStats.refetch(),
+      utils.games.getStats.refetch(),
+    ])
   }
 
   const approveMutation = api.listings.approveListing.useMutation({

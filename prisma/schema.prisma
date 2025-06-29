@@ -11,8 +11,11 @@ datasource db {
 }
 
 enum Role {
+  // User roles in order of increasing permissions
   USER
   AUTHOR
+  DEVELOPER
+  MODERATOR
   ADMIN
   SUPER_ADMIN
 }
@@ -48,6 +51,7 @@ model User {
   defaultToUserDevices Boolean     @default(false)
   defaultToUserSocs    Boolean     @default(false)
   notifyOnNewListings  Boolean     @default(true)
+  lastUsedDeviceId     String?     // Track the last used device
   // Relations
   comments             Comment[]
   listings             Listing[]

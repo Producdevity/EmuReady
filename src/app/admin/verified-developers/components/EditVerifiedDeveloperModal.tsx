@@ -2,34 +2,44 @@
 
 import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
-import { Autocomplete } from '@/components/ui/form'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { Role } from '@orm'
+
+interface VerifiedDeveloper {
+  id: string
+  emulatorId: string
+  notes: string | null
+  user: {
+    id: string
+    name: string | null
+    email: string
+    profileImage: string | null
+  }
+  emulator: {
+    id: string
+    name: string
+    logo: string | null
+  }
+  verifier: {
+    id: string
+    name: string | null
+    email: string
+  }
+  verifiedAt: Date
+}
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  verifiedDeveloper: VerifiedDeveloper | null
 }
 
-interface UserOption {
-  id: string
-  name: string | null
-  email: string
-  profileImage: string | null
-  role: Role
-  [key: string]: unknown // Add index signature for AutocompleteOptionBase
-}
-
-function VerifyDeveloperModal(props: Props) {
-  const [userId, setUserId] = useState<string | null>(null)
+function EditVerifiedDeveloperModal(props: Props) {
   const [emulatorId, setEmulatorId] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
-
-  const utils = api.useUtils()
 
   const emulatorsQuery = api.emulators.get.useQuery({
     limit: 100,
@@ -37,51 +47,45 @@ function VerifyDeveloperModal(props: Props) {
     sortDirection: 'asc',
   })
 
-  const verifyDeveloperMutation =
-    api.verifiedDevelopers.verifyDeveloper.useMutation()
+  const updateVerifiedDeveloperMutation =
+    api.verifiedDevelopers.updateVerifiedDeveloper.useMutation()
 
-  // Reset form when modal opens
+  // Reset form when modal opens or verified developer changes
   useEffect(() => {
-    if (props.isOpen) {
-      setUserId(null)
-      setEmulatorId('')
-      setNotes('')
+    if (props.isOpen && props.verifiedDeveloper) {
+      setEmulatorId(props.verifiedDeveloper.emulatorId)
+      setNotes(props.verifiedDeveloper.notes || '')
       setError('')
     }
-  }, [props.isOpen])
-
-  const loadUsers = async (query: string): Promise<UserOption[]> => {
-    const result = await utils.users.searchUsers.fetch({
-      query: query,
-      limit: 20,
-      minRole: Role.DEVELOPER, // Only load users with DEVELOPER role or higher
-    })
-    return result
-  }
+  }, [props.isOpen, props.verifiedDeveloper])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     setError('')
 
-    if (!userId || !emulatorId) {
-      setError('Please select both a user and an emulator')
+    if (!props.verifiedDeveloper || !emulatorId) {
+      setError('Please select an emulator')
       return
     }
 
     try {
-      await verifyDeveloperMutation.mutateAsync({
-        userId,
+      await updateVerifiedDeveloperMutation.mutateAsync({
+        id: props.verifiedDeveloper.id,
         emulatorId,
         notes: notes || undefined,
       })
 
-      toast.success('Developer verified successfully!')
+      toast.success('Verified developer updated successfully!')
       props.onSuccess()
     } catch (err) {
       const errorMessage = getErrorMessage(err)
       setError(errorMessage)
-      toast.error(`Failed to verify developer: ${errorMessage}`)
+      toast.error(`Failed to update verified developer: ${errorMessage}`)
     }
+  }
+
+  if (!props.verifiedDeveloper) {
+    return null
   }
 
   const emulatorOptions = [
@@ -96,38 +100,24 @@ function VerifyDeveloperModal(props: Props) {
     <Modal
       isOpen={props.isOpen}
       onClose={props.onClose}
-      title="Verify Developer"
+      title="Edit Verified Developer"
       size="md"
       closeOnBackdropClick={false}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Autocomplete<UserOption>
-            label="User"
-            value={userId}
-            onChange={setUserId}
-            loadItems={loadUsers}
-            optionToValue={(user) => user.id}
-            optionToLabel={(user) => user.name || user.email}
-            customOptionRenderer={(user, _isHighlighted) => (
-              <div className="flex items-center justify-between w-full">
-                <div>
-                  <div className="font-medium">{user.name || user.email}</div>
-                  {user.name && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                  {user.role}
-                </div>
-              </div>
-            )}
-            placeholder="Search for a user with DEVELOPER role or higher..."
-            minCharsToTrigger={2}
-            debounceTime={300}
-          />
+          <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+            Developer
+          </label>
+          <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="text-sm font-medium text-gray-900 dark:text-white">
+              {props.verifiedDeveloper.user.name ||
+                props.verifiedDeveloper.user.email}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {props.verifiedDeveloper.user.email}
+            </div>
+          </div>
         </div>
 
         <div>
@@ -168,16 +158,16 @@ function VerifyDeveloperModal(props: Props) {
             type="button"
             variant="outline"
             onClick={props.onClose}
-            disabled={verifyDeveloperMutation.isPending}
+            disabled={updateVerifiedDeveloperMutation.isPending}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            isLoading={verifyDeveloperMutation.isPending}
-            disabled={verifyDeveloperMutation.isPending}
+            isLoading={updateVerifiedDeveloperMutation.isPending}
+            disabled={updateVerifiedDeveloperMutation.isPending}
           >
-            Verify Developer
+            Update
           </Button>
         </div>
       </form>
@@ -185,4 +175,4 @@ function VerifyDeveloperModal(props: Props) {
   )
 }
 
-export default VerifyDeveloperModal
+export default EditVerifiedDeveloperModal

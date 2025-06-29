@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
@@ -641,5 +642,57 @@ export const usersRouter = createTRPCRouter({
       await ctx.prisma.user.delete({ where: { id: userId } })
 
       return { success: true }
+    }),
+
+  searchUsers: adminProcedure
+    .input(
+      z.object({
+        query: z.string().optional(),
+        limit: z.number().min(1).max(50).default(20),
+        minRole: z.nativeEnum(Role).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { query, limit, minRole } = input
+
+      const where: Prisma.UserWhereInput = {}
+
+      if (query && query.trim().length > 0) {
+        const searchTerm = query.trim()
+        where.OR = [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+        ]
+      }
+
+      // Filter by minimum role if specified
+      if (minRole) {
+        const roles: Role[] = [
+          Role.USER,
+          Role.AUTHOR,
+          Role.DEVELOPER,
+          Role.MODERATOR,
+          Role.ADMIN,
+          Role.SUPER_ADMIN,
+        ]
+        const minRoleIndex = roles.indexOf(minRole)
+        const allowedRoles = roles.slice(minRoleIndex)
+        where.role = { in: allowedRoles }
+      }
+
+      const users = await ctx.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          profileImage: true,
+          role: true,
+        },
+        orderBy: [{ name: 'asc' }, { email: 'asc' }],
+        take: limit,
+      })
+
+      return users
     }),
 })

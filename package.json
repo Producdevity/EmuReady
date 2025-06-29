@@ -1,6 +1,6 @@
 {
   "name": "emuready",
-  "version": "0.7.31",
+  "version": "0.7.32",
   "private": false,
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
@@ -19,6 +19,7 @@
     "db:migrate:status": "./scripts/db-cmd.sh prisma migrate status",
     "db:seed": "./scripts/db-cmd.sh npx tsx prisma/seed.ts",
     "db:studio": "./scripts/db-cmd.sh npx prisma studio",
+    "db:backup": "./scripts/db-backup.sh",
     "dev": "next dev --turbopack",
     "dev:debug": "DEBUG=next:* next dev --turbopack",
     "docs:generate": "tsx src/scripts/api/generate-api-docs.ts",

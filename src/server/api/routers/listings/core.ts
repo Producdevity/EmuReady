@@ -264,6 +264,17 @@ export const coreRouter = createTRPCRouter({
                 ? listing.votes[0].value
                 : null
 
+            // Check if the author is a verified developer for this emulator
+            const isVerifiedDeveloper =
+              await ctx.prisma.verifiedDeveloper.findUnique({
+                where: {
+                  userId_emulatorId: {
+                    userId: listing.authorId,
+                    emulatorId: listing.emulatorId,
+                  },
+                },
+              })
+
             return {
               ...listing,
               successRate,
@@ -271,6 +282,7 @@ export const coreRouter = createTRPCRouter({
               downVotes,
               totalVotes,
               userVote,
+              isVerifiedDeveloper: !!isVerifiedDeveloper,
               // Remove the raw votes array from the response
               votes: undefined,
             }
@@ -378,6 +390,17 @@ export const coreRouter = createTRPCRouter({
               ? listing.votes[0].value
               : null
 
+          // Check if the author is a verified developer for this emulator
+          const isVerifiedDeveloper =
+            await ctx.prisma.verifiedDeveloper.findUnique({
+              where: {
+                userId_emulatorId: {
+                  userId: listing.authorId,
+                  emulatorId: listing.emulatorId,
+                },
+              },
+            })
+
           return {
             ...listing,
             successRate,
@@ -385,6 +408,7 @@ export const coreRouter = createTRPCRouter({
             downVotes,
             totalVotes,
             userVote,
+            isVerifiedDeveloper: !!isVerifiedDeveloper,
             // Remove the raw votes array from the response
             votes: undefined,
           }
@@ -451,6 +475,18 @@ export const coreRouter = createTRPCRouter({
       const userVote =
         ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
 
+      // Check if the author is a verified developer for this emulator
+      const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+        {
+          where: {
+            userId_emulatorId: {
+              userId: listing.authorId,
+              emulatorId: listing.emulatorId,
+            },
+          },
+        },
+      )
+
       return {
         ...listing,
         successRate,
@@ -458,6 +494,7 @@ export const coreRouter = createTRPCRouter({
         downVotes,
         totalVotes,
         userVote,
+        isVerifiedDeveloper: !!isVerifiedDeveloper,
         // Remove the raw votes array from the response
         votes: undefined,
       }
@@ -874,13 +911,35 @@ export const coreRouter = createTRPCRouter({
     })
 
     async function calculateSuccessRate(listing: (typeof listings)[0]) {
+      // Count upvotes
       const upVotes = await ctx.prisma.vote.count({
         where: { listingId: listing.id, value: true },
       })
+
       const totalVotes = listing._count.votes
       const downVotes = totalVotes - upVotes
       const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-      return { ...listing, successRate, upVotes, downVotes, totalVotes }
+
+      // Check if the author is a verified developer for this emulator
+      const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+        {
+          where: {
+            userId_emulatorId: {
+              userId: listing.authorId,
+              emulatorId: listing.emulatorId,
+            },
+          },
+        },
+      )
+
+      return {
+        ...listing,
+        successRate,
+        upVotes,
+        downVotes,
+        totalVotes,
+        isVerifiedDeveloper: !!isVerifiedDeveloper,
+      }
     }
 
     return await Promise.all(listings.map(calculateSuccessRate))
