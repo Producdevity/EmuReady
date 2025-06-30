@@ -1,4 +1,4 @@
-import { ResourceError } from '@/lib/errors'
+import { ResourceError, AppError } from '@/lib/errors'
 import {
   UpdateUserPreferencesSchema,
   AddDevicePreferenceSchema,
@@ -161,12 +161,18 @@ export const userPreferencesRouter = createTRPCRouter({
       if (!user) return ResourceError.user.notFound()
 
       // Validate all devices exist
-      const devices = await ctx.prisma.device.findMany({
-        where: { id: { in: input.deviceIds } },
-      })
+      if (input.deviceIds.length > 0) {
+        const devices = await ctx.prisma.device.findMany({
+          where: { id: { in: input.deviceIds } },
+        })
 
-      if (devices.length !== input.deviceIds.length) {
-        return ResourceError.userDevicePreference.notFound()
+        if (devices.length !== input.deviceIds.length) {
+          const foundIds = new Set(devices.map((d) => d.id))
+          const missingIds = input.deviceIds.filter((id) => !foundIds.has(id))
+          return AppError.badRequest(
+            `Device(s) not found: ${missingIds.join(', ')}`,
+          )
+        }
       }
 
       // Remove existing preferences
@@ -201,12 +207,18 @@ export const userPreferencesRouter = createTRPCRouter({
       if (!user) return ResourceError.user.notFound()
 
       // Validate all SOCs exist
-      const socs = await ctx.prisma.soC.findMany({
-        where: { id: { in: input.socIds } },
-      })
+      if (input.socIds.length > 0) {
+        const socs = await ctx.prisma.soC.findMany({
+          where: { id: { in: input.socIds } },
+        })
 
-      if (socs.length !== input.socIds.length) {
-        return ResourceError.userSocPreference.notFound()
+        if (socs.length !== input.socIds.length) {
+          const foundIds = new Set(socs.map((s) => s.id))
+          const missingIds = input.socIds.filter((id) => !foundIds.has(id))
+          return AppError.badRequest(
+            `SOC(s) not found: ${missingIds.join(', ')}`,
+          )
+        }
       }
 
       // Remove existing preferences
