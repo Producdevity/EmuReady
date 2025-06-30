@@ -137,12 +137,31 @@ function DeviceSelector(props: Props) {
   }
 
   function handleDeviceToggle(device: Device) {
+    // Normalize the device data to match the expected structure
+    const normalizedDevice = {
+      id: device.id,
+      modelName: device.modelName,
+      brand: {
+        id: device.brand.id,
+        name: device.brand.name,
+      },
+      soc: device.soc
+        ? {
+            id: device.soc.id,
+            name: device.soc.name,
+            manufacturer: device.soc.manufacturer,
+          }
+        : null,
+    }
+
     if (isDeviceSelected(device)) {
-      props.onDevicesChange(
-        props.selectedDevices.filter((selected) => selected.id !== device.id),
+      const newSelection = props.selectedDevices.filter(
+        (selected) => selected.id !== device.id,
       )
+      props.onDevicesChange(newSelection)
     } else {
-      props.onDevicesChange([...props.selectedDevices, device])
+      const newSelection = [...props.selectedDevices, normalizedDevice]
+      props.onDevicesChange(newSelection)
     }
   }
 
@@ -177,8 +196,24 @@ function DeviceSelector(props: Props) {
       )
       props.onDevicesChange(remaining)
     } else {
-      // Select all from this brand
-      const toAdd = brandDevices.filter((device) => !isDeviceSelected(device))
+      // Select all from this brand - normalize the device data
+      const toAdd = brandDevices
+        .filter((device) => !isDeviceSelected(device))
+        .map((device) => ({
+          id: device.id,
+          modelName: device.modelName,
+          brand: {
+            id: device.brand.id,
+            name: device.brand.name,
+          },
+          soc: device.soc
+            ? {
+                id: device.soc.id,
+                name: device.soc.name,
+                manufacturer: device.soc.manufacturer,
+              }
+            : null,
+        }))
       props.onDevicesChange([...props.selectedDevices, ...toAdd])
     }
   }

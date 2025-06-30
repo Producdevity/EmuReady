@@ -83,11 +83,13 @@ function SocSelector(props: Props) {
 
   const toggleSoc = (soc: Soc) => {
     if (selectedSocIds.has(soc.id)) {
-      props.onSocsChange(
-        props.selectedSocs.filter((selected) => selected.id !== soc.id),
+      const newSelection = props.selectedSocs.filter(
+        (selected) => selected.id !== soc.id,
       )
+      props.onSocsChange(newSelection)
     } else {
-      props.onSocsChange([...props.selectedSocs, soc])
+      const newSelection = [...props.selectedSocs, soc]
+      props.onSocsChange(newSelection)
     }
   }
 
