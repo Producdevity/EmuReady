@@ -1,8 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { type NextRequest, NextResponse } from 'next/server'
-import { appRouter } from '@/server/api/root'
-import { prisma } from '@/server/db'
+import { createMobileTRPCFetchContext } from '@/server/api/mobileContext'
+import { mobileRouter } from '@/server/api/routers/mobile'
 
 // CORS headers for mobile API
 const corsHeaders = {
@@ -27,51 +26,11 @@ const handler = async (req: NextRequest) => {
     const response = await fetchRequestHandler({
       endpoint: '/api/mobile/trpc',
       req,
-      router: appRouter,
-      createContext: async () => {
-        let session = null
-
-        try {
-          const { userId } = await auth()
-
-          if (userId) {
-            // Fetch user data from database using clerkId
-            const user = await prisma.user.findUnique({
-              where: { clerkId: userId },
-              select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-              },
-            })
-
-            if (user) {
-              session = {
-                user: {
-                  id: user.id,
-                  email: user.email,
-                  name: user.name,
-                  role: user.role,
-                },
-              }
-            }
-          }
-        } catch (authError) {
-          // Log auth error but don't fail the request
-          // Many mobile endpoints are public anyway
-          console.warn('Auth error in mobile tRPC:', authError)
-        }
-
-        return {
-          session,
-          prisma,
-          headers: new Headers(req.headers),
-        }
-      },
+      router: mobileRouter,
+      createContext: createMobileTRPCFetchContext,
       onError:
         process.env.NODE_ENV === 'development'
-          ? ({ path, error }) => {
+          ? ({ path, error }: { path?: string; error: Error }) => {
               console.error(
                 `❌ Mobile tRPC failed on ${path ?? '<no-path>'}: ${error.message}`,
               )
