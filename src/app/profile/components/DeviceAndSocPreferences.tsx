@@ -1,6 +1,7 @@
 'use client'
 
 import { Smartphone, Cpu, Settings } from 'lucide-react'
+import { useCallback, useRef, useEffect } from 'react'
 import { AnimatedToggle } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -24,7 +25,13 @@ function DeviceAndSocPreferences(props: Props) {
 
   const updatePreferences = api.userPreferences.update.useMutation({
     onSuccess: () => {
-      utils.userPreferences.get.invalidate().catch(console.error)
+      // Invalidate all user preference related queries to ensure cache consistency
+      Promise.all([
+        utils.userPreferences.get.invalidate(),
+        utils.users.me.invalidate(),
+        utils.listings.get.invalidate(),
+      ]).catch(console.error)
+
       toast.success('Preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -41,7 +48,13 @@ function DeviceAndSocPreferences(props: Props) {
 
   const bulkUpdateDevices = api.userPreferences.bulkUpdateDevices.useMutation({
     onSuccess: () => {
-      utils.userPreferences.get.invalidate().catch(console.error)
+      // Invalidate all user preference related queries to ensure cache consistency
+      Promise.all([
+        utils.userPreferences.get.invalidate(),
+        utils.users.me.invalidate(),
+        utils.listings.get.invalidate(),
+      ]).catch(console.error)
+
       toast.success('Device preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -60,7 +73,13 @@ function DeviceAndSocPreferences(props: Props) {
 
   const bulkUpdateSocs = api.userPreferences.bulkUpdateSocs.useMutation({
     onSuccess: () => {
-      utils.userPreferences.get.invalidate().catch(console.error)
+      // Invalidate all user preference related queries to ensure cache consistency
+      Promise.all([
+        utils.userPreferences.get.invalidate(),
+        utils.users.me.invalidate(),
+        utils.listings.get.invalidate(),
+      ]).catch(console.error)
+
       toast.success('SOC preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -82,22 +101,62 @@ function DeviceAndSocPreferences(props: Props) {
     updatePreferences.mutate({ [key]: value })
   }
 
-  function handleDevicesChange(
-    devices: Array<{
-      id: string
-      modelName: string
-      brand: { id: string; name: string }
-      soc?: { id: string; name: string; manufacturer: string } | null
-    }>,
-  ) {
-    const deviceIds = devices.map((device) => device.id)
-    bulkUpdateDevices.mutate({ deviceIds })
-  }
+  // Debounce refs to prevent excessive API calls
+  const deviceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const socTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  function handleSocsChange(socs: typeof selectedSocs) {
-    const socIds = socs.map((soc) => soc.id)
-    bulkUpdateSocs.mutate({ socIds })
-  }
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (deviceTimeoutRef.current) {
+        clearTimeout(deviceTimeoutRef.current)
+      }
+      if (socTimeoutRef.current) {
+        clearTimeout(socTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleDevicesChange = useCallback(
+    (
+      devices: Array<{
+        id: string
+        modelName: string
+        brand: { id: string; name: string }
+        soc?: { id: string; name: string; manufacturer: string } | null
+      }>,
+    ) => {
+      const deviceIds = devices.map((device) => device.id)
+
+      // Clear existing timeout
+      if (deviceTimeoutRef.current) {
+        clearTimeout(deviceTimeoutRef.current)
+      }
+
+      // Set new timeout for debounced update
+      deviceTimeoutRef.current = setTimeout(() => {
+        bulkUpdateDevices.mutate({ deviceIds })
+      }, 500) // 500ms debounce
+    },
+    [bulkUpdateDevices],
+  )
+
+  const handleSocsChange = useCallback(
+    (socs: typeof selectedSocs) => {
+      const socIds = socs.map((soc) => soc.id)
+
+      // Clear existing timeout
+      if (socTimeoutRef.current) {
+        clearTimeout(socTimeoutRef.current)
+      }
+
+      // Set new timeout for debounced update
+      socTimeoutRef.current = setTimeout(() => {
+        bulkUpdateSocs.mutate({ socIds })
+      }, 500) // 500ms debounce
+    },
+    [bulkUpdateSocs],
+  )
 
   if (props.preferencesQuery.isLoading) {
     return (

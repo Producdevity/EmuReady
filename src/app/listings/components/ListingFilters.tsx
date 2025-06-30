@@ -56,6 +56,8 @@ interface FiltersProps {
   userSocIds: string[]
   onEnableUserDeviceFilter?: () => void
   onEnableUserSocFilter?: () => void
+  userDeviceFilterDisabled: boolean
+  userSocFilterDisabled: boolean
 }
 
 function ListingFilters(props: FiltersProps) {
@@ -596,13 +598,15 @@ function ListingFilters(props: FiltersProps) {
                         <div className="flex items-center gap-3 mb-2">
                           <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Your device preferences available
+                            {props.userDeviceFilterDisabled
+                              ? 'Your device preferences (disabled)'
+                              : 'Your device preferences available'}
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                          You have {props.userDeviceIds.length} preferred
-                          devices. Enable filtering to show only listings for
-                          your devices.
+                          {props.userDeviceFilterDisabled
+                            ? `You chose to see all devices. Click to filter by your ${props.userDeviceIds.length} preferred devices instead.`
+                            : `You have ${props.userDeviceIds.length} preferred devices. Enable filtering to show only listings for your devices.`}
                         </p>
                         <Button
                           variant="outline"
@@ -610,7 +614,9 @@ function ListingFilters(props: FiltersProps) {
                           onClick={props.onEnableUserDeviceFilter}
                           className="text-xs h-7 px-3"
                         >
-                          Use my device preferences
+                          {props.userDeviceFilterDisabled
+                            ? 'Filter by my devices'
+                            : 'Use my device preferences'}
                         </Button>
                       </motion.div>
                     )}
@@ -680,12 +686,15 @@ function ListingFilters(props: FiltersProps) {
                         <div className="flex items-center gap-3 mb-2">
                           <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Your SoC preferences available
+                            {props.userSocFilterDisabled
+                              ? 'Your SoC preferences (disabled)'
+                              : 'Your SoC preferences available'}
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                          You have {props.userSocIds.length} preferred SoCs.
-                          Enable filtering to show only listings for your SoCs.
+                          {props.userSocFilterDisabled
+                            ? `You chose to see all SoCs. Click to filter by your ${props.userSocIds.length} preferred SoCs instead.`
+                            : `You have ${props.userSocIds.length} preferred SoCs. Enable filtering to show only listings for your SoCs.`}
                         </p>
                         <Button
                           variant="outline"
@@ -693,7 +702,9 @@ function ListingFilters(props: FiltersProps) {
                           onClick={props.onEnableUserSocFilter}
                           className="text-xs h-7 px-3"
                         >
-                          Use my SoC preferences
+                          {props.userSocFilterDisabled
+                            ? 'Filter by my SoCs'
+                            : 'Use my SoC preferences'}
                         </Button>
                       </motion.div>
                     )}

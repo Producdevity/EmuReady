@@ -72,7 +72,10 @@ function ListingsPage() {
   })
 
   const userQuery = api.users.me.useQuery()
-  const userPreferencesQuery = api.userPreferences.get.useQuery()
+  const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
+    staleTime: 30 * 1000, // Cache for 30 seconds to reduce excessive refetching
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  })
 
   const userRole = userQuery?.data?.role as Role | undefined
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
@@ -100,6 +103,22 @@ function ListingsPage() {
     listingsState.socIds.length === 0 &&
     userSocIds.length > 0 &&
     !userSocFilterDisabled
+
+  // Debug logging for development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('User preferences loaded:', {
+      defaultToUserDevices: userPreferencesQuery.data?.defaultToUserDevices,
+      defaultToUserSocs: userPreferencesQuery.data?.defaultToUserSocs,
+      userDeviceIds,
+      userSocIds,
+      shouldUseUserDeviceFilter,
+      shouldUseUserSocFilter,
+      userDeviceFilterDisabled,
+      userSocFilterDisabled,
+      currentDeviceFilter: listingsState.deviceIds,
+      currentSocFilter: listingsState.socIds,
+    })
+  }
 
   const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
@@ -151,25 +170,31 @@ function ListingsPage() {
   const handleDeviceChange = (values: string[]) => {
     listingsState.setDeviceIds(values)
     // When user manually selects devices, disable user preference filtering
-    setUserDeviceFilterDisabled(values.length > 0)
     if (values.length > 0) {
+      setUserDeviceFilterDisabled(true)
       // Also disable SoC preferences when manually selecting devices
       setUserSocFilterDisabled(true)
     }
-    // Note: We don't automatically re-enable preferences when clearing selections
-    // This allows users to see ALL listings when they clear everything
+    // When clearing device selections (Show all devices), ensure user preferences are disabled
+    // so we show ALL devices, not filtered by user preferences
+    if (values.length === 0) {
+      setUserDeviceFilterDisabled(true)
+    }
   }
 
   const handleSocChange = (values: string[]) => {
     listingsState.setSocIds(values)
     // When user manually selects SoCs, disable user preference filtering
-    setUserSocFilterDisabled(values.length > 0)
     if (values.length > 0) {
+      setUserSocFilterDisabled(true)
       // Also disable device preferences when manually selecting SoCs
       setUserDeviceFilterDisabled(true)
     }
-    // Note: We don't automatically re-enable preferences when clearing selections
-    // This allows users to see ALL listings when they clear everything
+    // When clearing SOC selections (Show all SOCs), ensure user preferences are disabled
+    // so we show ALL listings, not filtered by user preferences
+    if (values.length === 0) {
+      setUserSocFilterDisabled(true)
+    }
   }
 
   const handleEmulatorChange = (values: string[]) => {
@@ -238,6 +263,8 @@ function ListingsPage() {
             userSocIds={userSocIds}
             onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
             onEnableUserSocFilter={handleEnableUserSocFilter}
+            userDeviceFilterDisabled={userDeviceFilterDisabled}
+            userSocFilterDisabled={userSocFilterDisabled}
           />
         </div>
 
@@ -299,6 +326,8 @@ function ListingsPage() {
                     userSocIds={userSocIds}
                     onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
                     onEnableUserSocFilter={handleEnableUserSocFilter}
+                    userDeviceFilterDisabled={userDeviceFilterDisabled}
+                    userSocFilterDisabled={userSocFilterDisabled}
                   />
                 </div>
               </div>
