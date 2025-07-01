@@ -256,7 +256,7 @@ function Navbar() {
                   >
                     Profile
                   </Link>
-                  {userRole && hasPermission(userRole, Role.AUTHOR) && (
+                  {hasPermission(userRole, Role.AUTHOR) && (
                     <Link
                       href="/listings/new"
                       className="block px-4 py-3 rounded-xl font-semibold text-base bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
@@ -265,7 +265,7 @@ function Navbar() {
                       Create Listing
                     </Link>
                   )}
-                  {userRole && hasPermission(userRole, Role.ADMIN) && (
+                  {hasPermission(userRole, Role.DEVELOPER) && (
                     <Link
                       href="/admin"
                       className="block px-4 py-3 rounded-xl font-semibold text-base bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg"
