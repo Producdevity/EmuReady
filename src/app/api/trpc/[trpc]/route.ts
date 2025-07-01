@@ -22,12 +22,27 @@ const handler = async (req: NextRequest) => {
         })
 
         if (user) {
+          // Fetch user permissions based on their role
+          const rolePermissions = await prisma.rolePermission.findMany({
+            where: { role: user.role },
+            include: {
+              permission: {
+                select: {
+                  key: true,
+                },
+              },
+            },
+          })
+
+          const permissions = rolePermissions.map((rp) => rp.permission.key)
+
           session = {
             user: {
               id: user.id,
               email: user.email,
               name: user.name,
               role: user.role,
+              permissions,
             },
           }
         }

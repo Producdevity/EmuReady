@@ -6,6 +6,7 @@ import emulatorsSeeder from './seeders/emulatorsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
 import performanceScalesSeeder from './seeders/performanceScalesSeeder'
+import permissionsSeeder from './seeders/permissionsSeeder'
 import socSeeder from './seeders/socSeeder'
 import systemsSeeder from './seeders/systemsSeeder'
 import usersSeeder from './seeders/usersSeeder'
@@ -32,6 +33,10 @@ async function clearDb() {
   await prisma.game.deleteMany()
   await prisma.system.deleteMany()
   await prisma.deviceBrand.deleteMany()
+  // Clear permission system tables
+  await prisma.permissionActionLog.deleteMany()
+  await prisma.rolePermission.deleteMany()
+  await prisma.permission.deleteMany()
 }
 
 async function main() {
@@ -127,6 +132,7 @@ async function main() {
 
   try {
     // Seed in order of dependencies
+    await permissionsSeeder(prisma) // Seed permissions first
     await performanceScalesSeeder(prisma)
     await systemsSeeder(prisma)
     await usersSeeder(prisma)

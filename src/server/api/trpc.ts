@@ -8,6 +8,7 @@ import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
+import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
@@ -16,6 +17,7 @@ type User = {
   email: string | null
   name: string | null
   role: Role
+  permissions: string[] // Array of permission keys
 }
 
 type Session = {
@@ -56,12 +58,27 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
     })
 
     if (user) {
+      // Fetch user permissions based on their role
+      const rolePermissions = await prisma.rolePermission.findMany({
+        where: { role: user.role },
+        include: {
+          permission: {
+            select: {
+              key: true,
+            },
+          },
+        },
+      })
+
+      const permissions = rolePermissions.map((rp) => rp.permission.key)
+
       session = {
         user: {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          permissions,
         },
       }
     } else {
@@ -294,3 +311,102 @@ export function developerEmulatorProcedure(emulatorId: string) {
     })
   })
 }
+
+// ===== Permission-Based Procedures =====
+
+/**
+ * Generic permission-based procedure
+ * @param requiredPermission The permission key required to access this procedure
+ */
+export function permissionProcedure(requiredPermission: string) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    if (!hasPermissionInContext(ctx, requiredPermission)) {
+      AppError.forbidden(
+        `You need the '${requiredPermission}' permission to perform this action`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+/**
+ * Procedure that requires multiple permissions (all must be present)
+ * @param requiredPermissions Array of permission keys that are all required
+ */
+export function multiPermissionProcedure(requiredPermissions: string[]) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    const missingPermissions = requiredPermissions.filter(
+      (permission) => !hasPermissionInContext(ctx, permission),
+    )
+
+    if (missingPermissions.length > 0) {
+      AppError.forbidden(
+        `You need the following permissions: ${missingPermissions.join(', ')}`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+/**
+ * Procedure that requires any one of multiple permissions
+ * @param requiredPermissions Array of permission keys (any one is sufficient)
+ */
+export function anyPermissionProcedure(requiredPermissions: string[]) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    const hasAnyPermission = requiredPermissions.some((permission) =>
+      hasPermissionInContext(ctx, permission),
+    )
+
+    if (!hasAnyPermission) {
+      AppError.forbidden(
+        `You need one of the following permissions: ${requiredPermissions.join(', ')}`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+// Common permission-based procedures for convenience
+export const createListingProcedure = permissionProcedure(
+  PERMISSIONS.CREATE_LISTING,
+)
+export const approveListingsProcedure = permissionProcedure(
+  PERMISSIONS.APPROVE_LISTINGS,
+)
+export const manageUsersProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_USERS,
+)
+export const managePermissionsProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_PERMISSIONS,
+)
+export const accessAdminPanelProcedure = permissionProcedure(
+  PERMISSIONS.ACCESS_ADMIN_PANEL,
+)
+export const viewStatisticsProcedure = permissionProcedure(
+  PERMISSIONS.VIEW_STATISTICS,
+)
+export const manageEmulatorsProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_EMULATORS,
+)
+export const manageGamesProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_GAMES,
+)

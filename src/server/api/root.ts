@@ -10,6 +10,8 @@ import { listingVerificationsRouter } from './routers/listingVerifications'
 import { mobileRouter } from './routers/mobile'
 import { notificationsRouter } from './routers/notifications'
 import { performanceScalesRouter } from './routers/performanceScales'
+import { permissionLogsRouter } from './routers/permissionLogs'
+import { permissionsRouter } from './routers/permissions'
 import { rawgRouter } from './routers/rawg'
 import { socsRouter } from './routers/socs'
 import { systemsRouter } from './routers/systems'
@@ -33,6 +35,8 @@ export const appRouter = createTRPCRouter({
   customFieldDefinitions: customFieldDefinitionRouter,
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,
+  permissions: permissionsRouter,
+  permissionLogs: permissionLogsRouter,
   trust: trustRouter,
   rawg: rawgRouter,
   tgdb: tgdbRouter,

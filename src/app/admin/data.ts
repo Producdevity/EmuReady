@@ -100,6 +100,18 @@ export const superAdminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Monitor trust system activity and scores.',
   },
+  {
+    href: '/admin/permissions',
+    label: 'Permissions',
+    exact: false,
+    description: 'Manage roles and permissions.',
+  },
+  {
+    href: '/admin/permission-logs',
+    label: 'Permission Logs',
+    exact: true,
+    description: 'Monitor permission changes and audit trail.',
+  },
 ]
 
 export const moderatorNavItems: AdminNavItem[] = [

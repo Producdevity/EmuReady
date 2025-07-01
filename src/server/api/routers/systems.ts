@@ -7,10 +7,11 @@ import {
   DeleteSystemSchema,
 } from '@/schemas/system'
 import {
-  adminProcedure,
   createTRPCRouter,
   publicProcedure,
+  permissionProcedure,
 } from '@/server/api/trpc'
+import { PERMISSIONS } from '@/utils/permission-system'
 import type { Prisma } from '@orm'
 
 export const systemsRouter = createTRPCRouter({
@@ -61,7 +62,7 @@ export const systemsRouter = createTRPCRouter({
       return system
     }),
 
-  create: adminProcedure
+  create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(CreateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.prisma.system.findUnique({
@@ -77,7 +78,7 @@ export const systemsRouter = createTRPCRouter({
       })
     }),
 
-  update: adminProcedure
+  update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(UpdateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
@@ -106,7 +107,7 @@ export const systemsRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(DeleteSystemSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if system has games
@@ -123,29 +124,31 @@ export const systemsRouter = createTRPCRouter({
       })
     }),
 
-  stats: adminProcedure.query(async ({ ctx }) => {
-    const [total, withGames, withoutGames] = await Promise.all([
-      ctx.prisma.system.count(),
-      ctx.prisma.system.count({
-        where: {
-          games: {
-            some: {},
+  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
+    async ({ ctx }) => {
+      const [total, withGames, withoutGames] = await Promise.all([
+        ctx.prisma.system.count(),
+        ctx.prisma.system.count({
+          where: {
+            games: {
+              some: {},
+            },
           },
-        },
-      }),
-      ctx.prisma.system.count({
-        where: {
-          games: {
-            none: {},
+        }),
+        ctx.prisma.system.count({
+          where: {
+            games: {
+              none: {},
+            },
           },
-        },
-      }),
-    ])
+        }),
+      ])
 
-    return {
-      total,
-      withGames,
-      withoutGames,
-    }
-  }),
+      return {
+        total,
+        withGames,
+        withoutGames,
+      }
+    },
+  ),
 })
