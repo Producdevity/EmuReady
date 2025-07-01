@@ -17,9 +17,7 @@ import {
   ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import EmulatorViewModal from './components/EmulatorViewModal'

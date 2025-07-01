@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react'
 import { type ChangeEvent } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import useAdminTable from './useAdminTable'
+import { useAdminTable } from './useAdminTable'
 
 // Mock Next.js navigation hooks
 const mockPush = vi.fn()
@@ -18,7 +18,6 @@ vi.mock('next/navigation', () => ({
 
 describe('useAdminTable', () => {
   beforeEach(() => {
-    // Clear all mocks before each test
     vi.clearAllMocks()
     // Reset search params
     mockSearchParams.forEach((_, key) => {

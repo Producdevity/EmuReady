@@ -37,9 +37,7 @@ function AdminLayout(props: PropsWithChildren) {
 
   // Get pending games count for admin navigation
   const gameStatsQuery = api.games.getStats.useQuery(undefined, {
-    enabled:
-      !!userQuery.data &&
-      hasPermission(userQuery.data.role as Role, Role.ADMIN),
+    enabled: !!userQuery.data && hasPermission(userQuery.data.role, Role.ADMIN),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
     refetchOnMount: true,
@@ -65,11 +63,11 @@ function AdminLayout(props: PropsWithChildren) {
   useEffect(() => {
     if (!isLoaded || userQuery.isLoading || !user) return
 
-    // Check if user has admin permissions once data is loaded
+    // Check if a user has the right permissions once data is loaded
     // Now allow access to MODERATOR and DEVELOPER roles as well
     if (
       userQuery.data &&
-      !hasPermission(userQuery.data?.role, Role.MODERATOR)
+      !hasPermission(userQuery.data?.role, Role.DEVELOPER)
     ) {
       router.replace('/')
     }
@@ -81,15 +79,6 @@ function AdminLayout(props: PropsWithChildren) {
     router,
     userQuery.isLoading,
   ])
-
-  // Hydrate URL state on initial load
-  useEffect(() => {
-    // This effect ensures that when the page loads with URL parameters,
-    // the component state is properly initialized from those parameters
-    // We don't need to do anything specific here since the useAdminTable hook
-    // will handle reading from URL parameters on its own initialization
-    // This is just a placeholder effect to document the behavior
-  }, [])
 
   if (!isLoaded || userQuery.isLoading) return <LoadingSpinner size="lg" />
 
@@ -109,7 +98,7 @@ function AdminLayout(props: PropsWithChildren) {
     return item
   })
 
-  // Select appropriate nav items based on user role
+  // Select appropriate nav items based on a user role
   let navItems: AdminNavItem[] = []
   let superAdminItems: AdminNavItem[] = []
 

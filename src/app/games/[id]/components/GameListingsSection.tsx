@@ -12,7 +12,7 @@ type Game = NonNullable<RouterOutput['games']['byId']>
 interface Props {
   listings: Game['listings']
   gameId: Game['id']
-  isAdmin: boolean
+  hasPermission: boolean
 }
 
 export function GameListingsSection(props: Props) {
@@ -103,7 +103,7 @@ export function GameListingsSection(props: Props) {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {props.isAdmin && (
+                      {props.hasPermission && (
                         <EditButton
                           href={`/admin/listings/${listing.id}/edit`}
                           title="Edit Listing"

@@ -14,6 +14,7 @@ import {
 import {
   adminProcedure,
   createTRPCRouter,
+  moderatorProcedure,
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
@@ -256,7 +257,7 @@ export const gamesRouter = createTRPCRouter({
     }
   }),
 
-  getStats: adminProcedure.query(async ({ ctx }) => {
+  getStats: moderatorProcedure.query(async ({ ctx }) => {
     const cached = gameStatsCache.get(GAME_STATS_CACHE_KEY)
     if (cached) return cached
 
@@ -390,7 +391,6 @@ export const gamesRouter = createTRPCRouter({
               select: {
                 id: true,
                 name: true,
-                email: true,
               },
             },
           },
@@ -410,7 +410,7 @@ export const gamesRouter = createTRPCRouter({
       }
     }),
 
-  update: adminProcedure
+  update: moderatorProcedure
     .input(UpdateGameSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -493,8 +493,8 @@ export const gamesRouter = createTRPCRouter({
       }
     }),
 
-  // New endpoints for approval system
-  getPendingGames: adminProcedure
+  // endpoints for an approval system
+  getPendingGames: moderatorProcedure
     .input(GetPendingGamesSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -586,7 +586,7 @@ export const gamesRouter = createTRPCRouter({
       }
     }),
 
-  approveGame: adminProcedure
+  approveGame: moderatorProcedure
     .input(ApproveGameSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, status } = input
@@ -622,7 +622,7 @@ export const gamesRouter = createTRPCRouter({
       return result
     }),
 
-  bulkApproveGames: adminProcedure
+  bulkApproveGames: moderatorProcedure
     .input(BulkApproveGamesSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
@@ -662,7 +662,7 @@ export const gamesRouter = createTRPCRouter({
       })
     }),
 
-  bulkRejectGames: adminProcedure
+  bulkRejectGames: moderatorProcedure
     .input(BulkRejectGamesSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
@@ -681,7 +681,7 @@ export const gamesRouter = createTRPCRouter({
           return AppError.badRequest('No valid pending games found to reject')
         }
 
-        // Update all games to rejected
+        // Rejecte all games to
         await tx.game.updateMany({
           where: { id: { in: gamesToReject.map((g) => g.id) } },
           data: {

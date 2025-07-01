@@ -12,11 +12,11 @@ function AdminGameEditPage() {
   const params = useParams()
   const id = params.id as string
 
-  const { data: game, isLoading, error } = api.games.byId.useQuery({ id })
+  const gameQuery = api.games.byId.useQuery({ id })
 
-  if (isLoading) return <PageLoading />
+  if (gameQuery.isLoading) return <PageLoading />
 
-  if (error || !game) return notFound()
+  if (gameQuery.error || !gameQuery.data) return notFound()
 
   return (
     <div className="space-y-6">
@@ -28,7 +28,7 @@ function AdminGameEditPage() {
           </Link>
         </Button>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Edit Game: {game.title}
+          Edit Game: {gameQuery.data.title}
         </h1>
       </div>
 
@@ -38,10 +38,10 @@ function AdminGameEditPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
               Game Details
             </h2>
-            <GameEditForm game={game} />
+            <GameEditForm game={gameQuery.data} />
           </div>
 
-          <GameRelatedData game={game} />
+          <GameRelatedData game={gameQuery.data} />
         </div>
 
         <div className="space-y-6">
@@ -55,7 +55,7 @@ function AdminGameEditPage() {
                 variant="outline"
                 className="w-full justify-start"
               >
-                <Link href={`/games/${game.id}`} target="_blank">
+                <Link href={`/games/${gameQuery.data.id}`} target="_blank">
                   View Public Page
                 </Link>
               </Button>
@@ -64,7 +64,7 @@ function AdminGameEditPage() {
                 variant="outline"
                 className="w-full justify-start"
               >
-                <Link href={`/listings/new?gameId=${game.id}`}>
+                <Link href={`/listings/new?gameId=${gameQuery.data.id}`}>
                   Add New Listing
                 </Link>
               </Button>
@@ -75,9 +75,9 @@ function AdminGameEditPage() {
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
               Compatible Emulators
             </h3>
-            {game.system.emulators.length > 0 ? (
+            {gameQuery.data.system.emulators.length > 0 ? (
               <ul className="space-y-2">
-                {game.system.emulators.map((emulator) => (
+                {gameQuery.data.system.emulators.map((emulator) => (
                   <li key={emulator.id}>
                     <Link
                       href={`/admin/emulators/${emulator.id}`}

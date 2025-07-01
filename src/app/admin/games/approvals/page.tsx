@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
+import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
@@ -32,10 +33,7 @@ import {
   ViewButton,
 } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'

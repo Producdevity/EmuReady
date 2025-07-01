@@ -1,8 +1,9 @@
 'use client'
 
-import { CheckCircle, XCircle, Undo, ExternalLink } from 'lucide-react'
+import { Undo, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useState, type ChangeEvent } from 'react'
+import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
@@ -10,17 +11,16 @@ import {
   AdminSearchFilters,
 } from '@/components/admin'
 import {
+  ApproveButton,
   Button,
   ColumnVisibilityControl,
   Pagination,
+  RejectButton,
   SelectInput,
 } from '@/components/ui'
 import { EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -65,16 +65,16 @@ function ProcessedListingsPage() {
 
   const [filterStatus, setFilterStatus] = useState<ApprovalStatus | null>(null)
 
-  const { data, isLoading, error } = api.listings.getProcessed.useQuery({
+  const listingStatsQuery = api.listings.getStats.useQuery()
+  const processedListingsQuery = api.listings.getProcessed.useQuery({
     page: table.page,
     limit: table.limit,
     filterStatus: filterStatus ?? undefined,
     search: table.debouncedSearch || undefined,
   })
 
-  const listingStatsQuery = api.listings.getStats.useQuery()
-  const processedListings = data?.listings ?? []
-  const paginationData = data?.pagination
+  const processedListings = processedListingsQuery.data?.listings ?? []
+  const paginationData = processedListingsQuery.data?.pagination
 
   const [showOverrideModal, setShowOverrideModal] = useState(false)
   const [selectedListingForOverride, setSelectedListingForOverride] =
@@ -137,10 +137,10 @@ function ProcessedListingsPage() {
     table.setPage(1)
   }
 
-  if (error) {
+  if (processedListingsQuery.error) {
     return (
       <div className="container mx-auto p-6 text-red-500">
-        Error loading processed listings: {error.message}
+        Error loading processed listings: {processedListingsQuery.error.message}
       </div>
     )
   }
@@ -197,19 +197,19 @@ function ProcessedListingsPage() {
         />
       </AdminSearchFilters>
 
-      {isLoading && (
+      {processedListingsQuery.isLoading && (
         <div className="text-center py-8">
           <p>Loading processed listings...</p>
         </div>
       )}
 
-      {!isLoading && processedListings.length === 0 && (
+      {!processedListingsQuery.isLoading && processedListings.length === 0 && (
         <p className="text-gray-600 dark:text-gray-400 text-center py-8">
           No listings match the current filter.
         </p>
       )}
 
-      {!isLoading && processedListings.length > 0 && (
+      {!processedListingsQuery.isLoading && processedListings.length > 0 && (
         <AdminTableContainer>
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -310,30 +310,20 @@ function ProcessedListingsPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-1">
                       {listing.status === ApprovalStatus.APPROVED && (
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        <RejectButton
+                          title="Override to Rejected"
                           onClick={() =>
                             openOverrideModal(listing, ApprovalStatus.REJECTED)
                           }
-                          title="Override to Rejected"
-                          className="text-yellow-600 border-yellow-400 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-500 dark:hover:bg-yellow-700/20"
-                        >
-                          <XCircle className="mr-1 h-4 w-4" /> Reject
-                        </Button>
+                        />
                       )}
                       {listing.status === ApprovalStatus.REJECTED && (
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        <ApproveButton
+                          title="Override to Approved"
                           onClick={() =>
                             openOverrideModal(listing, ApprovalStatus.APPROVED)
                           }
-                          title="Override to Approved"
-                          className="text-green-600 border-green-400 hover:bg-green-50 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-700/20"
-                        >
-                          <CheckCircle className="mr-1 h-4 w-4" /> Approve
-                        </Button>
+                        />
                       )}
                       <Button
                         size="sm"

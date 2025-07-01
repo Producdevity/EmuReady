@@ -4,6 +4,7 @@ import { Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
+import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -22,10 +23,7 @@ import {
 } from '@/components/ui'
 import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'

@@ -23,14 +23,14 @@ function GameDetailsPage() {
     enabled: !!user,
   })
 
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
   const isOwnerOfPendingGame =
     userQuery.data &&
     gameQuery.data &&
     gameQuery.data.submittedBy === userQuery.data.id &&
     gameQuery.data.status === ApprovalStatus.PENDING
 
-  const canEdit = isAdmin || isOwnerOfPendingGame
+  const canEdit =
+    hasPermission(userQuery.data?.role, Role.ADMIN) || isOwnerOfPendingGame
 
   if (gameQuery.isLoading) return <LoadingSpinner text="Loading game data..." />
 
@@ -84,7 +84,7 @@ function GameDetailsPage() {
         <GameListingsSection
           gameId={gameQuery.data.id}
           listings={gameQuery.data?.listings}
-          isAdmin={hasPermission(userQuery.data?.role, Role.ADMIN)}
+          hasPermission={hasPermission(userQuery.data?.role, Role.ADMIN)}
         />
       </div>
     </main>

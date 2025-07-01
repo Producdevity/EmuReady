@@ -4,6 +4,7 @@ import { Clock, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
@@ -27,10 +28,7 @@ import {
   ViewButton,
 } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import analytics from '@/lib/analytics'

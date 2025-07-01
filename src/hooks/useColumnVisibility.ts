@@ -31,7 +31,7 @@ export interface UseColumnVisibilityReturn {
   isHydrated: boolean
 }
 
-function useColumnVisibility(
+export function useColumnVisibility(
   columns: ColumnDefinition[],
   opts?: UseColumnVisibilityOptions,
 ): UseColumnVisibilityReturn {
@@ -210,5 +210,3 @@ function useColumnVisibility(
     isHydrated,
   }
 }
-
-export default useColumnVisibility

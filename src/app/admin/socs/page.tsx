@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminTableContainer,
   AdminSearchFilters,
@@ -20,10 +21,7 @@ import {
   ViewButton,
 } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'

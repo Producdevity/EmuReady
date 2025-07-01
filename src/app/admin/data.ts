@@ -104,6 +104,18 @@ export const superAdminNavItems: AdminNavItem[] = [
 
 export const moderatorNavItems: AdminNavItem[] = [
   {
+    href: '/admin/games',
+    label: 'Games',
+    exact: true,
+    description: 'Manage games and view related data.',
+  },
+  {
+    href: '/admin/games/approvals',
+    label: 'Game Approvals',
+    exact: true,
+    description: 'Review and approve submitted games.',
+  },
+  {
     href: '/admin/devices',
     label: 'Devices',
     exact: true,
@@ -114,6 +126,12 @@ export const moderatorNavItems: AdminNavItem[] = [
     label: 'SoCs',
     exact: true,
     description: 'Manage System on Chip specifications.',
+  },
+  {
+    href: '/admin/approvals',
+    label: 'Listing Approvals',
+    exact: true,
+    description: 'Manage listing approvals.',
   },
 ]
 

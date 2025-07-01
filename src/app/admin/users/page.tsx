@@ -4,6 +4,7 @@ import { Search, ShieldUser, User } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import { useAdminTable } from '@/app/admin/hooks'
 import { AdminTableContainer } from '@/components/admin'
 import {
   Button,
@@ -21,10 +22,7 @@ import {
   ViewButton,
 } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'

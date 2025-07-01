@@ -8,7 +8,8 @@ import {
   vi,
   type MockInstance,
 } from 'vitest'
-import useColumnVisibility, {
+import {
+  useColumnVisibility,
   type ColumnDefinition,
 } from './useColumnVisibility'
 

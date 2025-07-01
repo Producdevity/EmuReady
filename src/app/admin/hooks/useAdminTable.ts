@@ -45,7 +45,7 @@ export interface UseAdminTableReturn<TSortField extends string> {
 const DEFAULT_LIMIT = 20
 const DEFAULT_SEARCH_DEBOUNCE = 500
 
-function useAdminTable<TSortField extends string>(
+export function useAdminTable<TSortField extends string>(
   opts: UseAdminTableOptions<TSortField> = {},
 ): UseAdminTableReturn<TSortField> {
   const searchParams = useSearchParams()
@@ -247,5 +247,3 @@ function useAdminTable<TSortField extends string>(
     resetFilters,
   }
 }
-
-export default useAdminTable

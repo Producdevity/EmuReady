@@ -15,8 +15,8 @@ import {
 } from '@/schemas/listing'
 import {
   createTRPCRouter,
-  adminProcedure,
   superAdminProcedure,
+  moderatorProcedure,
 } from '@/server/api/trpc'
 import {
   notificationEventEmitter,
@@ -29,7 +29,7 @@ import type { Prisma } from '@orm'
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 
 export const adminRouter = createTRPCRouter({
-  getPending: adminProcedure
+  getPending: moderatorProcedure
     .input(GetPendingListingsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -129,7 +129,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  approve: adminProcedure
+  approve: moderatorProcedure
     .input(ApproveListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId } = input
@@ -196,7 +196,7 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  reject: adminProcedure
+  reject: moderatorProcedure
     .input(RejectListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, notes } = input
@@ -383,7 +383,7 @@ export const adminRouter = createTRPCRouter({
       return { success: true, message: 'Listing deleted successfully' }
     }),
 
-  bulkApprove: adminProcedure
+  bulkApprove: moderatorProcedure
     .input(BulkApproveListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingIds } = input
@@ -474,7 +474,7 @@ export const adminRouter = createTRPCRouter({
       })
     }),
 
-  bulkReject: adminProcedure
+  bulkReject: moderatorProcedure
     .input(BulkRejectListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingIds, notes } = input
@@ -566,7 +566,7 @@ export const adminRouter = createTRPCRouter({
       })
     }),
 
-  getStats: adminProcedure.query(async ({ ctx }) => {
+  getStats: moderatorProcedure.query(async ({ ctx }) => {
     const [pending, approved, rejected] = await Promise.all([
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),

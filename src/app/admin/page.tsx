@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getCurrentUser } from '@/server/utils/auth'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
-import { adminNavItems, superAdminNavItems } from './data'
+import { moderatorNavItems, adminNavItems, superAdminNavItems } from './data'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
@@ -62,7 +62,20 @@ async function AdminDashboardPage() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {(isAdmin || isSuperAdmin) &&
+        {isModerator &&
+          moderatorNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
+            >
+              <h3 className="font-semibold text-xl mb-2">{item.label}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {item.description}
+              </p>
+            </Link>
+          ))}
+        {isAdmin &&
           adminNavItems.map((item) => (
             <Link
               key={item.href}

@@ -1,10 +1,9 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { sendGAEvent } from '@next/third-parties/google'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
-import useCookieConsent from '@/hooks/useCookieConsent'
+import { useCookieConsent } from '@/hooks'
 import analytics from '@/lib/analytics'
 
 function SessionTracker() {
@@ -18,7 +17,7 @@ function SessionTracker() {
   const discoveredFeatures = useRef<Set<string>>(new Set())
   const previousUserIdRef = useRef<string | undefined>(undefined)
 
-  // Track user sign-in when user transitions from null/undefined to having a user
+  // Track user sign-in when a user transitions from null/undefined to having a user
   useEffect(() => {
     if (!analyticsAllowed) return
 
@@ -37,7 +36,7 @@ function SessionTracker() {
     previousUserIdRef.current = currentUserId
   }, [analyticsAllowed, user?.id])
 
-  // Track session start on first load
+  // Track session start on the first load
   useEffect(() => {
     if (!analyticsAllowed || hasTrackedSessionStart.current) return
 
@@ -58,19 +57,14 @@ function SessionTracker() {
     const loadTime = Date.now() - pageLoadTimeRef.current
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('📊 Page View:', {
-        page: pathname,
+      return console.log('📊 Page View:', {
+        pathname,
         loadTime,
         userId: user?.id,
       })
-      return
     }
 
-    sendGAEvent('event', 'page_view', {
-      page_location: pathname,
-      page_load_time: loadTime,
-      user_id: user?.id,
-    })
+    analytics.session.pageView({ pathname, loadTime, userId: user?.id })
 
     // Track feature discovery based on page visits
     const featureMap: Record<string, string> = {
@@ -95,7 +89,7 @@ function SessionTracker() {
     pageLoadTimeRef.current = Date.now()
   }, [pathname, analyticsAllowed, user?.id])
 
-  // Track session duration on page unload
+  // Track session duration on page unloading
   useEffect(() => {
     if (!analyticsAllowed) return
 

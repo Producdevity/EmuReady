@@ -22,9 +22,7 @@ import {
 } from '@/components/ui'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import useEmulatorLogos from '@/hooks/useEmulatorLogos'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { api } from '@/lib/api'

@@ -3,6 +3,7 @@
 import { Shield, UserCheck, Search } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
+import { useAdminTable } from '@/app/admin/hooks'
 import { AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
@@ -17,10 +18,7 @@ import {
 } from '@/components/ui'
 import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'

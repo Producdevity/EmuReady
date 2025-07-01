@@ -1,11 +1,13 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
 import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
+import { useAdminTable } from '@/app/admin/hooks'
 import { AdminTableContainer } from '@/components/admin'
 import {
   Button,
@@ -24,10 +26,7 @@ import {
 } from '@/components/ui'
 import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
@@ -35,7 +34,8 @@ import { type Nullable } from '@/types/utils'
 import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
-import { ApprovalStatus } from '@orm'
+import { hasPermission } from '@/utils/permissions'
+import { ApprovalStatus, Role } from '@orm'
 
 type Game = RouterOutput['games']['get']['games'][number]
 type GameSortField =
@@ -68,6 +68,12 @@ function AdminGamesPage() {
 
   const columnVisibility = useColumnVisibility(GAMES_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminGames,
+  })
+
+  const { user } = useUser()
+
+  const userQuery = api.users.me.useQuery(undefined, {
+    enabled: !!user,
   })
 
   const systemsQuery = api.systems.get.useQuery()
@@ -417,16 +423,26 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <EditButton
-                              href={`/admin/games/${game.id}`}
-                              title="Edit Game"
-                            />
-                            <DeleteButton
-                              onClick={() => handleDelete(game)}
-                              title="Delete Game"
-                              isLoading={deleteGame.isPending}
-                              disabled={deleteGame.isPending}
-                            />
+                            {hasPermission(
+                              userQuery.data?.role,
+                              Role.MODERATOR,
+                            ) && (
+                              <EditButton
+                                href={`/admin/games/${game.id}`}
+                                title="Edit Game"
+                              />
+                            )}
+                            {hasPermission(
+                              userQuery.data?.role,
+                              Role.ADMIN,
+                            ) && (
+                              <DeleteButton
+                                onClick={() => handleDelete(game)}
+                                title="Delete Game"
+                                isLoading={deleteGame.isPending}
+                                disabled={deleteGame.isPending}
+                              />
+                            )}
                           </div>
                         </td>
                       )}

@@ -15,7 +15,7 @@ const DEFAULT_PREFERENCES: CookiePreferences = {
   performance: false,
 }
 
-function useCookieConsent() {
+export function useCookieConsent() {
   const router = useRouter()
   const [preferences, setPreferences] =
     useState<CookiePreferences>(DEFAULT_PREFERENCES)
@@ -133,5 +133,3 @@ function useCookieConsent() {
     dismissWithoutChoice,
   }
 }
-
-export default useCookieConsent

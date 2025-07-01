@@ -1,5 +1,6 @@
 'use client'
 
+import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -15,10 +16,7 @@ import {
 } from '@/components/ui'
 import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import useAdminTable from '@/hooks/useAdminTable'
-import useColumnVisibility, {
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
