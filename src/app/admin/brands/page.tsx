@@ -14,8 +14,9 @@ import {
   SortableHeader,
   useConfirmDialog,
   LoadingSpinner,
+  DeleteButton,
+  EditButton,
 } from '@/components/ui'
-import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -114,7 +115,6 @@ function AdminBrandsPage() {
 
       {brandsStatsQuery.data && (
         <AdminStatsDisplay
-          className="mb-6"
           stats={[
             {
               label: 'Total',
@@ -132,6 +132,7 @@ function AdminBrandsPage() {
               color: 'gray',
             },
           ]}
+          isLoading={brandsStatsQuery.isLoading}
         />
       )}
 

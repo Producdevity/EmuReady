@@ -36,7 +36,7 @@ export function AdminStatsDisplay(props: Props) {
   return (
     <div
       className={cn(
-        'grid grid-cols-1 gap-4',
+        'grid grid-cols-1 gap-4 mb-6',
         gridColsMap[props.stats.length],
         props.className,
       )}

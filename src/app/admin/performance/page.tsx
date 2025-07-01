@@ -9,12 +9,13 @@ import {
 } from '@/components/admin'
 import {
   Button,
-  LoadingSpinner,
   ColumnVisibilityControl,
+  DeleteButton,
+  EditButton,
+  LoadingSpinner,
   SortableHeader,
   useConfirmDialog,
 } from '@/components/ui'
-import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -118,7 +119,6 @@ function AdminPerformancePage() {
             },
           ]}
           isLoading={performanceStatsQuery.isLoading}
-          className="mb-6"
         />
       )}
 

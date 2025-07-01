@@ -19,12 +19,16 @@ import {
   TooltipContent,
   DisplayToggleButton,
   VerifiedDeveloperBadge,
+  EditButton,
+  ViewButton,
 } from '@/components/ui'
-import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
-import useEmulatorLogos from '@/hooks/useEmulatorLogos'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import {
+  useEmulatorLogos,
+  useLocalStorage,
+  useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'

@@ -10,21 +10,22 @@ import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { useAdminTable } from '@/app/admin/hooks'
 import { AdminTableContainer } from '@/components/admin'
 import {
+  ApprovalStatusBadge,
+  Badge,
   Button,
+  Card,
+  DeleteButton,
+  EditButton,
   Input,
   LoadingSpinner,
-  Card,
-  Badge,
-  SortableHeader,
   Pagination,
-  ApprovalStatusBadge,
-  useConfirmDialog,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
   SelectInput,
+  SortableHeader,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useConfirmDialog,
 } from '@/components/ui'
-import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'

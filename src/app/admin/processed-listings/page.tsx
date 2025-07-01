@@ -14,11 +14,11 @@ import {
   ApproveButton,
   Button,
   ColumnVisibilityControl,
+  EditButton,
   Pagination,
   RejectButton,
   SelectInput,
 } from '@/components/ui'
-import { EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import analytics from '@/lib/analytics'

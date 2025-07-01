@@ -11,11 +11,12 @@ import {
 import {
   Button,
   ColumnVisibilityControl,
+  DeleteButton,
+  EditButton,
+  LoadingSpinner,
   SortableHeader,
   useConfirmDialog,
-  LoadingSpinner,
 } from '@/components/ui'
-import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -117,7 +118,6 @@ function AdminSystemsPage() {
 
       {systemsStatsQuery.data && (
         <AdminStatsDisplay
-          className="mb-6"
           stats={[
             {
               label: 'Total',
@@ -135,6 +135,7 @@ function AdminSystemsPage() {
               color: 'gray',
             },
           ]}
+          isLoading={systemsStatsQuery.isLoading}
         />
       )}
 

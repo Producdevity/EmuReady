@@ -20,11 +20,15 @@ import {
   Pagination,
   useConfirmDialog,
   DisplayToggleButton,
+  EditButton,
+  DeleteButton,
 } from '@/components/ui'
-import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
-import useEmulatorLogos from '@/hooks/useEmulatorLogos'
+import {
+  useEmulatorLogos,
+  useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
@@ -44,17 +48,13 @@ const EMULATORS_COLUMNS: ColumnDefinition[] = [
 
 function AdminEmulatorsPage() {
   const table = useAdminTable<EmulatorSortField>({ defaultLimit: 20 })
-
+  const utils = api.useUtils()
+  const emulatorLogos = useEmulatorLogos()
   const columnVisibility = useColumnVisibility(EMULATORS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminEmulators,
   })
 
-  const {
-    showEmulatorLogos,
-    toggleEmulatorLogos,
-    isHydrated: isEmulatorLogosHydrated,
-  } = useEmulatorLogos()
-
+  const emulatorsStatsQuery = api.emulators.getStats.useQuery()
   const emulatorsQuery = api.emulators.get.useQuery({
     search: table.search ?? undefined,
     sortField: table.sortField ?? undefined,
@@ -63,11 +63,8 @@ function AdminEmulatorsPage() {
     limit: table.limit,
   })
 
-  const emulatorsStatsQuery = api.emulators.getStats.useQuery()
-
   const emulators = emulatorsQuery.data?.emulators ?? []
   const pagination = emulatorsQuery.data?.pagination
-  const utils = api.useUtils()
 
   const deleteEmulator = api.emulators.delete.useMutation({
     onSuccess: () => {
@@ -118,9 +115,9 @@ function AdminEmulatorsPage() {
       headerActions={
         <>
           <DisplayToggleButton
-            showLogos={showEmulatorLogos}
-            onToggle={toggleEmulatorLogos}
-            isHydrated={isEmulatorLogosHydrated}
+            showLogos={emulatorLogos.showEmulatorLogos}
+            onToggle={emulatorLogos.toggleEmulatorLogos}
+            isHydrated={emulatorLogos.isHydrated}
             logoLabel="Show Emulator Logos"
             nameLabel="Show Emulator Names"
           />
@@ -152,7 +149,6 @@ function AdminEmulatorsPage() {
             },
           ]}
           isLoading={emulatorsStatsQuery.isLoading}
-          className="mb-6"
         />
       )}
 
@@ -233,7 +229,8 @@ function AdminEmulatorsPage() {
                               name={emulator.name}
                               logo={emulator.logo}
                               showLogo={
-                                isEmulatorLogosHydrated && showEmulatorLogos
+                                emulatorLogos.isHydrated &&
+                                emulatorLogos.showEmulatorLogos
                               }
                             />
                           </Link>

@@ -2,9 +2,13 @@
 
 import Link from 'next/link'
 import { EmulatorIcon } from '@/components/icons'
-import { Badge, PerformanceBadge } from '@/components/ui'
-import { EditButton, ViewButton } from '@/components/ui/table-buttons'
-import useEmulatorLogos from '@/hooks/useEmulatorLogos'
+import {
+  Badge,
+  PerformanceBadge,
+  EditButton,
+  ViewButton,
+} from '@/components/ui'
+import { useEmulatorLogos } from '@/hooks'
 import type { RouterOutput } from '@/types/trpc'
 
 type Game = NonNullable<RouterOutput['games']['byId']>

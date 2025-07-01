@@ -15,12 +15,10 @@ import {
   useConfirmDialog,
   Autocomplete,
   LoadingSpinner,
-} from '@/components/ui'
-import {
   DeleteButton,
   EditButton,
   ViewButton,
-} from '@/components/ui/table-buttons'
+} from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -60,7 +58,7 @@ function AdminDevicesPage() {
   })
 
   const devicesStatsQuery = api.devices.stats.useQuery()
-  const brandsQuery = api.deviceBrands.get.useQuery({ limit: 1000 })
+  const brandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
   const deleteDevice = api.devices.delete.useMutation()
   const confirm = useConfirmDialog()
 
@@ -152,7 +150,6 @@ function AdminDevicesPage() {
 
       {devicesStatsQuery.data && (
         <AdminStatsDisplay
-          className="mb-6"
           stats={[
             {
               label: 'Total',
@@ -170,6 +167,7 @@ function AdminDevicesPage() {
               color: 'gray',
             },
           ]}
+          isLoading={devicesStatsQuery.isLoading}
         />
       )}
 

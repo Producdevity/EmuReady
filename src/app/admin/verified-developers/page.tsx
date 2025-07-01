@@ -9,14 +9,15 @@ import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
   ColumnVisibilityControl,
+  DeleteButton,
+  EditButton,
+  Input,
+  LoadingSpinner,
+  SelectInput,
   SortableHeader,
   VerifiedDeveloperBadge,
   useConfirmDialog,
-  LoadingSpinner,
-  SelectInput,
-  Input,
 } from '@/components/ui'
-import { DeleteButton, EditButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -180,7 +181,6 @@ function AdminVerifiedDevelopersPage() {
 
       {verifiedDevelopersQuery.data && (
         <AdminStatsDisplay
-          className="mb-6"
           stats={[
             {
               label: 'Total Verified',
@@ -206,6 +206,7 @@ function AdminVerifiedDevelopersPage() {
               color: 'gray',
             },
           ]}
+          isLoading={verifiedDevelopersQuery.isLoading}
         />
       )}
 

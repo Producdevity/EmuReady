@@ -1,7 +1,11 @@
 'use client'
 
-import { PerformanceBadge, ApprovalStatusBadge } from '@/components/ui'
-import { EditButton, ViewButton } from '@/components/ui/table-buttons'
+import {
+  PerformanceBadge,
+  ApprovalStatusBadge,
+  EditButton,
+  ViewButton,
+} from '@/components/ui'
 import { formatTimeAgo } from '@/utils/date'
 import { type Prisma } from '@orm'
 
