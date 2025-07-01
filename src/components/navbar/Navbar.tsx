@@ -29,7 +29,7 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Get user role with proper type casting
+  // Get a user role with proper type casting
   const userRole = user?.publicMetadata?.role as Role | null
 
   const getNavItemClass = useCallback(
@@ -132,7 +132,7 @@ function Navbar() {
                         Create Listing
                       </Link>
                     )}
-                    {hasPermission(userRole, Role.ADMIN) && (
+                    {hasPermission(userRole, Role.DEVELOPER) && (
                       <Link
                         href="/admin"
                         className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
