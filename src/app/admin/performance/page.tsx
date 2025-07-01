@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
@@ -22,6 +23,13 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import PerformanceScaleModal from './components/PerformanceScaleModal'
+import ReplacementSelectionModal from './components/ReplacementSelectionModal'
+import {
+  type PerformanceScale,
+  type PerformanceModalState,
+  type ReplacementModalState,
+} from './types'
 
 type PerformanceScaleSortField = 'label' | 'rank'
 
@@ -40,6 +48,15 @@ function AdminPerformancePage() {
   const columnVisibility = useColumnVisibility(PERFORMANCE_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminPerformance,
   })
+
+  const [performanceModal, setPerformanceModal] =
+    useState<PerformanceModalState>({ isOpen: false })
+
+  const [replacementModal, setReplacementModal] =
+    useState<ReplacementModalState>({
+      isOpen: false,
+      scaleToDelete: null,
+    })
 
   const performanceStatsQuery = api.performanceScales.getStats.useQuery()
   const performanceScalesQuery = api.performanceScales.get.useQuery({
@@ -61,23 +78,25 @@ function AdminPerformancePage() {
     },
   })
 
-  const openModal = (_scale?: { id: number }) => {
-    // TODO: Implement modal functionality to edit performance scale
-    console.log('Open modal for editing performance scale')
+  const handleCreate = () => {
+    setPerformanceModal({ isOpen: true })
   }
 
-  const handleDelete = async (id: number) => {
+  const handleEdit = (scale: PerformanceScale) => {
+    setPerformanceModal({ isOpen: true, scale })
+  }
+
+  const handleDelete = async (scale: PerformanceScale) => {
     const confirmed = await confirm({
       title: 'Delete Performance Scale',
-      description:
-        'Are you sure you want to delete this performance scale? This action cannot be undone.',
+      description: `Are you sure you want to delete "${scale.label}"? This action cannot be undone.`,
     })
 
     if (!confirmed) return
 
-    // TODO: add a way to select a performance scale that all the listings using this performance scale will be updated to
+    // Try to delete directly first
     deletePerformanceScale.mutate({
-      id,
+      id: scale.id,
     } satisfies RouterInput['performanceScales']['delete'])
   }
 
@@ -93,7 +112,7 @@ function AdminPerformancePage() {
             columns={PERFORMANCE_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          <Button onClick={() => openModal()}>Add Performance Scale</Button>
+          <Button onClick={handleCreate}>Add Performance Scale</Button>
         </>
       }
     >
@@ -208,11 +227,11 @@ function AdminPerformancePage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <EditButton
-                            onClick={() => openModal(scale)}
+                            onClick={() => handleEdit(scale)}
                             title="Edit Performance Scale"
                           />
                           <DeleteButton
-                            onClick={() => handleDelete(scale.id)}
+                            onClick={() => handleDelete(scale)}
                             title="Delete Performance Scale"
                             isLoading={deletePerformanceScale.isPending}
                             disabled={deletePerformanceScale.isPending}
@@ -227,6 +246,32 @@ function AdminPerformancePage() {
           </div>
         )}
       </AdminTableContainer>
+
+      <PerformanceScaleModal
+        isOpen={performanceModal.isOpen}
+        onClose={() => setPerformanceModal({ isOpen: false })}
+        editId={performanceModal.scale?.id || null}
+        scale={performanceModal.scale}
+        onSuccess={() => {
+          setPerformanceModal({ isOpen: false })
+          utils.performanceScales.get.invalidate().catch(console.error)
+          utils.performanceScales.getStats.invalidate().catch(console.error)
+        }}
+      />
+
+      <ReplacementSelectionModal
+        isOpen={replacementModal.isOpen}
+        onClose={() =>
+          setReplacementModal({ isOpen: false, scaleToDelete: null })
+        }
+        scaleToDelete={replacementModal.scaleToDelete}
+        onSuccess={() => {
+          setReplacementModal({ isOpen: false, scaleToDelete: null })
+          utils.performanceScales.get.invalidate().catch(console.error)
+          utils.performanceScales.getStats.invalidate().catch(console.error)
+          toast.success('Performance scale deleted successfully!')
+        }}
+      />
     </AdminPageLayout>
   )
 }
