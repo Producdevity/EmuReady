@@ -5,7 +5,7 @@ import { useLocalStorage } from './useLocalStorage'
 import type { DeviceOption } from '@/app/listings/components/shared'
 
 vi.mock('./useLocalStorage', () => ({
-  default: vi.fn(() => [null, vi.fn(), true]),
+  useLocalStorage: vi.fn(() => [null, vi.fn(), true]),
 }))
 
 describe('useLastUsedDevice', () => {
