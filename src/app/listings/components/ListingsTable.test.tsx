@@ -1,8 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ColumnVisibilityControl } from '@/components/ui'
-import { type ColumnDefinition } from '@/hooks/useColumnVisibility'
-import type useColumnVisibility from '@/hooks/useColumnVisibility'
+import {
+  type useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks/useColumnVisibility'
 
 vi.mock('@/hooks/useColumnVisibility')
 
