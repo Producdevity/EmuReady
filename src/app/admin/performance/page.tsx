@@ -35,21 +35,20 @@ const PERFORMANCE_COLUMNS: ColumnDefinition[] = [
 
 function AdminPerformancePage() {
   const table = useAdminTable<PerformanceScaleSortField>({ defaultLimit: 20 })
-
+  const confirm = useConfirmDialog()
+  const utils = api.useUtils()
   const columnVisibility = useColumnVisibility(PERFORMANCE_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminPerformance,
   })
 
+  const performanceStatsQuery = api.performanceScales.getStats.useQuery()
   const performanceScalesQuery = api.performanceScales.get.useQuery({
     search: table.search || undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
 
-  const performanceStatsQuery = api.performanceScales.getStats.useQuery()
-
   const performanceScales = performanceScalesQuery.data ?? []
-  const utils = api.useUtils()
 
   const deletePerformanceScale = api.performanceScales.delete.useMutation({
     onSuccess: () => {
@@ -62,10 +61,8 @@ function AdminPerformancePage() {
     },
   })
 
-  const confirm = useConfirmDialog()
-
   const openModal = (_scale?: { id: number }) => {
-    // TODO: Implement modal functionality
+    // TODO: Implement modal functionality to edit performance scale
     console.log('Open modal for editing performance scale')
   }
 
@@ -78,6 +75,7 @@ function AdminPerformancePage() {
 
     if (!confirmed) return
 
+    // TODO: add a way to select a performance scale that all the listings using this performance scale will be updated to
     deletePerformanceScale.mutate({
       id,
     } satisfies RouterInput['performanceScales']['delete'])
