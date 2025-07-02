@@ -500,6 +500,10 @@ export const coreRouter = createTRPCRouter({
   byId: publicProcedure
     .input(GetListingByIdSchema)
     .query(async ({ ctx, input }) => {
+      // Shadow ban logic: Check user permissions before fetching
+      const userRole = ctx.session?.user?.role
+      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
+
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: input.id },
         include: {
@@ -508,7 +512,24 @@ export const coreRouter = createTRPCRouter({
           emulator: true,
           performance: true,
           author: {
-            select: { id: true, name: true, profileImage: true },
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+              // Include ban status for moderators to show banned user indication
+              ...(canSeeBannedUsers && {
+                userBans: {
+                  where: {
+                    isActive: true,
+                    OR: [
+                      { expiresAt: null },
+                      { expiresAt: { gt: new Date() } },
+                    ],
+                  },
+                  select: { id: true, reason: true, expiresAt: true },
+                },
+              }),
+            },
           },
           customFieldValues: {
             include: { customFieldDefinition: true },
@@ -533,6 +554,27 @@ export const coreRouter = createTRPCRouter({
       })
 
       if (!listing) return ResourceError.listing.notFound()
+
+      // CRITICAL: Check if the listing author is banned and if current user can access it
+      if (!canSeeBannedUsers) {
+        const authorBanStatus = await ctx.prisma.userBan.findFirst({
+          where: {
+            userId: listing.authorId,
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+          select: { id: true },
+        })
+
+        if (authorBanStatus) {
+          throw AppError.forbidden('This listing is not accessible.')
+        }
+      }
+
+      // CRITICAL: Check approval status - REJECTED listings should NEVER be visible to regular users
+      if (!canSeeBannedUsers && listing.status === ApprovalStatus.REJECTED) {
+        throw AppError.forbidden('This listing is not accessible.')
+      }
 
       // Count upvotes
       const upVotes = await ctx.prisma.vote.count({

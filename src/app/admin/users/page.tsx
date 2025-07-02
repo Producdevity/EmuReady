@@ -1,17 +1,20 @@
 'use client'
 
-import { Search, ShieldUser, User } from 'lucide-react'
+import { ShieldUser, User } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminTableContainer } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+  AdminTableContainer,
+} from '@/components/admin'
 import {
   Badge,
-  Button,
   ColumnVisibilityControl,
   DeleteButton,
-  Input,
   LoadingSpinner,
   Pagination,
   SortableHeader,
@@ -73,11 +76,7 @@ function AdminUsersPage() {
   const [selectedUserForRole, setSelectedUserForRole] =
     useState<UserForModal | null>(null)
 
-  const {
-    data: usersData,
-    isLoading,
-    refetch,
-  } = api.users.getAll.useQuery({
+  const usersQuery = api.users.getAll.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
@@ -85,10 +84,10 @@ function AdminUsersPage() {
     limit: table.limit,
   })
 
-  const { data: userStats } = api.users.getStats.useQuery()
+  const usersStatsQuery = api.users.getStats.useQuery()
 
-  const users = usersData?.users ?? []
-  const pagination = usersData?.pagination
+  const users = usersQuery.data?.users ?? []
+  const pagination = usersQuery.data?.pagination
   const deleteUser = api.users.delete.useMutation()
   const confirm = useConfirmDialog()
 
@@ -105,8 +104,10 @@ function AdminUsersPage() {
       await deleteUser.mutateAsync({
         userId,
       } satisfies RouterInput['users']['delete'])
-      refetch().catch(console.error)
+      toast.success('User deleted successfully')
+      usersQuery.refetch().catch(console.error)
     } catch (err) {
+      console.error('Failed to delete user:', err)
       toast.error(`Failed to delete user: ${getErrorMessage(err)}`)
     }
   }
@@ -133,84 +134,68 @@ function AdminUsersPage() {
     router.push(newUrl, { scroll: false })
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Users Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage user accounts and roles
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <ColumnVisibilityControl
-            columns={USERS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
-          {userStats && (
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {userStats.total}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Users
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {userStats.byRole.admin + userStats.byRole.superAdmin}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Admins
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {userStats.byRole.author}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Authors
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+  const statsData = usersStatsQuery.data
+    ? [
+        {
+          label: 'Total Users',
+          value: usersStatsQuery.data.total,
+          color: 'blue' as const,
+        },
+        {
+          label: 'Users',
+          value: usersStatsQuery.data.byRole.user,
+          color: 'green' as const,
+        },
+        {
+          label: 'Authors',
+          value: usersStatsQuery.data.byRole.author,
+          color: 'gray' as const,
+        },
+        {
+          label: 'Developers',
+          value: usersStatsQuery.data.byRole.developer,
+          color: 'purple' as const,
+        },
+        {
+          label: 'Moderators',
+          value: usersStatsQuery.data.byRole.moderator,
+          color: 'yellow' as const,
+        },
+        {
+          label: 'Admins',
+          value:
+            usersStatsQuery.data.byRole.admin +
+            usersStatsQuery.data.byRole.superAdmin,
+          color: 'red' as const,
+        },
+      ]
+    : []
 
-      {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={table.search}
-                onChange={table.handleSearchChange}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="h-full"
-              onClick={() => {
-                table.setSearch('')
-                table.setPage(1)
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+  return (
+    <AdminPageLayout
+      title="Users Management"
+      description="Manage user accounts and roles"
+      headerActions={
+        <ColumnVisibilityControl
+          columns={USERS_COLUMNS}
+          columnVisibility={columnVisibility}
+        />
+      }
+    >
+      <AdminStatsDisplay
+        stats={statsData}
+        isLoading={usersStatsQuery.isLoading}
+      />
+
+      <AdminSearchFilters
+        searchValue={table.search}
+        onSearchChange={table.setSearch}
+        searchPlaceholder="Search users by name or email..."
+        onClear={table.search ? () => table.setSearch('') : undefined}
+      />
 
       <AdminTableContainer>
-        {isLoading ? (
+        {usersQuery.isLoading ? (
           <LoadingSpinner />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -419,7 +404,7 @@ function AdminUsersPage() {
         isOpen={!!userIdFromUrl}
         onClose={closeUserDetailsModal}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 

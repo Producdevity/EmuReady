@@ -57,3 +57,9 @@ export const UpdateUserRoleSchema = z.object({
 export const DeleteUserSchema = z.object({
   userId: z.string().uuid(),
 })
+
+export const SearchUsersSchema = z.object({
+  query: z.string().optional(),
+  limit: z.number().min(1).max(50).default(20),
+  minRole: z.nativeEnum(Role).optional(),
+})

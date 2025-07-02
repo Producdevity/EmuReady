@@ -6,32 +6,13 @@ import {
   EditButton,
   ViewButton,
 } from '@/components/ui'
+import { type RouterOutput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
-import { type Prisma } from '@orm'
 
-type GameWithRelations = Prisma.GameGetPayload<{
-  include: {
-    system: { include: { emulators: true } }
-    listings: {
-      include: {
-        device: { include: { brand: true } }
-        emulator: true
-        performance: true
-        author: {
-          select: {
-            id: true
-            name: true
-            email: true
-          }
-        }
-        _count: { select: { comments: true } }
-      }
-    }
-  }
-}>
+type Game = NonNullable<RouterOutput['games']['byId']>
 
 interface Props {
-  game: GameWithRelations
+  game: Game
 }
 
 export function GameRelatedData(props: Props) {

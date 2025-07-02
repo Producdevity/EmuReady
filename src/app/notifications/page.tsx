@@ -184,7 +184,7 @@ function NotificationsPage() {
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {CATEGORIES.slice(1).map((category) => (
+            {CATEGORIES.map((category) => (
               <motion.div
                 key={category.value}
                 whileHover={{ scale: 1.02 }}

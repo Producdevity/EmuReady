@@ -17,7 +17,8 @@ import {
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
-import { CustomFieldType } from '@orm'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { CustomFieldType, Role, ApprovalStatus } from '@orm'
 import CommentThread from './CommentThread'
 import EditListingButton from './EditListingButton'
 import ReportListingButton from './ReportListingButton'
@@ -38,6 +39,13 @@ function ListingDetailsClient(props: Props) {
   const listingId = props.listing.id
   const utils = api.useUtils()
   const router = useRouter()
+
+  // Get current user to check if they can see banned user indicators
+  const currentUserQuery = api.users.me.useQuery()
+  const canViewBannedUsers = roleIncludesRole(
+    currentUserQuery.data?.role,
+    Role.MODERATOR,
+  )
 
   const refreshData = () => {
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
@@ -193,6 +201,19 @@ function ListingDetailsClient(props: Props) {
                     <VerifiedDeveloperBadge showText />
                   </div>
                 )}
+                {canViewBannedUsers &&
+                  props.listing.status !== ApprovalStatus.APPROVED && (
+                    <Badge
+                      variant={
+                        props.listing.status === ApprovalStatus.REJECTED
+                          ? 'danger'
+                          : 'warning'
+                      }
+                      size="sm"
+                    >
+                      {props.listing.status}
+                    </Badge>
+                  )}
               </div>
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
@@ -283,6 +304,15 @@ function ListingDetailsClient(props: Props) {
                 <div className="font-semibold text-gray-900 dark:text-white">
                   {props.listing?.author?.name ?? 'Unknown'}
                 </div>
+                {canViewBannedUsers &&
+                  props.listing?.author &&
+                  'userBans' in props.listing.author &&
+                  Array.isArray(props.listing.author.userBans) &&
+                  props.listing.author.userBans.length > 0 && (
+                    <Badge variant="danger" size="sm" className="mt-1">
+                      BANNED USER
+                    </Badge>
+                  )}
               </div>
               <Link
                 href={`/users/${props.listing?.author?.id ?? ''}`}

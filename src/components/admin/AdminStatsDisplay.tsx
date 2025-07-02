@@ -1,20 +1,21 @@
 import { Card } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
-interface StatItem {
+export interface AdminStatItem {
   label: string
   value: number
-  color: 'yellow' | 'green' | 'red' | 'blue' | 'purple' | 'gray'
+  color: 'yellow' | 'green' | 'red' | 'blue' | 'purple' | 'gray' | 'orange'
   description?: string
 }
 
-const colorClasses: Record<StatItem['color'], string> = {
-  yellow: 'text-yellow-600 dark:text-yellow-400',
-  green: 'text-green-600 dark:text-green-400',
-  red: 'text-red-600 dark:text-red-400',
+const colorClasses: Record<AdminStatItem['color'], string> = {
   blue: 'text-blue-600 dark:text-blue-400',
-  purple: 'text-purple-600 dark:text-purple-400',
   gray: 'text-gray-600 dark:text-gray-400',
+  green: 'text-green-600 dark:text-green-400',
+  orange: 'text-orange-600 dark:text-orange-400',
+  purple: 'text-purple-600 dark:text-purple-400',
+  red: 'text-red-600 dark:text-red-400',
+  yellow: 'text-yellow-600 dark:text-yellow-400',
 }
 
 const gridColsMap: Record<number, string> = {
@@ -27,7 +28,7 @@ const gridColsMap: Record<number, string> = {
 }
 
 interface Props {
-  stats: StatItem[]
+  stats: AdminStatItem[]
   isLoading?: boolean
   className?: string
 }
@@ -37,7 +38,7 @@ export function AdminStatsDisplay(props: Props) {
     <div
       className={cn(
         'grid grid-cols-1 gap-4 mb-6',
-        gridColsMap[props.stats.length],
+        props.isLoading ? gridColsMap[3] : gridColsMap[props.stats.length],
         props.className,
       )}
     >

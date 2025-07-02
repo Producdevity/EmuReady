@@ -281,6 +281,7 @@ export class ResourceError {
   static user = {
     notFound: () => AppError.notFound('User'),
     emailExists: () => AppError.alreadyExists('User', 'this email'),
+    usernameExists: () => AppError.alreadyExists('User', 'this username'),
     invalidPassword: () =>
       AppError.custom('UNAUTHORIZED', 'Current password is incorrect'),
     cannotDeleteSelf: () =>

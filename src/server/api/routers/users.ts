@@ -1,23 +1,22 @@
-import { z } from 'zod'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
-  RegisterUserSchema,
-  GetUserByIdSchema,
-  GetAllUsersSchema,
-  UpdateUserSchema,
-  UpdateUserRoleSchema,
   DeleteUserSchema,
+  GetAllUsersSchema,
+  GetUserByIdSchema,
+  SearchUsersSchema,
+  UpdateUserRoleSchema,
+  UpdateUserSchema,
 } from '@/schemas/user'
 import {
   createTRPCRouter,
+  permissionProcedure,
   protectedProcedure,
   publicProcedure,
-  permissionProcedure,
 } from '@/server/api/trpc'
 import {
-  notificationEventEmitter,
   NOTIFICATION_EVENTS,
+  notificationEventEmitter,
 } from '@/server/notifications/eventEmitter'
 import { updateUserRole } from '@/server/utils/roleSync'
 import {
@@ -26,7 +25,7 @@ import {
   roleIncludesRole,
 } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
-import { Role, ApprovalStatus } from '@orm'
+import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
 
 export const usersRouter = createTRPCRouter({
@@ -41,41 +40,6 @@ export const usersRouter = createTRPCRouter({
       permissions: ctx.session.user.permissions,
     }
   }),
-
-  /**
-   * @deprecated - use clerk
-   */
-  register: publicProcedure
-    .input(RegisterUserSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { name, email } = input
-
-      const existingUser = await ctx.prisma.user.findUnique({
-        where: { email },
-      })
-
-      if (existingUser) return ResourceError.user.emailExists()
-
-      // Note: This endpoint is deprecated since Clerk handles user registration
-      // This is kept for backward compatibility but should not be used in production
-      const user = await ctx.prisma.user.create({
-        data: {
-          clerkId: `legacy_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-          name,
-          email,
-          role: Role.USER,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-        },
-      })
-
-      return { status: 'success', data: user }
-    }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
@@ -120,6 +84,7 @@ export const usersRouter = createTRPCRouter({
           take: 10, // Limit to 10 most recent submissions
         },
         // Limit votes (no ordering available since no timestamp)
+        // TODO: add createdAt to votes in the future
         votes: {
           select: {
             id: true,
@@ -142,11 +107,7 @@ export const usersRouter = createTRPCRouter({
           take: 10, // Limit to 10 most recent votes
         },
         _count: {
-          select: {
-            listings: true,
-            submittedGames: true,
-            votes: true,
-          },
+          select: { listings: true, submittedGames: true, votes: true },
         },
       },
     })
@@ -201,7 +162,7 @@ export const usersRouter = createTRPCRouter({
       // Build where clauses for listings filtering
       const listingsWhere: Prisma.ListingWhereInput = {}
 
-      // CRITICAL: Filter by approval status based on user permissions
+      // Filter by approval status based on user permissions
       if (canViewBannedUsers) {
         // Moderators can see all statuses including rejected
         // No additional filtering needed
@@ -233,9 +194,7 @@ export const usersRouter = createTRPCRouter({
         ]
       }
       if (listingsSystem) {
-        listingsWhere.device = {
-          brand: { name: listingsSystem },
-        }
+        listingsWhere.device = { brand: { name: listingsSystem } }
       }
       if (listingsEmulator) {
         listingsWhere.emulator = { name: listingsEmulator }
@@ -292,12 +251,7 @@ export const usersRouter = createTRPCRouter({
               },
             },
           }),
-          _count: {
-            select: {
-              listings: true,
-              votes: true,
-            },
-          },
+          _count: { select: { listings: true, votes: true } },
         },
       })
 
@@ -319,13 +273,7 @@ export const usersRouter = createTRPCRouter({
             game: {
               select: {
                 title: true,
-                system: {
-                  select: {
-                    id: true,
-                    name: true,
-                    key: true,
-                  },
-                },
+                system: { select: { id: true, name: true, key: true } },
               },
             },
             emulator: { select: { name: true } },
@@ -360,13 +308,7 @@ export const usersRouter = createTRPCRouter({
                 game: {
                   select: {
                     title: true,
-                    system: {
-                      select: {
-                        id: true,
-                        name: true,
-                        key: true,
-                      },
-                    },
+                    system: { select: { id: true, name: true, key: true } },
                   },
                 },
                 emulator: { select: { name: true } },
@@ -390,9 +332,7 @@ export const usersRouter = createTRPCRouter({
         }),
         ctx.prisma.listing.findMany({
           where: { authorId: userId },
-          select: {
-            emulator: { select: { name: true } },
-          },
+          select: { emulator: { select: { name: true } } },
           distinct: ['emulatorId'],
         }),
       ])
@@ -448,7 +388,7 @@ export const usersRouter = createTRPCRouter({
           where: { email },
         })
 
-        if (existingUser) ResourceError.user.emailExists()
+        if (existingUser) return ResourceError.user.emailExists()
       }
 
       // Check for username conflicts if name is being updated
@@ -460,11 +400,7 @@ export const usersRouter = createTRPCRouter({
           },
         })
 
-        if (existingUserWithName) {
-          AppError.conflict(
-            'This username is already taken. Please choose a different one.',
-          )
-        }
+        if (existingUserWithName) return ResourceError.user.usernameExists()
       }
 
       // Sync name changes back to Clerk if username is being updated
@@ -518,16 +454,14 @@ export const usersRouter = createTRPCRouter({
       const skip = (page - 1) * limit
 
       // Build where clause for search
-      let where: Prisma.UserWhereInput = {}
+      const where: Prisma.UserWhereInput = {}
 
       if (search && search.trim() !== '') {
         const searchTerm = search.trim()
-        where = {
-          OR: [
-            { name: { contains: searchTerm, mode: 'insensitive' } },
-            { email: { contains: searchTerm, mode: 'insensitive' } },
-          ],
-        }
+        where.OR = [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+        ]
       }
 
       // Build orderBy based on sortField and sortDirection
@@ -599,20 +533,37 @@ export const usersRouter = createTRPCRouter({
 
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
     async ({ ctx }) => {
-      const [total, userCount, authorCount, adminCount, superAdminCount] =
-        await Promise.all([
-          ctx.prisma.user.count(),
-          ctx.prisma.user.count({ where: { role: 'USER' } }),
-          ctx.prisma.user.count({ where: { role: 'AUTHOR' } }),
-          ctx.prisma.user.count({ where: { role: 'ADMIN' } }),
-          ctx.prisma.user.count({ where: { role: 'SUPER_ADMIN' } }),
-        ])
+      const [
+        userCount,
+        developerCount,
+        moderatorCount,
+        authorCount,
+        adminCount,
+        superAdminCount,
+      ] = await Promise.all([
+        ctx.prisma.user.count({ where: { role: Role.USER } }),
+        ctx.prisma.user.count({ where: { role: Role.AUTHOR } }),
+        ctx.prisma.user.count({ where: { role: Role.DEVELOPER } }),
+        ctx.prisma.user.count({ where: { role: Role.MODERATOR } }),
+        ctx.prisma.user.count({ where: { role: Role.ADMIN } }),
+        ctx.prisma.user.count({ where: { role: Role.SUPER_ADMIN } }),
+      ])
+
+      const total =
+        userCount +
+        developerCount +
+        moderatorCount +
+        authorCount +
+        adminCount +
+        superAdminCount
 
       return {
         total,
         byRole: {
           user: userCount,
           author: authorCount,
+          developer: developerCount,
+          moderator: moderatorCount,
           admin: adminCount,
           superAdmin: superAdminCount,
         },
@@ -648,7 +599,9 @@ export const usersRouter = createTRPCRouter({
         targetUser.role === Role.SUPER_ADMIN &&
         !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        AppError.forbidden('You need permission to modify super admin users')
+        return AppError.forbidden(
+          'You need permission to modify super admin users',
+        )
       }
 
       // Only users with MODIFY_SUPER_ADMIN_USERS permission can assign SUPER_ADMIN role
@@ -656,7 +609,9 @@ export const usersRouter = createTRPCRouter({
         role === Role.SUPER_ADMIN &&
         !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        AppError.forbidden('You need permission to assign super admin role')
+        return AppError.forbidden(
+          'You need permission to assign super admin role',
+        )
       }
 
       // Use the role sync utility to update both database and Clerk
@@ -694,24 +649,18 @@ export const usersRouter = createTRPCRouter({
   delete: permissionProcedure(PERMISSIONS.MANAGE_USERS)
     .input(DeleteUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const { userId } = input
-
       // Prevent self-deletion
-      if (userId === ctx.session.user.id) ResourceError.user.cannotDeleteSelf()
+      if (input.userId === ctx.session.user.id) {
+        return ResourceError.user.cannotDeleteSelf()
+      }
 
-      await ctx.prisma.user.delete({ where: { id: userId } })
+      await ctx.prisma.user.delete({ where: { id: input.userId } })
 
       return { success: true }
     }),
 
   searchUsers: permissionProcedure(PERMISSIONS.MANAGE_USERS)
-    .input(
-      z.object({
-        query: z.string().optional(),
-        limit: z.number().min(1).max(50).default(20),
-        minRole: z.nativeEnum(Role).optional(),
-      }),
-    )
+    .input(SearchUsersSchema)
     .query(async ({ ctx, input }) => {
       const { query, limit, minRole } = input
 
@@ -740,7 +689,7 @@ export const usersRouter = createTRPCRouter({
         where.role = { in: allowedRoles }
       }
 
-      const users = await ctx.prisma.user.findMany({
+      return await ctx.prisma.user.findMany({
         where,
         select: {
           id: true,
@@ -752,7 +701,5 @@ export const usersRouter = createTRPCRouter({
         orderBy: [{ name: 'asc' }, { email: 'asc' }],
         take: limit,
       })
-
-      return users
     }),
 })

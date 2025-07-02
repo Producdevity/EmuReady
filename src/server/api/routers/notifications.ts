@@ -132,9 +132,7 @@ export const notificationsRouter = createTRPCRouter({
             metadata: input.metadata,
             deliveryChannel: DeliveryChannel.IN_APP,
           },
-          {
-            immediate: true, // Admin system notifications should be delivered immediately
-          },
+          { immediate: true }, // Admin system notifications should be delivered immediately
         )
         notificationIds.push(notificationId)
       }
@@ -147,10 +145,7 @@ export const notificationsRouter = createTRPCRouter({
     const [total, unread, byCategory] = await Promise.all([
       ctx.prisma.notification.count({ where: { userId: ctx.session.user.id } }),
       ctx.prisma.notification.count({
-        where: {
-          userId: ctx.session.user.id,
-          isRead: false,
-        },
+        where: { userId: ctx.session.user.id, isRead: false },
       }),
       ctx.prisma.notification.groupBy({
         by: ['category'],
@@ -174,10 +169,8 @@ export const notificationsRouter = createTRPCRouter({
 
   // Admin endpoint for monitoring batching queue
   getBatchingStatus: protectedProcedure.query(async ({ ctx }) => {
-    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-      return AppError.insufficientPermissions()
-    }
-
-    return notificationService.getBatchingQueueStatus()
+    return hasPermission(ctx.session.user.role, Role.ADMIN)
+      ? notificationService.getBatchingQueueStatus()
+      : AppError.insufficientPermissions()
   }),
 })
