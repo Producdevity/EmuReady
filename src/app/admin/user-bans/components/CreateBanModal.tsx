@@ -182,7 +182,7 @@ function CreateBanModal(props: Props) {
   }, [props.isOpen, props.userId])
 
   const users = userSearchQuery.data ?? []
-  const isLoading = userSearchQuery.isLoading
+  const isLoading = userSearchQuery.isPending
 
   const minDate = new Date().toISOString().split('T')[0]
 

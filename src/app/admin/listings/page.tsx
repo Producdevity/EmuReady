@@ -208,7 +208,7 @@ function AdminListingsPage() {
               color: 'red',
             },
           ]}
-          isLoading={listingStatsQuery.isLoading}
+          isLoading={listingStatsQuery.isPending}
         />
       )}
 
@@ -373,7 +373,7 @@ function AdminListingsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {listingsQuery.isLoading ? (
+              {listingsQuery.isPending ? (
                 <LoadingSpinner text="Loading Listings..." />
               ) : listings.length === 0 ? (
                 <div className="text-center py-12">

@@ -344,7 +344,7 @@ function AdminApprovalsPage() {
               color: 'red',
             },
           ]}
-          isLoading={listingStatsQuery.isLoading}
+          isLoading={listingStatsQuery.isPending}
         />
       )}
 
@@ -422,7 +422,7 @@ function AdminApprovalsPage() {
 
       {/* Listings Table */}
       <AdminTableContainer>
-        {pendingListingsQuery.isLoading ? (
+        {pendingListingsQuery.isPending ? (
           <LoadingSpinner text="Loading pending listings..." />
         ) : listings.length === 0 ? (
           <div className="text-center py-12">

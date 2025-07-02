@@ -135,7 +135,7 @@ function AdminSystemsPage() {
               color: 'gray',
             },
           ]}
-          isLoading={systemsStatsQuery.isLoading}
+          isLoading={systemsStatsQuery.isPending}
         />
       )}
 
@@ -150,7 +150,7 @@ function AdminSystemsPage() {
       />
 
       <AdminTableContainer>
-        {systemsQuery.isLoading ? (
+        {systemsQuery.isPending ? (
           <LoadingSpinner text="Loading systems..." />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -215,7 +215,7 @@ function AdminSystemsPage() {
                   )}
                 </tr>
               ))}
-              {!systemsQuery.isLoading && systemsQuery.data?.length === 0 && (
+              {!systemsQuery.isPending && systemsQuery.data?.length === 0 && (
                 <tr>
                   <td
                     colSpan={3}

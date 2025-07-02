@@ -36,7 +36,7 @@ function CustomFieldTemplatesPage() {
     setEditingTemplateId(null)
   }
 
-  if (customFieldTemplatesQuery.isLoading) {
+  if (customFieldTemplatesQuery.isPending) {
     return <LoadingSpinner text="Loading templates..." />
   }
 
@@ -85,7 +85,7 @@ function CustomFieldTemplatesPage() {
             color: 'gray',
           },
         ]}
-        isLoading={customFieldTemplatesQuery.isLoading}
+        isLoading={customFieldTemplatesQuery.isPending}
       />
 
       <AdminSearchFilters

@@ -116,7 +116,7 @@ function UserDetailsModal(props: Props) {
       title={`User Details: ${userQuery.data?.name ?? 'Loading...'}`}
       className="max-w-4xl"
     >
-      {userQuery.isLoading && (
+      {userQuery.isPending && (
         <div className="flex items-center justify-center py-12">
           <LoadingSpinner />
         </div>

@@ -100,7 +100,7 @@ function AdminPerformancePage() {
     } satisfies RouterInput['performanceScales']['delete'])
   }
 
-  if (performanceScalesQuery.isLoading) return <LoadingSpinner />
+  if (performanceScalesQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
@@ -135,7 +135,7 @@ function AdminPerformancePage() {
               color: 'gray',
             },
           ]}
-          isLoading={performanceStatsQuery.isLoading}
+          isLoading={performanceStatsQuery.isPending}
         />
       )}
 

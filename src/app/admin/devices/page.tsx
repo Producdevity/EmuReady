@@ -167,7 +167,7 @@ function AdminDevicesPage() {
               color: 'gray',
             },
           ]}
-          isLoading={devicesStatsQuery.isLoading}
+          isLoading={devicesStatsQuery.isPending}
         />
       )}
 
@@ -190,7 +190,7 @@ function AdminDevicesPage() {
       </AdminSearchFilters>
 
       <AdminTableContainer>
-        {devicesQuery.isLoading ? (
+        {devicesQuery.isPending ? (
           <LoadingSpinner text="Loading devices..." />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -273,7 +273,7 @@ function AdminDevicesPage() {
                   )}
                 </tr>
               ))}
-              {!devicesQuery.isLoading &&
+              {!devicesQuery.isPending &&
                 devicesQuery.data?.devices.length === 0 && (
                   <tr>
                     <td

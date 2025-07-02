@@ -286,7 +286,7 @@ function GameApprovalsPage() {
               color: 'red',
             },
           ]}
-          isLoading={gameStatsQuery.isLoading}
+          isLoading={gameStatsQuery.isPending}
         />
       )}
 
@@ -341,7 +341,7 @@ function GameApprovalsPage() {
 
       {/* Games Table */}
       <AdminTableContainer>
-        {pendingGamesQuery.isLoading ? (
+        {pendingGamesQuery.isPending ? (
           <LoadingSpinner text="Loading pending games..." />
         ) : filteredGames.length === 0 ? (
           <div className="text-center py-12">

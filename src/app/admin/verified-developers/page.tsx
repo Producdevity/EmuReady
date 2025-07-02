@@ -206,7 +206,7 @@ function AdminVerifiedDevelopersPage() {
               color: 'gray',
             },
           ]}
-          isLoading={verifiedDevelopersQuery.isLoading}
+          isLoading={verifiedDevelopersQuery.isPending}
         />
       )}
 
@@ -246,7 +246,7 @@ function AdminVerifiedDevelopersPage() {
       </div>
 
       <AdminTableContainer>
-        {verifiedDevelopersQuery.isLoading ? (
+        {verifiedDevelopersQuery.isPending ? (
           <LoadingSpinner text="Loading verified developers..." />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

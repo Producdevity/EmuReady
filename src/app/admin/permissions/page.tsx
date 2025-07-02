@@ -107,7 +107,7 @@ function RolePermissionMatrix({ onSuccess }: { onSuccess: () => void }) {
     }
   }
 
-  if (matrixQuery.isLoading) {
+  if (matrixQuery.isPending) {
     return <LoadingSpinner />
   }
 
@@ -269,7 +269,7 @@ function AdminPermissionsPage() {
       ]
     : []
 
-  if (permissionsQuery.isLoading) return <LoadingSpinner />
+  if (permissionsQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
@@ -293,7 +293,7 @@ function AdminPermissionsPage() {
     >
       <AdminStatsDisplay
         stats={statsData}
-        isLoading={permissionsQuery.isLoading}
+        isLoading={permissionsQuery.isPending}
       />
 
       {showMatrix && (

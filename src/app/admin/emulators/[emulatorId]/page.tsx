@@ -19,7 +19,7 @@ function EditEmulatorPage() {
 
   const systemsQuery = api.systems.get.useQuery({})
 
-  if (emulatorsQuery.isLoading || systemsQuery.isLoading) return <PageLoading />
+  if (emulatorsQuery.isPending || systemsQuery.isPending) return <PageLoading />
 
   if (emulatorsQuery.error || systemsQuery.error) {
     return (

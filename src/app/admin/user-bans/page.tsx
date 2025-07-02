@@ -184,7 +184,7 @@ function AdminUserBansPage() {
       ]
     : []
 
-  if (bansQuery.isLoading) return <LoadingSpinner />
+  if (bansQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
@@ -209,7 +209,7 @@ function AdminUserBansPage() {
     >
       <AdminStatsDisplay
         stats={statsData}
-        isLoading={bansStatsQuery.isLoading}
+        isLoading={bansStatsQuery.isPending}
       />
 
       <AdminSearchFilters

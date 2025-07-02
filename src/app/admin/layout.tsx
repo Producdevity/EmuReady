@@ -70,7 +70,7 @@ function AdminLayout(props: PropsWithChildren) {
   )
 
   useEffect(() => {
-    if (!isLoaded || userQuery.isLoading || !user) return
+    if (!isLoaded || userQuery.isPending || !user) return
 
     // Check if a user has the right permissions once data is loaded
     // Use permission-based access control
@@ -83,10 +83,10 @@ function AdminLayout(props: PropsWithChildren) {
     userQuery.data,
     hasAdminPanelAccess,
     router,
-    userQuery.isLoading,
+    userQuery.isPending,
   ])
 
-  if (!isLoaded || userQuery.isLoading) return <LoadingSpinner size="lg" />
+  if (!isLoaded || userQuery.isPending) return <LoadingSpinner size="lg" />
 
   if (!user || !userQuery.data) return null
 

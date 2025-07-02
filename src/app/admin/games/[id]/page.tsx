@@ -14,7 +14,7 @@ function AdminGameEditPage() {
 
   const gameQuery = api.games.byId.useQuery({ id })
 
-  if (gameQuery.isLoading) return <PageLoading />
+  if (gameQuery.isPending) return <PageLoading />
 
   if (gameQuery.error || !gameQuery.data) return notFound()
 

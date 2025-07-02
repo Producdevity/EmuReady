@@ -412,7 +412,7 @@ function CustomFieldTemplateFormModal(props: Props) {
       closeOnEscape={false}
       size="3xl"
     >
-      {customFieldTemplateQuery.isLoading ? (
+      {customFieldTemplateQuery.isPending ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -1012,7 +1012,7 @@ function CustomFieldTemplateFormModal(props: Props) {
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || customFieldTemplateQuery.isLoading}
+              disabled={isSubmitting || customFieldTemplateQuery.isPending}
             >
               {isSubmitting
                 ? 'Saving...'

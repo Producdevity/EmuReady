@@ -136,7 +136,7 @@ function AdminPermissionLogsPage() {
       ]
     : []
 
-  if (logsQuery.isLoading) return <LoadingSpinner />
+  if (logsQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
@@ -151,7 +151,7 @@ function AdminPermissionLogsPage() {
         </>
       }
     >
-      <AdminStatsDisplay stats={statsData} isLoading={statsQuery.isLoading} />
+      <AdminStatsDisplay stats={statsData} isLoading={statsQuery.isPending} />
 
       <AdminSearchFilters
         searchValue={table.search}

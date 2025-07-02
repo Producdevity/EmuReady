@@ -132,7 +132,7 @@ function AdminBrandsPage() {
               color: 'gray',
             },
           ]}
-          isLoading={brandsStatsQuery.isLoading}
+          isLoading={brandsStatsQuery.isPending}
         />
       )}
 
@@ -147,7 +147,7 @@ function AdminBrandsPage() {
       />
 
       <AdminTableContainer>
-        {brandsQuery.isLoading ? (
+        {brandsQuery.isPending ? (
           <LoadingSpinner text="Loading brands..." />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -212,7 +212,7 @@ function AdminBrandsPage() {
                   )}
                 </tr>
               ))}
-              {!brandsQuery.isLoading && brandsQuery.data?.length === 0 && (
+              {!brandsQuery.isPending && brandsQuery.data?.length === 0 && (
                 <tr>
                   <td
                     colSpan={3}

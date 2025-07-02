@@ -181,7 +181,7 @@ function AdminTrustLogsPage() {
 
       {/* Trust Logs Table */}
       <AdminTableContainer>
-        {trustLogsQuery.isLoading ? (
+        {trustLogsQuery.isPending ? (
           <LoadingSpinner text="Loading logs..." />
         ) : logs.length === 0 ? (
           <div className="text-center py-12">

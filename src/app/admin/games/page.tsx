@@ -251,7 +251,7 @@ function AdminGamesPage() {
       </div>
 
       <AdminTableContainer>
-        {gamesQuery.isLoading ? (
+        {gamesQuery.isPending ? (
           <div className="flex justify-center items-center py-16">
             <LoadingSpinner text="Loading games..." />
           </div>

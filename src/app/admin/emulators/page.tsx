@@ -148,7 +148,7 @@ function AdminEmulatorsPage() {
               color: 'purple',
             },
           ]}
-          isLoading={emulatorsStatsQuery.isLoading}
+          isLoading={emulatorsStatsQuery.isPending}
         />
       )}
 
@@ -160,7 +160,7 @@ function AdminEmulatorsPage() {
       />
 
       <AdminTableContainer>
-        {emulatorsQuery.isLoading ? (
+        {emulatorsQuery.isPending ? (
           <LoadingSpinner text="Loading emulators..." />
         ) : emulators.length === 0 ? (
           <div className="text-center py-12">

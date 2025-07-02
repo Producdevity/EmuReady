@@ -184,7 +184,7 @@ function AdminUsersPage() {
     >
       <AdminStatsDisplay
         stats={statsData}
-        isLoading={usersStatsQuery.isLoading}
+        isLoading={usersStatsQuery.isPending}
       />
 
       <AdminSearchFilters
@@ -195,7 +195,7 @@ function AdminUsersPage() {
       />
 
       <AdminTableContainer>
-        {usersQuery.isLoading ? (
+        {usersQuery.isPending ? (
           <LoadingSpinner />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

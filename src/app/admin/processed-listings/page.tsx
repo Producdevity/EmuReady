@@ -179,7 +179,7 @@ function ProcessedListingsPage() {
             color: 'red',
           },
         ]}
-        isLoading={listingStatsQuery.isLoading}
+        isLoading={listingStatsQuery.isPending}
       />
 
       <AdminSearchFilters
@@ -197,19 +197,19 @@ function ProcessedListingsPage() {
         />
       </AdminSearchFilters>
 
-      {processedListingsQuery.isLoading && (
+      {processedListingsQuery.isPending && (
         <div className="text-center py-8">
           <p>Loading processed listings...</p>
         </div>
       )}
 
-      {!processedListingsQuery.isLoading && processedListings.length === 0 && (
+      {!processedListingsQuery.isPending && processedListings.length === 0 && (
         <p className="text-gray-600 dark:text-gray-400 text-center py-8">
           No listings match the current filter.
         </p>
       )}
 
-      {!processedListingsQuery.isLoading && processedListings.length > 0 && (
+      {!processedListingsQuery.isPending && processedListings.length > 0 && (
         <AdminTableContainer>
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">

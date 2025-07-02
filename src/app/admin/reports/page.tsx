@@ -196,7 +196,7 @@ function AdminReportsPage() {
       ]
     : []
 
-  if (reportsQuery.isLoading) return <LoadingSpinner />
+  if (reportsQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
@@ -211,7 +211,7 @@ function AdminReportsPage() {
     >
       <AdminStatsDisplay
         stats={statsData}
-        isLoading={reportsStatsQuery.isLoading}
+        isLoading={reportsStatsQuery.isPending}
       />
 
       <AdminSearchFilters

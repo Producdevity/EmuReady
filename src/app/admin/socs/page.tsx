@@ -155,7 +155,7 @@ function AdminSoCsPage() {
               color: 'gray',
             },
           ]}
-          isLoading={socsStatsQuery.isLoading}
+          isLoading={socsStatsQuery.isPending}
         />
       )}
 
@@ -167,7 +167,7 @@ function AdminSoCsPage() {
       />
 
       <AdminTableContainer>
-        {socsQuery.isLoading ? (
+        {socsQuery.isPending ? (
           <LoadingSpinner text="Loading SoCs..." />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -250,7 +250,7 @@ function AdminSoCsPage() {
                   )}
                 </tr>
               ))}
-              {!socsQuery.isLoading && socsQuery.data?.socs.length === 0 && (
+              {!socsQuery.isPending && socsQuery.data?.socs.length === 0 && (
                 <tr>
                   <td
                     colSpan={4}
