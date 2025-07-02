@@ -168,6 +168,34 @@ export const coreRouter = createTRPCRouter({
               mode: Prisma.QueryMode.insensitive,
             },
           },
+          {
+            device: {
+              OR: [
+                {
+                  modelName: {
+                    contains: input.searchTerm,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+                {
+                  brand: {
+                    name: {
+                      contains: input.searchTerm,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          {
+            emulator: {
+              name: {
+                contains: input.searchTerm,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
         ]
 
         // Build AND conditions array

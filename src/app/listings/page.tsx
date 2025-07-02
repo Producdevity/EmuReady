@@ -21,6 +21,7 @@ import {
   VerifiedDeveloperBadge,
   EditButton,
   ViewButton,
+  Badge,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -33,6 +34,7 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'
 import { filterNullAndEmpty } from '@/utils/filter'
+import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
@@ -81,6 +83,9 @@ function ListingsPage() {
 
   const userRole = userQuery?.data?.role as Role | undefined
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
+  const isModerator = userRole
+    ? roleIncludesRole(userRole, Role.MODERATOR)
+    : false
 
   // Get user's preferred device IDs if defaultToUserDevices is enabled
   const userDeviceIds = userPreferencesQuery.data?.defaultToUserDevices
@@ -580,6 +585,23 @@ function ListingsPage() {
                                 <TooltipContent>Under Review</TooltipContent>
                               </Tooltip>
                             )}
+
+                            {isModerator &&
+                              listing.author &&
+                              'userBans' in listing.author &&
+                              Array.isArray(listing.author.userBans) &&
+                              listing.author.userBans.length > 0 && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
+                                      BANNED
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    This user has been banned
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                           </div>
                         </td>
                       )}

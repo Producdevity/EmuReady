@@ -2,25 +2,25 @@ import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
 import {
-  NotificationType,
-  type NotificationCategory,
-  type Prisma,
   DeliveryChannel,
+  type NotificationCategory,
   NotificationDeliveryStatus,
+  NotificationType,
+  type Prisma,
 } from '@orm'
 import { createEmailService } from './emailService'
 import {
-  notificationEventEmitter,
   type NotificationEventData,
+  notificationEventEmitter,
 } from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'
 import { realtimeNotificationService } from './realtimeService'
 import { notificationTemplateEngine, type TemplateContext } from './templates'
 import type {
   NotificationData,
-  NotificationServiceConfig,
   NotificationDeliveryResult,
   NotificationEventPayload,
+  NotificationServiceConfig,
 } from './types'
 
 export class NotificationService {
@@ -618,9 +618,8 @@ export class NotificationService {
         userIds.push(...systemUsers.map((u) => u.id))
     }
 
-    // CRITICAL: Filter out banned users - they should not receive notifications
-    const filteredUserIds = await this.filterBannedUsers(userIds)
-    return filteredUserIds
+    // Filter out banned users - they should not receive notifications
+    return await this.filterBannedUsers(userIds)
   }
 
   private async getUsersWithMatchingPreferences(

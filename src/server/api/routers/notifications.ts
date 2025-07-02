@@ -1,17 +1,17 @@
 import { AppError } from '@/lib/errors'
 import {
-  GetNotificationsSchema,
-  UpdateNotificationPreferenceSchema,
-  UpdateListingNotificationPreferenceSchema,
   CreateSystemNotificationSchema,
-  MarkAsReadSchema,
   DeleteNotificationSchema,
   GetListingPreferencesSchema,
+  GetNotificationsSchema,
+  MarkAsReadSchema,
+  UpdateListingNotificationPreferenceSchema,
+  UpdateNotificationPreferenceSchema,
 } from '@/schemas/notification'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
 import { hasPermission } from '@/utils/permissions'
-import { Role, NotificationCategory, DeliveryChannel } from '@orm'
+import { DeliveryChannel, NotificationCategory, Role } from '@orm'
 
 export const notificationsRouter = createTRPCRouter({
   get: protectedProcedure
@@ -52,14 +52,13 @@ export const notificationsRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  getPreferences: protectedProcedure.query(async ({ ctx }) => {
-    const preferences = await ctx.prisma.notificationPreference.findMany({
-      where: { userId: ctx.session.user.id },
-      orderBy: { type: 'asc' },
-    })
-
-    return preferences
-  }),
+  getPreferences: protectedProcedure.query(
+    async ({ ctx }) =>
+      await ctx.prisma.notificationPreference.findMany({
+        where: { userId: ctx.session.user.id },
+        orderBy: { type: 'asc' },
+      }),
+  ),
 
   updatePreference: protectedProcedure
     .input(UpdateNotificationPreferenceSchema)
