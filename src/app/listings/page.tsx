@@ -108,7 +108,7 @@ function ListingsPage() {
 
   // Debug logging for development
   if (process.env.NODE_ENV === 'development') {
-    console.log('User preferences loaded:', {
+    console.log('⚙️ User preferences loaded:', {
       defaultToUserDevices: userPreferencesQuery.data?.defaultToUserDevices,
       defaultToUserSocs: userPreferencesQuery.data?.defaultToUserSocs,
       userDeviceIds,
