@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -40,15 +40,14 @@ function ReportListingModal(props: Props) {
 
   // Reset form when modal opens/closes
   useEffect(() => {
-    if (props.isOpen) {
-      setReason(ReportReason.SPAM)
-      setDescription('')
-      setError('')
-    }
+    if (!props.isOpen) return
+    setReason(ReportReason.SPAM)
+    setDescription('')
+    setError('')
   }, [props.isOpen])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
     setError('')
 
     if (reason === ReportReason.OTHER && !description.trim()) {
@@ -68,6 +67,7 @@ function ReportListingModal(props: Props) {
       )
       props.onSuccess()
     } catch (err) {
+      console.error(err)
       setError(getErrorMessage(err))
     }
   }
@@ -147,6 +147,7 @@ function ReportListingModal(props: Props) {
             variant="outline"
             onClick={handleClose}
             disabled={createReport.isPending}
+            isLoading={createReport.isPending}
           >
             Cancel
           </Button>
