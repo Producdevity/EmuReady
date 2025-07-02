@@ -11,6 +11,37 @@ export const metadata: Metadata = {
   title: 'Admin Dashboard',
 }
 
+const messages: Record<Role, { welcome: string; description: string }> = {
+  [Role.USER]: {
+    welcome: 'GTFO',
+    description: 'How did you get here?',
+  },
+  [Role.AUTHOR]: {
+    welcome: 'WTF.',
+    description: 'You have no business being here.',
+  },
+  [Role.DEVELOPER]: {
+    welcome: 'Welcome, Developer!',
+    description:
+      'You have access to manage your emulator settings, custom fields, and configurations. Build and maintain your emulation software integration.',
+  },
+  [Role.MODERATOR]: {
+    welcome: 'Welcome, Moderator!',
+    description:
+      'You can manage games, devices, SoCs, approve listings, review user reports, and handle user bans. Help maintain community standards and platform quality.',
+  },
+  [Role.ADMIN]: {
+    welcome: 'Welcome, Admin!',
+    description:
+      'Manage systems, games, devices, emulators, performance scales, verified developers, and approve listings. You have full control over platform content and configurations.',
+  },
+  [Role.SUPER_ADMIN]: {
+    welcome: 'Welcome, Super Admin!',
+    description:
+      'You have complete access to all administrative features, including user management, trust system monitoring, permission controls, and advanced reporting capabilities.',
+  },
+}
+
 async function AdminDashboardPage() {
   const user = await getCurrentUser()
 
@@ -32,34 +63,14 @@ async function AdminDashboardPage() {
   const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
   const isAdmin = hasPermission(user.role, Role.ADMIN)
   const isModerator = user.role === Role.MODERATOR
-  const isDeveloper = user.role === Role.DEVELOPER
-
-  let welcomeMessage = 'Welcome!'
-  let roleDescription = ''
-
-  if (isSuperAdmin) {
-    welcomeMessage = 'Welcome, Super Admin!'
-    roleDescription = 'You have complete access to all administrative features.'
-  } else if (isAdmin) {
-    welcomeMessage = 'Welcome, Admin!'
-    roleDescription =
-      'Manage all systems, devices, emulators, performance scales, and approve new listings from this dashboard.'
-  } else if (isModerator) {
-    welcomeMessage = 'Welcome, Moderator!'
-    roleDescription = 'You can manage devices and SoCs from this dashboard.'
-  } else if (isDeveloper) {
-    welcomeMessage = 'Welcome, Developer!'
-    roleDescription =
-      'You have access to manage your emulator settings and configurations.'
-  }
 
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-        {welcomeMessage}
+        {messages[user.role]?.welcome || 'Welcome!'}
       </h1>
       <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
-        {roleDescription}
+        {messages[user.role]?.description || ''}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
