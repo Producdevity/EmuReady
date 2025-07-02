@@ -113,7 +113,7 @@ See [Prisma Cli Reference](https://www.prisma.io/docs/orm/reference/prisma-cli-r
 - **Framework**: Next.js 15
 - **Database ORM**: Prisma
 - **API**: tRPC
-- **Authentication**: NextAuth.js
+- **Authentication**: Clerk
 - **Styling**: Tailwind CSS
 - **State Management**: React Query
 - **Type Checking**: TypeScript
