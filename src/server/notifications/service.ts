@@ -1,7 +1,13 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
-import { NotificationType, type NotificationCategory, type Prisma } from '@orm'
+import {
+  NotificationType,
+  type NotificationCategory,
+  type Prisma,
+  DeliveryChannel,
+  NotificationDeliveryStatus,
+} from '@orm'
 import { createEmailService } from './emailService'
 import {
   notificationEventEmitter,
@@ -72,8 +78,8 @@ export class NotificationService {
           message: data.message,
           actionUrl: data.actionUrl,
           metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
-          deliveryChannel: data.deliveryChannel || 'IN_APP',
-          deliveryStatus: 'PENDING',
+          deliveryChannel: data.deliveryChannel || DeliveryChannel.IN_APP,
+          deliveryStatus: NotificationDeliveryStatus.PENDING,
         },
       })
 
@@ -153,7 +159,7 @@ export class NotificationService {
         message: template.message,
         actionUrl: template.actionUrl,
         metadata: template.metadata,
-        deliveryChannel: 'IN_APP', // Default to in-app for now
+        deliveryChannel: DeliveryChannel.IN_APP, // Default to in-app for now
       }
 
       // Event-driven notifications use batching for better performance
@@ -181,7 +187,7 @@ export class NotificationService {
     if (
       this.config.enableEmailDelivery &&
       this.emailService &&
-      data.deliveryChannel === 'EMAIL'
+      data.deliveryChannel === DeliveryChannel.EMAIL
     ) {
       const user = await prisma.user.findUnique({
         where: { id: data.userId },
@@ -209,10 +215,10 @@ export class NotificationService {
       where: { id: notificationId },
       data: {
         deliveryStatus: hasSuccessfulDelivery
-          ? 'SENT'
+          ? NotificationDeliveryStatus.SENT
           : allDeliveriesFailed
-            ? 'FAILED'
-            : 'PENDING',
+            ? NotificationDeliveryStatus.FAILED
+            : NotificationDeliveryStatus.PENDING,
       },
     })
   }
@@ -260,15 +266,15 @@ export class NotificationService {
 
       return {
         success: true,
-        channel: 'IN_APP',
-        status: 'SENT',
+        channel: DeliveryChannel.IN_APP,
+        status: NotificationDeliveryStatus.SENT,
       }
     } catch (error) {
       console.error('In-app delivery error:', error)
       return {
         success: false,
-        channel: 'IN_APP',
-        status: 'FAILED',
+        channel: DeliveryChannel.IN_APP,
+        status: NotificationDeliveryStatus.FAILED,
         error: error instanceof Error ? error.message : 'Unknown error',
       }
     }

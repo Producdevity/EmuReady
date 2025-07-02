@@ -1,10 +1,13 @@
 'use client'
 
+import { motion, AnimatePresence } from 'framer-motion'
+import { User, ArrowUp } from 'lucide-react'
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react'
 import useListingsState from '@/app/listings/hooks/useListingsState'
-import { LoadingSpinner, PullToRefresh } from '@/components/ui'
+import { LoadingSpinner, PullToRefresh, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { ListingFilters } from './components/ListingFilters'
 import { ListingsContent } from './components/ListingsContent'
@@ -27,19 +30,66 @@ function V2ListingsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [showSystemIcons, _setShowSystemIcons] = useState(false)
+  const [showScrollToTop, setShowScrollToTop] = useState(false)
 
   // Infinite scrolling state
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMoreItems, setHasMoreItems] = useState(true)
   const [allListings, setAllListings] = useState<ListingType[]>([])
+  const [myListingsOnly, setMyListingsOnly] = useState(false)
 
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
+
+  // User preferences and device filtering
+  const userQuery = api.users.me.useQuery()
+  const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+  })
+
+  const [userDeviceFilterDisabled, setUserDeviceFilterDisabled] =
+    useState(false)
+  const [userSocFilterDisabled, setUserSocFilterDisabled] = useState(false)
+
+  // Get user's preferred device IDs if defaultToUserDevices is enabled
+  const userDeviceIds = useMemo(
+    () =>
+      userPreferencesQuery.data?.defaultToUserDevices
+        ? userPreferencesQuery.data.devicePreferences.map(
+            (pref) => pref.deviceId,
+          )
+        : [],
+    [userPreferencesQuery.data],
+  )
+
+  // Get user's preferred SoC IDs if defaultToUserSocs is enabled
+  const userSocIds = useMemo(
+    () =>
+      userPreferencesQuery.data?.defaultToUserSocs
+        ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
+        : [],
+    [userPreferencesQuery.data],
+  )
+
+  // Apply user device filter if enabled and no manual device filter is set
+  const shouldUseUserDeviceFilter =
+    userPreferencesQuery.data?.defaultToUserDevices &&
+    listingsState.deviceIds.length === 0 &&
+    userDeviceIds.length > 0 &&
+    !userDeviceFilterDisabled
+
+  // Apply user SoC filter if enabled and no manual SoC filter is set
+  const shouldUseUserSocFilter =
+    userPreferencesQuery.data?.defaultToUserSocs &&
+    listingsState.socIds.length === 0 &&
+    userSocIds.length > 0 &&
+    !userSocFilterDisabled
 
   // Filter params for API call
   const filterParams: ListingsFilter = useMemo(
     () => ({
       page: currentPage,
-      limit: 12,
+      limit: 15, // Increased for better mobile experience
       ...filterNullAndEmpty({
         systemIds:
           listingsState.systemIds.length > 0
@@ -48,9 +98,15 @@ function V2ListingsPage() {
         deviceIds:
           listingsState.deviceIds.length > 0
             ? listingsState.deviceIds
-            : undefined,
+            : shouldUseUserDeviceFilter
+              ? userDeviceIds
+              : undefined,
         socIds:
-          listingsState.socIds.length > 0 ? listingsState.socIds : undefined,
+          listingsState.socIds.length > 0
+            ? listingsState.socIds
+            : shouldUseUserSocFilter
+              ? userSocIds
+              : undefined,
         emulatorIds:
           listingsState.emulatorIds.length > 0
             ? listingsState.emulatorIds
@@ -60,6 +116,7 @@ function V2ListingsPage() {
             ? listingsState.performanceIds
             : undefined,
         searchTerm: listingsState.search || undefined,
+        myListingsOnly: myListingsOnly && userQuery.data?.id ? true : undefined,
         sortField: listingsState.sortField ?? undefined,
         sortDirection: listingsState.sortDirection ?? undefined,
       }),
@@ -73,7 +130,13 @@ function V2ListingsPage() {
       listingsState.search,
       listingsState.sortField,
       listingsState.sortDirection,
+      myListingsOnly,
+      shouldUseUserDeviceFilter,
+      shouldUseUserSocFilter,
+      userDeviceIds,
+      userSocIds,
       currentPage,
+      userQuery.data?.id,
     ],
   )
 
@@ -120,6 +183,35 @@ function V2ListingsPage() {
     }
   }, [listingsQuery.data, listingsQuery.isLoading, listingsState.search])
 
+  // Scroll to top functionality
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 400)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (navigator.vibrate) {
+      navigator.vibrate(25)
+    }
+  }
+
+  const toggleMyListings = () => {
+    setMyListingsOnly(!myListingsOnly)
+    setCurrentPage(1)
+    setAllListings([])
+
+    if (navigator.vibrate) {
+      navigator.vibrate(50)
+    }
+
+    analytics.filter.myListings(!myListingsOnly)
+  }
+
   const loadMoreListings = useCallback(() => {
     if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
       setCurrentPage((prev) => prev + 1)
@@ -142,6 +234,79 @@ function V2ListingsPage() {
     }
   }, [listingsQuery])
 
+  // Enhanced filter handlers
+  const handleDeviceChange = useCallback(
+    (values: string[]) => {
+      listingsState.setDeviceIds(values)
+      setCurrentPage(1)
+      setAllListings([])
+
+      // When user manually selects devices, disable user preference filtering
+      if (values.length > 0) {
+        setUserDeviceFilterDisabled(true)
+        setUserSocFilterDisabled(true)
+      }
+      // When clearing device selections, ensure user preferences are disabled
+      if (values.length === 0) {
+        setUserDeviceFilterDisabled(true)
+      }
+
+      analytics.filter.device(values)
+    },
+    [listingsState],
+  )
+
+  const handleSocChange = useCallback(
+    (values: string[]) => {
+      listingsState.setSocIds(values)
+      setCurrentPage(1)
+      setAllListings([])
+
+      // When user manually selects SoCs, disable user preference filtering
+      if (values.length > 0) {
+        setUserSocFilterDisabled(true)
+        setUserDeviceFilterDisabled(true)
+      }
+      // When clearing SOC selections, ensure user preferences are disabled
+      if (values.length === 0) {
+        setUserSocFilterDisabled(true)
+      }
+
+      analytics.filter.soc(values)
+    },
+    [listingsState],
+  )
+
+  const handleSystemChange = useCallback(
+    (values: string[]) => {
+      listingsState.setSystemIds(values)
+      setCurrentPage(1)
+      setAllListings([])
+      analytics.filter.system(values)
+    },
+    [listingsState],
+  )
+
+  const handleEmulatorChange = useCallback(
+    (values: string[]) => {
+      listingsState.setEmulatorIds(values)
+      setCurrentPage(1)
+      setAllListings([])
+      analytics.filter.emulator(values)
+    },
+    [listingsState],
+  )
+
+  const handlePerformanceChange = useCallback(
+    (values: number[]) => {
+      listingsState.setPerformanceIds(values)
+      setCurrentPage(1)
+      setAllListings([])
+      analytics.filter.performance(values)
+    },
+    [listingsState],
+  )
+
   // Clear all filters
   const clearAllFilters = useCallback(() => {
     listingsState.setSystemIds([])
@@ -152,6 +317,11 @@ function V2ListingsPage() {
     listingsState.setSearch('')
     listingsState.setSortField(null)
     listingsState.setSortDirection(null)
+    setMyListingsOnly(false)
+    setCurrentPage(1)
+    setAllListings([])
+    setUserDeviceFilterDisabled(false)
+    setUserSocFilterDisabled(false)
     analytics.filter.clearAll()
   }, [listingsState])
 
@@ -162,7 +332,8 @@ function V2ListingsPage() {
     listingsState.socIds.length > 0 ||
     listingsState.emulatorIds.length > 0 ||
     listingsState.performanceIds.length > 0 ||
-    listingsState.search.length > 0
+    listingsState.search.length > 0 ||
+    myListingsOnly
 
   // Properly typed handleSort function
   const handleSort = (field: SortField, direction?: SortDirection) => {
@@ -363,20 +534,34 @@ function V2ListingsPage() {
               onSearchChange={(value) => listingsState.setSearch(value)}
               showFilters={showFilters}
               onToggleFilters={() => setShowFilters(!showFilters)}
+              activeFilterCount={
+                hasActiveFilters
+                  ? Object.values({
+                      systems: listingsState.systemIds.length,
+                      devices: listingsState.deviceIds.length,
+                      socs: listingsState.socIds.length,
+                      emulators: listingsState.emulatorIds.length,
+                      performance: listingsState.performanceIds.length,
+                      search: listingsState.search ? 1 : 0,
+                      myListings: myListingsOnly ? 1 : 0,
+                    }).reduce((sum, count) => sum + count, 0)
+                  : 0
+              }
             />
 
             {/* Quick Filter Chips */}
             <QuickFilters
               performanceScales={performanceScalesQuery.data}
               performanceIds={listingsState.performanceIds}
-              handlePerformanceChange={(values) =>
-                listingsState.setPerformanceIds(values)
-              }
+              handlePerformanceChange={handlePerformanceChange}
               sortField={listingsState.sortField}
               sortDirection={listingsState.sortDirection}
               handleSort={handleSort}
               hasActiveFilters={hasActiveFilters}
               clearAllFilters={clearAllFilters}
+              myListingsOnly={myListingsOnly}
+              toggleMyListings={toggleMyListings}
+              userQuery={userQuery}
             />
           </div>
 
@@ -387,23 +572,21 @@ function V2ListingsPage() {
             hasActiveFilters={hasActiveFilters}
             clearAllFilters={clearAllFilters}
             systemIds={listingsState.systemIds}
-            handleSystemChange={(values) => listingsState.setSystemIds(values)}
+            handleSystemChange={handleSystemChange}
             fetchSystems={fetchSystems}
             performanceIds={listingsState.performanceIds.map(String)}
             handlePerformanceChange={(values) =>
-              listingsState.setPerformanceIds(values.map(Number))
+              handlePerformanceChange(values.map(Number))
             }
             performanceScales={performanceScalesQuery.data}
             deviceIds={listingsState.deviceIds}
-            handleDeviceChange={(values) => listingsState.setDeviceIds(values)}
+            handleDeviceChange={handleDeviceChange}
             fetchDevices={fetchDevices}
             emulatorIds={listingsState.emulatorIds}
-            handleEmulatorChange={(values) =>
-              listingsState.setEmulatorIds(values)
-            }
+            handleEmulatorChange={handleEmulatorChange}
             fetchEmulators={fetchEmulators}
             socIds={listingsState.socIds}
-            handleSocChange={(values) => listingsState.setSocIds(values)}
+            handleSocChange={handleSocChange}
             fetchSocs={fetchSocs}
           />
 
@@ -420,6 +603,56 @@ function V2ListingsPage() {
             hasActiveFilters={hasActiveFilters}
             clearAllFilters={clearAllFilters}
           />
+        </div>
+
+        {/* Floating Action Buttons */}
+        <div className="fixed bottom-6 right-4 flex flex-col gap-3 z-30">
+          {/* My Listings Toggle */}
+          {userQuery.data && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Button
+                onClick={toggleMyListings}
+                size="sm"
+                className={cn(
+                  'h-12 w-12 rounded-full shadow-lg transition-all duration-200',
+                  'border-2 backdrop-blur-sm',
+                  myListingsOnly
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-500/25'
+                    : 'bg-white/90 hover:bg-white text-gray-700 border-gray-200 hover:border-gray-300 dark:bg-gray-800/90 dark:hover:bg-gray-800 dark:text-gray-300 dark:border-gray-600',
+                )}
+                title={
+                  myListingsOnly ? 'Show all listings' : 'Show my listings only'
+                }
+              >
+                <User className="w-5 h-5" />
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Scroll to Top */}
+          <AnimatePresence>
+            {showScrollToTop && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button
+                  onClick={scrollToTop}
+                  size="sm"
+                  className="h-12 w-12 rounded-full bg-gray-900/90 hover:bg-gray-900 text-white shadow-lg backdrop-blur-sm border-2 border-gray-700 hover:border-gray-600"
+                  title="Scroll to top"
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </PullToRefresh>
