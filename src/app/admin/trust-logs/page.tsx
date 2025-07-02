@@ -102,12 +102,12 @@ function AdminTrustLogsPage() {
   const logs = trustLogsQuery.data?.logs ?? []
   const pagination = trustLogsQuery.data?.pagination
 
-  if (trustLogsQuery.isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <LoadingSpinner text="Loading trust logs..." />
-      </div>
-    )
+  const getLogMetadata = (log: TrustLog): string | number => {
+    return log.metadata && typeof log.metadata === 'object'
+      ? JSON.stringify(log.metadata)
+      : log.metadata
+        ? log.metadata.toString()
+        : '-'
   }
 
   return (
@@ -181,7 +181,9 @@ function AdminTrustLogsPage() {
 
       {/* Trust Logs Table */}
       <AdminTableContainer>
-        {logs.length === 0 ? (
+        {trustLogsQuery.isLoading ? (
+          <LoadingSpinner text="Loading logs..." />
+        ) : logs.length === 0 ? (
           <div className="text-center py-12">
             <Shield className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <p className="text-gray-600 dark:text-gray-400 text-lg">
@@ -298,11 +300,10 @@ function AdminTrustLogsPage() {
                       )}
                       {columnVisibility.isColumnVisible('metadata') && (
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          <Code>
-                            {log.metadata && typeof log.metadata === 'object'
-                              ? JSON.stringify(log.metadata)
-                              : log.metadata || '-'}
-                          </Code>
+                          <Code
+                            value={getLogMetadata(log)}
+                            label={getLogMetadata(log)}
+                          />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('timestamp') && (

@@ -30,8 +30,8 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
-import { type Nullable } from '@/types/utils'
 import { getRoleVariant, getTrustActionBadgeColor } from '@/utils/badgeColors'
+import { copyToClipboard } from '@/utils/copyToClipboard'
 import { formatDate, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
@@ -105,18 +105,6 @@ function UserDetailsModal(props: Props) {
       adjustment,
       reason: adjustmentReason.trim(),
     })
-  }
-
-  const copyToClipboard = (text: Nullable<string>) => {
-    if (!text) return toast.error('No user ID to copy')
-
-    navigator.clipboard
-      .writeText(text)
-      .then(() => toast.success('Copied to clipboard!'))
-      .catch((error) => {
-        console.error('Failed to copy user ID: ', error)
-        toast.error(`Failed to copy user ID: ${getErrorMessage(error)}`)
-      })
   }
 
   if (!props.isOpen) return null
@@ -280,9 +268,10 @@ function UserDetailsModal(props: Props) {
                         User ID
                       </span>
                       <div className="flex items-center gap-2">
-                        <Code>
-                          {userQuery.data.id?.slice(0, 10) ?? 'N/A'}...
-                        </Code>
+                        <Code
+                          label={`${userQuery.data.id?.slice(0, 10) ?? 'N/A'}...`}
+                          value={userQuery.data.id}
+                        />
                         <button
                           type="button"
                           onClick={() =>

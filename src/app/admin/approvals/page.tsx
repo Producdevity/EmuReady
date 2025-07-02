@@ -78,11 +78,7 @@ function AdminApprovalsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
     useLocalStorage(storageKeys.showSystemIcons, false)
 
-  const {
-    showEmulatorLogos,
-    toggleEmulatorLogos,
-    isHydrated: isEmulatorLogosHydrated,
-  } = useEmulatorLogos()
+  const emulatorLogos = useEmulatorLogos()
 
   const currentUserQuery = api.users.me.useQuery()
   const pendingListingsQuery = api.listings.getPending.useQuery({
@@ -302,14 +298,6 @@ function AdminApprovalsPage() {
   const listings = pendingListingsQuery.data?.listings ?? []
   const pagination = pendingListingsQuery.data?.pagination
 
-  if (pendingListingsQuery.isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <LoadingSpinner text="Loading pending listings..." />
-      </div>
-    )
-  }
-
   return (
     <AdminPageLayout
       title="Listing Approvals"
@@ -324,9 +312,9 @@ function AdminApprovalsPage() {
             nameLabel="Show System Names"
           />
           <DisplayToggleButton
-            showLogos={showEmulatorLogos}
-            onToggle={toggleEmulatorLogos}
-            isHydrated={isEmulatorLogosHydrated}
+            showLogos={emulatorLogos.showEmulatorLogos}
+            onToggle={emulatorLogos.toggleEmulatorLogos}
+            isHydrated={emulatorLogos.isHydrated}
             logoLabel="Show Emulator Logos"
             nameLabel="Show Emulator Names"
           />
@@ -434,7 +422,9 @@ function AdminApprovalsPage() {
 
       {/* Listings Table */}
       <AdminTableContainer>
-        {listings.length === 0 ? (
+        {pendingListingsQuery.isLoading ? (
+          <LoadingSpinner text="Loading pending listings..." />
+        ) : listings.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <p className="text-gray-600 dark:text-gray-400 text-lg">
@@ -626,7 +616,8 @@ function AdminApprovalsPage() {
                             name={listing.emulator.name}
                             logo={listing.emulator.logo}
                             showLogo={
-                              isEmulatorLogosHydrated && showEmulatorLogos
+                              emulatorLogos.isHydrated &&
+                              emulatorLogos.showEmulatorLogos
                             }
                             size="sm"
                           />

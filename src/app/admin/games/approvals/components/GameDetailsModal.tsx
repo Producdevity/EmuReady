@@ -18,10 +18,10 @@ import { type ProcessingAction } from '@/app/admin/games/approvals/page'
 import { Modal, Button, ApprovalStatusBadge, Code } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
-import { type Nullable } from '@/types/utils'
+import { type Maybe, type Nullable } from '@/types/utils'
+import { copyToClipboard } from '@/utils/copyToClipboard'
 import { formatDate, formatTimeAgo } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission } from '@/utils/permissions'
@@ -101,15 +101,13 @@ function GameDetailsModal(props: Props) {
       props.selectedGame.imageUrl && !imageError.main,
     ].filter(Boolean).length === 1
 
-  const copyToClipboard = (text: string | number, label: string) => {
+  const handleCopyToClipboard = (
+    text: Maybe<string | number>,
+    label: string,
+  ) => {
+    if (!text) return
     const value = isNumber(text) ? text.toString() : text
-    navigator.clipboard
-      .writeText(value)
-      .then(() => toast.success(`Copied ${label} to clipboard (${value})`))
-      .catch((error) => {
-        console.error('Copy to clipboard failed:', error)
-        toast.error('Failed to copy to clipboard. Please try again.')
-      })
+    copyToClipboard(value, label)
   }
 
   const navigateToUserModal = (userId: string) => {
@@ -331,7 +329,7 @@ function GameDetailsModal(props: Props) {
                       type="button"
                       onClick={() => {
                         if (!props.selectedGame?.submitter?.id) return
-                        copyToClipboard(
+                        handleCopyToClipboard(
                           props.selectedGame.submitter.id,
                           'Submitter ID',
                         )
@@ -403,12 +401,18 @@ function GameDetailsModal(props: Props) {
                         Game ID:
                       </span>
                       <div className="flex items-center gap-1 ml-4">
-                        <Code>{props.selectedGame.id.slice(0, 10)}...</Code>
+                        <Code
+                          label={`${props.selectedGame.id.slice(0, 10)}...`}
+                          value={props.selectedGame.id}
+                        />
                         <button
                           type="button"
                           onClick={() => {
                             if (!props.selectedGame) return
-                            copyToClipboard(props.selectedGame.id, 'Game ID')
+                            handleCopyToClipboard(
+                              props.selectedGame.id,
+                              'Game ID',
+                            )
                           }}
                           className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                           title="Copy Game ID"
@@ -423,16 +427,18 @@ function GameDetailsModal(props: Props) {
                           TGDB ID:
                         </span>
                         <div className="flex items-center gap-1 ml-4">
-                          <Code>{props.selectedGame.tgdbGameId}</Code>
+                          <Code
+                            value={props.selectedGame.tgdbGameId}
+                            label={props.selectedGame.tgdbGameId ?? 'N/A'}
+                          />
                           <button
                             type="button"
-                            onClick={() => {
-                              if (!props.selectedGame?.tgdbGameId) return
-                              copyToClipboard(
+                            onClick={() =>
+                              handleCopyToClipboard(
                                 props.selectedGame?.tgdbGameId,
                                 'TheGamesDB ID',
                               )
-                            }}
+                            }
                             className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             title="Copy Game ID"
                           >

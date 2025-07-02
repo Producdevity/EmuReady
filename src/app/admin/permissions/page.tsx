@@ -18,6 +18,7 @@ import {
   SortableHeader,
   useConfirmDialog,
   Badge,
+  Code,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -418,7 +419,7 @@ function AdminPermissionsPage() {
                     )}
                     {columnVisibility.isColumnVisible('key') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900 dark:text-white">
-                        {permission.key}
+                        <Code label={permission.key} value={permission.key} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('label') && (
