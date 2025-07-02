@@ -388,10 +388,10 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         select: { authorId: true },
       })
 
-      if (!existing) throw AppError.notFound('Listing')
+      if (!existing) return AppError.notFound('Listing')
 
       if (existing.authorId !== ctx.session.user.id) {
-        throw AppError.forbidden('You can only edit your own listings')
+        return AppError.forbidden('You can only edit your own listings')
       }
 
       return await ctx.prisma.listing.update({
@@ -435,15 +435,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         select: { authorId: true },
       })
 
-      if (!existing) throw AppError.notFound('Listing')
+      if (!existing) return AppError.notFound('Listing')
 
-      if (existing.authorId !== ctx.session.user.id) {
-        throw AppError.forbidden('You can only delete your own listings')
-      }
-
-      return await ctx.prisma.listing.delete({
-        where: { id: input.id },
-      })
+      return existing.authorId !== ctx.session.user.id
+        ? AppError.forbidden('You can only delete your own listings')
+        : await ctx.prisma.listing.delete({ where: { id: input.id } })
     }),
 
   /**
@@ -536,10 +532,10 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         select: { userId: true },
       })
 
-      if (!existing) throw ResourceError.comment.notFound()
+      if (!existing) return ResourceError.comment.notFound()
 
       if (existing.userId !== ctx.session.user.id) {
-        throw AppError.forbidden('You can only edit your own comments')
+        return AppError.forbidden('You can only edit your own comments')
       }
 
       return await ctx.prisma.comment.update({
@@ -561,12 +557,10 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         select: { userId: true },
       })
 
-      if (!existing) throw ResourceError.comment.notFound()
+      if (!existing) return ResourceError.comment.notFound()
 
-      if (existing.userId !== ctx.session.user.id) {
-        throw AppError.forbidden('You can only delete your own comments')
-      }
-
-      return await ctx.prisma.comment.delete({ where: { id: input.commentId } })
+      return existing.userId !== ctx.session.user.id
+        ? AppError.forbidden('You can only delete your own comments')
+        : await ctx.prisma.comment.delete({ where: { id: input.commentId } })
     }),
 })
