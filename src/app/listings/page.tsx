@@ -123,9 +123,12 @@ function ListingsPage() {
   }
 
   const systemsQuery = api.systems.get.useQuery()
+  // TODO: find a better alternative to hardcoding 10000 for devices
   const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
+  // TODO: find a better alternative to hardcoding 10000 for SoCs
   const socsQuery = api.socs.get.useQuery({ limit: 10000 })
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 10000 })
+  // TODO: find a better alternative to hardcoding 200 for emulators
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 200 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {
