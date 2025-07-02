@@ -22,6 +22,7 @@ import {
   EditButton,
   ViewButton,
   Badge,
+  ListingVerificationBadge,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -601,6 +602,15 @@ function ListingsPage() {
                                     This user has been banned
                                   </TooltipContent>
                                 </Tooltip>
+                              )}
+
+                            {listing.developerVerifications &&
+                              listing.developerVerifications.length > 0 && (
+                                <ListingVerificationBadge
+                                  verifications={listing.developerVerifications}
+                                  size="sm"
+                                  showTooltip={true}
+                                />
                               )}
                           </div>
                         </td>

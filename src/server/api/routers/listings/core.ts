@@ -16,6 +16,8 @@ import {
   GetListingsSchema,
   UpdateListingUserSchema,
   GetListingForUserEditSchema,
+  VerifyListingSchema,
+  UnverifyListingSchema,
 } from '@/schemas/listing'
 import {
   authorProcedure,
@@ -318,6 +320,13 @@ export const coreRouter = createTRPCRouter({
                   : false,
               },
             },
+            developerVerifications: {
+              include: {
+                developer: {
+                  select: { id: true, name: true },
+                },
+              },
+            },
             _count: { select: { votes: true, comments: true } },
             votes: ctx.session
               ? {
@@ -459,6 +468,13 @@ export const coreRouter = createTRPCRouter({
                 : false,
             },
           },
+          developerVerifications: {
+            include: {
+              developer: {
+                select: { id: true, name: true },
+              },
+            },
+          },
           _count: { select: { votes: true, comments: true } },
           votes: ctx.session
             ? {
@@ -557,6 +573,13 @@ export const coreRouter = createTRPCRouter({
                   select: { id: true, reason: true, expiresAt: true },
                 },
               }),
+            },
+          },
+          developerVerifications: {
+            include: {
+              developer: {
+                select: { id: true, name: true },
+              },
             },
           },
           customFieldValues: {
@@ -705,18 +728,14 @@ export const coreRouter = createTRPCRouter({
           select: { systemId: true },
         })
 
-        if (!gameForValidation) {
-          throw ResourceError.game.notFound()
-        }
+        if (!gameForValidation) throw ResourceError.game.notFound()
 
         const emulator = await tx.emulator.findUnique({
           where: { id: emulatorId },
           include: { systems: { select: { id: true } } },
         })
 
-        if (!emulator) {
-          throw ResourceError.emulator.notFound()
-        }
+        if (!emulator) return ResourceError.emulator.notFound()
 
         const isSystemCompatible = emulator.systems.some(
           (system) => system.id === gameForValidation.systemId,
@@ -931,9 +950,7 @@ export const coreRouter = createTRPCRouter({
           select: { authorId: true },
         })
 
-        if (!listingForRemoval) {
-          AppError.notFound('Listing')
-        }
+        if (!listingForRemoval) return AppError.notFound('Listing')
 
         await ctx.prisma.vote.delete({
           where: { userId_listingId: { userId, listingId: input.listingId } },
@@ -1080,6 +1097,13 @@ export const coreRouter = createTRPCRouter({
         emulator: true,
         performance: true,
         author: { select: { id: true, name: true } },
+        developerVerifications: {
+          include: {
+            developer: {
+              select: { id: true, name: true },
+            },
+          },
+        },
         _count: { select: { votes: true, comments: true } },
       },
     })
@@ -1369,5 +1393,127 @@ export const coreRouter = createTRPCRouter({
       }
 
       return listing
+    }),
+
+  verifyListing: protectedProcedure
+    .input(VerifyListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      // Get the listing with emulator information
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.listingId },
+        include: {
+          emulator: true,
+          author: { select: { id: true, name: true } },
+        },
+      })
+
+      if (!listing) {
+        throw AppError.notFound('Listing not found')
+      }
+
+      // Check if user is verified developer for this emulator
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: userId,
+            emulatorId: listing.emulatorId,
+          },
+        },
+      })
+
+      if (!verifiedDeveloper) {
+        throw AppError.forbidden(
+          `You must be a verified developer for ${listing.emulator.name} to verify listings for this emulator`,
+        )
+      }
+
+      // Prevent developers from verifying their own listings
+      if (listing.authorId === userId) {
+        throw AppError.forbidden('You cannot verify your own listings')
+      }
+
+      // Check if verification already exists
+      const existingVerification =
+        await ctx.prisma.listingDeveloperVerification.findUnique({
+          where: {
+            listingId_verifiedBy: {
+              listingId: input.listingId,
+              verifiedBy: userId,
+            },
+          },
+        })
+
+      if (existingVerification) {
+        throw AppError.conflict('You have already verified this listing')
+      }
+
+      // Create the verification
+      const verification = await ctx.prisma.listingDeveloperVerification.create(
+        {
+          data: {
+            listingId: input.listingId,
+            verifiedBy: userId,
+            notes: input.notes,
+          },
+          include: {
+            developer: { select: { id: true, name: true } },
+          },
+        },
+      )
+
+      // Emit notification event for listing verification
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: NOTIFICATION_EVENTS.LISTING_VERIFIED,
+        entityType: 'listing',
+        entityId: input.listingId,
+        triggeredBy: userId,
+        payload: {
+          listingId: input.listingId,
+          verificationId: verification.id,
+          verifierName: verification.developer.name,
+          emulatorName: listing.emulator.name,
+        },
+      })
+
+      return verification
+    }),
+
+  unverifyListing: protectedProcedure
+    .input(UnverifyListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      // Check if verification exists
+      const verification =
+        await ctx.prisma.listingDeveloperVerification.findUnique({
+          where: {
+            listingId_verifiedBy: {
+              listingId: input.listingId,
+              verifiedBy: userId,
+            },
+          },
+          include: {
+            listing: {
+              include: {
+                emulator: true,
+              },
+            },
+          },
+        })
+
+      if (!verification) {
+        throw AppError.notFound('Verification not found')
+      }
+
+      // Delete the verification
+      await ctx.prisma.listingDeveloperVerification.delete({
+        where: {
+          id: verification.id,
+        },
+      })
+
+      return { message: 'Verification removed successfully' }
     }),
 })

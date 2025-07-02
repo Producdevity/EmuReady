@@ -1,6 +1,7 @@
 import { RedirectToSignIn } from '@clerk/nextjs'
 import { type Metadata } from 'next'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import { getCurrentUser } from '@/server/utils/auth'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -61,13 +62,18 @@ async function AdminDashboardPage() {
         {roleDescription}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {isModerator &&
           moderatorNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
+              className={cn(
+                'bg-white dark:bg-gray-800',
+                'p-6 rounded-lg',
+                'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors',
+                'transition-shadow shadow-md hover:shadow-lg',
+              )}
             >
               <h3 className="font-semibold text-xl mb-2">{item.label}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -80,7 +86,12 @@ async function AdminDashboardPage() {
             <Link
               key={item.href}
               href={item.href}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
+              className={cn(
+                'bg-white dark:bg-gray-800',
+                'p-6 rounded-lg',
+                'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors',
+                'transition-shadow shadow-md hover:shadow-lg',
+              )}
             >
               <h3 className="font-semibold text-xl mb-2">{item.label}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -94,7 +105,12 @@ async function AdminDashboardPage() {
             <Link
               key={item.href}
               href={item.href}
-              className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-500 transition-colors"
+              className={cn(
+                'bg-purple-50 dark:bg-purple-900/20',
+                'p-6 rounded-lg',
+                'border border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-500 transition-colors',
+                'transition-shadow shadow-md hover:shadow-lg',
+              )}
             >
               <h3 className="font-semibold text-xl mb-2 text-purple-800 dark:text-purple-300">
                 {item.label}

@@ -13,15 +13,18 @@ import {
   Button,
   TranslatableMarkdown,
   VerifiedDeveloperBadge,
+  ListingVerificationBadge,
+  ApprovalStatusBadge,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { CustomFieldType, Role, ApprovalStatus } from '@orm'
+import { CustomFieldType, Role } from '@orm'
 import CommentThread from './CommentThread'
 import EditListingButton from './EditListingButton'
 import ReportListingButton from './ReportListingButton'
+import VerifyListingButton from './VerifyListingButton'
 import VoteReminderBanner from './vote-reminder/VoteReminderBanner'
 import VoteButtons from './VoteButtons'
 
@@ -201,19 +204,17 @@ function ListingDetailsClient(props: Props) {
                     <VerifiedDeveloperBadge showText />
                   </div>
                 )}
-                {canViewBannedUsers &&
-                  props.listing.status !== ApprovalStatus.APPROVED && (
-                    <Badge
-                      variant={
-                        props.listing.status === ApprovalStatus.REJECTED
-                          ? 'danger'
-                          : 'warning'
-                      }
-                      size="sm"
-                    >
-                      {props.listing.status}
-                    </Badge>
+                {props.listing.developerVerifications &&
+                  props.listing.developerVerifications.length > 0 && (
+                    <ListingVerificationBadge
+                      verifications={props.listing.developerVerifications}
+                      showText
+                      showTooltip={true}
+                    />
                   )}
+                {canViewBannedUsers && (
+                  <ApprovalStatusBadge status={props.listing.status} />
+                )}
               </div>
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
@@ -345,6 +346,24 @@ function ListingDetailsClient(props: Props) {
                 <ReportListingButton
                   listingId={props.listing.id}
                   authorId={props.listing.authorId}
+                  onSuccess={refreshData}
+                />
+                <VerifyListingButton
+                  listingId={props.listing.id}
+                  emulatorId={props.listing.emulatorId}
+                  authorId={props.listing.authorId}
+                  isAlreadyVerified={
+                    props.listing.developerVerifications?.some(
+                      (verification) =>
+                        verification.developer.id === currentUserQuery.data?.id,
+                    ) ?? false
+                  }
+                  verificationId={
+                    props.listing.developerVerifications?.find(
+                      (verification) =>
+                        verification.developer.id === currentUserQuery.data?.id,
+                    )?.id
+                  }
                   onSuccess={refreshData}
                 />
               </div>

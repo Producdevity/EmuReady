@@ -30,3 +30,17 @@ export function isValidEmail(email: string): boolean {
   const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailPattern.test(email)
 }
+
+/**
+ * Validates that a URL is in proper format
+ * @param url - The URL to validate
+ * @returns true if the URL is valid
+ */
+export function isValidUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url)
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
+  } catch {
+    return false
+  }
+}

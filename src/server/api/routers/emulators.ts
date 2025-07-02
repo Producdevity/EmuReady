@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { ResourceError, AppError } from '@/lib/errors'
 import {
   GetEmulatorsSchema,
@@ -12,6 +13,7 @@ import {
   publicProcedure,
   adminProcedure,
   superAdminProcedure,
+  protectedProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -116,6 +118,25 @@ export const emulatorsRouter = createTRPCRouter({
       })
 
       return emulator ?? ResourceError.emulator.notFound()
+    }),
+
+  getVerifiedDeveloper: protectedProcedure
+    .input(z.object({ emulatorId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: ctx.session.user.id,
+            emulatorId: input.emulatorId,
+          },
+        },
+        include: {
+          user: { select: { id: true, name: true, profileImage: true } },
+          emulator: { select: { id: true, name: true } },
+        },
+      })
+
+      return verifiedDeveloper
     }),
 
   create: adminProcedure

@@ -127,6 +127,15 @@ export const BulkRejectListingsSchema = z.object({
   listingIds: z
     .array(z.string().uuid())
     .min(1, 'At least one listing must be selected'),
+})
+
+export const VerifyListingSchema = z.object({
+  listingId: z.string().uuid(),
+  notes: z.string().optional(),
+})
+
+export const UnverifyListingSchema = z.object({
+  listingId: z.string().uuid(),
   notes: z.string().optional(),
 })
 

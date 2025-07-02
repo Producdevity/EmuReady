@@ -55,6 +55,7 @@ export const NOTIFICATION_EVENTS = {
   LISTING_APPROVED: 'listing.approved',
   LISTING_REJECTED: 'listing.rejected',
   LISTING_STATUS_OVERRIDDEN: 'listing.status_overridden',
+  LISTING_VERIFIED: 'listing.verified',
   CONTENT_FLAGGED: 'content.flagged',
   GAME_ADDED: 'game.added',
   EMULATOR_UPDATED: 'emulator.updated',

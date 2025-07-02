@@ -1,4 +1,6 @@
+import { isString } from 'remeda'
 import { AppError, ResourceError } from '@/lib/errors'
+import { isValidUrl } from '@/utils/validation'
 import { CustomFieldType, type Prisma } from '@orm'
 
 type PrismaTransactionClient = Omit<
@@ -85,14 +87,33 @@ function validateFieldValue(
   switch (fieldDef.type) {
     case CustomFieldType.TEXT:
     case CustomFieldType.TEXTAREA:
-    case CustomFieldType.URL:
       if (
         fieldDef.isRequired &&
-        (!value || (typeof value === 'string' && value.trim() === ''))
+        (!value || (isString(value) && value.trim() === ''))
       ) {
         return AppError.badRequest(
           `Required custom field '${fieldDef.label}' cannot be empty`,
         )
+      }
+      break
+
+    case CustomFieldType.URL:
+      if (
+        fieldDef.isRequired &&
+        (!value || (isString(value) && value.trim() === ''))
+      ) {
+        return AppError.badRequest(
+          `Required custom field '${fieldDef.label}' cannot be empty`,
+        )
+      }
+
+      // Validate URL format if value is provided
+      if (value && isString(value) && value.trim() !== '') {
+        if (!isValidUrl(value.trim())) {
+          return AppError.badRequest(
+            `Custom field '${fieldDef.label}' must be a valid URL (http:// or https://)`,
+          )
+        }
       }
       break
 
