@@ -629,6 +629,35 @@ export const coreRouter = createTRPCRouter({
             ? ApprovalStatus.APPROVED
             : ApprovalStatus.PENDING
 
+        // Validate that the game's system is compatible with the chosen emulator
+        const gameForValidation = await tx.game.findUnique({
+          where: { id: gameId },
+          select: { systemId: true },
+        })
+
+        if (!gameForValidation) {
+          throw ResourceError.game.notFound()
+        }
+
+        const emulator = await tx.emulator.findUnique({
+          where: { id: emulatorId },
+          include: { systems: { select: { id: true } } },
+        })
+
+        if (!emulator) {
+          throw ResourceError.emulator.notFound()
+        }
+
+        const isSystemCompatible = emulator.systems.some(
+          (system) => system.id === gameForValidation.systemId,
+        )
+
+        if (!isSystemCompatible) {
+          throw AppError.badRequest(
+            "The selected emulator does not support this game's system",
+          )
+        }
+
         const newListing = await tx.listing.create({
           data: {
             gameId,

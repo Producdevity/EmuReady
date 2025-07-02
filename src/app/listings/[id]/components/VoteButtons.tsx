@@ -7,6 +7,7 @@ import { useState } from 'react'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForVote } from '@/lib/captcha/hooks'
+import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import VotingHelpModal from './VotingHelpModal'
 
@@ -44,7 +45,7 @@ function VoteButtons(props: Props) {
 
   const handleVote = async (value: boolean) => {
     if (!isAuthenticated) {
-      // TODO: Show a login prompt (we don't use dedicated login pages)
+      toast.info('Please sign in to verify this listing')
       return
     }
 
@@ -194,7 +195,12 @@ function VoteButtons(props: Props) {
         {!isAuthenticated && (
           <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
             <SignInButton mode="modal">
-              <button className="text-blue-500 hover:underline">Sign in</button>
+              <button
+                className="text-blue-500 hover:underline"
+                data-clerk-sign-in-trigger
+              >
+                Sign in
+              </button>
             </SignInButton>{' '}
             to verify
           </div>

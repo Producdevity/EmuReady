@@ -1,5 +1,6 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
 import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
@@ -23,8 +24,11 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-// TODO: finish modals
-// import { type BanModalState, type CreateBanModalState } from './types'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
+import BanDetailsModal from './components/BanDetailsModal'
+import CreateBanModal from './components/CreateBanModal'
+import { type BanModalState, type CreateBanModalState } from './types'
 
 type BanSortField = 'bannedAt' | 'expiresAt' | 'isActive' | 'reason'
 
@@ -59,6 +63,7 @@ const getBanStatusText = (ban: {
 }
 
 function AdminUserBansPage() {
+  const { user: clerkUser } = useUser()
   const table = useAdminTable<BanSortField>({ defaultLimit: 20 })
   const confirm = useConfirmDialog()
   const utils = api.useUtils()
@@ -67,7 +72,21 @@ function AdminUserBansPage() {
   })
 
   const [selectedStatus, setSelectedStatus] = useState<boolean | ''>('')
-  // TODO: Add modal states when modals are implemented
+  const [banDetailsModal, setBanDetailsModal] = useState<BanModalState>({
+    isOpen: false,
+  })
+  const [createBanModal, setCreateBanModal] = useState<CreateBanModalState>({
+    isOpen: false,
+  })
+
+  // Get current user data to check permissions
+  const currentUserQuery = api.users.me.useQuery(undefined, {
+    enabled: !!clerkUser,
+  })
+
+  const currentUserRole = currentUserQuery.data?.role
+  const canCreateBans =
+    currentUserRole && hasPermission(currentUserRole, Role.MODERATOR)
 
   const bansStatsQuery = api.userBans.getStats.useQuery()
   const bansQuery = api.userBans.getAll.useQuery({
@@ -105,8 +124,7 @@ function AdminUserBansPage() {
   })
 
   const handleViewDetails = (ban: (typeof bans)[0]) => {
-    // TODO: Implement ban details modal
-    console.log('View ban details:', ban)
+    setBanDetailsModal({ isOpen: true, ban })
   }
 
   const handleLiftBan = async (ban: (typeof bans)[0]) => {
@@ -174,15 +192,14 @@ function AdminUserBansPage() {
       description="Manage user bans and suspensions"
       headerActions={
         <div className="flex gap-2">
-          <Button
-            onClick={() => {
-              // TODO: Implement create ban modal
-              console.log('Create new ban')
-            }}
-            variant="default"
-          >
-            New Ban
-          </Button>
+          {canCreateBans && (
+            <Button
+              onClick={() => setCreateBanModal({ isOpen: true })}
+              variant="default"
+            >
+              New Ban
+            </Button>
+          )}
           <ColumnVisibilityControl
             columns={BAN_COLUMNS}
             columnVisibility={columnVisibility}
@@ -386,7 +403,22 @@ function AdminUserBansPage() {
         </div>
       )}
 
-      {/* TODO: Add modals for ban details and create ban */}
+      {/* Modals */}
+      <BanDetailsModal
+        isOpen={banDetailsModal.isOpen}
+        onClose={() => setBanDetailsModal({ isOpen: false })}
+        ban={banDetailsModal.ban}
+      />
+
+      <CreateBanModal
+        isOpen={createBanModal.isOpen}
+        onClose={() => setCreateBanModal({ isOpen: false })}
+        userId={createBanModal.userId}
+        onSuccess={() => {
+          utils.userBans.getAll.invalidate().catch(console.error)
+          utils.userBans.getStats.invalidate().catch(console.error)
+        }}
+      />
     </AdminPageLayout>
   )
 }

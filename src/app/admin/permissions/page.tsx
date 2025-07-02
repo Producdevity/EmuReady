@@ -14,6 +14,7 @@ import {
   DeleteButton,
   EditButton,
   LoadingSpinner,
+  Pagination,
   SortableHeader,
   useConfirmDialog,
   Badge,
@@ -482,14 +483,13 @@ function AdminPermissionsPage() {
         )}
       </AdminTableContainer>
 
-      {/* TODO: Add pagination component */}
       {pagination && pagination.pages > 1 && (
-        <div className="mt-4 flex justify-center">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Page {pagination.page} of {pagination.pages} ({pagination.total}{' '}
-            total)
-          </div>
-        </div>
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={table.setPage}
+        />
       )}
 
       <PermissionModal
