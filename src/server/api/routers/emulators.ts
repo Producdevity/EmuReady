@@ -1,19 +1,19 @@
 import { z } from 'zod'
-import { ResourceError, AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
-  GetEmulatorsSchema,
-  GetEmulatorByIdSchema,
   CreateEmulatorSchema,
-  UpdateEmulatorSchema,
   DeleteEmulatorSchema,
+  GetEmulatorByIdSchema,
+  GetEmulatorsSchema,
+  UpdateEmulatorSchema,
   UpdateSupportedSystemsSchema,
 } from '@/schemas/emulator'
 import {
-  createTRPCRouter,
-  publicProcedure,
   adminProcedure,
-  superAdminProcedure,
+  createTRPCRouter,
   protectedProcedure,
+  publicProcedure,
+  superAdminProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -122,22 +122,21 @@ export const emulatorsRouter = createTRPCRouter({
 
   getVerifiedDeveloper: protectedProcedure
     .input(z.object({ emulatorId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId: ctx.session.user.id,
-            emulatorId: input.emulatorId,
+    .query(
+      async ({ ctx, input }) =>
+        await ctx.prisma.verifiedDeveloper.findUnique({
+          where: {
+            userId_emulatorId: {
+              userId: ctx.session.user.id,
+              emulatorId: input.emulatorId,
+            },
           },
-        },
-        include: {
-          user: { select: { id: true, name: true, profileImage: true } },
-          emulator: { select: { id: true, name: true } },
-        },
-      })
-
-      return verifiedDeveloper
-    }),
+          include: {
+            user: { select: { id: true, name: true, profileImage: true } },
+            emulator: { select: { id: true, name: true } },
+          },
+        }),
+    ),
 
   create: adminProcedure
     .input(CreateEmulatorSchema)
