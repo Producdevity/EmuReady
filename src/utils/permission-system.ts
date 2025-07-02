@@ -1,3 +1,4 @@
+import { type Maybe } from '@/types/utils'
 import { Role } from '@orm'
 import type { TRPCContext } from '@/server/api/trpc'
 
@@ -147,7 +148,11 @@ export const PERMISSIONS = {
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
 // Utility to check if a role hierarchically includes another role (backward compatibility)
-export function roleIncludesRole(userRole: Role, requiredRole: Role): boolean {
+export function roleIncludesRole(
+  userRole: Maybe<Role>,
+  requiredRole: Role,
+): boolean {
+  if (!userRole) return false
   const roleHierarchy: Role[] = [
     Role.USER,
     Role.AUTHOR,

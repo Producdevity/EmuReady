@@ -27,6 +27,7 @@ import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
@@ -205,8 +206,7 @@ export const coreRouter = createTRPCRouter({
 
       // Shadow ban logic: Hide listings from banned users for non-moderators
       const userRole = ctx.session?.user?.role
-      const canSeeBannedUsers =
-        userRole && ['MODERATOR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole)
+      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
       if (!canSeeBannedUsers) {
         // For regular users, exclude listings from banned users
