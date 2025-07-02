@@ -1,11 +1,13 @@
 import { isNullish } from 'remeda'
 import { Tooltip, TooltipContent, TooltipTrigger, Badge } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface Props {
   rank: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | number
   label: string
   pill?: boolean
   description?: string | null
+  className?: string
 }
 
 const performanceColorMap: Record<number, string> = {
@@ -29,7 +31,9 @@ export function PerformanceBadge(props: Props) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex justify-center items-center">
+        <div
+          className={cn('flex justify-center items-center', props.className)}
+        >
           <Badge
             className={customColorClass}
             pill={isNullish(props.pill) ? false : props.pill}
