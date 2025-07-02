@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Sparkles,
   Heart,
+  User,
   type LucideIcon,
 } from 'lucide-react'
 import { useMemo } from 'react'
@@ -19,6 +20,7 @@ import { Badge, Button, PerformanceBadge } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import type { SortDirection, SortField } from '@/app/listings/types'
+import type { api } from '@/lib/api'
 
 interface PerformanceScale {
   id: number
@@ -50,6 +52,9 @@ interface Props {
   handleSort: (field: SortField, direction?: SortDirection) => void
   hasActiveFilters: boolean
   clearAllFilters: () => void
+  myListingsOnly: boolean
+  toggleMyListings: () => void
+  userQuery: ReturnType<typeof api.users.me.useQuery>
 }
 
 const sortOptions: SortOption[] = [
@@ -101,6 +106,9 @@ export function QuickFilters(props: Props) {
     handleSort,
     hasActiveFilters,
     clearAllFilters,
+    myListingsOnly,
+    toggleMyListings,
+    userQuery,
   } = props
 
   const quickFilters = useMemo(() => {
@@ -144,14 +152,30 @@ export function QuickFilters(props: Props) {
       },
     ]
 
+    // Add "My Listings" filter if user is logged in
+    if (userQuery.data) {
+      filters.push({
+        label: 'My Listings',
+        action: () => {
+          toggleMyListings()
+          analytics.filter.myListings(!myListingsOnly)
+        },
+        icon: User,
+        isActive: myListingsOnly,
+      })
+    }
+
     return filters
   }, [
     performanceScales,
     performanceIds,
     sortField,
     sortDirection,
+    myListingsOnly,
+    userQuery.data,
     handlePerformanceChange,
     handleSort,
+    toggleMyListings,
   ])
 
   const currentSort = sortOptions.find(
@@ -384,7 +408,7 @@ export function QuickFilters(props: Props) {
                 {[
                   performanceIds.length,
                   currentSort ? 1 : 0,
-                  props.myListingsOnly ? 1 : 0,
+                  myListingsOnly ? 1 : 0,
                 ].reduce((sum, count) => sum + count, 0)}
               </Badge>
             </div>
