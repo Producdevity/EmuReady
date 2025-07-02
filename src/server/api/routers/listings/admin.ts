@@ -476,7 +476,8 @@ export const adminRouter = createTRPCRouter({
       })
       if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
-      return ctx.prisma.$transaction(async (tx) => {
+      // Execute database transaction first, then emit notifications
+      const transactionResult = await ctx.prisma.$transaction(async (tx) => {
         // Get all listings to approve and verify they are pending
         const listingsToApprove = await tx.listing.findMany({
           where: {
@@ -563,44 +564,73 @@ export const adminRouter = createTRPCRouter({
               },
             })
           }
-
-          // Emit notification event for each approved listing
-          notificationEventEmitter.emitNotificationEvent({
-            eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
-            entityType: 'listing',
-            entityId: listing.id,
-            triggeredBy: adminUserId,
-            payload: {
-              listingId: listing.id,
-              approvedBy: adminUserId,
-              approvedAt: new Date(),
-              bulk: true,
-            },
-          })
         }
 
-        // Invalidate listing stats cache
-        listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-        let message = `Successfully approved ${validListings.length} listing(s).`
-
-        if (bannedUserListings.length > 0) {
-          message += ` ${bannedUserListings.length} listing(s) were automatically rejected due to banned users.`
-        }
-
-        if (notFoundOrNotPendingIds.length > 0) {
-          message += ` ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
-        }
-
+        // Return data needed for post-transaction operations
         return {
-          success: true,
-          approvedCount: validListings.length,
-          rejectedCount: bannedUserListings.length,
-          skippedCount: notFoundOrNotPendingIds.length,
-          message,
-          hasReportedUsers: bannedUserListings.length > 0,
+          validListings,
+          bannedUserListings,
+          notFoundOrNotPendingIds,
         }
       })
+
+      // Emit notification events AFTER transaction completes successfully
+      try {
+        const { validListings } = transactionResult
+        const approvedAt = new Date()
+
+        // Emit notification events for each approved listing
+        for (const listing of validListings) {
+          try {
+            notificationEventEmitter.emitNotificationEvent({
+              eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
+              entityType: 'listing',
+              entityId: listing.id,
+              triggeredBy: adminUserId,
+              payload: {
+                listingId: listing.id,
+                approvedBy: adminUserId,
+                approvedAt,
+                bulk: true,
+              },
+            })
+          } catch (notificationError) {
+            // Log notification errors but don't fail the operation
+            console.error(
+              `Failed to emit notification for listing ${listing.id}:`,
+              notificationError,
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error emitting bulk approval notifications:', error)
+        // Don't throw - the database operations succeeded
+      }
+
+      // Invalidate listing stats cache
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+      const { validListings, bannedUserListings, notFoundOrNotPendingIds } =
+        transactionResult
+
+      let message = `Successfully approved ${validListings.length} listing(s).`
+
+      if (bannedUserListings.length > 0) {
+        message += ` ${bannedUserListings.length} listing(s) were automatically rejected due to banned users.`
+      }
+
+      if (notFoundOrNotPendingIds.length > 0) {
+        message += ` ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
+      }
+
+      return {
+        success: true,
+        approvedCount: validListings.length,
+        rejectedCount: bannedUserListings.length,
+        skippedCount: notFoundOrNotPendingIds.length,
+        message,
+        hasReportedUsers: bannedUserListings.length > 0,
+      }
     }),
 
   bulkReject: moderatorProcedure
@@ -616,7 +646,8 @@ export const adminRouter = createTRPCRouter({
       })
       if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
-      return ctx.prisma.$transaction(async (tx) => {
+      // CRITICAL: Execute database transaction first, then emit notifications
+      const transactionResult = await ctx.prisma.$transaction(async (tx) => {
         // Get all listings to reject and verify they are pending
         const listingsToReject = await tx.listing.findMany({
           where: {
@@ -661,38 +692,65 @@ export const adminRouter = createTRPCRouter({
               },
             })
           }
-
-          // Emit notification event for each listing
-          notificationEventEmitter.emitNotificationEvent({
-            eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
-            entityType: 'listing',
-            entityId: listing.id,
-            triggeredBy: adminUserId,
-            payload: {
-              listingId: listing.id,
-              rejectedBy: adminUserId,
-              rejectedAt: new Date(),
-              rejectionReason: notes,
-              bulk: true,
-            },
-          })
         }
 
-        // Invalidate listing stats cache
-        listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-        const message =
-          notFoundOrNotPendingIds.length > 0
-            ? `Successfully rejected ${listingsToReject.length} listing(s). ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
-            : `Successfully rejected ${listingsToReject.length} listing(s).`
-
+        // Return data needed for post-transaction operations
         return {
-          success: true,
-          rejectedCount: listingsToReject.length,
-          skippedCount: notFoundOrNotPendingIds.length,
-          message,
+          listingsToReject,
+          notFoundOrNotPendingIds,
         }
       })
+
+      // CRITICAL: Emit notification events AFTER transaction completes successfully
+      try {
+        const { listingsToReject } = transactionResult
+        const rejectedAt = new Date()
+
+        // Emit notification events for each rejected listing
+        for (const listing of listingsToReject) {
+          try {
+            notificationEventEmitter.emitNotificationEvent({
+              eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
+              entityType: 'listing',
+              entityId: listing.id,
+              triggeredBy: adminUserId,
+              payload: {
+                listingId: listing.id,
+                rejectedBy: adminUserId,
+                rejectedAt,
+                rejectionReason: notes,
+                bulk: true,
+              },
+            })
+          } catch (notificationError) {
+            // Log notification errors but don't fail the operation
+            console.error(
+              `Failed to emit notification for listing ${listing.id}:`,
+              notificationError,
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error emitting bulk rejection notifications:', error)
+        // Don't throw - the database operations succeeded
+      }
+
+      // Invalidate listing stats cache
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+      const { listingsToReject, notFoundOrNotPendingIds } = transactionResult
+
+      const message =
+        notFoundOrNotPendingIds.length > 0
+          ? `Successfully rejected ${listingsToReject.length} listing(s). ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
+          : `Successfully rejected ${listingsToReject.length} listing(s).`
+
+      return {
+        success: true,
+        rejectedCount: listingsToReject.length,
+        skippedCount: notFoundOrNotPendingIds.length,
+        message,
+      }
     }),
 
   getStats: moderatorProcedure.query(async ({ ctx }) => {

@@ -119,6 +119,19 @@ export class NotificationService {
         return null
       }
 
+      // Check for duplicate notifications before creating
+      const isDuplicate = await this.checkForDuplicateNotification(
+        userId,
+        notificationType,
+        eventData,
+      )
+      if (isDuplicate) {
+        console.log(
+          `Skipping duplicate notification for user ${userId}, type ${notificationType}`,
+        )
+        return null
+      }
+
       // Enrich context with database data
       const enrichedContext = await this.enrichContextWithData(
         eventData,
@@ -365,26 +378,84 @@ export class NotificationService {
   }
 
   async markAsRead(notificationId: string, userId: string): Promise<void> {
-    await prisma.notification.updateMany({
-      where: { id: notificationId, userId },
+    // Update notification as read
+    const updatedCount = await prisma.notification.updateMany({
+      where: { id: notificationId, userId, isRead: false }, // Only update if currently unread
       data: { isRead: true },
     })
+
+    // If notification was actually updated, invalidate caches and update real-time count
+    if (updatedCount.count > 0) {
+      // Get updated unread count
+      const unreadCount = await prisma.notification.count({
+        where: { userId, isRead: false },
+      })
+
+      // Send real-time unread count update
+      realtimeNotificationService.sendUnreadCountToUser(userId, unreadCount)
+
+      // Clear analytics cache since notification status changed
+      notificationAnalyticsService.clearCache()
+
+      console.log(
+        `Marked notification ${notificationId} as read for user ${userId}`,
+      )
+    }
   }
 
   async markAllAsRead(userId: string): Promise<void> {
-    await prisma.notification.updateMany({
+    // Update all unread notifications as read
+    const updatedCount = await prisma.notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true },
     })
+
+    // If any notifications were updated, invalidate caches and update real-time count
+    if (updatedCount.count > 0) {
+      // Send real-time unread count update (should be 0 after marking all as read)
+      realtimeNotificationService.sendUnreadCountToUser(userId, 0)
+
+      // Clear analytics cache since notification status changed
+      notificationAnalyticsService.clearCache()
+
+      console.log(
+        `Marked ${updatedCount.count} notifications as read for user ${userId}`,
+      )
+    }
   }
 
   async deleteNotification(
     notificationId: string,
     userId: string,
   ): Promise<void> {
-    await prisma.notification.deleteMany({
+    // First check if the notification exists and is unread
+    const notification = await prisma.notification.findFirst({
+      where: { id: notificationId, userId },
+      select: { isRead: true },
+    })
+
+    // Delete the notification
+    const deletedCount = await prisma.notification.deleteMany({
       where: { id: notificationId, userId },
     })
+
+    // If notification was deleted and was unread, update real-time count
+    if (deletedCount.count > 0) {
+      // If the deleted notification was unread, update the unread count
+      if (notification && !notification.isRead) {
+        const unreadCount = await prisma.notification.count({
+          where: { userId, isRead: false },
+        })
+
+        // Send real-time unread count update
+        realtimeNotificationService.sendUnreadCountToUser(userId, unreadCount)
+      }
+
+      // Clear analytics cache since a notification was deleted
+      notificationAnalyticsService.clearCache()
+
+      console.log(`Deleted notification ${notificationId} for user ${userId}`)
+    }
   }
 
   async getUnreadCount(userId: string): Promise<number> {
@@ -541,7 +612,9 @@ export class NotificationService {
         userIds.push(...systemUsers.map((u) => u.id))
     }
 
-    return userIds
+    // CRITICAL: Filter out banned users - they should not receive notifications
+    const filteredUserIds = await this.filterBannedUsers(userIds)
+    return filteredUserIds
   }
 
   private async getUsersWithMatchingPreferences(
@@ -567,6 +640,108 @@ export class NotificationService {
       where,
       select: { id: true },
     })
+  }
+
+  /**
+   * Filter out banned users from receiving notifications
+   * Banned users should not receive any notifications while their ban is active
+   */
+  private async filterBannedUsers(userIds: string[]): Promise<string[]> {
+    if (userIds.length === 0) return []
+
+    try {
+      // Get all users who have active bans
+      const bannedUserIds = await prisma.userBan.findMany({
+        where: {
+          userId: { in: userIds },
+          isActive: true,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        select: { userId: true },
+      })
+
+      const bannedUserIdsSet = new Set(bannedUserIds.map((ban) => ban.userId))
+
+      // Filter out banned users
+      const filteredUserIds = userIds.filter(
+        (userId) => !bannedUserIdsSet.has(userId),
+      )
+
+      if (bannedUserIds.length > 0) {
+        console.log(
+          `Filtered out ${bannedUserIds.length} banned users from notification targeting`,
+        )
+      }
+
+      return filteredUserIds
+    } catch (error) {
+      console.error('Error filtering banned users from notifications:', error)
+      // If we can't filter banned users, return all userIds to avoid breaking notifications entirely
+      // This is a fallback - in production, you might want to handle this differently
+      return userIds
+    }
+  }
+
+  /**
+   * Check for duplicate notifications to prevent spam
+   * Prevents the same notification from being sent multiple times for the same event
+   */
+  private async checkForDuplicateNotification(
+    userId: string,
+    notificationType: NotificationType,
+    _eventData: NotificationEventData,
+  ): Promise<boolean> {
+    try {
+      // Define deduplication window based on notification type
+      const deduplicationWindows: Record<NotificationType, number> = {
+        [NotificationType.LISTING_APPROVED]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.LISTING_REJECTED]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.LISTING_COMMENT]: 5 * 60 * 1000, // 5 minutes
+        [NotificationType.LISTING_VOTE_UP]: 15 * 60 * 1000, // 15 minutes
+        [NotificationType.LISTING_VOTE_DOWN]: 15 * 60 * 1000, // 15 minutes
+        [NotificationType.COMMENT_REPLY]: 5 * 60 * 1000, // 5 minutes
+        [NotificationType.USER_MENTION]: 5 * 60 * 1000, // 5 minutes
+        [NotificationType.NEW_DEVICE_LISTING]: 30 * 60 * 1000, // 30 minutes
+        [NotificationType.GAME_ADDED]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.EMULATOR_UPDATED]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.ROLE_CHANGED]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.CONTENT_FLAGGED]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.MAINTENANCE_NOTICE]: 24 * 60 * 60 * 1000, // 24 hours
+        [NotificationType.FEATURE_ANNOUNCEMENT]: 24 * 60 * 60 * 1000, // 24 hours
+        [NotificationType.NEW_SOC_LISTING]: 30 * 60 * 1000, // 30 minutes
+        [NotificationType.POLICY_UPDATE]: 24 * 60 * 60 * 1000, // 24 hours
+        [NotificationType.ACCOUNT_WARNING]: 60 * 60 * 1000, // 1 hour
+      }
+
+      const windowMs = deduplicationWindows[notificationType] || 30 * 60 * 1000 // Default: 30 minutes
+      const windowStart = new Date(Date.now() - windowMs)
+
+      // Check for existing similar notifications within the deduplication window
+      // For simplicity, we check by userId, type, and time window only
+      // This prevents rapid-fire duplicate notifications for the same user and type
+      const existingNotification = await prisma.notification.findFirst({
+        where: {
+          userId,
+          type: notificationType,
+          createdAt: { gte: windowStart },
+        },
+        select: { id: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      if (existingNotification) {
+        console.log(
+          `Duplicate notification detected for user ${userId}, type ${notificationType}, within ${windowMs / 1000}s window`,
+        )
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error('Error checking for duplicate notifications:', error)
+      // If we can't check for duplicates, allow the notification to prevent breaking functionality
+      return false
+    }
   }
 
   private async enrichContextWithData(
