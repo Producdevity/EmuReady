@@ -321,7 +321,16 @@ export const gamesRouter = createTRPCRouter({
             select: {
               id: true,
               status: true,
+              notes: true,
               createdAt: true,
+              deviceId: true,
+              gameId: true,
+              emulatorId: true,
+              performanceId: true,
+              authorId: true,
+              processedAt: true,
+              processedNotes: true,
+              processedByUserId: true,
               device: {
                 select: {
                   id: true,
@@ -351,7 +360,8 @@ export const gamesRouter = createTRPCRouter({
                 select: {
                   id: true,
                   name: true,
-                  email: canSeeBannedUsers,
+                  // Only expose email to moderators for privacy
+                  ...(canSeeBannedUsers && { email: true }),
                   // Include ban status for moderators to show banned user badge
                   ...(canSeeBannedUsers && {
                     userBans: {
@@ -381,34 +391,28 @@ export const gamesRouter = createTRPCRouter({
     .input(CheckExistingByTgdbIdsSchema)
     .query(async ({ ctx, input }) => {
       const existingGames = await ctx.prisma.game.findMany({
-        where: {
-          tgdbGameId: {
-            in: input.tgdbGameIds,
-          },
-        },
+        where: { tgdbGameId: { in: input.tgdbGameIds } },
         select: {
           id: true,
           tgdbGameId: true,
           title: true,
-          system: {
-            select: {
-              name: true,
-            },
-          },
+          system: { select: { name: true } },
         },
       })
 
       // Return a map for easy lookup
       return existingGames.reduce(
         (acc, game) => {
-          if (game.tgdbGameId) {
-            acc[game.tgdbGameId] = {
-              id: game.id,
-              title: game.title,
-              systemName: game.system.name,
-            }
-          }
-          return acc
+          return !game.tgdbGameId
+            ? acc
+            : {
+                ...acc,
+                [game.tgdbGameId]: {
+                  id: game.id,
+                  title: game.title,
+                  systemName: game.system.name,
+                },
+              }
         },
         {} as Record<number, { id: string; title: string; systemName: string }>,
       )
@@ -421,14 +425,11 @@ export const gamesRouter = createTRPCRouter({
         where: { id: input.systemId },
       })
 
-      if (!system) ResourceError.system.notFound()
+      if (!system) return ResourceError.system.notFound()
 
       // Check if game with same title already exists for this system
       const existingGame = await ctx.prisma.game.findFirst({
-        where: {
-          title: input.title,
-          systemId: input.systemId,
-        },
+        where: { title: input.title, systemId: input.systemId },
       })
 
       if (existingGame) {
@@ -461,12 +462,7 @@ export const gamesRouter = createTRPCRouter({
           },
           include: {
             system: true,
-            submitter: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            submitter: { select: { id: true, name: true } },
           },
         })
 
@@ -478,7 +474,7 @@ export const gamesRouter = createTRPCRouter({
         if (
           isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
         ) {
-          ResourceError.game.alreadyExists(input.title, system!.name)
+          return ResourceError.game.alreadyExists(input.title, system!.name)
         }
         throw error
       }
@@ -755,14 +751,15 @@ export const gamesRouter = createTRPCRouter({
           return AppError.badRequest('No valid pending games found to reject')
         }
 
-        // Rejecte all games to
+        // Reject all games to
         await tx.game.updateMany({
           where: { id: { in: gamesToReject.map((g) => g.id) } },
           data: {
             status: ApprovalStatus.REJECTED,
             approvedBy: adminUserId,
             approvedAt: new Date(),
-            // Note: There's no rejectionNotes field in the schema, but we could add it
+            // TODO: Add rejectionNotes
+            // Note: There's no rejectionNotes field in the schema, we should add it
           },
         })
 
