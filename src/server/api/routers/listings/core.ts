@@ -27,6 +27,7 @@ import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
@@ -203,6 +204,22 @@ export const coreRouter = createTRPCRouter({
         combinedFilters.game = { is: gameFilter }
       }
 
+      // Shadow ban logic: Hide listings from banned users for non-moderators
+      const userRole = ctx.session?.user?.role
+      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
+
+      if (!canSeeBannedUsers) {
+        // For regular users, exclude listings from banned users
+        combinedFilters.author = {
+          userBans: {
+            none: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+          },
+        }
+      }
+
       const total = await ctx.prisma.listing.count({ where: combinedFilters })
 
       // Build orderBy based on sortField and sortDirection
@@ -255,7 +272,24 @@ export const coreRouter = createTRPCRouter({
             device: { include: { brand: true, soc: true } },
             emulator: true,
             performance: true,
-            author: { select: { id: true, name: true } },
+            author: {
+              select: {
+                id: true,
+                name: true,
+                userBans: canSeeBannedUsers
+                  ? {
+                      where: {
+                        isActive: true,
+                        OR: [
+                          { expiresAt: null },
+                          { expiresAt: { gt: new Date() } },
+                        ],
+                      },
+                      select: { id: true, reason: true, bannedAt: true },
+                    }
+                  : false,
+              },
+            },
             _count: { select: { votes: true, comments: true } },
             votes: ctx.session
               ? {
@@ -379,7 +413,24 @@ export const coreRouter = createTRPCRouter({
           device: { include: { brand: true, soc: true } },
           emulator: true,
           performance: true,
-          author: { select: { id: true, name: true } },
+          author: {
+            select: {
+              id: true,
+              name: true,
+              userBans: canSeeBannedUsers
+                ? {
+                    where: {
+                      isActive: true,
+                      OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
+                      ],
+                    },
+                    select: { id: true, reason: true, bannedAt: true },
+                  }
+                : false,
+            },
+          },
           _count: { select: { votes: true, comments: true } },
           votes: ctx.session
             ? {
@@ -577,6 +628,35 @@ export const coreRouter = createTRPCRouter({
           canAutoApprove || isAuthorOrHigher
             ? ApprovalStatus.APPROVED
             : ApprovalStatus.PENDING
+
+        // Validate that the game's system is compatible with the chosen emulator
+        const gameForValidation = await tx.game.findUnique({
+          where: { id: gameId },
+          select: { systemId: true },
+        })
+
+        if (!gameForValidation) {
+          throw ResourceError.game.notFound()
+        }
+
+        const emulator = await tx.emulator.findUnique({
+          where: { id: emulatorId },
+          include: { systems: { select: { id: true } } },
+        })
+
+        if (!emulator) {
+          throw ResourceError.emulator.notFound()
+        }
+
+        const isSystemCompatible = emulator.systems.some(
+          (system) => system.id === gameForValidation.systemId,
+        )
+
+        if (!isSystemCompatible) {
+          throw AppError.badRequest(
+            "The selected emulator does not support this game's system",
+          )
+        }
 
         const newListing = await tx.listing.create({
           data: {

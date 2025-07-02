@@ -71,6 +71,15 @@ model User {
   verifiedDeveloperFor        VerifiedDeveloper[] @relation("UserVerifiedDeveloper")
   verifiedDeveloperBy         VerifiedDeveloper[] @relation("VerifiedBy")
   developerVerifications      ListingDeveloperVerification[]
+  // Permission system relations
+  assignedRolePermissions     RolePermission[]
+  permissionActionLogs        PermissionActionLog[]
+  // Report and ban system relations
+  reportsSubmitted            ListingReport[]  @relation("UserReports")
+  reportsReviewed             ListingReport[]  @relation("ReportsReviewed")
+  userBans                    UserBan[]        @relation("UserBans")
+  bansCreated                 UserBan[]        @relation("BansCreated")
+  bansLifted                  UserBan[]        @relation("BansLifted")
 }
 
 model UserDevicePreference {
@@ -275,6 +284,7 @@ model Listing {
   customFieldValues     ListingCustomFieldValue[]
   notificationPrefs     ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
+  reports               ListingReport[]
 
   @@index([processedByUserId])
 }
@@ -499,6 +509,72 @@ model TrustActionLog {
   @@map("trust_action_logs")
 }
 
+// Permission System Models
+model Permission {
+  id          String           @id @default(uuid())
+  key         String           @unique // Unique identifier like "approve_listings"
+  label       String           // Display name like "Approve Listings"
+  description String?          // Detailed explanation of what this permission does
+  category    String?          // Category like "CONTENT", "USER_MANAGEMENT", "SYSTEM"
+  isSystem    Boolean          @default(false) // System permissions that cannot be deleted
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  rolePermissions RolePermission[]
+  actionLogs     PermissionActionLog[]
+
+  @@index([category])
+  @@index([isSystem])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role
+  permissionId String
+  assignedBy   String?    // UserId who assigned this permission
+  assignedAt   DateTime   @default(now())
+  
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  assignedByUser User?    @relation(fields: [assignedBy], references: [id], onDelete: SetNull)
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model PermissionActionLog {
+  id           String                   @id @default(uuid())
+  userId       String
+  action       PermissionActionType
+  targetRole   Role?                   // For role-permission assignments
+  permissionId String?                 // For permission-related actions
+  metadata     Json?                   // Additional context (old values, etc.)
+  createdAt    DateTime                @default(now())
+  
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission?             @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([targetRole])
+  @@index([permissionId])
+  @@map("permission_action_logs")
+}
+
+enum PermissionActionType {
+  PERMISSION_CREATED
+  PERMISSION_UPDATED
+  PERMISSION_DELETED
+  ROLE_PERMISSION_ASSIGNED
+  ROLE_PERMISSION_REMOVED
+  USER_ROLE_CHANGED
+  
+  @@map("permission_action_type")
+}
+
 model VerifiedDeveloper {
   id          String   @id @default(uuid())
   userId      String
@@ -531,4 +607,72 @@ model ListingDeveloperVerification {
   @@index([listingId])
   @@index([verifiedBy])
   @@map("listing_developer_verifications")
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT
+  SPAM
+  MISLEADING_INFORMATION
+  FAKE_LISTING
+  COPYRIGHT_VIOLATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+model ListingReport {
+  id              String       @id @default(uuid())
+  listingId       String
+  reportedById    String
+  reason          ReportReason
+  description     String?
+  status          ReportStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  listing         Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reportedBy      User         @relation("UserReports", fields: [reportedById], references: [id], onDelete: Cascade)
+  reviewedBy      User?        @relation("ReportsReviewed", fields: [reviewedById], references: [id])
+  
+  @@unique([listingId, reportedById])
+  @@index([listingId])
+  @@index([reportedById])
+  @@index([reviewedById])
+  @@index([status])
+  @@index([createdAt])
+  @@map("listing_reports")
+}
+
+model UserBan {
+  id           String    @id @default(uuid())
+  userId       String
+  bannedById   String
+  reason       String
+  notes        String?
+  isActive     Boolean   @default(true)
+  bannedAt     DateTime  @default(now())
+  expiresAt    DateTime?
+  unbannedAt   DateTime?
+  unbannedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  user         User      @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
+  bannedBy     User      @relation("BansCreated", fields: [bannedById], references: [id])
+  unbannedBy   User?     @relation("BansLifted", fields: [unbannedById], references: [id])
+  
+  @@index([userId])
+  @@index([bannedById])
+  @@index([isActive])
+  @@index([bannedAt])
+  @@index([expiresAt])
+  @@map("user_bans")
 }

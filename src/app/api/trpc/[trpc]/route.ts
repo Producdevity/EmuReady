@@ -1,44 +1,14 @@
-import { auth } from '@clerk/nextjs/server'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
-import { prisma } from '@/server/db'
+import { createAppRouterTRPCContext } from '@/server/api/trpc'
 
 const handler = async (req: NextRequest) => {
   return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: async () => {
-      const { userId } = await auth()
-
-      let session = null
-
-      if (userId) {
-        // Fetch user data from database using clerkId
-        const user = await prisma.user.findUnique({
-          where: { clerkId: userId },
-          select: { id: true, email: true, name: true, role: true },
-        })
-
-        if (user) {
-          session = {
-            user: {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-            },
-          }
-        }
-      }
-
-      return {
-        session,
-        prisma,
-        headers: new Headers(req.headers),
-      }
-    },
+    createContext: createAppRouterTRPCContext,
     onError:
       process.env.NODE_ENV === 'development'
         ? ({ path, error }) => {

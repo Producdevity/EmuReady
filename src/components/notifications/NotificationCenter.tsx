@@ -39,8 +39,7 @@ function NotificationCenter(props: Props) {
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onSuccess: () => {
-      utils.notifications.get.invalidate().catch(console.error)
-      utils.notifications.getUnreadCount.invalidate().catch(console.error)
+      invalidateNotifications()
     },
     onError: (error) => {
       toast.error(`Failed to mark as read: ${getErrorMessage(error)}`)
@@ -49,8 +48,7 @@ function NotificationCenter(props: Props) {
 
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
-      utils.notifications.get.invalidate().catch(console.error)
-      utils.notifications.getUnreadCount.invalidate().catch(console.error)
+      invalidateNotifications()
       toast.success('All notifications marked as read')
     },
     onError: (error) => {
@@ -60,14 +58,18 @@ function NotificationCenter(props: Props) {
 
   const deleteMutation = api.notifications.delete.useMutation({
     onSuccess: () => {
-      utils.notifications.get.invalidate().catch(console.error)
-      utils.notifications.getUnreadCount.invalidate().catch(console.error)
+      invalidateNotifications()
       toast.success('Notification deleted')
     },
     onError: (error) => {
       toast.error(`Failed to delete notification: ${getErrorMessage(error)}`)
     },
   })
+
+  const invalidateNotifications = () => {
+    utils.notifications.get.refetch().catch(console.error)
+    utils.notifications.getUnreadCount.invalidate().catch(console.error)
+  }
 
   const handleMarkAsRead = async (notificationId: string) => {
     setIsLoading(true)

@@ -7,6 +7,7 @@ import { useState } from 'react'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForVote } from '@/lib/captcha/hooks'
+import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import VotingHelpModal from './VotingHelpModal'
 
@@ -44,7 +45,7 @@ function VoteButtons(props: Props) {
 
   const handleVote = async (value: boolean) => {
     if (!isAuthenticated) {
-      // TODO: Redirect to login or show a login prompt
+      toast.info('Please sign in to verify this listing')
       return
     }
 
@@ -58,7 +59,7 @@ function VoteButtons(props: Props) {
     const previousVote = optimisticVote
     let finalVoteValue: boolean | null = value
 
-    // If same vote clicked, we're removing the vote (toggle behavior)
+    // If the same vote clicked, we're removing the vote (toggle behavior)
     if (optimisticVote === value) {
       finalVoteValue = null
     }
@@ -79,7 +80,7 @@ function VoteButtons(props: Props) {
 
     // Handling previous vote state
     if (optimisticVote !== null) {
-      // If same vote clicked, we're removing the vote (toggle behavior)
+      // If the same vote clicked, we're removing the vote (toggle behavior)
       if (optimisticVote === value) {
         // If upvote is being removed
         if (value) {
@@ -194,7 +195,12 @@ function VoteButtons(props: Props) {
         {!isAuthenticated && (
           <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
             <SignInButton mode="modal">
-              <button className="text-blue-500 hover:underline">Sign in</button>
+              <button
+                className="text-blue-500 hover:underline"
+                data-clerk-sign-in-trigger
+              >
+                Sign in
+              </button>
             </SignInButton>{' '}
             to verify
           </div>

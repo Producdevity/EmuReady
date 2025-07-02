@@ -35,6 +35,18 @@ function getClientIdentifier(req: NextRequest): string {
 
 function checkRateLimit(identifier: string): boolean {
   const now = Date.now()
+
+  // Clean up expired entries to prevent memory leaks
+  // Only clean every 100 requests to avoid performance impact
+  if (Math.random() < 0.01) {
+    // 1% chance per request
+    for (const [key, value] of rateLimitMap.entries()) {
+      if (now > value.resetTime) {
+        rateLimitMap.delete(key)
+      }
+    }
+  }
+
   const userLimit = rateLimitMap.get(identifier)
 
   if (!userLimit || now > userLimit.resetTime) {
@@ -58,16 +70,25 @@ function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
 
-  // Allow requests from valid origins
-  if (origin && ALLOWED_ORIGINS.some((allowed) => origin.startsWith(allowed))) {
+  // Helper function to check if a URL exactly matches an allowed origin
+  const isExactOriginMatch = (url: string): boolean => {
+    try {
+      const urlObj = new URL(url)
+      const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+      return ALLOWED_ORIGINS.includes(baseUrl)
+    } catch {
+      // Invalid URL, check for exact string match
+      return ALLOWED_ORIGINS.includes(url)
+    }
+  }
+
+  // Allow requests from valid origins (exact match)
+  if (origin && isExactOriginMatch(origin)) {
     return true
   }
 
-  // Allow requests with valid referer
-  if (
-    referer &&
-    ALLOWED_ORIGINS.some((allowed) => referer.startsWith(allowed))
-  ) {
+  // Allow requests with valid referer (exact match)
+  if (referer && isExactOriginMatch(referer)) {
     return true
   }
 

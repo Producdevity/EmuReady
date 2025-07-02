@@ -26,15 +26,16 @@ import {
   BulkActions,
   LoadingSpinner,
   DisplayToggleButton,
-} from '@/components/ui'
-import {
   ApproveButton,
   RejectButton,
   ViewButton,
-} from '@/components/ui/table-buttons'
+} from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import {
+  useLocalStorage,
+  useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -286,7 +287,6 @@ function GameApprovalsPage() {
             },
           ]}
           isLoading={gameStatsQuery.isLoading}
-          className="mb-6"
         />
       )}
 

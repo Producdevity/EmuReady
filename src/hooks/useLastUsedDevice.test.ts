@@ -1,11 +1,11 @@
 import { renderHook, act } from '@testing-library/react'
 import { vi, describe, beforeEach, it, expect } from 'vitest'
 import { useLastUsedDevice } from './useLastUsedDevice'
-import mockUseLocalStorage from './useLocalStorage'
+import { useLocalStorage } from './useLocalStorage'
 import type { DeviceOption } from '@/app/listings/components/shared'
 
 vi.mock('./useLocalStorage', () => ({
-  default: vi.fn(() => [null, vi.fn(), true]),
+  useLocalStorage: vi.fn(() => [null, vi.fn(), true]),
 }))
 
 describe('useLastUsedDevice', () => {
@@ -14,7 +14,7 @@ describe('useLastUsedDevice', () => {
   })
 
   it('should return initial state with no device', () => {
-    vi.mocked(mockUseLocalStorage).mockReturnValue([null, vi.fn(), true])
+    vi.mocked(useLocalStorage).mockReturnValue([null, vi.fn(), true])
 
     const { result } = renderHook(() => useLastUsedDevice())
 
@@ -24,7 +24,7 @@ describe('useLastUsedDevice', () => {
   })
 
   it('should return loading state when not hydrated', () => {
-    vi.mocked(mockUseLocalStorage).mockReturnValue([null, vi.fn(), false])
+    vi.mocked(useLocalStorage).mockReturnValue([null, vi.fn(), false])
 
     const { result } = renderHook(() => useLastUsedDevice())
 
@@ -39,7 +39,7 @@ describe('useLastUsedDevice', () => {
       soc: { id: 'soc-1', name: 'Zen 2', manufacturer: 'AMD' },
     }
 
-    vi.mocked(mockUseLocalStorage).mockReturnValue([mockDevice, vi.fn(), true])
+    vi.mocked(useLocalStorage).mockReturnValue([mockDevice, vi.fn(), true])
 
     const { result } = renderHook(() => useLastUsedDevice())
 
@@ -49,7 +49,7 @@ describe('useLastUsedDevice', () => {
 
   it('should allow setting a new device', async () => {
     const mockSetDevice = vi.fn()
-    vi.mocked(mockUseLocalStorage).mockReturnValue([null, mockSetDevice, true])
+    vi.mocked(useLocalStorage).mockReturnValue([null, mockSetDevice, true])
 
     const mockDevice: DeviceOption = {
       id: 'device-2',
@@ -69,7 +69,7 @@ describe('useLastUsedDevice', () => {
 
   it('should allow clearing the device', async () => {
     const mockSetDevice = vi.fn()
-    vi.mocked(mockUseLocalStorage).mockReturnValue([null, mockSetDevice, true])
+    vi.mocked(useLocalStorage).mockReturnValue([null, mockSetDevice, true])
 
     const { result } = renderHook(() => useLastUsedDevice())
 

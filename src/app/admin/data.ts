@@ -89,6 +89,18 @@ export const superAdminNavItems: AdminNavItem[] = [
     description: 'View all processed listings.',
   },
   {
+    href: '/admin/reports',
+    label: 'Reports',
+    exact: true,
+    description: 'Review and manage user reports.',
+  },
+  {
+    href: '/admin/user-bans',
+    label: 'User Bans',
+    exact: true,
+    description: 'Manage user bans and suspensions.',
+  },
+  {
     href: '/admin/custom-field-templates',
     label: 'Field Templates',
     exact: false,
@@ -99,6 +111,18 @@ export const superAdminNavItems: AdminNavItem[] = [
     label: 'Trust Logs',
     exact: true,
     description: 'Monitor trust system activity and scores.',
+  },
+  {
+    href: '/admin/permissions',
+    label: 'Permissions',
+    exact: false,
+    description: 'Manage roles and permissions.',
+  },
+  {
+    href: '/admin/permission-logs',
+    label: 'Permission Logs',
+    exact: true,
+    description: 'Monitor permission changes and audit trail.',
   },
 ]
 
@@ -132,6 +156,18 @@ export const moderatorNavItems: AdminNavItem[] = [
     label: 'Listing Approvals',
     exact: true,
     description: 'Manage listing approvals.',
+  },
+  {
+    href: '/admin/reports',
+    label: 'Reports',
+    exact: true,
+    description: 'Review and manage user reports.',
+  },
+  {
+    href: '/admin/user-bans',
+    label: 'User Bans',
+    exact: true,
+    description: 'Manage user bans and suspensions.',
   },
 ]
 

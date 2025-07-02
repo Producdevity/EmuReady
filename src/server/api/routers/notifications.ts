@@ -23,9 +23,9 @@ export const notificationsRouter = createTRPCRouter({
       )
     }),
 
-  getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
-    return notificationService.getUnreadCount(ctx.session.user.id)
-  }),
+  getUnreadCount: protectedProcedure.query(async ({ ctx }) =>
+    notificationService.getUnreadCount(ctx.session.user.id),
+  ),
 
   markAsRead: protectedProcedure
     .input(MarkAsReadSchema)

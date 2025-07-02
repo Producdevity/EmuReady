@@ -13,26 +13,27 @@ import {
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
-  Button,
-  Input,
-  SelectInput,
-  ColumnVisibilityControl,
-  SortableHeader,
   ApprovalStatusBadge,
-  Pagination,
-  LoadingSpinner,
-  useConfirmDialog,
-  DisplayToggleButton,
-} from '@/components/ui'
-import {
+  Button,
+  ColumnVisibilityControl,
   DeleteButton,
+  DisplayToggleButton,
   EditButton,
+  Input,
+  LoadingSpinner,
+  Pagination,
+  SelectInput,
+  SortableHeader,
   ViewButton,
-} from '@/components/ui/table-buttons'
+  useConfirmDialog,
+} from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
-import useEmulatorLogos from '@/hooks/useEmulatorLogos'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import {
+  useEmulatorLogos,
+  useLocalStorage,
+  useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
@@ -208,7 +209,6 @@ function AdminListingsPage() {
             },
           ]}
           isLoading={listingStatsQuery.isLoading}
-          className="mb-6"
         />
       )}
 

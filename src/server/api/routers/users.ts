@@ -10,17 +10,21 @@ import {
   DeleteUserSchema,
 } from '@/schemas/user'
 import {
-  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
+  permissionProcedure,
 } from '@/server/api/trpc'
 import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { updateUserRole } from '@/server/utils/roleSync'
-import { hasPermission } from '@/utils/permissions'
+import {
+  hasPermissionInContext,
+  PERMISSIONS,
+  roleIncludesRole,
+} from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
 import { Role } from '@orm'
 import type { Prisma } from '@orm'
@@ -34,6 +38,7 @@ export const usersRouter = createTRPCRouter({
       email: ctx.session.user.email,
       name: ctx.session.user.name,
       role: ctx.session.user.role,
+      permissions: ctx.session.user.permissions,
     }
   }),
 
@@ -447,7 +452,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Admin-only routes
-  getAll: adminProcedure
+  getAll: permissionProcedure(PERMISSIONS.MANAGE_USERS)
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -539,28 +544,30 @@ export const usersRouter = createTRPCRouter({
       }
     }),
 
-  getStats: adminProcedure.query(async ({ ctx }) => {
-    const [total, userCount, authorCount, adminCount, superAdminCount] =
-      await Promise.all([
-        ctx.prisma.user.count(),
-        ctx.prisma.user.count({ where: { role: 'USER' } }),
-        ctx.prisma.user.count({ where: { role: 'AUTHOR' } }),
-        ctx.prisma.user.count({ where: { role: 'ADMIN' } }),
-        ctx.prisma.user.count({ where: { role: 'SUPER_ADMIN' } }),
-      ])
+  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
+    async ({ ctx }) => {
+      const [total, userCount, authorCount, adminCount, superAdminCount] =
+        await Promise.all([
+          ctx.prisma.user.count(),
+          ctx.prisma.user.count({ where: { role: 'USER' } }),
+          ctx.prisma.user.count({ where: { role: 'AUTHOR' } }),
+          ctx.prisma.user.count({ where: { role: 'ADMIN' } }),
+          ctx.prisma.user.count({ where: { role: 'SUPER_ADMIN' } }),
+        ])
 
-    return {
-      total,
-      byRole: {
-        user: userCount,
-        author: authorCount,
-        admin: adminCount,
-        superAdmin: superAdminCount,
-      },
-    }
-  }),
+      return {
+        total,
+        byRole: {
+          user: userCount,
+          author: authorCount,
+          admin: adminCount,
+          superAdmin: superAdminCount,
+        },
+      }
+    },
+  ),
 
-  updateRole: adminProcedure
+  updateRole: permissionProcedure(PERMISSIONS.CHANGE_USER_ROLES)
     .input(UpdateUserRoleSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, role } = input
@@ -577,26 +584,26 @@ export const usersRouter = createTRPCRouter({
       // Prevent self-demotion from admin roles
       if (
         userId === ctx.session.user.id &&
-        hasPermission(currentUserRole, Role.ADMIN) &&
-        !hasPermission(role, Role.ADMIN)
+        roleIncludesRole(currentUserRole, Role.ADMIN) &&
+        !roleIncludesRole(role, Role.ADMIN)
       ) {
         ResourceError.user.cannotDemoteSelf()
       }
 
-      // Only SUPER_ADMIN can modify SUPER_ADMIN users
+      // Only users with MODIFY_SUPER_ADMIN_USERS permission can modify SUPER_ADMIN users
       if (
         targetUser.role === Role.SUPER_ADMIN &&
-        !hasPermission(currentUserRole, Role.SUPER_ADMIN)
+        !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+        AppError.forbidden('You need permission to modify super admin users')
       }
 
-      // Only SUPER_ADMIN can assign SUPER_ADMIN role
+      // Only users with MODIFY_SUPER_ADMIN_USERS permission can assign SUPER_ADMIN role
       if (
         role === Role.SUPER_ADMIN &&
-        !hasPermission(currentUserRole, Role.SUPER_ADMIN)
+        !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+        AppError.forbidden('You need permission to assign super admin role')
       }
 
       // Use the role sync utility to update both database and Clerk
@@ -631,7 +638,7 @@ export const usersRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: permissionProcedure(PERMISSIONS.MANAGE_USERS)
     .input(DeleteUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId } = input
@@ -644,7 +651,7 @@ export const usersRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  searchUsers: adminProcedure
+  searchUsers: permissionProcedure(PERMISSIONS.MANAGE_USERS)
     .input(
       z.object({
         query: z.string().optional(),

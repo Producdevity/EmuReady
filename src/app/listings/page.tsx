@@ -19,12 +19,16 @@ import {
   TooltipContent,
   DisplayToggleButton,
   VerifiedDeveloperBadge,
+  EditButton,
+  ViewButton,
 } from '@/components/ui'
-import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
-import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
-import useEmulatorLogos from '@/hooks/useEmulatorLogos'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import {
+  useEmulatorLogos,
+  useLocalStorage,
+  useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'
@@ -119,9 +123,12 @@ function ListingsPage() {
   }
 
   const systemsQuery = api.systems.get.useQuery()
+  // TODO: find a better alternative to hardcoding 10000 for devices
   const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
+  // TODO: find a better alternative to hardcoding 10000 for SoCs
   const socsQuery = api.socs.get.useQuery({ limit: 10000 })
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 10000 })
+  // TODO: find a better alternative to hardcoding 200 for emulators
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 200 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {

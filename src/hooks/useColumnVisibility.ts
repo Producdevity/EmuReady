@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import toggleInSet from '@/utils/toggleInSet'
-import useLocalStorage from './useLocalStorage'
+import { useLocalStorage } from './useLocalStorage'
 
 export interface ColumnDefinition {
   key: string

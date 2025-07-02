@@ -1,7 +1,7 @@
 import storageKeys from '@/data/storageKeys'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 
-function useEmulatorLogos() {
+export function useEmulatorLogos() {
   const [showEmulatorLogos, setShowEmulatorLogos, isHydrated] = useLocalStorage(
     storageKeys.showEmulatorLogos,
     true,
@@ -14,5 +14,3 @@ function useEmulatorLogos() {
     toggleEmulatorLogos: () => setShowEmulatorLogos(!showEmulatorLogos),
   }
 }
-
-export default useEmulatorLogos

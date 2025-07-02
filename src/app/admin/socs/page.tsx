@@ -14,12 +14,10 @@ import {
   SortableHeader,
   useConfirmDialog,
   LoadingSpinner,
-} from '@/components/ui'
-import {
   DeleteButton,
   EditButton,
   ViewButton,
-} from '@/components/ui/table-buttons'
+} from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -140,7 +138,6 @@ function AdminSoCsPage() {
 
       {socsStatsQuery.data && (
         <AdminStatsDisplay
-          className="mb-6"
           stats={[
             {
               label: 'Total',
@@ -158,6 +155,7 @@ function AdminSoCsPage() {
               color: 'gray',
             },
           ]}
+          isLoading={socsStatsQuery.isLoading}
         />
       )}
 

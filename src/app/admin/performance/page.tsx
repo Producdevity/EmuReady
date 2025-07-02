@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
@@ -9,18 +10,26 @@ import {
 } from '@/components/admin'
 import {
   Button,
-  LoadingSpinner,
   ColumnVisibilityControl,
+  DeleteButton,
+  EditButton,
+  LoadingSpinner,
   SortableHeader,
   useConfirmDialog,
 } from '@/components/ui'
-import { EditButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import PerformanceScaleModal from './components/PerformanceScaleModal'
+import ReplacementSelectionModal from './components/ReplacementSelectionModal'
+import {
+  type PerformanceScale,
+  type PerformanceModalState,
+  type ReplacementModalState,
+} from './types'
 
 type PerformanceScaleSortField = 'label' | 'rank'
 
@@ -34,21 +43,29 @@ const PERFORMANCE_COLUMNS: ColumnDefinition[] = [
 
 function AdminPerformancePage() {
   const table = useAdminTable<PerformanceScaleSortField>({ defaultLimit: 20 })
-
+  const confirm = useConfirmDialog()
+  const utils = api.useUtils()
   const columnVisibility = useColumnVisibility(PERFORMANCE_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminPerformance,
   })
 
+  const [performanceModal, setPerformanceModal] =
+    useState<PerformanceModalState>({ isOpen: false })
+
+  const [replacementModal, setReplacementModal] =
+    useState<ReplacementModalState>({
+      isOpen: false,
+      scaleToDelete: null,
+    })
+
+  const performanceStatsQuery = api.performanceScales.getStats.useQuery()
   const performanceScalesQuery = api.performanceScales.get.useQuery({
     search: table.search || undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
   })
 
-  const performanceStatsQuery = api.performanceScales.getStats.useQuery()
-
   const performanceScales = performanceScalesQuery.data ?? []
-  const utils = api.useUtils()
 
   const deletePerformanceScale = api.performanceScales.delete.useMutation({
     onSuccess: () => {
@@ -61,24 +78,25 @@ function AdminPerformancePage() {
     },
   })
 
-  const confirm = useConfirmDialog()
-
-  const openModal = (_scale?: { id: number }) => {
-    // TODO: Implement modal functionality
-    console.log('Open modal for editing performance scale')
+  const handleCreate = () => {
+    setPerformanceModal({ isOpen: true })
   }
 
-  const handleDelete = async (id: number) => {
+  const handleEdit = (scale: PerformanceScale) => {
+    setPerformanceModal({ isOpen: true, scale })
+  }
+
+  const handleDelete = async (scale: PerformanceScale) => {
     const confirmed = await confirm({
       title: 'Delete Performance Scale',
-      description:
-        'Are you sure you want to delete this performance scale? This action cannot be undone.',
+      description: `Are you sure you want to delete "${scale.label}"? This action cannot be undone.`,
     })
 
     if (!confirmed) return
 
+    // Try to delete directly first
     deletePerformanceScale.mutate({
-      id,
+      id: scale.id,
     } satisfies RouterInput['performanceScales']['delete'])
   }
 
@@ -94,7 +112,7 @@ function AdminPerformancePage() {
             columns={PERFORMANCE_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          <Button onClick={() => openModal()}>Add Performance Scale</Button>
+          <Button onClick={handleCreate}>Add Performance Scale</Button>
         </>
       }
     >
@@ -118,7 +136,6 @@ function AdminPerformancePage() {
             },
           ]}
           isLoading={performanceStatsQuery.isLoading}
-          className="mb-6"
         />
       )}
 
@@ -210,11 +227,11 @@ function AdminPerformancePage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <EditButton
-                            onClick={() => openModal(scale)}
+                            onClick={() => handleEdit(scale)}
                             title="Edit Performance Scale"
                           />
                           <DeleteButton
-                            onClick={() => handleDelete(scale.id)}
+                            onClick={() => handleDelete(scale)}
                             title="Delete Performance Scale"
                             isLoading={deletePerformanceScale.isPending}
                             disabled={deletePerformanceScale.isPending}
@@ -229,6 +246,32 @@ function AdminPerformancePage() {
           </div>
         )}
       </AdminTableContainer>
+
+      <PerformanceScaleModal
+        isOpen={performanceModal.isOpen}
+        onClose={() => setPerformanceModal({ isOpen: false })}
+        editId={performanceModal.scale?.id || null}
+        scale={performanceModal.scale}
+        onSuccess={() => {
+          setPerformanceModal({ isOpen: false })
+          utils.performanceScales.get.invalidate().catch(console.error)
+          utils.performanceScales.getStats.invalidate().catch(console.error)
+        }}
+      />
+
+      <ReplacementSelectionModal
+        isOpen={replacementModal.isOpen}
+        onClose={() =>
+          setReplacementModal({ isOpen: false, scaleToDelete: null })
+        }
+        scaleToDelete={replacementModal.scaleToDelete}
+        onSuccess={() => {
+          setReplacementModal({ isOpen: false, scaleToDelete: null })
+          utils.performanceScales.get.invalidate().catch(console.error)
+          utils.performanceScales.getStats.invalidate().catch(console.error)
+          toast.success('Performance scale deleted successfully!')
+        }}
+      />
     </AdminPageLayout>
   )
 }

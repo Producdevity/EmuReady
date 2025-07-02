@@ -7,20 +7,18 @@ import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
 import { AdminTableContainer } from '@/components/admin'
 import {
-  Button,
-  Input,
-  SortableHeader,
   Badge,
+  Button,
   ColumnVisibilityControl,
+  DeleteButton,
+  Input,
   LoadingSpinner,
   Pagination,
-  useConfirmDialog,
-} from '@/components/ui'
-import {
-  DeleteButton,
+  SortableHeader,
   TableButton,
   ViewButton,
-} from '@/components/ui/table-buttons'
+  useConfirmDialog,
+} from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'

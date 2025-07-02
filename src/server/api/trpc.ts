@@ -8,6 +8,8 @@ import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
+import { type Nullable } from '@/types/utils'
+import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
@@ -16,13 +18,12 @@ type User = {
   email: string | null
   name: string | null
   role: Role
+  permissions: string[] // Array of permission keys
 }
 
 type Session = {
   user: User
 }
-
-type Nullable<T> = T | null
 
 type CreateContextOptions = {
   session: Nullable<Session>
@@ -38,49 +39,118 @@ const createInnerTRPCContext = (
   }
 }
 
+/**
+ * Creates a session from a Clerk user ID, with auto-creation fallback
+ */
+async function createSessionFromClerkUserId(
+  userId: string,
+): Promise<Nullable<Session>> {
+  // Find user in database - they should exist due to webhook sync
+  let user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { id: true, email: true, name: true, role: true },
+  })
+
+  // If the user doesn't exist, create them automatically
+  // This handles cases where webhooks aren't configured or during development
+  if (!user) {
+    try {
+      // Get user info from Clerk
+      const clerkUser = await fetch(
+        `https://api.clerk.com/v1/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+          },
+        },
+      )
+
+      if (clerkUser.ok) {
+        const clerkData = await clerkUser.json()
+        const primaryEmail =
+          clerkData.email_addresses?.find(
+            (email: { id: string; email_address: string }) =>
+              email.id === clerkData.primary_email_address_id,
+          ) || clerkData.email_addresses?.[0]
+
+        if (primaryEmail) {
+          console.log(
+            `🔧 Auto-creating user with clerkId ${userId} in database`,
+          )
+          user = await prisma.user.create({
+            data: {
+              clerkId: userId,
+              email: primaryEmail.email_address,
+              name: clerkData.username || clerkData.first_name || null,
+              profileImage: clerkData.image_url || null,
+              role: Role.USER, // Default role
+            },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+            },
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to auto-create user:', error)
+    }
+
+    // If we still don't have a user, show appropriate warning
+    if (!user) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          `🔧 Dev mode: User with clerkId ${userId} not found in database and auto-creation failed.`,
+        )
+        console.warn(
+          '   Either run the seeder (npx prisma db seed) or set up webhooks for auto-sync.',
+        )
+      } else {
+        console.warn(
+          `User with clerkId ${userId} not found in database and auto-creation failed. Check webhook configuration.`,
+        )
+      }
+    }
+  }
+
+  if (!user) {
+    return null
+  }
+
+  // Fetch user permissions based on their role
+  const rolePermissions = await prisma.rolePermission.findMany({
+    where: { role: user.role },
+    include: {
+      permission: {
+        select: {
+          key: true,
+        },
+      },
+    },
+  })
+
+  const permissions = rolePermissions.map((rp) => rp.permission.key)
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      permissions,
+    },
+  }
+}
+
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { userId } = await auth()
 
   let session: Nullable<Session> = null
 
   if (userId) {
-    // Find user in database - they should exist due to webhook sync
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
-    })
-
-    if (user) {
-      session = {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
-      }
-    } else {
-      // User not found in database - this shouldn't happen with webhooks
-      // In development, this is common when webhooks aren't set up
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(
-          `🔧 Dev mode: User with clerkId ${userId} not found in database.`,
-        )
-        console.warn(
-          '   Either run the seeder (npx prisma db seed) or set up webhooks for auto-sync.',
-        )
-        console.warn('   See DEVELOPMENT_SETUP.md for details.')
-      } else {
-        console.warn(
-          `User with clerkId ${userId} not found in database. Check webhook configuration.`,
-        )
-      }
-    }
+    session = await createSessionFromClerkUserId(userId)
   }
 
   // Initialize notification service
@@ -90,6 +160,28 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
     session,
     headers: new Headers(opts.req.headers as Record<string, string>),
   })
+}
+
+/**
+ * App Router version of context creation (for /api/trpc/[trpc]/route.ts)
+ */
+export const createAppRouterTRPCContext = async () => {
+  const { userId } = await auth()
+
+  let session: Nullable<Session> = null
+
+  if (userId) {
+    session = await createSessionFromClerkUserId(userId)
+  }
+
+  // Initialize notification service
+  initializeNotificationService()
+
+  return {
+    session,
+    prisma,
+    headers: new Headers(),
+  }
 }
 
 export type TRPCContext = ReturnType<typeof createInnerTRPCContext>
@@ -294,3 +386,102 @@ export function developerEmulatorProcedure(emulatorId: string) {
     })
   })
 }
+
+// ===== Permission-Based Procedures =====
+
+/**
+ * Generic permission-based procedure
+ * @param requiredPermission The permission key required to access this procedure
+ */
+export function permissionProcedure(requiredPermission: string) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    if (!hasPermissionInContext(ctx, requiredPermission)) {
+      AppError.forbidden(
+        `You need the '${requiredPermission}' permission to perform this action`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+/**
+ * Procedure that requires multiple permissions (all must be present)
+ * @param requiredPermissions Array of permission keys that are all required
+ */
+export function multiPermissionProcedure(requiredPermissions: string[]) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    const missingPermissions = requiredPermissions.filter(
+      (permission) => !hasPermissionInContext(ctx, permission),
+    )
+
+    if (missingPermissions.length > 0) {
+      AppError.forbidden(
+        `You need the following permissions: ${missingPermissions.join(', ')}`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+/**
+ * Procedure that requires any one of multiple permissions
+ * @param requiredPermissions Array of permission keys (any one is sufficient)
+ */
+export function anyPermissionProcedure(requiredPermissions: string[]) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    const hasAnyPermission = requiredPermissions.some((permission) =>
+      hasPermissionInContext(ctx, permission),
+    )
+
+    if (!hasAnyPermission) {
+      AppError.forbidden(
+        `You need one of the following permissions: ${requiredPermissions.join(', ')}`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+// Common permission-based procedures for convenience
+export const createListingProcedure = permissionProcedure(
+  PERMISSIONS.CREATE_LISTING,
+)
+export const approveListingsProcedure = permissionProcedure(
+  PERMISSIONS.APPROVE_LISTINGS,
+)
+export const manageUsersProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_USERS,
+)
+export const managePermissionsProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_PERMISSIONS,
+)
+export const accessAdminPanelProcedure = permissionProcedure(
+  PERMISSIONS.ACCESS_ADMIN_PANEL,
+)
+export const viewStatisticsProcedure = permissionProcedure(
+  PERMISSIONS.VIEW_STATISTICS,
+)
+export const manageEmulatorsProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_EMULATORS,
+)
+export const manageGamesProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_GAMES,
+)

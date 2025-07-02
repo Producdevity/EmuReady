@@ -8,7 +8,8 @@ import { useEffect, useState, type PropsWithChildren } from 'react'
 import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { hasPermission } from '@/utils/permissions'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission as hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import AdminNavbar from './components/AdminNavbar'
 import {
@@ -37,7 +38,9 @@ function AdminLayout(props: PropsWithChildren) {
 
   // Get pending games count for admin navigation
   const gameStatsQuery = api.games.getStats.useQuery(undefined, {
-    enabled: !!userQuery.data && hasPermission(userQuery.data.role, Role.ADMIN),
+    enabled:
+      !!userQuery.data &&
+      hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
     refetchOnMount: true,
@@ -48,34 +51,37 @@ function AdminLayout(props: PropsWithChildren) {
   const listingStatsQuery = api.listings.getStats.useQuery(undefined, {
     enabled:
       !!userQuery.data &&
-      hasPermission(userQuery.data.role as Role, Role.ADMIN),
+      hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
 
-  const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
-  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
+  const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
+  const isAdmin = hasRolePermission(userQuery.data?.role, Role.ADMIN)
+  const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
   const isDeveloper = userQuery.data?.role === Role.DEVELOPER // Exact match, not hierarchical
+
+  // New permission-based checks
+  const hasAdminPanelAccess = hasPermission(
+    userQuery.data?.permissions,
+    PERMISSIONS.ACCESS_ADMIN_PANEL,
+  )
 
   useEffect(() => {
     if (!isLoaded || userQuery.isLoading || !user) return
 
     // Check if a user has the right permissions once data is loaded
-    // Now allow access to MODERATOR and DEVELOPER roles as well
-    if (
-      userQuery.data &&
-      !hasPermission(userQuery.data?.role, Role.DEVELOPER)
-    ) {
+    // Use permission-based access control
+    if (userQuery.data && !hasAdminPanelAccess) {
       router.replace('/')
     }
   }, [
     isLoaded,
     user,
     userQuery.data,
-    userQuery.data?.role,
+    hasAdminPanelAccess,
     router,
     userQuery.isLoading,
   ])
@@ -84,8 +90,8 @@ function AdminLayout(props: PropsWithChildren) {
 
   if (!user || !userQuery.data) return null
 
-  // Don't render admin content if user doesn't have required role
-  if (!hasPermission(userQuery.data?.role, Role.MODERATOR)) return null
+  // Don't render admin content if user doesn't have admin panel access
+  if (!hasAdminPanelAccess) return null
 
   // Create navigation items with counts
   const adminNavItemsWithCounts = adminNavItems.map((item) => {

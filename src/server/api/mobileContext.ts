@@ -9,6 +9,7 @@ import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
+import { type Nullable } from '@/types/utils'
 import { Role } from '@orm'
 
 type User = {
@@ -21,8 +22,6 @@ type User = {
 type Session = {
   user: User
 }
-
-type Nullable<T> = T | null
 
 type CreateMobileContextOptions = {
   session: Nullable<Session>
@@ -52,8 +51,8 @@ export const createMobileTRPCContext = async (
   try {
     const webAuth = await auth()
     clerkUserId = webAuth.userId
-  } catch {
-    // Web auth failed, try mobile JWT token
+  } catch (error) {
+    console.error('Web auth failed, try mobile JWT token', error)
   }
 
   // If no web auth, try mobile JWT token from Authorization header
@@ -76,7 +75,7 @@ export const createMobileTRPCContext = async (
     }
   }
 
-  // If we have a Clerk user ID, fetch user from database
+  // If we have a Clerk user ID, fetch user from the database
   if (clerkUserId) {
     try {
       const user = await prisma.user.findUnique({
@@ -99,7 +98,7 @@ export const createMobileTRPCContext = async (
           },
         }
       } else {
-        // User not found in database
+        // User isn't found in the database
         if (process.env.NODE_ENV === 'development') {
           console.warn(
             `🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`,

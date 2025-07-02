@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from '@/lib/toast'
 
-function useLocalStorage<T>(key: string, initialValue: T, enabled = true) {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T,
+  enabled = true,
+) {
   const [isHydrated, setIsHydrated] = useState(false)
 
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -85,5 +89,3 @@ function useLocalStorage<T>(key: string, initialValue: T, enabled = true) {
 
   return [storedValue, setValue, isHydrated] as const
 }
-
-export default useLocalStorage

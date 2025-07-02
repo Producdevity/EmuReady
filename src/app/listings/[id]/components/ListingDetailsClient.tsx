@@ -20,6 +20,7 @@ import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { CustomFieldType } from '@orm'
 import CommentThread from './CommentThread'
 import EditListingButton from './EditListingButton'
+import ReportListingButton from './ReportListingButton'
 import VoteReminderBanner from './vote-reminder/VoteReminderBanner'
 import VoteButtons from './VoteButtons'
 
@@ -305,10 +306,15 @@ function ListingDetailsClient(props: Props) {
                 </div>
               </div>
 
-              {/* Edit Button */}
-              <div className="mt-2">
+              {/* Action Buttons */}
+              <div className="mt-2 flex gap-2">
                 <EditListingButton
                   listingId={props.listing.id}
+                  onSuccess={refreshData}
+                />
+                <ReportListingButton
+                  listingId={props.listing.id}
+                  authorId={props.listing.authorId}
                   onSuccess={refreshData}
                 />
               </div>

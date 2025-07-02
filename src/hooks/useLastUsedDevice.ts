@@ -1,5 +1,5 @@
 import storageKeys from '@/data/storageKeys'
-import useLocalStorage from './useLocalStorage'
+import { useLocalStorage } from './useLocalStorage'
 import type { DeviceOption } from '@/app/listings/components/shared'
 
 interface UseLastUsedDeviceReturn {

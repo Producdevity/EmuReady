@@ -9,24 +9,27 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  adminProcedure,
+  permissionProcedure,
 } from '@/server/api/trpc'
+import { PERMISSIONS } from '@/utils/permission-system'
 
 export const performanceScalesRouter = createTRPCRouter({
-  getStats: adminProcedure.query(async ({ ctx }) => {
-    const [total, usedInListings] = await Promise.all([
-      ctx.prisma.performanceScale.count(),
-      ctx.prisma.performanceScale.count({
-        where: { listings: { some: {} } },
-      }),
-    ])
+  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
+    async ({ ctx }) => {
+      const [total, usedInListings] = await Promise.all([
+        ctx.prisma.performanceScale.count(),
+        ctx.prisma.performanceScale.count({
+          where: { listings: { some: {} } },
+        }),
+      ])
 
-    return {
-      total,
-      usedInListings,
-      unused: total - usedInListings,
-    }
-  }),
+      return {
+        total,
+        usedInListings,
+        unused: total - usedInListings,
+      }
+    },
+  ),
 
   get: publicProcedure
     .input(GetPerformanceScalesSchema)
@@ -74,7 +77,7 @@ export const performanceScalesRouter = createTRPCRouter({
       return scale
     }),
 
-  create: adminProcedure
+  create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(CreatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const existingScale = await ctx.prisma.performanceScale.findFirst({
@@ -98,7 +101,7 @@ export const performanceScalesRouter = createTRPCRouter({
       return ctx.prisma.performanceScale.create({ data: input })
     }),
 
-  update: adminProcedure
+  update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(UpdatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -131,7 +134,7 @@ export const performanceScalesRouter = createTRPCRouter({
       return ctx.prisma.performanceScale.update({ where: { id }, data })
     }),
 
-  delete: adminProcedure
+  delete: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(DeletePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const listingsCount = await ctx.prisma.listing.count({
