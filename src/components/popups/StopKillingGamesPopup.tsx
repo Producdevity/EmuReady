@@ -76,7 +76,7 @@ export function StopKillingGamesPopup() {
 
             <div className="text-gray-600 dark:text-gray-300 space-y-3 mb-6">
               <p>
-                526,341 people have already signed a petition urging publishers
+                765,634 people have already signed a petition urging publishers
                 to make future games playable even after servers shut down.
               </p>
               <p>
