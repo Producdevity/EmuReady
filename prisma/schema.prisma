@@ -74,6 +74,12 @@ model User {
   // Permission system relations
   assignedRolePermissions     RolePermission[]
   permissionActionLogs        PermissionActionLog[]
+  // Report and ban system relations
+  reportsSubmitted            ListingReport[]  @relation("UserReports")
+  reportsReviewed             ListingReport[]  @relation("ReportsReviewed")
+  userBans                    UserBan[]        @relation("UserBans")
+  bansCreated                 UserBan[]        @relation("BansCreated")
+  bansLifted                  UserBan[]        @relation("BansLifted")
 }
 
 model UserDevicePreference {
@@ -278,6 +284,7 @@ model Listing {
   customFieldValues     ListingCustomFieldValue[]
   notificationPrefs     ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
+  reports               ListingReport[]
 
   @@index([processedByUserId])
 }
@@ -600,4 +607,72 @@ model ListingDeveloperVerification {
   @@index([listingId])
   @@index([verifiedBy])
   @@map("listing_developer_verifications")
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT
+  SPAM
+  MISLEADING_INFORMATION
+  FAKE_LISTING
+  COPYRIGHT_VIOLATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+model ListingReport {
+  id              String       @id @default(uuid())
+  listingId       String
+  reportedById    String
+  reason          ReportReason
+  description     String?
+  status          ReportStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  listing         Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reportedBy      User         @relation("UserReports", fields: [reportedById], references: [id], onDelete: Cascade)
+  reviewedBy      User?        @relation("ReportsReviewed", fields: [reviewedById], references: [id])
+  
+  @@unique([listingId, reportedById])
+  @@index([listingId])
+  @@index([reportedById])
+  @@index([reviewedById])
+  @@index([status])
+  @@index([createdAt])
+  @@map("listing_reports")
+}
+
+model UserBan {
+  id           String    @id @default(uuid())
+  userId       String
+  bannedById   String
+  reason       String
+  notes        String?
+  isActive     Boolean   @default(true)
+  bannedAt     DateTime  @default(now())
+  expiresAt    DateTime?
+  unbannedAt   DateTime?
+  unbannedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  user         User      @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
+  bannedBy     User      @relation("BansCreated", fields: [bannedById], references: [id])
+  unbannedBy   User?     @relation("BansLifted", fields: [unbannedById], references: [id])
+  
+  @@index([userId])
+  @@index([bannedById])
+  @@index([isActive])
+  @@index([bannedAt])
+  @@index([expiresAt])
+  @@map("user_bans")
 }

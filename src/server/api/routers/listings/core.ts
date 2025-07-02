@@ -203,6 +203,23 @@ export const coreRouter = createTRPCRouter({
         combinedFilters.game = { is: gameFilter }
       }
 
+      // Shadow ban logic: Hide listings from banned users for non-moderators
+      const userRole = ctx.session?.user?.role
+      const canSeeBannedUsers =
+        userRole && ['MODERATOR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole)
+
+      if (!canSeeBannedUsers) {
+        // For regular users, exclude listings from banned users
+        combinedFilters.author = {
+          userBans: {
+            none: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+          },
+        }
+      }
+
       const total = await ctx.prisma.listing.count({ where: combinedFilters })
 
       // Build orderBy based on sortField and sortDirection
@@ -255,7 +272,24 @@ export const coreRouter = createTRPCRouter({
             device: { include: { brand: true, soc: true } },
             emulator: true,
             performance: true,
-            author: { select: { id: true, name: true } },
+            author: {
+              select: {
+                id: true,
+                name: true,
+                userBans: canSeeBannedUsers
+                  ? {
+                      where: {
+                        isActive: true,
+                        OR: [
+                          { expiresAt: null },
+                          { expiresAt: { gt: new Date() } },
+                        ],
+                      },
+                      select: { id: true, reason: true, bannedAt: true },
+                    }
+                  : false,
+              },
+            },
             _count: { select: { votes: true, comments: true } },
             votes: ctx.session
               ? {
@@ -379,7 +413,24 @@ export const coreRouter = createTRPCRouter({
           device: { include: { brand: true, soc: true } },
           emulator: true,
           performance: true,
-          author: { select: { id: true, name: true } },
+          author: {
+            select: {
+              id: true,
+              name: true,
+              userBans: canSeeBannedUsers
+                ? {
+                    where: {
+                      isActive: true,
+                      OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
+                      ],
+                    },
+                    select: { id: true, reason: true, bannedAt: true },
+                  }
+                : false,
+            },
+          },
           _count: { select: { votes: true, comments: true } },
           votes: ctx.session
             ? {

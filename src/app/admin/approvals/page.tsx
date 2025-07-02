@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, Search } from 'lucide-react'
+import { Clock, Search, Flag, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -24,6 +24,10 @@ import {
   RejectButton,
   SortableHeader,
   ViewButton,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -99,6 +103,7 @@ function AdminApprovalsPage() {
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalStatus | null>(null)
   const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
+  const confirm = useConfirmDialog()
 
   const utils = api.useUtils()
 
@@ -196,6 +201,43 @@ function AdminApprovalsPage() {
       toast.error(`Failed to bulk reject listings: ${getErrorMessage(err)}`)
     },
   })
+
+  // Handle bulk approval with confirmation for reported users
+  const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
+    const selectedListings = listings.filter((listing) =>
+      listingIds.includes(listing.id),
+    )
+    const reportedUserListings = selectedListings.filter(
+      (listing) => listing.authorReportStats?.hasReports,
+    )
+
+    if (reportedUserListings.length > 0) {
+      const reportedUsers = [
+        ...new Set(
+          reportedUserListings.map((l) => l.author?.name || 'Unknown'),
+        ),
+      ]
+      const totalReports = reportedUserListings.reduce(
+        (sum, l) => sum + (l.authorReportStats?.totalReports || 0),
+        0,
+      )
+
+      const confirmed = await confirm({
+        title: 'Bulk Approval Warning',
+        description: `You are about to approve ${listingIds.length} listings, including ${reportedUserListings.length} from reported users.\n\nReported users in this selection:\n• ${reportedUsers.join('\n• ')}\n\nThese users have a total of ${totalReports} active reports against their listings.\n\nAre you sure you want to proceed with the bulk approval?`,
+        confirmText: 'Yes, Approve All',
+        cancelText: 'Cancel',
+      })
+
+      if (!confirmed) {
+        return
+      }
+    }
+
+    // Proceed with bulk approval
+    await bulkApproveMutation.mutateAsync({ listingIds })
+    await invalidateQueries()
+  }
 
   const handleSelectAll = (selected: boolean) => {
     setSelectedListingIds(selected ? listings.map((l) => l.id) : [])
@@ -377,10 +419,7 @@ function AdminApprovalsPage() {
           actions={{
             approve: {
               label: 'Approve Selected',
-              onAction: async (listingIds) => {
-                await bulkApproveMutation.mutateAsync({ listingIds })
-                await invalidateQueries()
-              },
+              onAction: handleBulkApprovalWithConfirmation,
             },
             reject: {
               label: 'Reject Selected',
@@ -537,7 +576,43 @@ function AdminApprovalsPage() {
                       )}
                       {columnVisibility.isColumnVisible('author') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {listing.author?.name ?? 'N/A'}
+                          <div className="flex items-center gap-2">
+                            <span>{listing.author?.name ?? 'N/A'}</span>
+                            {listing.authorReportStats?.hasReports && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1">
+                                    <Flag className="w-4 h-4 text-red-500" />
+                                    <AlertTriangle className="w-4 h-4 text-orange-500" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-sm">
+                                    <p className="font-medium text-red-600 mb-1">
+                                      ⚠️ Reported User
+                                    </p>
+                                    <p>
+                                      This user has{' '}
+                                      {listing.authorReportStats.totalReports}{' '}
+                                      active reports
+                                    </p>
+                                    <p>
+                                      against{' '}
+                                      {
+                                        listing.authorReportStats
+                                          .reportedListingsCount
+                                      }{' '}
+                                      of their listings.
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Consider reviewing carefully before
+                                      approval.
+                                    </p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('device') && (

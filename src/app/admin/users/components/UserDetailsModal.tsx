@@ -12,6 +12,8 @@ import {
   Settings,
   Plus,
   Minus,
+  Flag,
+  Ban,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -53,6 +55,17 @@ function UserDetailsModal(props: Props) {
   const isSuperAdmin = hasPermission(
     currentUserQuery.data?.role,
     Role.SUPER_ADMIN,
+  )
+
+  // Get ban status and report statistics
+  const banStatusQuery = api.userBans.checkUserBanStatus.useQuery(
+    { userId: props.userId! },
+    { enabled: !!props.userId },
+  )
+
+  const reportStatsQuery = api.listingReports.getUserReportStats.useQuery(
+    { userId: props.userId! },
+    { enabled: !!props.userId },
   )
 
   // Trust score adjustment state
@@ -177,7 +190,7 @@ function UserDetailsModal(props: Props) {
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Statistics Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <GamepadIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -230,6 +243,22 @@ function UserDetailsModal(props: Props) {
                 </div>
                 <p className="text-lg font-bold text-purple-900 dark:text-purple-100">
                   {formatTimeAgo(userQuery.data.createdAt ?? new Date())}
+                </p>
+              </div>
+
+              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Flag className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-800 dark:text-red-300">
+                    Reports
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                  {reportStatsQuery.data?.totalReports ?? 0}
+                </p>
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  {reportStatsQuery.data?.reportedListingsCount ?? 0} listings
+                  reported
                 </p>
               </div>
             </div>
@@ -298,6 +327,67 @@ function UserDetailsModal(props: Props) {
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatTimeAgo(userQuery.data.createdAt ?? new Date())}
                     </p>
+                  </div>
+
+                  {/* Ban Status */}
+                  <div
+                    className={`p-3 rounded-lg ${
+                      banStatusQuery.data?.isBanned
+                        ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                        : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Ban
+                          className={`w-4 h-4 ${
+                            banStatusQuery.data?.isBanned
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-green-600 dark:text-green-400'
+                          }`}
+                        />
+                        Ban Status
+                      </span>
+                      {banStatusQuery.data?.isBanned && (
+                        <Link
+                          href="/admin/user-bans"
+                          className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                        >
+                          Manage Bans
+                        </Link>
+                      )}
+                    </div>
+                    {banStatusQuery.data?.isBanned ? (
+                      <div>
+                        <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
+                          Currently Banned
+                        </p>
+                        {banStatusQuery.data.ban && (
+                          <>
+                            <p className="text-xs text-red-700 dark:text-red-300 mb-1">
+                              Reason: {banStatusQuery.data.ban.reason}
+                            </p>
+                            <p className="text-xs text-red-700 dark:text-red-300">
+                              Banned by:{' '}
+                              {banStatusQuery.data.ban.bannedBy?.name ||
+                                'Unknown'}
+                            </p>
+                            {banStatusQuery.data.ban.expiresAt && (
+                              <p className="text-xs text-red-700 dark:text-red-300">
+                                Expires:{' '}
+                                {formatDate(
+                                  new Date(banStatusQuery.data.ban.expiresAt),
+                                )}
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-green-900 dark:text-green-100">
+                        Account in good standing
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

@@ -312,4 +312,22 @@ export class ResourceError {
     notInPreferences: () =>
       AppError.notFound('SOC not found in user preferences'),
   }
+
+  static listingReport = {
+    notFound: () => AppError.notFound('Listing report'),
+    alreadyExists: () =>
+      AppError.conflict('You have already reported this listing'),
+    cannotReportOwnListing: () =>
+      AppError.forbidden('You cannot report your own listing'),
+  }
+
+  static userBan = {
+    notFound: () => AppError.notFound('User ban'),
+    alreadyBanned: () => AppError.conflict('User already has an active ban'),
+    cannotBanHigherRole: () =>
+      AppError.forbidden(
+        'You cannot ban a user with equal or higher role than yours',
+      ),
+    alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
+  }
 }

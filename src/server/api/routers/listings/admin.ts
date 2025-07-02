@@ -23,7 +23,7 @@ import {
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
-import { ApprovalStatus, TrustAction } from '@orm'
+import { ApprovalStatus, TrustAction, ReportStatus } from '@orm'
 import type { Prisma } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
@@ -116,10 +116,59 @@ export const adminRouter = createTRPCRouter({
         take: limit,
       })
 
+      // Get report statistics for each unique author
+      const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
+      const authorReportStats = await Promise.all(
+        uniqueAuthorIds.map(async (authorId) => {
+          const [reportedListingsCount, totalReports] = await Promise.all([
+            ctx.prisma.listingReport.count({
+              where: {
+                listing: {
+                  authorId,
+                },
+              },
+            }),
+            ctx.prisma.listingReport.count({
+              where: {
+                listing: {
+                  authorId,
+                },
+                status: {
+                  in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW],
+                },
+              },
+            }),
+          ])
+
+          return {
+            authorId,
+            reportedListingsCount,
+            totalReports,
+            hasReports: totalReports > 0,
+          }
+        }),
+      )
+
+      // Create a map for quick lookup
+      const reportStatsMap = new Map(
+        authorReportStats.map((stat) => [stat.authorId, stat]),
+      )
+
+      // Add report statistics to each listing
+      const listingsWithReports = listings.map((listing) => ({
+        ...listing,
+        authorReportStats: reportStatsMap.get(listing.authorId) || {
+          authorId: listing.authorId,
+          reportedListingsCount: 0,
+          totalReports: 0,
+          hasReports: false,
+        },
+      }))
+
       const totalListings = await ctx.prisma.listing.count({ where })
 
       return {
-        listings,
+        listings: listingsWithReports,
         pagination: {
           total: totalListings,
           pages: Math.ceil(totalListings / limit),
@@ -144,7 +193,20 @@ export const adminRouter = createTRPCRouter({
 
       const listingToApprove = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-        include: { author: { select: { id: true } } },
+        include: {
+          author: {
+            select: {
+              id: true,
+              userBans: {
+                where: {
+                  isActive: true,
+                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+                },
+                select: { reason: true },
+              },
+            },
+          },
+        },
       })
 
       if (
@@ -152,6 +214,24 @@ export const adminRouter = createTRPCRouter({
         listingToApprove.status !== ApprovalStatus.PENDING
       ) {
         return ResourceError.listing.notPending()
+      }
+
+      // Auto-reject if user is banned
+      if (listingToApprove.author.userBans.length > 0) {
+        const banReason = listingToApprove.author.userBans[0].reason
+        await ctx.prisma.listing.update({
+          where: { id: listingId },
+          data: {
+            status: ApprovalStatus.REJECTED,
+            processedByUserId: adminUserId,
+            processedAt: new Date(),
+            processedNotes: `Automatically rejected: User is currently banned (${banReason})`,
+          },
+        })
+
+        AppError.badRequest(
+          `Cannot approve listing: Author is currently banned (${banReason})`,
+        )
       }
 
       const updatedListing = await ctx.prisma.listing.update({
@@ -403,7 +483,23 @@ export const adminRouter = createTRPCRouter({
             id: { in: listingIds },
             status: ApprovalStatus.PENDING,
           },
-          include: { author: { select: { id: true } } },
+          include: {
+            author: {
+              select: {
+                id: true,
+                userBans: {
+                  where: {
+                    isActive: true,
+                    OR: [
+                      { expiresAt: null },
+                      { expiresAt: { gt: new Date() } },
+                    ],
+                  },
+                  select: { reason: true },
+                },
+              },
+            },
+          },
         })
 
         // Get the IDs of listings that were not found or not pending
@@ -417,19 +513,45 @@ export const adminRouter = createTRPCRouter({
           )
         }
 
-        // Update all listings to approved
-        await tx.listing.updateMany({
-          where: { id: { in: listingsToApprove.map((l) => l.id) } },
-          data: {
-            status: ApprovalStatus.APPROVED,
-            processedByUserId: adminUserId,
-            processedAt: new Date(),
-            processedNotes: null,
-          },
-        })
+        // Separate listings by banned/non-banned authors
+        const bannedUserListings = listingsToApprove.filter(
+          (l) => l.author.userBans.length > 0,
+        )
+        const validListings = listingsToApprove.filter(
+          (l) => l.author.userBans.length === 0,
+        )
 
-        // Apply trust actions for all approved listings
-        for (const listing of listingsToApprove) {
+        // Auto-reject listings from banned users
+        if (bannedUserListings.length > 0) {
+          for (const listing of bannedUserListings) {
+            const banReason = listing.author.userBans[0].reason
+            await tx.listing.update({
+              where: { id: listing.id },
+              data: {
+                status: ApprovalStatus.REJECTED,
+                processedByUserId: adminUserId,
+                processedAt: new Date(),
+                processedNotes: `Automatically rejected during bulk approval: User is currently banned (${banReason})`,
+              },
+            })
+          }
+        }
+
+        // Update valid listings to approved
+        if (validListings.length > 0) {
+          await tx.listing.updateMany({
+            where: { id: { in: validListings.map((l) => l.id) } },
+            data: {
+              status: ApprovalStatus.APPROVED,
+              processedByUserId: adminUserId,
+              processedAt: new Date(),
+              processedNotes: null,
+            },
+          })
+        }
+
+        // Apply trust actions for approved listings only
+        for (const listing of validListings) {
           if (listing.authorId) {
             await applyTrustAction({
               userId: listing.authorId,
@@ -442,7 +564,7 @@ export const adminRouter = createTRPCRouter({
             })
           }
 
-          // Emit notification event for each listing
+          // Emit notification event for each approved listing
           notificationEventEmitter.emitNotificationEvent({
             eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
             entityType: 'listing',
@@ -460,16 +582,23 @@ export const adminRouter = createTRPCRouter({
         // Invalidate listing stats cache
         listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
-        const message =
-          notFoundOrNotPendingIds.length > 0
-            ? `Successfully approved ${listingsToApprove.length} listing(s). ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
-            : `Successfully approved ${listingsToApprove.length} listing(s).`
+        let message = `Successfully approved ${validListings.length} listing(s).`
+
+        if (bannedUserListings.length > 0) {
+          message += ` ${bannedUserListings.length} listing(s) were automatically rejected due to banned users.`
+        }
+
+        if (notFoundOrNotPendingIds.length > 0) {
+          message += ` ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
+        }
 
         return {
           success: true,
-          approvedCount: listingsToApprove.length,
+          approvedCount: validListings.length,
+          rejectedCount: bannedUserListings.length,
           skippedCount: notFoundOrNotPendingIds.length,
           message,
+          hasReportedUsers: bannedUserListings.length > 0,
         }
       })
     }),

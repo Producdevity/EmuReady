@@ -44,7 +44,7 @@ function VoteButtons(props: Props) {
 
   const handleVote = async (value: boolean) => {
     if (!isAuthenticated) {
-      // TODO: Redirect to login or show a login prompt
+      // TODO: Show a login prompt (we don't use dedicated login pages)
       return
     }
 
@@ -58,7 +58,7 @@ function VoteButtons(props: Props) {
     const previousVote = optimisticVote
     let finalVoteValue: boolean | null = value
 
-    // If same vote clicked, we're removing the vote (toggle behavior)
+    // If the same vote clicked, we're removing the vote (toggle behavior)
     if (optimisticVote === value) {
       finalVoteValue = null
     }
@@ -79,7 +79,7 @@ function VoteButtons(props: Props) {
 
     // Handling previous vote state
     if (optimisticVote !== null) {
-      // If same vote clicked, we're removing the vote (toggle behavior)
+      // If the same vote clicked, we're removing the vote (toggle behavior)
       if (optimisticVote === value) {
         // If upvote is being removed
         if (value) {
