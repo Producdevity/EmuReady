@@ -17,19 +17,21 @@ import {
   createTRPCRouter,
   superAdminProcedure,
   moderatorProcedure,
+  developerProcedure,
 } from '@/server/api/trpc'
 import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
-import { ApprovalStatus, TrustAction, ReportStatus } from '@orm'
+import { hasPermission } from '@/utils/permissions'
+import { ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 
 export const adminRouter = createTRPCRouter({
-  getPending: moderatorProcedure
+  getPending: developerProcedure
     .input(GetPendingListingsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -44,6 +46,27 @@ export const adminRouter = createTRPCRouter({
       // Build where clause for search
       let where: Prisma.ListingWhereInput = {
         status: ApprovalStatus.PENDING,
+      }
+
+      // For developers, only show listings for their verified emulators
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        // Get user's verified emulators
+        const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
+          where: { userId: ctx.session.user.id },
+          select: { emulatorId: true },
+        })
+
+        const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+
+        if (emulatorIds.length === 0) {
+          // Developer has no verified emulators, return empty result
+          return {
+            listings: [],
+            pagination: { page, pages: 0, total: 0, limit },
+          }
+        }
+
+        where.emulatorId = { in: emulatorIds }
       }
 
       if (search && search.trim() !== '') {
@@ -178,7 +201,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  approve: moderatorProcedure
+  approve: developerProcedure
     .input(ApproveListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId } = input
@@ -214,6 +237,26 @@ export const adminRouter = createTRPCRouter({
         listingToApprove.status !== ApprovalStatus.PENDING
       ) {
         return ResourceError.listing.notPending()
+      }
+
+      // For developers, verify they can approve this emulator's listings
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: adminUserId,
+                emulatorId: listingToApprove.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only approve listings for emulators you are verified for',
+          )
+        }
       }
 
       // Auto-reject if user is banned
@@ -276,7 +319,7 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  reject: moderatorProcedure
+  reject: developerProcedure
     .input(RejectListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, notes } = input
@@ -299,6 +342,26 @@ export const adminRouter = createTRPCRouter({
         listingToReject.status !== ApprovalStatus.PENDING
       ) {
         return ResourceError.listing.notPending()
+      }
+
+      // For developers, verify they can reject this emulator's listings
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: adminUserId,
+                emulatorId: listingToReject.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only reject listings for emulators you are verified for',
+          )
+        }
       }
 
       const updatedListing = await ctx.prisma.listing.update({
@@ -463,7 +526,7 @@ export const adminRouter = createTRPCRouter({
       return { success: true, message: 'Listing deleted successfully' }
     }),
 
-  bulkApprove: moderatorProcedure
+  bulkApprove: developerProcedure
     .input(BulkApproveListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingIds } = input
@@ -502,6 +565,27 @@ export const adminRouter = createTRPCRouter({
             },
           },
         })
+
+        // For developers, verify they can approve these emulator listings
+        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+          const userVerifiedEmulators = await tx.verifiedDeveloper.findMany({
+            where: { userId: adminUserId },
+            select: { emulatorId: true },
+          })
+
+          const verifiedEmulatorIds = userVerifiedEmulators.map(
+            (ve) => ve.emulatorId,
+          )
+          const unauthorizedListings = listingsToApprove.filter(
+            (listing) => !verifiedEmulatorIds.includes(listing.emulatorId),
+          )
+
+          if (unauthorizedListings.length > 0) {
+            return AppError.forbidden(
+              `You can only approve listings for emulators you are verified for. ${unauthorizedListings.length} listings are for unauthorized emulators.`,
+            )
+          }
+        }
 
         // Get the IDs of listings that were not found or not pending
         const notFoundOrNotPendingIds = listingIds.filter(
@@ -633,7 +717,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  bulkReject: moderatorProcedure
+  bulkReject: developerProcedure
     .input(BulkRejectListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingIds, notes } = input
@@ -656,6 +740,27 @@ export const adminRouter = createTRPCRouter({
           },
           include: { author: { select: { id: true } } },
         })
+
+        // For developers, verify they can reject these emulator listings
+        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+          const userVerifiedEmulators = await tx.verifiedDeveloper.findMany({
+            where: { userId: adminUserId },
+            select: { emulatorId: true },
+          })
+
+          const verifiedEmulatorIds = userVerifiedEmulators.map(
+            (ve) => ve.emulatorId,
+          )
+          const unauthorizedListings = listingsToReject.filter(
+            (listing) => !verifiedEmulatorIds.includes(listing.emulatorId),
+          )
+
+          if (unauthorizedListings.length > 0) {
+            return AppError.forbidden(
+              `You can only reject listings for emulators you are verified for. ${unauthorizedListings.length} listings are for unauthorized emulators.`,
+            )
+          }
+        }
 
         // Get the IDs of listings that were not found or not pending
         const notFoundOrNotPendingIds = listingIds.filter(

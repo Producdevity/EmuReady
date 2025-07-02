@@ -178,25 +178,51 @@ export const moderatorNavItems: AdminNavItem[] = [
 export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
   if (!emulatorIds.length) return []
 
+  const navItems: AdminNavItem[] = []
+
+  // Always include approvals page for developers
+  navItems.push({
+    href: '/admin/approvals',
+    label: 'My Emulator Approvals',
+    exact: true,
+    description: 'Review and approve listings for your verified emulators.',
+  })
+
   // If multiple emulators, show the main emulators page
   if (emulatorIds.length > 1) {
-    return [
-      {
-        href: '/admin/emulators',
-        label: 'My Emulators',
-        exact: false,
-        description: 'Manage your emulators.',
-      },
-    ]
-  }
-
-  // If single emulator, direct link to that emulator
-  return [
-    {
+    navItems.push({
+      href: '/admin/emulators',
+      label: 'My Emulators',
+      exact: false,
+      description: 'Manage your emulators.',
+    })
+  } else {
+    // If single emulator, direct link to that emulator
+    navItems.push({
       href: `/admin/emulators/${emulatorIds[0]}`,
       label: 'My Emulator',
       exact: true,
       description: 'Manage your emulator.',
-    },
-  ]
+    })
+  }
+
+  return navItems
+}
+
+/**
+ * Server-side function to get developer navigation items for a user
+ * @param userId - The developer user ID
+ */
+export async function getDeveloperNavItemsForUser(
+  userId: string,
+): Promise<AdminNavItem[]> {
+  const { prisma } = await import('@/server/db')
+
+  const verifiedEmulators = await prisma.verifiedDeveloper.findMany({
+    where: { userId },
+    select: { emulatorId: true },
+  })
+
+  const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+  return getDeveloperNavItems(emulatorIds)
 }

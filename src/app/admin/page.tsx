@@ -5,7 +5,12 @@ import { cn } from '@/lib/utils'
 import { getCurrentUser } from '@/server/utils/auth'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
-import { moderatorNavItems, adminNavItems, superAdminNavItems } from './data'
+import {
+  moderatorNavItems,
+  adminNavItems,
+  superAdminNavItems,
+  getDeveloperNavItemsForUser,
+} from './data'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
@@ -63,6 +68,12 @@ async function AdminDashboardPage() {
   const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
   const isAdmin = hasPermission(user.role, Role.ADMIN)
   const isModerator = user.role === Role.MODERATOR
+  const isDeveloper = user.role === Role.DEVELOPER
+
+  // Get developer's verified emulators for navigation items
+  const developerNavItems = isDeveloper
+    ? await getDeveloperNavItemsForUser(user.id)
+    : []
 
   return (
     <div className="space-y-8">
@@ -74,6 +85,26 @@ async function AdminDashboardPage() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {isDeveloper &&
+          developerNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'bg-green-50 dark:bg-green-900/20',
+                'p-6 rounded-lg',
+                'border border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-500 transition-colors',
+                'transition-shadow shadow-md hover:shadow-lg',
+              )}
+            >
+              <h3 className="font-semibold text-xl mb-2 text-green-800 dark:text-green-300">
+                {item.label}
+              </h3>
+              <p className="text-sm text-green-700 dark:text-green-400">
+                {item.description}
+              </p>
+            </Link>
+          ))}
         {isModerator &&
           moderatorNavItems.map((item) => (
             <Link
