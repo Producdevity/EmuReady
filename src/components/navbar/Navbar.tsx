@@ -140,7 +140,7 @@ function Navbar() {
                         Admin
                       </Link>
                     )}
-                    {hasPermission(userRole, Role.ADMIN) && (
+                    {hasPermission(userRole, Role.MODERATOR) && (
                       <Link
                         href="/v2/listings"
                         className="px-4 py-2.5 bg-gradient-to-r
