@@ -21,12 +21,8 @@ export const emulatorsRouter = createTRPCRouter({
   getStats: adminProcedure.query(async ({ ctx }) => {
     const [total, withListings, withSystems] = await Promise.all([
       ctx.prisma.emulator.count(),
-      ctx.prisma.emulator.count({
-        where: { listings: { some: {} } },
-      }),
-      ctx.prisma.emulator.count({
-        where: { systems: { some: {} } },
-      }),
+      ctx.prisma.emulator.count({ where: { listings: { some: {} } } }),
+      ctx.prisma.emulator.count({ where: { systems: { some: {} } } }),
     ])
 
     return {
