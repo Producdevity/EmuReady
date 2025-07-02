@@ -26,7 +26,7 @@ import {
   roleIncludesRole,
 } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
-import { Role } from '@orm'
+import { Role, ApprovalStatus } from '@orm'
 import type { Prisma } from '@orm'
 
 export const usersRouter = createTRPCRouter({
@@ -169,16 +169,52 @@ export const usersRouter = createTRPCRouter({
         votesSearch,
       } = input
 
-      // Check if user exists first
-      const userExists = await ctx.prisma.user.findUnique({
+      // Check if user exists and get ban status
+      const userWithBanStatus = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true },
+        select: {
+          id: true,
+          userBans: {
+            where: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+            select: { id: true },
+          },
+        },
       })
 
-      if (!userExists) return ResourceError.user.notFound()
+      if (!userWithBanStatus) return ResourceError.user.notFound()
+
+      // Check if user is banned and if current user can view banned profiles
+      const isBanned = userWithBanStatus.userBans.length > 0
+      const currentUserRole = ctx.session?.user?.role
+      const canViewBannedUsers = roleIncludesRole(
+        currentUserRole,
+        Role.MODERATOR,
+      )
+
+      if (isBanned && !canViewBannedUsers) {
+        throw AppError.forbidden('This user profile is not accessible.')
+      }
 
       // Build where clauses for listings filtering
       const listingsWhere: Prisma.ListingWhereInput = {}
+
+      // CRITICAL: Filter by approval status based on user permissions
+      if (canViewBannedUsers) {
+        // Moderators can see all statuses including rejected
+        // No additional filtering needed
+      } else if (ctx.session?.user?.id === userId) {
+        // Users can see their own approved and pending listings, but NOT rejected
+        listingsWhere.status = {
+          in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
+        }
+      } else {
+        // Regular users (including signed out) can ONLY see approved listings from others
+        listingsWhere.status = ApprovalStatus.APPROVED
+      }
+
       if (listingsSearch) {
         listingsWhere.OR = [
           {
@@ -240,6 +276,22 @@ export const usersRouter = createTRPCRouter({
             orderBy: { createdAt: 'desc' },
             take: 10,
           },
+          // Include ban status for moderators
+          ...(canViewBannedUsers && {
+            userBans: {
+              where: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+              select: {
+                id: true,
+                reason: true,
+                expiresAt: true,
+                bannedBy: { select: { name: true } },
+                createdAt: true,
+              },
+            },
+          }),
           _count: {
             select: {
               listings: true,
@@ -257,6 +309,7 @@ export const usersRouter = createTRPCRouter({
           select: {
             id: true,
             createdAt: true,
+            status: true,
             device: {
               select: {
                 brand: { select: { id: true, name: true } },

@@ -20,6 +20,7 @@ import {
 } from '@/server/api/trpc'
 import { gameStatsCache } from '@/server/utils/cache'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
+import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
@@ -282,17 +283,90 @@ export const gamesRouter = createTRPCRouter({
   byId: publicProcedure
     .input(GetGameByIdSchema)
     .query(async ({ ctx, input }) => {
+      // Shadow ban logic: Hide listings from banned users for non-moderators
+      const userRole = ctx.session?.user?.role
+      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
+
+      // Build the listings where clause with shadow ban filtering and approval status
+      const listingsWhere: Prisma.ListingWhereInput = {}
+
+      // CRITICAL: Filter by approval status - REJECTED listings should NEVER be visible to regular users
+      if (canSeeBannedUsers) {
+        // Moderators can see all statuses including rejected
+        // No additional filtering needed for approval status
+      } else {
+        // Regular users can ONLY see approved listings
+        listingsWhere.status = ApprovalStatus.APPROVED
+      }
+
+      if (!canSeeBannedUsers) {
+        // For regular users, exclude listings from banned users
+        listingsWhere.author = {
+          userBans: {
+            none: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+          },
+        }
+      }
+
       const game = await ctx.prisma.game.findUnique({
         where: { id: input.id },
         include: {
           submitter: { select: { id: true, name: true } },
           system: { include: { emulators: true } },
           listings: {
-            include: {
-              device: { include: { brand: true } },
-              emulator: true,
-              performance: true,
-              author: { select: { id: true, name: true } },
+            where: listingsWhere,
+            select: {
+              id: true,
+              status: true,
+              createdAt: true,
+              device: {
+                select: {
+                  id: true,
+                  modelName: true,
+                  brand: { select: { id: true, name: true } },
+                },
+              },
+              emulator: {
+                select: {
+                  id: true,
+                  name: true,
+                  logo: true,
+                  description: true,
+                  repositoryUrl: true,
+                  officialUrl: true,
+                },
+              },
+              performance: {
+                select: {
+                  id: true,
+                  label: true,
+                  rank: true,
+                  description: true,
+                },
+              },
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: canSeeBannedUsers,
+                  // Include ban status for moderators to show banned user badge
+                  ...(canSeeBannedUsers && {
+                    userBans: {
+                      where: {
+                        isActive: true,
+                        OR: [
+                          { expiresAt: null },
+                          { expiresAt: { gt: new Date() } },
+                        ],
+                      },
+                      select: { id: true },
+                    },
+                  }),
+                },
+              },
               _count: { select: { votes: true, comments: true } },
             },
             orderBy: { createdAt: 'desc' },

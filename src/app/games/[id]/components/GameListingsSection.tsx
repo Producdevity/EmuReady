@@ -9,6 +9,8 @@ import {
   ViewButton,
 } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { Role, ApprovalStatus } from '@orm'
 import type { RouterOutput } from '@/types/trpc'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
@@ -17,10 +19,12 @@ interface Props {
   listings: Game['listings']
   gameId: Game['id']
   hasPermission: boolean
+  userRole?: Role | null
 }
 
 export function GameListingsSection(props: Props) {
   const emulatorLogos = useEmulatorLogos()
+  const canSeeBannedUsers = roleIncludesRole(props.userRole, Role.MODERATOR)
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
@@ -84,23 +88,50 @@ export function GameListingsSection(props: Props) {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <PerformanceBadge
-                      rank={listing.performance.rank}
-                      label={listing.performance.label}
-                      description={listing.performance?.description}
-                    />
+                    <div className="flex items-center gap-2">
+                      <PerformanceBadge
+                        rank={listing.performance.rank}
+                        label={listing.performance.label}
+                        description={listing.performance?.description}
+                      />
+                      {canSeeBannedUsers &&
+                        'status' in listing &&
+                        listing.status !== ApprovalStatus.APPROVED && (
+                          <Badge
+                            variant={
+                              listing.status === ApprovalStatus.REJECTED
+                                ? 'danger'
+                                : 'warning'
+                            }
+                            size="sm"
+                          >
+                            {listing.status}
+                          </Badge>
+                        )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {listing.author?.id ? (
-                      <Link
-                        href={`/users/${listing.author.id}`}
-                        className="text-blue-600 dark:text-indigo-400 hover:underline"
-                      >
-                        {listing.author?.name ?? 'Anonymous'}
-                      </Link>
-                    ) : (
-                      (listing.author?.name ?? 'Anonymous')
-                    )}
+                    <div className="flex items-center gap-2">
+                      {listing.author?.id ? (
+                        <Link
+                          href={`/users/${listing.author.id}`}
+                          className="text-blue-600 dark:text-indigo-400 hover:underline"
+                        >
+                          {listing.author?.name ?? 'Anonymous'}
+                        </Link>
+                      ) : (
+                        <span>{listing.author?.name ?? 'Anonymous'}</span>
+                      )}
+                      {canSeeBannedUsers &&
+                        listing.author &&
+                        'userBans' in listing.author &&
+                        Array.isArray(listing.author.userBans) &&
+                        listing.author.userBans.length > 0 && (
+                          <Badge variant="danger" size="sm">
+                            BANNED
+                          </Badge>
+                        )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{listing._count.comments || 0}</Badge>

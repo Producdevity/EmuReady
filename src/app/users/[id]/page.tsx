@@ -29,6 +29,8 @@ import { api } from '@/lib/api'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 import { formatDate, formatTimeAgo } from '@/utils/date'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { Role } from '@orm'
 import UserDetailsPageError from './components/UserDetailsPageError'
 
 function UserDetailsPage() {
@@ -78,6 +80,13 @@ function UserDetailsPage() {
     votesLimit: 12,
     votesSearch: debouncedSearch || undefined,
   })
+
+  // Get current user to check if they can see banned user indicators
+  const currentUserQuery = api.users.me.useQuery()
+  const canViewBannedUsers = roleIncludesRole(
+    currentUserQuery.data?.role,
+    Role.MODERATOR,
+  )
 
   // Update URL params when filters change
   const updateUrlParams = useCallback(
@@ -170,6 +179,14 @@ function UserDetailsPage() {
                     <Badge variant="default" className="text-sm">
                       {user.role}
                     </Badge>
+                    {canViewBannedUsers &&
+                      'userBans' in user &&
+                      Array.isArray(user.userBans) &&
+                      user.userBans.length > 0 && (
+                        <Badge variant="danger" className="text-sm font-bold">
+                          BANNED USER
+                        </Badge>
+                      )}
                     <Badge
                       variant={
                         userTrustLevel.name === 'New' ? 'default' : 'success'

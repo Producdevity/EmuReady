@@ -85,6 +85,7 @@ function GameDetailsPage() {
           gameId={gameQuery.data.id}
           listings={gameQuery.data?.listings}
           hasPermission={hasPermission(userQuery.data?.role, Role.ADMIN)}
+          userRole={userQuery.data?.role}
         />
       </div>
     </main>
