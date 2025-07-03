@@ -535,9 +535,9 @@ export const usersRouter = createTRPCRouter({
     async ({ ctx }) => {
       const [
         userCount,
+        authorCount,
         developerCount,
         moderatorCount,
-        authorCount,
         adminCount,
         superAdminCount,
       ] = await Promise.all([
