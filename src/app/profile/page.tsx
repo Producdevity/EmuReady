@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { User, Smartphone, Bell, Settings } from 'lucide-react'
+import { User, Smartphone, Bell, Settings, Computer } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useState, Suspense } from 'react'
 import { PageLoading } from '@/components/ui'
@@ -10,6 +10,7 @@ import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import DeviceAndSocPreferences from './components/DeviceAndSocPreferences'
 import NotificationPreferences from './components/NotificationPreferences'
+import PcPresets from './components/PcPresets'
 import ProfileHeader from './components/ProfileHeader'
 import ProfileInformation from './components/ProfileInformation'
 import ProfilePageError from './components/ProfilePageError'
@@ -27,6 +28,11 @@ const tabs = [
     id: 'devices',
     label: 'Devices & SOCs',
     icon: <Smartphone className="w-4 h-4" />,
+  },
+  {
+    id: 'pc-presets',
+    label: 'PC Presets',
+    icon: <Computer className="w-4 h-4" />,
   },
   {
     id: 'notifications',
@@ -94,6 +100,8 @@ function ProfilePage() {
           {activeTab === 'devices' && (
             <DeviceAndSocPreferences preferencesQuery={preferencesQuery} />
           )}
+
+          {activeTab === 'pc-presets' && <PcPresets />}
 
           {activeTab === 'notifications' && (
             <NotificationPreferences

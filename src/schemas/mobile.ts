@@ -187,3 +187,96 @@ export const GetMyVerificationsSchema = z.object({
   limit: z.number().min(1).max(100).optional(),
   page: z.number().min(1).optional(),
 })
+
+// PC Listings schemas
+export const CreatePcListingSchema = z.object({
+  gameId: z.string().uuid(),
+  cpuId: z.string().uuid(),
+  gpuId: z.string().uuid(),
+  emulatorId: z.string().uuid(),
+  performanceId: z.number(),
+  memorySize: z.number().min(1).max(256),
+  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']),
+  osVersion: z.string().min(1),
+  notes: z.string().optional(),
+  customFieldValues: z
+    .array(
+      z.object({
+        customFieldDefinitionId: z.string().uuid(),
+        value: z.any(),
+      }),
+    )
+    .optional(),
+})
+
+export const UpdatePcListingSchema = z.object({
+  id: z.string().uuid(),
+  gameId: z.string().uuid().optional(),
+  cpuId: z.string().uuid().optional(),
+  gpuId: z.string().uuid().optional(),
+  emulatorId: z.string().uuid().optional(),
+  performanceId: z.number().optional(),
+  memorySize: z.number().min(1).max(256).optional(),
+  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
+  osVersion: z.string().min(1).optional(),
+  notes: z.string().optional(),
+  customFieldValues: z
+    .array(
+      z.object({
+        customFieldDefinitionId: z.string().uuid(),
+        value: z.any(),
+      }),
+    )
+    .optional(),
+})
+
+export const GetPcListingsSchema = z.object({
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(50).default(20),
+  gameId: z.string().uuid().optional(),
+  systemId: z.string().uuid().optional(),
+  cpuId: z.string().uuid().optional(),
+  gpuId: z.string().uuid().optional(),
+  emulatorId: z.string().uuid().optional(),
+  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
+  search: z.string().optional(),
+})
+
+export const GetCpusSchema = z.object({
+  search: z.string().optional(),
+  brandId: z.string().uuid().optional(),
+  limit: z.number().min(1).max(100).default(50),
+})
+
+export const GetGpusSchema = z.object({
+  search: z.string().optional(),
+  brandId: z.string().uuid().optional(),
+  limit: z.number().min(1).max(100).default(50),
+})
+
+export const GetPcPresetsSchema = z.object({
+  limit: z.number().min(1).max(50).default(20),
+})
+
+export const CreatePcPresetSchema = z.object({
+  name: z.string().min(1).max(50),
+  cpuId: z.string().uuid(),
+  gpuId: z.string().uuid(),
+  memorySize: z.number().min(1).max(256),
+  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']),
+  osVersion: z.string().min(1),
+})
+
+export const UpdatePcPresetSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(50).optional(),
+  cpuId: z.string().uuid().optional(),
+  gpuId: z.string().uuid().optional(),
+  memorySize: z.number().min(1).max(256).optional(),
+  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
+  osVersion: z.string().min(1).optional(),
+})
+
+export const DeletePcPresetSchema = z.object({
+  id: z.string().uuid(),
+})

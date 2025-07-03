@@ -35,6 +35,9 @@ const storageKeys = {
     adminPermissionLogs: `${PREFIX}admin_permission_logs_column_visibility`,
     adminReports: `${PREFIX}admin_reports_column_visibility`,
     adminUserBans: `${PREFIX}admin_user_bans_column_visibility`,
+    adminCpus: `${PREFIX}admin_cpus_column_visibility`,
+    adminGpus: `${PREFIX}admin_gpus_column_visibility`,
+    adminPcListings: `${PREFIX}admin_pc_listings_column_visibility`,
   },
 } as const
 

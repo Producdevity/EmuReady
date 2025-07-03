@@ -7,11 +7,13 @@ import { mobileGamesRouter } from './mobile/games'
 import { mobileGeneralRouter } from './mobile/general'
 import { mobileListingsRouter } from './mobile/listings'
 import { mobileNotificationsRouter } from './mobile/notifications'
+import { mobilePcListingsRouter } from './mobile/pcListings'
 import { mobilePreferencesRouter } from './mobile/preferences'
 
 export const mobileRouter = createMobileTRPCRouter({
   auth: mobileAuthRouter,
   listings: mobileListingsRouter,
+  pcListings: mobilePcListingsRouter,
   games: mobileGamesRouter,
   devices: mobileDevicesRouter,
   emulators: mobileEmulatorsRouter,
@@ -68,4 +70,14 @@ export const mobileRouter = createMobileTRPCRouter({
   removeVerification: mobileDevelopersRouter.removeVerification,
   getListingVerifications: mobileDevelopersRouter.getListingVerifications,
   getMyVerifications: mobileDevelopersRouter.getMyVerifications,
+  // PC Listings endpoints
+  getPcListings: mobilePcListingsRouter.getPcListings,
+  createPcListing: mobilePcListingsRouter.createPcListing,
+  updatePcListing: mobilePcListingsRouter.updatePcListing,
+  getCpus: mobilePcListingsRouter.getCpus,
+  getGpus: mobilePcListingsRouter.getGpus,
+  getPcPresets: mobilePcListingsRouter.presets.get,
+  createPcPreset: mobilePcListingsRouter.presets.create,
+  updatePcPreset: mobilePcListingsRouter.presets.update,
+  deletePcPreset: mobilePcListingsRouter.presets.delete,
 })

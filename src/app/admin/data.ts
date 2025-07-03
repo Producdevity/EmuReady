@@ -44,6 +44,18 @@ export const adminNavItems: AdminNavItem[] = [
     description: 'Manage devices.',
   },
   {
+    href: '/admin/cpus',
+    label: 'CPUs',
+    exact: true,
+    description: 'Manage CPU models for PC compatibility.',
+  },
+  {
+    href: '/admin/gpus',
+    label: 'GPUs',
+    exact: true,
+    description: 'Manage GPU models for PC compatibility.',
+  },
+  {
     href: '/admin/emulators',
     label: 'Emulators',
     exact: false,
@@ -144,6 +156,18 @@ export const moderatorNavItems: AdminNavItem[] = [
     label: 'Devices',
     exact: true,
     description: 'Manage devices.',
+  },
+  {
+    href: '/admin/cpus',
+    label: 'CPUs',
+    exact: true,
+    description: 'Manage CPU models for PC compatibility.',
+  },
+  {
+    href: '/admin/gpus',
+    label: 'GPUs',
+    exact: true,
+    description: 'Manage GPU models for PC compatibility.',
   },
   {
     href: '/admin/socs',

@@ -1,9 +1,11 @@
 import { PrismaClient } from '@orm'
 import clearTestDataSeeder from './seeders/clearTestDataSeeder'
+import cpuSeeder from './seeders/cpuSeeder'
 import customFieldTemplatesSeeder from './seeders/customFieldTemplatesSeeder'
 import devicesSeeder from './seeders/devicesSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
+import gpuSeeder from './seeders/gpuSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
 import performanceScalesSeeder from './seeders/performanceScalesSeeder'
 import permissionsSeeder from './seeders/permissionsSeeder'
@@ -22,12 +24,16 @@ async function clearDb() {
   await prisma.commentVote.deleteMany()
   await prisma.comment.deleteMany()
   await prisma.listingCustomFieldValue.deleteMany()
+  await prisma.pcListingCustomFieldValue.deleteMany()
   await prisma.listing.deleteMany()
+  await prisma.pcListing.deleteMany()
   await prisma.customFieldDefinition.deleteMany()
   await prisma.customFieldTemplateField.deleteMany()
   await prisma.customFieldTemplate.deleteMany()
   await prisma.performanceScale.deleteMany()
   await prisma.device.deleteMany()
+  await prisma.cpu.deleteMany()
+  await prisma.gpu.deleteMany()
   await prisma.soC.deleteMany()
   await prisma.emulator.deleteMany()
   await prisma.game.deleteMany()
@@ -47,6 +53,8 @@ async function main() {
   const seedDevicesOnly = args.includes('--devices-only')
   const seedEmulatorsOnly = args.includes('--emulators-only')
   const seedCustomFieldsOnly = args.includes('--custom-fields-only')
+  const seedCpusOnly = args.includes('--cpus-only')
+  const seedGpusOnly = args.includes('--gpus-only')
 
   if (clearDbTestDataArg) {
     console.info('🧹 Clearing test data only...')
@@ -118,6 +126,34 @@ async function main() {
     return
   }
 
+  if (seedCpusOnly) {
+    console.info('🌱 Seeding CPUs only...')
+    try {
+      await cpuSeeder(prisma)
+      console.info('✅ CPUs seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding CPUs:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
+  if (seedGpusOnly) {
+    console.info('🌱 Seeding GPUs only...')
+    try {
+      await gpuSeeder(prisma)
+      console.info('✅ GPUs seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding GPUs:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
   if (clearDbArg) {
     console.warn('🗑️ Clearing database...')
     console.warn('I hope you know what you are doing 😅')
@@ -139,6 +175,8 @@ async function main() {
     await emulatorsSeeder(prisma)
     await customFieldTemplatesSeeder(prisma)
     await socSeeder(prisma)
+    await cpuSeeder(prisma)
+    await gpuSeeder(prisma)
     await devicesSeeder(prisma)
     await gamesSeeder(prisma)
     await listingsSeeder(prisma)

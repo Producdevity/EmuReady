@@ -6,9 +6,17 @@
 function parseArrayParam(param: string | null): string[] {
   if (!param) return []
   try {
-    return JSON.parse(param)
+    // Try to decode URL-encoded JSON first
+    const decoded = decodeURIComponent(param)
+    return JSON.parse(decoded)
   } catch {
-    return param ? [param] : []
+    try {
+      // Fallback to parsing without decoding
+      return JSON.parse(param)
+    } catch {
+      // If both fail, treat as single string value
+      return param ? [param] : []
+    }
   }
 }
 
@@ -20,7 +28,9 @@ function parseArrayParam(param: string | null): string[] {
 function parseNumberArrayParam(param: string | null): number[] {
   if (!param) return []
   try {
-    const parsed = JSON.parse(param)
+    // Try to decode URL-encoded JSON first
+    const decoded = decodeURIComponent(param)
+    const parsed = JSON.parse(decoded)
     if (Array.isArray(parsed)) {
       return parsed.map(Number).filter(Boolean)
     } else if (typeof parsed === 'number') {
@@ -29,7 +39,20 @@ function parseNumberArrayParam(param: string | null): number[] {
       return []
     }
   } catch {
-    return param ? [Number(param)].filter(Boolean) : []
+    try {
+      // Fallback to parsing without decoding
+      const parsed = JSON.parse(param)
+      if (Array.isArray(parsed)) {
+        return parsed.map(Number).filter(Boolean)
+      } else if (typeof parsed === 'number') {
+        return [parsed].filter(Boolean)
+      } else {
+        return []
+      }
+    } catch {
+      // If both fail, treat as single number value
+      return param ? [Number(param)].filter(Boolean) : []
+    }
   }
 }
 

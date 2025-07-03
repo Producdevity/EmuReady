@@ -35,6 +35,12 @@ enum ApprovalStatus {
   REJECTED
 }
 
+enum PcOs {
+  WINDOWS
+  LINUX
+  MACOS
+}
+
 model User {
   id                   String      @id @default(uuid())
   clerkId              String      @unique
@@ -55,28 +61,35 @@ model User {
   // Relations
   comments             Comment[]
   listings             Listing[]
+  pcListings           PcListing[]
   processedListings    Listing[]   @relation("ListingsProcessedByAdmin")
+  processedPcListings  PcListing[] @relation("PcListingsProcessedByAdmin")
   submittedGames       Game[]      @relation("GamesSubmittedByUser")
   approvedGames        Game[]      @relation("GamesApprovedByAdmin")
   votes                Vote[]
   commentVotes                CommentVote[]
   devicePreferences           UserDevicePreference[]
   socPreferences              UserSocPreference[]
+  pcPresets                   UserPcPreset[]
   notifications               Notification[]
   notificationPreferences     NotificationPreference[]
   listingNotificationPrefs    ListingNotificationPreference[]
+  pcListingNotificationPrefs  PcListingNotificationPreference[]
   triggeredNotificationEvents NotificationEvent[]
   trustActionLogs             TrustActionLog[]
   // Verified developer relations
   verifiedDeveloperFor        VerifiedDeveloper[] @relation("UserVerifiedDeveloper")
   verifiedDeveloperBy         VerifiedDeveloper[] @relation("VerifiedBy")
   developerVerifications      ListingDeveloperVerification[]
+  pcDeveloperVerifications    PcListingDeveloperVerification[]
   // Permission system relations
   assignedRolePermissions     RolePermission[]
   permissionActionLogs        PermissionActionLog[]
   // Report and ban system relations
   reportsSubmitted            ListingReport[]  @relation("UserReports")
   reportsReviewed             ListingReport[]  @relation("ReportsReviewed")
+  pcReportsSubmitted          PcListingReport[] @relation("UserPcReports")
+  pcReportsReviewed           PcListingReport[] @relation("PcReportsReviewed")
   userBans                    UserBan[]        @relation("UserBans")
   bansCreated                 UserBan[]        @relation("BansCreated")
   bansLifted                  UserBan[]        @relation("BansLifted")
@@ -115,6 +128,8 @@ model DeviceBrand {
   name      String   @unique
   createdAt DateTime @default(now())
   devices   Device[]
+  cpus      Cpu[]
+  gpus      Gpu[]
 }
 
 model SoC {
@@ -168,6 +183,7 @@ model Game {
   createdAt   DateTime       @default(now())
   system      System         @relation(fields: [systemId], references: [id])
   listings    Listing[]
+  pcListings  PcListing[]
   submitter   User?          @relation("GamesSubmittedByUser", fields: [submittedBy], references: [id])
   approver    User?          @relation("GamesApprovedByAdmin", fields: [approvedBy], references: [id])
 
@@ -200,6 +216,7 @@ model CustomFieldDefinition {
   updatedAt    DateTime          @updatedAt
   emulator     Emulator          @relation(fields: [emulatorId], references: [id])
   listingValues ListingCustomFieldValue[]
+  pcListingValues PcListingCustomFieldValue[]
 
   @@unique([emulatorId, name])
   @@index([emulatorId])
@@ -246,6 +263,7 @@ model Emulator {
   repositoryUrl         String?                 // Repository/source code URL
   officialUrl           String?                 // Official website URL
   listings              Listing[]
+  pcListings            PcListing[]
   customFieldDefinitions CustomFieldDefinition[]
   systems               System[]
   verifiedDevelopers    VerifiedDeveloper[]
@@ -257,6 +275,7 @@ model PerformanceScale {
   rank        Int
   description String?
   listings    Listing[]
+  pcListings  PcListing[]
 }
 
 model Listing {
@@ -675,4 +694,170 @@ model UserBan {
   @@index([bannedAt])
   @@index([expiresAt])
   @@map("user_bans")
+}
+
+model UserPcPreset {
+  id        String @id @default(uuid())
+  userId    String
+  name      String
+  cpuId     String
+  gpuId     String
+  memorySize Int    // in GB
+  os        PcOs
+  osVersion String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cpu  Cpu  @relation(fields: [cpuId], references: [id])
+  gpu  Gpu  @relation(fields: [gpuId], references: [id])
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("user_pc_presets")
+}
+
+model Cpu {
+  id        String      @id @default(uuid())
+  brandId   String
+  modelName String
+  createdAt DateTime    @default(now())
+  brand     DeviceBrand @relation(fields: [brandId], references: [id])
+  pcListings PcListing[]
+  presets   UserPcPreset[]
+
+  @@unique([brandId, modelName])
+  @@index([brandId])
+  @@map("cpus")
+}
+
+model Gpu {
+  id        String      @id @default(uuid())
+  brandId   String
+  modelName String
+  createdAt DateTime    @default(now())
+  brand     DeviceBrand @relation(fields: [brandId], references: [id])
+  pcListings PcListing[]
+  presets   UserPcPreset[]
+
+  @@unique([brandId, modelName])
+  @@index([brandId])
+  @@map("gpus")
+}
+
+model PcListing {
+  id              String   @id @default(uuid())
+  gameId          String
+  emulatorId      String
+  performanceId   Int
+  notes           String?
+  authorId        String
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  status          ApprovalStatus  @default(PENDING)
+  processedAt     DateTime?
+  processedNotes  String?
+  processedByUserId String?
+  memorySize      Int  // in GB
+  cpuId           String
+  gpuId           String
+  os              PcOs
+  osVersion       String
+
+  author          User                   @relation(fields: [authorId], references: [id])
+  processedByUser User?                  @relation("PcListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
+  performance     PerformanceScale       @relation(fields: [performanceId], references: [id])
+  emulator        Emulator               @relation(fields: [emulatorId], references: [id])
+  game            Game                   @relation(fields: [gameId], references: [id])
+  gpu             Gpu                    @relation(fields: [gpuId], references: [id])
+  cpu             Cpu                    @relation(fields: [cpuId], references: [id])
+
+  customFieldValues     PcListingCustomFieldValue[]
+  notificationPrefs     PcListingNotificationPreference[]
+  developerVerifications PcListingDeveloperVerification[]
+  reports               PcListingReport[]
+
+  @@index([processedByUserId])
+  @@index([status])
+  @@index([gameId])
+  @@index([emulatorId])
+  @@index([cpuId])
+  @@index([gpuId])
+  @@index([authorId])
+  @@map("pc_listings")
+}
+
+model PcListingCustomFieldValue {
+  id                      String                @id @default(uuid())
+  pcListingId             String
+  customFieldDefinitionId String
+  value                   Json
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  pcListing               PcListing             @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  customFieldDefinition   CustomFieldDefinition @relation(fields: [customFieldDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([pcListingId, customFieldDefinitionId])
+  @@index([pcListingId])
+  @@index([customFieldDefinitionId])
+  @@map("pc_listing_custom_field_values")
+}
+
+model PcListingNotificationPreference {
+  id          String    @id @default(cuid())
+  userId      String
+  pcListingId String
+  isEnabled   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pcListingId])
+  @@map("pc_listing_notification_preferences")
+}
+
+model PcListingDeveloperVerification {
+  id          String   @id @default(uuid())
+  pcListingId String
+  verifiedBy  String
+  verifiedAt  DateTime @default(now())
+  notes       String?
+  
+  pcListing   PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  developer   User      @relation(fields: [verifiedBy], references: [id], onDelete: Cascade)
+  
+  @@unique([pcListingId, verifiedBy])
+  @@index([pcListingId])
+  @@index([verifiedBy])
+  @@map("pc_listing_developer_verifications")
+}
+
+model PcListingReport {
+  id              String       @id @default(uuid())
+  pcListingId     String
+  reportedById    String
+  reason          ReportReason
+  description     String?
+  status          ReportStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  pcListing       PcListing    @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  reportedBy      User         @relation("UserPcReports", fields: [reportedById], references: [id], onDelete: Cascade)
+  reviewedBy      User?        @relation("PcReportsReviewed", fields: [reviewedById], references: [id])
+  
+  @@unique([pcListingId, reportedById])
+  @@index([pcListingId])
+  @@index([reportedById])
+  @@index([reviewedById])
+  @@index([status])
+  @@index([createdAt])
+  @@map("pc_listing_reports")
 }

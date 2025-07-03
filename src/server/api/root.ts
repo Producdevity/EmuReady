@@ -1,15 +1,18 @@
 import { createTRPCRouter } from '@/server/api/trpc'
+import { cpusRouter } from './routers/cpus'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
 import { customFieldTemplateRouter } from './routers/customFieldTemplates'
 import { deviceBrandsRouter } from './routers/deviceBrands'
 import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { gamesRouter } from './routers/games'
+import { gpusRouter } from './routers/gpus'
 import { listingReportsRouter } from './routers/listingReports'
 import { listingsRouter } from './routers/listings'
 import { listingVerificationsRouter } from './routers/listingVerifications'
 import { mobileRouter } from './routers/mobile'
 import { notificationsRouter } from './routers/notifications'
+import { pcListingsRouter } from './routers/pcListings'
 import { performanceScalesRouter } from './routers/performanceScales'
 import { permissionLogsRouter } from './routers/permissionLogs'
 import { permissionsRouter } from './routers/permissions'
@@ -25,7 +28,10 @@ import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 
 export const appRouter = createTRPCRouter({
   listings: listingsRouter,
+  pcListings: pcListingsRouter,
   devices: devicesRouter,
+  cpus: cpusRouter,
+  gpus: gpusRouter,
   deviceBrands: deviceBrandsRouter,
   socs: socsRouter,
   games: gamesRouter,
