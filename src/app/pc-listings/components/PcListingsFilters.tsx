@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useState, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { AsyncMultiSelect } from '@/components/ui/form/AsyncMultiSelect'
@@ -55,21 +55,39 @@ export function PcListingsFilters() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   // Async loaders for CPU and GPU
-  const loadCpuOptions = async (search: string) => {
-    const result = await utils.cpus.get.fetch({ search, limit: 50 })
-    return result.cpus.map((cpu) => ({
-      id: cpu.id,
-      name: `${cpu.brand.name} ${cpu.modelName}`,
-    }))
-  }
+  const loadCpuOptions = useCallback(
+    async (search: string) => {
+      if (search.length < 2) return Promise.resolve([])
+      try {
+        const result = await utils.cpus.get.fetch({ search, limit: 50 })
+        return result.cpus.map((cpu) => ({
+          id: cpu.id,
+          name: `${cpu.brand.name} ${cpu.modelName}`,
+        }))
+      } catch (error) {
+        console.error('Error fetching CPUs:', error)
+        return []
+      }
+    },
+    [utils.cpus.get],
+  )
 
-  const loadGpuOptions = async (search: string) => {
-    const result = await utils.gpus.get.fetch({ search, limit: 50 })
-    return result.gpus.map((gpu) => ({
-      id: gpu.id,
-      name: `${gpu.brand.name} ${gpu.modelName}`,
-    }))
-  }
+  const loadGpuOptions = useCallback(
+    async (search: string) => {
+      if (search.length < 2) return Promise.resolve([])
+      try {
+        const result = await utils.gpus.get.fetch({ search, limit: 50 })
+        return result.gpus.map((gpu) => ({
+          id: gpu.id,
+          name: `${gpu.brand.name} ${gpu.modelName}`,
+        }))
+      } catch (error) {
+        console.error('Error fetching GPUs:', error)
+        return []
+      }
+    },
+    [utils.gpus.get],
+  )
 
   // Update URL when filters change
   useEffect(() => {
