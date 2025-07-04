@@ -10,6 +10,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  type AdminStatItem,
 } from '@/components/admin'
 import {
   Badge,
@@ -134,39 +135,47 @@ function AdminUsersPage() {
     router.push(newUrl, { scroll: false })
   }
 
-  const statsData = usersStatsQuery.data
+  const statsData: AdminStatItem[] = usersStatsQuery.data
     ? [
         {
           label: 'Total Users',
           value: usersStatsQuery.data.total,
-          color: 'blue' as const,
+          color: 'blue',
         },
         {
           label: 'Users',
           value: usersStatsQuery.data.byRole.user,
-          color: 'green' as const,
+          color: 'green',
         },
         {
           label: 'Authors',
           value: usersStatsQuery.data.byRole.author,
-          color: 'gray' as const,
+          color: 'gray',
         },
         {
           label: 'Developers',
           value: usersStatsQuery.data.byRole.developer,
-          color: 'purple' as const,
+          color: 'purple',
         },
         {
           label: 'Moderators',
           value: usersStatsQuery.data.byRole.moderator,
-          color: 'yellow' as const,
+          color: 'yellow',
         },
         {
           label: 'Admins',
-          value:
-            usersStatsQuery.data.byRole.admin +
-            usersStatsQuery.data.byRole.superAdmin,
-          color: 'red' as const,
+          value: usersStatsQuery.data.byRole.admin,
+          color: 'rose',
+        },
+        {
+          label: 'Super Admins',
+          value: usersStatsQuery.data.byRole.superAdmin,
+          color: 'pink',
+        },
+        {
+          label: 'Banned',
+          value: usersStatsQuery.data.bannedUsers,
+          color: 'red',
         },
       ]
     : []

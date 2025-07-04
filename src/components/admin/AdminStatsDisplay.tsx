@@ -4,17 +4,30 @@ import { cn } from '@/lib/utils'
 export interface AdminStatItem {
   label: string
   value: number
-  color: 'yellow' | 'green' | 'red' | 'blue' | 'purple' | 'gray' | 'orange'
+  color:
+    | 'yellow'
+    | 'green'
+    | 'red'
+    | 'blue'
+    | 'purple'
+    | 'gray'
+    | 'orange'
+    | 'cyan'
+    | 'pink'
+    | 'rose'
   description?: string
 }
 
 const colorClasses: Record<AdminStatItem['color'], string> = {
   blue: 'text-blue-600 dark:text-blue-400',
+  cyan: 'text-cyan-600 dark:text-cyan-400',
   gray: 'text-gray-600 dark:text-gray-400',
   green: 'text-green-600 dark:text-green-400',
   orange: 'text-orange-600 dark:text-orange-400',
+  pink: 'text-pink-600 dark:text-pink-400',
   purple: 'text-purple-600 dark:text-purple-400',
   red: 'text-red-600 dark:text-red-400',
+  rose: 'text-rose-600 dark:text-rose-400',
   yellow: 'text-yellow-600 dark:text-yellow-400',
 }
 
@@ -25,6 +38,7 @@ const gridColsMap: Record<number, string> = {
   4: 'sm:grid-cols-2 md:grid-cols-4',
   5: 'md:grid-cols-5',
   6: 'md:grid-cols-3 lg:grid-cols-6',
+  8: 'md:grid-cols-4 lg:grid-cols-8',
 }
 
 interface Props {

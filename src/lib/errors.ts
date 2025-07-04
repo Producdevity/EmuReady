@@ -198,11 +198,17 @@ export class ResourceError {
     inUse: (count: number) => AppError.resourceInUse('brand', count),
   }
 
+  static permission = {
+    notFound: () => AppError.notFound('Permission'),
+    alreadyExists: (name: string) =>
+      AppError.alreadyExists('Permission', `key "${name}"`),
+  }
+
   static device = {
     notFound: () => AppError.notFound('Device'),
     alreadyExists: (modelName: string) =>
       AppError.conflict(
-        `A device with model name "${modelName}" already exists for this brand`,
+        `Permission with this key already exists A device with model name "${modelName}" already exists for this brand`,
       ),
     inUse: (count: number) => AppError.resourceInUse('device', count),
   }

@@ -3,13 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import {
-  Button,
-  LoadingSpinner,
   Autocomplete,
-  SelectInput,
+  Button,
   Input,
+  LoadingSpinner,
+  SelectInput,
 } from '@/components/ui'
 import { MarkdownEditor } from '@/components/ui/form'
 import useMounted from '@/hooks/useMounted'
@@ -107,14 +107,13 @@ function AddPcListingPage() {
       try {
         const result = await utils.emulators.get.fetch({ search: query })
         // Filter to only emulators that support the selected game's system
-        const filteredEmulators = result.emulators.filter(
+        return result.emulators.filter(
           (emulator) =>
             !selectedGame ||
             emulator.systems.some(
               (system) => system.id === selectedGame.system.id,
             ),
         )
-        return filteredEmulators
       } catch (error) {
         console.error('Error fetching emulators:', error)
         return []

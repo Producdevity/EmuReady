@@ -1,39 +1,38 @@
-import { TRPCError } from '@trpc/server'
-import { ResourceError, AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
-  CreatePcListingSchema,
-  GetPcListingsSchema,
-  GetPcListingByIdSchema,
-  GetPendingPcListingsSchema,
-  DeletePcListingSchema,
   ApprovePcListingSchema,
-  RejectPcListingSchema,
   BulkApprovePcListingsSchema,
   BulkRejectPcListingsSchema,
-  GetAllPcListingsAdminSchema,
-  UpdatePcListingAdminSchema,
-  GetPcListingForEditSchema,
+  CreatePcListingSchema,
   CreatePcPresetSchema,
-  UpdatePcPresetSchema,
+  DeletePcListingSchema,
   DeletePcPresetSchema,
+  GetAllPcListingsAdminSchema,
+  GetPcListingByIdSchema,
+  GetPcListingForEditSchema,
+  GetPcListingsSchema,
   GetPcPresetsSchema,
+  GetPendingPcListingsSchema,
+  RejectPcListingSchema,
+  UpdatePcListingAdminSchema,
+  UpdatePcPresetSchema,
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
   moderatorProcedure,
+  protectedProcedure,
+  publicProcedure,
 } from '@/server/api/trpc'
 import {
-  pcListingInclude,
-  pcListingDetailInclude,
-  pcListingAdminInclude,
+  buildPaginationResponse,
   buildPcListingOrderBy,
   buildPcListingWhere,
-  buildPaginationResponse,
+  pcListingAdminInclude,
+  pcListingDetailInclude,
+  pcListingInclude,
 } from '@/server/api/utils/pcListingHelpers'
 import { isModerator } from '@/utils/permissions'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
 
 export const pcListingsRouter = createTRPCRouter({
@@ -184,7 +183,7 @@ export const pcListingsRouter = createTRPCRouter({
       if (!performance) return ResourceError.performanceScale.notFound()
 
       // Create PC listing with custom field values
-      const pcListing = await ctx.prisma.pcListing.create({
+      return await ctx.prisma.pcListing.create({
         data: {
           gameId: input.gameId,
           cpuId: input.cpuId,
@@ -207,8 +206,6 @@ export const pcListingsRouter = createTRPCRouter({
         },
         include: pcListingInclude,
       })
-
-      return pcListing
     }),
 
   delete: protectedProcedure
@@ -529,29 +526,20 @@ export const pcListingsRouter = createTRPCRouter({
         // Only allow users to see their own presets unless admin
         if (
           userId !== ctx.session.user.id &&
-          ctx.session.user.role !== 'ADMIN' &&
-          ctx.session.user.role !== 'SUPER_ADMIN'
+          ctx.session.user.role !== Role.ADMIN &&
+          ctx.session.user.role !== Role.SUPER_ADMIN
         ) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You can only view your own PC presets',
-          })
+          return AppError.forbidden('You can only view your own PC presets')
         }
 
-        const presets = await ctx.prisma.userPcPreset.findMany({
+        return await ctx.prisma.userPcPreset.findMany({
           where: { userId },
           include: {
-            cpu: {
-              include: { brand: true },
-            },
-            gpu: {
-              include: { brand: true },
-            },
+            cpu: { include: { brand: true } },
+            gpu: { include: { brand: true } },
           },
           orderBy: { createdAt: 'desc' },
         })
-
-        return presets
       }),
 
     create: protectedProcedure
@@ -614,10 +602,7 @@ export const pcListingsRouter = createTRPCRouter({
 
         // Only allow users to edit their own presets
         if (preset.userId !== ctx.session.user.id) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You can only edit your own PC presets',
-          })
+          return AppError.forbidden('You can only edit your own PC presets')
         }
 
         // Check if name conflicts with another preset
@@ -667,10 +652,7 @@ export const pcListingsRouter = createTRPCRouter({
 
         // Only allow users to delete their own presets
         if (preset.userId !== ctx.session.user.id) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You can only delete your own PC presets',
-          })
+          return AppError.forbidden('You can only delete your own PC presets')
         }
 
         return ctx.prisma.userPcPreset.delete({

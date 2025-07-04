@@ -1,21 +1,21 @@
-import { TRPCError } from '@trpc/server'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
-  CreatePermissionSchema,
-  UpdatePermissionSchema,
-  DeletePermissionSchema,
-  GetPermissionByIdSchema,
-  GetAllPermissionsSchema,
-  GetRolePermissionsSchema,
   AssignPermissionToRoleSchema,
-  RemovePermissionFromRoleSchema,
-  BulkUpdateRolePermissionsSchema,
-  GetPermissionMatrixSchema,
   BulkPermissionActionSchema,
+  BulkUpdateRolePermissionsSchema,
+  CreatePermissionSchema,
+  DeletePermissionSchema,
+  GetAllPermissionsSchema,
+  GetPermissionByIdSchema,
+  GetPermissionMatrixSchema,
+  GetRolePermissionsSchema,
+  RemovePermissionFromRoleSchema,
+  UpdatePermissionSchema,
 } from '@/schemas/permission'
 import {
+  accessAdminPanelProcedure,
   createTRPCRouter,
   managePermissionsProcedure,
-  accessAdminPanelProcedure,
 } from '@/server/api/trpc'
 import { PermissionActionType, Role } from '@orm'
 
@@ -67,16 +67,8 @@ export const permissionsRouter = createTRPCRouter({
           skip: offset,
           take: limit,
           include: {
-            rolePermissions: {
-              select: {
-                role: true,
-              },
-            },
-            _count: {
-              select: {
-                rolePermissions: true,
-              },
-            },
+            rolePermissions: { select: { role: true } },
+            _count: { select: { rolePermissions: true } },
           },
         }),
         ctx.prisma.permission.count({ where }),
@@ -88,12 +80,7 @@ export const permissionsRouter = createTRPCRouter({
           assignedRoles: permission.rolePermissions.map((rp) => rp.role),
           roleCount: permission._count.rolePermissions,
         })),
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
       }
     }),
 
@@ -110,24 +97,13 @@ export const permissionsRouter = createTRPCRouter({
             select: {
               role: true,
               assignedAt: true,
-              assignedByUser: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
+              assignedByUser: { select: { id: true, name: true, email: true } },
             },
           },
         },
       })
 
-      if (!permission) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Permission not found',
-        })
-      }
+      if (!permission) return AppError.notFound('Permission')
 
       return {
         ...permission,
@@ -147,10 +123,7 @@ export const permissionsRouter = createTRPCRouter({
       })
 
       if (existingPermission) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'Permission with this key already exists',
-        })
+        return ResourceError.permission.alreadyExists('key')
       }
 
       const permission = await ctx.prisma.permission.create({
@@ -183,12 +156,7 @@ export const permissionsRouter = createTRPCRouter({
         where: { id: input.id },
       })
 
-      if (!existingPermission) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Permission not found',
-        })
-      }
+      if (!existingPermission) return ResourceError.permission.notFound()
 
       // System permissions cannot be deleted, but can be updated
       const { id, ...updateData } = input
@@ -204,10 +172,7 @@ export const permissionsRouter = createTRPCRouter({
           userId: ctx.session.user.id,
           action: PermissionActionType.PERMISSION_UPDATED,
           permissionId: permission.id,
-          metadata: {
-            oldValues: existingPermission,
-            newValues: updateData,
-          },
+          metadata: { oldValues: existingPermission, newValues: updateData },
         },
       })
 
@@ -222,51 +187,31 @@ export const permissionsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const permission = await ctx.prisma.permission.findUnique({
         where: { id: input.id },
-        include: {
-          _count: {
-            select: {
-              rolePermissions: true,
-            },
-          },
-        },
+        include: { _count: { select: { rolePermissions: true } } },
       })
 
-      if (!permission) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Permission not found',
-        })
-      }
+      if (!permission) return ResourceError.permission.notFound()
 
       // Prevent deletion of system permissions
       if (permission.isSystem) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'System permissions cannot be deleted',
-        })
+        return AppError.forbidden('System permissions cannot be deleted')
       }
 
       // Check if permission is currently assigned to any roles
       if (permission._count.rolePermissions > 0) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message:
-            'Cannot delete permission that is assigned to roles. Remove from all roles first.',
-        })
+        return AppError.conflict(
+          'Cannot delete permission that is assigned to roles. Remove from all roles first.',
+        )
       }
 
-      await ctx.prisma.permission.delete({
-        where: { id: input.id },
-      })
+      await ctx.prisma.permission.delete({ where: { id: input.id } })
 
       // Log the action
       await ctx.prisma.permissionActionLog.create({
         data: {
           userId: ctx.session.user.id,
           action: PermissionActionType.PERMISSION_DELETED,
-          metadata: {
-            deletedPermission: permission,
-          },
+          metadata: { deletedPermission: permission },
         },
       })
 
@@ -282,11 +227,9 @@ export const permissionsRouter = createTRPCRouter({
     .input(GetRolePermissionsSchema)
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {}
-      if (input?.role) {
-        where.role = input.role
-      }
+      if (input?.role) where.role = input.role
 
-      const rolePermissions = await ctx.prisma.rolePermission.findMany({
+      return await ctx.prisma.rolePermission.findMany({
         where,
         include: {
           permission: {
@@ -299,13 +242,7 @@ export const permissionsRouter = createTRPCRouter({
               isSystem: true,
             },
           },
-          assignedByUser: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
+          assignedByUser: { select: { id: true, name: true, email: true } },
         },
         orderBy: [
           { role: 'asc' },
@@ -313,8 +250,6 @@ export const permissionsRouter = createTRPCRouter({
           { permission: { label: 'asc' } },
         ],
       })
-
-      return rolePermissions
     }),
 
   /**
@@ -334,10 +269,7 @@ export const permissionsRouter = createTRPCRouter({
       })
 
       if (existingAssignment) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'Permission is already assigned to this role',
-        })
+        return AppError.conflict('Permission is already assigned to this role')
       }
 
       // Verify permission exists
@@ -345,12 +277,7 @@ export const permissionsRouter = createTRPCRouter({
         where: { id: input.permissionId },
       })
 
-      if (!permission) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Permission not found',
-        })
-      }
+      if (!permission) return ResourceError.permission.notFound()
 
       const rolePermission = await ctx.prisma.rolePermission.create({
         data: {
@@ -358,9 +285,7 @@ export const permissionsRouter = createTRPCRouter({
           permissionId: input.permissionId,
           assignedBy: ctx.session.user.id,
         },
-        include: {
-          permission: true,
-        },
+        include: { permission: true },
       })
 
       // Log the action
@@ -370,9 +295,7 @@ export const permissionsRouter = createTRPCRouter({
           action: PermissionActionType.ROLE_PERMISSION_ASSIGNED,
           targetRole: input.role,
           permissionId: input.permissionId,
-          metadata: {
-            permissionKey: permission.key,
-          },
+          metadata: { permissionKey: permission.key },
         },
       })
 
@@ -392,17 +315,10 @@ export const permissionsRouter = createTRPCRouter({
             permissionId: input.permissionId,
           },
         },
-        include: {
-          permission: true,
-        },
+        include: { permission: true },
       })
 
-      if (!rolePermission) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Permission assignment not found',
-        })
-      }
+      if (!rolePermission) return AppError.notFound('Permission assignment')
 
       await ctx.prisma.rolePermission.delete({
         where: {
@@ -420,9 +336,7 @@ export const permissionsRouter = createTRPCRouter({
           action: PermissionActionType.ROLE_PERMISSION_REMOVED,
           targetRole: input.role,
           permissionId: input.permissionId,
-          metadata: {
-            permissionKey: rolePermission.permission.key,
-          },
+          metadata: { permissionKey: rolePermission.permission.key },
         },
       })
 
@@ -443,10 +357,7 @@ export const permissionsRouter = createTRPCRouter({
       })
 
       if (permissions.length !== permissionIds.length) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'One or more permissions not found',
-        })
+        return AppError.notFound('One or more permissions')
       }
 
       // Get current permissions for comparison
@@ -462,9 +373,7 @@ export const permissionsRouter = createTRPCRouter({
       // Use transaction for bulk update
       await ctx.prisma.$transaction(async (tx) => {
         // Remove existing permissions
-        await tx.rolePermission.deleteMany({
-          where: { role },
-        })
+        await tx.rolePermission.deleteMany({ where: { role } })
 
         // Add new permissions
         if (permissionIds.length > 0) {
@@ -520,13 +429,7 @@ export const permissionsRouter = createTRPCRouter({
       const permissions = await ctx.prisma.permission.findMany({
         where,
         orderBy: [{ category: 'asc' }, { label: 'asc' }],
-        include: {
-          rolePermissions: {
-            select: {
-              role: true,
-            },
-          },
-        },
+        include: { rolePermissions: { select: { role: true } } },
       })
 
       // Get all roles
@@ -541,12 +444,10 @@ export const permissionsRouter = createTRPCRouter({
         category: permission.category,
         isSystem: permission.isSystem,
         roles: roles.reduce(
-          (acc, role) => {
-            acc[role] = permission.rolePermissions.some(
-              (rp) => rp.role === role,
-            )
-            return acc
-          },
+          (acc, role) => ({
+            ...acc,
+            [role]: permission.rolePermissions.some((rp) => rp.role === role),
+          }),
           {} as Record<Role, boolean>,
         ),
       }))
@@ -628,11 +529,7 @@ export const permissionsRouter = createTRPCRouter({
             action === 'assign'
               ? PermissionActionType.ROLE_PERMISSION_ASSIGNED
               : PermissionActionType.ROLE_PERMISSION_REMOVED,
-          metadata: {
-            bulkAction: true,
-            action,
-            results,
-          },
+          metadata: { bulkAction: true, action, results },
         },
       })
 

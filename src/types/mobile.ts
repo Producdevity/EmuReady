@@ -121,6 +121,7 @@ export interface MobileUserProfile {
   createdAt: Date
   _count: {
     listings: number
+    pcListings: number
     votes: number
     comments: number
   }

@@ -1,5 +1,5 @@
-import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { AppError } from '@/lib/errors'
 import { GetPermissionLogsSchema } from '@/schemas/permission'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
 import { PERMISSIONS } from '@/utils/permission-system'
@@ -30,21 +30,10 @@ export const permissionLogsRouter = createTRPCRouter({
       // Build where clause
       const where: Record<string, unknown> = {}
 
-      if (userId) {
-        where.userId = userId
-      }
-
-      if (action) {
-        where.action = action
-      }
-
-      if (targetRole) {
-        where.targetRole = targetRole
-      }
-
-      if (permissionId) {
-        where.permissionId = permissionId
-      }
+      if (userId) where.userId = userId
+      if (action) where.action = action
+      if (targetRole) where.targetRole = targetRole
+      if (permissionId) where.permissionId = permissionId
 
       if (dateFrom || dateTo) {
         where.createdAt = {}
@@ -64,21 +53,9 @@ export const permissionLogsRouter = createTRPCRouter({
           skip: offset,
           take: limit,
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-              },
-            },
+            user: { select: { id: true, name: true, email: true, role: true } },
             permission: {
-              select: {
-                id: true,
-                key: true,
-                label: true,
-                category: true,
-              },
+              select: { id: true, key: true, label: true, category: true },
             },
           },
         }),
@@ -87,12 +64,7 @@ export const permissionLogsRouter = createTRPCRouter({
 
       return {
         logs,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
       }
     }),
 
@@ -120,80 +92,40 @@ export const permissionLogsRouter = createTRPCRouter({
 
         // Logs in last 24 hours
         ctx.prisma.permissionActionLog.count({
-          where: {
-            createdAt: {
-              gte: last24Hours,
-            },
-          },
+          where: { createdAt: { gte: last24Hours } },
         }),
 
         // Logs in last 7 days
         ctx.prisma.permissionActionLog.count({
-          where: {
-            createdAt: {
-              gte: last7Days,
-            },
-          },
+          where: { createdAt: { gte: last7Days } },
         }),
 
         // Logs in last 30 days
         ctx.prisma.permissionActionLog.count({
-          where: {
-            createdAt: {
-              gte: last30Days,
-            },
-          },
+          where: { createdAt: { gte: last30Days } },
         }),
 
         // Action breakdown
         ctx.prisma.permissionActionLog.groupBy({
           by: ['action'],
-          _count: {
-            id: true,
-          },
-          where: {
-            createdAt: {
-              gte: last30Days,
-            },
-          },
+          _count: { id: true },
+          where: { createdAt: { gte: last30Days } },
         }),
 
         // Role breakdown (for role-related actions)
         ctx.prisma.permissionActionLog.groupBy({
           by: ['targetRole'],
-          _count: {
-            id: true,
-          },
-          where: {
-            targetRole: {
-              not: null,
-            },
-            createdAt: {
-              gte: last30Days,
-            },
-          },
+          _count: { id: true },
+          where: { targetRole: { not: null }, createdAt: { gte: last30Days } },
         }),
 
         // Recent activity (last 10 logs)
         ctx.prisma.permissionActionLog.findMany({
           take: 10,
-          orderBy: {
-            createdAt: 'desc',
-          },
+          orderBy: { createdAt: 'desc' },
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-            permission: {
-              select: {
-                key: true,
-                label: true,
-              },
-            },
+            user: { select: { id: true, name: true, email: true } },
+            permission: { select: { key: true, label: true } },
           },
         }),
       ])
@@ -230,14 +162,7 @@ export const permissionLogsRouter = createTRPCRouter({
       const log = await ctx.prisma.permissionActionLog.findUnique({
         where: { id: input.id },
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-            },
-          },
+          user: { select: { id: true, name: true, email: true, role: true } },
           permission: {
             select: {
               id: true,
@@ -250,14 +175,7 @@ export const permissionLogsRouter = createTRPCRouter({
         },
       })
 
-      if (!log) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Permission log not found',
-        })
-      }
-
-      return log
+      return log || AppError.notFound('Permission log')
     }),
 
   /**
@@ -270,28 +188,15 @@ export const permissionLogsRouter = createTRPCRouter({
         limit: z.number().int().min(1).max(100).default(50),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      const logs = await ctx.prisma.permissionActionLog.findMany({
-        where: {
-          permissionId: input.permissionId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: input.limit,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      })
-
-      return logs
-    }),
+    .query(
+      async ({ ctx, input }) =>
+        await ctx.prisma.permissionActionLog.findMany({
+          where: { permissionId: input.permissionId },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          include: { user: { select: { id: true, name: true, email: true } } },
+        }),
+    ),
 
   /**
    * Get user activity for permission management
@@ -303,28 +208,17 @@ export const permissionLogsRouter = createTRPCRouter({
         limit: z.number().int().min(1).max(100).default(50),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      const logs = await ctx.prisma.permissionActionLog.findMany({
-        where: {
-          userId: input.userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: input.limit,
-        include: {
-          permission: {
-            select: {
-              id: true,
-              key: true,
-              label: true,
-            },
+    .query(
+      async ({ ctx, input }) =>
+        await ctx.prisma.permissionActionLog.findMany({
+          where: { userId: input.userId },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          include: {
+            permission: { select: { id: true, key: true, label: true } },
           },
-        },
-      })
-
-      return logs
-    }),
+        }),
+    ),
 
   /**
    * Export permission logs (for audit purposes)
@@ -344,13 +238,8 @@ export const permissionLogsRouter = createTRPCRouter({
 
       const where: Record<string, unknown> = {}
 
-      if (userId) {
-        where.userId = userId
-      }
-
-      if (action) {
-        where.action = action
-      }
+      if (userId) where.userId = userId
+      if (action) where.action = action
 
       if (dateFrom || dateTo) {
         where.createdAt = {}
@@ -364,25 +253,11 @@ export const permissionLogsRouter = createTRPCRouter({
 
       const logs = await ctx.prisma.permissionActionLog.findMany({
         where,
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-            },
-          },
+          user: { select: { id: true, name: true, email: true, role: true } },
           permission: {
-            select: {
-              id: true,
-              key: true,
-              label: true,
-              category: true,
-            },
+            select: { id: true, key: true, label: true, category: true },
           },
         },
       })

@@ -540,6 +540,7 @@ export const usersRouter = createTRPCRouter({
         moderatorCount,
         adminCount,
         superAdminCount,
+        bannedUsersCount,
       ] = await Promise.all([
         ctx.prisma.user.count({ where: { role: Role.USER } }),
         ctx.prisma.user.count({ where: { role: Role.AUTHOR } }),
@@ -547,6 +548,16 @@ export const usersRouter = createTRPCRouter({
         ctx.prisma.user.count({ where: { role: Role.MODERATOR } }),
         ctx.prisma.user.count({ where: { role: Role.ADMIN } }),
         ctx.prisma.user.count({ where: { role: Role.SUPER_ADMIN } }),
+        ctx.prisma.user.count({
+          where: {
+            userBans: {
+              some: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+            },
+          },
+        }),
       ])
 
       const total =
@@ -567,6 +578,7 @@ export const usersRouter = createTRPCRouter({
           admin: adminCount,
           superAdmin: superAdminCount,
         },
+        bannedUsers: bannedUsersCount,
       }
     },
   ),
