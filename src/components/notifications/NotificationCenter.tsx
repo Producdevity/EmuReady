@@ -68,7 +68,7 @@ function NotificationCenter(props: Props) {
 
   const invalidateNotifications = () => {
     utils.notifications.get.refetch().catch(console.error)
-    utils.notifications.getUnreadCount.invalidate().catch(console.error)
+    utils.notifications.getUnreadCount.refetch().catch(console.error)
   }
 
   const handleMarkAsRead = async (notificationId: string) => {
