@@ -373,4 +373,8 @@ export class ResourceError {
         `A PC preset with name "${name}" already exists for this user`,
       ),
   }
+
+  static verification = {
+    notFound: () => AppError.notFound('Verification'),
+  }
 }

@@ -1,25 +1,40 @@
+import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   ApprovePcListingSchema,
   BulkApprovePcListingsSchema,
   BulkRejectPcListingsSchema,
+  CreatePcListingCommentSchema,
+  CreatePcListingReportSchema,
   CreatePcListingSchema,
   CreatePcPresetSchema,
+  DeletePcListingCommentSchema,
   DeletePcListingSchema,
   DeletePcPresetSchema,
   GetAllPcListingsAdminSchema,
   GetPcListingByIdSchema,
-  GetPcListingForEditSchema,
+  GetPcListingCommentsSchema,
+  GetPcListingForAdminEditSchema,
+  GetPcListingReportsSchema,
   GetPcListingsSchema,
+  GetPcListingUserVoteSchema,
+  GetPcListingVerificationsSchema,
   GetPcPresetsSchema,
   GetPendingPcListingsSchema,
   RejectPcListingSchema,
+  RemovePcListingVerificationSchema,
   UpdatePcListingAdminSchema,
+  UpdatePcListingCommentSchema,
+  UpdatePcListingReportSchema,
   UpdatePcPresetSchema,
+  VerifyPcListingAdminSchema,
+  VotePcListingCommentSchema,
+  VotePcListingSchema,
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
   moderatorProcedure,
+  permissionProcedure,
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
@@ -31,8 +46,17 @@ import {
   pcListingDetailInclude,
   pcListingInclude,
 } from '@/server/api/utils/pcListingHelpers'
-import { isModerator } from '@/utils/permissions'
-import { ApprovalStatus, Role } from '@orm'
+import {
+  notificationEventEmitter,
+  NOTIFICATION_EVENTS,
+} from '@/server/notifications/eventEmitter'
+import { PERMISSIONS } from '@/utils/permission-system'
+import {
+  canDeleteComment,
+  canEditComment,
+  isModerator,
+} from '@/utils/permissions'
+import { ApprovalStatus, Role, ReportStatus } from '@orm'
 import type { Prisma } from '@orm'
 
 export const pcListingsRouter = createTRPCRouter({
@@ -135,14 +159,61 @@ export const pcListingsRouter = createTRPCRouter({
   byId: publicProcedure
     .input(GetPcListingByIdSchema)
     .query(async ({ ctx, input }) => {
-      const pcListing = await ctx.prisma.pcListing.findUnique({
-        where: { id: input.id },
-        include: pcListingDetailInclude,
+      const canSeeBannedUsers = ctx.session?.user
+        ? isModerator(ctx.session.user.role)
+        : false
+
+      // Apply banned user filtering
+      const where = buildPcListingWhere({ id: input.id }, canSeeBannedUsers)
+
+      const pcListing = await ctx.prisma.pcListing.findFirst({
+        where,
+        include: {
+          ...pcListingDetailInclude,
+          _count: {
+            select: {
+              votes: true,
+              comments: {
+                where: { deletedAt: null },
+              },
+              reports: true,
+            },
+          },
+        },
       })
 
       if (!pcListing) return ResourceError.pcListing.notFound()
 
-      return pcListing
+      // Get user's vote if logged in
+      let userVote = null
+      if (ctx.session?.user) {
+        const vote = await ctx.prisma.pcListingVote.findUnique({
+          where: {
+            userId_pcListingId: {
+              userId: ctx.session.user.id,
+              pcListingId: input.id,
+            },
+          },
+        })
+        userVote = vote ? vote.value : null
+      }
+
+      // Calculate vote totals
+      const [upvotes, downvotes] = await Promise.all([
+        ctx.prisma.pcListingVote.count({
+          where: { pcListingId: input.id, value: true },
+        }),
+        ctx.prisma.pcListingVote.count({
+          where: { pcListingId: input.id, value: false },
+        }),
+      ])
+
+      return {
+        ...pcListing,
+        userVote,
+        upvotes,
+        downvotes,
+      }
     }),
 
   create: protectedProcedure
@@ -165,12 +236,18 @@ export const pcListingsRouter = createTRPCRouter({
 
       // Validate referenced entities exist
       const [game, cpu, gpu, emulator, performance] = await Promise.all([
-        ctx.prisma.game.findUnique({ where: { id: input.gameId } }),
+        ctx.prisma.game.findUnique({
+          where: { id: input.gameId },
+          select: { id: true, systemId: true },
+        }),
         ctx.prisma.cpu.findUnique({ where: { id: input.cpuId } }),
         input.gpuId
           ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } })
           : null,
-        ctx.prisma.emulator.findUnique({ where: { id: input.emulatorId } }),
+        ctx.prisma.emulator.findUnique({
+          where: { id: input.emulatorId },
+          include: { systems: { select: { id: true } } },
+        }),
         ctx.prisma.performanceScale.findUnique({
           where: { id: input.performanceId },
         }),
@@ -181,6 +258,17 @@ export const pcListingsRouter = createTRPCRouter({
       if (input.gpuId && !gpu) return ResourceError.gpu.notFound() // Only check GPU if provided
       if (!emulator) return ResourceError.emulator.notFound()
       if (!performance) return ResourceError.performanceScale.notFound()
+
+      // Validate that the game's system is compatible with the chosen emulator
+      const isSystemCompatible = emulator.systems.some(
+        (system) => system.id === game.systemId,
+      )
+
+      if (!isSystemCompatible) {
+        throw AppError.badRequest(
+          "The selected emulator does not support this game's system",
+        )
+      }
 
       // Create PC listing with custom field values
       return await ctx.prisma.pcListing.create({
@@ -440,7 +528,7 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   getForEdit: moderatorProcedure
-    .input(GetPcListingForEditSchema)
+    .input(GetPcListingForAdminEditSchema)
     .query(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
@@ -660,4 +748,576 @@ export const pcListingsRouter = createTRPCRouter({
         })
       }),
   },
+
+  // Voting endpoints
+  vote: protectedProcedure
+    .input(VotePcListingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { pcListingId, value } = input
+      const userId = ctx.session.user.id
+
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+      })
+
+      if (!pcListing) {
+        ResourceError.pcListing.notFound()
+      }
+
+      // Check if user already voted on this PC listing
+      const existingVote = await ctx.prisma.pcListingVote.findUnique({
+        where: { userId_pcListingId: { userId, pcListingId } },
+      })
+
+      let voteResult
+
+      if (existingVote) {
+        // If vote is the same, remove the vote (toggle)
+        if (existingVote.value === value) {
+          await ctx.prisma.pcListingVote.delete({
+            where: { userId_pcListingId: { userId, pcListingId } },
+          })
+          voteResult = { message: 'Vote removed' }
+        } else {
+          voteResult = await ctx.prisma.pcListingVote.update({
+            where: { userId_pcListingId: { userId, pcListingId } },
+            data: { value },
+          })
+        }
+      } else {
+        voteResult = await ctx.prisma.pcListingVote.create({
+          data: { userId, pcListingId, value },
+        })
+      }
+
+      // Emit notification event
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: value
+          ? NOTIFICATION_EVENTS.LISTING_VOTED
+          : NOTIFICATION_EVENTS.LISTING_VOTED,
+        entityType: 'pcListing',
+        entityId: pcListingId,
+        triggeredBy: userId,
+        payload: {
+          pcListingId,
+          voteValue: value,
+        },
+      })
+
+      const finalVoteValue = existingVote?.value === value ? null : value
+      analytics.engagement.vote({
+        listingId: pcListingId,
+        voteValue: finalVoteValue,
+        previousVote: existingVote?.value,
+      })
+
+      return voteResult
+    }),
+
+  getUserVote: protectedProcedure
+    .input(GetPcListingUserVoteSchema)
+    .query(async ({ ctx, input }) => {
+      const vote = await ctx.prisma.pcListingVote.findUnique({
+        where: {
+          userId_pcListingId: {
+            userId: ctx.session.user.id,
+            pcListingId: input.pcListingId,
+          },
+        },
+      })
+
+      return { vote: vote ? vote.value : null }
+    }),
+
+  // Comments endpoints
+  getComments: publicProcedure
+    .input(GetPcListingCommentsSchema)
+    .query(async ({ ctx, input }) => {
+      const { pcListingId, sortBy = 'newest', limit = 50, offset = 0 } = input
+
+      const comments = await ctx.prisma.pcListingComment.findMany({
+        where: {
+          pcListingId,
+          parentId: null, // Only get top-level comments
+          deletedAt: null, // Don't show soft-deleted comments
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+          replies: {
+            where: {
+              deletedAt: null,
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  profileImage: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy:
+          sortBy === 'newest'
+            ? { createdAt: 'desc' }
+            : sortBy === 'oldest'
+              ? { createdAt: 'asc' }
+              : { score: 'desc' },
+        skip: offset,
+        take: limit,
+      })
+
+      // Get comment votes for the user if logged in
+      let userCommentVotes: Record<string, boolean> = {}
+      if (ctx.session?.user) {
+        const votes = await ctx.prisma.pcListingCommentVote.findMany({
+          where: {
+            userId: ctx.session.user.id,
+            comment: { pcListingId },
+          },
+          select: { commentId: true, value: true },
+        })
+
+        userCommentVotes = votes.reduce(
+          (acc, vote) => ({
+            ...acc,
+            [vote.commentId]: vote.value,
+          }),
+          {} as Record<string, boolean>,
+        )
+      }
+
+      const commentsWithVotes = comments.map((comment) => ({
+        ...comment,
+        userVote: userCommentVotes[comment.id] ?? null,
+        replies: comment.replies.map((reply) => ({
+          ...reply,
+          userVote: userCommentVotes[reply.id] ?? null,
+        })),
+      }))
+
+      return { comments: commentsWithVotes }
+    }),
+
+  createComment: protectedProcedure
+    .input(CreatePcListingCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { pcListingId, content, parentId } = input
+      const userId = ctx.session.user.id
+
+      // Check if PC listing exists
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+      })
+
+      if (!pcListing) {
+        ResourceError.pcListing.notFound()
+      }
+
+      // If parentId is provided, check if parent comment exists
+      if (parentId) {
+        const parentComment = await ctx.prisma.pcListingComment.findUnique({
+          where: { id: parentId },
+        })
+
+        if (!parentComment) {
+          ResourceError.comment.parentNotFound()
+        }
+      }
+
+      const comment = await ctx.prisma.pcListingComment.create({
+        data: {
+          content,
+          userId,
+          pcListingId,
+          parentId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+        },
+      })
+
+      notificationEventEmitter.emitNotificationEvent({
+        eventType: parentId
+          ? NOTIFICATION_EVENTS.COMMENT_REPLIED
+          : NOTIFICATION_EVENTS.LISTING_COMMENTED,
+        entityType: 'pcListing',
+        entityId: pcListingId,
+        triggeredBy: userId,
+        payload: {
+          pcListingId,
+          commentId: comment.id,
+          parentId,
+          commentText: content,
+        },
+      })
+
+      analytics.engagement.comment({
+        action: parentId ? 'reply' : 'created',
+        commentId: comment.id,
+        listingId: pcListingId,
+        isReply: !!parentId,
+        contentLength: content.length,
+      })
+
+      return comment
+    }),
+
+  updateComment: protectedProcedure
+    .input(UpdatePcListingCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const comment = await ctx.prisma.pcListingComment.findUnique({
+        where: { id: input.commentId },
+        include: { user: { select: { id: true } } },
+      })
+
+      if (!comment) return ResourceError.comment.notFound()
+      if (comment.deletedAt) return ResourceError.comment.cannotEditDeleted()
+
+      const canEdit = canEditComment(
+        ctx.session.user.role,
+        comment.user.id,
+        ctx.session.user.id,
+      )
+
+      if (!canEdit) {
+        AppError.forbidden('You do not have permission to edit this comment')
+      }
+
+      return ctx.prisma.pcListingComment.update({
+        where: { id: input.commentId },
+        data: {
+          content: input.content,
+          isEdited: true,
+          updatedAt: new Date(),
+        },
+        include: {
+          user: { select: { id: true, name: true, profileImage: true } },
+        },
+      })
+    }),
+
+  deleteComment: protectedProcedure
+    .input(DeletePcListingCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const comment = await ctx.prisma.pcListingComment.findUnique({
+        where: { id: input.commentId },
+        include: { user: { select: { id: true } } },
+      })
+
+      if (!comment) return ResourceError.comment.notFound()
+      if (comment.deletedAt) return ResourceError.comment.alreadyDeleted()
+
+      const canDelete = canDeleteComment(
+        ctx.session.user.role,
+        comment.user.id,
+        ctx.session.user.id,
+      )
+
+      if (!canDelete) {
+        AppError.forbidden('You do not have permission to delete this comment')
+      }
+
+      return ctx.prisma.pcListingComment.update({
+        where: { id: input.commentId },
+        data: { deletedAt: new Date() },
+      })
+    }),
+
+  voteComment: protectedProcedure
+    .input(VotePcListingCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { commentId, value } = input
+      const userId = ctx.session.user.id
+
+      const comment = await ctx.prisma.pcListingComment.findUnique({
+        where: { id: commentId },
+      })
+
+      if (!comment) {
+        ResourceError.comment.notFound()
+      }
+
+      // Check if user already voted on this comment
+      const existingVote = await ctx.prisma.pcListingCommentVote.findUnique({
+        where: { userId_commentId: { userId, commentId } },
+      })
+
+      // Start a transaction to handle both the vote and score update
+      return ctx.prisma.$transaction(async (tx) => {
+        let voteResult
+        let scoreChange: number
+
+        if (existingVote) {
+          // If vote is the same, remove the vote (toggle)
+          if (existingVote.value === value) {
+            await tx.pcListingCommentVote.delete({
+              where: { userId_commentId: { userId, commentId } },
+            })
+            scoreChange = existingVote.value ? -1 : 1
+            voteResult = { message: 'Vote removed' }
+          } else {
+            voteResult = await tx.pcListingCommentVote.update({
+              where: { userId_commentId: { userId, commentId } },
+              data: { value },
+            })
+            scoreChange = value ? 2 : -2
+          }
+        } else {
+          voteResult = await tx.pcListingCommentVote.create({
+            data: { userId, commentId, value },
+          })
+          scoreChange = value ? 1 : -1
+        }
+
+        // Update the comment score
+        await tx.pcListingComment.update({
+          where: { id: commentId },
+          data: { score: { increment: scoreChange } },
+        })
+
+        return voteResult
+      })
+    }),
+
+  // Reporting endpoints
+  createReport: protectedProcedure
+    .input(CreatePcListingReportSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { pcListingId, reason, description } = input
+      const userId = ctx.session.user.id
+
+      // Check if PC listing exists
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+        include: { author: true },
+      })
+
+      if (!pcListing) {
+        throw ResourceError.pcListing.notFound()
+      }
+
+      // Prevent users from reporting their own listings
+      if (pcListing.authorId === userId) {
+        AppError.badRequest('You cannot report your own listing')
+      }
+
+      // Check if user already reported this listing
+      const existingReport = await ctx.prisma.pcListingReport.findUnique({
+        where: {
+          pcListingId_reportedById: {
+            pcListingId,
+            reportedById: userId,
+          },
+        },
+      })
+
+      if (existingReport) {
+        AppError.badRequest('You have already reported this listing')
+      }
+
+      return ctx.prisma.pcListingReport.create({
+        data: {
+          pcListingId,
+          reportedById: userId,
+          reason,
+          description,
+        },
+        include: {
+          pcListing: {
+            include: {
+              game: { select: { title: true } },
+              author: { select: { name: true } },
+            },
+          },
+        },
+      })
+    }),
+
+  getReports: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+    .input(GetPcListingReportsSchema)
+    .query(async ({ ctx, input }) => {
+      const { status, page = 1, limit = 20 } = input
+      const offset = (page - 1) * limit
+
+      const where: Prisma.PcListingReportWhereInput = {}
+      if (status) {
+        where.status = status
+      }
+
+      const [reports, total] = await Promise.all([
+        ctx.prisma.pcListingReport.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: offset,
+          take: limit,
+          include: {
+            pcListing: {
+              include: {
+                game: { select: { id: true, title: true } },
+                author: { select: { id: true, name: true } },
+                cpu: true,
+                gpu: true,
+                emulator: { select: { id: true, name: true } },
+              },
+            },
+            reportedBy: { select: { id: true, name: true, email: true } },
+            reviewedBy: { select: { id: true, name: true } },
+          },
+        }),
+        ctx.prisma.pcListingReport.count({ where }),
+      ])
+
+      return {
+        reports,
+        pagination: buildPaginationResponse(total, page, limit),
+      }
+    }),
+
+  updateReport: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+    .input(UpdatePcListingReportSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { reportId, status, reviewNotes } = input
+      const reviewerId = ctx.session.user.id
+
+      const report = await ctx.prisma.pcListingReport.findUnique({
+        where: { id: reportId },
+        include: { pcListing: true },
+      })
+
+      if (!report) {
+        throw ResourceError.listingReport.notFound()
+      }
+
+      // If resolving the report and marking listing as rejected
+      if (
+        status === ReportStatus.RESOLVED &&
+        report.pcListing?.status === ApprovalStatus.APPROVED
+      ) {
+        // Update the listing status to rejected
+        await ctx.prisma.pcListing.update({
+          where: { id: report.pcListingId },
+          data: {
+            status: ApprovalStatus.REJECTED,
+            processedAt: new Date(),
+            processedByUserId: reviewerId,
+            processedNotes: `Rejected due to report: ${reviewNotes || 'No additional notes'}`,
+          },
+        })
+      }
+
+      return ctx.prisma.pcListingReport.update({
+        where: { id: reportId },
+        data: {
+          status,
+          reviewNotes,
+          reviewedById: reviewerId,
+          reviewedAt: new Date(),
+        },
+        include: {
+          pcListing: {
+            include: {
+              game: { select: { title: true } },
+              author: { select: { name: true } },
+            },
+          },
+          reportedBy: { select: { name: true } },
+          reviewedBy: { select: { name: true } },
+        },
+      })
+    }),
+
+  // Verification endpoints
+  verify: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
+    .input(VerifyPcListingAdminSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { pcListingId, notes } = input
+      const verifierId = ctx.session.user.id
+
+      // Check if PC listing exists
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+      })
+
+      if (!pcListing) {
+        ResourceError.pcListing.notFound()
+      }
+
+      // Check if user already verified this listing
+      const existingVerification =
+        await ctx.prisma.pcListingDeveloperVerification.findUnique({
+          where: {
+            pcListingId_verifiedBy: {
+              pcListingId,
+              verifiedBy: verifierId,
+            },
+          },
+        })
+
+      if (existingVerification) {
+        AppError.badRequest('You have already verified this listing')
+      }
+
+      return ctx.prisma.pcListingDeveloperVerification.create({
+        data: {
+          pcListingId,
+          verifiedBy: verifierId,
+          notes,
+        },
+        include: {
+          developer: { select: { id: true, name: true } },
+        },
+      })
+    }),
+
+  removeVerification: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
+    .input(RemovePcListingVerificationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const verification =
+        await ctx.prisma.pcListingDeveloperVerification.findUnique({
+          where: { id: input.verificationId },
+        })
+
+      if (!verification) {
+        throw ResourceError.verification.notFound()
+      }
+
+      // Only allow the verifier or admin to remove verification
+      if (
+        verification.verifiedBy !== ctx.session.user.id &&
+        !isModerator(ctx.session.user.role)
+      ) {
+        AppError.forbidden('You can only remove your own verifications')
+      }
+
+      return ctx.prisma.pcListingDeveloperVerification.delete({
+        where: { id: input.verificationId },
+      })
+    }),
+
+  getVerifications: publicProcedure
+    .input(GetPcListingVerificationsSchema)
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.pcListingDeveloperVerification.findMany({
+        where: { pcListingId: input.pcListingId },
+        include: {
+          developer: { select: { id: true, name: true } },
+        },
+        orderBy: { verifiedAt: 'desc' },
+      })
+    }),
 })

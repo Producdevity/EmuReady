@@ -111,12 +111,12 @@ export const BulkRejectPcListingsSchema = z.object({
   notes: z.string().optional(),
 })
 
-export const VerifyPcListingSchema = z.object({
+export const VerifyPcListingAdminSchema = z.object({
   pcListingId: z.string().uuid(),
   notes: z.string().optional(),
 })
 
-export const UnverifyPcListingSchema = z.object({
+export const UnverifyPcListingAdminSchema = z.object({
   pcListingId: z.string().uuid(),
   notes: z.string().optional(),
 })
@@ -147,7 +147,7 @@ export const GetAllPcListingsAdminSchema = z.object({
   osFilter: z.nativeEnum(PcOs).optional(),
 })
 
-export const GetPcListingForEditSchema = z.object({
+export const GetPcListingForAdminEditSchema = z.object({
   id: z.string().uuid(),
 })
 
@@ -190,7 +190,7 @@ export const UpdatePcListingUserSchema = z.object({
     .optional(),
 })
 
-export const GetPcListingForUserEditSchema = z.object({
+export const GetPcListingForOwnerEditSchema = z.object({
   id: z.string().uuid(),
 })
 
@@ -219,3 +219,108 @@ export const DeletePcPresetSchema = z.object({ id: z.string().uuid() })
 export const GetPcPresetsSchema = z.object({
   userId: z.string().uuid().optional(), // For admin access
 })
+
+// PC Listing Vote schemas
+export const VotePcListingSchema = z.object({
+  pcListingId: z.string().uuid(),
+  value: z.boolean(), // true = upvote, false = downvote
+})
+
+export const GetPcListingUserVoteSchema = z.object({
+  pcListingId: z.string().uuid(),
+})
+
+// PC Listing Comment schemas
+export const GetPcListingCommentsSchema = z.object({
+  pcListingId: z.string().uuid(),
+  sortBy: z.enum(['newest', 'oldest', 'score']).default('newest'),
+  limit: z.number().min(1).max(100).default(50),
+  offset: z.number().min(0).default(0),
+})
+
+export const CreatePcListingCommentSchema = z.object({
+  pcListingId: z.string().uuid(),
+  content: z.string().min(1).max(2000),
+  parentId: z.string().uuid().optional(),
+})
+
+export const UpdatePcListingCommentSchema = z.object({
+  commentId: z.string().uuid(),
+  content: z.string().min(1).max(2000),
+})
+
+export const DeletePcListingCommentSchema = z.object({
+  commentId: z.string().uuid(),
+})
+
+export const VotePcListingCommentSchema = z.object({
+  commentId: z.string().uuid(),
+  value: z.boolean(), // true = upvote, false = downvote
+})
+
+// PC Listing Report schemas
+export const CreatePcListingReportSchema = z.object({
+  pcListingId: z.string().uuid(),
+  reason: z.enum([
+    'INAPPROPRIATE_CONTENT',
+    'SPAM',
+    'MISLEADING_INFORMATION',
+    'FAKE_LISTING',
+    'COPYRIGHT_VIOLATION',
+    'OTHER',
+  ]),
+  description: z.string().max(1000).optional(),
+})
+
+export const UpdatePcListingReportSchema = z.object({
+  reportId: z.string().uuid(),
+  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']),
+  reviewNotes: z.string().max(1000).optional(),
+})
+
+export const GetPcListingReportsSchema = z.object({
+  status: z
+    .enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'])
+    .optional(),
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20),
+})
+
+// PC Listing Verification schemas
+export const VerifyPcListingSchema = z.object({
+  pcListingId: z.string().uuid(),
+  notes: z.string().max(500).optional(),
+})
+
+export const RemovePcListingVerificationSchema = z.object({
+  verificationId: z.string().uuid(),
+})
+
+export const GetPcListingVerificationsSchema = z.object({
+  pcListingId: z.string().uuid(),
+})
+
+// User permissions and editing
+export const CanEditPcListingSchema = z.object({
+  pcListingId: z.string().uuid(),
+})
+
+export const GetPcListingForUserEditSchema = z.object({
+  id: z.string().uuid(),
+})
+
+// Type exports
+export type CreatePcListingInput = z.infer<typeof CreatePcListingSchema>
+export type GetPcListingsInput = z.infer<typeof GetPcListingsSchema>
+export type UpdatePcListingInput = z.infer<typeof UpdatePcListingUserSchema>
+export type VotePcListingInput = z.infer<typeof VotePcListingSchema>
+export type CreatePcListingCommentInput = z.infer<
+  typeof CreatePcListingCommentSchema
+>
+export type UpdatePcListingCommentInput = z.infer<
+  typeof UpdatePcListingCommentSchema
+>
+export type CreatePcListingReportInput = z.infer<
+  typeof CreatePcListingReportSchema
+>
+export type VerifyPcListingInput = z.infer<typeof VerifyPcListingSchema>

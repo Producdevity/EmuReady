@@ -104,16 +104,21 @@ function AddPcListingPage() {
 
   const loadEmulatorItems = useCallback(
     async (query: string): Promise<EmulatorOption[]> => {
+      if (!selectedGame) {
+        return Promise.resolve([])
+      }
+
       try {
         const result = await utils.emulators.get.fetch({ search: query })
+
         // Filter to only emulators that support the selected game's system
-        return result.emulators.filter(
-          (emulator) =>
-            !selectedGame ||
-            emulator.systems.some(
-              (system) => system.id === selectedGame.system.id,
-            ),
+        const filteredEmulators = result.emulators.filter((emulator) =>
+          emulator.systems.some(
+            (system) => system.id === selectedGame.system.id,
+          ),
         )
+
+        return filteredEmulators
       } catch (error) {
         console.error('Error fetching emulators:', error)
         return []

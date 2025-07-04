@@ -14,11 +14,20 @@ import {
   TranslatableMarkdown,
   ApprovalStatusBadge,
 } from '@/components/ui'
+import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
-import { CustomFieldType, PcOs } from '@orm'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { CustomFieldType, PcOs, Role } from '@orm'
+import PcCommentThread from './PcCommentThread'
+import PcReportListingButton from './PcReportListingButton'
+import PcVoteButtons from './PcVoteButtons'
 
-export type PcListing = NonNullable<RouterOutput['pcListings']['byId']>
+export type PcListing = NonNullable<RouterOutput['pcListings']['byId']> & {
+  userVote?: boolean | null
+  upvotes?: number
+  downvotes?: number
+}
 
 interface Props {
   pcListing: PcListing
@@ -33,9 +42,19 @@ const osLabels: Record<PcOs | 'UNKNOWN', string> = {
 
 function PcListingDetailsClient(props: Props) {
   const router = useRouter()
+  const utils = api.useUtils()
+  const pcListingId = props.pcListing.id
 
-  // TODO: Add user query to check banned user indicators when needed
-  const canViewBannedUsers = false
+  // Get current user to check if they can see banned user indicators
+  const currentUserQuery = api.users.me.useQuery()
+  const canViewBannedUsers = roleIncludesRole(
+    currentUserQuery.data?.role,
+    Role.MODERATOR,
+  )
+
+  const refreshData = () => {
+    utils.pcListings.byId.invalidate({ id: pcListingId }).catch(console.error)
+  }
 
   const renderCustomFieldValue = (
     fieldValue: NonNullable<Props['pcListing']['customFieldValues']>[0],
@@ -322,11 +341,47 @@ function PcListingDetailsClient(props: Props) {
                 </div>
               </div>
 
-              {/* TODO: Add PC-specific action buttons when endpoints are available */}
+              {/* Action Buttons */}
+              <div className="mt-4 space-y-2">
+                <PcReportListingButton
+                  pcListingId={props.pcListing.id}
+                  authorId={props.pcListing.authorId}
+                  onSuccess={refreshData}
+                />
+              </div>
             </div>
           </div>
 
-          {/* TODO: Add PC listing specific comments and voting system */}
+          {/* Voting Section */}
+          <div
+            className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700"
+            id="vote-section"
+          >
+            <PcVoteButtons
+              pcListingId={props.pcListing.id}
+              currentVote={props.pcListing.userVote ?? null}
+              upVoteCount={props.pcListing.upvotes ?? 0}
+              totalVotes={
+                (props.pcListing.upvotes ?? 0) +
+                (props.pcListing.downvotes ?? 0)
+              }
+              onVoteSuccess={refreshData}
+              gameId={props.pcListing.game.id}
+              systemId={props.pcListing.game.system?.id}
+              emulatorId={props.pcListing.emulator.id}
+              cpuId={props.pcListing.cpu.id}
+              gpuId={props.pcListing.gpu?.id}
+            />
+          </div>
+
+          {/* Comments Section */}
+          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+            <PcCommentThread
+              pcListingId={props.pcListing.id}
+              gameId={props.pcListing.game.id}
+              systemId={props.pcListing.game.system?.id}
+            />
+          </div>
         </Card>
       </motion.div>
     </div>

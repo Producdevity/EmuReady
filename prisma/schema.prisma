@@ -68,6 +68,9 @@ model User {
   approvedGames        Game[]      @relation("GamesApprovedByAdmin")
   votes                Vote[]
   commentVotes                CommentVote[]
+  pcListingVotes              PcListingVote[]
+  pcListingComments           PcListingComment[]
+  pcListingCommentVotes       PcListingCommentVote[]
   devicePreferences           UserDevicePreference[]
   socPreferences              UserSocPreference[]
   pcPresets                   UserPcPreset[]
@@ -776,6 +779,8 @@ model PcListing {
   notificationPrefs     PcListingNotificationPreference[]
   developerVerifications PcListingDeveloperVerification[]
   reports               PcListingReport[]
+  votes                 PcListingVote[]
+  comments              PcListingComment[]
 
   @@index([processedByUserId])
   @@index([status])
@@ -860,4 +865,61 @@ model PcListingReport {
   @@index([status])
   @@index([createdAt])
   @@map("pc_listing_reports")
+}
+
+model PcListingVote {
+  id          String    @id @default(uuid())
+  value       Boolean   // true = upvote, false = downvote
+  userId      String
+  pcListingId String
+  createdAt   DateTime  @default(now())
+  
+  pcListing   PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, pcListingId])
+  @@index([pcListingId])
+  @@index([userId])
+  @@map("pc_listing_votes")
+}
+
+model PcListingComment {
+  id          String               @id @default(uuid())
+  content     String
+  userId      String
+  pcListingId String
+  parentId    String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?
+  isEdited    Boolean              @default(false)
+  score       Int                  @default(0)
+  
+  parent      PcListingComment?    @relation("PcCommentThread", fields: [parentId], references: [id])
+  replies     PcListingComment[]   @relation("PcCommentThread")
+  pcListing   PcListing            @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes       PcListingCommentVote[]
+  
+  @@index([pcListingId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("pc_listing_comments")
+}
+
+model PcListingCommentVote {
+  id        String           @id @default(uuid())
+  value     Boolean          // true = upvote, false = downvote
+  userId    String
+  commentId String
+  createdAt DateTime         @default(now())
+  
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   PcListingComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("pc_listing_comment_votes")
 }

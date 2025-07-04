@@ -19,6 +19,10 @@ export const pcListingInclude = {
   _count: {
     select: {
       reports: true,
+      votes: true,
+      comments: {
+        where: { deletedAt: null },
+      },
     },
   },
 } as const
