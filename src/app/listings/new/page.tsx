@@ -26,8 +26,11 @@ import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
+import {
+  parseCustomFieldOptions,
+  getCustomFieldDefaultValue,
+} from '@/utils/customFields'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { CustomFieldType } from '@orm'
 import {
   CustomFieldRenderer,
   type DeviceOption,
@@ -41,7 +44,6 @@ import {
 } from '../components/shared'
 import createDynamicListingSchema, {
   type CustomFieldDefinitionWithOptions,
-  type CustomFieldOptionUI,
 } from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 
@@ -255,31 +257,7 @@ function AddListingPage() {
 
     const parsed = customFieldDefinitionsQuery.data.map(
       (field): CustomFieldDefinitionWithOptions => {
-        //
-        let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
-        if (
-          field.type === CustomFieldType.SELECT &&
-          Array.isArray(field.options)
-        ) {
-          parsedOptions = field.options.reduce(
-            (acc: CustomFieldOptionUI[], opt: unknown) => {
-              if (
-                typeof opt === 'object' &&
-                opt !== null &&
-                'value' in opt &&
-                'label' in opt
-              ) {
-                const knownOpt = opt as { value: unknown; label: unknown }
-                acc.push({
-                  value: String(knownOpt.value),
-                  label: String(knownOpt.label),
-                })
-              }
-              return acc
-            },
-            [],
-          )
-        }
+        const parsedOptions = parseCustomFieldOptions(field)
         return {
           ...field,
           parsedOptions,
@@ -314,23 +292,10 @@ function AddListingPage() {
       )
       if (existingValueObj) return existingValueObj
 
-      // Use the actual default value from the field definition
-      let defaultValue: string | boolean | number | null | undefined =
-        field.defaultValue as string | boolean | number | null | undefined
-
-      // Only fall back to hardcoded defaults if no default value is set
-      if (defaultValue === null || defaultValue === undefined) {
-        switch (field.type) {
-          case CustomFieldType.BOOLEAN:
-            defaultValue = false
-            break
-          case CustomFieldType.SELECT:
-            defaultValue = field.parsedOptions?.[0]?.value ?? ''
-            break
-          default:
-            defaultValue = ''
-        }
-      }
+      const defaultValue = getCustomFieldDefaultValue(
+        field,
+        field.parsedOptions,
+      )
 
       return {
         customFieldDefinitionId: field.id,

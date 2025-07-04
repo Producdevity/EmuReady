@@ -18,11 +18,14 @@ import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
+import {
+  parseCustomFieldOptions,
+  getCustomFieldDefaultValue,
+} from '@/utils/customFields'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { CustomFieldType, PcOs } from '@orm'
+import { PcOs } from '@orm'
 import createDynamicPcListingSchema, {
   type CustomFieldDefinitionWithOptions,
-  type CustomFieldOptionUI,
 } from './form-schemas/createDynamicPcListingSchema'
 import {
   CustomFieldRenderer,
@@ -70,7 +73,11 @@ function AddPcListingPage() {
       if (query.length < 2) return Promise.resolve([])
       try {
         const result = await utils.games.get.fetch({ search: query, limit: 20 })
-        return result.games ?? []
+        // Filter out Microsoft Windows games since PC listings are for emulation
+        const filteredGames = (result.games ?? []).filter(
+          (game) => game.system.name !== 'Microsoft Windows',
+        )
+        return filteredGames
       } catch (error) {
         console.error('Error fetching games:', error)
         return []
@@ -157,30 +164,7 @@ function AddPcListingPage() {
 
     const parsed = customFieldDefinitionsQuery.data.map(
       (field): CustomFieldDefinitionWithOptions => {
-        let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
-        if (
-          field.type === CustomFieldType.SELECT &&
-          Array.isArray(field.options)
-        ) {
-          parsedOptions = field.options.reduce(
-            (acc: CustomFieldOptionUI[], opt: unknown) => {
-              if (
-                typeof opt === 'object' &&
-                opt !== null &&
-                'value' in opt &&
-                'label' in opt
-              ) {
-                const knownOpt = opt as { value: unknown; label: unknown }
-                acc.push({
-                  value: String(knownOpt.value),
-                  label: String(knownOpt.label),
-                })
-              }
-              return acc
-            },
-            [],
-          )
-        }
+        const parsedOptions = parseCustomFieldOptions(field)
         return {
           ...field,
           optionsUI: parsedOptions,
@@ -215,23 +199,7 @@ function AddPcListingPage() {
       )
       if (existingValueObj) return existingValueObj
 
-      // Use the actual default value from the field definition
-      let defaultValue: string | boolean | number | null | undefined =
-        field.defaultValue as string | boolean | number | null | undefined
-
-      // Only fall back to hardcoded defaults if no default value is set
-      if (defaultValue === null || defaultValue === undefined) {
-        switch (field.type) {
-          case CustomFieldType.BOOLEAN:
-            defaultValue = false
-            break
-          case CustomFieldType.SELECT:
-            defaultValue = field.optionsUI?.[0]?.value ?? ''
-            break
-          default:
-            defaultValue = ''
-        }
-      }
+      const defaultValue = getCustomFieldDefaultValue(field, field.optionsUI)
 
       return {
         customFieldDefinitionId: field.id,

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { AsyncMultiSelect } from '@/components/ui/form/AsyncMultiSelect'
 import { Input } from '@/components/ui/form/Input'
 import { MultiSelect } from '@/components/ui/form/MultiSelect'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
@@ -46,20 +47,29 @@ export function PcListingsFilters() {
   const debouncedMemoryMin = useDebouncedValue(memoryMin, 300)
   const debouncedMemoryMax = useDebouncedValue(memoryMax, 300)
 
+  const utils = api.useUtils()
+
   // Fetch filter options
   const systemsQuery = api.systems.get.useQuery()
-  // TODO: find a better alternative to hardcoding 10000 for cpus (AsyncMultiselect)
-  const cpusQuery = api.cpus.get.useQuery({
-    page: 1,
-    limit: 1000,
-  })
-  // TODO: find a better alternative to hardcoding 10000 for gpus (AsyncMultiselect)
-  const gpusQuery = api.gpus.get.useQuery({
-    page: 1,
-    limit: 1000,
-  })
   const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
+
+  // Async loaders for CPU and GPU
+  const loadCpuOptions = async (search: string) => {
+    const result = await utils.cpus.get.fetch({ search, limit: 50 })
+    return result.cpus.map((cpu) => ({
+      id: cpu.id,
+      name: `${cpu.brand.name} ${cpu.modelName}`,
+    }))
+  }
+
+  const loadGpuOptions = async (search: string) => {
+    const result = await utils.gpus.get.fetch({ search, limit: 50 })
+    return result.gpus.map((gpu) => ({
+      id: gpu.id,
+      name: `${gpu.brand.name} ${gpu.modelName}`,
+    }))
+  }
 
   // Update URL when filters change
   useEffect(() => {
@@ -157,34 +167,26 @@ export function PcListingsFilters() {
           )}
 
           {/* CPUs */}
-          {cpusQuery.data?.cpus && (
-            <MultiSelect
-              label="CPUs"
-              value={selectedCpus}
-              onChange={setSelectedCpus}
-              options={cpusQuery.data.cpus.map((cpu) => ({
-                id: cpu.id,
-                name: `${cpu.brand.name} ${cpu.modelName}`,
-              }))}
-              placeholder="Select CPUs..."
-              maxDisplayed={2}
-            />
-          )}
+          <AsyncMultiSelect
+            label="CPUs"
+            value={selectedCpus}
+            onChange={setSelectedCpus}
+            loadOptions={loadCpuOptions}
+            placeholder="Select CPUs..."
+            emptyMessage="No CPUs found"
+            maxSelected={5}
+          />
 
           {/* GPUs */}
-          {gpusQuery.data?.gpus && (
-            <MultiSelect
-              label="GPUs"
-              value={selectedGpus}
-              onChange={setSelectedGpus}
-              options={gpusQuery.data.gpus.map((gpu) => ({
-                id: gpu.id,
-                name: `${gpu.brand.name} ${gpu.modelName}`,
-              }))}
-              placeholder="Select GPUs..."
-              maxDisplayed={2}
-            />
-          )}
+          <AsyncMultiSelect
+            label="GPUs"
+            value={selectedGpus}
+            onChange={setSelectedGpus}
+            loadOptions={loadGpuOptions}
+            placeholder="Select GPUs..."
+            emptyMessage="No GPUs found"
+            maxSelected={5}
+          />
 
           {/* Emulators */}
           {emulatorsQuery.data?.emulators && (
