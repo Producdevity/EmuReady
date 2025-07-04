@@ -315,6 +315,7 @@ const gpuSeeder = async (prisma: PrismaClient) => {
 
   // Seed NVIDIA GPUs
   for (const modelName of nvidiaGpus) {
+    console.info(`Seeding NVIDIA GPU: ${modelName}`)
     await prisma.gpu.upsert({
       where: {
         brandId_modelName: {
@@ -332,6 +333,7 @@ const gpuSeeder = async (prisma: PrismaClient) => {
 
   // Seed AMD GPUs
   for (const modelName of amdGpus) {
+    console.info(`Seeding AMD GPU: ${modelName}`)
     await prisma.gpu.upsert({
       where: {
         brandId_modelName: {
@@ -349,6 +351,7 @@ const gpuSeeder = async (prisma: PrismaClient) => {
 
   // Seed Intel GPUs
   for (const modelName of intelGpus) {
+    console.info(`Seeding Intel GPU: ${modelName}`)
     await prisma.gpu.upsert({
       where: {
         brandId_modelName: {

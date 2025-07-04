@@ -472,6 +472,7 @@ const cpuSeeder = async (prisma: PrismaClient) => {
 
   // Seed Intel CPUs
   for (const modelName of intelCpus) {
+    console.info(`Seeding Intel CPU: ${modelName}`)
     await prisma.cpu.upsert({
       where: {
         brandId_modelName: {
@@ -489,6 +490,7 @@ const cpuSeeder = async (prisma: PrismaClient) => {
 
   // Seed AMD CPUs
   for (const modelName of amdCpus) {
+    console.info(`Seeding AMD CPU: ${modelName}`)
     await prisma.cpu.upsert({
       where: {
         brandId_modelName: {
@@ -506,6 +508,7 @@ const cpuSeeder = async (prisma: PrismaClient) => {
 
   // Seed Apple CPUs
   for (const modelName of appleCpus) {
+    console.info(`Seeding Apple CPU: ${modelName}`)
     await prisma.cpu.upsert({
       where: {
         brandId_modelName: {
