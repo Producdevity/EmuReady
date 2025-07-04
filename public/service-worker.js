@@ -39,7 +39,7 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.7.50'
+const CACHE_NAME = 'emuready_v0.7.51'
 
 /** URLs cached during the installation step. */
 const urlsToCache = [
@@ -97,6 +97,7 @@ self.addEventListener(
   'fetch',
   /** @param {SWFetchEvent} event */ (event) => {
     // Only handle GET for http(s) and same‑origin assets.
+    return // temporarily disabled
     if (event.request.method !== 'GET') return
     if (
       !event.request.url.startsWith('http://') &&

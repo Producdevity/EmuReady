@@ -1,5 +1,4 @@
 import { keys } from 'remeda'
-import { z } from 'zod'
 import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
@@ -1063,20 +1062,29 @@ export const coreRouter = createTRPCRouter({
   }),
 
   statistics: publicProcedure.query(async ({ ctx }) => {
-    const [listingsCount, gamesCount, emulatorsCount, devicesCount] =
-      await Promise.all([
-        ctx.prisma.listing.count({
-          where: { status: ApprovalStatus.APPROVED },
-        }),
-        ctx.prisma.game.count({
-          where: { status: ApprovalStatus.APPROVED },
-        }),
-        ctx.prisma.emulator.count(),
-        ctx.prisma.device.count(),
-      ])
+    const [
+      listingsCount,
+      pcListingsCount,
+      gamesCount,
+      emulatorsCount,
+      devicesCount,
+    ] = await Promise.all([
+      ctx.prisma.listing.count({
+        where: { status: ApprovalStatus.APPROVED },
+      }),
+      ctx.prisma.pcListing.count({
+        where: { status: ApprovalStatus.APPROVED },
+      }),
+      ctx.prisma.game.count({
+        where: { status: ApprovalStatus.APPROVED },
+      }),
+      ctx.prisma.emulator.count(),
+      ctx.prisma.device.count(),
+    ])
 
     return {
       listings: listingsCount,
+      pcListings: pcListingsCount,
       games: gamesCount,
       emulators: emulatorsCount,
       devices: devicesCount,
@@ -1144,7 +1152,7 @@ export const coreRouter = createTRPCRouter({
   }),
 
   canEdit: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(GetListingForUserEditSchema)
     .query(async ({ ctx, input }) => {
       if (hasPermission(ctx.session.user.role, Role.ADMIN)) {
         return {
