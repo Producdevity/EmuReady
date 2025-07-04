@@ -47,17 +47,19 @@ export function PcListingsFilters() {
   const debouncedMemoryMax = useDebouncedValue(memoryMax, 300)
 
   // Fetch filter options
-  const { data: systems } = api.systems.get.useQuery()
-  const { data: cpusData } = api.cpus.get.useQuery({
+  const systemsQuery = api.systems.get.useQuery()
+  // TODO: find a better alternative to hardcoding 10000 for cpus (AsyncMultiselect)
+  const cpusQuery = api.cpus.get.useQuery({
     page: 1,
     limit: 1000,
   })
-  const { data: gpusData } = api.gpus.get.useQuery({
+  // TODO: find a better alternative to hardcoding 10000 for gpus (AsyncMultiselect)
+  const gpusQuery = api.gpus.get.useQuery({
     page: 1,
     limit: 1000,
   })
-  const { data: emulators } = api.emulators.get.useQuery({ limit: 200 })
-  const { data: performanceScales } = api.listings.performanceScales.useQuery()
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   // Update URL when filters change
   useEffect(() => {
@@ -140,12 +142,12 @@ export function PcListingsFilters() {
           </div>
 
           {/* Systems */}
-          {systems && (
+          {systemsQuery.data && (
             <MultiSelect
               label="Systems"
               value={selectedSystems}
               onChange={setSelectedSystems}
-              options={systems.map((system) => ({
+              options={systemsQuery.data.map((system) => ({
                 id: system.id,
                 name: system.name,
               }))}
@@ -155,12 +157,12 @@ export function PcListingsFilters() {
           )}
 
           {/* CPUs */}
-          {cpusData?.cpus && (
+          {cpusQuery.data?.cpus && (
             <MultiSelect
               label="CPUs"
               value={selectedCpus}
               onChange={setSelectedCpus}
-              options={cpusData.cpus.map((cpu) => ({
+              options={cpusQuery.data.cpus.map((cpu) => ({
                 id: cpu.id,
                 name: `${cpu.brand.name} ${cpu.modelName}`,
               }))}
@@ -170,12 +172,12 @@ export function PcListingsFilters() {
           )}
 
           {/* GPUs */}
-          {gpusData?.gpus && (
+          {gpusQuery.data?.gpus && (
             <MultiSelect
               label="GPUs"
               value={selectedGpus}
               onChange={setSelectedGpus}
-              options={gpusData.gpus.map((gpu) => ({
+              options={gpusQuery.data.gpus.map((gpu) => ({
                 id: gpu.id,
                 name: `${gpu.brand.name} ${gpu.modelName}`,
               }))}
@@ -185,12 +187,12 @@ export function PcListingsFilters() {
           )}
 
           {/* Emulators */}
-          {emulators?.emulators && (
+          {emulatorsQuery.data?.emulators && (
             <MultiSelect
               label="Emulators"
               value={selectedEmulators}
               onChange={setSelectedEmulators}
-              options={emulators.emulators.map((emulator) => ({
+              options={emulatorsQuery.data.emulators.map((emulator) => ({
                 id: emulator.id,
                 name: emulator.name,
               }))}
@@ -200,12 +202,12 @@ export function PcListingsFilters() {
           )}
 
           {/* Performance */}
-          {performanceScales && (
+          {performanceScalesQuery.data && (
             <MultiSelect
               label="Performance"
               value={selectedPerformance.map(String)}
               onChange={(values) => setSelectedPerformance(values.map(Number))}
-              options={performanceScales.map((scale) => ({
+              options={performanceScalesQuery.data.map((scale) => ({
                 id: scale.id.toString(),
                 name: scale.label,
               }))}

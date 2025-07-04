@@ -82,6 +82,7 @@ export const pcListingsRouter = createTRPCRouter({
         myListings = false,
       } = input
 
+      const mode: Prisma.QueryMode = 'insensitive'
       const offset = (page - 1) * limit
       const canSeeBannedUsers = ctx.session?.user
         ? isModerator(ctx.session.user.role)
@@ -93,7 +94,11 @@ export const pcListingsRouter = createTRPCRouter({
         ...(myListings && ctx.session?.user
           ? { authorId: ctx.session.user.id }
           : {}),
-        ...(systemIds?.length ? { game: { systemId: { in: systemIds } } } : {}),
+        // Exclude Microsoft Windows games since PC listings are for emulation
+        game: {
+          system: { key: { not: 'microsoft_windows' } },
+          ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
+        },
         ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
         ...(gpuIds?.length ? { gpuId: { in: gpuIds } } : {}),
         ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
@@ -108,25 +113,14 @@ export const pcListingsRouter = createTRPCRouter({
               OR: [
                 {
                   game: {
-                    title: { contains: searchTerm, mode: 'insensitive' },
+                    title: { contains: searchTerm, mode },
+                    system: { key: { not: 'microsoft_windows' } },
                   },
                 },
-                {
-                  cpu: {
-                    modelName: { contains: searchTerm, mode: 'insensitive' },
-                  },
-                },
-                {
-                  gpu: {
-                    modelName: { contains: searchTerm, mode: 'insensitive' },
-                  },
-                },
-                {
-                  emulator: {
-                    name: { contains: searchTerm, mode: 'insensitive' },
-                  },
-                },
-                { notes: { contains: searchTerm, mode: 'insensitive' } },
+                { cpu: { modelName: { contains: searchTerm, mode } } },
+                { gpu: { modelName: { contains: searchTerm, mode } } },
+                { emulator: { name: { contains: searchTerm, mode } } },
+                { notes: { contains: searchTerm, mode } },
               ],
             }
           : {}),

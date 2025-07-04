@@ -112,29 +112,12 @@ function ListingsPage() {
     userSocIds.length > 0 &&
     !userSocFilterDisabled
 
-  // Debug logging for development
-  if (process.env.NODE_ENV === 'development') {
-    console.log('⚙️ User preferences loaded:', {
-      defaultToUserDevices: userPreferencesQuery.data?.defaultToUserDevices,
-      defaultToUserSocs: userPreferencesQuery.data?.defaultToUserSocs,
-      userDeviceIds,
-      userSocIds,
-      shouldUseUserDeviceFilter,
-      shouldUseUserSocFilter,
-      userDeviceFilterDisabled,
-      userSocFilterDisabled,
-      currentDeviceFilter: listingsState.deviceIds,
-      currentSocFilter: listingsState.socIds,
-    })
-  }
-
   const systemsQuery = api.systems.get.useQuery()
-  // TODO: find a better alternative to hardcoding 10000 for devices
+  // TODO: find a better alternative to hardcoding 10000 for devices (AsyncMultiselect)
   const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
-  // TODO: find a better alternative to hardcoding 10000 for SoCs
+  // TODO: find a better alternative to hardcoding 10000 for SoCs (AsyncMultiselect)
   const socsQuery = api.socs.get.useQuery({ limit: 10000 })
-  // TODO: find a better alternative to hardcoding 200 for emulators
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 200 })
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: ListingsFilter = {

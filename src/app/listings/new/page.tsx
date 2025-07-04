@@ -255,6 +255,7 @@ function AddListingPage() {
 
     const parsed = customFieldDefinitionsQuery.data.map(
       (field): CustomFieldDefinitionWithOptions => {
+        //
         let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
         if (
           field.type === CustomFieldType.SELECT &&

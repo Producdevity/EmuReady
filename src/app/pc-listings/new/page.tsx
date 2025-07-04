@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { type Control, Controller, useForm } from 'react-hook-form'
 import {
   Autocomplete,
   Button,
@@ -19,11 +19,15 @@ import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { PcOs } from '@orm'
+import { CustomFieldType, PcOs } from '@orm'
 import createDynamicPcListingSchema, {
   type CustomFieldDefinitionWithOptions,
+  type CustomFieldOptionUI,
 } from './form-schemas/createDynamicPcListingSchema'
-import { FormValidationSummary } from '../../listings/components/shared'
+import {
+  CustomFieldRenderer,
+  FormValidationSummary,
+} from '../../listings/components/shared'
 
 export type PcListingFormValues = RouterInput['pcListings']['create']
 
@@ -44,14 +48,15 @@ function AddPcListingPage() {
   const mounted = useMounted()
 
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
-  const [selectedEmulator, setSelectedEmulator] =
-    useState<EmulatorOption | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(
     null,
   )
-  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
+  const [parsedCustomFields, setParsedCustomFields] = useState<
     CustomFieldDefinitionWithOptions[]
   >([])
+  const [schemaState, setSchemaState] = useState<
+    ReturnType<typeof createDynamicPcListingSchema>
+  >(createDynamicPcListingSchema([]))
 
   const utils = api.useUtils()
   const createPcListing = api.pcListings.create.useMutation()
@@ -104,21 +109,17 @@ function AddPcListingPage() {
 
   const loadEmulatorItems = useCallback(
     async (query: string): Promise<EmulatorOption[]> => {
-      if (!selectedGame) {
-        return Promise.resolve([])
-      }
+      if (!selectedGame) return Promise.resolve([])
 
       try {
         const result = await utils.emulators.get.fetch({ search: query })
 
         // Filter to only emulators that support the selected game's system
-        const filteredEmulators = result.emulators.filter((emulator) =>
+        return result.emulators.filter((emulator) =>
           emulator.systems.some(
             (system) => system.id === selectedGame.system.id,
           ),
         )
-
-        return filteredEmulators
       } catch (error) {
         console.error('Error fetching emulators:', error)
         return []
@@ -127,9 +128,8 @@ function AddPcListingPage() {
     [utils.emulators.get, selectedGame],
   )
 
-  const dynamicFormSchema = createDynamicPcListingSchema(customFieldDefinitions)
   const form = useForm<PcListingFormValues>({
-    resolver: zodResolver(dynamicFormSchema),
+    resolver: zodResolver(schemaState),
     defaultValues: {
       gameId: '',
       cpuId: '',
@@ -144,11 +144,102 @@ function AddPcListingPage() {
     },
   })
 
+  const selectedEmulatorId = form.watch('emulatorId')
+  const customFieldDefinitionsQuery =
+    api.customFieldDefinitions.getByEmulator.useQuery(
+      { emulatorId: selectedEmulatorId! },
+      { enabled: !!selectedEmulatorId },
+    )
+
   // Update custom field definitions when emulator changes
   useEffect(() => {
-    // TODO: Load custom field definitions for the selected emulator
-    setCustomFieldDefinitions([])
-  }, [selectedEmulator])
+    if (!customFieldDefinitionsQuery.data) return
+
+    const parsed = customFieldDefinitionsQuery.data.map(
+      (field): CustomFieldDefinitionWithOptions => {
+        let parsedOptions: CustomFieldOptionUI[] | undefined = undefined
+        if (
+          field.type === CustomFieldType.SELECT &&
+          Array.isArray(field.options)
+        ) {
+          parsedOptions = field.options.reduce(
+            (acc: CustomFieldOptionUI[], opt: unknown) => {
+              if (
+                typeof opt === 'object' &&
+                opt !== null &&
+                'value' in opt &&
+                'label' in opt
+              ) {
+                const knownOpt = opt as { value: unknown; label: unknown }
+                acc.push({
+                  value: String(knownOpt.value),
+                  label: String(knownOpt.label),
+                })
+              }
+              return acc
+            },
+            [],
+          )
+        }
+        return {
+          ...field,
+          optionsUI: parsedOptions,
+          defaultValue: field.defaultValue as
+            | string
+            | number
+            | boolean
+            | null
+            | undefined,
+        }
+      },
+    )
+    setParsedCustomFields(parsed)
+
+    // Create and set the dynamic schema
+    const dynamicSchema = createDynamicPcListingSchema(parsed)
+    setSchemaState(dynamicSchema)
+
+    // Store the form values before updating the resolver
+    const currentValues = form.getValues()
+
+    // Release form state first
+    form.reset()
+
+    // Update the form with new schema and restore values
+    form.reset(currentValues)
+
+    const currentCustomValues = form.watch('customFieldValues') ?? []
+    const newCustomValues = parsed.map((field) => {
+      const existingValueObj = currentCustomValues.find(
+        (cv) => cv.customFieldDefinitionId === field.id,
+      )
+      if (existingValueObj) return existingValueObj
+
+      // Use the actual default value from the field definition
+      let defaultValue: string | boolean | number | null | undefined =
+        field.defaultValue as string | boolean | number | null | undefined
+
+      // Only fall back to hardcoded defaults if no default value is set
+      if (defaultValue === null || defaultValue === undefined) {
+        switch (field.type) {
+          case CustomFieldType.BOOLEAN:
+            defaultValue = false
+            break
+          case CustomFieldType.SELECT:
+            defaultValue = field.optionsUI?.[0]?.value ?? ''
+            break
+          default:
+            defaultValue = ''
+        }
+      }
+
+      return {
+        customFieldDefinitionId: field.id,
+        value: defaultValue,
+      }
+    })
+    form.setValue('customFieldValues', newCustomValues)
+  }, [customFieldDefinitionsQuery.data, form])
 
   const onSubmit = useCallback(
     async (data: PcListingFormValues) => {
@@ -168,8 +259,8 @@ function AddPcListingPage() {
           emulatorId: data.emulatorId,
           deviceId: 'pc',
           performanceId: data.performanceId,
-          hasCustomFields: customFieldDefinitions.length > 0,
-          customFieldCount: customFieldDefinitions.length,
+          hasCustomFields: parsedCustomFields.length > 0,
+          customFieldCount: parsedCustomFields.length,
         })
 
         toast.success(
@@ -185,7 +276,7 @@ function AddPcListingPage() {
       createPcListing,
       recaptchaHook,
       router,
-      customFieldDefinitions.length,
+      parsedCustomFields.length,
       selectedGame?.system?.id,
     ],
   )
@@ -576,15 +667,6 @@ function AddPcListingPage() {
                     value={field.value}
                     onChange={(value) => {
                       field.onChange(value || '')
-                      if (!value) {
-                        setSelectedEmulator(null)
-                        return
-                      }
-                      // Try to find the emulator from recently loaded items or search for it
-                      loadEmulatorItems(value).then((emulators) => {
-                        const emulator = emulators.find((e) => e.id === value)
-                        if (emulator) setSelectedEmulator(emulator)
-                      })
                     }}
                     loadItems={loadEmulatorItems}
                     optionToValue={(emulator) => emulator.id}
@@ -632,20 +714,46 @@ function AddPcListingPage() {
               )}
             </div>
 
-            {/* Custom Fields - TODO: Implement proper custom field handling */}
-            {customFieldDefinitions.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  {selectedEmulator?.name} Settings
-                </h3>
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Custom fields for {selectedEmulator?.name} will be available
-                    in a future update.
-                  </p>
-                </div>
+            {/* Custom Fields */}
+            {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
+              <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  Loading emulator-specific fields...
+                </p>
               </div>
             )}
+            {selectedEmulatorId &&
+              !customFieldDefinitionsQuery.isPending &&
+              parsedCustomFields.length > 0 && (
+                <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
+                    Emulator-Specific Details
+                    {customFieldDefinitionsQuery.data?.[0]?.emulator?.name && (
+                      <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                        ({customFieldDefinitionsQuery.data[0].emulator.name})
+                      </span>
+                    )}
+                  </h2>
+                  {parsedCustomFields.map((fieldDef, index) => {
+                    const errorMessage =
+                      typeof form.formState.errors.customFieldValues?.[index]
+                        ?.value?.message === 'string'
+                        ? form.formState.errors.customFieldValues?.[index]
+                            ?.value?.message
+                        : undefined
+                    return (
+                      <CustomFieldRenderer
+                        key={fieldDef.id}
+                        fieldDef={fieldDef}
+                        fieldName={`customFieldValues.${index}.value` as const}
+                        index={index}
+                        control={form.control as unknown as Control}
+                        errorMessage={errorMessage}
+                      />
+                    )
+                  })}
+                </div>
+              )}
 
             {/* Notes */}
             <div>

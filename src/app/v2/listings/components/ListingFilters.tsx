@@ -355,6 +355,7 @@ export function ListingFilters(props: Props) {
                                 onChange={props.handlePerformanceChange}
                                 placeholder="Select performance levels..."
                                 loadOptions={async (search) => {
+                                  // TODO: just use MultiSelect instead of AsyncMultiSelect
                                   const scales = props.performanceScales || []
                                   const filtered = search
                                     ? scales.filter(
