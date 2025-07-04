@@ -75,7 +75,7 @@ function Navbar() {
           : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-transparent'
       }`}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         <div className="flex h-18 items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center space-x-4">
@@ -84,7 +84,7 @@ function Navbar() {
                 <LogoIcon animation />
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
               </div>
-              <div>
+              <div className="hidden md:block">
                 <span className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-blue-400 dark:via-purple-400 dark:to-blue-600 bg-clip-text text-transparent tracking-tight">
                   EmuReady
                 </span>

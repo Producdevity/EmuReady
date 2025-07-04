@@ -28,6 +28,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
 }
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://emuready.com'
+
 export const metadata: Metadata = {
   applicationName: 'EmuReady',
   title: {
@@ -35,9 +37,9 @@ export const metadata: Metadata = {
     default: 'EmuReady',
   },
   description: 'Find the perfect emulator settings for your games and devices',
-  creator: 'EmuReady Team',
+  creator: 'Producdevity',
   other: {
-    'theme-color': '#3b82f6',
+    'theme-color': '#111828',
   },
   appleWebApp: {
     capable: true,
@@ -57,8 +59,25 @@ export const metadata: Metadata = {
       },
     ],
   },
+  metadataBase: new URL(appUrl),
+  openGraph: {
+    type: 'website',
+    url: appUrl,
+    title: 'EmuReady - Know before you load',
+    description:
+      'Find the perfect emulator settings for your games and devices!',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'EmuReady - Know before you load',
+    description: `Find the perfect emulator settings for your games and devices on ${appUrl}`,
+  },
+  alternates: {
+    canonical: appUrl,
+  },
 }
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
 
@@ -101,7 +120,7 @@ export default function RootLayout(props: PropsWithChildren) {
           </Providers>
           <Analytics />
           <SpeedInsights />
-          <KofiWidget />
+          {IS_PRODUCTION && <KofiWidget />}
           {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
         </body>
       </html>

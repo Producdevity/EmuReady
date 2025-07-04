@@ -37,6 +37,7 @@ interface SearchableDevice extends Device {
   searchableText: string // combined searchable text
 }
 
+// TODO: this just needs to be fuzzy searching server side
 function createSearchableDevice(device: Device): SearchableDevice {
   const fullName = `${device.brand.name} ${device.modelName}`
   const brandModel = fullName.toLowerCase()
@@ -73,6 +74,7 @@ function DeviceSelector(props: Props) {
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   // Get all devices (with high limit to get all)
+  // TODO: this needs to handled server-side for performance
   const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
 
   // Prepare searchable devices

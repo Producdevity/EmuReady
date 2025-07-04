@@ -72,8 +72,8 @@ function ProfileInformation(props: Props) {
           <div className="flex items-center gap-4 mb-6">
             <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
             <div className="space-y-2">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48" />
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ function ProfileInformation(props: Props) {
           </h2>
         </div>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={() => setIsEditing((prevState) => !prevState)}
           className="flex items-center gap-2"
@@ -118,8 +118,8 @@ function ProfileInformation(props: Props) {
           {isEditing ? (
             <Input
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+              onChange={(ev) =>
+                setFormData({ ...formData, name: ev.target.value })
               }
               placeholder="Enter your name"
               className="w-full"
@@ -140,8 +140,8 @@ function ProfileInformation(props: Props) {
               as="textarea"
               rows={3}
               value={formData.bio}
-              onChange={(e) =>
-                setFormData({ ...formData, bio: e.target.value })
+              onChange={(ev) =>
+                setFormData({ ...formData, bio: ev.target.value })
               }
               placeholder="Tell us about yourself"
               className="w-full"

@@ -2,7 +2,7 @@
 
 import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
-import { Edit, Shield, Calendar, User as UserIcon, Award } from 'lucide-react'
+import { Edit, Shield, Calendar, UserIcon, Award } from 'lucide-react'
 import { TrustLevelBadge } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
