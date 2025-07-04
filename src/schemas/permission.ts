@@ -155,3 +155,40 @@ export type GetPermissionMatrixInput = z.infer<typeof GetPermissionMatrixSchema>
 export type BulkPermissionActionInput = z.infer<
   typeof BulkPermissionActionSchema
 >
+
+// Additional permission log schemas
+export const GetPermissionLogByIdSchema = z.object({
+  id: z.string().uuid(),
+})
+
+export const GetPermissionTimelineSchema = z.object({
+  permissionId: z.string().uuid(),
+  limit: z.number().int().min(1).max(100).default(50),
+})
+
+export const GetUserPermissionActivitySchema = z.object({
+  userId: z.string().uuid(),
+  limit: z.number().int().min(1).max(100).default(50),
+})
+
+export const ExportPermissionLogsSchema = z.object({
+  format: z.enum(['csv', 'json']).default('csv'),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  userId: z.string().uuid().optional(),
+  action: z.nativeEnum(PermissionActionType).optional(),
+})
+
+// Export additional types
+export type GetPermissionLogByIdInput = z.infer<
+  typeof GetPermissionLogByIdSchema
+>
+export type GetPermissionTimelineInput = z.infer<
+  typeof GetPermissionTimelineSchema
+>
+export type GetUserPermissionActivityInput = z.infer<
+  typeof GetUserPermissionActivitySchema
+>
+export type ExportPermissionLogsInput = z.infer<
+  typeof ExportPermissionLogsSchema
+>

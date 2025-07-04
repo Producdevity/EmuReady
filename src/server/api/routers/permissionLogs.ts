@@ -1,9 +1,13 @@
-import { z } from 'zod'
 import { AppError } from '@/lib/errors'
-import { GetPermissionLogsSchema } from '@/schemas/permission'
+import {
+  GetPermissionLogsSchema,
+  GetPermissionLogByIdSchema,
+  GetPermissionTimelineSchema,
+  GetUserPermissionActivitySchema,
+  ExportPermissionLogsSchema,
+} from '@/schemas/permission'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { PermissionActionType } from '@orm'
 
 export const permissionLogsRouter = createTRPCRouter({
   /**
@@ -157,7 +161,7 @@ export const permissionLogsRouter = createTRPCRouter({
    * Get log details by ID
    */
   getById: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
-    .input(z.object({ id: z.string().uuid() }))
+    .input(GetPermissionLogByIdSchema)
     .query(async ({ ctx, input }) => {
       const log = await ctx.prisma.permissionActionLog.findUnique({
         where: { id: input.id },
@@ -182,12 +186,7 @@ export const permissionLogsRouter = createTRPCRouter({
    * Get permission activity timeline for a specific permission
    */
   getPermissionTimeline: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
-    .input(
-      z.object({
-        permissionId: z.string().uuid(),
-        limit: z.number().int().min(1).max(100).default(50),
-      }),
-    )
+    .input(GetPermissionTimelineSchema)
     .query(
       async ({ ctx, input }) =>
         await ctx.prisma.permissionActionLog.findMany({
@@ -202,12 +201,7 @@ export const permissionLogsRouter = createTRPCRouter({
    * Get user activity for permission management
    */
   getUserActivity: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
-    .input(
-      z.object({
-        userId: z.string().uuid(),
-        limit: z.number().int().min(1).max(100).default(50),
-      }),
-    )
+    .input(GetUserPermissionActivitySchema)
     .query(
       async ({ ctx, input }) =>
         await ctx.prisma.permissionActionLog.findMany({
@@ -224,15 +218,7 @@ export const permissionLogsRouter = createTRPCRouter({
    * Export permission logs (for audit purposes)
    */
   export: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
-    .input(
-      z.object({
-        format: z.enum(['csv', 'json']).default('csv'),
-        dateFrom: z.string().datetime().optional(),
-        dateTo: z.string().datetime().optional(),
-        userId: z.string().uuid().optional(),
-        action: z.nativeEnum(PermissionActionType).optional(),
-      }),
-    )
+    .input(ExportPermissionLogsSchema)
     .query(async ({ ctx, input }) => {
       const { format, dateFrom, dateTo, userId, action } = input
 
