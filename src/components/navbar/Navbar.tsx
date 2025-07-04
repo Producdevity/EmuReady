@@ -84,11 +84,11 @@ function Navbar() {
                 <LogoIcon animation />
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
               </div>
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <span className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-blue-400 dark:via-purple-400 dark:to-blue-600 bg-clip-text text-transparent tracking-tight">
                   EmuReady
                 </span>
-                <p className="hidden sm:block font-medium text-xs text-gray-500 dark:text-gray-400 -mt-1">
+                <p className="font-medium text-xs text-gray-500 dark:text-gray-400 -mt-1">
                   Know before you load
                 </p>
               </div>
