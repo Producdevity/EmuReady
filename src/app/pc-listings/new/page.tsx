@@ -129,7 +129,7 @@ function AddPcListingPage() {
     defaultValues: {
       gameId: '',
       cpuId: '',
-      gpuId: '',
+      gpuId: undefined, // Optional for integrated graphics
       emulatorId: '',
       performanceId: 0,
       memorySize: 16,
@@ -189,7 +189,7 @@ function AddPcListingPage() {
   const handlePresetSelect = (preset: PcPresetOption) => {
     setSelectedPreset(preset)
     form.setValue('cpuId', preset.cpuId)
-    form.setValue('gpuId', preset.gpuId)
+    form.setValue('gpuId', preset.gpuId || undefined) // Handle optional GPU
     form.setValue('memorySize', preset.memorySize)
     form.setValue('os', preset.os)
     form.setValue('osVersion', preset.osVersion)
@@ -198,7 +198,7 @@ function AddPcListingPage() {
   const handleClearPreset = () => {
     setSelectedPreset(null)
     form.setValue('cpuId', '')
-    form.setValue('gpuId', '')
+    form.setValue('gpuId', undefined) // Set to undefined for optional field
     form.setValue('memorySize', 16)
     form.setValue('os', PcOs.WINDOWS)
     form.setValue('osVersion', '')
@@ -274,15 +274,27 @@ function AddPcListingPage() {
                             {selectedPreset.cpu.modelName}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">
-                            GPU:
-                          </span>
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            {selectedPreset.gpu.brand.name}{' '}
-                            {selectedPreset.gpu.modelName}
-                          </span>
-                        </div>
+                        {selectedPreset.gpu && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">
+                              GPU:
+                            </span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {selectedPreset.gpu.brand.name}{' '}
+                              {selectedPreset.gpu.modelName}
+                            </span>
+                          </div>
+                        )}
+                        {!selectedPreset.gpu && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">
+                              GPU:
+                            </span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              Integrated Graphics
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
@@ -328,7 +340,9 @@ function AddPcListingPage() {
                               {preset.cpu.brand.name} {preset.cpu.modelName}
                             </div>
                             <div>
-                              {preset.gpu.brand.name} {preset.gpu.modelName}
+                              {preset.gpu
+                                ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
+                                : 'Integrated Graphics'}
                             </div>
                             <div>
                               {preset.memorySize}GB •{' '}
@@ -424,7 +438,7 @@ function AddPcListingPage() {
                 {/* GPU Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    GPU *
+                    GPU (Optional - leave blank for integrated graphics)
                   </label>
                   <Controller
                     control={form.control}

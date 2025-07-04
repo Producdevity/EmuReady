@@ -48,7 +48,7 @@ function PcPresetModal(props: Props) {
     if (props.preset) {
       setName(props.preset.name)
       setCpuId(props.preset.cpuId)
-      setGpuId(props.preset.gpuId)
+      setGpuId(props.preset.gpuId || '')
       setMemorySize(props.preset.memorySize.toString())
       setOs(props.preset.os)
       setOsVersion(props.preset.osVersion)

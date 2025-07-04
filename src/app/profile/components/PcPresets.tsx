@@ -158,7 +158,9 @@ function PcPresets() {
                     GPU
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {preset.gpu.brand.name} {preset.gpu.modelName}
+                    {preset.gpu
+                      ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
+                      : 'Integrated Graphics'}
                   </p>
                 </div>
                 <div className="flex justify-between">

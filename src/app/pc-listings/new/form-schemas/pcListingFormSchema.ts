@@ -4,7 +4,7 @@ import { CreatePcListingSchema } from '@/schemas/pcListing'
 const pcListingFormSchema = CreatePcListingSchema.extend({
   gameId: z.string().min(1, 'Game is required'),
   cpuId: z.string().min(1, 'CPU is required'),
-  gpuId: z.string().min(1, 'GPU is required'),
+  gpuId: z.string().optional(), // GPU is optional for integrated graphics
   emulatorId: z.string().min(1, 'Emulator is required'),
   performanceId: z.coerce.number().min(1, 'Performance rating is required'),
   memorySize: z.coerce

@@ -258,3 +258,121 @@ export interface MobileErrorFallbackProps {
   errorInfo: MobileErrorInfo
   resetError: () => void
 }
+
+// Comment types
+export interface MobileComment {
+  id: string
+  content: string
+  createdAt: Date
+  updatedAt: Date
+  author: MobileAuthor
+  _count: {
+    votes: number
+  }
+  userVote?: boolean | null // Only present when authenticated
+}
+
+export interface MobileCommentsResponse {
+  comments: MobileComment[]
+  _count: {
+    comments: number
+  }
+}
+
+// PC Listing specific types
+export interface MobileCpu {
+  id: string
+  name: string
+  brand: MobileBrand
+  _count: {
+    pcListings: number
+  }
+}
+
+export interface MobileGpu {
+  id: string
+  name: string
+  brand: MobileBrand
+  memorySize?: number | null
+  _count: {
+    pcListings: number
+  }
+}
+
+export interface MobilePcListing {
+  id: string
+  notes: string | null
+  status: ApprovalStatus
+  memorySize: number
+  os: string
+  osVersion: string
+  createdAt: Date
+  updatedAt: Date
+  game: MobileGame
+  cpu: MobileCpu
+  gpu: MobileGpu
+  emulator: MobileEmulator
+  performance: MobilePerformance
+  author: MobileAuthor
+  customFieldValues?: MobileCustomFieldValue[]
+  _count: {
+    votes: number
+    comments: number
+  }
+  successRate: number
+  userVote?: boolean | null // Only present when authenticated
+}
+
+export interface MobilePcListingsResponse {
+  listings: MobilePcListing[]
+  pagination: {
+    total: number
+    pages: number
+    currentPage: number
+    limit: number
+  }
+}
+
+export interface MobilePcPreset {
+  id: string
+  name: string
+  memorySize: number
+  os: string
+  osVersion: string
+  createdAt: Date
+  cpu: MobileCpu
+  gpu: MobileGpu
+}
+
+// Developer verification types
+export interface MobileEmulatorVerification {
+  id: string
+  emulator: MobileEmulator
+  isVerified: boolean
+  verifiedAt?: Date
+}
+
+export interface MobileListingVerification {
+  id: string
+  notes: string | null
+  createdAt: Date
+  developer: MobileAuthor
+  emulator: MobileEmulator
+}
+
+export interface MobileListingVerificationsResponse {
+  verifications: MobileListingVerification[]
+  _count: {
+    verifications: number
+  }
+}
+
+// Trust level types
+export interface MobileTrustLevel {
+  id: string
+  name: string
+  minScore: number
+  maxScore: number
+  color: string
+  description: string
+}

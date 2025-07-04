@@ -4,7 +4,7 @@ import { ApprovalStatus, PcOs } from '@orm'
 export const CreatePcListingSchema = z.object({
   gameId: z.string().uuid(),
   cpuId: z.string().uuid(),
-  gpuId: z.string().uuid(),
+  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
   memorySize: z.number().int().positive().min(1).max(256), // 1GB to 256GB
@@ -155,7 +155,7 @@ export const UpdatePcListingAdminSchema = z.object({
   id: z.string().uuid(),
   gameId: z.string().uuid(),
   cpuId: z.string().uuid(),
-  gpuId: z.string().uuid(),
+  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
   memorySize: z.number().int().positive().min(1).max(256),
@@ -198,7 +198,7 @@ export const GetPcListingForUserEditSchema = z.object({
 export const CreatePcPresetSchema = z.object({
   name: z.string().min(1).max(50),
   cpuId: z.string().uuid(),
-  gpuId: z.string().uuid(),
+  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
   memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
@@ -208,7 +208,7 @@ export const UpdatePcPresetSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(50),
   cpuId: z.string().uuid(),
-  gpuId: z.string().uuid(),
+  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
   memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),

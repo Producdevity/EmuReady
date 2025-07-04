@@ -701,7 +701,7 @@ model UserPcPreset {
   userId    String
   name      String
   cpuId     String
-  gpuId     String
+  gpuId     String?  // Optional for integrated graphics
   memorySize Int    // in GB
   os        PcOs
   osVersion String
@@ -710,7 +710,7 @@ model UserPcPreset {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   cpu  Cpu  @relation(fields: [cpuId], references: [id])
-  gpu  Gpu  @relation(fields: [gpuId], references: [id])
+  gpu  Gpu?  @relation(fields: [gpuId], references: [id])
 
   @@unique([userId, name])
   @@index([userId])
@@ -760,7 +760,7 @@ model PcListing {
   processedByUserId String?
   memorySize      Int  // in GB
   cpuId           String
-  gpuId           String
+  gpuId           String?  // Optional for integrated graphics
   os              PcOs
   osVersion       String
 
@@ -769,7 +769,7 @@ model PcListing {
   performance     PerformanceScale       @relation(fields: [performanceId], references: [id])
   emulator        Emulator               @relation(fields: [emulatorId], references: [id])
   game            Game                   @relation(fields: [gameId], references: [id])
-  gpu             Gpu                    @relation(fields: [gpuId], references: [id])
+  gpu             Gpu?                   @relation(fields: [gpuId], references: [id])
   cpu             Cpu                    @relation(fields: [cpuId], references: [id])
 
   customFieldValues     PcListingCustomFieldValue[]

@@ -154,7 +154,7 @@ export const pcListingsRouter = createTRPCRouter({
         where: {
           gameId: input.gameId,
           cpuId: input.cpuId,
-          gpuId: input.gpuId,
+          ...(input.gpuId ? { gpuId: input.gpuId } : { gpuId: null }),
           emulatorId: input.emulatorId,
           authorId: ctx.session.user.id,
         },
@@ -168,7 +168,9 @@ export const pcListingsRouter = createTRPCRouter({
       const [game, cpu, gpu, emulator, performance] = await Promise.all([
         ctx.prisma.game.findUnique({ where: { id: input.gameId } }),
         ctx.prisma.cpu.findUnique({ where: { id: input.cpuId } }),
-        ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }),
+        input.gpuId
+          ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } })
+          : null,
         ctx.prisma.emulator.findUnique({ where: { id: input.emulatorId } }),
         ctx.prisma.performanceScale.findUnique({
           where: { id: input.performanceId },
@@ -177,7 +179,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       if (!game) return ResourceError.game.notFound()
       if (!cpu) return ResourceError.cpu.notFound()
-      if (!gpu) return ResourceError.gpu.notFound()
+      if (input.gpuId && !gpu) return ResourceError.gpu.notFound() // Only check GPU if provided
       if (!emulator) return ResourceError.emulator.notFound()
       if (!performance) return ResourceError.performanceScale.notFound()
 
@@ -186,7 +188,7 @@ export const pcListingsRouter = createTRPCRouter({
         data: {
           gameId: input.gameId,
           cpuId: input.cpuId,
-          gpuId: input.gpuId,
+          ...(input.gpuId ? { gpuId: input.gpuId } : {}), // Handle optional GPU
           emulatorId: input.emulatorId,
           performanceId: input.performanceId,
           memorySize: input.memorySize,
@@ -570,16 +572,23 @@ export const pcListingsRouter = createTRPCRouter({
         // Validate CPU and GPU exist
         const [cpu, gpu] = await Promise.all([
           ctx.prisma.cpu.findUnique({ where: { id: input.cpuId } }),
-          ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }),
+          input.gpuId
+            ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } })
+            : null,
         ])
 
         if (!cpu) return ResourceError.cpu.notFound()
-        if (!gpu) return ResourceError.gpu.notFound()
+        if (input.gpuId && !gpu) return ResourceError.gpu.notFound() // Only check GPU if provided
 
         return ctx.prisma.userPcPreset.create({
           data: {
-            ...input,
             userId: ctx.session.user.id,
+            name: input.name,
+            cpuId: input.cpuId,
+            ...(input.gpuId ? { gpuId: input.gpuId } : {}), // Handle optional GPU
+            memorySize: input.memorySize,
+            os: input.os,
+            osVersion: input.osVersion,
           },
           include: {
             cpu: {

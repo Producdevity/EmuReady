@@ -150,10 +150,18 @@ export function PcListingsContent() {
 
                     <div className="flex items-center gap-2 text-sm">
                       <Monitor className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium">
-                        {listing.gpu.brand.name}
-                      </span>
-                      <span>{listing.gpu.modelName}</span>
+                      {listing.gpu ? (
+                        <>
+                          <span className="font-medium">
+                            {listing.gpu.brand.name}
+                          </span>
+                          <span>{listing.gpu.modelName}</span>
+                        </>
+                      ) : (
+                        <span className="font-medium text-gray-500">
+                          Integrated Graphics
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 text-sm">

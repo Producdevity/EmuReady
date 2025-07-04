@@ -180,8 +180,9 @@ function PcListingDetailsClient(props: Props) {
                         GPU:
                       </span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {props.pcListing.gpu.brand.name}{' '}
-                        {props.pcListing.gpu.modelName}
+                        {props.pcListing.gpu
+                          ? `${props.pcListing.gpu.brand.name} ${props.pcListing.gpu.modelName}`
+                          : 'Integrated Graphics'}
                       </span>
                     </div>
                   </div>
