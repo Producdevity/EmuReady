@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Suspense,
@@ -10,13 +11,21 @@ import {
   type KeyboardEvent,
 } from 'react'
 import {
-  type Control,
   Controller,
   useForm,
+  type Control,
   type FieldValues,
   type UseFormSetValue,
 } from 'react-hook-form'
 import { isString } from 'remeda'
+import {
+  CustomFieldRenderer,
+  FormValidationSummary,
+  EmulatorSelector,
+  GameSelector,
+  type EmulatorOption,
+  type GameOption,
+} from '@/app/listings/components/shared'
 import {
   Autocomplete,
   Button,
@@ -40,20 +49,12 @@ import { PcOs } from '@orm'
 import createDynamicPcListingSchema, {
   type CustomFieldDefinitionWithOptions,
 } from './form-schemas/createDynamicPcListingSchema'
-import {
-  CustomFieldRenderer,
-  FormValidationSummary,
-  type EmulatorOption as SharedEmulatorOption,
-  EmulatorSelector,
-} from '../../listings/components/shared'
 
 export type PcListingFormValues = RouterInput['pcListings']['create']
 
 type CpuOption = RouterOutput['cpus']['get']['cpus'][number]
 type GpuOption = RouterOutput['gpus']['get']['gpus'][number]
 type PcPresetOption = RouterOutput['pcListings']['presets']['get'][number]
-type GameOption = RouterOutput['games']['get']['games'][number]
-type EmulatorOption = SharedEmulatorOption
 
 const OS_OPTIONS = [
   { value: PcOs.WINDOWS, label: 'Windows' },
@@ -69,6 +70,7 @@ function AddPcListingPage() {
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(
     null,
   )
+  const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [availableEmulators, setAvailableEmulators] = useState<
     EmulatorOption[]
@@ -90,11 +92,19 @@ function AddPcListingPage() {
   // Async load functions for autocomplete
   const loadGameItems = useCallback(
     async (query: string): Promise<GameOption[]> => {
+      setGameSearchTerm(query)
       if (query.length < 2) return Promise.resolve([])
       try {
         // Windows Games are filtered out server-side
         const result = await utils.games.get.fetch({ search: query, limit: 20 })
-        return result.games ?? []
+        return (
+          result.games.map((game) => ({
+            id: game.id,
+            title: game.title,
+            system: game.system,
+            status: game.status,
+          })) ?? []
+        )
       } catch (error) {
         console.error('Error fetching games:', error)
         return []
@@ -315,8 +325,6 @@ function AddPcListingPage() {
     `${cpu.brand.name} ${cpu.modelName}`
   const formatGpuLabel = (gpu: GpuOption) =>
     `${gpu.brand.name} ${gpu.modelName}`
-  const formatGameLabel = (game: GameOption) =>
-    `${game.title} (${game.system.name})`
 
   // Prevent form submission on Enter key press
   const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
@@ -477,41 +485,30 @@ function AddPcListingPage() {
 
           {/* Game Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Game *
-            </label>
-            <Controller
-              control={form.control}
+            <GameSelector
+              control={form.control as unknown as Control}
               name="gameId"
-              render={({ field }) => (
-                <Autocomplete
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value || '')
-                    if (!value) {
-                      setSelectedGame(null)
-                      return
-                    }
-                    // Try to find the game from recently loaded items or search for it
-                    loadGameItems(value).then((games) => {
-                      const game = games.find((g) => g.id === value)
-                      if (game) setSelectedGame(game)
-                    })
-                  }}
-                  loadItems={loadGameItems}
-                  optionToValue={(game) => game.id}
-                  optionToLabel={formatGameLabel}
-                  placeholder="Select a game..."
-                  className="w-full"
-                  filterKeys={['title']}
-                />
-              )}
+              selectedGame={selectedGame}
+              errorMessage={form.formState.errors.gameId?.message}
+              loadGameItems={loadGameItems}
+              onGameSelect={(game: GameOption | null) => {
+                setSelectedGame(game)
+                if (game) return
+                form.setValue('emulatorId', '')
+                form.setValue('customFieldValues', [])
+              }}
+              gameSearchTerm={gameSearchTerm}
             />
-            {form.formState.errors.gameId && (
-              <p className="mt-1 text-sm text-red-600">
-                {form.formState.errors.gameId.message}
-              </p>
-            )}
+
+            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Can&apos;t find your game?{' '}
+              <Link
+                href="/games/new/search"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+              >
+                Add it here
+              </Link>
+            </div>
           </div>
 
           {/* PC Specifications - Only show if no preset selected */}
