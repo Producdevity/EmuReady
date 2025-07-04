@@ -1,4 +1,5 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import { track } from '@vercel/analytics'
 import { type AnalyticsEventData } from '@/lib/analytics/analytics.types'
 import { isTrackingAllowed } from './isTrackingAllowed'
 /**
@@ -64,6 +65,7 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
 
   // Only send to GA on client-side (GA requires browser environment)
   if (typeof window !== 'undefined') {
+    track(params.action, eventData)
     sendGAEvent('event', params.action, {
       event_category: params.category,
       ...eventData,
