@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react'
 import { AnimatedToggle } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { NotificationType } from '@orm'
 
@@ -27,17 +28,17 @@ const allTypes = [
   NotificationType.USER_MENTION,
 ]
 
+type NotificationPreferencesData =
+  RouterOutput['notifications']['getPreferences']
+
+interface NotificationPreferencesQuery {
+  data?: NotificationPreferencesData
+  isPending: boolean
+  error?: unknown
+}
+
 interface Props {
-  notificationPreferencesQuery: {
-    data:
-      | Array<{
-          type: string
-          inAppEnabled: boolean
-          emailEnabled: boolean
-        }>
-      | undefined
-    isLoading: boolean
-  }
+  notificationPreferencesQuery: NotificationPreferencesQuery
 }
 
 function NotificationPreferences(props: Props) {

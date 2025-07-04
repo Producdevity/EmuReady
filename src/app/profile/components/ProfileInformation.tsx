@@ -5,20 +5,19 @@ import { useState, useEffect } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface ProfileData {
-  name: string | null
-  bio: string | null
-  profileImage: string | null
+type UserProfileData = RouterOutput['users']['getProfile']
+
+interface UserProfileQuery {
+  data?: UserProfileData
+  isPending: boolean
+  error?: unknown
 }
 
 interface Props {
-  userQuery: {
-    data: ProfileData | null | undefined
-    isLoading: boolean
-    error: unknown
-  }
+  userQuery: UserProfileQuery
 }
 
 function ProfileInformation(props: Props) {
