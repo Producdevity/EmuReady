@@ -72,12 +72,9 @@ function AddPcListingPage() {
     async (query: string): Promise<GameOption[]> => {
       if (query.length < 2) return Promise.resolve([])
       try {
+        // Windows Games are filtered out server-side
         const result = await utils.games.get.fetch({ search: query, limit: 20 })
-        // Filter out Microsoft Windows games since PC listings are for emulation
-        const filteredGames = (result.games ?? []).filter(
-          (game) => game.system.name !== 'Microsoft Windows',
-        )
-        return filteredGames
+        return result.games ?? []
       } catch (error) {
         console.error('Error fetching games:', error)
         return []
