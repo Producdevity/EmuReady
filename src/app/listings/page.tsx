@@ -466,7 +466,7 @@ function ListingsPage() {
           </div>
 
           <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
-            {listingsQuery.isLoading ? (
+            {listingsQuery.isPending ? (
               <LoadingSpinner text="Loading listings..." />
             ) : (
               <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
@@ -715,7 +715,7 @@ function ListingsPage() {
               </table>
             )}
 
-            {!listingsQuery.isLoading &&
+            {!listingsQuery.isPending &&
               listingsQuery.data?.listings.length === 0 && <NoListingsFound />}
           </div>
 

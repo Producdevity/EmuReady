@@ -18,6 +18,7 @@ import {
   DeleteButton,
   EditButton,
   ViewButton,
+  Pagination,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -292,29 +293,13 @@ function AdminDevicesPage() {
       </AdminTableContainer>
 
       {devicesQuery.data && devicesQuery.data.pagination.pages > 1 && (
-        <div className="mt-6 flex justify-center">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.setPage(table.page - 1)}
-              disabled={table.page === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Page {table.page} of {devicesQuery.data.pagination.pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.setPage(table.page + 1)}
-              disabled={table.page === devicesQuery.data.pagination.pages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={table.page}
+          totalPages={devicesQuery.data.pagination.pages}
+          totalItems={devicesQuery.data.pagination.total}
+          itemsPerPage={devicesQuery.data.pagination.limit}
+          onPageChange={(newPage) => table.setPage(newPage)}
+        />
       )}
 
       <DeviceModal

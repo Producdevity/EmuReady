@@ -138,7 +138,7 @@ function EditListingModal(props: Props) {
           </div>
         ) : (
           <>
-            {listingQuery.isLoading && (
+            {listingQuery.isPending && (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner text="Loading listing details..." />
               </div>

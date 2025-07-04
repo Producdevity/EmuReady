@@ -496,7 +496,7 @@ function AddListingPage() {
           </div>
 
           {/* Dynamic Custom Fields Section */}
-          {selectedEmulatorId && customFieldDefinitionsQuery.isLoading && (
+          {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
             <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-center py-4 text-gray-500 dark:text-gray-400">
                 Loading emulator-specific fields...
@@ -504,7 +504,7 @@ function AddListingPage() {
             </div>
           )}
           {selectedEmulatorId &&
-            !customFieldDefinitionsQuery.isLoading &&
+            !customFieldDefinitionsQuery.isPending &&
             parsedCustomFields.length > 0 && (
               <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">

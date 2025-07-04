@@ -18,6 +18,7 @@ import {
   DeleteButton,
   EditButton,
   ViewButton,
+  Pagination,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -287,29 +288,13 @@ function AdminGpusPage() {
       </AdminTableContainer>
 
       {gpusQuery.data && gpusQuery.data.pagination.pages > 1 && (
-        <div className="mt-6 flex justify-center">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.setPage(table.page - 1)}
-              disabled={table.page === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Page {table.page} of {gpusQuery.data.pagination.pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.setPage(table.page + 1)}
-              disabled={table.page === gpusQuery.data.pagination.pages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={table.page}
+          totalPages={gpusQuery.data.pagination.pages}
+          totalItems={gpusQuery.data.pagination.total}
+          itemsPerPage={gpusQuery.data.pagination.limit}
+          onPageChange={(newPage) => table.setPage(newPage)}
+        />
       )}
 
       <GpuModal

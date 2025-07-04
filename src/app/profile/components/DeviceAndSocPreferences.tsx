@@ -25,13 +25,7 @@ function DeviceAndSocPreferences(props: Props) {
 
   const updatePreferences = api.userPreferences.update.useMutation({
     onSuccess: () => {
-      // Invalidate all user preference related queries to ensure cache consistency
-      Promise.all([
-        utils.userPreferences.get.invalidate(),
-        utils.users.me.invalidate(),
-        utils.listings.get.invalidate(),
-      ]).catch(console.error)
-
+      invalidatePreferences()
       toast.success('Preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -48,13 +42,7 @@ function DeviceAndSocPreferences(props: Props) {
 
   const bulkUpdateDevices = api.userPreferences.bulkUpdateDevices.useMutation({
     onSuccess: () => {
-      // Invalidate all user preference related queries to ensure cache consistency
-      Promise.all([
-        utils.userPreferences.get.invalidate(),
-        utils.users.me.invalidate(),
-        utils.listings.get.invalidate(),
-      ]).catch(console.error)
-
+      invalidatePreferences()
       toast.success('Device preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -73,13 +61,7 @@ function DeviceAndSocPreferences(props: Props) {
 
   const bulkUpdateSocs = api.userPreferences.bulkUpdateSocs.useMutation({
     onSuccess: () => {
-      // Invalidate all user preference related queries to ensure cache consistency
-      Promise.all([
-        utils.userPreferences.get.invalidate(),
-        utils.users.me.invalidate(),
-        utils.listings.get.invalidate(),
-      ]).catch(console.error)
-
+      invalidatePreferences()
       toast.success('SOC preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -93,6 +75,17 @@ function DeviceAndSocPreferences(props: Props) {
       toast.error(`Failed to update SOC preferences: ${getErrorMessage(error)}`)
     },
   })
+
+  /**
+   * Invalidate all user preferences related queries.
+   */
+  const invalidatePreferences = () => {
+    Promise.all([
+      utils.userPreferences.get.invalidate(),
+      utils.users.me.invalidate(),
+      utils.listings.get.invalidate(),
+    ]).catch(console.error)
+  }
 
   function handleDevicePreferenceChange(
     key: 'defaultToUserDevices' | 'defaultToUserSocs' | 'notifyOnNewListings',
@@ -158,7 +151,7 @@ function DeviceAndSocPreferences(props: Props) {
     [bulkUpdateSocs],
   )
 
-  if (props.preferencesQuery.isLoading) {
+  if (props.preferencesQuery.isPending) {
     return (
       <div className="space-y-8">
         <div className="space-y-6">

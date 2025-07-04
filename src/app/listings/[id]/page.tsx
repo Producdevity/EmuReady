@@ -11,7 +11,7 @@ function ListingDetailsPage() {
 
   const listingQuery = api.listings.byId.useQuery({ id: params.id as string })
 
-  if (listingQuery.isLoading) {
+  if (listingQuery.isPending) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
         <div className="max-w-6xl mx-auto">

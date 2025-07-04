@@ -1,6 +1,5 @@
 'use client'
 
-import { format } from 'date-fns'
 import { Monitor, Cpu, HardDrive, Calendar } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
@@ -9,8 +8,16 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Pagination } from '@/components/ui/Pagination'
 import { PerformanceBadge } from '@/components/ui/PerformanceBadge'
 import { api } from '@/lib/api'
+import { formatDate } from '@/utils/date'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
 import { PcOs } from '@orm'
+
+const osLabels: Record<PcOs | 'UNKNOWN', string> = {
+  [PcOs.WINDOWS]: 'Windows',
+  [PcOs.LINUX]: 'Linux',
+  [PcOs.MACOS]: 'macOS',
+  UNKNOWN: 'Unknown',
+}
 
 export function PcListingsContent() {
   const searchParams = useSearchParams()
@@ -89,19 +96,6 @@ export function PcListingsContent() {
     )
   }
 
-  const getOsLabel = (os: PcOs) => {
-    switch (os) {
-      case PcOs.WINDOWS:
-        return 'Windows'
-      case PcOs.LINUX:
-        return 'Linux'
-      case PcOs.MACOS:
-        return 'macOS'
-      default:
-        return os
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Results Header */}
@@ -118,7 +112,8 @@ export function PcListingsContent() {
           {pcListingsQuery.data.pcListings.map((listing) => (
             <Card
               key={listing.id}
-              className="transition-shadow hover:shadow-md p-6"
+              className="transition-shadow hover:shadow-md p-6 cursor-pointer"
+              onClick={() => router.push(`/pc-listings/${listing.id}`)}
             >
               <div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:space-y-0 lg:space-x-6">
                 {/* Game Info */}
@@ -162,7 +157,8 @@ export function PcListingsContent() {
                     <HardDrive className="h-4 w-4 text-gray-500" />
                     <span>{listing.memorySize}GB RAM</span>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                      {getOsLabel(listing.os)} {listing.osVersion}
+                      {osLabels[listing.os] || osLabels.UNKNOWN}{' '}
+                      {listing.osVersion}
                     </span>
                   </div>
                 </div>
@@ -177,9 +173,7 @@ export function PcListingsContent() {
 
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Calendar className="h-3 w-3" />
-                    <span>
-                      {format(new Date(listing.createdAt), 'MMM d, yyyy')}
-                    </span>
+                    <span>{formatDate(listing.createdAt)}</span>
                   </div>
 
                   <div className="text-xs text-gray-500">

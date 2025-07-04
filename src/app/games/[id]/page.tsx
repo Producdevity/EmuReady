@@ -32,7 +32,7 @@ function GameDetailsPage() {
   const canEdit =
     hasPermission(userQuery.data?.role, Role.ADMIN) || isOwnerOfPendingGame
 
-  if (gameQuery.isLoading) return <LoadingSpinner text="Loading game data..." />
+  if (gameQuery.isPending) return <LoadingSpinner text="Loading game data..." />
 
   if (gameQuery.error || !gameQuery.data) notFound()
 

@@ -134,7 +134,7 @@ function EmulatorsPage() {
 
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-        {emulatorsQuery.isLoading ? (
+        {emulatorsQuery.isPending ? (
           <div className="flex justify-center items-center py-16">
             <LoadingSpinner text="Loading emulators..." />
           </div>
@@ -233,7 +233,7 @@ function EmulatorsPage() {
                   </tr>
                 ))}
 
-                {!emulatorsQuery.isLoading && emulators.length === 0 && (
+                {!emulatorsQuery.isPending && emulators.length === 0 && (
                   <tr>
                     <td
                       colSpan={3}

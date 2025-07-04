@@ -162,7 +162,7 @@ function Home() {
               href="/listings"
               className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
-              {statisticsQuery.isLoading ? (
+              {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
                   <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto"></div>
@@ -184,7 +184,7 @@ function Home() {
               href="/games"
               className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
-              {statisticsQuery.isLoading ? (
+              {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
                   <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mx-auto"></div>
@@ -206,7 +206,7 @@ function Home() {
               href="/emulators"
               className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
-              {statisticsQuery.isLoading ? (
+              {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
                   <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
@@ -228,7 +228,7 @@ function Home() {
               href="/devices"
               className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
-              {statisticsQuery.isLoading ? (
+              {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
                   <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mx-auto"></div>
@@ -260,7 +260,7 @@ function Home() {
             </p>
           </div>
 
-          {listingsQuery.isLoading ? (
+          {listingsQuery.isPending ? (
             <div className="flex justify-center items-center py-16">
               <LoadingSpinner text="Loading featured content..." />
             </div>

@@ -71,7 +71,7 @@ function AddGamePage() {
     }
   }, [isLoaded, user, userQuery.data, router])
 
-  if (!isLoaded || userQuery.isLoading) return <LoadingSpinner />
+  if (!isLoaded || userQuery.isPending) return <LoadingSpinner />
 
   if (!user || !userQuery.data) return <NotSignedInMessage />
 
@@ -194,7 +194,7 @@ function AddGamePage() {
             optionToLabel={(option) => option.name}
             filterKeys={['name']}
             minCharsToTrigger={0}
-            disabled={systemsQuery.isLoading}
+            disabled={systemsQuery.isPending}
             className="w-full"
           />
         </div>

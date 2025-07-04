@@ -254,7 +254,7 @@ function GameSearchContent() {
     ],
   )
 
-  if (!isLoaded || userQuery.isLoading) {
+  if (!isLoaded || userQuery.isPending) {
     return (
       <div className="flex justify-center items-center min-h-96">
         <LoadingSpinner />

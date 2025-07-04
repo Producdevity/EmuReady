@@ -61,7 +61,7 @@ function SocSelector(props: Props) {
       }, {})
   }, [filteredSocs])
 
-  if (socsQuery.isLoading) {
+  if (socsQuery.isPending) {
     return (
       <div className="flex items-center justify-center py-12">
         <Cpu className="w-8 h-8 animate-spin text-blue-600" />

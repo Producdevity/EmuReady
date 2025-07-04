@@ -171,7 +171,7 @@ function V2ListingsPage() {
     if (
       listingsState.search &&
       listingsState.search.length > 2 &&
-      !listingsQuery.isLoading &&
+      !listingsQuery.isPending &&
       listingsQuery.data
     ) {
       analytics.contentDiscovery.searchPerformed({
@@ -181,7 +181,7 @@ function V2ListingsPage() {
         page: 'v2/listings',
       })
     }
-  }, [listingsQuery.data, listingsQuery.isLoading, listingsState.search])
+  }, [listingsQuery.data, listingsQuery.isPending, listingsState.search])
 
   // Scroll to top functionality
   useEffect(() => {
@@ -213,13 +213,13 @@ function V2ListingsPage() {
   }
 
   const loadMoreListings = useCallback(() => {
-    if (hasMoreItems && !listingsQuery.isLoading && !listingsQuery.isFetching) {
+    if (hasMoreItems && !listingsQuery.isPending && !listingsQuery.isFetching) {
       setCurrentPage((prev) => prev + 1)
     }
-  }, [hasMoreItems, listingsQuery.isLoading, listingsQuery.isFetching])
+  }, [hasMoreItems, listingsQuery.isPending, listingsQuery.isFetching])
 
   const handleRefresh = useCallback(async () => {
-    if (listingsQuery.isLoading || listingsQuery.isFetching) return
+    if (listingsQuery.isPending || listingsQuery.isFetching) return
 
     try {
       await listingsQuery.refetch()
@@ -525,7 +525,7 @@ function V2ListingsPage() {
               viewMode={viewMode}
               setViewMode={setViewMode}
               listingsCount={allListings.length}
-              isLoading={listingsQuery.isLoading && currentPage === 1}
+              isLoading={listingsQuery.isPending && currentPage === 1}
             />
 
             {/* Search Bar */}
@@ -595,7 +595,7 @@ function V2ListingsPage() {
             allListings={allListings}
             viewMode={viewMode}
             showSystemIcons={showSystemIcons}
-            isLoading={listingsQuery.isLoading}
+            isLoading={listingsQuery.isPending}
             isFetching={listingsQuery.isFetching}
             hasMoreItems={hasMoreItems}
             currentPage={currentPage}

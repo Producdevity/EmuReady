@@ -274,7 +274,7 @@ function NotificationsPage() {
 
         {/* Notifications List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {notificationsQuery.isLoading ? (
+          {notificationsQuery.isPending ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-pulse" />

@@ -15,7 +15,7 @@ function useVerifiedDeveloper(userId: string, emulatorId: string) {
 
   return {
     isVerifiedDeveloper: query.data ?? false,
-    isLoading: query.isLoading,
+    isLoading: query.isPending,
     error: query.error,
   }
 }

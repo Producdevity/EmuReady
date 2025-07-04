@@ -418,7 +418,7 @@ function CommentThread(props: Props) {
         listingsQuery.data.comments.length > 0 && <SortControls />}
 
       <div className="space-y-2">
-        {listingsQuery.isLoading ? (
+        {listingsQuery.isPending ? (
           <div className="text-gray-500 dark:text-gray-400 animate-pulse">
             Loading comments...
           </div>

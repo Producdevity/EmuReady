@@ -17,6 +17,7 @@ import {
   SortableHeader,
   useConfirmDialog,
   Badge,
+  Pagination,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -395,12 +396,13 @@ function AdminUserBansPage() {
       </AdminTableContainer>
 
       {pagination && pagination.pages > 1 && (
-        <div className="mt-4 flex justify-center">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Page {pagination.page} of {pagination.pages} ({pagination.total}{' '}
-            total)
-          </div>
-        </div>
+        <Pagination
+          currentPage={table.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          itemsPerPage={pagination.limit}
+          onPageChange={(newPage) => table.setPage(newPage)}
+        />
       )}
 
       {/* Modals */}

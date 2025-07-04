@@ -133,7 +133,7 @@ function UserDetailsPage() {
     updateUrlParams({ votesPage: page })
   }
 
-  if (userQuery.isLoading) return <PageLoading />
+  if (userQuery.isPending) return <PageLoading />
 
   if (userQuery.error || !userQuery.data) {
     return <UserDetailsPageError errorMessage={userQuery.error?.message} />

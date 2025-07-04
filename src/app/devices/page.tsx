@@ -130,7 +130,7 @@ function DevicesPage() {
 
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-        {devicesQuery.isLoading ? (
+        {devicesQuery.isPending ? (
           <div className="flex justify-center items-center py-16">
             <LoadingSpinner text="Loading devices..." />
           </div>
@@ -226,7 +226,7 @@ function DevicesPage() {
                   </tr>
                 ))}
 
-                {!devicesQuery.isLoading && devices.length === 0 && (
+                {!devicesQuery.isPending && devices.length === 0 && (
                   <tr>
                     <td
                       colSpan={4}

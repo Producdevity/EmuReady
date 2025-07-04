@@ -96,7 +96,7 @@ function NotificationPreferences(props: Props) {
     })
   }
 
-  if (props.notificationPreferencesQuery.isLoading) {
+  if (props.notificationPreferencesQuery.isPending) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="animate-pulse">

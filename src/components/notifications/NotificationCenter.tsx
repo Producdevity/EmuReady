@@ -216,7 +216,7 @@ function NotificationCenter(props: Props) {
 
             {/* Notifications List */}
             <div className="max-h-72 overflow-y-auto">
-              {notificationsQuery.isLoading ? (
+              {notificationsQuery.isPending ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
                 </div>

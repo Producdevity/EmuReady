@@ -75,7 +75,7 @@ function ProfilePage() {
   // Filter tabs based on user permissions
   const visibleTabs = tabs.filter((tab) =>
     tab.id === 'settings'
-      ? hasPermission(userQuery.data?.role, Role.ADMIN)
+      ? hasPermission(userQuery.data?.role, Role.MODERATOR)
       : true,
   )
 
@@ -110,7 +110,7 @@ function ProfilePage() {
           )}
 
           {activeTab === 'settings' &&
-            hasPermission(userQuery.data?.role, Role.ADMIN) && (
+            hasPermission(userQuery.data?.role, Role.MODERATOR) && (
               <SettingsSection
                 title="Admin Settings"
                 description="Administrative tools and configuration options"

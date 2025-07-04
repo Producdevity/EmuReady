@@ -43,7 +43,7 @@ function EditListingButton(props: Props) {
   }
 
   // Show loading state
-  if (canEditQuery.isLoading) {
+  if (canEditQuery.isPending) {
     return (
       <Button
         variant="outline"

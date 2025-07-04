@@ -97,7 +97,7 @@ function SearchForm(props: Props) {
               optionToLabel={(option) => option.name}
               filterKeys={['name']}
               minCharsToTrigger={0}
-              disabled={systemsQuery.isLoading}
+              disabled={systemsQuery.isPending}
               className="w-full"
             />
             {selectedSystem && !selectedSystem.tgdbPlatformId && (

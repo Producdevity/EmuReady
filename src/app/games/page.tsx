@@ -183,7 +183,7 @@ function GamesContent() {
           onHideGamesWithNoListingsChange={handleHideGamesWithNoListingsChange}
         />
 
-        {gamesQuery.isLoading ? (
+        {gamesQuery.isPending ? (
           <LoadingSpinner text="Loading games..." />
         ) : (
           <>
