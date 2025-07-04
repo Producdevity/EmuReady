@@ -75,7 +75,7 @@ function Navbar() {
           : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-transparent'
       }`}
     >
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-18 items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center space-x-4">
@@ -124,18 +124,14 @@ function Navbar() {
               <>
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    {hasPermission(userRole, Role.USER) && (
-                      <Link
-                        href="/listings/new"
-                        className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-105"
-                      >
-                        Create Listing
-                      </Link>
-                    )}
                     {hasPermission(userRole, Role.DEVELOPER) && (
                       <Link
                         href="/admin"
-                        className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
+                        className="px-4 py-2.5 bg-gradient-to-r
+                        from-orange-500 to-red-600
+                        hover:from-orange-600 hover:to-red-700
+                        text-white font-semibold text-sm rounded-xl transition-all duration-300
+                        shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
                       >
                         Admin
                       </Link>
@@ -144,22 +140,27 @@ function Navbar() {
                       <Link
                         href="/v2/listings"
                         className="px-4 py-2.5 bg-gradient-to-r
-                        from-cyan-500 to-blue-600
-                        hover:from-cyan-600 hover:to-blue-700
+                        from-pink-500 to-rose-600
+                        hover:from-pink-600 hover:to-rose-700
                         text-white font-semibold text-sm rounded-xl transition-all duration-300
-                        shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105"
+                        shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-105"
                       >
-                        Listings V2 (BETA)
+                        V2
                       </Link>
                     )}
 
                     <Link
                       href="/profile"
-                      className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-sm rounded-xl transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="px-4 py-2.5 bg-gradient-to-r
+                        from-cyan-500 to-blue-600
+                        hover:from-cyan-600 hover:to-blue-700
+                        text-white font-semibold text-sm rounded-xl transition-all duration-300
+                        shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105"
                     >
                       Profile
                     </Link>
-                    <div className="relative">
+
+                    <div className="relative mt-2">
                       <UserButton
                         appearance={{
                           elements: {

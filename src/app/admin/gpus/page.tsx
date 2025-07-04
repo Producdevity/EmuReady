@@ -9,6 +9,7 @@ import {
   AdminStatsDisplay,
 } from '@/components/admin'
 import {
+  Badge,
   Button,
   ColumnVisibilityControl,
   SortableHeader,
@@ -245,7 +246,7 @@ function AdminGpusPage() {
                   )}
                   {columnVisibility.isColumnVisible('listings') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {gpu._count.pcListings}
+                      <Badge>{gpu._count.pcListings}</Badge>
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (

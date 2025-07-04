@@ -1,7 +1,6 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
@@ -145,14 +144,6 @@ function AddPcListingPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Link
-              href="/pc-listings"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              ← Back to PC Listings
-            </Link>
-          </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Create PC Compatibility Listing
           </h1>
@@ -471,7 +462,7 @@ function AddPcListingPage() {
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => router.back()}
               >
                 Cancel

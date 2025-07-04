@@ -40,6 +40,11 @@ export const pcListingDetailInclude = {
       customFieldDefinition: true,
     },
   },
+  developerVerifications: {
+    include: {
+      developer: true,
+    },
+  },
 } as const
 
 /**

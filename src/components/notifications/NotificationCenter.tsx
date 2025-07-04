@@ -23,30 +23,28 @@ function NotificationCenter(props: Props) {
 
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
-    {
-      enabled: !!user,
-      refetchInterval: 30000,
-    },
+    { enabled: !!user, refetchInterval: 30000 },
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(
     undefined,
-    {
-      enabled: !!user,
-      refetchInterval: 30000,
-    },
+    { enabled: !!user, refetchInterval: 30000 },
   )
 
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
+    onMutate: () => setIsLoading(true),
     onSuccess: () => {
       invalidateNotifications()
+      toast.success('Notification marked as read')
     },
     onError: (error) => {
       toast.error(`Failed to mark as read: ${getErrorMessage(error)}`)
     },
+    onSettled: () => setIsLoading(false),
   })
 
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
+    onMutate: () => setIsLoading(true),
     onSuccess: () => {
       invalidateNotifications()
       toast.success('All notifications marked as read')
@@ -54,9 +52,11 @@ function NotificationCenter(props: Props) {
     onError: (error) => {
       toast.error(`Failed to mark all as read: ${getErrorMessage(error)}`)
     },
+    onSettled: () => setIsLoading(false),
   })
 
   const deleteMutation = api.notifications.delete.useMutation({
+    onMutate: () => setIsLoading(true),
     onSuccess: () => {
       invalidateNotifications()
       toast.success('Notification deleted')
@@ -64,38 +64,12 @@ function NotificationCenter(props: Props) {
     onError: (error) => {
       toast.error(`Failed to delete notification: ${getErrorMessage(error)}`)
     },
+    onSettled: () => setIsLoading(false),
   })
 
   const invalidateNotifications = () => {
     utils.notifications.get.refetch().catch(console.error)
     utils.notifications.getUnreadCount.refetch().catch(console.error)
-  }
-
-  const handleMarkAsRead = async (notificationId: string) => {
-    setIsLoading(true)
-    try {
-      await markAsReadMutation.mutateAsync({ notificationId })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleMarkAllAsRead = async () => {
-    setIsLoading(true)
-    try {
-      await markAllAsReadMutation.mutateAsync()
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleDelete = async (notificationId: string) => {
-    setIsLoading(true)
-    try {
-      await deleteMutation.mutateAsync({ notificationId })
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const handleViewAllNotifications = () => {
@@ -128,7 +102,9 @@ function NotificationCenter(props: Props) {
   const handleNotificationClick = (notification: (typeof notifications)[0]) => {
     // Mark as read if not already read (swallow error if it fails)
     if (!notification.isRead) {
-      handleMarkAsRead(notification.id).catch(console.error)
+      markAsReadMutation
+        .mutateAsync({ notificationId: notification.id })
+        .catch(console.error)
     }
 
     setIsOpen(false)
@@ -198,7 +174,7 @@ function NotificationCenter(props: Props) {
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button
-                    onClick={handleMarkAllAsRead}
+                    onClick={() => markAllAsReadMutation.mutateAsync()}
                     disabled={isLoading}
                     className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                   >
@@ -271,9 +247,13 @@ function NotificationCenter(props: Props) {
                         <div className="flex items-center gap-1">
                           {!notification.isRead && (
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleMarkAsRead(notification.id)
+                              onClick={(ev) => {
+                                ev.stopPropagation()
+                                markAsReadMutation
+                                  .mutateAsync({
+                                    notificationId: notification.id,
+                                  })
+                                  .catch(console.error)
                               }}
                               disabled={isLoading}
                               className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
@@ -282,9 +262,13 @@ function NotificationCenter(props: Props) {
                             </button>
                           )}
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(notification.id)
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              deleteMutation
+                                .mutateAsync({
+                                  notificationId: notification.id,
+                                })
+                                .catch(console.error)
                             }}
                             disabled={isLoading}
                             className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"

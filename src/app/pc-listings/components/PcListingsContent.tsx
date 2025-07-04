@@ -112,84 +112,88 @@ export function PcListingsContent() {
           {pcListingsQuery.data.pcListings.map((listing) => (
             <Card
               key={listing.id}
-              className="transition-shadow hover:shadow-md p-6 cursor-pointer"
-              onClick={() => router.push(`/pc-listings/${listing.id}`)}
+              className="transition-shadow hover:shadow-md p-0 overflow-hidden"
             >
-              <div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:space-y-0 lg:space-x-6">
-                {/* Game Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">
-                        {listing.game.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {listing.game.system.name}
-                      </p>
+              <div
+                className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                onClick={() => router.push(`/pc-listings/${listing.id}`)}
+              >
+                <div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:space-y-0 lg:space-x-6">
+                  {/* Game Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold">
+                          {listing.game.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {listing.game.system.name}
+                        </p>
+                      </div>
+                      <PerformanceBadge
+                        rank={listing.performance?.rank ?? 8}
+                        label={listing.performance?.label ?? 'N/A'}
+                        description={listing.performance?.description}
+                      />
                     </div>
-                    <PerformanceBadge
-                      rank={listing.performance?.rank ?? 8}
-                      label={listing.performance?.label ?? 'N/A'}
-                      description={listing.performance?.description}
-                    />
+                  </div>
+
+                  {/* Hardware Info */}
+                  <div className="space-y-2 lg:w-80">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Cpu className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">
+                        {listing.cpu.brand.name}
+                      </span>
+                      <span>{listing.cpu.modelName}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm">
+                      <Monitor className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">
+                        {listing.gpu.brand.name}
+                      </span>
+                      <span>{listing.gpu.modelName}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm">
+                      <HardDrive className="h-4 w-4 text-gray-500" />
+                      <span>{listing.memorySize}GB RAM</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                        {osLabels[listing.os] || osLabels.UNKNOWN}{' '}
+                        {listing.osVersion}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Emulator & Meta */}
+                  <div className="space-y-2 lg:w-48">
+                    <div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                        {listing.emulator.name}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatDate(listing.createdAt)}</span>
+                    </div>
+
+                    <div className="text-xs text-gray-500">
+                      by {listing.author.name}
+                    </div>
                   </div>
                 </div>
 
-                {/* Hardware Info */}
-                <div className="space-y-2 lg:w-80">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Cpu className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">
-                      {listing.cpu.brand.name}
-                    </span>
-                    <span>{listing.cpu.modelName}</span>
+                {/* Notes */}
+                {listing.notes && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {listing.notes}
+                    </p>
                   </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <Monitor className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">
-                      {listing.gpu.brand.name}
-                    </span>
-                    <span>{listing.gpu.modelName}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <HardDrive className="h-4 w-4 text-gray-500" />
-                    <span>{listing.memorySize}GB RAM</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                      {osLabels[listing.os] || osLabels.UNKNOWN}{' '}
-                      {listing.osVersion}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Emulator & Meta */}
-                <div className="space-y-2 lg:w-48">
-                  <div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                      {listing.emulator.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Calendar className="h-3 w-3" />
-                    <span>{formatDate(listing.createdAt)}</span>
-                  </div>
-
-                  <div className="text-xs text-gray-500">
-                    by {listing.author.name}
-                  </div>
-                </div>
+                )}
               </div>
-
-              {/* Notes */}
-              {listing.notes && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {listing.notes}
-                  </p>
-                </div>
-              )}
             </Card>
           ))}
         </div>
