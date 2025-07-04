@@ -10,7 +10,11 @@ export const navbarItems: NavbarItem[] = [
   },
   {
     href: '/listings',
-    label: 'Listings',
+    label: 'Handheld Compatibility',
+  },
+  {
+    href: '/pc-listings',
+    label: 'PC Compatibility',
   },
   {
     href: '/games',

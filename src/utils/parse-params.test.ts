@@ -43,6 +43,28 @@ describe('parseArrayParam', () => {
       'test-with-special-chars!@#$%',
     ])
   })
+
+  // URL decoding tests - critical for shared URL filter bug fix
+  it('should parse URL-encoded JSON arrays', () => {
+    // %5B%22id1%22,%22id2%22%5D is URL-encoded ["id1","id2"]
+    expect(parseArrayParam('%5B%22id1%22,%22id2%22%5D')).toEqual(['id1', 'id2'])
+    // %5B%22test%22%5D is URL-encoded ["test"]
+    expect(parseArrayParam('%5B%22test%22%5D')).toEqual(['test'])
+    // %5B%5D is URL-encoded []
+    expect(parseArrayParam('%5B%5D')).toEqual([])
+  })
+
+  it('should handle complex URL-encoded arrays', () => {
+    // URL-encoded ["system-1","system-2","system-3"]
+    expect(
+      parseArrayParam('%5B%22system-1%22,%22system-2%22,%22system-3%22%5D'),
+    ).toEqual(['system-1', 'system-2', 'system-3'])
+  })
+
+  it('should fallback gracefully for URL-encoded non-JSON', () => {
+    // URL-encoded string that's not JSON - falls back to treating as single string without decoding
+    expect(parseArrayParam('single%20value')).toEqual(['single%20value'])
+  })
 })
 
 describe('parseNumberArrayParam', () => {

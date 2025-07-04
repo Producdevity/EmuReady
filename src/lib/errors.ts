@@ -331,4 +331,40 @@ export class ResourceError {
       ),
     alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
   }
+
+  static cpu = {
+    notFound: () => AppError.notFound('CPU'),
+    alreadyExists: (modelName: string) =>
+      AppError.conflict(
+        `A CPU with model name "${modelName}" already exists for this brand`,
+      ),
+    inUse: (count: number) => AppError.resourceInUse('CPU', count),
+  }
+
+  static gpu = {
+    notFound: () => AppError.notFound('GPU'),
+    alreadyExists: (modelName: string) =>
+      AppError.conflict(
+        `A GPU with model name "${modelName}" already exists for this brand`,
+      ),
+    inUse: (count: number) => AppError.resourceInUse('GPU', count),
+  }
+
+  static pcListing = {
+    notFound: () => AppError.notFound('PC listing'),
+    alreadyExists: () =>
+      AppError.conflict(
+        'A PC listing for this game, CPU, GPU, and emulator combination already exists',
+      ),
+    notPending: () =>
+      AppError.notFound('Pending PC listing not found or already processed'),
+  }
+
+  static pcPreset = {
+    notFound: () => AppError.notFound('PC preset'),
+    alreadyExists: (name: string) =>
+      AppError.conflict(
+        `A PC preset with name "${name}" already exists for this user`,
+      ),
+  }
 }
