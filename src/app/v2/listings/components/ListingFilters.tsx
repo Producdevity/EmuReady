@@ -13,7 +13,13 @@ import {
   Search,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { AsyncMultiSelect, Button, Input, Badge } from '@/components/ui'
+import {
+  AsyncMultiSelect,
+  MultiSelect,
+  Button,
+  Input,
+  Badge,
+} from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
@@ -349,33 +355,18 @@ export function ListingFilters(props: Props) {
                             )}
 
                             {section.id === 'performance' && (
-                              <AsyncMultiSelect
+                              <MultiSelect
                                 label="Performance"
                                 value={props.performanceIds}
                                 onChange={props.handlePerformanceChange}
                                 placeholder="Select performance levels..."
-                                loadOptions={async (search) => {
-                                  // TODO: just use MultiSelect instead of AsyncMultiSelect
-                                  const scales = props.performanceScales || []
-                                  const filtered = search
-                                    ? scales.filter(
-                                        (s) =>
-                                          s.label
-                                            .toLowerCase()
-                                            .includes(search.toLowerCase()) ||
-                                          (s.description &&
-                                            s.description
-                                              .toLowerCase()
-                                              .includes(search.toLowerCase())),
-                                      )
-                                    : scales
-
-                                  return filtered.map((scale) => ({
+                                options={(props.performanceScales || []).map(
+                                  (scale) => ({
                                     id: scale.id.toString(),
                                     name: `${scale.label}${scale.description ? ` - ${scale.description}` : ''}`,
-                                  }))
-                                }}
-                                emptyMessage="No performance levels found"
+                                  }),
+                                )}
+                                maxDisplayed={3}
                                 className="mobile-optimized"
                               />
                             )}

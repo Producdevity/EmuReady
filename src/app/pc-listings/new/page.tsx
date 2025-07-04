@@ -54,6 +54,9 @@ function AddPcListingPage() {
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(
     null,
   )
+  const [availableEmulators, setAvailableEmulators] = useState<
+    EmulatorOption[]
+  >([])
   const [parsedCustomFields, setParsedCustomFields] = useState<
     CustomFieldDefinitionWithOptions[]
   >([])
@@ -113,23 +116,22 @@ function AddPcListingPage() {
 
   const loadEmulatorItems = useCallback(
     async (query: string): Promise<EmulatorOption[]> => {
-      if (!selectedGame) return Promise.resolve([])
-
-      try {
-        const result = await utils.emulators.get.fetch({ search: query })
-
-        // Filter to only emulators that support the selected game's system
-        return result.emulators.filter((emulator) =>
-          emulator.systems.some(
-            (system) => system.id === selectedGame.system.id,
-          ),
-        )
-      } catch (error) {
-        console.error('Error fetching emulators:', error)
-        return []
+      // Use local filtering on pre-loaded emulators instead of server-side search
+      if (!selectedGame || availableEmulators.length === 0) {
+        return Promise.resolve([])
       }
+
+      // Filter locally based on query
+      if (!query) {
+        return Promise.resolve(availableEmulators)
+      }
+
+      const filtered = availableEmulators.filter((emulator) =>
+        emulator.name.toLowerCase().includes(query.toLowerCase()),
+      )
+      return Promise.resolve(filtered)
     },
-    [utils.emulators.get, selectedGame],
+    [selectedGame, availableEmulators],
   )
 
   const form = useForm<PcListingFormValues>({
@@ -205,6 +207,36 @@ function AddPcListingPage() {
     })
     form.setValue('customFieldValues', newCustomValues)
   }, [customFieldDefinitionsQuery.data, form])
+
+  // Pre-load emulators when game changes
+  useEffect(() => {
+    if (selectedGame) {
+      form.setValue('emulatorId', '') // Clear emulator selection when game changes
+
+      // Pre-load all emulators that support this game's system
+      const fetchEmulators = async () => {
+        try {
+          const result = await utils.emulators.get.fetch({ search: '' })
+
+          // Filter to only emulators that support the selected game's system
+          const compatibleEmulators = result.emulators.filter((emulator) =>
+            emulator.systems.some(
+              (system) => system.id === selectedGame.system.id,
+            ),
+          )
+
+          setAvailableEmulators(compatibleEmulators)
+        } catch (error) {
+          console.error('Error fetching emulators:', error)
+          setAvailableEmulators([])
+        }
+      }
+
+      fetchEmulators()
+    } else {
+      setAvailableEmulators([])
+    }
+  }, [selectedGame, form, utils.emulators.get])
 
   const onSubmit = useCallback(
     async (data: PcListingFormValues) => {
