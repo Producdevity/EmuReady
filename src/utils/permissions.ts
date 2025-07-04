@@ -62,3 +62,16 @@ export function canDeleteComment(
   if (hasPermission(userRole, Role.ADMIN)) return true
   return commentUserId === currentUserId
 }
+
+/**
+ * Check if user is a moderator or higher
+ * @param userRole - The role to check
+ * @returns boolean
+ */
+export function isModerator(userRole?: Role | string | null): boolean {
+  if (!userRole) return false
+  if (typeof userRole === 'string') {
+    return hasPermission(userRole as Role, Role.MODERATOR)
+  }
+  return hasPermission(userRole, Role.MODERATOR)
+}

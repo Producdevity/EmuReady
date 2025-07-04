@@ -15,6 +15,12 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import {
+  pcListingInclude,
+  buildPcListingWhere,
+  buildPaginationResponse,
+} from '@/server/api/utils/pcListingHelpers'
+import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus } from '@orm'
 
 export const mobilePcListingsRouter = createMobileTRPCRouter({
@@ -37,6 +43,10 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       } = input
       const skip = (page - 1) * limit
 
+      const canSeeBannedUsers = ctx.session?.user
+        ? isModerator(ctx.session.user.role)
+        : false
+
       // Build where clause without complex nested structures
       const baseWhere = {
         status: ApprovalStatus.APPROVED,
@@ -50,31 +60,18 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       if (os) Object.assign(baseWhere, { os })
       if (systemId) Object.assign(baseWhere.game, { systemId })
 
+      // Apply banned user filtering
+      const where = buildPcListingWhere(baseWhere, canSeeBannedUsers)
+
       const [pcListings, total] = await Promise.all([
         ctx.prisma.pcListing.findMany({
-          where: baseWhere,
+          where,
           skip,
           take: limit,
           orderBy: { createdAt: 'desc' },
-          include: {
-            game: {
-              include: {
-                system: { select: { id: true, name: true, key: true } },
-              },
-            },
-            cpu: {
-              include: { brand: { select: { id: true, name: true } } },
-            },
-            gpu: {
-              include: { brand: { select: { id: true, name: true } } },
-            },
-            emulator: { select: { id: true, name: true, logo: true } },
-            performance: { select: { id: true, label: true, rank: true } },
-            author: { select: { id: true, name: true } },
-            _count: { select: { reports: true, developerVerifications: true } },
-          },
+          include: pcListingInclude,
         }),
-        ctx.prisma.pcListing.count({ where: baseWhere }),
+        ctx.prisma.pcListing.count({ where }),
       ])
 
       // Filter by search on the results if needed
@@ -90,7 +87,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       // PC listings don't have votes, just return as is
       const listingsWithStats = filteredListings.map((listing) => ({
         ...listing,
-        verificationCount: listing._count.developerVerifications,
+        verificationCount: 0, // PC listings use developer verifications differently
         reportCount: listing._count.reports,
       }))
 
@@ -100,10 +97,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       return {
         listings: listingsWithStats,
         pagination: {
-          total: adjustedTotal,
-          pages,
-          currentPage: page,
-          limit,
+          ...buildPaginationResponse(adjustedTotal, page, limit),
           hasNextPage: page < pages,
           hasPreviousPage: page > 1,
         },

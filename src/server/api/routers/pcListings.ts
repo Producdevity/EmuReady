@@ -24,6 +24,15 @@ import {
   protectedProcedure,
   moderatorProcedure,
 } from '@/server/api/trpc'
+import {
+  pcListingInclude,
+  pcListingDetailInclude,
+  pcListingAdminInclude,
+  buildPcListingOrderBy,
+  buildPcListingWhere,
+  buildPaginationResponse,
+} from '@/server/api/utils/pcListingHelpers'
+import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus } from '@orm'
 import type { Prisma } from '@orm'
 
@@ -51,9 +60,12 @@ export const pcListingsRouter = createTRPCRouter({
       } = input
 
       const offset = (page - 1) * limit
+      const canSeeBannedUsers = ctx.session?.user
+        ? isModerator(ctx.session.user.role)
+        : false
 
-      // Build where clause
-      const where: Prisma.PcListingWhereInput = {
+      // Build base where clause
+      const baseWhere: Prisma.PcListingWhereInput = {
         status: approvalStatus,
         ...(myListings && ctx.session?.user
           ? { authorId: ctx.session.user.id }
@@ -97,67 +109,17 @@ export const pcListingsRouter = createTRPCRouter({
           : {}),
       }
 
-      // Build orderBy
-      const orderBy: Prisma.PcListingOrderByWithRelationInput[] = []
-
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'game.title':
-            orderBy.push({ game: { title: sortDirection } })
-            break
-          case 'game.system.name':
-            orderBy.push({ game: { system: { name: sortDirection } } })
-            break
-          case 'cpu':
-            orderBy.push({ cpu: { modelName: sortDirection } })
-            break
-          case 'gpu':
-            orderBy.push({ gpu: { modelName: sortDirection } })
-            break
-          case 'emulator.name':
-            orderBy.push({ emulator: { name: sortDirection } })
-            break
-          case 'performance.rank':
-            orderBy.push({ performance: { rank: sortDirection } })
-            break
-          case 'author.name':
-            orderBy.push({ author: { name: sortDirection } })
-            break
-          case 'memorySize':
-            orderBy.push({ memorySize: sortDirection })
-            break
-          case 'createdAt':
-            orderBy.push({ createdAt: sortDirection })
-            break
-        }
-      }
-
-      if (!orderBy.length) {
-        orderBy.push({ createdAt: 'desc' })
-      }
+      // Apply banned user filtering and get final where clause
+      const where = buildPcListingWhere(baseWhere, canSeeBannedUsers)
+      const orderBy = buildPcListingOrderBy(
+        sortField,
+        sortDirection ?? undefined,
+      )
 
       const [pcListings, total] = await Promise.all([
         ctx.prisma.pcListing.findMany({
           where,
-          include: {
-            game: {
-              include: { system: true },
-            },
-            cpu: {
-              include: { brand: true },
-            },
-            gpu: {
-              include: { brand: true },
-            },
-            emulator: true,
-            performance: true,
-            author: true,
-            _count: {
-              select: {
-                reports: true,
-              },
-            },
-          },
+          include: pcListingInclude,
           orderBy,
           skip: offset,
           take: limit,
@@ -167,12 +129,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          page,
-          limit,
-        },
+        pagination: buildPaginationResponse(total, page, limit),
       }
     }),
 
@@ -181,36 +138,7 @@ export const pcListingsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
-        include: {
-          game: {
-            include: { system: true },
-          },
-          cpu: {
-            include: { brand: true },
-          },
-          gpu: {
-            include: { brand: true },
-          },
-          emulator: {
-            include: {
-              customFieldDefinitions: {
-                orderBy: { displayOrder: 'asc' },
-              },
-            },
-          },
-          performance: true,
-          author: true,
-          customFieldValues: {
-            include: {
-              customFieldDefinition: true,
-            },
-          },
-          _count: {
-            select: {
-              reports: true,
-            },
-          },
-        },
+        include: pcListingDetailInclude,
       })
 
       if (!pcListing) return ResourceError.pcListing.notFound()
@@ -275,20 +203,7 @@ export const pcListingsRouter = createTRPCRouter({
               }
             : undefined,
         },
-        include: {
-          game: {
-            include: { system: true },
-          },
-          cpu: {
-            include: { brand: true },
-          },
-          gpu: {
-            include: { brand: true },
-          },
-          emulator: true,
-          performance: true,
-          author: true,
-        },
+        include: pcListingInclude,
       })
 
       return pcListing
@@ -326,7 +241,7 @@ export const pcListingsRouter = createTRPCRouter({
       } = input ?? {}
       const offset = (page - 1) * limit
 
-      const where: Prisma.PcListingWhereInput = {
+      const baseWhere: Prisma.PcListingWhereInput = {
         status: ApprovalStatus.PENDING,
         ...(search
           ? {
@@ -347,57 +262,22 @@ export const pcListingsRouter = createTRPCRouter({
           : {}),
       }
 
-      const orderBy: Prisma.PcListingOrderByWithRelationInput[] = []
+      // Moderators can see listings from banned users
+      const where = buildPcListingWhere(baseWhere, true)
+      const orderBy = buildPcListingOrderBy(
+        sortField,
+        sortDirection ?? undefined,
+      )
 
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'game.title':
-            orderBy.push({ game: { title: sortDirection } })
-            break
-          case 'cpu':
-            orderBy.push({ cpu: { modelName: sortDirection } })
-            break
-          case 'gpu':
-            orderBy.push({ gpu: { modelName: sortDirection } })
-            break
-          case 'emulator.name':
-            orderBy.push({ emulator: { name: sortDirection } })
-            break
-          case 'author.name':
-            orderBy.push({ author: { name: sortDirection } })
-            break
-          case 'createdAt':
-            orderBy.push({ createdAt: sortDirection })
-            break
-        }
-      }
-
-      if (!orderBy.length) {
-        orderBy.push({ createdAt: 'asc' })
+      // Default to ascending for pending items
+      if (!sortField) {
+        orderBy[0] = { createdAt: 'asc' }
       }
 
       const [pcListings, total] = await Promise.all([
         ctx.prisma.pcListing.findMany({
           where,
-          include: {
-            game: {
-              include: { system: true },
-            },
-            cpu: {
-              include: { brand: true },
-            },
-            gpu: {
-              include: { brand: true },
-            },
-            emulator: true,
-            performance: true,
-            author: true,
-            _count: {
-              select: {
-                reports: true,
-              },
-            },
-          },
+          include: pcListingInclude,
           orderBy,
           skip: offset,
           take: limit,
@@ -407,12 +287,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          page,
-          limit,
-        },
+        pagination: buildPaginationResponse(total, page, limit),
       }
     }),
 
@@ -517,7 +392,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const offset = (page - 1) * limit
 
-      const where: Prisma.PcListingWhereInput = {
+      const baseWhere: Prisma.PcListingWhereInput = {
         ...(statusFilter ? { status: statusFilter } : {}),
         ...(systemFilter ? { game: { systemId: systemFilter } } : {}),
         ...(emulatorFilter ? { emulatorId: emulatorFilter } : {}),
@@ -541,64 +416,17 @@ export const pcListingsRouter = createTRPCRouter({
           : {}),
       }
 
-      const orderBy: Prisma.PcListingOrderByWithRelationInput[] = []
-
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'game.title':
-            orderBy.push({ game: { title: sortDirection } })
-            break
-          case 'cpu':
-            orderBy.push({ cpu: { modelName: sortDirection } })
-            break
-          case 'gpu':
-            orderBy.push({ gpu: { modelName: sortDirection } })
-            break
-          case 'emulator.name':
-            orderBy.push({ emulator: { name: sortDirection } })
-            break
-          case 'author.name':
-            orderBy.push({ author: { name: sortDirection } })
-            break
-          case 'status':
-            orderBy.push({ status: sortDirection })
-            break
-          case 'memorySize':
-            orderBy.push({ memorySize: sortDirection })
-            break
-          case 'createdAt':
-            orderBy.push({ createdAt: sortDirection })
-            break
-        }
-      }
-
-      if (!orderBy.length) {
-        orderBy.push({ createdAt: 'desc' })
-      }
+      // Moderators can see listings from banned users
+      const where = buildPcListingWhere(baseWhere, true)
+      const orderBy = buildPcListingOrderBy(
+        sortField,
+        sortDirection ?? undefined,
+      )
 
       const [pcListings, total] = await Promise.all([
         ctx.prisma.pcListing.findMany({
           where,
-          include: {
-            game: {
-              include: { system: true },
-            },
-            cpu: {
-              include: { brand: true },
-            },
-            gpu: {
-              include: { brand: true },
-            },
-            emulator: true,
-            performance: true,
-            author: true,
-            processedByUser: true,
-            _count: {
-              select: {
-                reports: true,
-              },
-            },
-          },
+          include: pcListingAdminInclude,
           orderBy,
           skip: offset,
           take: limit,
@@ -608,12 +436,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          page,
-          limit,
-        },
+        pagination: buildPaginationResponse(total, page, limit),
       }
     }),
 
@@ -622,31 +445,7 @@ export const pcListingsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
-        include: {
-          game: {
-            include: { system: true },
-          },
-          cpu: {
-            include: { brand: true },
-          },
-          gpu: {
-            include: { brand: true },
-          },
-          emulator: {
-            include: {
-              customFieldDefinitions: {
-                orderBy: { displayOrder: 'asc' },
-              },
-            },
-          },
-          performance: true,
-          author: true,
-          customFieldValues: {
-            include: {
-              customFieldDefinition: true,
-            },
-          },
-        },
+        include: pcListingDetailInclude,
       })
 
       if (!pcListing) return ResourceError.pcListing.notFound()
@@ -673,25 +472,7 @@ export const pcListingsRouter = createTRPCRouter({
           ...data,
           updatedAt: new Date(),
         },
-        include: {
-          game: {
-            include: { system: true },
-          },
-          cpu: {
-            include: { brand: true },
-          },
-          gpu: {
-            include: { brand: true },
-          },
-          emulator: true,
-          performance: true,
-          author: true,
-          customFieldValues: {
-            include: {
-              customFieldDefinition: true,
-            },
-          },
-        },
+        include: pcListingDetailInclude,
       })
 
       // Handle custom field values if provided
