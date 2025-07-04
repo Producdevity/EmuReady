@@ -57,9 +57,11 @@ export function PcListingsFilters() {
   // Async loaders for CPU and GPU
   const loadCpuOptions = useCallback(
     async (search: string) => {
-      if (search.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.cpus.get.fetch({ search, limit: 50 })
+        const result = await utils.cpus.get.fetch({
+          search: search || undefined,
+          limit: 50,
+        })
         return result.cpus.map((cpu) => ({
           id: cpu.id,
           name: `${cpu.brand.name} ${cpu.modelName}`,
@@ -74,9 +76,11 @@ export function PcListingsFilters() {
 
   const loadGpuOptions = useCallback(
     async (search: string) => {
-      if (search.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.gpus.get.fetch({ search, limit: 50 })
+        const result = await utils.gpus.get.fetch({
+          search: search || undefined,
+          limit: 50,
+        })
         return result.gpus.map((gpu) => ({
           id: gpu.id,
           name: `${gpu.brand.name} ${gpu.modelName}`,
