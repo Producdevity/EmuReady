@@ -1,5 +1,6 @@
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
+import { canUserAutoApprove } from '@/lib/trust/service'
 import {
   ApprovePcListingSchema,
   BulkApprovePcListingsSchema,
@@ -54,6 +55,7 @@ import { PERMISSIONS } from '@/utils/permission-system'
 import {
   canDeleteComment,
   canEditComment,
+  hasPermission,
   isModerator,
 } from '@/utils/permissions'
 import { ApprovalStatus, Role, ReportStatus } from '@orm'
@@ -213,6 +215,7 @@ export const pcListingsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(CreatePcListingSchema)
     .mutation(async ({ ctx, input }) => {
+      const authorId = ctx.session.user.id
       // Check for existing PC listing with same combination
       const existingPcListing = await ctx.prisma.pcListing.findFirst({
         where: {
@@ -220,13 +223,11 @@ export const pcListingsRouter = createTRPCRouter({
           cpuId: input.cpuId,
           ...(input.gpuId ? { gpuId: input.gpuId } : { gpuId: null }),
           emulatorId: input.emulatorId,
-          authorId: ctx.session.user.id,
+          authorId,
         },
       })
 
-      if (existingPcListing) {
-        return ResourceError.pcListing.alreadyExists()
-      }
+      if (existingPcListing) return ResourceError.pcListing.alreadyExists()
 
       // Validate referenced entities exist
       const [game, cpu, gpu, emulator, performance] = await Promise.all([
@@ -264,6 +265,14 @@ export const pcListingsRouter = createTRPCRouter({
         )
       }
 
+      // Check if user can auto-approve
+      const canAutoApprove = await canUserAutoApprove(authorId)
+      const isAuthorOrHigher = hasPermission(ctx.session.user.role, Role.AUTHOR)
+      const listingStatus =
+        canAutoApprove || isAuthorOrHigher
+          ? ApprovalStatus.APPROVED
+          : ApprovalStatus.PENDING
+
       // Create PC listing with custom field values
       return await ctx.prisma.pcListing.create({
         data: {
@@ -277,6 +286,15 @@ export const pcListingsRouter = createTRPCRouter({
           osVersion: input.osVersion,
           notes: input.notes,
           authorId: ctx.session.user.id,
+          status: listingStatus,
+          ...((canAutoApprove || isAuthorOrHigher) && {
+            processedByUserId: authorId,
+            processedAt: new Date(),
+            processedNotes:
+              isAuthorOrHigher && !canAutoApprove
+                ? 'Auto-approved (Author or higher role)'
+                : 'Auto-approved (Trusted user)',
+          }),
           customFieldValues: input.customFieldValues?.length
             ? {
                 create: input.customFieldValues.map((cfv) => ({

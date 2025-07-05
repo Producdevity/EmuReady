@@ -2,6 +2,7 @@
 
 import { Monitor, Cpu, HardDrive, Calendar } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -126,9 +127,13 @@ export function PcListingsContent() {
                         <h3 className="text-lg font-semibold">
                           {listing.game.title}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {listing.game.system.name}
-                        </p>
+                        <div>
+                          <SystemIcon
+                            name={listing.game.system.name}
+                            systemKey={listing.game.system.key}
+                            size="sm"
+                          />
+                        </div>
                       </div>
                       <PerformanceBadge
                         rank={listing.performance?.rank ?? 8}
@@ -177,9 +182,12 @@ export function PcListingsContent() {
                   {/* Emulator & Meta */}
                   <div className="space-y-2 lg:w-48">
                     <div>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                        {listing.emulator.name}
-                      </span>
+                      <EmulatorIcon
+                        logo={listing.emulator.logo}
+                        name={listing.emulator.name}
+                        showLogo={true}
+                        size="md"
+                      />
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -192,15 +200,6 @@ export function PcListingsContent() {
                     </div>
                   </div>
                 </div>
-
-                {/* Notes */}
-                {listing.notes && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {listing.notes}
-                    </p>
-                  </div>
-                )}
               </div>
             </Card>
           ))}

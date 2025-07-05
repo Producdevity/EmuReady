@@ -794,7 +794,7 @@ function AddPcListingPage() {
               }
               size="lg"
             >
-              {createPcListing.isPending ? 'Creating...' : 'Create PC Listing'}
+              Create PC Listing
             </Button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Flag } from 'lucide-react'
+import { Clock, Flag } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -8,16 +8,15 @@ import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
-  AdminNotificationBanner,
   AdminSearchFilters,
   AdminStatsDisplay,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
   ColumnVisibilityControl,
   DisplayToggleButton,
-  Input,
   LoadingSpinner,
   RejectButton,
   ViewButton,
@@ -26,6 +25,8 @@ import {
   TooltipContent,
   useConfirmDialog,
   Pagination,
+  BulkActions,
+  Button,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -72,10 +73,8 @@ function PcListingApprovalsPage() {
     storageKey: storageKeys.columnVisibility.adminApprovals,
   })
 
-  const [showSystemIcons, setShowSystemIcons] = useLocalStorage(
-    storageKeys.showSystemIcons,
-    false,
-  )
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
+    useLocalStorage(storageKeys.showSystemIcons, false)
 
   const emulatorLogos = useEmulatorLogos()
   const confirm = useConfirmDialog()
@@ -343,160 +342,113 @@ function PcListingApprovalsPage() {
     </tr>
   )
 
-  const renderEmptyState = () => (
-    <tr>
-      <td
-        colSpan={columnVisibility.visibleColumns.size + 1}
-        className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-      >
-        {table.search
-          ? 'No PC listings found matching your search'
-          : 'No pending PC listings to review'}
-      </td>
-    </tr>
-  )
-
-  const isLoading =
-    pendingPcListingsQuery.isPending ||
-    approveMutation.isPending ||
-    rejectMutation.isPending ||
-    bulkApproveMutation.isPending ||
-    bulkRejectMutation.isPending
-
-  const data = pendingPcListingsQuery.data
+  const pcListings = pendingPcListingsQuery.data?.pcListings ?? []
   const pagination = pendingPcListingsQuery.data?.pagination
+
+  // TODO: extract this to a generic Admin error component
+  if (pendingPcListingsQuery.error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-red-600 dark:text-red-400 text-lg">
+            Error loading pending listings:{' '}
+            {pendingPcListingsQuery.error.message}
+          </p>
+          <Button
+            onClick={() => pendingPcListingsQuery.refetch()}
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <AdminPageLayout
       title="PC Listing Approvals"
-      description="Review and approve user-submitted PC compatibility listings"
+      description="Review and approve or reject pending listing submissions"
+      headerActions={
+        <>
+          <DisplayToggleButton
+            showLogos={showSystemIcons}
+            onToggle={() => setShowSystemIcons(!showSystemIcons)}
+            isHydrated={isSystemIconsHydrated}
+            logoLabel="Show System Icons"
+            nameLabel="Show System Names"
+          />
+          <DisplayToggleButton
+            showLogos={emulatorLogos.showEmulatorLogos}
+            onToggle={emulatorLogos.toggleEmulatorLogos}
+            isHydrated={emulatorLogos.isHydrated}
+            logoLabel="Show Emulator Logos"
+            nameLabel="Show Emulator Names"
+          />
+          <ColumnVisibilityControl
+            columns={PC_APPROVALS_COLUMNS}
+            columnVisibility={columnVisibility}
+          />
+        </>
+      }
     >
-      {pcListingsStatsQuery.data && pcListingsStatsQuery.data.pending > 0 && (
-        <AdminNotificationBanner
-          type="warning"
-          title="Pending Approvals"
-          message={`${pcListingsStatsQuery.data.pending} PC listings are waiting for approval`}
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total',
+            value: pcListingsStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
+            label: 'Pending',
+            value: pcListingsStatsQuery.data?.pending,
+            color: 'yellow',
+          },
+          {
+            label: 'Approved',
+            value: pcListingsStatsQuery.data?.approved,
+            color: 'green',
+          },
+          {
+            label: 'Rejected',
+            value: pcListingsStatsQuery.data?.rejected,
+            color: 'red',
+          },
+        ]}
+        isLoading={pcListingsStatsQuery.isPending}
+      />
+
+      <AdminSearchFilters<ApprovalSortField>
+        table={table}
+        searchPlaceholder="Search listings..."
+      />
+
+      {/* Bulk Actions */}
+      {pcListings.length > 0 && (
+        <BulkActions
+          selectedIds={Array.from(selectedRows)}
+          totalCount={pcListings.length}
+          onSelectAll={handleSelectAll}
+          onClearSelection={() => setSelectedRows(new Set<string>())}
+          actions={{
+            approve: {
+              label: 'Approve Selected',
+              onAction: handleBulkApprove,
+            },
+            reject: {
+              label: 'Reject Selected',
+              onAction: handleBulkReject,
+            },
+          }}
         />
       )}
 
-      {pcListingsStatsQuery.data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Total
-            </h3>
-            <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-              {pcListingsStatsQuery.data.total}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-yellow-600">Pending</h3>
-            <p className="text-2xl font-bold text-yellow-600">
-              {pcListingsStatsQuery.data.pending}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-green-600">Approved</h3>
-            <p className="text-2xl font-bold text-green-600">
-              {pcListingsStatsQuery.data.approved}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-red-600">Rejected</h3>
-            <p className="text-2xl font-bold text-red-600">
-              {pcListingsStatsQuery.data.rejected}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Pending PC Listings
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                PC listings submitted by users that need approval
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <ColumnVisibilityControl
-                columns={PC_APPROVALS_COLUMNS}
-                columnVisibility={columnVisibility}
-              />
-              <DisplayToggleButton
-                showLogos={showSystemIcons}
-                onToggle={() => setShowSystemIcons(!showSystemIcons)}
-                isHydrated={true}
-                logoLabel="Show Icons"
-                nameLabel="Hide Icons"
-              />
-            </div>
-          </div>
-        </div>
-
-        <AdminStatsDisplay
-          stats={[
-            {
-              label: 'Pending',
-              value: pcListingsStatsQuery.data?.pending,
-              color: 'yellow',
-            },
-            {
-              label: 'Approved',
-              value: pcListingsStatsQuery.data?.approved,
-              color: 'green',
-            },
-            {
-              label: 'Rejected',
-              value: pcListingsStatsQuery.data?.rejected,
-              color: 'red',
-            },
-          ]}
-          isLoading={pcListingsStatsQuery.isPending}
-        />
-
-        <AdminSearchFilters<ApprovalSortField>
-          table={table}
-          searchPlaceholder="Search listings..."
-        />
-
-        <AdminTableContainer>
-          <div className="mb-4 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  type="text"
-                  placeholder="Search by game, CPU, GPU, emulator, or user..."
-                  value={table.search}
-                  onChange={(e) => table.setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            {selectedRows.size > 0 && (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleBulkApprove}
-                  disabled={bulkApproveMutation.isPending}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                >
-                  Approve {selectedRows.size}
-                </button>
-                <button
-                  onClick={handleBulkReject}
-                  disabled={bulkRejectMutation.isPending}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                >
-                  Reject {selectedRows.size}
-                </button>
-              </div>
-            )}
-          </div>
-
+      <AdminTableContainer>
+        {pendingPcListingsQuery.isPending ? (
+          <LoadingSpinner text="Loading pending listings..." />
+        ) : pcListings.length === 0 ? (
+          <AdminTableNoResults icon={Clock} hasQuery={!!table.search} />
+        ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
@@ -505,9 +457,8 @@ function PcListingApprovalsPage() {
                     <input
                       type="checkbox"
                       checked={
-                        data?.pcListings &&
-                        data.pcListings.length > 0 &&
-                        selectedRows.size === data.pcListings.length
+                        pcListings.length > 0 &&
+                        selectedRows.size === pcListings.length
                       }
                       onChange={handleSelectAll}
                       className="rounded border-gray-300 dark:border-gray-600"
@@ -549,43 +500,21 @@ function PcListingApprovalsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {isLoading ? (
-                  <tr>
-                    <td
-                      colSpan={columnVisibility.visibleColumns.size + 1}
-                      className="px-6 py-12 text-center"
-                    >
-                      <LoadingSpinner size="lg" />
-                    </td>
-                  </tr>
-                ) : pendingPcListingsQuery.isError ? (
-                  <tr>
-                    <td
-                      colSpan={columnVisibility.visibleColumns.size + 1}
-                      className="px-6 py-12 text-center text-red-600 dark:text-red-400"
-                    >
-                      Failed to load PC listings. Please try again.
-                    </td>
-                  </tr>
-                ) : !data?.pcListings || data.pcListings.length === 0 ? (
-                  renderEmptyState()
-                ) : (
-                  data.pcListings.map(renderRow)
-                )}
+                {pcListings.map(renderRow)}
               </tbody>
             </table>
           </div>
-        </AdminTableContainer>
-
-        {pagination && pagination.pages > 1 && (
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.pages}
-            totalItems={pagination.total}
-            onPageChange={table.setPage}
-          />
         )}
-      </div>
+      </AdminTableContainer>
+
+      {pagination && pagination.pages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={table.setPage}
+        />
+      )}
 
       {showModal && selectedListing && (
         <ApprovalModal

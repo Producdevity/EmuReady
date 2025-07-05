@@ -336,6 +336,11 @@ function AdminApprovalsPage() {
       <AdminStatsDisplay
         stats={[
           {
+            label: 'Total',
+            value: listingStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
             label: 'Pending',
             value: listingStatsQuery.data?.pending,
             color: 'yellow',
@@ -365,8 +370,8 @@ function AdminApprovalsPage() {
       )}
 
       <AdminSearchFilters<ApprovalSortField>
-        searchPlaceholder="Search listings..."
         table={table}
+        searchPlaceholder="Search listings..."
       />
 
       {/* Bulk Actions */}

@@ -663,7 +663,7 @@ export const coreRouter = createTRPCRouter({
       }
     }),
 
-  create: authorProcedure
+  create: protectedProcedure
     .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
       const {
@@ -753,7 +753,7 @@ export const coreRouter = createTRPCRouter({
             emulatorId,
             performanceId,
             notes,
-            authorId: authorId,
+            authorId,
             status: listingStatus,
             ...((canAutoApprove || isAuthorOrHigher) && {
               processedByUserId: authorId,
