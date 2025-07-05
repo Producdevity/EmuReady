@@ -349,7 +349,7 @@ function ListingsPage() {
                   {listingsState.myListings ? 'All Listings' : 'My Listings'}
                 </Button>
               )}
-              <Button asChild variant="fancy">
+              <Button asChild size="sm" variant="fancy">
                 <Link href="/listings/new">Add Listing</Link>
               </Button>
               <div className="flex items-center gap-2">
