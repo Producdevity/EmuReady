@@ -13,13 +13,7 @@ import {
   Search,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import {
-  AsyncMultiSelect,
-  MultiSelect,
-  Button,
-  Input,
-  Badge,
-} from '@/components/ui'
+import { MultiSelect, Button, Input, Badge } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
@@ -45,7 +39,7 @@ interface Props {
   // System filters
   systemIds: string[]
   handleSystemChange: (values: string[]) => void
-  fetchSystems: (search: string) => Promise<{ id: string; name: string }[]>
+  systemOptions: { id: string; name: string }[] | undefined
   // Performance filters
   performanceIds: string[]
   handlePerformanceChange: (values: string[]) => void
@@ -53,15 +47,15 @@ interface Props {
   // Device filters
   deviceIds: string[]
   handleDeviceChange: (values: string[]) => void
-  fetchDevices: (search: string) => Promise<{ id: string; name: string }[]>
+  deviceOptions: { id: string; name: string }[] | undefined
   // Emulator filters
   emulatorIds: string[]
   handleEmulatorChange: (values: string[]) => void
-  fetchEmulators: (search: string) => Promise<{ id: string; name: string }[]>
+  emulatorOptions: { id: string; name: string }[] | undefined
   // SoC filters
   socIds: string[]
   handleSocChange: (values: string[]) => void
-  fetchSocs: (search: string) => Promise<{ id: string; name: string }[]>
+  socOptions: { id: string; name: string }[] | undefined
 }
 
 const filterSections: FilterSection[] = [
@@ -342,17 +336,18 @@ export function ListingFilters(props: Props) {
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            {section.id === 'systems' && (
-                              <AsyncMultiSelect
-                                label="Systems"
-                                value={props.systemIds}
-                                onChange={props.handleSystemChange}
-                                placeholder="Select game systems..."
-                                loadOptions={props.fetchSystems}
-                                emptyMessage="No systems found"
-                                className="mobile-optimized"
-                              />
-                            )}
+                            {section.id === 'systems' &&
+                              props.systemOptions && (
+                                <MultiSelect
+                                  label="Systems"
+                                  value={props.systemIds}
+                                  onChange={props.handleSystemChange}
+                                  placeholder="Select game systems..."
+                                  options={props.systemOptions}
+                                  maxDisplayed={3}
+                                  className="mobile-optimized"
+                                />
+                              )}
 
                             {section.id === 'performance' && (
                               <MultiSelect
@@ -371,40 +366,40 @@ export function ListingFilters(props: Props) {
                               />
                             )}
 
-                            {section.id === 'devices' && (
-                              <AsyncMultiSelect
-                                label="Devices"
-                                value={props.deviceIds}
-                                onChange={props.handleDeviceChange}
-                                placeholder="Select devices..."
-                                loadOptions={props.fetchDevices}
-                                maxSelected={5}
-                                emptyMessage="No devices found"
-                                className="mobile-optimized"
-                              />
-                            )}
+                            {section.id === 'devices' &&
+                              props.deviceOptions && (
+                                <MultiSelect
+                                  label="Devices"
+                                  value={props.deviceIds}
+                                  onChange={props.handleDeviceChange}
+                                  placeholder="Select devices..."
+                                  options={props.deviceOptions}
+                                  maxDisplayed={3}
+                                  className="mobile-optimized"
+                                />
+                              )}
 
-                            {section.id === 'emulators' && (
-                              <AsyncMultiSelect
-                                label="Emulators"
-                                value={props.emulatorIds}
-                                onChange={props.handleEmulatorChange}
-                                placeholder="Select emulators..."
-                                loadOptions={props.fetchEmulators}
-                                emptyMessage="No emulators found"
-                                className="mobile-optimized"
-                              />
-                            )}
+                            {section.id === 'emulators' &&
+                              props.emulatorOptions && (
+                                <MultiSelect
+                                  label="Emulators"
+                                  value={props.emulatorIds}
+                                  onChange={props.handleEmulatorChange}
+                                  placeholder="Select emulators..."
+                                  options={props.emulatorOptions}
+                                  maxDisplayed={3}
+                                  className="mobile-optimized"
+                                />
+                              )}
 
-                            {section.id === 'socs' && (
-                              <AsyncMultiSelect
+                            {section.id === 'socs' && props.socOptions && (
+                              <MultiSelect
                                 label="SoCs"
                                 value={props.socIds}
                                 onChange={props.handleSocChange}
                                 placeholder="Select system on chips..."
-                                loadOptions={props.fetchSocs}
-                                maxSelected={5}
-                                emptyMessage="No SoCs found"
+                                options={props.socOptions}
+                                maxDisplayed={3}
                                 className="mobile-optimized"
                               />
                             )}

@@ -341,148 +341,47 @@ function V2ListingsPage() {
     listingsState.setSortDirection(direction || null)
   }
 
-  // State for async fetch functions (for multiselect components)
-  const [systemSearchTerm, setSystemSearchTerm] = useState('')
-  const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
-  const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
-  const [socSearchTerm, setSocSearchTerm] = useState('')
+  // Preload filter data with 500 item limits
+  const systemsQuery = api.systems.get.useQuery()
+  const devicesQuery = api.devices.get.useQuery({ limit: 500, offset: 0 })
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 500, offset: 0 })
+  const socsQuery = api.socs.get.useQuery({ limit: 500, offset: 0 })
 
-  // Queries for async data fetching
-  const systemsQuery = api.systems.get.useQuery(
-    { search: systemSearchTerm || undefined },
-    { enabled: systemSearchTerm.length > 0, refetchOnWindowFocus: false },
+  // Transform preloaded data into options format
+  const systemOptions = useMemo(
+    () =>
+      systemsQuery.data?.map((system) => ({
+        id: system.id,
+        name: system.name,
+      })),
+    [systemsQuery.data],
   )
 
-  const devicesQuery = api.devices.get.useQuery(
-    { search: deviceSearchTerm || undefined, limit: 50, offset: 0 },
-    { enabled: deviceSearchTerm.length > 0, refetchOnWindowFocus: false },
+  const deviceOptions = useMemo(
+    () =>
+      devicesQuery.data?.devices.map((device) => ({
+        id: device.id,
+        name: `${device.brand.name} ${device.modelName}`,
+      })),
+    [devicesQuery.data],
   )
 
-  const emulatorsQuery = api.emulators.get.useQuery(
-    { search: emulatorSearchTerm || undefined, limit: 50, offset: 0 },
-    { enabled: emulatorSearchTerm.length > 0, refetchOnWindowFocus: false },
+  const emulatorOptions = useMemo(
+    () =>
+      emulatorsQuery.data?.emulators.map((emulator) => ({
+        id: emulator.id,
+        name: emulator.name,
+      })),
+    [emulatorsQuery.data],
   )
 
-  const socsQuery = api.socs.get.useQuery(
-    { search: socSearchTerm || undefined, limit: 50, offset: 0 },
-    { enabled: socSearchTerm.length > 0, refetchOnWindowFocus: false },
-  )
-
-  // Debounced fetch functions
-  const fetchSystems = useCallback(
-    async (search: string): Promise<{ id: string; name: string }[]> => {
-      if (!search.trim()) return []
-
-      return new Promise((resolve) => {
-        const timeoutId = setTimeout(async () => {
-          setSystemSearchTerm(search)
-          setTimeout(async () => {
-            try {
-              const result = await systemsQuery.refetch()
-              resolve(
-                result.data?.map((system) => ({
-                  id: system.id,
-                  name: system.name,
-                })) || [],
-              )
-            } catch (error) {
-              console.error('Error fetching systems:', error)
-              resolve([])
-            }
-          }, 50)
-        }, 150)
-
-        return () => clearTimeout(timeoutId)
-      })
-    },
-    [systemsQuery],
-  )
-
-  const fetchDevices = useCallback(
-    async (search: string): Promise<{ id: string; name: string }[]> => {
-      if (!search.trim()) return []
-
-      return new Promise((resolve) => {
-        const timeoutId = setTimeout(async () => {
-          setDeviceSearchTerm(search)
-          setTimeout(async () => {
-            try {
-              const result = await devicesQuery.refetch()
-              resolve(
-                result.data?.devices.map((device) => ({
-                  id: device.id,
-                  name: `${device.brand.name} ${device.modelName}`,
-                })) || [],
-              )
-            } catch (error) {
-              console.error('Error fetching devices:', error)
-              resolve([])
-            }
-          }, 50)
-        }, 150)
-
-        return () => clearTimeout(timeoutId)
-      })
-    },
-    [devicesQuery],
-  )
-
-  const fetchEmulators = useCallback(
-    async (search: string): Promise<{ id: string; name: string }[]> => {
-      if (!search.trim()) return []
-
-      return new Promise((resolve) => {
-        const timeoutId = setTimeout(async () => {
-          setEmulatorSearchTerm(search)
-          setTimeout(async () => {
-            try {
-              const result = await emulatorsQuery.refetch()
-              resolve(
-                result.data?.emulators.map((emulator) => ({
-                  id: emulator.id,
-                  name: emulator.name,
-                })) || [],
-              )
-            } catch (error) {
-              console.error('Error fetching emulators:', error)
-              resolve([])
-            }
-          }, 50)
-        }, 150)
-
-        return () => clearTimeout(timeoutId)
-      })
-    },
-    [emulatorsQuery],
-  )
-
-  const fetchSocs = useCallback(
-    async (search: string): Promise<{ id: string; name: string }[]> => {
-      if (!search.trim()) return []
-
-      return new Promise((resolve) => {
-        const timeoutId = setTimeout(async () => {
-          setSocSearchTerm(search)
-          setTimeout(async () => {
-            try {
-              const result = await socsQuery.refetch()
-              resolve(
-                result.data?.socs.map((soc) => ({
-                  id: soc.id,
-                  name: `${soc.name} (${soc.manufacturer})`,
-                })) || [],
-              )
-            } catch (error) {
-              console.error('Error fetching SoCs:', error)
-              resolve([])
-            }
-          }, 50)
-        }, 150)
-
-        return () => clearTimeout(timeoutId)
-      })
-    },
-    [socsQuery],
+  const socOptions = useMemo(
+    () =>
+      socsQuery.data?.socs.map((soc) => ({
+        id: soc.id,
+        name: `${soc.name} (${soc.manufacturer})`,
+      })),
+    [socsQuery.data],
   )
 
   // Handle errors
@@ -573,7 +472,7 @@ function V2ListingsPage() {
             clearAllFilters={clearAllFilters}
             systemIds={listingsState.systemIds}
             handleSystemChange={handleSystemChange}
-            fetchSystems={fetchSystems}
+            systemOptions={systemOptions}
             performanceIds={listingsState.performanceIds.map(String)}
             handlePerformanceChange={(values) =>
               handlePerformanceChange(values.map(Number))
@@ -581,13 +480,13 @@ function V2ListingsPage() {
             performanceScales={performanceScalesQuery.data}
             deviceIds={listingsState.deviceIds}
             handleDeviceChange={handleDeviceChange}
-            fetchDevices={fetchDevices}
+            deviceOptions={deviceOptions}
             emulatorIds={listingsState.emulatorIds}
             handleEmulatorChange={handleEmulatorChange}
-            fetchEmulators={fetchEmulators}
+            emulatorOptions={emulatorOptions}
             socIds={listingsState.socIds}
             handleSocChange={handleSocChange}
-            fetchSocs={fetchSocs}
+            socOptions={socOptions}
           />
 
           {/* Listings Content */}
