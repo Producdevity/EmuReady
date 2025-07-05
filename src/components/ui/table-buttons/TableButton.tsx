@@ -12,6 +12,11 @@ const colorClassMap = {
     icon: 'text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 drop-shadow-sm',
     glow: 'group-hover:bg-blue-500/10 dark:group-hover:bg-blue-400/15',
   },
+  clear: {
+    base: 'bg-transparent border border-gray-200/40 dark:border-gray-500/30 hover:border-gray-300/60 dark:hover:border-gray-400/50 hover:shadow-xl hover:shadow-gray-500/25 dark:hover:shadow-gray-400/20 backdrop-blur-sm hover:bg-gradient-to-br hover:from-gray-500/15 hover:to-slate-500/15 w-10 h-10',
+    icon: 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 drop-shadow-sm',
+    glow: 'group-hover:bg-gray-500/10 dark:group-hover:bg-gray-400/15',
+  },
   gray: {
     base: 'bg-gradient-to-br from-gray-500/8 to-slate-500/8 dark:from-gray-400/15 dark:to-slate-400/15 border border-gray-200/40 dark:border-gray-500/30 hover:border-gray-300/60 dark:hover:border-gray-400/50 hover:shadow-xl hover:shadow-gray-500/25 dark:hover:shadow-gray-400/20 backdrop-blur-sm hover:bg-gradient-to-br hover:from-gray-500/15 hover:to-slate-500/15',
     icon: 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 drop-shadow-sm',
@@ -77,8 +82,6 @@ export type TableButtonWrapperProps =
 
 /**
  * TableButton is a reusable button component designed for the action buttons in tables.
- * @param props
- * @constructor
  */
 export function TableButton(props: Props) {
   const colorClass = colorClassMap[props.color]

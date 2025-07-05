@@ -1,7 +1,8 @@
 'use client'
 
-import { Modal } from '@/components/ui'
+import { Modal, InputPlaceholder } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
+import { formatCountLabel } from '@/utils/text'
 
 type DeviceData = RouterOutput['devices']['get']['devices'][number]
 
@@ -14,7 +15,10 @@ interface Props {
 function DeviceViewModal(props: Props) {
   if (!props.deviceData) return null
 
-  const { deviceData } = props
+  const deviceSoc =
+    props.deviceData.soc?.manufacturer && props.deviceData.soc?.name
+      ? `${props.deviceData.soc?.manufacturer} ${props.deviceData.soc?.name}`
+      : 'Not specified'
 
   return (
     <Modal
@@ -25,52 +29,26 @@ function DeviceViewModal(props: Props) {
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Device ID
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md font-mono">
-              {deviceData.id}
-            </div>
-          </div>
+          <InputPlaceholder
+            label="Device ID"
+            value={props.deviceData.id}
+            mono
+          />
+          <InputPlaceholder label="Brand" value={props.deviceData.brand.name} />
+          <InputPlaceholder
+            label="Model Name"
+            value={props.deviceData.modelName}
+          />
+          <InputPlaceholder label="System on Chip (SoC)" value={deviceSoc} />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Brand
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {deviceData.brand.name}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Model Name
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {deviceData.modelName}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              System on Chip (SoC)
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {deviceData.soc?.name || 'Not specified'}
-            </div>
-          </div>
-
-          {deviceData._count && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Total Listings
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {deviceData._count.listings} listing
-                {deviceData._count.listings !== 1 ? 's' : ''}
-              </div>
-            </div>
+          {props.deviceData._count && (
+            <InputPlaceholder
+              label="Total Listings"
+              value={formatCountLabel(
+                'listing',
+                props.deviceData._count.listings,
+              )}
+            />
           )}
         </div>
 

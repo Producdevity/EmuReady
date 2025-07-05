@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
 import TrustStatsOverview from '@/app/admin/trust-logs/components/TrustStatsOverview'
-import { AdminTableContainer } from '@/components/admin'
+import { AdminTableContainer, AdminTableNoResults } from '@/components/admin'
 import {
   Button,
   Input,
@@ -15,6 +15,7 @@ import {
   LoadingSpinner,
   Badge,
   Code,
+  Pagination,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -110,6 +111,7 @@ function AdminTrustLogsPage() {
         : '-'
   }
 
+  // TODO: use AdminPageLayout like all the other admin pages
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -138,6 +140,7 @@ function AdminTrustLogsPage() {
         </div>
       </div>
 
+      {/*TODO: check if we can use AdminStatsDisplay */}
       {trustStatsQuery.data && (
         <TrustStatsOverview trustStatsData={trustStatsQuery.data} />
       )}
@@ -184,175 +187,146 @@ function AdminTrustLogsPage() {
         {trustLogsQuery.isPending ? (
           <LoadingSpinner text="Loading logs..." />
         ) : logs.length === 0 ? (
-          <div className="text-center py-12">
-            <Shield className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedAction
-                ? 'No trust logs found matching your filters.'
-                : 'No trust logs yet.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            icon={Shield}
+            hasQuery={!!table.search || !!selectedAction}
+          />
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  {columnVisibility.isColumnVisible('user') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      User
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('action') && (
+                    <SortableHeader
+                      label="Action"
+                      field="action"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('weight') && (
+                    <SortableHeader
+                      label="Weight"
+                      field="weight"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('trustScore') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Current Score
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('metadata') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Details
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('timestamp') && (
+                    <SortableHeader
+                      label="Timestamp"
+                      field="createdAt"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {logs.map((log: TrustLog) => (
+                  <tr
+                    key={log.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
                     {columnVisibility.isColumnVisible('user') && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        User
-                      </th>
+                      <td className="px-6 py-4">
+                        <div>
+                          <Link
+                            href={`/admin/users`}
+                            className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {log.user.name || 'Unknown User'}
+                          </Link>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {log.user.email}
+                          </div>
+                        </div>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('action') && (
-                      <SortableHeader
-                        label="Action"
-                        field="action"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4">
+                        <Badge
+                          variant={getTrustActionBadgeColor(log.action)}
+                          size="sm"
+                        >
+                          {TRUST_ACTIONS[log.action]?.description ?? log.action}
+                        </Badge>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('weight') && (
-                      <SortableHeader
-                        label="Weight"
-                        field="weight"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm">
+                        <span
+                          className={`font-semibold ${
+                            log.weight > 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : log.weight < 0
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          {log.weight > 0 ? '+' : ''}
+                          {log.weight}
+                        </span>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('trustScore') && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Current Score
-                      </th>
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        {log.user.trustScore}
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('metadata') && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Details
-                      </th>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        <Code
+                          value={getLogMetadata(log)}
+                          label={getLogMetadata(log)}
+                        />
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('timestamp') && (
-                      <SortableHeader
-                        label="Timestamp"
-                        field="createdAt"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td
+                        className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
+                        title={formatDateTime(log.createdAt)}
+                      >
+                        {formatTimeAgo(log.createdAt)}
+                      </td>
                     )}
                   </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {logs.map((log: TrustLog) => (
-                    <tr
-                      key={log.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      {columnVisibility.isColumnVisible('user') && (
-                        <td className="px-6 py-4">
-                          <div>
-                            <Link
-                              href={`/admin/users`}
-                              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {log.user.name || 'Unknown User'}
-                            </Link>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {log.user.email}
-                            </div>
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('action') && (
-                        <td className="px-6 py-4">
-                          <Badge
-                            variant={getTrustActionBadgeColor(log.action)}
-                            size="sm"
-                          >
-                            {TRUST_ACTIONS[log.action]?.description ??
-                              log.action}
-                          </Badge>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('weight') && (
-                        <td className="px-6 py-4 text-sm">
-                          <span
-                            className={`font-semibold ${
-                              log.weight > 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : log.weight < 0
-                                  ? 'text-red-600 dark:text-red-400'
-                                  : 'text-gray-600 dark:text-gray-400'
-                            }`}
-                          >
-                            {log.weight > 0 ? '+' : ''}
-                            {log.weight}
-                          </span>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('trustScore') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {log.user.trustScore}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('metadata') && (
-                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          <Code
-                            value={getLogMetadata(log)}
-                            label={getLogMetadata(log)}
-                          />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('timestamp') && (
-                        <td
-                          className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
-                          title={formatDateTime(log.createdAt)}
-                        >
-                          {formatTimeAgo(log.createdAt)}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {pagination && pagination.pages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700 dark:text-gray-300">
-                    Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                    {Math.min(
-                      pagination.page * pagination.limit,
-                      pagination.total,
-                    )}{' '}
-                    of {pagination.total} results
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={pagination.page <= 1}
-                      onClick={() => table.setPage(pagination.page - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={pagination.page >= pagination.pages}
-                      onClick={() => table.setPage(pagination.page + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </AdminTableContainer>
+      {pagination && pagination.pages > 1 && (
+        <Pagination
+          currentPage={table.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          itemsPerPage={pagination.limit}
+          onPageChange={(newPage) => table.setPage(newPage)}
+        />
+      )}
     </div>
   )
 }

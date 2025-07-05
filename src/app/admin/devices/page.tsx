@@ -98,16 +98,6 @@ function AdminDevicesPage() {
     closeModal()
   }
 
-  const handleBrandChange = (value: string | null) => {
-    table.setAdditionalParam('brandId', value || '')
-  }
-
-  const clearFilters = () => {
-    table.setSearch('')
-    table.setAdditionalParam('brandId', '')
-    table.setPage(1)
-  }
-
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete Device',
@@ -129,6 +119,7 @@ function AdminDevicesPage() {
     }
   }
 
+  // TODO: use AdminPageLayout like all the other admin pages
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -172,15 +163,14 @@ function AdminDevicesPage() {
         />
       )}
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={(value) => table.setSearch(value)}
+      <AdminSearchFilters<DeviceSortField>
         searchPlaceholder="Search devices..."
-        onClear={clearFilters}
+        table={table}
+        onClear={() => table.setAdditionalParam('brandId', '')}
       >
         <Autocomplete
           value={table.additionalParams.brandId || ''}
-          onChange={handleBrandChange}
+          onChange={(value) => table.setAdditionalParam('brandId', value || '')}
           items={[{ id: '', name: 'All Brands' }, ...(brandsQuery.data || [])]}
           optionToValue={(brand) => brand.id}
           optionToLabel={(brand) => brand.name}

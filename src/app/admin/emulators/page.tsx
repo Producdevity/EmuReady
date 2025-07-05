@@ -10,6 +10,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
@@ -152,24 +153,16 @@ function AdminEmulatorsPage() {
         />
       )}
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<EmulatorSortField>
+        table={table}
         searchPlaceholder="Search emulators by name..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       />
 
       <AdminTableContainer>
         {emulatorsQuery.isPending ? (
           <LoadingSpinner text="Loading emulators..." />
         ) : emulators.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No emulators found matching your search.'
-                : 'No emulators found.'}
-            </p>
-          </div>
+          <AdminTableNoResults hasQuery={!!table.search} />
         ) : (
           <>
             <div className="overflow-x-auto">

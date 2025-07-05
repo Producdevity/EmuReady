@@ -210,7 +210,7 @@ function AddPcListingPage() {
         const parsedOptions = parseCustomFieldOptions(field)
         return {
           ...field,
-          optionsUI: parsedOptions,
+          parsedOptions,
           defaultValue: field.defaultValue as
             | string
             | number
@@ -242,7 +242,10 @@ function AddPcListingPage() {
       )
       if (existingValueObj) return existingValueObj
 
-      const defaultValue = getCustomFieldDefaultValue(field, field.optionsUI)
+      const defaultValue = getCustomFieldDefaultValue(
+        field,
+        field.parsedOptions,
+      )
 
       return {
         customFieldDefinitionId: field.id,

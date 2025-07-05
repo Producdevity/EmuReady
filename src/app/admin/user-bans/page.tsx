@@ -213,11 +213,9 @@ function AdminUserBansPage() {
         isLoading={bansStatsQuery.isPending}
       />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<BanSortField>
+        table={table}
         searchPlaceholder="Search bans by user name, email, or reason..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       >
         <div className="flex gap-2">
           <select

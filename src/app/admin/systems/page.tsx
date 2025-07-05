@@ -7,6 +7,7 @@ import {
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -139,96 +140,83 @@ function AdminSystemsPage() {
         />
       )}
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={(value) => table.setSearch(value)}
+      <AdminSearchFilters<SystemSortField>
         searchPlaceholder="Search systems..."
-        onClear={() => {
-          table.setSearch('')
-          table.setPage(1)
-        }}
+        table={table}
       />
 
       <AdminTableContainer>
         {systemsQuery.isPending ? (
           <LoadingSpinner text="Loading systems..." />
+        ) : systemsQuery.data?.length === 0 ? (
+          <AdminTableNoResults hasQuery={!!table.search} />
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                {columnVisibility.isColumnVisible('name') && (
-                  <SortableHeader
-                    label="System Name"
-                    field="name"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('gamesCount') && (
-                  <SortableHeader
-                    label="Games"
-                    field="gamesCount"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {systemsQuery.data?.map((system) => (
-                <tr
-                  key={system.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                >
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
                   {columnVisibility.isColumnVisible('name') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {system.name}
-                    </td>
+                    <SortableHeader
+                      label="System Name"
+                      field="name"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('gamesCount') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {system._count.games} games
-                    </td>
+                    <SortableHeader
+                      label="Games"
+                      field="gamesCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <EditButton
-                          onClick={() => openModal(system)}
-                          title="Edit System"
-                        />
-                        <DeleteButton
-                          onClick={() => handleDelete(system.id)}
-                          title="Delete System"
-                          isLoading={deleteSystem.isPending}
-                          disabled={deleteSystem.isPending}
-                        />
-                      </div>
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
                   )}
                 </tr>
-              ))}
-              {!systemsQuery.isPending && systemsQuery.data?.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {systemsQuery.data?.map((system) => (
+                  <tr
+                    key={system.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                   >
-                    {table.search
-                      ? 'No systems found matching your search.'
-                      : 'No systems found. Add your first system.'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    {columnVisibility.isColumnVisible('name') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {system.name}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('gamesCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {system._count.games} games
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center gap-2">
+                          <EditButton
+                            onClick={() => openModal(system)}
+                            title="Edit System"
+                          />
+                          <DeleteButton
+                            onClick={() => handleDelete(system.id)}
+                            title="Delete System"
+                            isLoading={deleteSystem.isPending}
+                            disabled={deleteSystem.isPending}
+                          />
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </AdminTableContainer>
 

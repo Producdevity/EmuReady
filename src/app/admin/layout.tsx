@@ -58,6 +58,17 @@ function AdminLayout(props: PropsWithChildren) {
     refetchOnWindowFocus: true,
   })
 
+  // Get pending PC listings count for admin navigation
+  const pcListingStatsQuery = api.pcListings.stats.useQuery(undefined, {
+    enabled:
+      !!userQuery.data &&
+      hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+    refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
+    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  })
+
   const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
   const isAdmin = hasRolePermission(userQuery.data?.role, Role.ADMIN)
   const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
@@ -101,6 +112,12 @@ function AdminLayout(props: PropsWithChildren) {
     if (item.href === '/admin/approvals' && listingStatsQuery.data) {
       return { ...item, count: listingStatsQuery.data.pending }
     }
+    if (
+      item.href === '/admin/pc-listing-approvals' &&
+      pcListingStatsQuery.data
+    ) {
+      return { ...item, count: pcListingStatsQuery.data.pending }
+    }
     return item
   })
 
@@ -114,7 +131,21 @@ function AdminLayout(props: PropsWithChildren) {
   } else if (isAdmin) {
     navItems = adminNavItemsWithCounts
   } else if (isModerator) {
-    navItems = moderatorNavItems
+    navItems = moderatorNavItems.map((item) => {
+      if (item.href === '/admin/games/approvals' && gameStatsQuery.data) {
+        return { ...item, count: gameStatsQuery.data.pending }
+      }
+      if (item.href === '/admin/approvals' && listingStatsQuery.data) {
+        return { ...item, count: listingStatsQuery.data.pending }
+      }
+      if (
+        item.href === '/admin/pc-listing-approvals' &&
+        pcListingStatsQuery.data
+      ) {
+        return { ...item, count: pcListingStatsQuery.data.pending }
+      }
+      return item
+    })
   } else if (isDeveloper && verifiedEmulatorsQuery.data) {
     const emulatorIds = verifiedEmulatorsQuery.data.map((e) => e.id)
     navItems = getDeveloperNavItems(emulatorIds)

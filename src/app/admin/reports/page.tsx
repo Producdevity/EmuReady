@@ -215,17 +215,15 @@ function AdminReportsPage() {
         isLoading={reportsStatsQuery.isPending}
       />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<ReportSortField>
+        table={table}
         searchPlaceholder="Search reports by listing, user, or description..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       >
         <div className="flex gap-2">
           <select
             value={selectedReason}
-            onChange={(e) =>
-              setSelectedReason(e.target.value as ReportReasonType | '')
+            onChange={(ev) =>
+              setSelectedReason(ev.target.value as ReportReasonType | '')
             }
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >

@@ -10,7 +10,7 @@ export interface CustomFieldOptionUI {
 
 export interface CustomFieldDefinitionWithOptions
   extends Omit<CustomFieldDefinition, 'defaultValue'> {
-  optionsUI?: CustomFieldOptionUI[]
+  parsedOptions?: CustomFieldOptionUI[]
   defaultValue?: string | number | boolean | null
 }
 

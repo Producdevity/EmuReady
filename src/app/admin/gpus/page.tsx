@@ -99,16 +99,6 @@ function AdminGpusPage() {
     closeModal()
   }
 
-  const handleBrandChange = (value: string | null) => {
-    table.setAdditionalParam('brandId', value || '')
-  }
-
-  const clearFilters = () => {
-    table.setSearch('')
-    table.setAdditionalParam('brandId', '')
-    table.setPage(1)
-  }
-
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete GPU',
@@ -130,6 +120,7 @@ function AdminGpusPage() {
     }
   }
 
+  // TODO: use AdminPageLayout like all the other admin pages
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -150,38 +141,35 @@ function AdminGpusPage() {
         </div>
       </div>
 
-      {gpusStatsQuery.data && (
-        <AdminStatsDisplay
-          stats={[
-            {
-              label: 'Total',
-              value: gpusStatsQuery.data.total,
-              color: 'blue',
-            },
-            {
-              label: 'With Listings',
-              value: gpusStatsQuery.data.withListings,
-              color: 'green',
-            },
-            {
-              label: 'No Listings',
-              value: gpusStatsQuery.data.withoutListings,
-              color: 'gray',
-            },
-          ]}
-          isLoading={gpusStatsQuery.isPending}
-        />
-      )}
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total',
+            value: gpusStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
+            label: 'With Listings',
+            value: gpusStatsQuery.data?.withListings,
+            color: 'green',
+          },
+          {
+            label: 'No Listings',
+            value: gpusStatsQuery.data?.withoutListings,
+            color: 'gray',
+          },
+        ]}
+        isLoading={gpusStatsQuery.isPending}
+      />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={(value) => table.setSearch(value)}
+      <AdminSearchFilters<GpuSortField>
+        table={table}
         searchPlaceholder="Search GPUs..."
-        onClear={clearFilters}
+        onClear={() => table.setAdditionalParam('brandId', '')}
       >
         <Autocomplete
           value={table.additionalParams.brandId || ''}
-          onChange={handleBrandChange}
+          onChange={(value) => table.setAdditionalParam('brandId', value || '')}
           items={[{ id: '', name: 'All Brands' }, ...(brandsQuery.data || [])]}
           optionToValue={(brand) => brand.id}
           optionToLabel={(brand) => brand.name}

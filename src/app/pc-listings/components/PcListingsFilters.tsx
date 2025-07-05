@@ -42,8 +42,6 @@ export function PcListingsFilters() {
   const [memoryMax, setMemoryMax] = useState(
     searchParams.get('memoryMax') || '',
   )
-  const [cpuSearchTerm, setCpuSearchTerm] = useState('')
-  const [gpuSearchTerm, setGpuSearchTerm] = useState('')
 
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
   const debouncedMemoryMin = useDebouncedValue(memoryMin, 300)
@@ -53,72 +51,45 @@ export function PcListingsFilters() {
   const systemsQuery = api.systems.get.useQuery()
   const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
-  const cpusQuery = api.cpus.get.useQuery({
-    search: cpuSearchTerm || undefined,
-    limit: 50,
-  })
-  const gpusQuery = api.gpus.get.useQuery({
-    search: gpuSearchTerm || undefined,
-    limit: 50,
-  })
+
+  // Get utils for fetching
+  const utils = api.useUtils()
 
   // Async loaders for CPU and GPU
   const loadCpuOptions = useCallback(
     async (search: string): Promise<{ id: string; name: string }[]> => {
-      if (!search.trim()) return []
+      if (!search.trim() || search.length < 2) return []
 
-      return new Promise((resolve) => {
-        const timeoutId = setTimeout(async () => {
-          setCpuSearchTerm(search)
-          setTimeout(async () => {
-            try {
-              const result = await cpusQuery.refetch()
-              resolve(
-                result.data?.cpus.map((cpu) => ({
-                  id: cpu.id,
-                  name: `${cpu.brand.name} ${cpu.modelName}`,
-                })) || [],
-              )
-            } catch (error) {
-              console.error('Error fetching CPUs:', error)
-              resolve([])
-            }
-          }, 50)
-        }, 150)
-
-        return () => clearTimeout(timeoutId)
-      })
+      try {
+        const result = await utils.cpus.get.fetch({ search, limit: 50 })
+        return result.cpus.map((cpu) => ({
+          id: cpu.id,
+          name: `${cpu.brand.name} ${cpu.modelName}`,
+        }))
+      } catch (error) {
+        console.error('Error fetching CPUs:', error)
+        return []
+      }
     },
-    [cpusQuery],
+    [utils.cpus.get],
   )
 
   const loadGpuOptions = useCallback(
     async (search: string): Promise<{ id: string; name: string }[]> => {
-      if (!search.trim()) return []
+      if (!search.trim() || search.length < 2) return []
 
-      return new Promise((resolve) => {
-        const timeoutId = setTimeout(async () => {
-          setGpuSearchTerm(search)
-          setTimeout(async () => {
-            try {
-              const result = await gpusQuery.refetch()
-              resolve(
-                result.data?.gpus.map((gpu) => ({
-                  id: gpu.id,
-                  name: `${gpu.brand.name} ${gpu.modelName}`,
-                })) || [],
-              )
-            } catch (error) {
-              console.error('Error fetching GPUs:', error)
-              resolve([])
-            }
-          }, 50)
-        }, 150)
-
-        return () => clearTimeout(timeoutId)
-      })
+      try {
+        const result = await utils.gpus.get.fetch({ search, limit: 50 })
+        return result.gpus.map((gpu) => ({
+          id: gpu.id,
+          name: `${gpu.brand.name} ${gpu.modelName}`,
+        }))
+      } catch (error) {
+        console.error('Error fetching GPUs:', error)
+        return []
+      }
     },
-    [gpusQuery],
+    [utils.gpus.get],
   )
 
   // Update URL when filters change

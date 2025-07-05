@@ -116,34 +116,30 @@ function AdminPerformancePage() {
         </>
       }
     >
-      {performanceStatsQuery.data && (
-        <AdminStatsDisplay
-          stats={[
-            {
-              label: 'Total Scales',
-              value: performanceStatsQuery.data.total,
-              color: 'blue',
-            },
-            {
-              label: 'Used in Listings',
-              value: performanceStatsQuery.data.usedInListings,
-              color: 'green',
-            },
-            {
-              label: 'Unused',
-              value: performanceStatsQuery.data.unused,
-              color: 'gray',
-            },
-          ]}
-          isLoading={performanceStatsQuery.isPending}
-        />
-      )}
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total Scales',
+            value: performanceStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
+            label: 'Used in Listings',
+            value: performanceStatsQuery.data?.usedInListings,
+            color: 'green',
+          },
+          {
+            label: 'Unused',
+            value: performanceStatsQuery.data?.unused,
+            color: 'gray',
+          },
+        ]}
+        isLoading={performanceStatsQuery.isPending}
+      />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<PerformanceScaleSortField>
+        table={table}
         searchPlaceholder="Search performance scales by name or description..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       />
 
       <AdminTableContainer>

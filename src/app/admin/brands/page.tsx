@@ -93,6 +93,7 @@ function AdminBrandsPage() {
     }
   }
 
+  // TODO: use AdminPageLayout like all the other admin pages
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -136,14 +137,9 @@ function AdminBrandsPage() {
         />
       )}
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={(value) => table.setSearch(value)}
+      <AdminSearchFilters<DeviceBrandSortField>
+        table={table}
         searchPlaceholder="Search brands..."
-        onClear={() => {
-          table.setSearch('')
-          table.setPage(1)
-        }}
       />
 
       <AdminTableContainer>

@@ -6,15 +6,17 @@ import { useState, type ChangeEvent } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
-  AdminTableContainer,
-  AdminStatsDisplay,
   AdminSearchFilters,
+  AdminStatsDisplay,
+  AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ApproveButton,
   Button,
   ColumnVisibilityControl,
   EditButton,
+  LoadingSpinner,
   Pagination,
   RejectButton,
   SelectInput,
@@ -131,12 +133,6 @@ function ProcessedListingsPage() {
     table.setPage(1)
   }
 
-  const clearFilters = () => {
-    table.setSearch('')
-    setFilterStatus(null)
-    table.setPage(1)
-  }
-
   if (processedListingsQuery.error) {
     return (
       <div className="container mx-auto p-6 text-red-500">
@@ -182,11 +178,10 @@ function ProcessedListingsPage() {
         isLoading={listingStatsQuery.isPending}
       />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<ProcessedListingSortField>
+        table={table}
         searchPlaceholder="Search by game name, author, or notes..."
-        onClear={clearFilters}
+        onClear={() => setFilterStatus(null)}
       >
         <SelectInput
           hideLabel
@@ -197,20 +192,12 @@ function ProcessedListingsPage() {
         />
       </AdminSearchFilters>
 
-      {processedListingsQuery.isPending && (
-        <div className="text-center py-8">
-          <p>Loading processed listings...</p>
-        </div>
-      )}
-
-      {!processedListingsQuery.isPending && processedListings.length === 0 && (
-        <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-          No listings match the current filter.
-        </p>
-      )}
-
-      {!processedListingsQuery.isPending && processedListings.length > 0 && (
-        <AdminTableContainer>
+      <AdminTableContainer>
+        {processedListingsQuery.isPending ? (
+          <LoadingSpinner text="Loading processed listings..." />
+        ) : processedListings.length === 0 ? (
+          <AdminTableNoResults hasQuery={!!table.search} />
+        ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
@@ -346,8 +333,8 @@ function ProcessedListingsPage() {
               ))}
             </tbody>
           </table>
-        </AdminTableContainer>
-      )}
+        )}
+      </AdminTableContainer>
 
       {paginationData && paginationData.pages > 1 && (
         <Pagination

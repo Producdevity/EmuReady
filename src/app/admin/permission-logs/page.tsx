@@ -18,7 +18,7 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
-import type { PermissionActionType, Role } from '@orm'
+import { PermissionActionType, type Role } from '@orm'
 
 type PermissionLogSortField = 'createdAt' | 'action' | 'userId' | 'targetRole'
 
@@ -88,17 +88,17 @@ function AdminPermissionLogsPage() {
 
   const getActionBadgeColor = (action: PermissionActionType) => {
     switch (action) {
-      case 'PERMISSION_CREATED':
+      case PermissionActionType.PERMISSION_CREATED:
         return 'success'
-      case 'PERMISSION_UPDATED':
+      case PermissionActionType.PERMISSION_UPDATED:
         return 'warning'
-      case 'PERMISSION_DELETED':
+      case PermissionActionType.PERMISSION_DELETED:
         return 'danger'
-      case 'ROLE_PERMISSION_ASSIGNED':
+      case PermissionActionType.ROLE_PERMISSION_ASSIGNED:
         return 'info'
-      case 'ROLE_PERMISSION_REMOVED':
+      case PermissionActionType.ROLE_PERMISSION_REMOVED:
         return 'default'
-      case 'USER_ROLE_CHANGED':
+      case PermissionActionType.USER_ROLE_CHANGED:
         return 'primary'
       default:
         return 'default'
@@ -111,31 +111,6 @@ function AdminPermissionLogsPage() {
       .toLowerCase()
       .replace(/\b\w/g, (l) => l.toUpperCase())
   }
-
-  const statsData = statsQuery.data
-    ? [
-        {
-          label: 'Total Logs',
-          value: statsQuery.data.summary.totalLogs,
-          color: 'blue' as const,
-        },
-        {
-          label: 'Last 24h',
-          value: statsQuery.data.summary.logsLast24h,
-          color: 'green' as const,
-        },
-        {
-          label: 'Last 7 days',
-          value: statsQuery.data.summary.logsLast7d,
-          color: 'purple' as const,
-        },
-        {
-          label: 'Last 30 days',
-          value: statsQuery.data.summary.logsLast30d,
-          color: 'yellow' as const,
-        },
-      ]
-    : []
 
   if (logsQuery.isPending) return <LoadingSpinner />
 
@@ -152,13 +127,35 @@ function AdminPermissionLogsPage() {
         </>
       }
     >
-      <AdminStatsDisplay stats={statsData} isLoading={statsQuery.isPending} />
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total Logs',
+            value: statsQuery.data?.summary.totalLogs,
+            color: 'blue' as const,
+          },
+          {
+            label: 'Last 24h',
+            value: statsQuery.data?.summary.logsLast24h,
+            color: 'green' as const,
+          },
+          {
+            label: 'Last 7 days',
+            value: statsQuery.data?.summary.logsLast7d,
+            color: 'purple' as const,
+          },
+          {
+            label: 'Last 30 days',
+            value: statsQuery.data?.summary.logsLast30d,
+            color: 'yellow' as const,
+          },
+        ]}
+        isLoading={statsQuery.isPending}
+      />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<PermissionLogSortField>
+        table={table}
         searchPlaceholder="Search by user name, email, or permission..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           <select

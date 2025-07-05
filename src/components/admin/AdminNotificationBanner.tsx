@@ -74,7 +74,7 @@ export function AdminNotificationBanner(props: Props) {
   return (
     <div
       className={cn(
-        'p-4 border rounded-lg',
+        'p-4 border rounded-lg mb-4',
         variant.containerClass,
         props.className,
       )}

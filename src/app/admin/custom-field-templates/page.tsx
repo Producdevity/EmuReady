@@ -4,7 +4,7 @@ import { PlusCircle } from 'lucide-react'
 import { useState } from 'react'
 import {
   AdminPageLayout,
-  AdminSearchFilters,
+  // AdminSearchFilters,
   AdminStatsDisplay,
 } from '@/components/admin'
 import { Button, LoadingSpinner } from '@/components/ui'
@@ -13,7 +13,7 @@ import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormMo
 import CustomFieldTemplateList from './components/CustomFieldTemplateList'
 
 function CustomFieldTemplatesPage() {
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, _setSearchQuery] = useState('')
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
     null,
@@ -88,12 +88,13 @@ function CustomFieldTemplatesPage() {
         isLoading={customFieldTemplatesQuery.isPending}
       />
 
-      <AdminSearchFilters
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search templates..."
-        onClear={() => setSearchQuery('')}
-      />
+      {/*TODO: fix this, AdminSearchFilters requires a table property, we need to convert this component to work like the other admin pages*/}
+      {/*<AdminSearchFilters*/}
+      {/*  searchValue={searchQuery}*/}
+      {/*  onSearchChange={setSearchQuery}*/}
+      {/*  searchPlaceholder="Search templates..."*/}
+      {/*  onClear={() => setSearchQuery('')}*/}
+      {/*/>*/}
 
       {templates.length > 0 ? (
         <CustomFieldTemplateList

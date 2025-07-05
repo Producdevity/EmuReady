@@ -10,7 +10,6 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
-  type AdminStatItem,
 } from '@/components/admin'
 import {
   Badge,
@@ -135,51 +134,6 @@ function AdminUsersPage() {
     router.push(newUrl, { scroll: false })
   }
 
-  const statsData: AdminStatItem[] = usersStatsQuery.data
-    ? [
-        {
-          label: 'Total Users',
-          value: usersStatsQuery.data.total,
-          color: 'blue',
-        },
-        {
-          label: 'Users',
-          value: usersStatsQuery.data.byRole.user,
-          color: 'green',
-        },
-        {
-          label: 'Authors',
-          value: usersStatsQuery.data.byRole.author,
-          color: 'gray',
-        },
-        {
-          label: 'Developers',
-          value: usersStatsQuery.data.byRole.developer,
-          color: 'purple',
-        },
-        {
-          label: 'Moderators',
-          value: usersStatsQuery.data.byRole.moderator,
-          color: 'yellow',
-        },
-        {
-          label: 'Admins',
-          value: usersStatsQuery.data.byRole.admin,
-          color: 'rose',
-        },
-        {
-          label: 'Super Admins',
-          value: usersStatsQuery.data.byRole.superAdmin,
-          color: 'pink',
-        },
-        {
-          label: 'Banned',
-          value: usersStatsQuery.data.bannedUsers,
-          color: 'red',
-        },
-      ]
-    : []
-
   return (
     <AdminPageLayout
       title="Users Management"
@@ -192,199 +146,240 @@ function AdminUsersPage() {
       }
     >
       <AdminStatsDisplay
-        stats={statsData}
+        stats={[
+          {
+            label: 'Total Users',
+            value: usersStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
+            label: 'Users',
+            value: usersStatsQuery.data?.byRole.user,
+            color: 'green',
+          },
+          {
+            label: 'Authors',
+            value: usersStatsQuery.data?.byRole.author,
+            color: 'gray',
+          },
+          {
+            label: 'Developers',
+            value: usersStatsQuery.data?.byRole.developer,
+            color: 'purple',
+          },
+          {
+            label: 'Moderators',
+            value: usersStatsQuery.data?.byRole.moderator,
+            color: 'yellow',
+          },
+          {
+            label: 'Admins',
+            value: usersStatsQuery.data?.byRole.admin,
+            color: 'rose',
+          },
+          {
+            label: 'Super Admins',
+            value: usersStatsQuery.data?.byRole.superAdmin,
+            color: 'pink',
+          },
+          {
+            label: 'Banned',
+            value: usersStatsQuery.data?.bannedUsers,
+            color: 'red',
+          },
+        ]}
         isLoading={usersStatsQuery.isPending}
       />
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<UserSortField>
+        table={table}
         searchPlaceholder="Search users by name or email..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       />
 
       <AdminTableContainer>
         {usersQuery.isPending ? (
           <LoadingSpinner />
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                {columnVisibility.isColumnVisible('name') && (
-                  <SortableHeader
-                    label="Name"
-                    field="name"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('email') && (
-                  <SortableHeader
-                    label="Email"
-                    field="email"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('role') && (
-                  <SortableHeader
-                    label="Role"
-                    field="role"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('trustScore') && (
-                  <SortableHeader
-                    label="Trust Score"
-                    field="trustScore"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('createdAt') && (
-                  <SortableHeader
-                    label="Joined"
-                    field="createdAt"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('listingsCount') && (
-                  <SortableHeader
-                    label="Listings"
-                    field="listingsCount"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('votesCount') && (
-                  <SortableHeader
-                    label="Votes"
-                    field="votesCount"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('commentsCount') && (
-                  <SortableHeader
-                    label="Comments"
-                    field="commentsCount"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={table.handleSort}
-                  />
-                )}
-                {columnVisibility.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {users?.map((user) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                >
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
                   {columnVisibility.isColumnVisible('name') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        type="button"
-                        onClick={() => openUserDetailsModal(user.id)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 font-medium"
-                      >
-                        {user.name ?? 'N/A'}
-                      </button>
-                    </td>
+                    <SortableHeader
+                      label="Name"
+                      field="name"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('email') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </td>
+                    <SortableHeader
+                      label="Email"
+                      field="email"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('role') && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={getRoleVariant(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </td>
+                    <SortableHeader
+                      label="Role"
+                      field="role"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('trustScore') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user.trustScore}
-                    </td>
+                    <SortableHeader
+                      label="Trust Score"
+                      field="trustScore"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('createdAt') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
+                    <SortableHeader
+                      label="Joined"
+                      field="createdAt"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('listingsCount') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user._count.listings}
-                    </td>
+                    <SortableHeader
+                      label="Listings"
+                      field="listingsCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('votesCount') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user._count.votes}
-                    </td>
+                    <SortableHeader
+                      label="Votes"
+                      field="votesCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('commentsCount') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user._count.comments}
-                    </td>
+                    <SortableHeader
+                      label="Comments"
+                      field="commentsCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <TableButton
-                        onClick={() => openRoleModal(user)}
-                        title="Change Role"
-                        icon={ShieldUser}
-                        color="yellow"
-                      />
-                      <ViewButton
-                        title="View User Details"
-                        onClick={() => openUserDetailsModal(user.id)}
-                      />
-                      <DeleteButton
-                        onClick={() => handleDelete(user.id)}
-                        title="Delete User"
-                        isLoading={deleteUser.isPending}
-                        disabled={deleteUser.isPending}
-                      />
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
                   )}
                 </tr>
-              ))}
-
-              {users.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {users?.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                   >
-                    <div className="flex flex-col items-center">
-                      <User className="h-12 w-12 text-gray-400 mb-4" />
-                      <p className="text-lg">
-                        {table.search
-                          ? 'No users found matching your search.'
-                          : 'No users found.'}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    {columnVisibility.isColumnVisible('name') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          type="button"
+                          onClick={() => openUserDetailsModal(user.id)}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 font-medium"
+                        >
+                          {user.name ?? 'N/A'}
+                        </button>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('email') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user.email}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('role') && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={getRoleVariant(user.role)}>
+                          {user.role}
+                        </Badge>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('trustScore') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user.trustScore}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('createdAt') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('listingsCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.listings}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('votesCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.votes}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('commentsCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.comments}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <TableButton
+                          onClick={() => openRoleModal(user)}
+                          title="Change Role"
+                          icon={ShieldUser}
+                          color="yellow"
+                        />
+                        <ViewButton
+                          title="View User Details"
+                          onClick={() => openUserDetailsModal(user.id)}
+                        />
+                        <DeleteButton
+                          onClick={() => handleDelete(user.id)}
+                          title="Delete User"
+                          isLoading={deleteUser.isPending}
+                          disabled={deleteUser.isPending}
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+
+                {users.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                    >
+                      <div className="flex flex-col items-center">
+                        <User className="h-12 w-12 text-gray-400 mb-4" />
+                        <p className="text-lg">
+                          {table.search
+                            ? 'No users found matching your search.'
+                            : 'No users found.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {pagination && pagination.pages > 1 && (

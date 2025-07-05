@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 export interface AdminStatItem {
   label: string
-  value: number
+  value?: number
   color:
     | 'yellow'
     | 'green'
@@ -72,7 +72,7 @@ export function AdminStatsDisplay(props: Props) {
                 )}
                 title={stat.description}
               >
-                {stat.value.toLocaleString()}
+                {stat.value?.toLocaleString() || '...'}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 {stat.label}

@@ -26,6 +26,18 @@ export const adminNavItems: AdminNavItem[] = [
     description: 'Review and approve submitted games.',
   },
   {
+    href: '/admin/approvals',
+    label: 'Handheld Approvals',
+    exact: true,
+    description: 'Manage Handheld listing approvals.',
+  },
+  {
+    href: '/admin/pc-listing-approvals',
+    label: 'PC Approvals',
+    exact: true,
+    description: 'Manage PC listing approvals.',
+  },
+  {
     href: '/admin/brands',
     label: 'Brands',
     exact: true,
@@ -72,12 +84,6 @@ export const adminNavItems: AdminNavItem[] = [
     label: 'Performance Scales',
     exact: true,
     description: 'Manage performance scales.',
-  },
-  {
-    href: '/admin/approvals',
-    label: 'Listing Approvals',
-    exact: true,
-    description: 'Manage listing approvals.',
   },
 ]
 
@@ -152,6 +158,18 @@ export const moderatorNavItems: AdminNavItem[] = [
     description: 'Review and approve submitted games.',
   },
   {
+    href: '/admin/approvals',
+    label: 'Handheld Listing Approvals',
+    exact: true,
+    description: 'Manage Handheld listing approvals.',
+  },
+  {
+    href: '/admin/pc-listing-approvals',
+    label: 'PC Listing Approvals',
+    exact: true,
+    description: 'Manage PC listing approvals.',
+  },
+  {
     href: '/admin/devices',
     label: 'Devices',
     exact: true,
@@ -174,12 +192,6 @@ export const moderatorNavItems: AdminNavItem[] = [
     label: 'SoCs',
     exact: true,
     description: 'Manage System on Chip specifications.',
-  },
-  {
-    href: '/admin/approvals',
-    label: 'Listing Approvals',
-    exact: true,
-    description: 'Manage listing approvals.',
   },
   {
     href: '/admin/reports',

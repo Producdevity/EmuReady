@@ -84,7 +84,7 @@ async function AdminDashboardPage() {
         {messages[user.role]?.description || ''}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6">
         {isDeveloper &&
           developerNavItems.map((item) => (
             <Link

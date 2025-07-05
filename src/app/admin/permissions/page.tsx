@@ -7,6 +7,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -304,11 +305,9 @@ function AdminPermissionsPage() {
         />
       )}
 
-      <AdminSearchFilters
-        searchValue={table.search}
-        onSearchChange={table.setSearch}
+      <AdminSearchFilters<PermissionSortField>
+        table={table}
         searchPlaceholder="Search permissions by key, label, or description..."
-        onClear={table.search ? () => table.setSearch('') : undefined}
       >
         <div className="flex gap-2">
           <select
@@ -326,161 +325,157 @@ function AdminPermissionsPage() {
       </AdminSearchFilters>
 
       <AdminTableContainer>
-        {permissions.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedCategory
-                ? 'No permissions found matching your criteria.'
-                : 'No permissions found.'}
-            </p>
-          </div>
+        {permissionsQuery.isPending ? (
+          <LoadingSpinner text="Loading permissions..." />
+        ) : permissions.length === 0 ? (
+          <AdminTableNoResults
+            hasQuery={!!table.search || !!selectedCategory}
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                {columnVisibility.isColumnVisible('id') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    ID
+                  </th>
+                )}
+                {columnVisibility.isColumnVisible('key') && (
+                  <SortableHeader
+                    label="Permission Key"
+                    field="key"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('label') && (
+                  <SortableHeader
+                    label="Label"
+                    field="label"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('description') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Description
+                  </th>
+                )}
+                {columnVisibility.isColumnVisible('category') && (
+                  <SortableHeader
+                    label="Category"
+                    field="category"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('roles') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Assigned Roles
+                  </th>
+                )}
+                {columnVisibility.isColumnVisible('isSystem') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    System
+                  </th>
+                )}
+                {columnVisibility.isColumnVisible('createdAt') && (
+                  <SortableHeader
+                    label="Created"
+                    field="createdAt"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                    className="px-6 py-3 text-left"
+                  />
+                )}
+                {columnVisibility.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {permissions.map((permission) => (
+                <tr
+                  key={permission.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                >
                   {columnVisibility.isColumnVisible('id') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      ID
-                    </th>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {permission.id.slice(0, 8)}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('key') && (
-                    <SortableHeader
-                      label="Permission Key"
-                      field="key"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900 dark:text-white">
+                      <Code label={permission.key} value={permission.key} />
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('label') && (
-                    <SortableHeader
-                      label="Label"
-                      field="label"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {permission.label}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('description') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Description
-                    </th>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                      {permission.description || '-'}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('category') && (
-                    <SortableHeader
-                      label="Category"
-                      field="category"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {permission.category && (
+                        <Badge>{permission.category}</Badge>
+                      )}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('roles') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Assigned Roles
-                    </th>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex flex-wrap gap-1">
+                        {permission.assignedRoles.map((role: Role) => (
+                          <Badge key={role}>{role}</Badge>
+                        ))}
+                      </div>
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('isSystem') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      System
-                    </th>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {permission.isSystem && <Badge>System</Badge>}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('createdAt') && (
-                    <SortableHeader
-                      label="Created"
-                      field="createdAt"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(permission.createdAt).toLocaleDateString()}
+                    </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <EditButton
+                          onClick={() => handleEdit(permission)}
+                          title="Edit Permission"
+                        />
+                        {!permission.isSystem && (
+                          <DeleteButton
+                            onClick={() => handleDelete(permission)}
+                            title="Delete Permission"
+                            isLoading={deletePermission.isPending}
+                            disabled={deletePermission.isPending}
+                          />
+                        )}
+                      </div>
+                    </td>
                   )}
                 </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {permissions.map((permission) => (
-                  <tr
-                    key={permission.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                  >
-                    {columnVisibility.isColumnVisible('id') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {permission.id.slice(0, 8)}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('key') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900 dark:text-white">
-                        <Code label={permission.key} value={permission.key} />
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('label') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                        {permission.label}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('description') && (
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                        {permission.description || '-'}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('category') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {permission.category && (
-                          <Badge>{permission.category}</Badge>
-                        )}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('roles') && (
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex flex-wrap gap-1">
-                          {permission.assignedRoles.map((role: Role) => (
-                            <Badge key={role}>{role}</Badge>
-                          ))}
-                        </div>
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('isSystem') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {permission.isSystem && <Badge>System</Badge>}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('createdAt') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(permission.createdAt).toLocaleDateString()}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('actions') && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <EditButton
-                            onClick={() => handleEdit(permission)}
-                            title="Edit Permission"
-                          />
-                          {!permission.isSystem && (
-                            <DeleteButton
-                              onClick={() => handleDelete(permission)}
-                              title="Delete Permission"
-                              isLoading={deletePermission.isPending}
-                              disabled={deletePermission.isPending}
-                            />
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
       </AdminTableContainer>
 

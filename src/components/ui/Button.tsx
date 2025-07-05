@@ -11,6 +11,7 @@ export type ButtonVariant =
   | 'destructive'
   | 'outline'
   | 'secondary'
+  | 'minimal'
   | 'ghost'
   | 'link'
   | 'fancy'
@@ -32,6 +33,8 @@ export const buttonVariants = cva(
           'border bg-transparent backdrop-blur-sm shadow-xs hover:bg-white/10 dark:hover:bg-white/5 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md',
         secondary:
           'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
+        minimal:
+          'border hover:border-gray-400 dark:hover:border-gray-500 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 transition-colors',
         ghost:
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',

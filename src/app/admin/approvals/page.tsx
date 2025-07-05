@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, Search, Flag, AlertTriangle } from 'lucide-react'
+import { Clock, Flag, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -10,6 +10,8 @@ import {
   AdminTableContainer,
   AdminNotificationBanner,
   AdminStatsDisplay,
+  AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
@@ -18,7 +20,6 @@ import {
   Button,
   ColumnVisibilityControl,
   DisplayToggleButton,
-  Input,
   LoadingSpinner,
   Pagination,
   RejectButton,
@@ -225,9 +226,16 @@ function AdminApprovalsPage() {
         cancelText: 'Cancel',
       })
 
-      if (!confirmed) {
-        return
-      }
+      if (!confirmed) return
+    } else {
+      const confirmed = await confirm({
+        title: 'Bulk Approval Confirmation',
+        description: `You are about to approve ${listingIds.length} listings. Are you sure you want to proceed?`,
+        confirmText: 'Yes, Approve All',
+        cancelText: 'Cancel',
+      })
+
+      if (!confirmed) return
     }
 
     // Proceed with bulk approval
@@ -325,28 +333,26 @@ function AdminApprovalsPage() {
         </>
       }
     >
-      {listingStatsQuery.data && (
-        <AdminStatsDisplay
-          stats={[
-            {
-              label: 'Pending',
-              value: listingStatsQuery.data.pending,
-              color: 'yellow',
-            },
-            {
-              label: 'Approved',
-              value: listingStatsQuery.data.approved,
-              color: 'green',
-            },
-            {
-              label: 'Rejected',
-              value: listingStatsQuery.data.rejected,
-              color: 'red',
-            },
-          ]}
-          isLoading={listingStatsQuery.isPending}
-        />
-      )}
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Pending',
+            value: listingStatsQuery.data?.pending,
+            color: 'yellow',
+          },
+          {
+            label: 'Approved',
+            value: listingStatsQuery.data?.approved,
+            color: 'green',
+          },
+          {
+            label: 'Rejected',
+            value: listingStatsQuery.data?.rejected,
+            color: 'red',
+          },
+        ]}
+        isLoading={listingStatsQuery.isPending}
+      />
 
       {gameStatsQuery.data && gameStatsQuery.data.pending > 0 && (
         <AdminNotificationBanner
@@ -358,44 +364,10 @@ function AdminApprovalsPage() {
         />
       )}
 
-      {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search listings, games, or authors..."
-                value={table.search}
-                onChange={(e) => {
-                  table.handleSearchChange(e)
-                  if (e.target.value.length > 2) {
-                    analytics.contentDiscovery.searchPerformed({
-                      query: e.target.value,
-                      resultCount: listings.length,
-                      category: 'admin_approvals',
-                      page: 'admin/approvals',
-                    })
-                  }
-                }}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="h-full"
-              onClick={() => {
-                table.setSearch('')
-                table.setPage(1)
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminSearchFilters<ApprovalSortField>
+        searchPlaceholder="Search listings..."
+        table={table}
+      />
 
       {/* Bulk Actions */}
       {listings.length > 0 && (
@@ -425,261 +397,261 @@ function AdminApprovalsPage() {
         {pendingListingsQuery.isPending ? (
           <LoadingSpinner text="Loading pending listings..." />
         ) : listings.length === 0 ? (
-          <div className="text-center py-12">
-            <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No listings found matching your search.'
-                : 'No pending listings to review.'}
-            </p>
-          </div>
+          <AdminTableNoResults icon={Clock} hasQuery={!!table.search} />
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedListingIds.length === listings.length &&
+                        listings.length > 0
+                      }
+                      onChange={(ev) => handleSelectAll(ev.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                  </th>
+                  {columnVisibility.isColumnVisible('game') && (
+                    <SortableHeader
+                      label="Game"
+                      field="game.title"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('system') && (
+                    <SortableHeader
+                      label="System"
+                      field="game.system.name"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('author') && (
+                    <SortableHeader
+                      label="Author"
+                      field="author.name"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('device') && (
+                    <SortableHeader
+                      label="Device"
+                      field="device"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('emulator') && (
+                    <SortableHeader
+                      label="Emulator"
+                      field="emulator.name"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('submittedAt') && (
+                    <SortableHeader
+                      label="Submitted"
+                      field="createdAt"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {listings.map((listing: PendingListing) => (
+                  <tr
+                    key={listing.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <td className="px-6 py-4">
                       <input
                         type="checkbox"
-                        checked={
-                          selectedListingIds.length === listings.length &&
-                          listings.length > 0
+                        checked={selectedListingIds.includes(listing.id)}
+                        onChange={(e) =>
+                          handleSelectListing(listing.id, e.target.checked)
                         }
-                        onChange={(ev) => handleSelectAll(ev.target.checked)}
                         className="rounded border-gray-300"
                       />
-                    </th>
+                    </td>
                     {columnVisibility.isColumnVisible('game') && (
-                      <SortableHeader
-                        label="Game"
-                        field="game.title"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/listings/${listing.id}`}
+                          target="_blank"
+                          className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {listing.game.title}
+                        </Link>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('system') && (
-                      <SortableHeader
-                        label="System"
-                        field="game.system.name"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        {isSystemIconsHydrated &&
+                        showSystemIcons &&
+                        listing.game.system?.key ? (
+                          <div className="flex items-center gap-2">
+                            <SystemIcon
+                              name={listing.game.system.name}
+                              systemKey={listing.game.system.key}
+                              size="md"
+                            />
+                            <span className="sr-only">
+                              {listing.game.system.name}
+                            </span>
+                          </div>
+                        ) : (
+                          listing.game.system.name
+                        )}
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('author') && (
-                      <SortableHeader
-                        label="Author"
-                        field="author.name"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span>{listing.author?.name ?? 'N/A'}</span>
+                          {listing.authorReportStats?.hasReports && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1">
+                                  <Flag className="w-4 h-4 text-red-500" />
+                                  <AlertTriangle className="w-4 h-4 text-orange-500" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-sm">
+                                  <p className="font-medium text-red-600 mb-1">
+                                    ⚠️ Reported User
+                                  </p>
+                                  <p>
+                                    This user has{' '}
+                                    {listing.authorReportStats.totalReports}{' '}
+                                    active reports
+                                  </p>
+                                  <p>
+                                    against{' '}
+                                    {
+                                      listing.authorReportStats
+                                        .reportedListingsCount
+                                    }{' '}
+                                    of their listings.
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Consider reviewing carefully before
+                                    approval.
+                                  </p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('device') && (
-                      <SortableHeader
-                        label="Device"
-                        field="device"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        {listing.device.brand.name} {listing.device.modelName}
+                      </td>
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (
-                      <SortableHeader
-                        label="Emulator"
-                        field="emulator.name"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('submittedAt') && (
-                      <SortableHeader
-                        label="Submitted"
-                        field="createdAt"
-                        currentSortField={table.sortField}
-                        currentSortDirection={table.sortDirection}
-                        onSort={table.handleSort}
-                        className="px-6 py-3 text-left"
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('actions') && (
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {listings.map((listing: PendingListing) => (
-                    <tr
-                      key={listing.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedListingIds.includes(listing.id)}
-                          onChange={(e) =>
-                            handleSelectListing(listing.id, e.target.checked)
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <EmulatorIcon
+                          name={listing.emulator.name}
+                          logo={listing.emulator.logo}
+                          showLogo={
+                            emulatorLogos.isHydrated &&
+                            emulatorLogos.showEmulatorLogos
                           }
-                          className="rounded border-gray-300"
+                          size="sm"
                         />
                       </td>
-                      {columnVisibility.isColumnVisible('game') && (
-                        <td className="px-6 py-4">
-                          <Link
-                            href={`/listings/${listing.id}`}
-                            target="_blank"
-                            className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            {listing.game.title}
-                          </Link>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('system') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {isSystemIconsHydrated &&
-                          showSystemIcons &&
-                          listing.game.system?.key ? (
-                            <div className="flex items-center gap-2">
-                              <SystemIcon
-                                name={listing.game.system.name}
-                                systemKey={listing.game.system.key}
-                                size="md"
-                              />
-                              <span className="sr-only">
-                                {listing.game.system.name}
-                              </span>
-                            </div>
-                          ) : (
-                            listing.game.system.name
-                          )}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('author') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <div className="flex items-center gap-2">
-                            <span>{listing.author?.name ?? 'N/A'}</span>
-                            {listing.authorReportStats?.hasReports && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-1">
-                                    <Flag className="w-4 h-4 text-red-500" />
-                                    <AlertTriangle className="w-4 h-4 text-orange-500" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-sm">
-                                    <p className="font-medium text-red-600 mb-1">
-                                      ⚠️ Reported User
-                                    </p>
-                                    <p>
-                                      This user has{' '}
-                                      {listing.authorReportStats.totalReports}{' '}
-                                      active reports
-                                    </p>
-                                    <p>
-                                      against{' '}
-                                      {
-                                        listing.authorReportStats
-                                          .reportedListingsCount
-                                      }{' '}
-                                      of their listings.
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Consider reviewing carefully before
-                                      approval.
-                                    </p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('device') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {listing.device.brand.name} {listing.device.modelName}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('emulator') && (
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <EmulatorIcon
-                            name={listing.emulator.name}
-                            logo={listing.emulator.logo}
-                            showLogo={
-                              emulatorLogos.isHydrated &&
-                              emulatorLogos.showEmulatorLogos
+                    )}
+                    {columnVisibility.isColumnVisible('submittedAt') && (
+                      <td
+                        className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"
+                        title={formatDateTime(listing.createdAt)}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <span className="cursor-help">
+                              {formatTimeAgo(listing.createdAt)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {formatDateTime(listing.createdAt)}
+                          </TooltipContent>
+                        </Tooltip>
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actions') && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <ApproveButton
+                            title="Approve Listing"
+                            onClick={() =>
+                              openApprovalModal(
+                                listing,
+                                ApprovalStatus.APPROVED,
+                              )
                             }
-                            size="sm"
                           />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('submittedAt') && (
-                        <td
-                          className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
-                          title={formatDateTime(listing.createdAt)}
-                        >
-                          {formatTimeAgo(listing.createdAt)}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('actions') && (
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <ApproveButton
-                              title="Approve Listing"
-                              onClick={() =>
-                                openApprovalModal(
-                                  listing,
-                                  ApprovalStatus.APPROVED,
-                                )
-                              }
-                            />
 
-                            <RejectButton
-                              onClick={() =>
-                                openApprovalModal(
-                                  listing,
-                                  ApprovalStatus.REJECTED,
-                                )
-                              }
-                              title="Reject Listing"
-                            />
-                            <ViewButton
-                              href={`/listings/${listing.id}`}
-                              title="View Details"
-                            />
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {pagination && pagination.pages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <Pagination
-                  currentPage={table.page}
-                  totalPages={pagination.pages}
-                  totalItems={pagination.total}
-                  itemsPerPage={pagination.limit}
-                  onPageChange={table.setPage}
-                />
-              </div>
-            )}
-          </>
+                          <RejectButton
+                            onClick={() =>
+                              openApprovalModal(
+                                listing,
+                                ApprovalStatus.REJECTED,
+                              )
+                            }
+                            title="Reject Listing"
+                          />
+                          <ViewButton
+                            href={`/listings/${listing.id}`}
+                            title="View Details"
+                          />
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </AdminTableContainer>
+
+      {pagination && pagination.pages > 1 && (
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+          <Pagination
+            currentPage={table.page}
+            totalPages={pagination.pages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={table.setPage}
+          />
+        </div>
+      )}
 
       {/* Approval Modal */}
       {showApprovalModal && selectedListingForApproval && approvalDecision && (
