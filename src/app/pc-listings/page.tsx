@@ -1,10 +1,11 @@
 'use client'
 
-import { Clock, X, FunnelIcon, Monitor, Settings2 } from 'lucide-react'
+import { Clock, X, FunnelIcon, CpuIcon, GamepadIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
+import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   PerformanceBadge,
   Pagination,
@@ -18,10 +19,17 @@ import {
   EditButton,
   ViewButton,
   Badge,
+  DisplayToggleButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import {
+  useEmulatorLogos,
+  useLocalStorage,
+  useColumnVisibility,
+  type ColumnDefinition,
+} from '@/hooks'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -50,6 +58,14 @@ function PcListingsPage() {
   const listingsState = usePcListingsState()
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
+    useLocalStorage(storageKeys.showSystemIcons, true)
+
+  const {
+    showEmulatorLogos,
+    toggleEmulatorLogos,
+    isHydrated: isEmulatorLogosHydrated,
+  } = useEmulatorLogos()
 
   const columnVisibility = useColumnVisibility(PC_LISTINGS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.pcListings,
@@ -218,6 +234,22 @@ function PcListingsPage() {
               <Button asChild size="sm" variant="fancy">
                 <Link href="/pc-listings/new">Add PC Listing</Link>
               </Button>
+              <div className="flex items-center gap-2">
+                <DisplayToggleButton
+                  showLogos={showSystemIcons}
+                  onToggle={() => setShowSystemIcons(!showSystemIcons)}
+                  isHydrated={isSystemIconsHydrated}
+                  logoLabel="System Icons"
+                  nameLabel="System Names"
+                />
+                <DisplayToggleButton
+                  showLogos={showEmulatorLogos}
+                  onToggle={toggleEmulatorLogos}
+                  isHydrated={isEmulatorLogosHydrated}
+                  logoLabel="Emulator Logos"
+                  nameLabel="Emulator Names"
+                />
+              </div>
               <ColumnVisibilityControl
                 columns={PC_LISTINGS_COLUMNS}
                 columnVisibility={columnVisibility}
@@ -253,6 +285,48 @@ function PcListingsPage() {
               >
                 <Link href="/pc-listings/new">Add</Link>
               </Button>
+
+              {/* Compact View Options */}
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowSystemIcons(!showSystemIcons)}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                  aria-pressed={showSystemIcons}
+                  aria-label={
+                    showSystemIcons ? 'Show System Names' : 'Show System Icons'
+                  }
+                  title={
+                    showSystemIcons ? 'Show System Names' : 'Show System Icons'
+                  }
+                >
+                  <CpuIcon
+                    className={cn(
+                      'w-4 h-4',
+                      showSystemIcons ? 'text-blue-600 dark:text-blue-400' : '',
+                    )}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleEmulatorLogos}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                  title={
+                    showEmulatorLogos
+                      ? 'Show Emulator Names'
+                      : 'Show Emulator Logos'
+                  }
+                >
+                  <GamepadIcon
+                    className={cn(
+                      'w-4 h-4',
+                      showEmulatorLogos
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : '',
+                    )}
+                  />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -411,7 +485,22 @@ function PcListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.game.system?.name ?? 'Unknown'}
+                          {isSystemIconsHydrated &&
+                          showSystemIcons &&
+                          listing.game.system?.key ? (
+                            <div className="flex items-center gap-2">
+                              <SystemIcon
+                                name={listing.game.system.name}
+                                systemKey={listing.game.system.key}
+                                size="md"
+                              />
+                              <span className="sr-only">
+                                {listing.game.system?.name}
+                              </span>
+                            </div>
+                          ) : (
+                            (listing.game.system?.name ?? 'Unknown')
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('cpu') && (
@@ -440,7 +529,20 @@ function PcListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('emulator') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.emulator?.name ?? 'N/A'}
+                          <div className="flex items-center gap-2">
+                            {listing.emulator ? (
+                              <EmulatorIcon
+                                name={listing.emulator.name}
+                                logo={listing.emulator.logo}
+                                showLogo={
+                                  isEmulatorLogosHydrated && showEmulatorLogos
+                                }
+                                size="sm"
+                              />
+                            ) : (
+                              'N/A'
+                            )}
+                          </div>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('performance') && (
@@ -533,10 +635,7 @@ function PcListingsPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-1">
-            <Monitor className="w-5 h-5" />
-            <Settings2 className="w-4 h-4" />
-          </div>
+          <FunnelIcon className="w-6 h-6" />
 
           {/* Ripple effect */}
           <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 group-hover:animate-ping" />
