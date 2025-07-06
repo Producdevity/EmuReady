@@ -417,7 +417,7 @@ function V2ListingsPage() {
       releaseText="Release to refresh"
     >
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           {/* Mobile-First Header */}
           <div className="mb-6">
             <ListingsHeader

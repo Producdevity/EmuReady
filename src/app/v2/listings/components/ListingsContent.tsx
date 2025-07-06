@@ -114,12 +114,37 @@ export function ListingsContent(props: Props) {
   // Listings content
   return (
     <div className="relative" style={{ minHeight: '500px' }}>
-      {isMobile || viewMode === 'list' ? (
-        // Mobile or list view: Use VirtualScroller for performance
+      {viewMode === 'list' ? (
+        // List view: Simple scrollable list with proper spacing
+        <div className="space-y-3 pb-12">
+          {allListings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              viewMode={viewMode}
+              showSystemIcons={showSystemIcons}
+            />
+          ))}
+
+          {/* Load more button for list view */}
+          {hasMoreItems && (
+            <div className="flex justify-center pt-6">
+              <button
+                onClick={loadMoreListings}
+                disabled={isLoading || isFetching}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+              >
+                {isLoading || isFetching ? 'Loading...' : 'Load More'}
+              </button>
+            </div>
+          )}
+        </div>
+      ) : isMobile ? (
+        // Mobile grid view: Use VirtualScroller for performance with proper grid
         <VirtualScroller
           items={allListings}
           renderItem={(listing) => (
-            <div className={viewMode === 'grid' ? 'p-2' : 'py-2'}>
+            <div className="p-2">
               <ListingCard
                 listing={listing}
                 viewMode={viewMode}
@@ -127,15 +152,12 @@ export function ListingsContent(props: Props) {
               />
             </div>
           )}
-          itemHeight={viewMode === 'grid' ? 380 : 120}
+          itemHeight={380}
           onEndReached={loadMoreListings}
           endReachedThreshold={300}
           getItemKey={(item) => item.id}
-          overscan={5}
-          className={cn(
-            'pb-12',
-            viewMode === 'grid' && 'grid grid-cols-1 sm:grid-cols-2 gap-4',
-          )}
+          overscan={3}
+          className="pb-12 grid grid-cols-1 sm:grid-cols-2 gap-4"
         />
       ) : (
         // Desktop grid view: Use CSS Grid with pagination
@@ -165,8 +187,9 @@ export function ListingsContent(props: Props) {
         </>
       )}
 
-      {/* Loading indicator for infinite scroll (mobile/list view only) */}
-      {(isMobile || viewMode === 'list') &&
+      {/* Loading indicator for mobile grid view only */}
+      {isMobile &&
+        viewMode === 'grid' &&
         (isLoading || isFetching) &&
         currentPage > 1 && (
           <div className="flex justify-center py-4">
@@ -174,8 +197,9 @@ export function ListingsContent(props: Props) {
           </div>
         )}
 
-      {/* End of results message (mobile/list view only) */}
-      {(isMobile || viewMode === 'list') &&
+      {/* End of results message for mobile grid view only */}
+      {isMobile &&
+        viewMode === 'grid' &&
         !hasMoreItems &&
         allListings.length > 0 &&
         !isLoading &&
