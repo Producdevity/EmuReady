@@ -83,12 +83,10 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
         select: { userId: true },
       })
 
-      if (!notification) {
-        throw AppError.notFound('Notification')
-      }
+      if (!notification) return AppError.notFound('Notification')
 
       if (notification.userId !== ctx.session.user.id) {
-        throw AppError.forbidden(
+        return AppError.forbidden(
           'You can only mark your own notifications as read',
         )
       }
@@ -107,10 +105,7 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
   markAllNotificationsAsRead: mobileProtectedProcedure.mutation(
     async ({ ctx }) => {
       await ctx.prisma.notification.updateMany({
-        where: {
-          userId: ctx.session.user.id,
-          isRead: false,
-        },
+        where: { userId: ctx.session.user.id, isRead: false },
         data: { isRead: true },
       })
 

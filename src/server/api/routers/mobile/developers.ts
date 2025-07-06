@@ -63,21 +63,18 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       })
 
       if (!listing) {
-        throw AppError.notFound('Listing not found')
+        return AppError.notFound('Listing not found')
       }
 
       // Check if user is a verified developer for this emulator
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: {
-          userId_emulatorId: {
-            userId,
-            emulatorId: listing.emulatorId,
-          },
+          userId_emulatorId: { userId, emulatorId: listing.emulatorId },
         },
       })
 
       if (!verifiedDeveloper) {
-        throw AppError.forbidden(
+        return AppError.forbidden(
           `You are not a verified developer for ${listing.emulator.name}`,
         )
       }
@@ -85,38 +82,29 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       // Check if already verified by this developer
       const existingVerification =
         await ctx.prisma.listingDeveloperVerification.findUnique({
-          where: {
-            listingId_verifiedBy: {
-              listingId,
-              verifiedBy: userId,
-            },
-          },
+          where: { listingId_verifiedBy: { listingId, verifiedBy: userId } },
         })
 
       if (existingVerification) {
-        throw AppError.conflict('You have already verified this listing')
+        return AppError.conflict('You have already verified this listing')
       }
 
-      const verification = await ctx.prisma.listingDeveloperVerification.create(
-        {
-          data: {
-            listingId,
-            verifiedBy: userId,
-            notes,
-          },
-          include: {
-            developer: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-              },
+      return await ctx.prisma.listingDeveloperVerification.create({
+        data: {
+          listingId,
+          verifiedBy: userId,
+          notes,
+        },
+        include: {
+          developer: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
             },
           },
         },
-      )
-
-      return verification
+      })
     }),
 
   /**
@@ -133,12 +121,10 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
           where: { id: input.verificationId },
         })
 
-      if (!verification) {
-        throw AppError.notFound('Verification not found')
-      }
+      if (!verification) return AppError.notFound('Verification not found')
 
       if (verification.verifiedBy !== userId) {
-        throw AppError.forbidden('You can only remove your own verifications')
+        return AppError.forbidden('You can only remove your own verifications')
       }
 
       await ctx.prisma.listingDeveloperVerification.delete({
@@ -154,22 +140,13 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   getListingVerifications: mobileProtectedProcedure
     .input(GetListingVerificationsSchema)
     .query(async ({ ctx, input }) => {
-      const verifications =
-        await ctx.prisma.listingDeveloperVerification.findMany({
-          where: { listingId: input.listingId },
-          include: {
-            developer: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-              },
-            },
-          },
-          orderBy: { verifiedAt: 'desc' },
-        })
-
-      return verifications
+      return await ctx.prisma.listingDeveloperVerification.findMany({
+        where: { listingId: input.listingId },
+        include: {
+          developer: { select: { id: true, name: true, profileImage: true } },
+        },
+        orderBy: { verifiedAt: 'desc' },
+      })
     }),
 
   /**

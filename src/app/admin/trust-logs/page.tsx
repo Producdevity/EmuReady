@@ -253,7 +253,7 @@ function AdminTrustLogsPage() {
                       <td className="px-6 py-4">
                         <div>
                           <Link
-                            href={`/admin/users`}
+                            href={`/admin/users?userId=${log.user.id}`}
                             className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                           >
                             {log.user.name || 'Unknown User'}

@@ -19,3 +19,7 @@ export const ManualTrustAdjustmentSchema = z.object({
   adjustment: z.number().int().min(-1000).max(1000),
   reason: z.string().min(1).max(500),
 })
+
+export const GetUserTrustInfoSchema = z.object({
+  userId: z.string().uuid(),
+})

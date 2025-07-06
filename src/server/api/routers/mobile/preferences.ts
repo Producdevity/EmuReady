@@ -40,7 +40,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       },
     })
 
-    if (!user) throw AppError.notFound('User')
+    if (!user) return AppError.notFound('User')
 
     return {
       devicePreferences: user.devicePreferences,
@@ -120,15 +120,13 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       const existingPreference =
         await ctx.prisma.userDevicePreference.findUnique({
           where: {
-            userId_deviceId: {
-              userId: user.id,
-              deviceId: input.deviceId,
-            },
+            userId_deviceId: { userId: user.id, deviceId: input.deviceId },
           },
         })
 
-      if (existingPreference)
+      if (existingPreference) {
         return ResourceError.userDevicePreference.alreadyExists()
+      }
 
       return ctx.prisma.userDevicePreference.create({
         data: { userId: user.id, deviceId: input.deviceId },
@@ -189,7 +187,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
           const missingIds = input.deviceIds.filter(
             (id) => !foundIds.includes(id),
           )
-          throw AppError.badRequest(
+          return AppError.badRequest(
             `Devices not found: ${missingIds.join(', ')}`,
           )
         }
@@ -239,7 +237,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
         if (socs.length !== input.socIds.length) {
           const foundIds = socs.map((s) => s.id)
           const missingIds = input.socIds.filter((id) => !foundIds.includes(id))
-          throw AppError.badRequest(`SOCs not found: ${missingIds.join(', ')}`)
+          return AppError.badRequest(`SOCs not found: ${missingIds.join(', ')}`)
         }
       }
 
@@ -251,10 +249,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       // Add new preferences
       if (input.socIds.length > 0) {
         await ctx.prisma.userSocPreference.createMany({
-          data: input.socIds.map((socId) => ({
-            userId: user.id,
-            socId,
-          })),
+          data: input.socIds.map((socId) => ({ userId: user.id, socId })),
         })
       }
 
@@ -278,13 +273,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
           name: true,
           bio: true,
           createdAt: true,
-          _count: {
-            select: {
-              listings: true,
-              votes: true,
-              comments: true,
-            },
-          },
+          _count: { select: { listings: true, votes: true, comments: true } },
         },
       })
     }),
@@ -298,12 +287,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       return await ctx.prisma.user.update({
         where: { id: ctx.session.user.id },
         data: input,
-        select: {
-          id: true,
-          name: true,
-          bio: true,
-          createdAt: true,
-        },
+        select: { id: true, name: true, bio: true, createdAt: true },
       })
     }),
 })

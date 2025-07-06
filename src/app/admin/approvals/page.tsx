@@ -241,6 +241,7 @@ function AdminApprovalsPage() {
     // Proceed with bulk approval
     await bulkApproveMutation.mutateAsync({ listingIds })
     await invalidateQueries()
+    closeApprovalModal()
   }
 
   const handleSelectAll = (selected: boolean) => {
