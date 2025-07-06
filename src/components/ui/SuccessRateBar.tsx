@@ -34,7 +34,10 @@ export function SuccessRateBar(props: Props) {
       >
         <div
           className={cn('rounded-full', barColor, compact ? 'h-1.5' : 'h-2')}
-          style={{ width: `${roundedRate}%`, transition: 'width 0.3s' }}
+          style={{
+            width: `${roundedRate < 0 ? 100 : roundedRate}%`,
+            transition: 'width 0.3s',
+          }}
         />
       </div>
       {!props.hideVoteCount && !compact && (
