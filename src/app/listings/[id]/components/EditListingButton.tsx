@@ -24,23 +24,10 @@ function EditListingButton(props: Props) {
     },
   )
 
-  const handleOpen = () => {
-    setIsModalOpen(true)
-  }
-
-  const handleClose = () => {
-    setIsModalOpen(false)
-  }
-
-  // Don't show anything if user is not logged in
-  if (!user?.id) {
-    return null
-  }
+  if (!user?.id) return null
 
   // If it's not our listing, don't show the button at all
-  if (canEditQuery.data?.isOwner === false) {
-    return null
-  }
+  if (canEditQuery.data?.isOwner === false) return null
 
   // Show loading state
   if (canEditQuery.isPending) {
@@ -75,7 +62,7 @@ function EditListingButton(props: Props) {
       <Button
         variant="outline"
         size="sm"
-        onClick={handleOpen}
+        onClick={() => setIsModalOpen(true)}
         disabled={!canEdit}
         title={buttonTitle}
         className={canEdit ? '' : 'opacity-50'}
@@ -86,7 +73,7 @@ function EditListingButton(props: Props) {
 
       <EditListingModal
         isOpen={isModalOpen}
-        onClose={handleClose}
+        onClose={() => setIsModalOpen(false)}
         listingId={props.listingId}
         canEdit={canEdit}
         remainingMinutes={remainingMinutes}
