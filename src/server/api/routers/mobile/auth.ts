@@ -177,17 +177,10 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         await clerkClient.users.updateUser(user.clerkId, updateData)
       }
 
-      const updatedUser = await ctx.prisma.user.findUnique({
+      return await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-        },
+        select: { id: true, email: true, name: true, role: true },
       })
-
-      return updatedUser
     }),
 
   /**
