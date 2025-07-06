@@ -33,6 +33,19 @@ export default function usePcListingsState() {
   const [performanceIds, setPerformanceIds] = useState<number[]>(
     parseNumberArrayParam(searchParams.get('performanceIds')),
   )
+  const [emulatorIds, setEmulatorIds] = useState<string[]>(
+    parseArrayParam(searchParams.get('emulatorIds')),
+  )
+  const [minMemory, setMinMemory] = useState<number | null>(
+    searchParams.get('minMemory')
+      ? Number(searchParams.get('minMemory'))
+      : null,
+  )
+  const [maxMemory, setMaxMemory] = useState<number | null>(
+    searchParams.get('maxMemory')
+      ? Number(searchParams.get('maxMemory'))
+      : null,
+  )
   const [sortField, setSortField] = useState<SortField | null>(
     (searchParams.get('sortField') as SortField) || null,
   )
@@ -54,6 +67,10 @@ export default function usePcListingsState() {
     if (systemIds.length) params.set('systemIds', JSON.stringify(systemIds))
     if (performanceIds.length)
       params.set('performanceIds', JSON.stringify(performanceIds))
+    if (emulatorIds.length)
+      params.set('emulatorIds', JSON.stringify(emulatorIds))
+    if (minMemory !== null) params.set('minMemory', minMemory.toString())
+    if (maxMemory !== null) params.set('maxMemory', maxMemory.toString())
     if (sortField) params.set('sortField', sortField)
     if (sortDirection) params.set('sortDirection', sortDirection)
     if (myListings) params.set('myListings', 'true')
@@ -67,6 +84,9 @@ export default function usePcListingsState() {
     gpuIds,
     systemIds,
     performanceIds,
+    emulatorIds,
+    minMemory,
+    maxMemory,
     sortField,
     sortDirection,
     myListings,
@@ -76,7 +96,17 @@ export default function usePcListingsState() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [search, cpuIds, gpuIds, systemIds, performanceIds, myListings])
+  }, [
+    search,
+    cpuIds,
+    gpuIds,
+    systemIds,
+    performanceIds,
+    emulatorIds,
+    minMemory,
+    maxMemory,
+    myListings,
+  ])
 
   const handleSort = useCallback(
     (field: string) => {
@@ -109,6 +139,12 @@ export default function usePcListingsState() {
     setSystemIds,
     performanceIds,
     setPerformanceIds,
+    emulatorIds,
+    setEmulatorIds,
+    minMemory,
+    setMinMemory,
+    maxMemory,
+    setMaxMemory,
     sortField,
     setSortField,
     sortDirection,

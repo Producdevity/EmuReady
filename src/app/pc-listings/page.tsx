@@ -79,8 +79,11 @@ function PcListingsPage() {
     ? roleIncludesRole(userRole, Role.MODERATOR)
     : false
 
-  const cpusQuery = api.cpus.get.useQuery({ limit: 100 })
-  const gpusQuery = api.gpus.get.useQuery({ limit: 100 })
+  // TODO: handle MultiSelect async instead of fetching 1000 items
+  const cpusQuery = api.cpus.get.useQuery({ limit: 1000 })
+  // TODO: handle MultiSelect async instead of fetching 1000 items
+  const gpusQuery = api.gpus.get.useQuery({ limit: 1000 })
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
   const systemsQuery = api.systems.get.useQuery()
 
@@ -96,10 +99,16 @@ function PcListingsPage() {
         listingsState.systemIds.length > 0
           ? listingsState.systemIds
           : undefined,
+      emulatorIds:
+        listingsState.emulatorIds.length > 0
+          ? listingsState.emulatorIds
+          : undefined,
       performanceIds:
         listingsState.performanceIds.length > 0
           ? listingsState.performanceIds
           : undefined,
+      minMemory: listingsState.minMemory ?? undefined,
+      maxMemory: listingsState.maxMemory ?? undefined,
       searchTerm: listingsState.search || undefined,
       sortField: listingsState.sortField ?? undefined,
       sortDirection: listingsState.sortDirection ?? undefined,
@@ -125,6 +134,18 @@ function PcListingsPage() {
     listingsState.setPerformanceIds(values)
   }
 
+  const handleEmulatorChange = (values: string[]) => {
+    listingsState.setEmulatorIds(values)
+  }
+
+  const handleMinMemoryChange = (value: number | null) => {
+    listingsState.setMinMemory(value)
+  }
+
+  const handleMaxMemoryChange = (value: number | null) => {
+    listingsState.setMaxMemory(value)
+  }
+
   const handleSearchChange = (value: string) => {
     listingsState.setSearch(value)
   }
@@ -146,16 +167,23 @@ function PcListingsPage() {
             cpuIds={listingsState.cpuIds}
             gpuIds={listingsState.gpuIds}
             systemIds={listingsState.systemIds}
+            emulatorIds={listingsState.emulatorIds}
             performanceIds={listingsState.performanceIds}
+            minMemory={listingsState.minMemory}
+            maxMemory={listingsState.maxMemory}
             searchTerm={listingsState.search}
             cpus={cpusQuery.data?.cpus ?? []}
             gpus={gpusQuery.data?.gpus ?? []}
             systems={systemsQuery.data ?? []}
+            emulators={emulatorsQuery.data?.emulators ?? []}
             performanceScales={performanceScalesQuery.data ?? []}
             onCpuChange={handleCpuChange}
             onGpuChange={handleGpuChange}
             onSystemChange={handleSystemChange}
+            onEmulatorChange={handleEmulatorChange}
             onPerformanceChange={handlePerformanceChange}
+            onMinMemoryChange={handleMinMemoryChange}
+            onMaxMemoryChange={handleMaxMemoryChange}
             onSearchChange={handleSearchChange}
           />
         </div>
@@ -193,16 +221,23 @@ function PcListingsPage() {
                     cpuIds={listingsState.cpuIds}
                     gpuIds={listingsState.gpuIds}
                     systemIds={listingsState.systemIds}
+                    emulatorIds={listingsState.emulatorIds}
                     performanceIds={listingsState.performanceIds}
+                    minMemory={listingsState.minMemory}
+                    maxMemory={listingsState.maxMemory}
                     searchTerm={listingsState.search}
                     cpus={cpusQuery.data?.cpus ?? []}
                     gpus={gpusQuery.data?.gpus ?? []}
                     systems={systemsQuery.data ?? []}
+                    emulators={emulatorsQuery.data?.emulators ?? []}
                     performanceScales={performanceScalesQuery.data ?? []}
                     onCpuChange={handleCpuChange}
                     onGpuChange={handleGpuChange}
                     onSystemChange={handleSystemChange}
+                    onEmulatorChange={handleEmulatorChange}
                     onPerformanceChange={handlePerformanceChange}
+                    onMinMemoryChange={handleMinMemoryChange}
+                    onMaxMemoryChange={handleMaxMemoryChange}
                     onSearchChange={handleSearchChange}
                   />
                 </div>
@@ -622,14 +657,20 @@ function PcListingsPage() {
           {(listingsState.cpuIds.length > 0 ||
             listingsState.gpuIds.length > 0 ||
             listingsState.systemIds.length > 0 ||
+            listingsState.emulatorIds.length > 0 ||
             listingsState.performanceIds.length > 0 ||
+            listingsState.minMemory !== null ||
+            listingsState.maxMemory !== null ||
             listingsState.search) && (
             <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg">
               {[
                 listingsState.cpuIds.length,
                 listingsState.gpuIds.length,
                 listingsState.systemIds.length,
+                listingsState.emulatorIds.length,
                 listingsState.performanceIds.length,
+                listingsState.minMemory !== null ? 1 : 0,
+                listingsState.maxMemory !== null ? 1 : 0,
                 listingsState.search ? 1 : 0,
               ].reduce((sum, count) => sum + count, 0)}
             </div>

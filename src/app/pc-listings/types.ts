@@ -5,7 +5,10 @@ export interface PcListingsFilter {
   cpuIds?: string[]
   gpuIds?: string[]
   systemIds?: string[]
+  emulatorIds?: string[]
   performanceIds?: number[]
+  minMemory?: number
+  maxMemory?: number
   sortField?:
     | 'game.title'
     | 'game.system.name'

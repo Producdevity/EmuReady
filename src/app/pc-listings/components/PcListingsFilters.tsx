@@ -7,11 +7,13 @@ import {
   Rocket,
   Filter,
   MonitorSpeaker,
+  Gamepad2,
+  MemoryStick,
 } from 'lucide-react'
 import { type ChangeEvent } from 'react'
 import { MultiSelect, Input } from '@/components/ui'
 import analytics from '@/lib/analytics'
-import { type System, type PerformanceScale } from '@orm'
+import { type System, type PerformanceScale, type Emulator } from '@orm'
 
 type CpuWithBrand = {
   id: string
@@ -33,16 +35,23 @@ interface PcListingsFiltersProps {
   cpuIds: string[]
   gpuIds: string[]
   systemIds: string[]
+  emulatorIds: string[]
   performanceIds: number[]
+  minMemory: number | null
+  maxMemory: number | null
   searchTerm: string
   cpus: CpuWithBrand[]
   gpus: GpuWithBrand[]
   systems: System[]
+  emulators: Emulator[]
   performanceScales: PerformanceScale[]
   onCpuChange: (values: string[]) => void
   onGpuChange: (values: string[]) => void
   onSystemChange: (values: string[]) => void
+  onEmulatorChange: (values: string[]) => void
   onPerformanceChange: (values: number[]) => void
+  onMinMemoryChange: (value: number | null) => void
+  onMaxMemoryChange: (value: number | null) => void
   onSearchChange: (value: string) => void
 }
 
@@ -50,16 +59,23 @@ export default function PcListingsFilters({
   cpuIds,
   gpuIds,
   systemIds,
+  emulatorIds,
   performanceIds,
+  minMemory,
+  maxMemory,
   searchTerm,
   cpus,
   gpus,
   systems,
+  emulators,
   performanceScales,
   onCpuChange,
   onGpuChange,
   onSystemChange,
+  onEmulatorChange,
   onPerformanceChange,
+  onMinMemoryChange,
+  onMaxMemoryChange,
   onSearchChange,
 }: PcListingsFiltersProps) {
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +99,23 @@ export default function PcListingsFilters({
     analytics.filter.device(values)
   }
 
+  const handleEmulatorChange = (values: string[]) => {
+    onEmulatorChange(values)
+    analytics.filter.emulator(values)
+  }
+
+  const handleMinMemoryChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    const value = ev.target.value === '' ? null : Number(ev.target.value)
+    onMinMemoryChange(value)
+    analytics.filter.performance([value || 0])
+  }
+
+  const handleMaxMemoryChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    const value = ev.target.value === '' ? null : Number(ev.target.value)
+    onMaxMemoryChange(value)
+    analytics.filter.performance([value || 0])
+  }
+
   const handlePerformanceChange = (values: string[]) => {
     const numericValues = values.map(Number)
     onPerformanceChange(numericValues)
@@ -94,7 +127,10 @@ export default function PcListingsFilters({
     onSystemChange([])
     onCpuChange([])
     onGpuChange([])
+    onEmulatorChange([])
     onPerformanceChange([])
+    onMinMemoryChange(null)
+    onMaxMemoryChange(null)
     analytics.filter.clearAll()
   }
 
@@ -103,14 +139,20 @@ export default function PcListingsFilters({
     systemIds.length > 0 ||
     cpuIds.length > 0 ||
     gpuIds.length > 0 ||
-    performanceIds.length > 0
+    emulatorIds.length > 0 ||
+    performanceIds.length > 0 ||
+    minMemory !== null ||
+    maxMemory !== null
 
   const totalActiveFilters = [
     searchTerm ? 1 : 0,
     systemIds.length,
     cpuIds.length,
     gpuIds.length,
+    emulatorIds.length,
     performanceIds.length,
+    minMemory !== null ? 1 : 0,
+    maxMemory !== null ? 1 : 0,
   ].reduce((sum, count) => sum + count, 0)
 
   return (
@@ -192,6 +234,49 @@ export default function PcListingsFilters({
             maxDisplayed={2}
           />
 
+          {/* Emulators */}
+          <MultiSelect
+            label="Emulators"
+            leftIcon={<Gamepad2 className="w-5 h-5" />}
+            value={emulatorIds}
+            onChange={handleEmulatorChange}
+            options={emulators.map((emulator) => ({
+              id: emulator.id,
+              name: emulator.name,
+            }))}
+            placeholder="All emulators"
+            maxDisplayed={2}
+          />
+
+          {/* Memory Range */}
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+              Memory (GB)
+            </label>
+            <div className="space-y-3">
+              <Input
+                leftIcon={<MemoryStick className="w-5 h-5" />}
+                type="number"
+                placeholder="Min memory"
+                value={minMemory?.toString() ?? ''}
+                onChange={handleMinMemoryChange}
+                min={1}
+                max={128}
+                className="transition-all duration-200 focus:scale-[1.02]"
+              />
+              <Input
+                leftIcon={<MemoryStick className="w-5 h-5" />}
+                type="number"
+                placeholder="Max memory"
+                value={maxMemory?.toString() ?? ''}
+                onChange={handleMaxMemoryChange}
+                min={1}
+                max={128}
+                className="transition-all duration-200 focus:scale-[1.02]"
+              />
+            </div>
+          </div>
+
           {/* Performance */}
           <MultiSelect
             label="Performance"
@@ -245,6 +330,18 @@ export default function PcListingsFilters({
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   GPUs: {gpuIds.length} selected
+                </div>
+              )}
+              {emulatorIds.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                  Emulators: {emulatorIds.length} selected
+                </div>
+              )}
+              {(minMemory !== null || maxMemory !== null) && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                  Memory: {minMemory ?? '?'} - {maxMemory ?? '?'} GB
                 </div>
               )}
               {performanceIds.length > 0 && (

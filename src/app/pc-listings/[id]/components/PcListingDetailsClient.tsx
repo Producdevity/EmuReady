@@ -221,7 +221,7 @@ function PcListingDetailsClient(props: Props) {
 
                   <div className="flex items-center gap-3">
                     <div className="h-5 w-5 flex items-center justify-center">
-                      <div className="h-3 w-3 bg-gray-500 rounded"></div>
+                      <div className="h-3 w-3 bg-gray-500 rounded" />
                     </div>
                     <div>
                       <span className="font-medium text-gray-700 dark:text-gray-300">
@@ -229,6 +229,19 @@ function PcListingDetailsClient(props: Props) {
                       </span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
                         {osLabels[props.pcListing.os] || osLabels.UNKNOWN}{' '}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="h-5 w-5 flex items-center justify-center">
+                      <div className="h-3 w-3 bg-gray-500 rounded" />
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        OS Version:
+                      </span>
+                      <span className="ml-2 text-gray-600 dark:text-gray-400">
                         {props.pcListing.osVersion}
                       </span>
                     </div>
