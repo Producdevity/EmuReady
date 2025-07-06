@@ -19,6 +19,7 @@ import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { CustomFieldType, PcOs, Role } from '@orm'
+import EditPcListingButton from './EditPcListingButton'
 import PcCommentThread from './PcCommentThread'
 import PcReportListingButton from './PcReportListingButton'
 import PcVoteButtons from './PcVoteButtons'
@@ -343,6 +344,10 @@ function PcListingDetailsClient(props: Props) {
 
               {/* Action Buttons */}
               <div className="mt-4 space-y-2">
+                <EditPcListingButton
+                  pcListingId={props.pcListing.id}
+                  onSuccess={refreshData}
+                />
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}
                   authorId={props.pcListing.authorId}

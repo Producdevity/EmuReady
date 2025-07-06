@@ -27,10 +27,12 @@ import {
   UpdatePcListingAdminSchema,
   UpdatePcListingCommentSchema,
   UpdatePcListingReportSchema,
+  UpdatePcListingUserSchema,
   UpdatePcPresetSchema,
   VerifyPcListingAdminSchema,
   VotePcListingCommentSchema,
   VotePcListingSchema,
+  GetPcListingForUserEditSchema,
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
@@ -212,6 +214,137 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }),
 
+  canEdit: protectedProcedure
+    .input(GetPcListingForUserEditSchema)
+    .query(async ({ ctx, input }) => {
+      const EDIT_TIME_LIMIT_MINUTES = 60
+
+      if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return {
+          canEdit: true,
+          isOwner: true,
+          reason: 'Moderator can edit any PC listing',
+        }
+      }
+
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: input.id },
+        select: {
+          authorId: true,
+          status: true,
+          processedAt: true,
+        },
+      })
+
+      if (!pcListing) {
+        return {
+          canEdit: false,
+          isOwner: false,
+          reason: 'PC listing not found',
+        }
+      }
+
+      // Check ownership
+      const isOwner = pcListing.authorId === ctx.session.user.id
+      if (!isOwner) {
+        return { canEdit: false, isOwner: false, reason: 'Not your PC listing' }
+      }
+
+      // PENDING PC listings can always be edited by the author
+      if (pcListing.status === ApprovalStatus.PENDING) {
+        return {
+          canEdit: true,
+          isOwner: true,
+          reason: 'Pending PC listings can always be edited',
+          isPending: true,
+        }
+      }
+
+      // REJECTED PC listings cannot be edited
+      if (pcListing.status === ApprovalStatus.REJECTED) {
+        return {
+          canEdit: false,
+          isOwner: true,
+          reason:
+            'Rejected PC listings cannot be edited. Please create a new listing.',
+        }
+      }
+
+      // APPROVED PC listings can be edited for 1 hour after approval
+      if (pcListing.status === ApprovalStatus.APPROVED) {
+        if (!pcListing.processedAt) {
+          return {
+            canEdit: false,
+            isOwner: true,
+            reason: 'No approval time found',
+          }
+        }
+
+        const now = new Date()
+        const timeSinceApproval =
+          now.getTime() - pcListing.processedAt.getTime()
+        const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+
+        const remainingTime = timeLimit - timeSinceApproval
+        const remainingMinutes = Math.floor(remainingTime / (60 * 1000))
+
+        if (timeSinceApproval > timeLimit) {
+          return {
+            canEdit: false,
+            isOwner: true,
+            reason: `Edit time expired (${EDIT_TIME_LIMIT_MINUTES} minutes after approval)`,
+            timeExpired: true,
+          }
+        }
+
+        return {
+          canEdit: true,
+          isOwner: true,
+          remainingMinutes: Math.max(0, remainingMinutes),
+          remainingTime: Math.max(0, remainingTime),
+          isApproved: true,
+        }
+      }
+
+      return {
+        canEdit: false,
+        isOwner: true,
+        reason: 'Invalid PC listing status',
+      }
+    }),
+
+  getForUserEdit: protectedProcedure
+    .input(GetPcListingForUserEditSchema)
+    .query(async ({ ctx, input }) => {
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: input.id },
+        include: {
+          ...pcListingDetailInclude,
+          emulator: {
+            include: {
+              customFieldDefinitions: {
+                orderBy: { label: 'asc' },
+              },
+            },
+          },
+        },
+      })
+
+      if (!pcListing) {
+        throw ResourceError.pcListing.notFound()
+      }
+
+      // Only allow owners or moderators to fetch for editing
+      if (
+        pcListing.authorId !== ctx.session.user.id &&
+        !hasPermission(ctx.session.user.role, Role.MODERATOR)
+      ) {
+        throw AppError.forbidden('You can only edit your own PC listings')
+      }
+
+      return pcListing
+    }),
+
   create: protectedProcedure
     .input(CreatePcListingSchema)
     .mutation(async ({ ctx, input }) => {
@@ -325,6 +458,116 @@ export const pcListingsRouter = createTRPCRouter({
       return ctx.prisma.pcListing.delete({
         where: { id: input.id },
       })
+    }),
+
+  update: protectedProcedure
+    .input(UpdatePcListingUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      const EDIT_TIME_LIMIT_MINUTES = 60
+
+      // First check if user can edit this PC listing
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: input.id },
+        select: {
+          authorId: true,
+          status: true,
+          processedAt: true,
+        },
+      })
+
+      if (!pcListing) {
+        throw ResourceError.pcListing.notFound()
+      }
+
+      // Only allow owners or moderators to edit
+      if (
+        pcListing.authorId !== ctx.session.user.id &&
+        !hasPermission(ctx.session.user.role, Role.MODERATOR)
+      ) {
+        throw AppError.forbidden('You can only edit your own PC listings')
+      }
+
+      // REJECTED PC listings cannot be edited
+      if (pcListing.status === ApprovalStatus.REJECTED) {
+        throw AppError.badRequest(
+          'Rejected PC listings cannot be edited. Please create a new listing.',
+        )
+      }
+
+      // PENDING PC listings can always be edited
+      if (pcListing.status === ApprovalStatus.PENDING) {
+        // No time restrictions for pending listings
+      } else if (pcListing.status === ApprovalStatus.APPROVED) {
+        // APPROVED PC listings have a time limit (except for moderators)
+        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+          if (!pcListing.processedAt) {
+            throw AppError.badRequest('PC listing approval time not found')
+          }
+
+          const now = new Date()
+          const timeSinceApproval =
+            now.getTime() - pcListing.processedAt.getTime()
+          const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+
+          if (timeSinceApproval > timeLimit) {
+            throw AppError.badRequest(
+              `You can only edit PC listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
+            )
+          }
+        }
+      }
+
+      // Validate referenced entities exist
+      const [performance] = await Promise.all([
+        ctx.prisma.performanceScale.findUnique({
+          where: { id: input.performanceId },
+        }),
+      ])
+
+      if (!performance) throw ResourceError.performanceScale.notFound()
+
+      // Update PC listing and handle custom field values
+      const { id, customFieldValues, ...updateData } = input
+
+      const updatedPcListing = await ctx.prisma.pcListing.update({
+        where: { id },
+        data: {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+        include: {
+          game: { include: { system: true } },
+          cpu: { include: { brand: true } },
+          gpu: { include: { brand: true } },
+          emulator: true,
+          performance: true,
+          author: true,
+          customFieldValues: {
+            include: { customFieldDefinition: true },
+          },
+        },
+      })
+
+      // Handle custom field values if provided
+      if (customFieldValues) {
+        // Delete existing custom field values
+        await ctx.prisma.pcListingCustomFieldValue.deleteMany({
+          where: { pcListingId: id },
+        })
+
+        // Create new custom field values
+        if (customFieldValues.length > 0) {
+          await ctx.prisma.pcListingCustomFieldValue.createMany({
+            data: customFieldValues.map((cfv) => ({
+              pcListingId: id,
+              customFieldDefinitionId: cfv.customFieldDefinitionId,
+              value: cfv.value,
+            })),
+          })
+        }
+      }
+
+      return updatedPcListing
     }),
 
   // Admin procedures
