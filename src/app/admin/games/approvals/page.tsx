@@ -524,9 +524,6 @@ function GameApprovalsPage() {
                                 systemKey={game.system.key}
                                 size="md"
                               />
-                              <span className="sr-only">
-                                {game.system.name}
-                              </span>
                             </div>
                           ) : (
                             game.system.name

@@ -529,9 +529,6 @@ function PcListingsPage() {
                                 systemKey={listing.game.system.key}
                                 size="md"
                               />
-                              <span className="sr-only">
-                                {listing.game.system?.name}
-                              </span>
                             </div>
                           ) : (
                             (listing.game.system?.name ?? 'Unknown')

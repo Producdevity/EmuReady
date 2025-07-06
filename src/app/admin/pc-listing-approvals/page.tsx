@@ -40,6 +40,7 @@ import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
+import getImageUrl from '@/utils/getImageUrl'
 import ApprovalModal from './components/ApprovalModal'
 
 type PendingPcListing =
@@ -53,7 +54,9 @@ type ApprovalSortField =
   | 'author.name'
 
 const PC_APPROVALS_COLUMNS: ColumnDefinition[] = [
+  { key: 'thumbnail', label: 'Thumbnail', defaultVisible: true },
   { key: 'game', label: 'Game', defaultVisible: true },
+  { key: 'system', label: 'System', defaultVisible: true },
   { key: 'cpu', label: 'CPU', defaultVisible: true },
   { key: 'gpu', label: 'GPU', defaultVisible: true },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
@@ -235,12 +238,12 @@ function PcListingApprovalsPage() {
           className="rounded border-gray-300 dark:border-gray-600"
         />
       </td>
-      {columnVisibility.isColumnVisible('game') && (
+      {columnVisibility.isColumnVisible('thumbnail') && (
         <td className="px-6 py-4">
           <div className="flex items-center space-x-2">
-            {showSystemIcons && listing.game.imageUrl && (
+            {listing.game.imageUrl && (
               <Image
-                src={listing.game.imageUrl}
+                src={getImageUrl(listing.game.imageUrl, listing.game.title)}
                 alt={listing.game.title}
                 width={40}
                 height={40}
@@ -248,20 +251,29 @@ function PcListingApprovalsPage() {
                 unoptimized
               />
             )}
-            <div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {listing.game.title}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <SystemIcon
-                  systemKey={listing.game.system.key}
-                  name={listing.game.system.name}
-                  size="sm"
-                />
-                {listing.game.system.name}
-              </div>
-            </div>
           </div>
+        </td>
+      )}
+      {columnVisibility.isColumnVisible('game') && (
+        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+          {listing.game.title}
+        </td>
+      )}
+      {columnVisibility.isColumnVisible('system') && (
+        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+          {isSystemIconsHydrated &&
+          showSystemIcons &&
+          listing.game.system?.key ? (
+            <div className="flex items-center gap-2">
+              <SystemIcon
+                name={listing.game.system.name}
+                systemKey={listing.game.system.key}
+                size="md"
+              />
+            </div>
+          ) : (
+            listing.game.system.name
+          )}
         </td>
       )}
       {columnVisibility.isColumnVisible('cpu') && (
@@ -275,18 +287,15 @@ function PcListingApprovalsPage() {
         </td>
       )}
       {columnVisibility.isColumnVisible('emulator') && (
-        <td className="px-6 py-4">
-          <div className="flex items-center space-x-2">
-            <EmulatorIcon
-              logo={listing.emulator.logo}
-              name={listing.emulator.name}
-              size="md"
-              showLogo={emulatorLogos.showEmulatorLogos}
-            />
-            <span className="text-sm text-gray-900 dark:text-white">
-              {listing.emulator.name}
-            </span>
-          </div>
+        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+          <EmulatorIcon
+            name={listing.emulator.name}
+            logo={listing.emulator.logo}
+            showLogo={
+              emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos
+            }
+            size="sm"
+          />
         </td>
       )}
       {columnVisibility.isColumnVisible('user') && (
@@ -467,6 +476,11 @@ function PcListingApprovalsPage() {
                   {columnVisibility.isColumnVisible('game') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Game
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('system') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      System
                     </th>
                   )}
                   {columnVisibility.isColumnVisible('cpu') && (
