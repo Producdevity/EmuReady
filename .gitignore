@@ -73,10 +73,7 @@ node_modules/
 # Notes
 CHECKS.md
 CLAUDE.md
-CLERK_SETUP.md
-CLERK_WEBHOOKS_SETUP.md
-DESCRIPTION.md
-NOTES_README.md
+NOTES.md
 
 
 # clerk configuration (can include secrets)
