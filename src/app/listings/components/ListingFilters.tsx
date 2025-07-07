@@ -532,7 +532,7 @@ function ListingFilters(props: FiltersProps) {
                       <Input
                         leftIcon={<Search className="w-5 h-5" />}
                         type="text"
-                        placeholder="Search games, notes..."
+                        placeholder="Search games, notes, emulators..."
                         value={props.searchTerm}
                         onChange={handleSearchChange}
                         className="transition-all duration-200 focus:scale-[1.02]"

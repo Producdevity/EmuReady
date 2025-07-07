@@ -183,7 +183,7 @@ export default function PcListingsFilters({
             <Input
               leftIcon={<Search className="w-5 h-5" />}
               type="text"
-              placeholder="Search PC builds..."
+              placeholder="Search games, notes, emulators..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="transition-all duration-200 focus:scale-[1.02]"
