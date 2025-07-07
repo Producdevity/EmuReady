@@ -436,7 +436,7 @@ function ListingFilters(props: FiltersProps) {
                         animate={{ x: 0, opacity: 1, scale: 1 }}
                         exit={{ x: -20, opacity: 0, scale: 0.8 }}
                         transition={{
-                          delay: 0.3,
+                          delay: 0.05,
                           type: 'spring',
                           stiffness: 300,
                         }}
@@ -455,7 +455,7 @@ function ListingFilters(props: FiltersProps) {
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{
-                            delay: 0.35,
+                            delay: 0.1,
                             type: 'spring',
                             stiffness: 400,
                           }}
@@ -523,6 +523,23 @@ function ListingFilters(props: FiltersProps) {
                   transition={{ delay: 0.3 }}
                   style={{ position: 'relative', zIndex: 20 }}
                 >
+                  {/* Search */}
+                  <div className="relative">
+                    <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+                      Search
+                    </label>
+                    <div className="relative">
+                      <Input
+                        leftIcon={<Search className="w-5 h-5" />}
+                        type="text"
+                        placeholder="Search games, notes..."
+                        value={props.searchTerm}
+                        onChange={handleSearchChange}
+                        className="transition-all duration-200 focus:scale-[1.02]"
+                      />
+                    </div>
+                  </div>
+
                   <MultiSelect
                     label="Systems"
                     leftIcon={<Joystick className="w-5 h-5" />}
@@ -731,22 +748,6 @@ function ListingFilters(props: FiltersProps) {
                     placeholder="All performance levels"
                     maxDisplayed={1}
                   />
-
-                  <div className="relative">
-                    <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
-                      Search
-                    </label>
-                    <div className="relative">
-                      <Input
-                        leftIcon={<Search className="w-5 h-5" />}
-                        type="text"
-                        placeholder="Search games, notes..."
-                        value={props.searchTerm}
-                        onChange={handleSearchChange}
-                        className="transition-all duration-200 focus:scale-[1.02]"
-                      />
-                    </div>
-                  </div>
                 </motion.div>
 
                 {/* Active Filters Summary */}
@@ -775,12 +776,24 @@ function ListingFilters(props: FiltersProps) {
                         </motion.button>
                       </div>
                       <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                        {props.searchTerm && (
+                          <motion.div
+                            key="summary-search"
+                            initial={{ x: -10, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="flex items-center gap-2"
+                          >
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            Search: &ldquo;{props.searchTerm}&rdquo;
+                          </motion.div>
+                        )}
                         {props.systemIds.length > 0 && (
                           <motion.div
                             key="summary-systems"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.1 }}
+                            transition={{ delay: 0.15 }}
                             className="flex items-center gap-2"
                           >
                             <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
@@ -792,7 +805,7 @@ function ListingFilters(props: FiltersProps) {
                             key="summary-devices"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.15 }}
+                            transition={{ delay: 0.2 }}
                             className="flex items-center gap-2"
                           >
                             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -804,7 +817,7 @@ function ListingFilters(props: FiltersProps) {
                             key="summary-socs"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
+                            transition={{ delay: 0.25 }}
                             className="flex items-center gap-2"
                           >
                             <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
@@ -816,7 +829,7 @@ function ListingFilters(props: FiltersProps) {
                             key="summary-emulators"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.25 }}
+                            transition={{ delay: 0.3 }}
                             className="flex items-center gap-2"
                           >
                             <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
@@ -828,23 +841,11 @@ function ListingFilters(props: FiltersProps) {
                             key="summary-performance"
                             initial={{ x: -10, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
+                            transition={{ delay: 0.35 }}
                             className="flex items-center gap-2"
                           >
                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                             Performance: {props.performanceIds.length} selected
-                          </motion.div>
-                        )}
-                        {props.searchTerm && (
-                          <motion.div
-                            key="summary-search"
-                            initial={{ x: -10, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.35 }}
-                            className="flex items-center gap-2"
-                          >
-                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                            Search: &ldquo;{props.searchTerm}&rdquo;
                           </motion.div>
                         )}
                       </div>
