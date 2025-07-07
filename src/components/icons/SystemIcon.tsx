@@ -24,7 +24,7 @@ export function SystemIcon(props: Props) {
   return IconComponent ? (
     <Tooltip>
       <TooltipTrigger asChild>
-        <>
+        <div>
           <div
             className={cn(
               'flex items-center justify-center dark:bg-gray-200 dark:rounded-2xl dark:p-1 overflow-hidden',
@@ -35,7 +35,7 @@ export function SystemIcon(props: Props) {
             <IconComponent />
           </div>
           <span className="sr-only">{props.name}</span>
-        </>
+        </div>
       </TooltipTrigger>
       <TooltipContent side="top">{props.name}</TooltipContent>
     </Tooltip>
