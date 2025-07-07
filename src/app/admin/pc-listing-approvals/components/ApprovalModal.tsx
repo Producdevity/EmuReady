@@ -14,6 +14,7 @@ import {
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime } from '@/utils/date'
+import getImageUrl from '@/utils/getImageUrl'
 
 type PendingPcListing =
   RouterOutput['pcListings']['pending']['pcListings'][number]
@@ -61,11 +62,15 @@ function ApprovalModal(props: ApprovalModalProps) {
             <div className="flex items-center gap-3">
               {props.listing.game.imageUrl && (
                 <Image
-                  src={props.listing.game.imageUrl}
+                  src={getImageUrl(
+                    props.listing.game.imageUrl,
+                    props.listing.game.title,
+                  )}
                   alt={props.listing.game.title}
                   width={48}
                   height={48}
                   className="object-cover rounded"
+                  unoptimized
                 />
               )}
               <div>

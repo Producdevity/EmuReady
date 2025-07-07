@@ -71,6 +71,12 @@ function AdminGpusPage() {
 
   const utils = api.useUtils()
 
+  // TODO: Temporary fix for brands query
+  // only keep 'Intel', 'AMD' and 'NVIDIA' brands
+  const brands = (brandsQuery.data || []).filter((brand) =>
+    ['intel', 'amd', 'nvidia'].includes(brand.name.toLowerCase()),
+  )
+
   const openModal = (gpu?: GpuData) => {
     setEditId(gpu?.id ?? null)
     setGpuData(gpu ?? null)
@@ -170,7 +176,7 @@ function AdminGpusPage() {
         <Autocomplete
           value={table.additionalParams.brandId || ''}
           onChange={(value) => table.setAdditionalParam('brandId', value || '')}
-          items={[{ id: '', name: 'All Brands' }, ...(brandsQuery.data || [])]}
+          items={[{ id: '', name: 'All Brands' }, ...brands]}
           optionToValue={(brand) => brand.id}
           optionToLabel={(brand) => brand.name}
           className="w-full md:w-64"

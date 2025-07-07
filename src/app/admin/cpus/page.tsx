@@ -71,6 +71,12 @@ function AdminCpusPage() {
 
   const utils = api.useUtils()
 
+  // TODO: Temporary fix for brands query
+  // only keep 'Intel', 'AMD', and 'Apple' brands
+  const brands = (brandsQuery.data || []).filter((brand) =>
+    ['intel', 'amd', 'apple'].includes(brand.name.toLowerCase()),
+  )
+
   const openModal = (cpu?: CpuData) => {
     setEditId(cpu?.id ?? null)
     setCpuData(cpu ?? null)
@@ -170,7 +176,7 @@ function AdminCpusPage() {
         <Autocomplete
           value={table.additionalParams.brandId || ''}
           onChange={(value) => table.setAdditionalParam('brandId', value || '')}
-          items={[{ id: '', name: 'All Brands' }, ...(brandsQuery.data || [])]}
+          items={[{ id: '', name: 'All Brands' }, ...brands]}
           optionToValue={(brand) => brand.id}
           optionToLabel={(brand) => brand.name}
           className="w-full md:w-64"

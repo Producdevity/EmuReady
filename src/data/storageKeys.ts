@@ -38,6 +38,7 @@ const storageKeys = {
     adminCpus: `${PREFIX}admin_cpus_column_visibility`,
     adminGpus: `${PREFIX}admin_gpus_column_visibility`,
     adminPcListings: `${PREFIX}admin_pc_listings_column_visibility`,
+    pcListings: `${PREFIX}pc_listings_column_visibility`,
   },
 } as const
 

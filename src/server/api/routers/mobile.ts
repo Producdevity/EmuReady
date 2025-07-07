@@ -1,14 +1,24 @@
 import { createMobileTRPCRouter } from '@/server/api/mobileContext'
 import { mobileAuthRouter } from './mobile/auth'
+import { mobileCpusRouter } from './mobile/cpus'
+import { mobileCustomFieldDefinitionsRouter } from './mobile/customFieldDefinitions'
 import { mobileDevelopersRouter } from './mobile/developers'
+import { mobileDeviceBrandsRouter } from './mobile/deviceBrands'
 import { mobileDevicesRouter } from './mobile/devices'
 import { mobileEmulatorsRouter } from './mobile/emulators'
 import { mobileGamesRouter } from './mobile/games'
 import { mobileGeneralRouter } from './mobile/general'
+import { mobileGpusRouter } from './mobile/gpus'
+import { mobileListingReportsRouter } from './mobile/listingReports'
 import { mobileListingsRouter } from './mobile/listings'
 import { mobileNotificationsRouter } from './mobile/notifications'
 import { mobilePcListingsRouter } from './mobile/pcListings'
 import { mobilePreferencesRouter } from './mobile/preferences'
+import { mobileRawgRouter } from './mobile/rawg'
+import { mobileSocsRouter } from './mobile/socs'
+import { mobileTgdbRouter } from './mobile/tgdb'
+import { mobileTrustRouter } from './mobile/trust'
+import { mobileUsersRouter } from './mobile/users'
 
 export const mobileRouter = createMobileTRPCRouter({
   auth: mobileAuthRouter,
@@ -21,6 +31,17 @@ export const mobileRouter = createMobileTRPCRouter({
   preferences: mobilePreferencesRouter,
   developers: mobileDevelopersRouter,
   general: mobileGeneralRouter,
+  // New routers for feature parity
+  listingReports: mobileListingReportsRouter,
+  trust: mobileTrustRouter,
+  customFieldDefinitions: mobileCustomFieldDefinitionsRouter,
+  cpus: mobileCpusRouter,
+  gpus: mobileGpusRouter,
+  socs: mobileSocsRouter,
+  deviceBrands: mobileDeviceBrandsRouter,
+  rawg: mobileRawgRouter,
+  tgdb: mobileTgdbRouter,
+  users: mobileUsersRouter,
   getListings: mobileListingsRouter.getListings,
   getFeaturedListings: mobileListingsRouter.getFeaturedListings,
   getListingsByGame: mobileListingsRouter.getListingsByGame,
@@ -80,4 +101,39 @@ export const mobileRouter = createMobileTRPCRouter({
   createPcPreset: mobilePcListingsRouter.presets.create,
   updatePcPreset: mobilePcListingsRouter.presets.update,
   deletePcPreset: mobilePcListingsRouter.presets.delete,
+
+  // Content Reporting endpoints
+  createListingReport: mobileListingReportsRouter.create,
+  checkUserHasReports: mobileListingReportsRouter.checkUserHasReports,
+
+  // Trust System endpoints
+  getMyTrustInfo: mobileTrustRouter.getMyTrustInfo,
+  getUserTrustInfo: mobileTrustRouter.getUserTrustInfo,
+  getTrustLevelsConfig: mobileTrustRouter.getTrustLevels,
+
+  // Custom Field endpoints
+  getCustomFieldsByEmulator: mobileCustomFieldDefinitionsRouter.getByEmulator,
+
+  // Hardware Data endpoints
+  getCpusData: mobileCpusRouter.get,
+  getCpuById: mobileCpusRouter.getById,
+  getGpusData: mobileGpusRouter.get,
+  getGpuById: mobileGpusRouter.getById,
+  getSocsData: mobileSocsRouter.get,
+  getSocById: mobileSocsRouter.getById,
+  getDeviceBrandsData: mobileDeviceBrandsRouter.get,
+  getDeviceBrandById: mobileDeviceBrandsRouter.getById,
+
+  // External Game Data endpoints
+  searchRawgGameImages: mobileRawgRouter.searchGameImages,
+  searchRawgGames: mobileRawgRouter.searchGames,
+  getRawgGameImages: mobileRawgRouter.getGameImages,
+  searchTgdbGameImages: mobileTgdbRouter.searchGameImages,
+  searchTgdbGames: mobileTgdbRouter.searchGames,
+  getTgdbGameImageUrls: mobileTgdbRouter.getGameImageUrls,
+  getTgdbGameImages: mobileTgdbRouter.getGameImages,
+  getTgdbPlatforms: mobileTgdbRouter.getPlatforms,
+
+  // User Profile endpoints
+  getUserProfileById: mobileUsersRouter.getUserById,
 })

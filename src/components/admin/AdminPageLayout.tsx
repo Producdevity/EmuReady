@@ -22,7 +22,7 @@ export function AdminPageLayout(props: Props) {
           </p>
         </div>
         {props.headerActions && (
-          <div className="flex flex-col items-center align-end gap-4">
+          <div className="flex flex-col items-end gap-2">
             {props.headerActions}
           </div>
         )}

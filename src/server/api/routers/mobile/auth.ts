@@ -29,7 +29,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
    * Sign in with email and password
    */
   signIn: mobilePublicProcedure.input(MobileSignInSchema).mutation(async () => {
-    throw AppError.badRequest(
+    return AppError.badRequest(
       'Sign-in should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
     )
   }),
@@ -38,7 +38,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
    * Sign up with email and password
    */
   signUp: mobilePublicProcedure.input(MobileSignUpSchema).mutation(async () => {
-    throw AppError.badRequest(
+    return AppError.badRequest(
       'Sign-up should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
     )
   }),
@@ -49,7 +49,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   oauthSignIn: mobilePublicProcedure
     .input(MobileOAuthSignInSchema)
     .mutation(async ({ input }) => {
-      throw AppError.badRequest(
+      return AppError.badRequest(
         `${input.provider} authentication should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.`,
       )
     }),
@@ -86,7 +86,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   refreshToken: mobilePublicProcedure
     .input(RefreshTokenSchema)
     .mutation(async () => {
-      throw AppError.badRequest(
+      return AppError.badRequest(
         'Token refresh should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
       )
     }),
@@ -97,7 +97,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   verifyEmail: mobilePublicProcedure
     .input(VerifyEmailSchema)
     .mutation(async () => {
-      throw AppError.badRequest(
+      return AppError.badRequest(
         'Email verification should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
       )
     }),
@@ -108,7 +108,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   forgotPassword: mobilePublicProcedure
     .input(ForgotPasswordSchema)
     .mutation(async () => {
-      throw AppError.badRequest(
+      return AppError.badRequest(
         'Password reset should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
       )
     }),
@@ -119,7 +119,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   resetPassword: mobilePublicProcedure
     .input(ResetPasswordSchema)
     .mutation(async () => {
-      throw AppError.badRequest(
+      return AppError.badRequest(
         'Password reset should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
       )
     }),
@@ -164,7 +164,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
       })
 
       if (!user?.clerkId) {
-        throw AppError.notFound('User not found')
+        return AppError.notFound('User not found')
       }
 
       const updateData: Record<string, string> = {}
@@ -177,17 +177,10 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         await clerkClient.users.updateUser(user.clerkId, updateData)
       }
 
-      const updatedUser = await ctx.prisma.user.findUnique({
+      return await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-        },
+        select: { id: true, email: true, name: true, role: true },
       })
-
-      return updatedUser
     }),
 
   /**
@@ -204,10 +197,10 @@ export const mobileAuthRouter = createMobileTRPCRouter({
       })
 
       if (!user?.clerkId) {
-        throw AppError.notFound('User not found')
+        return AppError.notFound('User not found')
       }
 
-      throw AppError.badRequest(
+      return AppError.badRequest(
         'Password change should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
       )
     }),
@@ -226,7 +219,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
       })
 
       if (!user?.clerkId) {
-        throw AppError.notFound('User not found')
+        return AppError.notFound('User not found')
       }
 
       await clerkClient.users.deleteUser(user.clerkId)
