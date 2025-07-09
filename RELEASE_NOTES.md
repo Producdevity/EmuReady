@@ -1,3 +1,132 @@
+# 🚀 EmuReady Release Notes - 9 July 2025 (v0.8.0)
+
+## 🎮 PC Update
+
+**💻 Complete PC Compatibility Platform**
+
+- **PC Listings System**: Full compatibility reports for PC games with detailed hardware specifications
+- **Dynamic Hardware Database**: Comprehensive CPU and GPU database with thousands of processors and graphics cards
+- **Custom Performance Fields**: Emulator-specific settings tracking (frame rate, resolution, driver versions)
+- **Integrated Graphics Support**: Full support for systems without discrete GPUs
+- **Advanced Filtering**: Filter by CPU, GPU, memory, emulator, and performance metrics
+
+**🔧 Enhanced Admin Tools**
+
+- **PC Listing Approvals**: Dedicated admin interface for reviewing PC compatibility reports
+- **Hardware Management**: Complete CRUD operations for CPUs, GPUs, and system configurations
+- **Bulk Operations**: Process multiple PC listings efficiently
+- **Performance Analytics**: Track compatibility trends across different hardware configurations
+
+## 🎯 New Emulator Support
+
+**5 New Emulators Added**
+
+- **Skyline**: Nintendo Switch emulator for Android
+- **UTM**: Virtual machines for iOS and macOS
+- **XBSX2**: Enhanced PlayStation 2 emulator
+- **3 Xbox Console SoCs**: Support for Xbox One, Xbox One S, and Xbox One X hardware
+
+## 🛠️ Major Platform Enhancements
+
+**🔒 Role-Based Permission System**
+
+- **Dynamic Permissions**: Granular permission control for all user actions
+- **Enhanced Role Hierarchy**: USER → AUTHOR → DEVELOPER → MODERATOR → ADMIN → SUPER_ADMIN
+- **Permission Auditing**: Complete logging of all permission changes and role assignments
+- **Developer Tools**: Special privileges for verified emulator developers
+
+**📊 User Reports & Moderation**
+
+- **Comprehensive Reporting**: Users can report inappropriate content with categorized reasons
+- **Shadow Banning**: Advanced moderation system that hides content without user notification
+- **Admin Moderation Dashboard**: Full report management with status tracking and bulk actions
+- **User Ban Management**: Time-based bans with automatic expiration
+
+**🔔 Enhanced Notification System**
+
+- **Smart Filtering**: Banned users don't receive notifications for hidden content
+- **Duplicate Prevention**: Intelligent notification deduplication
+- **Better UI**: Improved notification center with proper navigation
+
+## 🌟 User Experience Improvements
+
+**⚡ Smart Device Memory**
+
+- **Last Used Device**: Automatically remembers your preferred device for faster listing creation
+- **Quick Selection**: One-click device selection based on your history
+- **Persistent Preferences**: Device and SoC preferences saved across sessions
+
+**🎨 Mobile-First Design**
+
+- **Responsive PC Listings**: Beautiful compatibility reports on all screen sizes
+- **Mobile Optimization**: Improved touch interfaces and navigation
+- **Progressive Loading**: Smooth loading states and skeleton animations
+
+**🔍 Advanced Search & Filtering**
+
+- **URL State Management**: Search and filter parameters persist in URLs
+- **"My Listings" Filter**: Quickly view only your own compatibility reports
+- **Multi-Platform Search**: Search across both mobile and PC compatibility databases
+
+## 📱 Mobile API Expansion
+
+**🔧 Extended Mobile API**
+
+- **PC Listings Endpoints**: Complete API coverage for PC compatibility data
+- **Hardware APIs**: Access to CPU, GPU, and SoC databases
+- **Enhanced Authentication**: Improved mobile session handling
+- **Performance Optimizations**: Faster API responses with better caching
+
+## 🐛 Bug Fixes & Performance
+
+**⚡ Performance Optimizations**
+
+- **Efficient Database Queries**: Optimized queries for PC listings and hardware data
+- **Reduced Bundle Size**: Cleaner imports and better code splitting
+- **Improved Caching**: Better React Query integration across all components
+
+**🔧 Critical Fixes**
+
+- **Rate Limiting**: Proper API protection with dynamic rate limiting
+- **Security Enhancements**: Email address protection and origin validation
+- **Error Handling**: More robust error boundaries and user feedback
+- **Form Validation**: Better input validation and error messages
+
+## 🎯 Developer Experience
+
+**🏗️ Enhanced Development Tools**
+
+- **Claude GitHub Actions**: Automated PR reviews and code assistance
+- **Improved Testing**: Better test coverage for new PC listings functionality
+- **Type Safety**: Enhanced TypeScript coverage across the platform
+- **Documentation**: Updated API documentation with new endpoints
+
+---
+
+## 🔄 Migration Notes
+
+**For Users:**
+
+- New PC compatibility platform is fully integrated with existing mobile listings
+- All existing functionality preserved with enhanced performance
+- Device preferences will be automatically remembered for future listings
+
+**For Developers:**
+
+- New permission system provides granular control over platform features
+- Enhanced mobile API includes PC compatibility endpoints
+- Shadow banning system provides better moderation capabilities
+
+---
+
+_This release represents EmuReady's evolution into a comprehensive compatibility platform supporting both mobile and PC gaming. The robust permission system, advanced moderation tools, and extensive hardware database make this our most feature-complete release yet._
+
+**Need help or found an issue?** Report it in our support channels or GitHub repository.
+
+🎮 **Happy Gaming!** - The EmuReady Team
+
+---
+
 # 🚀 EmuReady Release Notes - 22 June 2025 (v0.7.0)
 
 ## 🌟 What's New
