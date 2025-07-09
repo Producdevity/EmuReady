@@ -2,10 +2,10 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
-import { Save, X, ExternalLink, Github } from 'lucide-react'
+import { Save, X, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { EmulatorIcon } from '@/components/icons'
+import { EmulatorIcon, GitHubIcon } from '@/components/icons'
 import { Button, Input } from '@/components/ui'
 import { MarkdownEditor } from '@/components/ui/form/MarkdownEditor'
 import { api } from '@/lib/api'
@@ -66,7 +66,7 @@ const logoOptions = [
   'xenia.png',
   'yaba.png',
   'yuzu.png',
-]
+] as const
 
 function EmulatorEditForm(props: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -295,7 +295,7 @@ function EmulatorEditForm(props: Props) {
             id="repositoryUrl"
             {...register('repositoryUrl')}
             placeholder="https://github.com/..."
-            leftIcon={<Github className="w-4 h-4" />}
+            leftIcon={<GitHubIcon className="w-4 h-4" />}
             className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
           />
           {formState.errors.repositoryUrl && (
