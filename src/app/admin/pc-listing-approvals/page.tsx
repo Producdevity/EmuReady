@@ -332,10 +332,6 @@ function PcListingApprovalsPage() {
       )}
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex items-center justify-end space-x-2">
-          <ViewButton
-            href={`/pc-listings/${listing.id}`}
-            title="View PC Listing"
-          />
           <ApproveButton
             onClick={() => openModal(listing)}
             disabled={approveMutation.isPending}
@@ -345,6 +341,10 @@ function PcListingApprovalsPage() {
             onClick={() => handleReject(listing.id)}
             disabled={rejectMutation.isPending}
             title="Reject PC Listing"
+          />
+          <ViewButton
+            href={`/pc-listings/${listing.id}`}
+            title="View PC Listing"
           />
         </div>
       </td>
