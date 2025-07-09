@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Bell, Filter, Trash2, Check, Settings, Search } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -17,6 +18,7 @@ const CATEGORIES = [
 ] as const
 
 function NotificationsPage() {
+  const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
@@ -47,8 +49,8 @@ function NotificationsPage() {
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch()
-      statsQuery.refetch()
+      notificationsQuery.refetch().catch(console.error)
+      statsQuery.refetch().catch(console.error)
       setSelectedNotifications(new Set())
     },
     onError: (error) => {
@@ -58,8 +60,8 @@ function NotificationsPage() {
 
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch()
-      statsQuery.refetch()
+      notificationsQuery.refetch().catch(console.error)
+      statsQuery.refetch().catch(console.error)
       setSelectedNotifications(new Set())
       toast.success('All notifications marked as read')
     },
@@ -70,8 +72,8 @@ function NotificationsPage() {
 
   const deleteMutation = api.notifications.delete.useMutation({
     onSuccess: () => {
-      notificationsQuery.refetch()
-      statsQuery.refetch()
+      notificationsQuery.refetch().catch(console.error)
+      statsQuery.refetch().catch(console.error)
       setSelectedNotifications(new Set())
       toast.success('Notifications deleted')
     },
@@ -129,7 +131,7 @@ function NotificationsPage() {
     }
 
     if (notification.actionUrl) {
-      window.location.href = notification.actionUrl
+      router.push(notification.actionUrl)
     }
   }
 
@@ -172,7 +174,7 @@ function NotificationsPage() {
               </div>
             )}
             <button
-              onClick={() => (window.location.href = '/profile')}
+              onClick={() => router.push('/profile')}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <Settings className="w-4 h-4" />
