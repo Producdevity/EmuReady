@@ -1,4 +1,5 @@
 import { createTRPCRouter } from '@/server/api/trpc'
+import { badgesRouter } from './routers/badges'
 import { cpusRouter } from './routers/cpus'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
 import { customFieldTemplateRouter } from './routers/customFieldTemplates'
@@ -40,6 +41,7 @@ export const appRouter = createTRPCRouter({
   users: usersRouter,
   userPreferences: userPreferencesRouter,
   userBans: userBansRouter,
+  badges: badgesRouter,
   notifications: notificationsRouter,
   customFieldDefinitions: customFieldDefinitionRouter,
   customFieldTemplates: customFieldTemplateRouter,

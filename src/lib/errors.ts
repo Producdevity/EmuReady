@@ -338,6 +338,16 @@ export class ResourceError {
     alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
   }
 
+  static badge = {
+    notFound: () => AppError.notFound('Badge'),
+    alreadyExists: (name: string) =>
+      AppError.conflict(`A badge with name "${name}" already exists`),
+    inUse: (count: number) => AppError.resourceInUse('badge', count),
+    inactive: () => AppError.badRequest('Cannot assign inactive badge'),
+    alreadyAssigned: () => AppError.conflict('User already has this badge'),
+    notAssigned: () => AppError.badRequest('User does not have this badge'),
+  }
+
   static cpu = {
     notFound: () => AppError.notFound('CPU'),
     alreadyExists: (modelName: string) =>

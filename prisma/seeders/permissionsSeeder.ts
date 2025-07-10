@@ -1,10 +1,10 @@
-import { type PrismaClient, Role } from '@orm'
+import { type PrismaClient, Role, PermissionCategory } from '@orm'
 
 interface PermissionDefinition {
   key: string
   label: string
   description: string
-  category: string
+  category: PermissionCategory
   isSystem: boolean
 }
 
@@ -20,28 +20,28 @@ const permissions: PermissionDefinition[] = [
     key: 'create_listing',
     label: 'Create Listing',
     description: 'Create new compatibility listings',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'approve_listings',
     label: 'Approve Listings',
     description: 'Approve or reject submitted listings',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'edit_any_listing',
     label: 'Edit Any Listing',
     description: "Edit any user's listing",
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'delete_any_listing',
     label: 'Delete Any Listing',
     description: "Delete any user's listing",
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
 
@@ -50,28 +50,28 @@ const permissions: PermissionDefinition[] = [
     key: 'edit_own_comment',
     label: 'Edit Own Comment',
     description: 'Edit your own comments',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'delete_own_comment',
     label: 'Delete Own Comment',
     description: 'Delete your own comments',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'edit_any_comment',
     label: 'Edit Any Comment',
     description: "Edit any user's comment",
-    category: 'MODERATION',
+    category: PermissionCategory.MODERATION,
     isSystem: true,
   },
   {
     key: 'delete_any_comment',
     label: 'Delete Any Comment',
     description: "Delete any user's comment",
-    category: 'MODERATION',
+    category: PermissionCategory.MODERATION,
     isSystem: true,
   },
 
@@ -80,14 +80,14 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_games',
     label: 'Manage Games',
     description: 'Add, edit, and approve games',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'approve_games',
     label: 'Approve Games',
     description: 'Approve or reject submitted games',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
 
@@ -96,21 +96,21 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_emulators',
     label: 'Manage Emulators',
     description: 'Create, edit, and manage emulators',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'manage_custom_fields',
     label: 'Manage Custom Fields',
     description: 'Create and manage custom field definitions',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
   {
     key: 'manage_emulator_verified_developers',
     label: 'Manage Verified Developers',
     description: 'Verify and manage emulator developers',
-    category: 'USER_MANAGEMENT',
+    category: PermissionCategory.USER_MANAGEMENT,
     isSystem: true,
   },
 
@@ -119,21 +119,21 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_users',
     label: 'Manage Users',
     description: 'View and manage user accounts',
-    category: 'USER_MANAGEMENT',
+    category: PermissionCategory.USER_MANAGEMENT,
     isSystem: true,
   },
   {
     key: 'change_user_roles',
     label: 'Change User Roles',
     description: 'Modify user roles',
-    category: 'USER_MANAGEMENT',
+    category: PermissionCategory.USER_MANAGEMENT,
     isSystem: true,
   },
   {
     key: 'modify_super_admin_users',
     label: 'Modify Super Admin Users',
     description: 'Modify super admin user accounts',
-    category: 'USER_MANAGEMENT',
+    category: PermissionCategory.USER_MANAGEMENT,
     isSystem: true,
   },
 
@@ -142,21 +142,21 @@ const permissions: PermissionDefinition[] = [
     key: 'access_admin_panel',
     label: 'Access Admin Panel',
     description: 'Access the admin dashboard',
-    category: 'SYSTEM',
+    category: PermissionCategory.SYSTEM,
     isSystem: true,
   },
   {
     key: 'view_statistics',
     label: 'View Statistics',
     description: 'View system statistics and analytics',
-    category: 'SYSTEM',
+    category: PermissionCategory.SYSTEM,
     isSystem: true,
   },
   {
     key: 'view_logs',
     label: 'View Logs',
     description: 'View system logs and audit trails',
-    category: 'SYSTEM',
+    category: PermissionCategory.SYSTEM,
     isSystem: true,
   },
 
@@ -165,14 +165,14 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_permissions',
     label: 'Manage Permissions',
     description: 'Create, edit, and assign permissions to roles',
-    category: 'SYSTEM',
+    category: PermissionCategory.SYSTEM,
     isSystem: true,
   },
   {
     key: 'view_permission_logs',
     label: 'View Permission Logs',
     description: 'View permission change logs',
-    category: 'SYSTEM',
+    category: PermissionCategory.SYSTEM,
     isSystem: true,
   },
 
@@ -181,14 +181,14 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_trust_system',
     label: 'Manage Trust System',
     description: 'Manage user trust scores and actions',
-    category: 'USER_MANAGEMENT',
+    category: PermissionCategory.USER_MANAGEMENT,
     isSystem: true,
   },
   {
     key: 'view_trust_logs',
     label: 'View Trust Logs',
     description: 'View trust action logs',
-    category: 'SYSTEM',
+    category: PermissionCategory.SYSTEM,
     isSystem: true,
   },
 
@@ -197,7 +197,7 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_devices',
     label: 'Manage Devices',
     description: 'Create and manage devices and SoCs',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
 
@@ -206,7 +206,7 @@ const permissions: PermissionDefinition[] = [
     key: 'manage_systems',
     label: 'Manage Systems',
     description: 'Create and manage gaming systems/platforms',
-    category: 'CONTENT',
+    category: PermissionCategory.CONTENT,
     isSystem: true,
   },
 ]

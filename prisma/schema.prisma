@@ -41,6 +41,35 @@ enum PcOs {
   MACOS
 }
 
+enum TailwindColor {
+  yellow
+  lime
+  green
+  emerald
+  teal
+  cyan
+  sky
+  blue
+  indigo
+  violet
+  purple
+  fuchsia
+  pink
+  rose
+  slate
+  gray
+  zinc
+  neutral
+  stone
+}
+
+enum PermissionCategory {
+  CONTENT
+  MODERATION
+  USER_MANAGEMENT
+  SYSTEM
+}
+
 model User {
   id                   String      @id @default(uuid())
   clerkId              String      @unique
@@ -96,6 +125,10 @@ model User {
   userBans                    UserBan[]        @relation("UserBans")
   bansCreated                 UserBan[]        @relation("BansCreated")
   bansLifted                  UserBan[]        @relation("BansLifted")
+  // Badge system relations
+  userBadges                  UserBadge[]
+  badgesCreated               Badge[]          @relation("BadgesCreatedBy")
+  badgeAssignments            UserBadge[]      @relation("BadgeAssignments")
 }
 
 model UserDevicePreference {
@@ -537,7 +570,7 @@ model Permission {
   key         String           @unique // Unique identifier like "approve_listings"
   label       String           // Display name like "Approve Listings"
   description String?          // Detailed explanation of what this permission does
-  category    String?          // Category like "CONTENT", "USER_MANAGEMENT", "SYSTEM"
+  category    PermissionCategory? // Category like "CONTENT", "USER_MANAGEMENT", "SYSTEM"
   isSystem    Boolean          @default(false) // System permissions that cannot be deleted
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -922,4 +955,46 @@ model PcListingCommentVote {
   @@index([commentId])
   @@index([userId])
   @@map("pc_listing_comment_votes")
+}
+
+// Badge System Models
+model Badge {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  color       String    @default("#3B82F6") // Default blue color
+  icon        String?   // Icon name or path
+  isActive    Boolean   @default(true)
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  creator     User        @relation("BadgesCreatedBy", fields: [createdBy], references: [id])
+  userBadges  UserBadge[]
+
+  @@index([isActive])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("badges")
+}
+
+model UserBadge {
+  id         String        @id @default(uuid())
+  userId     String
+  badgeId    String
+  assignedBy String
+  assignedAt DateTime      @default(now())
+  notes      String?
+  color      TailwindColor @default(blue)
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  assignedByUser User @relation("BadgeAssignments", fields: [assignedBy], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+  @@index([assignedBy])
+  @@index([assignedAt])
+  @@map("user_badges")
 }
