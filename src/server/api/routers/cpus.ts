@@ -10,6 +10,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   moderatorProcedure,
+  adminProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -183,7 +184,7 @@ export const cpusRouter = createTRPCRouter({
       })
     }),
 
-  delete: moderatorProcedure
+  delete: adminProcedure
     .input(DeleteCpuSchema)
     .mutation(async ({ ctx, input }) => {
       const existingCpu = await ctx.prisma.cpu.findUnique({

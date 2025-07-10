@@ -1,5 +1,6 @@
 'use client'
 
+import { Gpu } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
@@ -7,6 +8,7 @@ import {
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Badge,
@@ -27,6 +29,8 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import GpuModal from './components/GpuModal'
 import GpuViewModal from './components/GpuViewModal'
 
@@ -70,6 +74,9 @@ function AdminGpusPage() {
   const [gpuData, setGpuData] = useState<GpuData | null>(null)
 
   const utils = api.useUtils()
+
+  const userQuery = api.users.me.useQuery()
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
 
   // TODO: Temporary fix for brands query
   // only keep 'Intel', 'AMD' and 'NVIDIA' brands
@@ -188,6 +195,11 @@ function AdminGpusPage() {
       <AdminTableContainer>
         {gpusQuery.isPending ? (
           <LoadingSpinner text="Loading GPUs..." />
+        ) : gpusQuery.data?.gpus.length === 0 ? (
+          <AdminTableNoResults
+            icon={Gpu}
+            hasQuery={!!table.search || !!table.additionalParams.brandId}
+          />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -254,29 +266,19 @@ function AdminGpusPage() {
                           onClick={() => openModal(gpu)}
                           title="Edit GPU"
                         />
-                        <DeleteButton
-                          onClick={() => handleDelete(gpu.id)}
-                          title="Delete GPU"
-                          isLoading={deleteGpu.isPending}
-                          disabled={deleteGpu.isPending}
-                        />
+                        {isAdmin && (
+                          <DeleteButton
+                            onClick={() => handleDelete(gpu.id)}
+                            title="Delete GPU"
+                            isLoading={deleteGpu.isPending}
+                            disabled={deleteGpu.isPending}
+                          />
+                        )}
                       </div>
                     </td>
                   )}
                 </tr>
               ))}
-              {!gpusQuery.isPending && gpusQuery.data?.gpus.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {table.search || table.additionalParams.brandId
-                      ? 'No GPUs found matching your search.'
-                      : 'No GPUs found. Add your first GPU.'}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         )}

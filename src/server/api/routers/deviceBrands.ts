@@ -10,6 +10,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
+  moderatorProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -61,44 +62,30 @@ export const deviceBrandsRouter = createTRPCRouter({
         where: { id: input.id },
       })
 
-      if (!brand) {
-        ResourceError.deviceBrand.notFound()
-      }
-
-      return brand
+      return brand || ResourceError.deviceBrand.notFound()
     }),
 
-  create: adminProcedure
+  create: moderatorProcedure
     .input(CreateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand with the same name already exists
       const existingBrand = await ctx.prisma.deviceBrand.findFirst({
-        where: {
-          name: { equals: input.name, mode: 'insensitive' },
-        },
+        where: { name: { equals: input.name, mode: 'insensitive' } },
       })
 
-      if (existingBrand) {
-        ResourceError.deviceBrand.alreadyExists(input.name)
-      }
-
-      return ctx.prisma.deviceBrand.create({
-        data: input,
-      })
+      return existingBrand
+        ? ResourceError.deviceBrand.alreadyExists(input.name)
+        : ctx.prisma.deviceBrand.create({ data: input })
     }),
 
-  update: adminProcedure
+  update: moderatorProcedure
     .input(UpdateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
 
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id },
-      })
+      const brand = await ctx.prisma.deviceBrand.findUnique({ where: { id } })
 
-      if (!brand) {
-        ResourceError.deviceBrand.notFound()
-      }
+      if (!brand) return ResourceError.deviceBrand.notFound()
 
       // Check if another brand with the same name already exists
       const existingBrand = await ctx.prisma.deviceBrand.findFirst({
@@ -108,14 +95,9 @@ export const deviceBrandsRouter = createTRPCRouter({
         },
       })
 
-      if (existingBrand) {
-        ResourceError.deviceBrand.alreadyExists(input.name)
-      }
-
-      return ctx.prisma.deviceBrand.update({
-        where: { id },
-        data,
-      })
+      return existingBrand
+        ? ResourceError.deviceBrand.alreadyExists(input.name)
+        : ctx.prisma.deviceBrand.update({ where: { id }, data })
     }),
 
   delete: adminProcedure
@@ -126,36 +108,19 @@ export const deviceBrandsRouter = createTRPCRouter({
         where: { brandId: input.id },
       })
 
-      if (devicesCount > 0) {
-        ResourceError.deviceBrand.inUse(devicesCount)
-      }
-
-      return ctx.prisma.deviceBrand.delete({
-        where: { id: input.id },
-      })
+      return devicesCount > 0
+        ? ResourceError.deviceBrand.inUse(devicesCount)
+        : ctx.prisma.deviceBrand.delete({ where: { id: input.id } })
     }),
 
-  stats: adminProcedure.query(async ({ ctx }) => {
-    const [total, withDevices, withoutDevices] = await Promise.all([
-      ctx.prisma.deviceBrand.count(),
-      ctx.prisma.deviceBrand.count({
-        where: {
-          devices: {
-            some: {},
-          },
-        },
-      }),
-      ctx.prisma.deviceBrand.count({
-        where: {
-          devices: {
-            none: {},
-          },
-        },
-      }),
+  stats: moderatorProcedure.query(async ({ ctx }) => {
+    const [withDevices, withoutDevices] = await Promise.all([
+      ctx.prisma.deviceBrand.count({ where: { devices: { some: {} } } }),
+      ctx.prisma.deviceBrand.count({ where: { devices: { none: {} } } }),
     ])
 
     return {
-      total,
+      total: withDevices + withoutDevices,
       withDevices,
       withoutDevices,
     }

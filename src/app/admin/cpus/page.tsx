@@ -1,5 +1,6 @@
 'use client'
 
+import { Cpu } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
@@ -7,6 +8,7 @@ import {
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Badge,
@@ -27,6 +29,8 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import CpuModal from './components/CpuModal'
 import CpuViewModal from './components/CpuViewModal'
 
@@ -70,6 +74,9 @@ function AdminCpusPage() {
   const [cpuData, setCpuData] = useState<CpuData | null>(null)
 
   const utils = api.useUtils()
+
+  const userQuery = api.users.me.useQuery()
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
 
   // TODO: Temporary fix for brands query
   // only keep 'Intel', 'AMD', and 'Apple' brands
@@ -188,6 +195,11 @@ function AdminCpusPage() {
       <AdminTableContainer>
         {cpusQuery.isPending ? (
           <LoadingSpinner text="Loading CPUs..." />
+        ) : cpusQuery.data?.cpus.length === 0 ? (
+          <AdminTableNoResults
+            icon={Cpu}
+            hasQuery={!!table.search || !!table.additionalParams.brandId}
+          />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -254,12 +266,14 @@ function AdminCpusPage() {
                           onClick={() => openModal(cpu)}
                           title="Edit CPU"
                         />
-                        <DeleteButton
-                          onClick={() => handleDelete(cpu.id)}
-                          title="Delete CPU"
-                          isLoading={deleteCpu.isPending}
-                          disabled={deleteCpu.isPending}
-                        />
+                        {isAdmin && (
+                          <DeleteButton
+                            onClick={() => handleDelete(cpu.id)}
+                            title="Delete CPU"
+                            isLoading={deleteCpu.isPending}
+                            disabled={deleteCpu.isPending}
+                          />
+                        )}
                       </div>
                     </td>
                   )}

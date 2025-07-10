@@ -10,6 +10,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
+  moderatorProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -140,7 +141,7 @@ export const socsRouter = createTRPCRouter({
       return soc || ResourceError.soc.notFound()
     }),
 
-  create: adminProcedure
+  create: moderatorProcedure
     .input(CreateSoCSchema)
     .mutation(async ({ ctx, input }) => {
       const existingSoC = await ctx.prisma.soC.findUnique({
@@ -157,7 +158,7 @@ export const socsRouter = createTRPCRouter({
       })
     }),
 
-  update: adminProcedure
+  update: moderatorProcedure
     .input(UpdateSoCSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input
@@ -225,7 +226,7 @@ export const socsRouter = createTRPCRouter({
     return manufacturers.map((soc) => soc.manufacturer)
   }),
 
-  stats: adminProcedure.query(async ({ ctx }) => {
+  stats: moderatorProcedure.query(async ({ ctx }) => {
     const [total, withDevices, withoutDevices] = await Promise.all([
       ctx.prisma.soC.count(),
       ctx.prisma.soC.count({
