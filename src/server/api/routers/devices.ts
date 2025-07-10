@@ -10,6 +10,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
+  moderatorProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -144,7 +145,7 @@ export const devicesRouter = createTRPCRouter({
       return device ?? ResourceError.device.notFound()
     }),
 
-  create: adminProcedure
+  create: moderatorProcedure
     .input(CreateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -183,7 +184,7 @@ export const devicesRouter = createTRPCRouter({
       })
     }),
 
-  update: adminProcedure
+  update: moderatorProcedure
     .input(UpdateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -251,7 +252,7 @@ export const devicesRouter = createTRPCRouter({
       return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
 
-  stats: adminProcedure.query(async ({ ctx }) => {
+  stats: moderatorProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([
       ctx.prisma.device.count(),
       ctx.prisma.device.count({ where: { listings: { some: {} } } }),

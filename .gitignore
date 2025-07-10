@@ -69,10 +69,12 @@ node_modules/
 .cursor
 .idea
 .claude
+.gemini
 
 # Notes
 CHECKS.md
 CLAUDE.md
+GEMINI.md
 NOTES.md
 
 

@@ -85,6 +85,12 @@ export const adminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Manage performance scales.',
   },
+  {
+    href: '/admin/badges',
+    label: 'Badges',
+    exact: true,
+    description: 'Manage user badges and assignments.',
+  },
 ]
 
 export const superAdminNavItems: AdminNavItem[] = [

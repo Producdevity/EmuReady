@@ -26,6 +26,8 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import DeviceModal from './components/DeviceModal'
 import DeviceViewModal from './components/DeviceViewModal'
 
@@ -69,6 +71,9 @@ function AdminDevicesPage() {
   const [deviceData, setDeviceData] = useState<DeviceData | null>(null)
 
   const utils = api.useUtils()
+
+  const userQuery = api.users.me.useQuery()
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
 
   const openModal = (device?: DeviceData) => {
     setEditId(device?.id ?? null)
@@ -253,12 +258,14 @@ function AdminDevicesPage() {
                           onClick={() => openModal(device)}
                           title="Edit Device"
                         />
-                        <DeleteButton
-                          onClick={() => handleDelete(device.id)}
-                          title="Delete Device"
-                          isLoading={deleteDevice.isPending}
-                          disabled={deleteDevice.isPending}
-                        />
+                        {isAdmin && (
+                          <DeleteButton
+                            onClick={() => handleDelete(device.id)}
+                            title="Delete Device"
+                            isLoading={deleteDevice.isPending}
+                            disabled={deleteDevice.isPending}
+                          />
+                        )}
                       </div>
                     </td>
                   )}

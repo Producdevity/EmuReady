@@ -23,6 +23,8 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import BrandModal from './components/BrandModal'
 
 type DeviceBrandSortField = 'name' | 'devicesCount'
@@ -48,6 +50,9 @@ function AdminBrandsPage() {
   const brandsStatsQuery = api.deviceBrands.stats.useQuery()
   const deleteBrand = api.deviceBrands.delete.useMutation()
   const confirm = useConfirmDialog()
+
+  const userQuery = api.users.me.useQuery()
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -197,12 +202,14 @@ function AdminBrandsPage() {
                           onClick={() => openModal(brand)}
                           title="Edit Brand"
                         />
-                        <DeleteButton
-                          onClick={() => handleDelete(brand.id)}
-                          title="Delete Brand"
-                          isLoading={deleteBrand.isPending}
-                          disabled={deleteBrand.isPending}
-                        />
+                        {isAdmin && (
+                          <DeleteButton
+                            onClick={() => handleDelete(brand.id)}
+                            title="Delete Brand"
+                            isLoading={deleteBrand.isPending}
+                            disabled={deleteBrand.isPending}
+                          />
+                        )}
                       </div>
                     </td>
                   )}

@@ -27,7 +27,9 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { Role } from '@orm'
+import { type Role, PermissionCategory } from '@orm'
+import PermissionModal from './components/PermissionModal'
+import RolePermissionMatrix from './components/RolePermissionMatrix'
 
 type PermissionSortField =
   | 'label'
@@ -50,136 +52,11 @@ const PERMISSION_COLUMNS: ColumnDefinition[] = [
 
 const PERMISSION_CATEGORIES = [
   { value: '', label: 'All Categories' },
-  { value: 'CONTENT', label: 'Content Management' },
-  { value: 'MODERATION', label: 'Moderation' },
-  { value: 'USER_MANAGEMENT', label: 'User Management' },
-  { value: 'SYSTEM', label: 'System' },
+  { value: PermissionCategory.CONTENT, label: 'Content Management' },
+  { value: PermissionCategory.MODERATION, label: 'Moderation' },
+  { value: PermissionCategory.USER_MANAGEMENT, label: 'User Management' },
+  { value: PermissionCategory.SYSTEM, label: 'System' },
 ] as const
-
-function PermissionModal({
-  permission: _permission,
-  isOpen: _isOpen,
-  onClose: _onClose,
-  onSuccess: _onSuccess,
-}: {
-  permission?: Record<string, unknown>
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  // TODO: Implement permission create/edit modal
-  // This would include form fields for key, label, description, category
-  return null
-}
-
-function RolePermissionMatrix({ onSuccess }: { onSuccess: () => void }) {
-  const matrixQuery = api.permissions.getPermissionMatrix.useQuery()
-  const assignPermission = api.permissions.assignPermissionToRole.useMutation({
-    onSuccess: () => {
-      toast.success('Permission assigned successfully!')
-      onSuccess()
-    },
-    onError: (err) => {
-      toast.error(`Failed to assign permission: ${getErrorMessage(err)}`)
-    },
-  })
-
-  const removePermission = api.permissions.removePermissionFromRole.useMutation(
-    {
-      onSuccess: () => {
-        toast.success('Permission removed successfully!')
-        onSuccess()
-      },
-      onError: (err) => {
-        toast.error(`Failed to remove permission: ${getErrorMessage(err)}`)
-      },
-    },
-  )
-
-  const handleTogglePermission = async (
-    role: Role,
-    permissionId: string,
-    hasPermission: boolean,
-  ) => {
-    if (hasPermission) {
-      await removePermission.mutateAsync({ role, permissionId })
-    } else {
-      await assignPermission.mutateAsync({ role, permissionId })
-    }
-  }
-
-  if (matrixQuery.isPending) {
-    return <LoadingSpinner />
-  }
-
-  const matrix = matrixQuery.data
-  if (!matrix) return null
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Role Permission Matrix
-      </h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead>
-            <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
-                Permission
-              </th>
-              {matrix.roles.map((role) => (
-                <th
-                  key={role}
-                  className="px-4 py-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
-                >
-                  {role}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {matrix.permissions.map((permission) => (
-              <tr
-                key={permission.id}
-                className="border-t border-gray-200 dark:border-gray-700"
-              >
-                <td className="px-4 py-2">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {permission.label}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {permission.key}
-                    </div>
-                  </div>
-                </td>
-                {matrix.roles.map((role) => (
-                  <td key={role} className="px-4 py-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={permission.roles[role]}
-                      onChange={() =>
-                        handleTogglePermission(
-                          role,
-                          permission.id,
-                          permission.roles[role],
-                        )
-                      }
-                      disabled={
-                        permission.isSystem && role === Role.SUPER_ADMIN
-                      }
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
 
 function AdminPermissionsPage() {
   const table = useAdminTable<PermissionSortField>({ defaultLimit: 50 })
@@ -189,7 +66,13 @@ function AdminPermissionsPage() {
   const [showMatrix, setShowMatrix] = useState(false)
   const [permissionModal, setPermissionModal] = useState<{
     isOpen: boolean
-    permission?: Record<string, unknown>
+    permission?: {
+      id: string
+      key: string
+      label: string
+      description?: string | null
+      category?: PermissionCategory | null
+    }
   }>({ isOpen: false })
 
   const columnVisibility = useColumnVisibility(PERMISSION_COLUMNS, {
@@ -199,12 +82,7 @@ function AdminPermissionsPage() {
   // Get permissions stats
   const permissionsQuery = api.permissions.getAll.useQuery({
     search: table.debouncedSearch || undefined,
-    category:
-      (selectedCategory as
-        | 'CONTENT'
-        | 'MODERATION'
-        | 'USER_MANAGEMENT'
-        | 'SYSTEM') || undefined,
+    category: (selectedCategory as PermissionCategory) || undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     page: table.page,
@@ -224,7 +102,13 @@ function AdminPermissionsPage() {
     },
   })
 
-  const handleEdit = (permission: Record<string, unknown>) => {
+  const handleEdit = (permission: {
+    id: string
+    key: string
+    label: string
+    description?: string | null
+    category?: PermissionCategory | null
+  }) => {
     setPermissionModal({ isOpen: true, permission })
   }
 
@@ -232,16 +116,22 @@ function AdminPermissionsPage() {
     setPermissionModal({ isOpen: true })
   }
 
-  const handleDelete = async (permission: Record<string, unknown>) => {
+  const handleDelete = async (permission: {
+    id: string
+    key: string
+    label: string
+    description?: string | null
+    category?: PermissionCategory | null
+  }) => {
     const confirmed = await confirm({
       title: 'Delete Permission',
-      description: `Are you sure you want to delete the permission "${permission.label as string}"? This action cannot be undone.`,
+      description: `Are you sure you want to delete the permission "${permission.label}"? This action cannot be undone.`,
     })
 
     if (!confirmed) return
 
     deletePermission.mutate({
-      id: permission.id as string,
+      id: permission.id,
     } satisfies RouterInput['permissions']['delete'])
   }
 
@@ -249,28 +139,6 @@ function AdminPermissionsPage() {
     setPermissionModal({ isOpen: false })
     utils.permissions.getAll.invalidate().catch(console.error)
   }
-
-  const statsData = permissionsQuery.data
-    ? [
-        {
-          label: 'Total Permissions',
-          value: pagination?.total || 0,
-          color: 'blue' as const,
-        },
-        {
-          label: 'System Permissions',
-          value: permissions.filter((p) => p.isSystem).length,
-          color: 'green' as const,
-        },
-        {
-          label: 'Custom Permissions',
-          value: permissions.filter((p) => !p.isSystem).length,
-          color: 'purple' as const,
-        },
-      ]
-    : []
-
-  if (permissionsQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
@@ -293,7 +161,23 @@ function AdminPermissionsPage() {
       }
     >
       <AdminStatsDisplay
-        stats={statsData}
+        stats={[
+          {
+            label: 'Total Permissions',
+            value: pagination?.total || 0,
+            color: 'blue',
+          },
+          {
+            label: 'System Permissions',
+            value: permissions?.filter((p) => p.isSystem).length,
+            color: 'green',
+          },
+          {
+            label: 'Custom Permissions',
+            value: permissions?.filter((p) => !p.isSystem).length,
+            color: 'purple',
+          },
+        ]}
         isLoading={permissionsQuery.isPending}
       />
 

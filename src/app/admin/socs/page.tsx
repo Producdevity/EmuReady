@@ -1,5 +1,6 @@
 'use client'
 
+import { Cpu } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
@@ -7,6 +8,7 @@ import {
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -24,6 +26,8 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import SocModal from './components/SocModal'
 import SocViewModal from './components/SocViewModal'
 
@@ -46,6 +50,9 @@ function AdminSoCsPage() {
   const columnVisibility = useColumnVisibility(SOCS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminSoCs,
   })
+
+  const userQuery = api.users.me.useQuery()
+  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
 
   const socsQuery = api.socs.get.useQuery({
     search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
@@ -132,28 +139,26 @@ function AdminSoCsPage() {
         </div>
       </div>
 
-      {socsStatsQuery.data && (
-        <AdminStatsDisplay
-          stats={[
-            {
-              label: 'Total',
-              value: socsStatsQuery.data.total,
-              color: 'blue',
-            },
-            {
-              label: 'With Devices',
-              value: socsStatsQuery.data.withDevices,
-              color: 'green',
-            },
-            {
-              label: 'No Devices',
-              value: socsStatsQuery.data.withoutDevices,
-              color: 'gray',
-            },
-          ]}
-          isLoading={socsStatsQuery.isPending}
-        />
-      )}
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total',
+            value: socsStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
+            label: 'With Devices',
+            value: socsStatsQuery.data?.withDevices,
+            color: 'green',
+          },
+          {
+            label: 'No Devices',
+            value: socsStatsQuery.data?.withoutDevices,
+            color: 'gray',
+          },
+        ]}
+        isLoading={socsStatsQuery.isPending}
+      />
 
       <AdminSearchFilters<SocSortField>
         table={table}
@@ -163,6 +168,8 @@ function AdminSoCsPage() {
       <AdminTableContainer>
         {socsQuery.isPending ? (
           <LoadingSpinner text="Loading SoCs..." />
+        ) : socsQuery.data?.socs.length === 0 ? (
+          <AdminTableNoResults icon={Cpu} hasQuery={!!table.search} />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -233,29 +240,19 @@ function AdminSoCsPage() {
                           onClick={() => openModal(soc)}
                           title="Edit SoC"
                         />
-                        <DeleteButton
-                          onClick={() => handleDelete(soc.id, soc.name)}
-                          title="Delete SoC"
-                          isLoading={deleteSoc.isPending}
-                          disabled={deleteSoc.isPending}
-                        />
+                        {isAdmin && (
+                          <DeleteButton
+                            onClick={() => handleDelete(soc.id, soc.name)}
+                            title="Delete SoC"
+                            isLoading={deleteSoc.isPending}
+                            disabled={deleteSoc.isPending}
+                          />
+                        )}
                       </div>
                     </td>
                   )}
                 </tr>
               ))}
-              {!socsQuery.isPending && socsQuery.data?.socs.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {table.search
-                      ? 'No SoCs found matching your search.'
-                      : 'No SoCs found. Add your first SoC.'}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         )}

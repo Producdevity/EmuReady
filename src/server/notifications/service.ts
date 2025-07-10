@@ -1,12 +1,14 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
+import { hasPermission } from '@/utils/permissions'
 import {
   DeliveryChannel,
   type NotificationCategory,
   NotificationDeliveryStatus,
   NotificationType,
   type Prisma,
+  Role,
 } from '@orm'
 import { createEmailService } from './emailService'
 import {
@@ -295,9 +297,26 @@ export class NotificationService {
       },
     })
 
-    if (!preference || !preference.inAppEnabled) {
-      return false
+    // If no preference exists, default to enabled for most notification types
+    // Only default to disabled for system notifications for non-admin users
+    if (!preference) {
+      // Check if user is admin for system notifications
+      if (
+        notificationType === NotificationType.MAINTENANCE_NOTICE ||
+        notificationType === NotificationType.FEATURE_ANNOUNCEMENT ||
+        notificationType === NotificationType.POLICY_UPDATE
+      ) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { role: true },
+        })
+        // Only send system notifications to moderators and above
+        return user ? hasPermission(user.role, Role.MODERATOR) : false
+      }
+      return true // Default to enabled for other notification types
     }
+
+    if (!preference.inAppEnabled) return false
 
     // Check per-listing preferences for listing-related notifications
     if (eventData.payload?.listingId) {
@@ -311,9 +330,7 @@ export class NotificationService {
           },
         })
 
-      if (listingPreference && !listingPreference.isEnabled) {
-        return false
-      }
+      if (listingPreference && !listingPreference.isEnabled) return false
     }
 
     return true
@@ -603,14 +620,11 @@ export class NotificationService {
         break
 
       default:
-        // For system events, get all users with system notification preferences enabled
+        // For system events, only notify moderators and above
         const systemUsers = await prisma.user.findMany({
           where: {
-            notificationPreferences: {
-              some: {
-                type: NotificationType.MAINTENANCE_NOTICE,
-                inAppEnabled: true,
-              },
+            role: {
+              in: [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN],
             },
           },
           select: { id: true },

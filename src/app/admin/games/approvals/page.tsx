@@ -440,15 +440,15 @@ function GameApprovalsPage() {
                                 onClick={() => handleImageClick(game)}
                                 className="group relative block"
                               >
-                                <Image
-                                  src={getGameImageUrl(game)}
-                                  alt={game.title}
-                                  width={80}
-                                  height={64}
-                                  className="rounded-md object-contain max-h-16 cursor-pointer hover:opacity-80 transition-opacity"
-                                  style={{ width: 'auto', height: 'auto' }}
-                                  unoptimized
-                                />
+                                <div className="h-16 w-20 rounded-md overflow-hidden relative">
+                                  <Image
+                                    src={getGameImageUrl(game)}
+                                    alt={game.title}
+                                    fill
+                                    className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                    unoptimized
+                                  />
+                                </div>
                                 {/* Image type indicators */}
                                 <div className="absolute -bottom-1 -right-1 flex gap-0.5">
                                   {game.boxartUrl && (

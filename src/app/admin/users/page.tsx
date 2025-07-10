@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldUser, User } from 'lucide-react'
+import { ShieldUser, User, Award } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -30,6 +30,7 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { getRoleVariant } from '@/utils/badgeColors'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type Role } from '@orm'
+import UserBadgeModal from './components/UserBadgeModal'
 import UserDetailsModal from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
 
@@ -75,6 +76,11 @@ function AdminUsersPage() {
   const userIdFromUrl = searchParams.get('userId')
   const [selectedUserForRole, setSelectedUserForRole] =
     useState<UserForModal | null>(null)
+  const [selectedUserForBadge, setSelectedUserForBadge] = useState<{
+    id: string
+    name: string | null
+    email: string
+  } | null>(null)
 
   const usersQuery = api.users.getAll.useQuery({
     search: isEmpty(table.search) ? undefined : table.search,
@@ -118,6 +124,14 @@ function AdminUsersPage() {
       name: user.name,
       email: user.email,
       role: user.role,
+    })
+  }
+
+  const openBadgeModal = (user: AdminUser) => {
+    setSelectedUserForBadge({
+      id: user.id,
+      name: user.name,
+      email: user.email,
     })
   }
 
@@ -345,6 +359,12 @@ function AdminUsersPage() {
                           icon={ShieldUser}
                           color="yellow"
                         />
+                        <TableButton
+                          onClick={() => openBadgeModal(user)}
+                          title="Manage Badges"
+                          icon={Award}
+                          color="purple"
+                        />
                         <ViewButton
                           title="View User Details"
                           onClick={() => openUserDetailsModal(user.id)}
@@ -401,6 +421,17 @@ function AdminUsersPage() {
           onClose={() => setSelectedUserForRole(null)}
         />
       )}
+
+      {/* Badge Modal */}
+      <UserBadgeModal
+        isOpen={!!selectedUserForBadge}
+        onClose={() => setSelectedUserForBadge(null)}
+        user={selectedUserForBadge}
+        onSuccess={() => {
+          // Refresh user data if needed
+          usersQuery.refetch().catch(console.error)
+        }}
+      />
 
       {/* User Details Modal */}
       <UserDetailsModal

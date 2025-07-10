@@ -106,6 +106,25 @@ export const usersRouter = createTRPCRouter({
           },
           take: 10, // Limit to 10 most recent votes
         },
+        userBadges: {
+          where: {
+            badge: { isActive: true },
+          },
+          select: {
+            id: true,
+            assignedAt: true,
+            badge: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                color: true,
+                icon: true,
+              },
+            },
+          },
+          orderBy: { assignedAt: 'desc' },
+        },
         _count: {
           select: { listings: true, submittedGames: true, votes: true },
         },
@@ -251,6 +270,26 @@ export const usersRouter = createTRPCRouter({
               },
             },
           }),
+          userBadges: {
+            where: {
+              badge: { isActive: true },
+            },
+            select: {
+              id: true,
+              assignedAt: true,
+              color: true,
+              badge: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  color: true,
+                  icon: true,
+                },
+              },
+            },
+            orderBy: { assignedAt: 'desc' },
+          },
           _count: { select: { listings: true, votes: true } },
         },
       })
