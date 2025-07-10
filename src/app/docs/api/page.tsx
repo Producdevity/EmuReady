@@ -95,10 +95,10 @@ function MobileApiDocsPage() {
               📄 OpenAPI Spec
             </h3>
             <p className="text-sm text-gray-600 dark:text-white mb-2">
-              Machine-readable API specification
+              Machine-readable API specification - automatically generated
             </p>
             <Link
-              href="/api/docs/api/openapi.json"
+              href="/api-docs/mobile-openapi.json"
               target="_blank"
               className="text-blue-500 hover:underline text-sm"
             >
@@ -109,7 +109,7 @@ function MobileApiDocsPage() {
           <div>
             <h3 className="font-semibold text-blue-600 mb-2">🔍 Endpoints</h3>
             <p className="text-sm text-gray-600 dark:text-white mb-2">
-              30+ endpoints for complete mobile functionality
+              90 endpoints across 20 routers for complete mobile functionality
             </p>
             <span className="text-sm text-gray-500 dark:text-white">
               Public & Protected
