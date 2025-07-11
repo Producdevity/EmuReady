@@ -37,11 +37,7 @@ export const commentsRouter = createTRPCRouter({
           userIP: clientIP,
         })
 
-        if (!captchaResult.success) {
-          return AppError.badRequest(
-            `CAPTCHA verification failed: ${captchaResult.error}`,
-          )
-        }
+        if (!captchaResult.success) return AppError.captcha(captchaResult.error)
       }
 
       // Check if listing exists
@@ -49,9 +45,7 @@ export const commentsRouter = createTRPCRouter({
         where: { id: listingId },
       })
 
-      if (!listing) {
-        ResourceError.listing.notFound()
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       // If parentId is provided, check if parent comment exists
       if (parentId) {
@@ -59,9 +53,7 @@ export const commentsRouter = createTRPCRouter({
           where: { id: parentId },
         })
 
-        if (!parentComment) {
-          ResourceError.comment.parentNotFound()
-        }
+        if (!parentComment) return ResourceError.comment.parentNotFound()
       }
 
       const userExists = await ctx.prisma.user.findUnique({
@@ -69,25 +61,11 @@ export const commentsRouter = createTRPCRouter({
         select: { id: true },
       })
 
-      if (!userExists) {
-        ResourceError.user.notInDatabase(userId)
-      }
+      if (!userExists) return ResourceError.user.notInDatabase(userId)
 
       const comment = await ctx.prisma.comment.create({
-        data: {
-          content,
-          userId,
-          listingId,
-          parentId,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
+        data: { content, userId, listingId, parentId },
+        include: { user: { select: { id: true, name: true } } },
       })
 
       notificationEventEmitter.emitNotificationEvent({

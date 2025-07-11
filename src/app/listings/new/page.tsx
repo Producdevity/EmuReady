@@ -308,12 +308,12 @@ function AddListingPage() {
   const createListingMutation = api.listings.create.useMutation({
     onSuccess: (data) => {
       analytics.listing.created({
-        listingId: data.id,
-        gameId: data.gameId,
-        systemId: selectedGame?.system.id || 'unknown',
-        emulatorId: data.emulatorId,
-        deviceId: data.deviceId,
-        performanceId: data.performanceId,
+        listingId: data?.id,
+        gameId: data?.gameId,
+        systemId: selectedGame?.system.id,
+        emulatorId: data?.emulatorId,
+        deviceId: data?.deviceId,
+        performanceId: data?.performanceId,
       })
 
       if (currentUserQuery.data?.id) {

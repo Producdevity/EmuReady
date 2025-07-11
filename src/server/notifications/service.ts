@@ -786,9 +786,7 @@ export class NotificationService {
         const listing = await prisma.listing.findUnique({
           where: { id: payload.listingId as string },
           include: {
-            game: {
-              select: { title: true, id: true },
-            },
+            game: { select: { title: true, id: true } },
             device: {
               select: {
                 modelName: true,
@@ -796,9 +794,7 @@ export class NotificationService {
                 brand: { select: { name: true } },
               },
             },
-            emulator: {
-              select: { name: true, id: true },
-            },
+            emulator: { select: { name: true, id: true } },
           },
         })
 

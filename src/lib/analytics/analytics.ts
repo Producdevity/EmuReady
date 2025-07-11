@@ -381,12 +381,12 @@ const analytics = {
   // Listing events
   listing: {
     created: (params: {
-      listingId: string
-      gameId: string
-      systemId: string
-      emulatorId: string
-      deviceId: string
-      performanceId: number
+      listingId?: string
+      gameId?: string
+      systemId?: string
+      emulatorId?: string
+      deviceId?: string
+      performanceId?: number
       hasCustomFields?: boolean
       customFieldCount?: number
     }) => {

@@ -946,25 +946,10 @@ export const adminRouter = createTRPCRouter({
       const listings = await ctx.prisma.listing.findMany({
         where: whereClause,
         include: {
-          game: {
-            include: {
-              system: true,
-            },
-          },
-          device: {
-            include: {
-              brand: true,
-              soc: true,
-            },
-          },
+          game: { include: { system: true } },
+          device: { include: { brand: true, soc: true } },
           emulator: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
+          author: { select: { id: true, name: true, email: true } },
           performance: true,
         },
         orderBy,
@@ -1006,9 +991,7 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
-      if (!listing) return ResourceError.listing.notFound()
-
-      return listing
+      return listing || ResourceError.listing.notFound()
     }),
 
   updateListing: superAdminProcedure

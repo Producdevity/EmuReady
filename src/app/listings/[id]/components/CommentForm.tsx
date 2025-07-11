@@ -31,15 +31,17 @@ function CommentForm(props: Props) {
 
   const createComment = api.listings.createComment.useMutation({
     onSuccess: (data) => {
-      analytics.engagement.comment({
-        action: props.parentId ? 'reply' : 'created',
-        commentId: data.id,
-        listingId: props.listingId,
-        isReply: !!props.parentId,
-        contentLength: content.trim().length,
-        gameId: props.gameId,
-        systemId: props.systemId,
-      })
+      if (data?.id) {
+        analytics.engagement.comment({
+          action: props.parentId ? 'reply' : 'created',
+          commentId: data.id,
+          listingId: props.listingId,
+          isReply: !!props.parentId,
+          contentLength: content.trim().length,
+          gameId: props.gameId,
+          systemId: props.systemId,
+        })
+      }
 
       setContent('')
       props.onCommentSuccess()
