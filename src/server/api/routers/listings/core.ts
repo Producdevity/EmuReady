@@ -686,11 +686,7 @@ export const coreRouter = createTRPCRouter({
           userIP: clientIP,
         })
 
-        if (!captchaResult.success) {
-          return AppError.badRequest(
-            `CAPTCHA verification failed: ${captchaResult.error}`,
-          )
-        }
+        if (!captchaResult.success) return AppError.captcha(captchaResult.error)
       }
 
       const userExists = await ctx.prisma.user.findUnique({
@@ -710,7 +706,7 @@ export const coreRouter = createTRPCRouter({
         // Validate custom fields
         await validateCustomFields(tx, emulatorId, customFieldValues)
 
-        // Check if user can auto-approve
+        // Check if user's listing can be auto-approved
         const canAutoApprove = await canUserAutoApprove(authorId)
         const isAuthorOrHigher = hasPermission(
           ctx.session.user.role,
@@ -727,7 +723,7 @@ export const coreRouter = createTRPCRouter({
           select: { systemId: true },
         })
 
-        if (!gameForValidation) throw ResourceError.game.notFound()
+        if (!gameForValidation) return ResourceError.game.notFound()
 
         const emulator = await tx.emulator.findUnique({
           where: { id: emulatorId },
@@ -741,7 +737,7 @@ export const coreRouter = createTRPCRouter({
         )
 
         if (!isSystemCompatible) {
-          throw AppError.badRequest(
+          return AppError.badRequest(
             "The selected emulator does not support this game's system",
           )
         }
@@ -851,11 +847,7 @@ export const coreRouter = createTRPCRouter({
           userIP: clientIP,
         })
 
-        if (!captchaResult.success) {
-          return AppError.badRequest(
-            `CAPTCHA verification failed: ${captchaResult.error}`,
-          )
-        }
+        if (!captchaResult.success) return AppError.captcha(captchaResult.error)
       }
 
       const listing = await ctx.prisma.listing.findUnique({
@@ -883,7 +875,7 @@ export const coreRouter = createTRPCRouter({
           select: { authorId: true },
         })
 
-        if (!listing) return AppError.notFound('Listing')
+        if (!listing) return ResourceError.listing.notFound()
 
         // Create new vote
         const vote = await ctx.prisma.vote.create({
@@ -1057,9 +1049,9 @@ export const coreRouter = createTRPCRouter({
       return updatedVote
     }),
 
-  performanceScales: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } })
-  }),
+  performanceScales: publicProcedure.query(async ({ ctx }) =>
+    ctx.prisma.performanceScale.findMany({ orderBy: { rank: 'asc' } }),
+  ),
 
   statistics: publicProcedure.query(async ({ ctx }) => {
     const [
@@ -1106,11 +1098,7 @@ export const coreRouter = createTRPCRouter({
         performance: true,
         author: { select: { id: true, name: true } },
         developerVerifications: {
-          include: {
-            developer: {
-              select: { id: true, name: true },
-            },
-          },
+          include: { developer: { select: { id: true, name: true } } },
         },
         _count: { select: { votes: true, comments: true } },
       },
@@ -1253,17 +1241,15 @@ export const coreRouter = createTRPCRouter({
         },
       })
 
-      if (!listing) {
-        throw ResourceError.listing.notFound()
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       if (listing.authorId !== ctx.session.user.id) {
-        throw AppError.forbidden('You can only edit your own listings')
+        return AppError.forbidden('You can only edit your own listings')
       }
 
       // REJECTED listings cannot be edited
       if (listing.status === ApprovalStatus.REJECTED) {
-        throw AppError.badRequest(
+        return AppError.badRequest(
           'Rejected listings cannot be edited. Please create a new listing.',
         )
       }
@@ -1274,7 +1260,7 @@ export const coreRouter = createTRPCRouter({
       } else if (listing.status === ApprovalStatus.APPROVED) {
         // APPROVED listings have a time limit
         if (!listing.processedAt) {
-          throw AppError.badRequest('Listing approval time not found')
+          return AppError.badRequest('Listing approval time not found')
         }
 
         const now = new Date()
@@ -1282,12 +1268,12 @@ export const coreRouter = createTRPCRouter({
         const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
 
         if (timeSinceApproval > timeLimit) {
-          throw AppError.badRequest(
+          return AppError.badRequest(
             `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
           )
         }
       } else {
-        throw AppError.badRequest('Invalid listing status')
+        return AppError.badRequest('Invalid listing status')
       }
 
       // Update the listing using a transaction to handle custom fields
@@ -1322,10 +1308,7 @@ export const coreRouter = createTRPCRouter({
         // Update the listing
         return await tx.listing.update({
           where: { id: input.id },
-          data: {
-            notes: input.notes,
-            performanceId: input.performanceId,
-          },
+          data: { notes: input.notes, performanceId: input.performanceId },
         })
       })
     }),
@@ -1346,56 +1329,32 @@ export const coreRouter = createTRPCRouter({
             select: {
               id: true,
               title: true,
-              system: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
+              system: { select: { id: true, name: true } },
             },
           },
           device: {
             select: {
               id: true,
               modelName: true,
-              brand: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
+              brand: { select: { id: true, name: true } },
             },
           },
           emulator: {
             select: {
               id: true,
               name: true,
-              customFieldDefinitions: {
-                orderBy: { displayOrder: 'asc' },
-              },
+              customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
             },
           },
-          performance: {
-            select: {
-              id: true,
-              label: true,
-              rank: true,
-            },
-          },
-          customFieldValues: {
-            include: {
-              customFieldDefinition: true,
-            },
-          },
+          performance: { select: { id: true, label: true, rank: true } },
+          customFieldValues: { include: { customFieldDefinition: true } },
         },
       })
 
-      if (!listing) {
-        throw ResourceError.listing.notFound()
-      }
+      if (!listing) throw ResourceError.listing.notFound()
 
       if (listing.authorId !== ctx.session.user.id) {
-        throw AppError.forbidden(
+        return AppError.forbidden(
           'You can only view your own listings for editing',
         )
       }
@@ -1417,29 +1376,24 @@ export const coreRouter = createTRPCRouter({
         },
       })
 
-      if (!listing) {
-        throw AppError.notFound('Listing not found')
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       // Check if user is verified developer for this emulator
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: {
-          userId_emulatorId: {
-            userId: userId,
-            emulatorId: listing.emulatorId,
-          },
+          userId_emulatorId: { userId: userId, emulatorId: listing.emulatorId },
         },
       })
 
       if (!verifiedDeveloper) {
-        throw AppError.forbidden(
+        return AppError.forbidden(
           `You must be a verified developer for ${listing.emulator.name} to verify listings for this emulator`,
         )
       }
 
       // Prevent developers from verifying their own listings
       if (listing.authorId === userId) {
-        throw AppError.forbidden('You cannot verify your own listings')
+        return AppError.forbidden('You cannot verify your own listings')
       }
 
       // Check if verification already exists
@@ -1454,7 +1408,7 @@ export const coreRouter = createTRPCRouter({
         })
 
       if (existingVerification) {
-        throw AppError.conflict('You have already verified this listing')
+        return AppError.conflict('You have already verified this listing')
       }
 
       // Create the verification
@@ -1465,9 +1419,7 @@ export const coreRouter = createTRPCRouter({
             verifiedBy: userId,
             notes: input.notes,
           },
-          include: {
-            developer: { select: { id: true, name: true } },
-          },
+          include: { developer: { select: { id: true, name: true } } },
         },
       )
 
@@ -1502,24 +1454,14 @@ export const coreRouter = createTRPCRouter({
               verifiedBy: userId,
             },
           },
-          include: {
-            listing: {
-              include: {
-                emulator: true,
-              },
-            },
-          },
+          include: { listing: { include: { emulator: true } } },
         })
 
-      if (!verification) {
-        throw AppError.notFound('Verification not found')
-      }
+      if (!verification) return ResourceError.verification.notFound()
 
       // Delete the verification
       await ctx.prisma.listingDeveloperVerification.delete({
-        where: {
-          id: verification.id,
-        },
+        where: { id: verification.id },
       })
 
       return { message: 'Verification removed successfully' }

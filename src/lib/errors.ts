@@ -32,6 +32,7 @@ export const ERROR_MESSAGES = {
   // Validation errors
   INVALID_INPUT: 'The provided input is invalid',
   MISSING_REQUIRED_FIELD: 'A required field is missing',
+  INVALID_CAPTCHA: 'CAPTCHA verification failed',
 
   // Business logic errors
   OPERATION_NOT_ALLOWED: 'This operation is not allowed',
@@ -120,6 +121,15 @@ export class AppError {
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
       message: `Required field missing: ${field}`,
+    })
+  }
+
+  static captcha(message?: string) {
+    throw new TRPCError({
+      code: ERROR_CODES.BAD_REQUEST,
+      message: message
+        ? `CAPTCHA verification failed: ${message}`
+        : ERROR_MESSAGES.INVALID_CAPTCHA,
     })
   }
 

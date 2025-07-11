@@ -1,43 +1,41 @@
 import { ResourceError } from '@/lib/errors'
 import {
   CreateListingReportSchema,
-  UpdateReportStatusSchema,
+  DeleteReportSchema,
   GetListingReportsSchema,
   GetReportByIdSchema,
-  DeleteReportSchema,
   GetUserReportStatsSchema,
+  UpdateReportStatusSchema,
 } from '@/schemas/listingReport'
 import {
   createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
   permissionProcedure,
+  protectedProcedure,
+  publicProcedure,
 } from '@/server/api/trpc'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { type Prisma, ReportStatus, ApprovalStatus } from '@orm'
+import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
     async ({ ctx }) => {
-      const [total, pending, underReview, resolved, dismissed] =
-        await Promise.all([
-          ctx.prisma.listingReport.count(),
-          ctx.prisma.listingReport.count({
-            where: { status: ReportStatus.PENDING },
-          }),
-          ctx.prisma.listingReport.count({
-            where: { status: ReportStatus.UNDER_REVIEW },
-          }),
-          ctx.prisma.listingReport.count({
-            where: { status: ReportStatus.RESOLVED },
-          }),
-          ctx.prisma.listingReport.count({
-            where: { status: ReportStatus.DISMISSED },
-          }),
-        ])
+      const [pending, underReview, resolved, dismissed] = await Promise.all([
+        ctx.prisma.listingReport.count({
+          where: { status: ReportStatus.PENDING },
+        }),
+        ctx.prisma.listingReport.count({
+          where: { status: ReportStatus.UNDER_REVIEW },
+        }),
+        ctx.prisma.listingReport.count({
+          where: { status: ReportStatus.RESOLVED },
+        }),
+        ctx.prisma.listingReport.count({
+          where: { status: ReportStatus.DISMISSED },
+        }),
+      ])
 
       return {
-        total,
+        total: pending + underReview + resolved + dismissed,
         pending,
         underReview,
         resolved,
@@ -76,13 +74,9 @@ export const listingReportsRouter = createTRPCRouter({
         ]
       }
 
-      if (status) {
-        where.status = status
-      }
+      if (status) where.status = status
 
-      if (reason) {
-        where.reason = reason
-      }
+      if (reason) where.reason = reason
 
       // Build orderBy
       const orderBy: Prisma.ListingReportOrderByWithRelationInput = {}
@@ -116,12 +110,7 @@ export const listingReportsRouter = createTRPCRouter({
 
       return {
         reports,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages,
-        },
+        pagination: { page, limit, total, pages },
       }
     }),
 
@@ -145,9 +134,7 @@ export const listingReportsRouter = createTRPCRouter({
         },
       })
 
-      if (!report) ResourceError.listingReport.notFound()
-
-      return report
+      return report || ResourceError.listingReport.notFound()
     }),
 
   create: protectedProcedure
@@ -162,13 +149,11 @@ export const listingReportsRouter = createTRPCRouter({
         include: { author: true },
       })
 
-      if (!listing) {
-        throw ResourceError.listing.notFound()
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       // Prevent users from reporting their own listings
       if (listing.authorId === userId) {
-        throw new Error('You cannot report your own listing')
+        return ResourceError.listingReport.cannotReportOwnListing()
       }
 
       // Check if user already reported this listing
@@ -181,11 +166,11 @@ export const listingReportsRouter = createTRPCRouter({
         },
       })
 
-      if (existingReport) {
-        throw new Error('You have already reported this listing')
-      }
+      if (existingReport) return ResourceError.listingReport.alreadyExists()
 
-      const report = await ctx.prisma.listingReport.create({
+      // TODO: Send notification to SUPER_ADMIN users
+
+      return await ctx.prisma.listingReport.create({
         data: {
           listingId,
           reportedById: userId,
@@ -201,10 +186,6 @@ export const listingReportsRouter = createTRPCRouter({
           },
         },
       })
-
-      // TODO: Send notification to SUPER_ADMIN users
-
-      return report
     }),
 
   updateStatus: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)

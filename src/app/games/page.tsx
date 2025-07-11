@@ -8,11 +8,11 @@ import {
   useEffect,
   useCallback,
   Suspense,
-  type SyntheticEvent,
   type ChangeEvent,
 } from 'react'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
+import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { hasPermission } from '@/utils/permissions'
@@ -26,35 +26,37 @@ function GamesContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [systemId, setSystemId] = useState('')
-  const [hideGamesWithNoListings, setHideGamesWithNoListings] = useState(false)
-  const limit = 12
-
-  // Initialize state from URL parameters, ensuring we don't use string "undefined"
-  useEffect(() => {
+  // Get initial values from URL
+  const getInitialSearch = () => {
     const urlSearch = searchParams.get('search')
-    const urlSystemId = searchParams.get('systemId')
-    const urlPage = searchParams.get('page')
-    const urlHideGames = searchParams.get('hideNoListings')
+    return urlSearch && urlSearch !== 'undefined' ? urlSearch : ''
+  }
 
-    if (urlSearch && urlSearch !== 'undefined') {
-      setSearch(urlSearch)
-    }
-    if (urlSystemId && urlSystemId !== 'undefined') {
-      setSystemId(urlSystemId)
-    }
-    if (urlPage && urlPage !== 'undefined') {
-      const pageNum = parseInt(urlPage, 10)
-      if (!isNaN(pageNum) && pageNum > 0) {
-        setPage(pageNum)
-      }
-    }
-    if (urlHideGames !== null) {
-      setHideGamesWithNoListings(urlHideGames === 'true')
-    }
-  }, [searchParams])
+  const getInitialSystemId = () => {
+    const urlSystemId = searchParams.get('systemId')
+    return urlSystemId && urlSystemId !== 'undefined' ? urlSystemId : ''
+  }
+
+  const getInitialPage = () => {
+    const urlPage = searchParams.get('page')
+    const pageNum = urlPage ? parseInt(urlPage, 10) : 1
+    return !isNaN(pageNum) && pageNum > 0 ? pageNum : 1
+  }
+
+  const getInitialHideGames = () => {
+    const urlHideGames = searchParams.get('hideNoListings')
+    return urlHideGames !== null ? urlHideGames === 'true' : true
+  }
+
+  // Initialize states with URL values
+  const [inputValue, setInputValue] = useState(() => getInitialSearch())
+  const [page, setPage] = useState(() => getInitialPage())
+  const [systemId, setSystemId] = useState(() => getInitialSystemId())
+  const [hideGamesWithNoListings, setHideGamesWithNoListings] = useState(() =>
+    getInitialHideGames(),
+  )
+  const debouncedSearch = useDebouncedValue(inputValue, 500)
+  const limit = 12
 
   // Update URL params whenever state changes
   const updateUrlParams = useCallback(
@@ -71,8 +73,9 @@ function GamesContent() {
 
       // Update or remove search param
       if (updates.search !== undefined) {
-        if (updates.search.trim()) {
-          params.set('search', updates.search.trim())
+        const trimmedSearch = updates.search.trim()
+        if (trimmedSearch) {
+          params.set('search', trimmedSearch)
         } else {
           params.delete('search')
         }
@@ -120,7 +123,7 @@ function GamesContent() {
 
   const gamesQuery = api.games.get.useQuery(
     filterNullAndEmpty({
-      search: search.trim() || undefined,
+      search: debouncedSearch.trim() || undefined,
       systemId: systemId || undefined,
       hideGamesWithNoListings,
       limit,
@@ -131,16 +134,19 @@ function GamesContent() {
   const games = gamesQuery.data?.games ?? []
   const pagination = gamesQuery.data?.pagination
 
-  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    const newSearch = ev.target.value
-    setSearch(newSearch)
+  // Update URL when debounced search changes
+  useEffect(() => {
     setPage(1)
-    updateUrlParams({ search: newSearch, page: 1 })
+    updateUrlParams({ search: debouncedSearch, page: 1 })
+  }, [debouncedSearch, updateUrlParams])
+
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    const newInputValue = ev.target.value
+    setInputValue(newInputValue)
   }
 
-  const handleSystemChange = (ev: SyntheticEvent) => {
-    const newSystemId = (ev as unknown as ChangeEvent<HTMLSelectElement>).target
-      .value
+  const handleSystemChange = (value: string | null) => {
+    const newSystemId = value || ''
     setSystemId(newSystemId)
     setPage(1)
     updateUrlParams({ systemId: newSystemId, page: 1 }, { push: true })
@@ -157,8 +163,10 @@ function GamesContent() {
     updateUrlParams({ hideNoListings: hide, page: 1 }, { push: true })
   }
 
-  const isAuthor = hasPermission(userQuery.data?.role, Role.AUTHOR)
-  const addGameHref = isAuthor ? '/games/new' : '/games/new/search'
+  // Moderators can add games manually, others use search
+  const addGameHref = hasPermission(userQuery.data?.role, Role.MODERATOR)
+    ? '/games/new'
+    : '/games/new/search'
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
@@ -174,7 +182,7 @@ function GamesContent() {
       </div>
       <div className="max-w-7xl mx-auto">
         <GameFilters
-          search={search}
+          search={inputValue}
           systemId={systemId}
           hideGamesWithNoListings={hideGamesWithNoListings}
           systems={systemsQuery.data}

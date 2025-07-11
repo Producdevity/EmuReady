@@ -2,20 +2,13 @@
 
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
+import { getBarColor, getBarWidth } from '@/utils/vote'
 
 interface Props {
   rate: number
   voteCount?: number
   hideVoteCount?: boolean
   compact?: boolean
-}
-
-// Determine color based on success rate
-function getBarColor(rate: number) {
-  if (rate >= 75) return 'bg-green-500'
-  if (rate >= 50) return 'bg-yellow-500'
-  if (rate >= 25) return 'bg-orange-500'
-  return 'bg-red-500'
 }
 
 export function SuccessRateBar(props: Props) {
@@ -35,7 +28,7 @@ export function SuccessRateBar(props: Props) {
         <div
           className={cn('rounded-full', barColor, compact ? 'h-1.5' : 'h-2')}
           style={{
-            width: `${roundedRate < 0 ? 100 : roundedRate}%`,
+            width: `${getBarWidth(roundedRate, voteCount)}%`,
             transition: 'width 0.3s',
           }}
         />

@@ -167,7 +167,7 @@ docker exec -it emuready-app sh
 # Now you can run any command:
 npm install leftpad
 npm run test
-npm run typecheck
+npm run types
 npm run lint
 npx playwright test
 ```
@@ -181,7 +181,7 @@ docker exec emuready-app npm run test
 docker exec emuready-app npm install package-name
 
 # Run TypeScript checks
-docker exec emuready-app npm run typecheck
+docker exec emuready-app npm run types
 
 # Run linting
 docker exec emuready-app npm run lint

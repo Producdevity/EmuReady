@@ -1,4 +1,5 @@
 import { CheckCircle } from 'lucide-react'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -10,7 +11,8 @@ interface Props {
 export function VerifiedDeveloperBadge(props: Props) {
   const size = props.size ?? 'md'
   const showText = props.showText ?? false
-  return (
+
+  const BadgeContent = (
     <div
       className={cn(
         'inline-flex items-center gap-1',
@@ -31,5 +33,14 @@ export function VerifiedDeveloperBadge(props: Props) {
         </span>
       )}
     </div>
+  )
+
+  return showText ? (
+    BadgeContent
+  ) : (
+    <Tooltip>
+      <TooltipTrigger asChild>{BadgeContent}</TooltipTrigger>
+      <TooltipContent>Verified Developer</TooltipContent>
+    </Tooltip>
   )
 }

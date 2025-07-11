@@ -32,6 +32,7 @@ export * from './TranslatableContent'
 export * from './TrustLevelBadge'
 export * from './VerifiedDeveloperBadge'
 export * from './VirtualScroller'
+export * from './VoteButtons'
 
 // Collection of components
 export * from './form'

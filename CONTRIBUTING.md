@@ -166,7 +166,7 @@ Make sure all tests and checks pass before creating a pull request:
 
 ```bash
 npm run lint
-npm run typecheck
+npm run types
 npm run build
 # or
 npm run prepare-deploy

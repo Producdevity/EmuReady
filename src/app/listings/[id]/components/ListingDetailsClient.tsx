@@ -17,8 +17,10 @@ import {
   ApprovalStatusBadge,
 } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import { formatDateTime, formatTimeAgo } from '@/utils/date'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { CustomFieldType, Role } from '@orm'
 import CommentThread from './CommentThread'
@@ -64,23 +66,30 @@ function ListingDetailsClient(props: Props) {
     onSuccess: () => {
       refreshData()
     },
+    onError: (error) => {
+      toast.error(`Failed to vote: ${getErrorMessage(error)}`)
+    },
   })
 
-  const handleVote = (value: boolean | null) => {
-    if (value !== null) {
-      // Normal vote - send the value directly, API handles toggle logic
-      return voteMutation.mutate({
-        listingId: props.listing.id,
-        value: value,
-      })
-    }
-    // For vote removal, we need to know what the current vote is and send that same value
-    // The API handles toggle logic - if same value is sent, it removes the vote
-    if (props.userVote !== null) {
-      voteMutation.mutate({
-        listingId: props.listing.id,
-        value: props.userVote, // Send current vote value to toggle it off
-      })
+  const handleVote = async (value: boolean | null) => {
+    try {
+      if (value !== null) {
+        // Normal vote - send the value directly, API handles toggle logic
+        await voteMutation.mutateAsync({
+          listingId: props.listing.id,
+          value: value,
+        })
+      } else if (props.userVote !== null) {
+        // For vote removal, we need to know what the current vote is and send that same value
+        // The API handles toggle logic - if same value is sent, it removes the vote
+        await voteMutation.mutateAsync({
+          listingId: props.listing.id,
+          value: props.userVote, // Send current vote value to toggle it off
+        })
+      }
+    } catch (error) {
+      console.error('Error voting:', error)
+      // The mutation's onError will handle user-facing error messages
     }
   }
 
@@ -130,7 +139,7 @@ function ListingDetailsClient(props: Props) {
               href={fieldValue.value}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:underline break-all"
             >
               {fieldValue.value}
             </a>
@@ -140,7 +149,11 @@ function ListingDetailsClient(props: Props) {
       case CustomFieldType.TEXT:
       case CustomFieldType.TEXTAREA:
       default:
-        return String(fieldValue.value ?? '')
+        return (
+          <span className="break-words overflow-wrap-anywhere">
+            {String(fieldValue.value ?? '')}
+          </span>
+        )
     }
   }
 
@@ -223,7 +236,7 @@ function ListingDetailsClient(props: Props) {
                 {props.listing?.notes ? (
                   <TranslatableMarkdown
                     content={props.listing.notes}
-                    className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
+                    className="text-gray-600 dark:text-gray-300 text-base leading-relaxed break-words overflow-wrap-anywhere"
                     preserveWhitespace={true}
                   />
                 ) : (
@@ -252,11 +265,11 @@ function ListingDetailsClient(props: Props) {
                             key={fieldValue.id}
                             className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
                           >
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300 sm:min-w-[120px] sm:flex-shrink-0">
                                 {fieldValue.customFieldDefinition.label}:
                               </span>
-                              <span className="text-gray-600 dark:text-gray-400">
+                              <span className="text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere min-w-0 flex-1">
                                 {renderCustomFieldValue(fieldValue)}
                               </span>
                             </div>
