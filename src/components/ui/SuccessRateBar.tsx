@@ -13,7 +13,6 @@ interface Props {
 /**
  * Get the color class for the success rate bar based on the rate
  * @param rate
- * @param voteCount
  */
 function getBarColor(rate: number) {
   if (rate >= 95) return 'bg-green-600' // Excellent - dark green
