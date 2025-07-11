@@ -31,13 +31,8 @@ Fixes # (issue)
 
 - [ ] My code follows the [style guidelines](../CONTRIBUTING.md#code-style) of this project
 - [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
 - [ ] I have checked that all checks (lint, typecheck, test) pass
-- [ ] I have checked that this PR does not contain sensitive data (secrets, credentials, etc)
 
 ## Notes for reviewers
 
