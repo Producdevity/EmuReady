@@ -1,6 +1,5 @@
-import { headers } from 'next/headers'
+import { verifyWebhook } from '@clerk/nextjs/webhooks'
 import { NextResponse } from 'next/server'
-import { Webhook } from 'svix'
 import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
 import { Role } from '@orm'
@@ -152,28 +151,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const headerPayload = await headers()
-  const svixId = headerPayload.get('svix-id')
-  const svixTimestamp = headerPayload.get('svix-timestamp')
-  const svixSignature = headerPayload.get('svix-signature')
-
-  if (!svixId || !svixTimestamp || !svixSignature) {
-    console.error('❌ Missing svix headers')
-    return NextResponse.json({ error: 'Missing svix headers' }, { status: 400 })
-  }
-
-  const payload = await request.text()
-
-  const wh = new Webhook(WEBHOOK_SECRET)
-
   let evt: ClerkWebhookEvent
-
   try {
-    evt = wh.verify(payload, {
-      'svix-id': svixId,
-      'svix-timestamp': svixTimestamp,
-      'svix-signature': svixSignature,
-    }) as ClerkWebhookEvent
+    evt = (await verifyWebhook(request, {
+      signingSecret: WEBHOOK_SECRET,
+    })) as ClerkWebhookEvent
   } catch (err) {
     console.error('❌ Error verifying webhook:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
