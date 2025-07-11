@@ -1,6 +1,6 @@
 {
   "name": "emuready",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "private": false,
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
@@ -9,7 +9,7 @@
     "analyze:turbo": "ANALYZE=true next build  --turbopack",
     "build": "next build",
     "build:turbo": "next build  --turbopack",
-    "check": "npm run lint:fix && npm run typecheck",
+    "check": "npm run lint:fix && npm run types",
     "clean": "rm -rf .next && rm -rf node_modules/.cache && rm -rf .eslintcache && rm -rf tsconfig.tsbuildinfo",
     "clean:all": "npm run clean && rm -rf node_modules",
     "db:backup": "./scripts/db-backup.sh",
@@ -30,7 +30,7 @@
     "lint:fix": "next lint --fix",
     "postinstall": "prisma generate",
     "prepare": "husky",
-    "prepare-deploy": "npm run format && npm run lint && npm run typecheck && npm run test && npm run build",
+    "prepare-deploy": "npm run format && npm run lint && npm run types && npm run test && npm run build",
     "shadcn": "tsx ./scripts/shadcn.ts",
     "start": "next start",
     "test": "vitest run",
@@ -41,7 +41,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:headless": "playwright test --reporter=list",
     "test:watch": "vitest watch",
-    "typecheck": "tsc --noEmit",
+    "types": "tsc --noEmit",
     "vercel:build": "prisma migrate deploy && next build"
   },
   "prisma": {

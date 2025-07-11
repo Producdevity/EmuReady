@@ -213,7 +213,7 @@ npm run dev
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix linting issues automatically
 - `npm run format` - Format code with Prettier
-- `npm run typecheck` - Check TypeScript types
+- `npm run types` - Check TypeScript types
 - `npm run check` - Run lint and typecheck together
 - `npm run prepare-deploy` - Full deployment prep (format, lint, typecheck, test, build)
 
