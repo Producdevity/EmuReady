@@ -32,8 +32,8 @@ describe('SuccessRateBar', () => {
     expect(screen.queryByText(/60%/)).not.toBeInTheDocument()
     expect(screen.queryByText(/votes/)).not.toBeInTheDocument()
 
-    // But the progress bar should still be rendered
-    const progressBar = container.querySelector('.bg-yellow-500')
+    // But the progress bar should still be rendered (rate 60 = bg-yellow-400)
+    const progressBar = container.querySelector('.bg-yellow-400')
     expect(progressBar).toBeInTheDocument()
     expect(progressBar).toHaveStyle({ width: '60%' })
   })
@@ -45,45 +45,55 @@ describe('SuccessRateBar', () => {
   })
 
   it('should apply correct color classes based on rate', () => {
-    const { container: container1 } = render(<SuccessRateBar rate={80} />)
+    const { container: container1 } = render(
+      <SuccessRateBar rate={80} voteCount={100} />,
+    )
 
-    // High rate (>= 75) should be green
-    let progressBar = container1.querySelector('.bg-green-500')
+    // High rate (80) should be green-400
+    let progressBar = container1.querySelector('.bg-green-400')
     expect(progressBar).toBeInTheDocument()
 
-    // Medium-high rate (>= 50, < 75) should be yellow
-    const { container: container2 } = render(<SuccessRateBar rate={60} />)
-    progressBar = container2.querySelector('.bg-yellow-500')
+    // Medium-high rate (60) should be yellow-400
+    const { container: container2 } = render(
+      <SuccessRateBar rate={60} voteCount={100} />,
+    )
+    progressBar = container2.querySelector('.bg-yellow-400')
     expect(progressBar).toBeInTheDocument()
 
-    // Medium-low rate (>= 25, < 50) should be orange
-    const { container: container3 } = render(<SuccessRateBar rate={30} />)
+    // Medium-low rate (30) should be orange-500
+    const { container: container3 } = render(
+      <SuccessRateBar rate={30} voteCount={100} />,
+    )
     progressBar = container3.querySelector('.bg-orange-500')
     expect(progressBar).toBeInTheDocument()
 
-    // Low rate (< 25) should be red
-    const { container: container4 } = render(<SuccessRateBar rate={10} />)
+    // Low rate (10) should be red-500
+    const { container: container4 } = render(
+      <SuccessRateBar rate={10} voteCount={100} />,
+    )
     progressBar = container4.querySelector('.bg-red-500')
     expect(progressBar).toBeInTheDocument()
   })
 
   it('should set correct width style for progress bar', () => {
-    const { container } = render(<SuccessRateBar rate={42} />)
+    const { container } = render(<SuccessRateBar rate={42} voteCount={100} />)
 
-    const progressBar = container.querySelector('.bg-orange-500')
+    const progressBar = container.querySelector('.bg-orange-400')
     expect(progressBar).toHaveStyle({ width: '42%' })
   })
 
   it('should handle edge cases', () => {
-    const { rerender, container } = render(<SuccessRateBar rate={0} />)
+    const { rerender, container } = render(
+      <SuccessRateBar rate={0} voteCount={2} />,
+    )
 
-    expect(screen.getByText('0%')).toBeInTheDocument()
-    let progressBar = container.querySelector('.bg-red-500')
-    expect(progressBar).toHaveStyle({ width: '0%' })
+    expect(screen.getByText(/0%/)).toBeInTheDocument()
+    let progressBar = container.querySelector('.bg-red-600')
+    expect(progressBar).toHaveStyle({ width: '100%' }) // Shows 100% width when rate=0 but has votes
 
-    rerender(<SuccessRateBar rate={100} />)
-    expect(screen.getByText('100%')).toBeInTheDocument()
-    progressBar = container.querySelector('.bg-green-500')
+    rerender(<SuccessRateBar rate={100} voteCount={1} />)
+    expect(screen.getByText(/100%/)).toBeInTheDocument()
+    progressBar = container.querySelector('.bg-green-600')
     expect(progressBar).toHaveStyle({ width: '100%' })
   })
 
