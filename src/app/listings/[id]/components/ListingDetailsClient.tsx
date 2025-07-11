@@ -130,7 +130,7 @@ function ListingDetailsClient(props: Props) {
               href={fieldValue.value}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:underline break-all"
             >
               {fieldValue.value}
             </a>
@@ -140,7 +140,11 @@ function ListingDetailsClient(props: Props) {
       case CustomFieldType.TEXT:
       case CustomFieldType.TEXTAREA:
       default:
-        return String(fieldValue.value ?? '')
+        return (
+          <span className="break-words overflow-wrap-anywhere">
+            {String(fieldValue.value ?? '')}
+          </span>
+        )
     }
   }
 
@@ -223,7 +227,7 @@ function ListingDetailsClient(props: Props) {
                 {props.listing?.notes ? (
                   <TranslatableMarkdown
                     content={props.listing.notes}
-                    className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
+                    className="text-gray-600 dark:text-gray-300 text-base leading-relaxed break-words overflow-wrap-anywhere"
                     preserveWhitespace={true}
                   />
                 ) : (
@@ -252,11 +256,11 @@ function ListingDetailsClient(props: Props) {
                             key={fieldValue.id}
                             className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
                           >
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300 sm:min-w-[120px] sm:flex-shrink-0">
                                 {fieldValue.customFieldDefinition.label}:
                               </span>
-                              <span className="text-gray-600 dark:text-gray-400">
+                              <span className="text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere min-w-0 flex-1">
                                 {renderCustomFieldValue(fieldValue)}
                               </span>
                             </div>
