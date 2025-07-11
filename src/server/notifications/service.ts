@@ -28,6 +28,8 @@ import type {
 export class NotificationService {
   private config: NotificationServiceConfig
   private emailService = createEmailService()
+  private listenersSetup = false
+  private systemRoles: Role[] = [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN]
 
   constructor(config: Partial<NotificationServiceConfig> = {}) {
     this.config = {
@@ -113,9 +115,7 @@ export class NotificationService {
       const notificationType = this.mapEventToNotificationType(
         eventData.eventType,
       )
-      if (!notificationType) {
-        return null
-      }
+      if (!notificationType) return null
 
       // Check user preferences
       const shouldSend = await this.shouldSendNotification(
@@ -123,9 +123,7 @@ export class NotificationService {
         notificationType,
         eventData,
       )
-      if (!shouldSend) {
-        return null
-      }
+      if (!shouldSend) return null
 
       // Check for duplicate notifications before creating
       const isDuplicate = await this.checkForDuplicateNotification(
@@ -525,9 +523,14 @@ export class NotificationService {
   }
 
   setupEventListeners(): void {
+    // Prevent duplicate listener registration
+    if (this.listenersSetup) return
+
     notificationEventEmitter.onNotificationEvent(
       this.handleNotificationEvent.bind(this),
     )
+
+    this.listenersSetup = true
   }
 
   private async handleNotificationEvent(
@@ -623,9 +626,7 @@ export class NotificationService {
         // For system events, only notify moderators and above
         const systemUsers = await prisma.user.findMany({
           where: {
-            role: {
-              in: [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN],
-            },
+            role: { in: this.systemRoles },
           },
           select: { id: true },
         })
