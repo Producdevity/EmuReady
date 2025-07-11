@@ -24,7 +24,7 @@
     "dev": "next dev --turbopack",
     "dev:debug": "DEBUG=next:* next dev --turbopack",
     "docs:generate": "tsx src/scripts/api/generate-api-docs.ts",
-    "docs:watch": "nodemon --watch src/server/api/routers/mobile.ts --watch src/schemas/mobile.ts --exec \"npm run docs:generate\"",
+    "docs:watch": "nodemon --watch src/server/api/routers/mobile --watch src/schemas/mobile.ts --exec \"npm run docs:generate\"",
     "format": "prettier --write .",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import * as mobileSchemas from '@/schemas/mobile'
@@ -220,7 +220,7 @@ function generateOpenAPISpec(endpoints: SwaggerEndpoint[]) {
       paths[endpoint.path] = {}
     }
 
-    const operation = {
+    ;(paths[endpoint.path] as Record<string, unknown>)[endpoint.method] = {
       summary: endpoint.summary,
       description: endpoint.description,
       tags: endpoint.tags,
@@ -229,9 +229,6 @@ function generateOpenAPISpec(endpoints: SwaggerEndpoint[]) {
       responses: endpoint.responses,
       security: endpoint.security,
     }
-
-    ;(paths[endpoint.path] as Record<string, unknown>)[endpoint.method] =
-      operation
   }
 
   // Get unique tags
@@ -306,6 +303,139 @@ function generateOpenAPISpec(endpoints: SwaggerEndpoint[]) {
   }
 }
 
+interface EndpointInfo {
+  path: string
+  method: string
+  summary: string
+  description?: string
+  tags?: string[]
+  parameters?: Array<{
+    name: string
+    schema: { type: string }
+    required: boolean
+    description?: string
+  }>
+  requestBody?: unknown
+  security?: unknown[]
+}
+
+function generateMarkdownDocs(
+  openApiSpec: ReturnType<typeof generateOpenAPISpec>,
+): string {
+  const { info, paths } = openApiSpec
+  const endpoints: EndpointInfo[] = Object.entries(paths).flatMap(
+    ([path, methods]) =>
+      Object.entries(methods as Record<string, unknown>).map(
+        ([method, operation]) => ({
+          path,
+          method: method.toUpperCase(),
+          ...(operation as Record<string, unknown>),
+        }),
+      ),
+  ) as EndpointInfo[]
+
+  const publicEndpoints = endpoints.filter(
+    (e) => !e.security || e.security.length === 0,
+  )
+  const protectedEndpoints = endpoints.filter(
+    (e) => e.security && e.security.length > 0,
+  )
+
+  const markdown = `# ${info.title}
+
+*Auto-generated on: ${new Date().toISOString()}*
+
+## Summary
+- **Total Endpoints**: ${endpoints.length}
+- **Public Endpoints**: ${publicEndpoints.length}
+- **Protected Endpoints**: ${protectedEndpoints.length}
+- **OpenAPI Version**: ${openApiSpec.openapi}
+
+## Base URL
+\`${openApiSpec.servers[0].url}\`
+
+## Authentication
+Protected endpoints require Bearer token authentication using Clerk JWT.
+
+## Interactive Documentation
+- **Swagger UI**: [/docs/api/swagger](/docs/api/swagger)
+- **OpenAPI JSON**: [/api-docs/mobile-openapi.json](/api-docs/mobile-openapi.json)
+
+## Endpoints
+
+### Public Endpoints (No Authentication Required)
+
+${publicEndpoints
+  .map(
+    (endpoint, index) => `
+#### ${index + 1}. **${endpoint.path.split('.').pop()}**
+- **Method**: ${endpoint.method}
+- **Path**: \`${endpoint.path}\`
+- **Description**: ${endpoint.summary}
+${endpoint.tags ? `- **Tags**: ${endpoint.tags.join(', ')}` : ''}
+${
+  endpoint.parameters && endpoint.parameters.length > 0
+    ? `- **Parameters**:
+${endpoint.parameters.map((p) => `  - \`${p.name}\` (${p.schema.type}${p.required ? ', required' : ''}): ${p.description || ''}`).join('\n')}`
+    : ''
+}
+${endpoint.requestBody ? `- **Request Body**: JSON object required` : ''}
+`,
+  )
+  .join('')}
+
+### Protected Endpoints (Authentication Required)
+
+${protectedEndpoints
+  .map(
+    (endpoint, index) => `
+#### ${index + 1}. **${endpoint.path.split('.').pop()}**
+- **Method**: ${endpoint.method}
+- **Path**: \`${endpoint.path}\`
+- **Description**: ${endpoint.summary}
+${endpoint.tags ? `- **Tags**: ${endpoint.tags.join(', ')}` : ''}
+${
+  endpoint.parameters && endpoint.parameters.length > 0
+    ? `- **Parameters**:
+${endpoint.parameters.map((p) => `  - \`${p.name}\` (${p.schema.type}${p.required ? ', required' : ''}): ${p.description || ''}`).join('\n')}`
+    : ''
+}
+${endpoint.requestBody ? `- **Request Body**: JSON object required` : ''}
+`,
+  )
+  .join('')}
+
+## Error Handling
+
+All endpoints return consistent error responses:
+
+\`\`\`json
+{
+  "error": {
+    "message": "Error description",
+    "code": "ERROR_CODE",
+    "data": {
+      "code": "TRPC_ERROR_CODE",
+      "httpStatus": 400
+    }
+  }
+}
+\`\`\`
+
+Common error codes:
+- \`UNAUTHORIZED\`: Missing or invalid authentication
+- \`FORBIDDEN\`: User lacks permission
+- \`NOT_FOUND\`: Resource not found
+- \`BAD_REQUEST\`: Invalid input parameters
+- \`INTERNAL_SERVER_ERROR\`: Server error
+
+---
+*This documentation is automatically generated from tRPC procedures and OpenAPI specifications.*
+`
+
+  return markdown
+}
+
 async function main() {
   console.log('🔍 Scanning mobile router files...')
 
@@ -337,20 +467,29 @@ async function main() {
 
   // Create output directory
   const outputDir = join(process.cwd(), 'public/api-docs')
-  const outputFile = join(outputDir, 'mobile-openapi.json')
+  const docsDir = join(process.cwd(), 'docs')
+  const jsonOutputFile = join(outputDir, 'mobile-openapi.json')
+  const mdOutputFile = join(docsDir, 'MOBILE_API.md')
 
   try {
     const { mkdirSync } = await import('fs')
     mkdirSync(outputDir, { recursive: true })
+    mkdirSync(docsDir, { recursive: true })
   } catch {
     // Directory might already exist
   }
 
   // Write OpenAPI spec
-  writeFileSync(outputFile, JSON.stringify(openApiSpec, null, 2))
+  writeFileSync(jsonOutputFile, JSON.stringify(openApiSpec, null, 2))
 
-  console.log(`\n✅ OpenAPI specification generated successfully!`)
-  console.log(`📄 Output: ${outputFile}`)
+  // Generate and write markdown documentation
+  console.log('\n📋 Generating Markdown documentation...')
+  const markdownDocs = generateMarkdownDocs(openApiSpec)
+  writeFileSync(mdOutputFile, markdownDocs)
+
+  console.log(`\n✅ API documentation generated successfully!`)
+  console.log(`📄 OpenAPI JSON: ${jsonOutputFile}`)
+  console.log(`📄 Markdown docs: ${mdOutputFile}`)
   console.log(`🌐 Available at: /api-docs/mobile-openapi.json`)
   console.log(`\n📊 Summary:`)
   console.log(`  - Routers: ${routerInfos.length}`)
