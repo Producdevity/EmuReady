@@ -18,14 +18,23 @@ export const mobileGamesRouter = createMobileTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { search, systemId, limit = 20 } = input || {}
 
-      const baseWhere = {
+      const whereClause: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
       }
 
-      if (systemId) Object.assign(baseWhere, { systemId })
+      if (systemId) {
+        whereClause.systemId = systemId
+      }
 
-      let games = await ctx.prisma.game.findMany({
-        where: baseWhere,
+      if (search) {
+        whereClause.title = {
+          contains: search,
+          mode: 'insensitive',
+        }
+      }
+
+      return await ctx.prisma.game.findMany({
+        where: whereClause,
         include: {
           system: { select: { id: true, name: true, key: true } },
           _count: {
@@ -35,19 +44,8 @@ export const mobileGamesRouter = createMobileTRPCRouter({
           },
         },
         orderBy: [{ listings: { _count: 'desc' } }, { title: 'asc' }],
-        take: search ? undefined : limit,
+        take: limit,
       })
-
-      // Filter by search if provided
-      if (search) {
-        games = games
-          .filter((game) =>
-            game.title.toLowerCase().includes(search.toLowerCase()),
-          )
-          .slice(0, limit)
-      }
-
-      return games
     }),
 
   /**
@@ -73,9 +71,13 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   searchGames: mobilePublicProcedure
     .input(SearchGamesSchema)
     .query(async ({ ctx, input }) => {
-      let games = await ctx.prisma.game.findMany({
+      return await ctx.prisma.game.findMany({
         where: {
           status: ApprovalStatus.APPROVED,
+          title: {
+            contains: input.query,
+            mode: 'insensitive',
+          },
         },
         include: {
           system: { select: { id: true, name: true, key: true } },
@@ -85,17 +87,9 @@ export const mobileGamesRouter = createMobileTRPCRouter({
             },
           },
         },
-        take: 100, // Get more to filter from
+        orderBy: [{ listings: { _count: 'desc' } }, { title: 'asc' }],
+        take: 20,
       })
-
-      // Filter by search
-      games = games
-        .filter((game) =>
-          game.title.toLowerCase().includes(input.query.toLowerCase()),
-        )
-        .slice(0, 20)
-
-      return games
     }),
 
   /**

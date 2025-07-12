@@ -14,7 +14,24 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { systemId, search, limit } = input
 
-      let emulators = await ctx.prisma.emulator.findMany({
+      const whereClause: Record<string, unknown> = {}
+
+      // Add search filtering at database level
+      if (search) {
+        whereClause.name = { contains: search, mode: 'insensitive' }
+      }
+
+      // Add system filtering at database level
+      if (systemId) {
+        whereClause.systems = {
+          some: {
+            id: systemId,
+          },
+        }
+      }
+
+      return await ctx.prisma.emulator.findMany({
+        where: whereClause,
         include: {
           systems: { select: { id: true, name: true, key: true } },
           _count: {
@@ -24,25 +41,8 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
           },
         },
         orderBy: [{ listings: { _count: 'desc' } }, { name: 'asc' }],
-        take: search || systemId ? undefined : limit,
+        take: limit,
       })
-
-      // Filter by search and/or systemId
-      if (search || systemId) {
-        emulators = emulators
-          .filter((emulator) => {
-            const matchesSearch =
-              !search ||
-              emulator.name.toLowerCase().includes(search.toLowerCase())
-            const matchesSystem =
-              !systemId ||
-              emulator.systems.some((system) => system.id === systemId)
-            return matchesSearch && matchesSystem
-          })
-          .slice(0, limit)
-      }
-
-      return emulators
     }),
 
   /**

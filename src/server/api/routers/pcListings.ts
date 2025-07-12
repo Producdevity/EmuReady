@@ -60,8 +60,7 @@ import {
   hasPermission,
   isModerator,
 } from '@/utils/permissions'
-import { ApprovalStatus, Role, ReportStatus } from '@orm'
-import type { Prisma } from '@orm'
+import { Prisma, ApprovalStatus, Role, ReportStatus } from '@orm'
 
 export const pcListingsRouter = createTRPCRouter({
   // PC Listing procedures
@@ -86,7 +85,7 @@ export const pcListingsRouter = createTRPCRouter({
         myListings = false,
       } = input
 
-      const mode: Prisma.QueryMode = 'insensitive'
+      const mode = Prisma.QueryMode.insensitive
       const offset = (page - 1) * limit
       const canSeeBannedUsers = ctx.session?.user
         ? isModerator(ctx.session.user.role)

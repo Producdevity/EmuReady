@@ -16,6 +16,10 @@ export const GetEmulatorsSchema = z
 
 export const GetEmulatorByIdSchema = z.object({ id: z.string().uuid() })
 
+export const GetVerifiedDevelopersForEmulatorSchema = z.object({
+  emulatorId: z.string().uuid(),
+})
+
 export const CreateEmulatorSchema = z.object({
   name: z.string().min(1),
   logo: z.string().optional(),

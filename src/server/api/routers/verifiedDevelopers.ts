@@ -1,33 +1,22 @@
-import { z } from 'zod'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
+  GetVerifiedDevelopersSchema,
   IsVerifiedDeveloperSchema,
   RemoveVerifiedDeveloperSchema,
+  UpdateVerifiedDeveloperSchema,
   VerifyDeveloperSchema,
 } from '@/schemas/verifiedDeveloper'
 import {
-  adminProcedure,
   createTRPCRouter,
+  adminProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
-import type { Prisma } from '@orm'
+import { Role, Prisma } from '@orm'
 
 export const verifiedDevelopersRouter = createTRPCRouter({
   getVerifiedDevelopers: adminProcedure
-    .input(
-      z
-        .object({
-          emulatorId: z.string().optional(),
-          userId: z.string().optional(),
-          limit: z.number().min(1).max(100).default(50),
-          page: z.number().min(1).default(1),
-          search: z.string().optional(),
-          emulatorFilter: z.string().optional(),
-        })
-        .optional(),
-    )
+    .input(GetVerifiedDevelopersSchema)
     .query(async ({ ctx, input }) => {
       const { emulatorId, userId, limit, page, search, emulatorFilter } =
         input ?? {}
@@ -35,6 +24,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       const actualPage = page ?? 1
       const skip = (actualPage - 1) * actualLimit
 
+      const mode = Prisma.QueryMode.insensitive
       const where: Prisma.VerifiedDeveloperWhereInput = {
         ...(emulatorId && { emulatorId }),
         ...(userId && { userId }),
@@ -48,19 +38,13 @@ export const verifiedDevelopersRouter = createTRPCRouter({
           {
             user: {
               OR: [
-                { name: { contains: searchTerm, mode: 'insensitive' } },
-                { email: { contains: searchTerm, mode: 'insensitive' } },
+                { name: { contains: searchTerm, mode } },
+                { email: { contains: searchTerm, mode } },
               ],
             },
           },
-          {
-            emulator: {
-              name: { contains: searchTerm, mode: 'insensitive' },
-            },
-          },
-          {
-            notes: { contains: searchTerm, mode: 'insensitive' },
-          },
+          { emulator: { name: { contains: searchTerm, mode } } },
+          { notes: { contains: searchTerm, mode } },
         ]
       }
 
@@ -126,12 +110,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       if (!emulator) return ResourceError.emulator.notFound()
 
       const existing = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId,
-            emulatorId,
-          },
-        },
+        where: { userId_emulatorId: { userId, emulatorId } },
       })
 
       if (existing) {
@@ -168,9 +147,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
         },
       })
 
-      if (!verifiedDeveloper) {
-        return AppError.notFound('Verified developer record not found')
-      }
+      if (!verifiedDeveloper) return ResourceError.verifiedDeveloper.notFound()
 
       await ctx.prisma.verifiedDeveloper.delete({ where: { id: input.id } })
 
@@ -205,13 +182,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
   }),
 
   updateVerifiedDeveloper: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        emulatorId: z.string(),
-        notes: z.string().optional(),
-      }),
-    )
+    .input(UpdateVerifiedDeveloperSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, emulatorId, notes } = input
 
@@ -222,9 +193,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
         },
       })
 
-      if (!verifiedDeveloper) {
-        return AppError.notFound('Verified developer record not found')
-      }
+      if (!verifiedDeveloper) return ResourceError.verifiedDeveloper.notFound()
 
       // Re-check user role when updating (in case their role was downgraded)
       if (!hasPermission(verifiedDeveloper.user.role, Role.DEVELOPER)) {
@@ -244,10 +213,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       if (emulatorId !== verifiedDeveloper.emulatorId) {
         const existing = await ctx.prisma.verifiedDeveloper.findUnique({
           where: {
-            userId_emulatorId: {
-              userId: verifiedDeveloper.userId,
-              emulatorId,
-            },
+            userId_emulatorId: { userId: verifiedDeveloper.userId, emulatorId },
           },
         })
 

@@ -4,7 +4,7 @@ import {
   createMobileTRPCRouter,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
-import type { Prisma } from '@orm'
+import { Prisma } from '@orm'
 
 export const mobileCpusRouter = createMobileTRPCRouter({
   /**
@@ -25,7 +25,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
 
       // Calculate actual offset based on page or use provided offset
       const actualOffset = page ? (page - 1) * limit : offset
-      const mode: Prisma.QueryMode = 'insensitive'
+      const mode = Prisma.QueryMode.insensitive
 
       // Build where clause for filtering
       const where: Prisma.CpuWhereInput = {
@@ -91,9 +91,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
       const [cpus, total] = await Promise.all([
         ctx.prisma.cpu.findMany({
           where,
-          include: {
-            brand: { select: { id: true, name: true } },
-          },
+          include: { brand: { select: { id: true, name: true } } },
           orderBy,
           skip: actualOffset,
           take: limit,

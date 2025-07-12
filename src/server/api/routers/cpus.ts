@@ -12,7 +12,7 @@ import {
   moderatorProcedure,
   adminProcedure,
 } from '@/server/api/trpc'
-import type { Prisma } from '@orm'
+import { Prisma } from '@orm'
 
 export const cpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
@@ -28,7 +28,7 @@ export const cpusRouter = createTRPCRouter({
 
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
-    const mode: Prisma.QueryMode = 'insensitive'
+    const mode = Prisma.QueryMode.insensitive
 
     // Build where clause for filtering
     const where: Prisma.CpuWhereInput = {
@@ -91,19 +91,16 @@ export const cpusRouter = createTRPCRouter({
       orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
     }
 
-    const total = await ctx.prisma.cpu.count({ where })
-
-    // Get CPUs with pagination
-    const cpus = await ctx.prisma.cpu.findMany({
-      where,
-      include: {
-        brand: true,
-        _count: { select: { pcListings: true } },
-      },
-      orderBy,
-      skip: actualOffset,
-      take: limit,
-    })
+    const [cpus, total] = await Promise.all([
+      ctx.prisma.cpu.findMany({
+        where,
+        include: { brand: true, _count: { select: { pcListings: true } } },
+        orderBy,
+        skip: actualOffset,
+        take: limit,
+      }),
+      ctx.prisma.cpu.count({ where }),
+    ])
 
     return {
       cpus,

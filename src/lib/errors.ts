@@ -397,4 +397,8 @@ export class ResourceError {
   static verification = {
     notFound: () => AppError.notFound('Verification'),
   }
+
+  static verifiedDeveloper = {
+    notFound: () => AppError.notFound('Verified Developer'),
+  }
 }

@@ -1,10 +1,10 @@
-import { z } from 'zod'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateEmulatorSchema,
   DeleteEmulatorSchema,
   GetEmulatorByIdSchema,
   GetEmulatorsSchema,
+  GetVerifiedDevelopersForEmulatorSchema,
   UpdateEmulatorSchema,
   UpdateSupportedSystemsSchema,
 } from '@/schemas/emulator'
@@ -117,7 +117,7 @@ export const emulatorsRouter = createTRPCRouter({
     }),
 
   getVerifiedDeveloper: protectedProcedure
-    .input(z.object({ emulatorId: z.string().uuid() }))
+    .input(GetVerifiedDevelopersForEmulatorSchema)
     .query(
       async ({ ctx, input }) =>
         await ctx.prisma.verifiedDeveloper.findUnique({
