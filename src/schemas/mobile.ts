@@ -99,11 +99,13 @@ export const GetListingsSchema = z.object({
   search: z.string().optional(),
 })
 
-export const GetGamesSchema = z.object({
-  search: z.string().optional(),
-  systemId: z.string().uuid().optional(),
-  limit: z.number().min(1).max(50).default(20),
-})
+export const GetGamesSchema = z
+  .object({
+    search: z.string().optional(),
+    systemId: z.string().uuid().optional(),
+    limit: z.number().min(1).max(50).default(20),
+  })
+  .optional()
 
 export const GetDevicesSchema = z.object({
   search: z.string().optional(),

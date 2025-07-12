@@ -16,7 +16,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   getGames: mobilePublicProcedure
     .input(GetGamesSchema)
     .query(async ({ ctx, input }) => {
-      const { search, systemId, limit } = input
+      const { search, systemId, limit = 20 } = input || {}
 
       const baseWhere = {
         status: ApprovalStatus.APPROVED,
