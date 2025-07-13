@@ -1,5 +1,6 @@
 'use client'
 
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -333,6 +334,10 @@ function AddListingPage() {
   })
 
   const onSubmit = async (data: ListingFormValues) => {
+    if (!currentUserQuery.data?.id) {
+      return toast.error('Yu must be signed in to create a listing.')
+    }
+
     // Get CAPTCHA token if enabled
     let recaptchaToken: string | null = null
     if (isCaptchaEnabled) {
@@ -359,6 +364,37 @@ function AddListingPage() {
   }
 
   if (!mounted) return null
+
+  if (!currentUserQuery.data?.id) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Who this?</h1>
+          <p className="text-gray-600 mb-6">
+            Please sign in to create a new listing.
+          </p>
+
+          <div className="mt-4">
+            <SignInButton mode="modal">
+              <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+                <span className="block text-gray-900 dark:text-white font-medium">
+                  Login
+                </span>
+              </p>
+            </SignInButton>
+
+            <SignUpButton mode="modal">
+              <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
+                <span className="block text-gray-900 dark:text-white font-medium">
+                  Sign Up
+                </span>
+              </p>
+            </SignUpButton>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">

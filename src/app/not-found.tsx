@@ -79,7 +79,7 @@ export default function NotFound() {
           <SignUpButton mode="modal">
             <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
               <span className="block text-gray-900 dark:text-white font-medium">
-                Register
+                Sign Up
               </span>
             </p>
           </SignUpButton>
