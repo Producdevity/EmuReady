@@ -10,6 +10,9 @@ import {
   UpdateGameSchema,
   BulkApproveGamesSchema,
   BulkRejectGamesSchema,
+  FindSwitchTitleIdSchema,
+  GetBestSwitchTitleIdSchema,
+  GetSwitchGamesStatsSchema,
 } from '@/schemas/game'
 import {
   adminProcedure,
@@ -20,6 +23,11 @@ import {
 } from '@/server/api/trpc'
 import { gameStatsCache } from '@/server/utils/cache'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
+import {
+  findTitleIdForGameName,
+  getBestTitleIdMatch,
+  getSwitchGamesStats,
+} from '@/server/utils/switchGameSearch'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
@@ -772,5 +780,59 @@ export const gamesRouter = createTRPCRouter({
           message: `Successfully rejected ${gamesToReject.length} game(s)`,
         }
       })
+    }),
+
+  // Nintendo Switch Title ID lookup endpoints
+  findSwitchTitleId: publicProcedure
+    .input(FindSwitchTitleIdSchema)
+    .query(async ({ input }) => {
+      const { gameName, maxResults } = input
+
+      try {
+        const results = await findTitleIdForGameName(gameName, maxResults)
+        return {
+          success: true,
+          results,
+          query: gameName,
+          totalResults: results.length,
+        }
+      } catch (error) {
+        console.error('Error finding Switch title ID:', error)
+        return AppError.internalError('Failed to search for Switch title ID')
+      }
+    }),
+
+  getBestSwitchTitleId: publicProcedure
+    .input(GetBestSwitchTitleIdSchema)
+    .query(async ({ input }) => {
+      const { gameName } = input
+
+      try {
+        const titleId = await getBestTitleIdMatch(gameName)
+        return {
+          success: true,
+          titleId,
+          query: gameName,
+          found: titleId !== null,
+        }
+      } catch (error) {
+        console.error('Error getting Switch title ID match:', error)
+        return AppError.internalError('Failed to find Switch title ID match')
+      }
+    }),
+
+  getSwitchGamesStats: publicProcedure
+    .input(GetSwitchGamesStatsSchema)
+    .query(async () => {
+      try {
+        const stats = await getSwitchGamesStats()
+        return {
+          success: true,
+          ...stats,
+        }
+      } catch (error) {
+        console.error('Error getting Switch games stats:', error)
+        return AppError.internalError('Failed to get Switch games statistics')
+      }
     }),
 })

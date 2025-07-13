@@ -105,3 +105,15 @@ export const GetPendingGamesSchema = z
     sortDirection: SortDirection.optional(),
   })
   .optional()
+
+// Nintendo Switch Title ID lookup schemas
+export const FindSwitchTitleIdSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  maxResults: z.number().min(1).max(20).default(5),
+})
+
+export const GetBestSwitchTitleIdSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+})
+
+export const GetSwitchGamesStatsSchema = z.object({}).optional()

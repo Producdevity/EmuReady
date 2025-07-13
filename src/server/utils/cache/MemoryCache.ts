@@ -7,6 +7,7 @@ interface CacheEntry<T> {
   value: T
   expires: number
   lastAccessed: number
+  createdAt: number
 }
 
 interface CacheStats {
@@ -77,6 +78,7 @@ class MemoryCache<T> {
       value,
       expires: now + ttl,
       lastAccessed: now + this.entryCounter++ * 0.001, // Add microsecond precision
+      createdAt: now,
     }
 
     const isExistingKey = this.cache.has(key)
@@ -141,6 +143,16 @@ class MemoryCache<T> {
 
   getSize(): number {
     return this.cache.size
+  }
+
+  getCreatedAt(key: string): Date | null {
+    const entry = this.cache.get(key)
+    if (!entry) return null
+
+    // Update last accessed time
+    entry.lastAccessed = Date.now()
+
+    return new Date(entry.createdAt)
   }
 
   destroy(): void {

@@ -16,6 +16,17 @@ export const SearchGamesSchema = z.object({
   query: z.string().min(1),
 })
 
+export const FindSwitchTitleIdMobileSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  maxResults: z.number().min(1).max(20).default(5),
+})
+
+export const GetBestSwitchTitleIdMobileSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+})
+
+export const GetSwitchGamesStatsMobileSchema = z.object({}).optional()
+
 export const GetListingCommentsSchema = z.object({
   listingId: z.string().uuid(),
 })
