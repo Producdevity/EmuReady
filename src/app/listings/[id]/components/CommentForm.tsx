@@ -133,7 +133,7 @@ function CommentForm(props: Props) {
         maxLength={1000}
         className={cn(props.isReply && 'text-sm')}
       />
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 mt-2">
         {(!!props.isEditing || !!props.isReply) && props.onCancelEdit && (
           <button
             type="button"

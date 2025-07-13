@@ -770,6 +770,7 @@ function AddPcListingPage() {
                   rows={4}
                   label="Notes"
                   id="notes"
+                  maxLength={5000}
                   error={form.formState.errors.notes?.message}
                 />
               )}

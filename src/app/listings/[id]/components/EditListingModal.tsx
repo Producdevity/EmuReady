@@ -266,6 +266,7 @@ function EditListingModal(props: Props) {
                         placeholder="Enter your notes about this listing..."
                         rows={4}
                         label="Notes (Optional)"
+                        maxLength={5000}
                         id="notes"
                         error={formState.errors.notes?.message}
                       />

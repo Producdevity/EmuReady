@@ -6,7 +6,7 @@ export const CreateListingSchema = z.object({
   deviceId: z.string().uuid(),
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
-  notes: z.string().optional(),
+  notes: z.string().max(5000).optional(),
   customFieldValues: z
     .array(
       z.object({
@@ -188,7 +188,7 @@ export const UpdateListingAdminSchema = z.object({
 export const UpdateListingUserSchema = z.object({
   id: z.string().uuid(),
   performanceId: z.number(),
-  notes: z.string().nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
   customFieldValues: z
     .array(
       z.object({

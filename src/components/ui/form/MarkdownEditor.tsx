@@ -13,10 +13,21 @@ import {
   Eye,
   EyeOff,
   HelpCircle,
+  GripHorizontal,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
-import { useState, useRef, useCallback } from 'react'
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  type ComponentType,
+  type TouchEvent as ReactTouchEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react'
+import { MarkdownRenderer } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { MarkdownRenderer } from './MarkdownRenderer'
 
 interface Props {
   onChange: (value: string) => void
@@ -29,14 +40,92 @@ interface Props {
   label?: string
   error?: string
   id?: string
+  minHeight?: number
+  maxHeight?: number
 }
 
 export function MarkdownEditor(props: Props) {
   const [showPreview, setShowPreview] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [height, setHeight] = useState(props.minHeight || 120)
+  const [isResizing, setIsResizing] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const resizeStartRef = useRef<{ startY: number; startHeight: number } | null>(
+    null,
+  )
 
   const { value, onChange } = props
+
+  const minHeight = props.minHeight || 120
+  const maxHeight = props.maxHeight || Infinity
+
+  // Mouse/touch event handlers for resizing
+  const handleResizeStart = useCallback(
+    (ev: ReactMouseEvent | ReactTouchEvent) => {
+      ev.preventDefault()
+      setIsResizing(true)
+
+      const clientY = 'touches' in ev ? ev.touches[0]?.clientY : ev.clientY
+      if (clientY) {
+        resizeStartRef.current = { startY: clientY, startHeight: height }
+      }
+    },
+    [height],
+  )
+
+  const handleResizeMove = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!isResizing || !resizeStartRef.current) return
+
+      const clientY = 'touches' in e ? e.touches[0]?.clientY : e.clientY
+      if (!clientY) return
+
+      const deltaY = clientY - resizeStartRef.current.startY
+      const newHeight = Math.min(
+        Math.max(resizeStartRef.current.startHeight + deltaY, minHeight),
+        maxHeight,
+      )
+
+      setHeight(newHeight)
+    },
+    [isResizing, minHeight, maxHeight],
+  )
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false)
+    resizeStartRef.current = null
+  }, [])
+
+  // Mobile-friendly expand/collapse
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded(!isExpanded)
+    const targetHeight = isExpanded ? minHeight : Math.min(600, maxHeight)
+    setHeight(targetHeight)
+  }, [isExpanded, minHeight, maxHeight])
+
+  // Effect to handle mouse/touch events during resize
+  useEffect(() => {
+    if (isResizing) {
+      const handleMouseMove = (e: MouseEvent) => handleResizeMove(e)
+      const handleMouseUp = () => handleResizeEnd()
+      const handleTouchMove = (e: TouchEvent) => handleResizeMove(e)
+      const handleTouchEnd = () => handleResizeEnd()
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchmove', handleTouchMove)
+      document.addEventListener('touchend', handleTouchEnd)
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
+      }
+    }
+  }, [isResizing, handleResizeMove, handleResizeEnd])
 
   // Helper function to insert text at cursor position
   const insertText = useCallback(
@@ -85,7 +174,7 @@ export function MarkdownEditor(props: Props) {
     title,
   }: {
     onClick: () => void
-    icon: React.ComponentType<{ className?: string }>
+    icon: ComponentType<{ className?: string }>
     title: string
   }) => (
     <button
@@ -165,6 +254,25 @@ export function MarkdownEditor(props: Props) {
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Mobile expand/collapse button */}
+            <button
+              type="button"
+              onClick={handleToggleExpand}
+              className={cn(
+                'inline-flex items-center gap-1 p-1 text-xs rounded-md transition-colors md:hidden',
+                'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200',
+                'hover:bg-gray-100 dark:hover:bg-gray-700',
+              )}
+              title={isExpanded ? 'Collapse editor' : 'Expand editor'}
+              disabled={props.disabled}
+            >
+              {isExpanded ? (
+                <Minimize2 className="w-3 h-3" />
+              ) : (
+                <Maximize2 className="w-3 h-3" />
+              )}
+            </button>
+
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
@@ -199,9 +307,16 @@ export function MarkdownEditor(props: Props) {
         </div>
 
         {/* Content Area */}
-        <div className="relative">
+        <div
+          ref={containerRef}
+          className="relative"
+          style={{ height: `${height}px` }}
+        >
           {showPreview ? (
-            <div className="p-3 min-h-[120px] max-h-[400px] overflow-y-auto">
+            <div
+              className="p-3 h-full overflow-y-auto"
+              style={{ height: `${height}px` }}
+            >
               {props.value?.trim() ? (
                 <MarkdownRenderer content={props.value} />
               ) : (
@@ -217,19 +332,40 @@ export function MarkdownEditor(props: Props) {
               value={props.value || ''}
               onChange={(e) => props.onChange(e.target.value)}
               placeholder={props.placeholder || 'Write your comment...'}
-              rows={props.rows || 4}
               maxLength={props.maxLength}
               disabled={props.disabled}
               className={cn(
-                'w-full p-3 resize-none border-0 focus:outline-none',
+                'w-full h-full p-3 resize-none border-0 focus:outline-none',
                 'bg-transparent text-gray-900 dark:text-gray-100',
                 'placeholder:text-gray-500 dark:placeholder:text-gray-400',
                 'disabled:cursor-not-allowed',
                 props.className,
               )}
-              style={{ minHeight: '120px', maxHeight: '400px' }}
+              style={{ height: `${height}px` }}
             />
           )}
+        </div>
+
+        {/* Resize Handle - Hidden on mobile, uses expand/collapse instead */}
+        <div
+          className={cn(
+            'hidden md:flex items-center justify-center h-4 cursor-ns-resize',
+            'bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700',
+            'hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors',
+            'group',
+            isResizing && 'bg-blue-50 dark:bg-blue-900',
+          )}
+          onMouseDown={handleResizeStart}
+          onTouchStart={handleResizeStart}
+          title="Drag to resize"
+        >
+          <GripHorizontal
+            className={cn(
+              'w-4 h-4 text-gray-400 dark:text-gray-600',
+              'group-hover:text-gray-600 dark:group-hover:text-gray-400',
+              isResizing && 'text-blue-500',
+            )}
+          />
         </div>
       </div>
 
@@ -293,9 +429,11 @@ export function MarkdownEditor(props: Props) {
           <span
             className={cn(
               'text-xs',
-              (props.value || '').length > props.maxLength * 0.9
-                ? 'text-red-500'
-                : 'text-gray-500 dark:text-gray-400',
+              (props.value || '').length > props.maxLength
+                ? 'text-red-500 font-medium'
+                : (props.value || '').length > props.maxLength * 0.9
+                  ? 'text-orange-500'
+                  : 'text-gray-500 dark:text-gray-400',
             )}
           >
             {(props.value || '').length}/{props.maxLength}

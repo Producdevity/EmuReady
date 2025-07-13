@@ -2,8 +2,9 @@
 
 import { useUser } from '@clerk/nextjs'
 import { Send, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui'
+import { MarkdownEditor } from '@/components/ui/form'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
@@ -21,25 +22,16 @@ interface Props {
 function PcCommentForm(props: Props) {
   const { user } = useUser()
   const [content, setContent] = useState(props.editingComment?.content ?? '')
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const createCommentMutation = api.pcListings.createComment.useMutation()
   const updateCommentMutation = api.pcListings.updateComment.useMutation()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: FormEvent) => {
+    ev.preventDefault()
 
-    if (!content.trim()) {
-      toast.error('Please enter a comment')
-      return
-    }
+    if (!user?.id) return toast.error('Please sign in to comment')
 
-    if (!user?.id) {
-      toast.error('Please sign in to comment')
-      return
-    }
-
-    setIsSubmitting(true)
+    if (!content.trim()) return toast.error('Please enter a comment')
 
     try {
       if (props.editingComment) {
@@ -64,8 +56,6 @@ function PcCommentForm(props: Props) {
     } catch (error) {
       console.error('Error submitting comment:', error)
       toast.error('Failed to submit comment. Please try again.')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -84,26 +74,22 @@ function PcCommentForm(props: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={
-            props.parentId
-              ? 'Write your reply...'
-              : 'Share your thoughts about this PC configuration...'
-          }
-          className="w-full min-h-[100px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-          disabled={isSubmitting}
-          required
-        />
-      </div>
+      <MarkdownEditor
+        value={content}
+        onChange={setContent}
+        placeholder={
+          props.parentId
+            ? 'Write your reply...'
+            : 'Share your thoughts about this PC configuration...'
+        }
+        rows={props.parentId ? 2 : 3}
+        maxLength={2000}
+        disabled={
+          createCommentMutation.isPending || updateCommentMutation.isPending
+        }
+      />
 
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500 dark:text-gray-400">
-          {content.length}/2000 characters
-        </div>
-
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           {props.onCancel && (
             <Button
@@ -111,7 +97,10 @@ function PcCommentForm(props: Props) {
               variant="outline"
               size="sm"
               onClick={handleCancel}
-              disabled={isSubmitting}
+              disabled={
+                createCommentMutation.isPending ||
+                updateCommentMutation.isPending
+              }
             >
               <X size={16} />
               Cancel
@@ -121,17 +110,23 @@ function PcCommentForm(props: Props) {
           <Button
             type="submit"
             size="sm"
-            disabled={isSubmitting || !content.trim() || content.length > 2000}
+            disabled={
+              createCommentMutation.isPending ||
+              updateCommentMutation.isPending ||
+              !content.trim() ||
+              content.length > 2000
+            }
+            isLoading={
+              createCommentMutation.isPending || updateCommentMutation.isPending
+            }
             className="flex items-center gap-2"
           >
             <Send size={16} />
-            {isSubmitting
-              ? 'Posting...'
-              : props.editingComment
-                ? 'Update'
-                : props.parentId
-                  ? 'Reply'
-                  : 'Post Comment'}
+            {props.editingComment
+              ? 'Update'
+              : props.parentId
+                ? 'Reply'
+                : 'Post Comment'}
           </Button>
         </div>
       </div>

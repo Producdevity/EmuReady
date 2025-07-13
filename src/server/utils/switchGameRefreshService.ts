@@ -69,9 +69,7 @@ export class SwitchGameRefreshService {
   }
 
   private startRefreshTimer(): void {
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer)
-    }
+    if (this.refreshTimer) clearInterval(this.refreshTimer)
 
     this.refreshTimer = setInterval(() => {
       this.performRefresh().catch((error) => {

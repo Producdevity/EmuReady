@@ -1,10 +1,10 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-07-12T19:12:38.585Z*
+*Auto-generated on: 2025-07-13T15:02:17.199Z*
 
 ## Summary
-- **Total Endpoints**: 90
-- **Public Endpoints**: 51
+- **Total Endpoints**: 93
+- **Public Endpoints**: 54
 - **Protected Endpoints**: 39
 - **OpenAPI Version**: 3.0.0
 
@@ -184,203 +184,224 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Tags**: games
 
 
-#### 23. **getAppStats**
+#### 23. **findSwitchTitleId**
+- **Method**: GET
+- **Path**: `/api/mobile/trpc/games.findSwitchTitleId`
+- **Description**: Find Nintendo Switch title IDs by game name (fuzzy search)
+- **Tags**: games
+
+
+#### 24. **getBestSwitchTitleId**
+- **Method**: GET
+- **Path**: `/api/mobile/trpc/games.getBestSwitchTitleId`
+- **Description**: Get the best matching Nintendo Switch title ID for a game name
+- **Tags**: games
+
+
+#### 25. **getSwitchGamesStats**
+- **Method**: GET
+- **Path**: `/api/mobile/trpc/games.getSwitchGamesStats`
+- **Description**: Get Nintendo Switch games cache statistics
+- **Tags**: games
+
+
+#### 26. **getAppStats**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getAppStats`
 - **Description**: Get app statistics
 - **Tags**: general
 
 
-#### 24. **getSystems**
+#### 27. **getSystems**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getSystems`
 - **Description**: Get all systems
 - **Tags**: general
 
 
-#### 25. **getPerformanceScales**
+#### 28. **getPerformanceScales**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getPerformanceScales`
 - **Description**: Get performance scales
 - **Tags**: general
 
 
-#### 26. **getSearchSuggestions**
+#### 29. **getSearchSuggestions**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getSearchSuggestions`
 - **Description**: Get search suggestions
 - **Tags**: general
 
 
-#### 27. **getTrustLevels**
+#### 30. **getTrustLevels**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getTrustLevels`
 - **Description**: Get trust levels (for mobile trust system integration)
 - **Tags**: general
 
 
-#### 28. **get**
+#### 31. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/gpus.get`
 - **Description**: Get GPUs with search, filtering, and pagination
 - **Tags**: gpus
 
 
-#### 29. **getById**
+#### 32. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/gpus.getById`
 - **Description**: Get GPU by ID
 - **Tags**: gpus
 
 
-#### 30. **checkUserHasReports**
+#### 33. **checkUserHasReports**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listingReports.checkUserHasReports`
 - **Description**: Check if a user has reports (for showing warnings)
 - **Tags**: listingReports
 
 
-#### 31. **getListings**
+#### 34. **getListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListings`
 - **Description**: Get listings with pagination and filtering
 - **Tags**: listings
 
 
-#### 32. **getFeaturedListings**
+#### 35. **getFeaturedListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getFeaturedListings`
 - **Description**: Get featured listings
 - **Tags**: listings
 
 
-#### 33. **getListingsByGame**
+#### 36. **getListingsByGame**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListingsByGame`
 - **Description**: Get listings by game
 - **Tags**: listings
 
 
-#### 34. **getListingById**
+#### 37. **getListingById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListingById`
 - **Description**: Get listing by ID
 - **Tags**: listings
 
 
-#### 35. **getListingComments**
+#### 38. **getListingComments**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListingComments`
 - **Description**: Get listing comments
 - **Tags**: listings
 
 
-#### 36. **getPcListings**
+#### 39. **getPcListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.getPcListings`
 - **Description**: Get PC listings with pagination and filtering
 - **Tags**: pcListings
 
 
-#### 37. **getCpus**
+#### 40. **getCpus**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.getCpus`
 - **Description**: Get CPUs for mobile
 - **Tags**: pcListings
 
 
-#### 38. **getGpus**
+#### 41. **getGpus**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.getGpus`
 - **Description**: Get GPUs for mobile
 - **Tags**: pcListings
 
 
-#### 39. **searchGameImages**
+#### 42. **searchGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.searchGameImages`
 - **Description**: Search for game images in RAWG database
 - **Tags**: rawg
 
 
-#### 40. **searchGames**
+#### 43. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.searchGames`
 - **Description**: Search for games in RAWG database
 - **Tags**: rawg
 
 
-#### 41. **getGameImages**
+#### 44. **getGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.getGameImages`
 - **Description**: Get game images by ID
 - **Tags**: rawg
 
 
-#### 42. **get**
+#### 45. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/socs.get`
 - **Description**: Get SoCs with search, filtering, and pagination
 - **Tags**: socs
 
 
-#### 43. **getById**
+#### 46. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/socs.getById`
 - **Description**: Get SoC by ID
 - **Tags**: socs
 
 
-#### 44. **searchGameImages**
+#### 47. **searchGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.searchGameImages`
 - **Description**: Search for game images in TGDB database
 - **Tags**: tgdb
 
 
-#### 45. **searchGames**
+#### 48. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.searchGames`
 - **Description**: Search for games in TGDB database
 - **Tags**: tgdb
 
 
-#### 46. **getGameImageUrls**
+#### 49. **getGameImageUrls**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getGameImageUrls`
 - **Description**: Get game image URLs for a specific game
 - **Tags**: tgdb
 
 
-#### 47. **getGameImages**
+#### 50. **getGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getGameImages`
 - **Description**: Get game images by game IDs
 - **Tags**: tgdb
 
 
-#### 48. **getPlatforms**
+#### 51. **getPlatforms**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getPlatforms`
 - **Description**: Get available platforms from TGDB
 - **Tags**: tgdb
 
 
-#### 49. **getUserTrustInfo**
+#### 52. **getUserTrustInfo**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/trust.getUserTrustInfo`
 - **Description**: Get trust info for a specific user (public)
 - **Tags**: trust
 
 
-#### 50. **getTrustLevels**
+#### 53. **getTrustLevels**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/trust.getTrustLevels`
 - **Description**: Get trust levels configuration
 - **Tags**: trust
 
 
-#### 51. **getUserById**
+#### 54. **getUserById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/users.getUserById`
 - **Description**: Get user profile by ID (public user profiles)

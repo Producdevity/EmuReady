@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "EmuReady Mobile API (tRPC)",
-    "description": "\n# EmuReady Mobile tRPC API\n\nComplete API documentation for EmuReady mobile applications built with tRPC.\n\n## tRPC HTTP Method Conventions\n\ntRPC uses HTTP method semantics with fetchRequestHandler:\n- **Queries** use **GET** requests with input as query parameter\n- **Mutations** use **POST** requests with input in request body\n\n### Correct Usage Examples:\n\n```bash\n# Query: Get games with search and limit (GET with SuperJSON wrapped input)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get popular games (GET, no input required)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getPopularGames\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get listings with filters (GET with SuperJSON wrapped input)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getListings?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Mutation: Create listing (POST with request body)\ncurl -X POST \"https://www.emuready.com/api/mobile/trpc/listings.createListing\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -d '{\"gameId\":\"uuid\",\"deviceId\":\"uuid\",\"emulatorId\":\"uuid\",\"performanceId\":\"uuid\"}'\n\n# Protected query with authentication (GET with query parameter and auth header)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22userId%22%3A%22uuid%22%7D\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n```\n\n### Important Notes:\n\n**For Queries (GET requests):**\n✅ Use GET method\n✅ Send input wrapped in SuperJSON format: `{\"json\":{\"field\":\"value\"}}`\n✅ URL-encode the entire JSON string\n✅ Many endpoints have defaults and don't require input\n✅ Input parameter format: `?input={\"json\":{\"field\":\"value\"}}` (URL-encoded)\n\n**For Mutations (POST requests):**\n✅ Use POST method\n✅ Send input as JSON in request body\n✅ Set Content-Type: application/json\n\n### Response Format:\nAll responses are wrapped in a tRPC result object:\n```json\n{\n  \"result\": {\n    \"data\": /* Your actual response data here */\n  }\n}\n```\n\n### Error Response Format:\n```json\n{\n  \"error\": {\n    \"json\": {\n      \"message\": \"Error message\",\n      \"code\": -32600,\n      \"data\": {\n        \"code\": \"BAD_REQUEST\",\n        \"httpStatus\": 400,\n        \"path\": \"games.getGames\"\n      }\n    }\n  }\n}\n```\n\nThis API provides endpoints for:\n- Game emulation listings management\n- User authentication and profiles  \n- Device and hardware information\n- Emulator data and compatibility\n- Community features (comments, votes)\n      ",
+    "description": "\n# EmuReady Mobile tRPC API\n\nComplete API documentation for EmuReady mobile applications built with tRPC.\n\n## tRPC HTTP Method Conventions\n\nNOTE: the protected routes require authentication via Clerk JWT token in the Authorization header. This isn't implemented yet.\n\ntRPC uses HTTP method semantics with fetchRequestHandler:\n- **Queries** use **GET** requests with input as query parameter\n- **Mutations** use **POST** requests with input in request body\n\n### Usage Examples:\n\n```bash\n# Query: Get games with search and limit (GET with SuperJSON wrapped input)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get popular games (GET, no input required)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getPopularGames\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get listings with filters (GET with SuperJSON wrapped input)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getListings?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Mutation: Create listing (POST with request body)\ncurl -X POST \"https://www.emuready.com/api/mobile/trpc/listings.createListing\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -d '{\"gameId\":\"uuid\",\"deviceId\":\"uuid\",\"emulatorId\":\"uuid\",\"performanceId\":\"uuid\"}'\n\n# Protected query with authentication (GET with query parameter and auth header)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22userId%22%3A%22uuid%22%7D\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n```\n\n### Important Notes:\n\n**For Queries (GET requests):**\n✅ Use GET method\n✅ Send input wrapped in SuperJSON format: `{\"json\":{\"field\":\"value\"}}`\n✅ URL-encode the entire JSON string\n✅ Many endpoints have defaults and don't require input\n✅ Input parameter format: `?input={\"json\":{\"field\":\"value\"}}` (URL-encoded)\n\n**For Mutations (POST requests):**\n✅ Use POST method\n✅ Send input as JSON in request body\n✅ Set Content-Type: application/json\n\n### Response Format:\nAll responses are wrapped in a tRPC result object:\n```json\n{\n  \"result\": {\n    \"data\": /* response data */\n  }\n}\n```\n\n### Error Response Format:\n```json\n{\n  \"error\": {\n    \"json\": {\n      \"message\": \"Error message\",\n      \"code\": -32600,\n      \"data\": {\n        \"code\": \"BAD_REQUEST\",\n        \"httpStatus\": 400,\n        \"path\": \"games.getGames\"\n      }\n    }\n  }\n}\n```\n\nThis API provides endpoints for:\n- Game emulation listings management\n- User authentication and profiles  \n- Device and hardware information\n- Emulator data and compatibility\n- Community features (comments, votes)\n      ",
     "version": "1.0.0",
     "contact": {
       "name": "EmuReady API Support",
@@ -5116,6 +5116,511 @@
                             "code": "BAD_REQUEST",
                             "httpStatus": 400,
                             "path": "games.getGameById",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/games.findSwitchTitleId": {
+      "get": {
+        "summary": "Find Nintendo Switch title IDs by game name (fuzzy search)",
+        "description": "Find Nintendo Switch title IDs by game name (fuzzy search)",
+        "tags": [
+          "games"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "JSON string containing the input object matching FindSwitchTitleIdMobileSchema"
+            },
+            "description": "Input data as SuperJSON wrapped JSON string. Schema: FindSwitchTitleIdMobileSchema. Can be omitted if all fields have defaults.",
+            "example": "{\"json\":{\"gameName\":\"example\"}}",
+            "x-input-schema": {
+              "$ref": "#/definitions/FindSwitchTitleIdMobileSchema",
+              "definitions": {
+                "FindSwitchTitleIdMobileSchema": {
+                  "type": "object",
+                  "properties": {
+                    "gameName": {
+                      "type": "string",
+                      "minLength": 2
+                    },
+                    "maxResults": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 20,
+                      "default": 5
+                    }
+                  },
+                  "required": [
+                    "gameName"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from games.findSwitchTitleId"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from games.findSwitchTitleId",
+                          "data": {
+                            "id": "uuid-game",
+                            "title": "Super Mario Bros",
+                            "systemId": "uuid-system",
+                            "imageUrl": "https://example.com/game.jpg",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "games.findSwitchTitleId",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/games.getBestSwitchTitleId": {
+      "get": {
+        "summary": "Get the best matching Nintendo Switch title ID for a game name",
+        "description": "Get the best matching Nintendo Switch title ID for a game name",
+        "tags": [
+          "games"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "JSON string containing the input object matching GetBestSwitchTitleIdMobileSchema"
+            },
+            "description": "Input data as SuperJSON wrapped JSON string. Schema: GetBestSwitchTitleIdMobileSchema. Can be omitted if all fields have defaults.",
+            "example": "{\"json\":{\"gameName\":\"example\"}}",
+            "x-input-schema": {
+              "$ref": "#/definitions/GetBestSwitchTitleIdMobileSchema",
+              "definitions": {
+                "GetBestSwitchTitleIdMobileSchema": {
+                  "type": "object",
+                  "properties": {
+                    "gameName": {
+                      "type": "string",
+                      "minLength": 2
+                    }
+                  },
+                  "required": [
+                    "gameName"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from games.getBestSwitchTitleId"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": [
+                          {
+                            "id": "uuid-game",
+                            "title": "Super Mario Bros",
+                            "systemId": "uuid-system",
+                            "imageUrl": "https://example.com/game.jpg",
+                            "status": "APPROVED",
+                            "system": {
+                              "id": "uuid-system",
+                              "name": "Nintendo Entertainment System",
+                              "key": "nes"
+                            },
+                            "_count": {
+                              "listings": 45
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "games.getBestSwitchTitleId",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/mobile/trpc/games.getSwitchGamesStats": {
+      "get": {
+        "summary": "Get Nintendo Switch games cache statistics",
+        "description": "Get Nintendo Switch games cache statistics",
+        "tags": [
+          "games"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "JSON string containing the input object matching GetSwitchGamesStatsMobileSchema"
+            },
+            "description": "Input data as SuperJSON wrapped JSON string. Schema: GetSwitchGamesStatsMobileSchema. Can be omitted if all fields have defaults.",
+            "example": "{\"json\":{}}",
+            "x-input-schema": {
+              "$ref": "#/definitions/GetSwitchGamesStatsMobileSchema",
+              "definitions": {
+                "GetSwitchGamesStatsMobileSchema": {
+                  "anyOf": [
+                    {
+                      "not": {}
+                    },
+                    {
+                      "type": "object",
+                      "properties": {},
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from games.getSwitchGamesStats"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": [
+                          {
+                            "id": "uuid-game",
+                            "title": "Super Mario Bros",
+                            "systemId": "uuid-system",
+                            "imageUrl": "https://example.com/game.jpg",
+                            "status": "APPROVED",
+                            "system": {
+                              "id": "uuid-system",
+                              "name": "Nintendo Entertainment System",
+                              "key": "nes"
+                            },
+                            "_count": {
+                              "listings": 45
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "games.getSwitchGamesStats",
                             "zodError": {
                               "formErrors": [
                                 "Required"
