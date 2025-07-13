@@ -2,6 +2,7 @@
 
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { isEmpty, isString } from 'remeda'
+import CustomFieldTypeDriverVersion from '@/app/listings/components/shared/custom-fields/CustomFieldTypeDriverVersion'
 import { CustomFieldType } from '@orm'
 import {
   CustomFieldTypeBoolean,
@@ -45,6 +46,8 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   errorMessage?: string
 }
 
+const DRIVER_VERSION_FIELD_NAME = 'dynamic_driver_version' as const
+
 function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
@@ -70,6 +73,24 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
 
   const icon = getCustomFieldTypeIcon(props.fieldDef.type)
   const validationRules = getValidationRules()
+
+  if (
+    props.fieldDef.type === CustomFieldType.TEXT &&
+    props.fieldDef.name === DRIVER_VERSION_FIELD_NAME
+  ) {
+    // Special case for driver version field
+    return (
+      <CustomFieldTypeDriverVersion
+        fieldDef={props.fieldDef}
+        fieldName={props.fieldName}
+        index={props.index}
+        rules={validationRules}
+        control={props.control}
+        errorMessage={props.errorMessage}
+        icon={icon}
+      />
+    )
+  }
 
   switch (props.fieldDef.type) {
     case CustomFieldType.TEXT:

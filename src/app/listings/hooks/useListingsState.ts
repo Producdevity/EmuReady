@@ -1,8 +1,9 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import analytics from '@/lib/analytics'
+import { type SortDirection } from '@/types/api'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
-import type { SortDirection, SortField } from '@/app/listings/types'
+import type { SortField } from '@/app/listings/types'
 
 interface FilterParams {
   systemIds?: string[] | null
@@ -55,9 +56,7 @@ function useListingsState() {
       const newParams = new URLSearchParams(searchParams.toString())
 
       // Reset to page 1 when changing filters (unless explicitly setting page)
-      if (newFilters.page === undefined && Object.keys(newFilters).length > 0) {
-        newFilters.page = 1
-      }
+      analytics.filter.listingsCombined(newFilters)
 
       // Update params
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -178,7 +177,7 @@ function useListingsState() {
   const handleSort = useCallback(
     (field: string) => {
       let newSortField: SortField | null = filters.sortField
-      let newSortDirection: SortDirection | null = filters.sortDirection
+      let newSortDirection: SortDirection | null
 
       if (filters.sortField === field) {
         if (filters.sortDirection === 'asc') {

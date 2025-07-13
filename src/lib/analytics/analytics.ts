@@ -1,4 +1,6 @@
 import { type SortField } from '@/app/listings/types'
+import { type SortField as PcSortField } from '@/app/pc-listings/types'
+import { type SortDirection } from '@/types/api'
 import { type Role } from '@orm'
 import {
   ADMIN_ACTIONS,
@@ -138,6 +140,78 @@ const analytics = {
           hasSearchTerm: searchTerm.length > 0,
           searchLength: searchTerm.length,
         },
+      })
+    },
+
+    listingsCombined: (params: {
+      systemIds?: string[] | null
+      search?: string | null
+      page?: number | null
+      deviceIds?: string[] | null
+      socIds?: string[] | null
+      emulatorIds?: string[] | null
+      performanceIds?: number[] | null
+      sortField?: SortField | null
+      sortDirection?: SortDirection | null
+      myListings?: boolean | null
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.LISTINGS_COMBINED,
+        metadata: filterUndefinedValues({
+          sortField: params.sortField || 'none',
+          page: params.page?.toString() || '1',
+          myListings: params.myListings?.toString() || 'false',
+          systemIds: params.systemIds?.join(',') || 'none',
+          systemCount: params.systemIds?.length.toString() || '0',
+          deviceIds: params.deviceIds?.join(',') || 'none',
+          deviceCount: params.deviceIds?.length.toString() || '0',
+          socIds: params.socIds?.join(',') || 'none',
+          socCount: params.socIds?.length.toString() || '0',
+          emulatorIds: params.emulatorIds?.join(',') || 'none',
+          emulatorCount: params.emulatorIds?.length.toString() || '0',
+          performanceIds: params.performanceIds?.join(',') || 'none',
+          performanceCount: params.performanceIds?.length.toString() || '0',
+          search: params.search || 'none',
+        }),
+      })
+    },
+
+    pcListingsCombined: (params: {
+      page: number
+      search: string
+      cpuIds: string[]
+      gpuIds: string[]
+      systemIds: string[]
+      performanceIds: number[]
+      emulatorIds: string[]
+      minMemory: number | null
+      maxMemory: number | null
+      sortField: PcSortField | null
+      sortDirection: SortDirection | null
+      myListings: boolean
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.PC_LISTINGS_COMBINED,
+        metadata: filterUndefinedValues({
+          sortField: params.sortField || 'none',
+          page: params.page?.toString() || '1',
+          myListings: params.myListings?.toString() || 'false',
+          systemIds: params.systemIds?.join(',') || 'none',
+          systemCount: params.systemIds?.length.toString() || '0',
+          emulatorIds: params.emulatorIds?.join(',') || 'none',
+          emulatorCount: params.emulatorIds?.length.toString() || '0',
+          performanceIds: params.performanceIds?.join(',') || 'none',
+          performanceCount: params.performanceIds?.length.toString() || '0',
+          cpuIds: params.cpuIds?.join(',') || 'none',
+          cpuCount: params.cpuIds?.length.toString() || '0',
+          gpuIds: params.gpuIds?.join(',') || 'none',
+          gpuCount: params.gpuIds?.length.toString() || '0',
+          minMemory: params.minMemory?.toString() || 'none',
+          maxMemory: params.maxMemory?.toString() || 'none',
+          search: params.search || 'none',
+        }),
       })
     },
 
