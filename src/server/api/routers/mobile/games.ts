@@ -1,12 +1,21 @@
+import { AppError } from '@/lib/errors'
 import {
   GetGameByIdSchema,
   GetGamesSchema,
   SearchGamesSchema,
+  FindSwitchTitleIdMobileSchema,
+  GetBestSwitchTitleIdMobileSchema,
+  GetSwitchGamesStatsMobileSchema,
 } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import {
+  findTitleIdForGameName,
+  getBestTitleIdMatch,
+  getSwitchGamesStats,
+} from '@/server/utils/switchGameSearch'
 import { ApprovalStatus } from '@orm'
 
 export const mobileGamesRouter = createMobileTRPCRouter({
@@ -16,16 +25,25 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   getGames: mobilePublicProcedure
     .input(GetGamesSchema)
     .query(async ({ ctx, input }) => {
-      const { search, systemId, limit } = input
+      const { search, systemId, limit = 20 } = input || {}
 
-      const baseWhere = {
+      const whereClause: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
       }
 
-      if (systemId) Object.assign(baseWhere, { systemId })
+      if (systemId) {
+        whereClause.systemId = systemId
+      }
 
-      let games = await ctx.prisma.game.findMany({
-        where: baseWhere,
+      if (search) {
+        whereClause.title = {
+          contains: search,
+          mode: 'insensitive',
+        }
+      }
+
+      return await ctx.prisma.game.findMany({
+        where: whereClause,
         include: {
           system: { select: { id: true, name: true, key: true } },
           _count: {
@@ -35,19 +53,8 @@ export const mobileGamesRouter = createMobileTRPCRouter({
           },
         },
         orderBy: [{ listings: { _count: 'desc' } }, { title: 'asc' }],
-        take: search ? undefined : limit,
+        take: limit,
       })
-
-      // Filter by search if provided
-      if (search) {
-        games = games
-          .filter((game) =>
-            game.title.toLowerCase().includes(search.toLowerCase()),
-          )
-          .slice(0, limit)
-      }
-
-      return games
     }),
 
   /**
@@ -73,9 +80,13 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   searchGames: mobilePublicProcedure
     .input(SearchGamesSchema)
     .query(async ({ ctx, input }) => {
-      let games = await ctx.prisma.game.findMany({
+      return await ctx.prisma.game.findMany({
         where: {
           status: ApprovalStatus.APPROVED,
+          title: {
+            contains: input.query,
+            mode: 'insensitive',
+          },
         },
         include: {
           system: { select: { id: true, name: true, key: true } },
@@ -85,17 +96,9 @@ export const mobileGamesRouter = createMobileTRPCRouter({
             },
           },
         },
-        take: 100, // Get more to filter from
+        orderBy: [{ listings: { _count: 'desc' } }, { title: 'asc' }],
+        take: 20,
       })
-
-      // Filter by search
-      games = games
-        .filter((game) =>
-          game.title.toLowerCase().includes(input.query.toLowerCase()),
-        )
-        .slice(0, 20)
-
-      return games
     }),
 
   /**
@@ -115,5 +118,67 @@ export const mobileGamesRouter = createMobileTRPCRouter({
           },
         },
       })
+    }),
+
+  /**
+   * Find Nintendo Switch title IDs by game name (fuzzy search)
+   */
+  findSwitchTitleId: mobilePublicProcedure
+    .input(FindSwitchTitleIdMobileSchema)
+    .query(async ({ input }) => {
+      const { gameName, maxResults } = input
+
+      try {
+        const results = await findTitleIdForGameName(gameName, maxResults)
+        return {
+          success: true,
+          results,
+          query: gameName,
+          totalResults: results.length,
+        }
+      } catch (error) {
+        console.error('Error finding Switch title ID:', error)
+        return AppError.internalError('Failed to search for Switch title ID')
+      }
+    }),
+
+  /**
+   * Get the best matching Nintendo Switch title ID for a game name
+   */
+  getBestSwitchTitleId: mobilePublicProcedure
+    .input(GetBestSwitchTitleIdMobileSchema)
+    .query(async ({ input }) => {
+      const { gameName } = input
+
+      try {
+        const titleId = await getBestTitleIdMatch(gameName)
+        return {
+          success: true,
+          titleId,
+          query: gameName,
+          found: titleId !== null,
+        }
+      } catch (error) {
+        console.error('Error getting Switch title ID match:', error)
+        return AppError.internalError('Failed to find Switch title ID match')
+      }
+    }),
+
+  /**
+   * Get Nintendo Switch games cache statistics
+   */
+  getSwitchGamesStats: mobilePublicProcedure
+    .input(GetSwitchGamesStatsMobileSchema)
+    .query(async () => {
+      try {
+        const stats = await getSwitchGamesStats()
+        return {
+          success: true,
+          ...stats,
+        }
+      } catch (error) {
+        console.error('Error getting Switch games stats:', error)
+        return AppError.internalError('Failed to get Switch games statistics')
+      }
     }),
 })

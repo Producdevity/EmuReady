@@ -60,60 +60,78 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
     .input(SearchSuggestionsSchema)
     .query(async ({ ctx, input }) => {
       const { query, limit } = input
-      const searchTerm = query.toLowerCase()
+
+      // Calculate how many results to get from each category
+      const perCategory = Math.ceil(limit / 3)
 
       const [games, devices, emulators] = await Promise.all([
         ctx.prisma.game.findMany({
           where: {
             status: ApprovalStatus.APPROVED,
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
           },
           select: { id: true, title: true, system: { select: { name: true } } },
-          take: Math.ceil(limit * 2), // Get more to filter from
+          take: perCategory,
         }),
         ctx.prisma.device.findMany({
+          where: {
+            OR: [
+              {
+                modelName: {
+                  contains: query,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                brand: {
+                  name: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            ],
+          },
           select: {
             id: true,
             modelName: true,
             brand: { select: { name: true } },
           },
-          take: Math.ceil(limit * 2),
+          take: perCategory,
         }),
         ctx.prisma.emulator.findMany({
+          where: {
+            name: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
           select: { id: true, name: true },
-          take: Math.ceil(limit * 2),
+          take: perCategory,
         }),
       ])
 
       const suggestions = [
-        ...games
-          .filter((game) => game.title.toLowerCase().includes(searchTerm))
-          .map((game) => ({
-            id: game.id,
-            title: game.title,
-            type: 'game' as const,
-            subtitle: game.system.name,
-          })),
-        ...devices
-          .filter(
-            (device) =>
-              device.modelName.toLowerCase().includes(searchTerm) ||
-              device.brand.name.toLowerCase().includes(searchTerm),
-          )
-          .map((device) => ({
-            id: device.id,
-            title: device.modelName,
-            type: 'device' as const,
-            subtitle: device.brand.name,
-          })),
-        ...emulators
-          .filter((emulator) =>
-            emulator.name.toLowerCase().includes(searchTerm),
-          )
-          .map((emulator) => ({
-            id: emulator.id,
-            title: emulator.name,
-            type: 'emulator' as const,
-          })),
+        ...games.map((game) => ({
+          id: game.id,
+          title: game.title,
+          type: 'game' as const,
+          subtitle: game.system.name,
+        })),
+        ...devices.map((device) => ({
+          id: device.id,
+          title: device.modelName,
+          type: 'device' as const,
+          subtitle: device.brand.name,
+        })),
+        ...emulators.map((emulator) => ({
+          id: emulator.id,
+          title: emulator.name,
+          type: 'emulator' as const,
+        })),
       ]
 
       return suggestions.slice(0, limit)

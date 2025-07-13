@@ -16,6 +16,17 @@ export const SearchGamesSchema = z.object({
   query: z.string().min(1),
 })
 
+export const FindSwitchTitleIdMobileSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  maxResults: z.number().min(1).max(20).default(5),
+})
+
+export const GetBestSwitchTitleIdMobileSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+})
+
+export const GetSwitchGamesStatsMobileSchema = z.object({}).optional()
+
 export const GetListingCommentsSchema = z.object({
   listingId: z.string().uuid(),
 })
@@ -99,11 +110,13 @@ export const GetListingsSchema = z.object({
   search: z.string().optional(),
 })
 
-export const GetGamesSchema = z.object({
-  search: z.string().optional(),
-  systemId: z.string().uuid().optional(),
-  limit: z.number().min(1).max(50).default(20),
-})
+export const GetGamesSchema = z
+  .object({
+    search: z.string().optional(),
+    systemId: z.string().uuid().optional(),
+    limit: z.number().min(1).max(50).default(20),
+  })
+  .optional()
 
 export const GetDevicesSchema = z.object({
   search: z.string().optional(),

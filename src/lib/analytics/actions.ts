@@ -23,6 +23,8 @@ export const ERROR_ACTIONS = {
 
 // Filter Actions
 export const FILTER_ACTIONS = {
+  LISTINGS_COMBINED: 'listings_combined',
+  PC_LISTINGS_COMBINED: 'pc_listings_combined',
   PAGE: 'page',
   SORT: 'sort',
   MY_LISTINGS: 'my_listings',

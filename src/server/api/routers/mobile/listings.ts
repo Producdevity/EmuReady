@@ -32,16 +32,41 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         input
       const skip = (page - 1) * limit
 
-      // Build where clause without complex nested structures
-      const baseWhere = {
+      // Build where clause with proper search filtering
+      const baseWhere: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
         game: { status: ApprovalStatus.APPROVED },
       }
 
-      if (gameId) Object.assign(baseWhere, { gameId })
-      if (deviceId) Object.assign(baseWhere, { deviceId })
-      if (emulatorId) Object.assign(baseWhere, { emulatorId })
-      if (systemId) Object.assign(baseWhere.game, { systemId })
+      if (gameId) baseWhere.gameId = gameId
+      if (deviceId) baseWhere.deviceId = deviceId
+      if (emulatorId) baseWhere.emulatorId = emulatorId
+      if (systemId) {
+        baseWhere.game = {
+          ...(baseWhere.game as Record<string, unknown>),
+          systemId,
+        }
+      }
+
+      // Add search filtering at database level
+      if (search) {
+        baseWhere.OR = [
+          {
+            game: {
+              title: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            notes: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        ]
+      }
 
       const [listings, total] = await Promise.all([
         ctx.prisma.listing.findMany({
@@ -67,19 +92,9 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         ctx.prisma.listing.count({ where: baseWhere }),
       ])
 
-      // Filter by search on the results if needed
-      const filteredListings = search
-        ? listings.filter(
-            (listing) =>
-              listing.game.title.toLowerCase().includes(search.toLowerCase()) ||
-              (listing.notes &&
-                listing.notes.toLowerCase().includes(search.toLowerCase())),
-          )
-        : listings
-
-      // Calculate success rates
+      // Calculate success rates (search filtering now done at database level)
       const listingsWithStats = await Promise.all(
-        filteredListings.map(async (listing) => {
+        listings.map(async (listing) => {
           const [upVotes, userVote] = await Promise.all([
             ctx.prisma.vote.count({
               where: { listingId: listing.id, value: true },
@@ -112,13 +127,12 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         }),
       )
 
-      const adjustedTotal = search ? filteredListings.length : total
-      const pages = Math.ceil(adjustedTotal / limit)
+      const pages = Math.ceil(total / limit)
 
       return {
         listings: listingsWithStats,
         pagination: {
-          total: adjustedTotal,
+          total,
           pages,
           currentPage: page,
           limit,

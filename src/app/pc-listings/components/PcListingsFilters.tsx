@@ -78,11 +78,6 @@ export default function PcListingsFilters({
   onMaxMemoryChange,
   onSearchChange,
 }: PcListingsFiltersProps) {
-  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    onSearchChange(ev.target.value)
-    analytics.filter.search(ev.target.value)
-  }
-
   const handleSystemChange = (values: string[]) => {
     onSystemChange(values)
     if (values.length === 0) return analytics.filter.clearSystemFilter()
@@ -185,7 +180,9 @@ export default function PcListingsFilters({
               type="text"
               placeholder="Search games, notes, emulators..."
               value={searchTerm}
-              onChange={handleSearchChange}
+              onChange={(ev: ChangeEvent<HTMLInputElement>) =>
+                onSearchChange(ev.target.value)
+              }
               className="transition-all duration-200 focus:scale-[1.02]"
             />
           </div>

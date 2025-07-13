@@ -128,7 +128,7 @@ function PcReportListingModal(props: Props) {
           <textarea
             id="description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(ev) => setDescription(ev.target.value)}
             placeholder="Please provide additional context about why you're reporting this PC listing..."
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             rows={4}

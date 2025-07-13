@@ -118,11 +118,6 @@ function ListingFilters(props: FiltersProps) {
     )
   }
 
-  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    props.onSearchChange(ev.target.value)
-    analytics.filter.search(ev.target.value)
-  }
-
   const clearAllFilters = () => {
     props.onSystemChange([])
     props.onDeviceChange([])
@@ -534,7 +529,9 @@ function ListingFilters(props: FiltersProps) {
                         type="text"
                         placeholder="Search games, notes, emulators..."
                         value={props.searchTerm}
-                        onChange={handleSearchChange}
+                        onChange={(ev: ChangeEvent<HTMLInputElement>) =>
+                          props.onSearchChange(ev.target.value)
+                        }
                         className="transition-all duration-200 focus:scale-[1.02]"
                       />
                     </div>

@@ -1,20 +1,52 @@
-import SwaggerUI from '@/components/SwaggerUI'
+'use client'
+
+import { ApiReferenceReact } from '@scalar/api-reference-react'
+import { useTheme } from 'next-themes'
+import { LoadingSpinner } from '@/components/ui'
+import useMounted from '@/hooks/useMounted'
+import '@scalar/api-reference-react/style.css'
+
+const url = '/api-docs/mobile-openapi.json'
 
 export default function SwaggerUIPage() {
+  const { resolvedTheme } = useTheme()
+  const mounted = useMounted()
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <LoadingSpinner text="Loading API documentation..." />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          EmuReady Mobile API Documentation
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Interactive API documentation for the EmuReady mobile platform -
-          automatically generated from router definitions
-        </p>
-      </div>
-      <div className="container mx-auto px-4 py-6">
-        <SwaggerUI url="/api-docs/mobile-openapi.json" />
-      </div>
+    <div className="w-full min-h-screen">
+      <ApiReferenceReact
+        configuration={{
+          url,
+          theme: resolvedTheme === 'dark' ? 'purple' : 'default',
+          layout: 'modern',
+          hideModels: false,
+          authentication: { preferredSecurityScheme: 'ClerkAuth' },
+          servers: [
+            {
+              url:
+                typeof window !== 'undefined'
+                  ? `${window.location.origin}/api/mobile/trpc`
+                  : '/api/mobile/trpc',
+              description: 'Mobile API Base URL',
+            },
+          ],
+          customCss: `
+            .references-layout {
+              font-family: inherit;
+            }
+          `,
+        }}
+      />
     </div>
   )
 }

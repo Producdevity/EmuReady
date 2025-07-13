@@ -1,18 +1,9 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
+import analytics from '@/lib/analytics'
+import { type SortDirection } from '@/types/api'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
-
-type SortDirection = 'asc' | 'desc'
-type SortField =
-  | 'game.title'
-  | 'game.system.name'
-  | 'cpu'
-  | 'gpu'
-  | 'emulator.name'
-  | 'performance.rank'
-  | 'author.name'
-  | 'memorySize'
-  | 'createdAt'
+import { type SortField } from '../types'
 
 export default function usePcListingsState() {
   const router = useRouter()
@@ -74,6 +65,21 @@ export default function usePcListingsState() {
     if (sortField) params.set('sortField', sortField)
     if (sortDirection) params.set('sortDirection', sortDirection)
     if (myListings) params.set('myListings', 'true')
+
+    analytics.filter.pcListingsCombined({
+      page,
+      search,
+      cpuIds,
+      gpuIds,
+      systemIds,
+      performanceIds,
+      emulatorIds,
+      minMemory,
+      maxMemory,
+      sortField,
+      sortDirection,
+      myListings,
+    })
 
     const url = params.toString() ? `?${params.toString()}` : '/pc-listings'
     router.replace(url, { scroll: false })

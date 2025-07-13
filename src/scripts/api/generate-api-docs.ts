@@ -26,7 +26,406 @@ interface RouterInfo {
     input?: string
     auth: 'public' | 'protected'
     description?: string
+    returnStructure?: string
   }[]
+}
+
+function analyzeReturnStructure(
+  filePath: string,
+  procedureName: string,
+): string {
+  try {
+    const content = readFileSync(filePath, 'utf-8')
+
+    // Find the procedure by looking for the procedure name and analyzing its block
+    const startIndex = content.indexOf(`${procedureName}:`)
+    if (startIndex === -1) return 'unknown'
+
+    // Find the end of this procedure (next procedure or closing brace)
+    const nextProcedureMatch = content
+      .substring(startIndex + 1)
+      .search(/\w+:\s*\w+Procedure/)
+    const endIndex =
+      nextProcedureMatch === -1
+        ? content.lastIndexOf('})') // End of router
+        : startIndex + 1 + nextProcedureMatch
+
+    const procedureBlock = content.substring(startIndex, endIndex)
+
+    // Analyze the return patterns in this procedure block
+    if (
+      procedureBlock.includes('ctx.prisma') &&
+      procedureBlock.includes('findMany')
+    ) {
+      if (
+        procedureBlock.includes('_count') &&
+        procedureBlock.includes('include')
+      ) {
+        return 'array-with-relations-and-counts'
+      } else if (procedureBlock.includes('include')) {
+        return 'array-with-relations'
+      } else {
+        return 'array-simple'
+      }
+    }
+
+    if (
+      procedureBlock.includes('ctx.prisma') &&
+      procedureBlock.includes('findUnique')
+    ) {
+      return procedureBlock.includes('include')
+        ? 'object-with-relations'
+        : 'object-simple'
+    }
+
+    if (
+      procedureBlock.includes('pagination') ||
+      procedureBlock.includes('total')
+    ) {
+      return 'paginated-list'
+    }
+
+    if (
+      procedureBlock.includes('create') ||
+      procedureBlock.includes('update')
+    ) {
+      return 'mutation-result'
+    }
+
+    if (procedureBlock.includes('count')) {
+      return 'count-result'
+    }
+
+    // Analyze router context to infer likely structure
+    if (
+      filePath.includes('games') &&
+      procedureName.startsWith('get') &&
+      !procedureName.includes('ById')
+    ) {
+      return 'array-with-relations-and-counts'
+    }
+    if (filePath.includes('listings') && procedureName === 'getListings') {
+      return 'paginated-list'
+    }
+    if (procedureName.includes('ById')) {
+      return 'object-with-relations'
+    }
+
+    return 'generic-object'
+  } catch (error) {
+    console.warn(
+      `Could not analyze return structure for ${procedureName}:`,
+      error instanceof Error ? error.message : String(error),
+    )
+    return 'unknown'
+  }
+}
+
+function generateResponseExampleByStructure(
+  routerName: string,
+  procedureName: string,
+  structure: string,
+  _filePath?: string,
+): unknown {
+  // Use structure analysis to generate accurate examples
+  switch (structure) {
+    case 'array-with-relations-and-counts':
+      return createArrayWithRelationsAndCounts(routerName, procedureName)
+    case 'array-with-relations':
+      return createArrayWithRelations(routerName, procedureName)
+    case 'array-simple':
+      return createSimpleArray(routerName, procedureName)
+    case 'object-with-relations':
+      return createObjectWithRelations(routerName, procedureName)
+    case 'object-simple':
+      return createSimpleObject(routerName, procedureName)
+    case 'paginated-list':
+      return createPaginatedList(routerName, procedureName)
+    case 'mutation-result':
+      return createMutationResult(routerName, procedureName)
+    case 'count-result':
+      return { count: 42 }
+    default:
+      return createGenericResponse(routerName, procedureName)
+  }
+}
+
+function createArrayWithRelationsAndCounts(
+  routerName: string,
+  _procedureName: string,
+): unknown {
+  const baseItem = getBaseItemStructure(routerName)
+  return [
+    {
+      ...baseItem,
+      ...getRelationsForRouter(routerName),
+      _count: getCountStructure(routerName),
+    },
+  ]
+}
+
+function createArrayWithRelations(
+  routerName: string,
+  _procedureName: string,
+): unknown {
+  const baseItem = getBaseItemStructure(routerName)
+  return [
+    {
+      ...baseItem,
+      ...getRelationsForRouter(routerName),
+    },
+  ]
+}
+
+function createSimpleArray(
+  routerName: string,
+  _procedureName: string,
+): unknown {
+  return [getBaseItemStructure(routerName)]
+}
+
+function createObjectWithRelations(
+  routerName: string,
+  _procedureName: string,
+): unknown {
+  const baseItem = getBaseItemStructure(routerName)
+  return {
+    ...baseItem,
+    ...getRelationsForRouter(routerName),
+  }
+}
+
+function createSimpleObject(
+  routerName: string,
+  _procedureName: string,
+): unknown {
+  return getBaseItemStructure(routerName)
+}
+
+function createPaginatedList(
+  routerName: string,
+  _procedureName: string,
+): unknown {
+  return {
+    [getPluralName(routerName)]: [
+      {
+        ...getBaseItemStructure(routerName),
+        ...getRelationsForRouter(routerName),
+        _count: getCountStructure(routerName),
+      },
+    ],
+    pagination: {
+      total: 156,
+      pages: 8,
+      currentPage: 1,
+      limit: 20,
+      hasNextPage: true,
+      hasPreviousPage: false,
+    },
+  }
+}
+
+function createMutationResult(
+  routerName: string,
+  procedureName: string,
+): unknown {
+  if (procedureName.startsWith('create')) {
+    return {
+      id: 'uuid-generated',
+      message: 'Created successfully',
+      ...getBaseItemStructure(routerName),
+    }
+  }
+  if (procedureName.startsWith('update')) {
+    return {
+      id: 'uuid-updated',
+      message: 'Updated successfully',
+    }
+  }
+  if (procedureName.startsWith('delete')) {
+    return { success: true, message: 'Deleted successfully' }
+  }
+  return { success: true }
+}
+
+function createGenericResponse(
+  routerName: string,
+  procedureName: string,
+): unknown {
+  return {
+    message: `Response from ${routerName}.${procedureName}`,
+    data: getBaseItemStructure(routerName),
+  }
+}
+
+function getBaseItemStructure(routerName: string): Record<string, unknown> {
+  const structures: Record<string, Record<string, unknown>> = {
+    games: {
+      id: 'uuid-game',
+      title: 'Super Mario Bros',
+      systemId: 'uuid-system',
+      imageUrl: 'https://example.com/game.jpg',
+      status: 'APPROVED',
+    },
+    listings: {
+      id: 'uuid-listing',
+      gameId: 'uuid-game',
+      deviceId: 'uuid-device',
+      emulatorId: 'uuid-emulator',
+      performanceId: 1,
+      notes: 'Runs perfectly at 60fps',
+      status: 'APPROVED',
+    },
+    devices: {
+      id: 'uuid-device',
+      brandId: 'uuid-brand',
+      modelName: 'Steam Deck',
+      socId: 'uuid-soc',
+    },
+    emulators: {
+      id: 'uuid-emulator',
+      name: 'RetroArch',
+      logo: 'retroarch.png',
+    },
+    auth: {
+      id: 'uuid-user',
+      email: 'user@example.com',
+      name: 'John Doe',
+    },
+    notifications: {
+      id: 'uuid-notification',
+      type: 'LISTING_APPROVED',
+      message: 'Your listing has been approved',
+      isRead: false,
+      createdAt: '2025-07-12T10:00:00Z',
+    },
+  }
+
+  return structures[routerName] || { id: 'uuid-generic', name: 'Generic Item' }
+}
+
+function getRelationsForRouter(routerName: string): Record<string, unknown> {
+  const relations: Record<string, Record<string, unknown>> = {
+    games: {
+      system: {
+        id: 'uuid-system',
+        name: 'Nintendo Entertainment System',
+        key: 'nes',
+      },
+    },
+    listings: {
+      game: { id: 'uuid-game', title: 'Super Mario Bros' },
+      device: {
+        id: 'uuid-device',
+        modelName: 'Steam Deck',
+        brand: { name: 'Valve' },
+      },
+      emulator: { id: 'uuid-emulator', name: 'RetroArch' },
+      performance: { id: 1, label: 'Perfect', rank: 1 },
+      author: { id: 'uuid-user', name: 'GameTester' },
+    },
+    devices: {
+      brand: { id: 'uuid-brand', name: 'Valve' },
+      soc: { id: 'uuid-soc', name: 'AMD APU' },
+    },
+  }
+
+  return relations[routerName] || {}
+}
+
+function getCountStructure(routerName: string): Record<string, unknown> {
+  const counts: Record<string, Record<string, unknown>> = {
+    games: { listings: 45 },
+    listings: { votes: 12, comments: 3 },
+    devices: { listings: 28 },
+  }
+
+  return counts[routerName] || {}
+}
+
+function getPluralName(routerName: string): string {
+  const plurals: Record<string, string> = {
+    game: 'games',
+    listing: 'listings',
+    device: 'devices',
+    emulator: 'emulators',
+    notification: 'notifications',
+  }
+
+  return plurals[routerName] || `${routerName}s`
+}
+
+function generateExampleFromSchema(
+  jsonSchema: Record<string, unknown>,
+): Record<string, unknown> {
+  const example: Record<string, unknown> = {}
+
+  // Handle direct properties
+  let properties = jsonSchema.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined
+  let required = jsonSchema.required as string[] | undefined
+
+  // Handle $ref definitions
+  if (!properties && jsonSchema.definitions && jsonSchema.$ref) {
+    const refName = (jsonSchema.$ref as string).split('/').pop()
+    if (refName) {
+      const definitions = jsonSchema.definitions as Record<
+        string,
+        Record<string, unknown>
+      >
+      const definition = definitions[refName]
+      if (definition) {
+        properties = definition.properties as Record<
+          string,
+          Record<string, unknown>
+        >
+        required = definition.required as string[] | undefined
+      }
+    }
+  }
+
+  if (!properties) return {}
+
+  for (const [propName, propSchema] of Object.entries(properties)) {
+    const isRequired = required?.includes(propName) || false
+    const propType = propSchema.type as string
+    const format = propSchema.format as string | undefined
+
+    // Only include required fields and some common optional ones in examples
+    if (isRequired || ['search', 'limit', 'page'].includes(propName)) {
+      switch (propType) {
+        case 'string':
+          if (format === 'uuid') {
+            example[propName] = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+          } else if (propName.toLowerCase().includes('search')) {
+            example[propName] = 'mario'
+          } else {
+            example[propName] = 'example'
+          }
+          break
+        case 'number':
+        case 'integer':
+          if (propName === 'limit') {
+            example[propName] = 10
+          } else if (propName === 'page') {
+            example[propName] = 1
+          } else {
+            example[propName] = propSchema.default ?? 1
+          }
+          break
+        case 'boolean':
+          example[propName] = propSchema.default ?? false
+          break
+        default:
+          if (propSchema.default !== undefined) {
+            example[propName] = propSchema.default
+          }
+      }
+    }
+  }
+
+  return example
 }
 
 function extractRouterInfo(filePath: string): RouterInfo | null {
@@ -63,6 +462,7 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
         input: inputSchema,
         auth: authType === 'mobileProtectedProcedure' ? 'protected' : 'public',
         description,
+        returnStructure: analyzeReturnStructure(filePath, name),
       })
     }
 
@@ -83,6 +483,7 @@ function generateSwaggerEndpoints(
 
   for (const routerInfo of routerInfos) {
     for (const procedure of routerInfo.procedures) {
+      // tRPC uses GET for queries and POST for mutations when using fetchRequestHandler
       const method = procedure.type === 'mutation' ? 'post' : 'get'
       const path = `/api/mobile/trpc/${routerInfo.router}.${procedure.name}`
 
@@ -103,55 +504,37 @@ function generateSwaggerEndpoints(
           ) as Record<string, unknown>
 
           if (method === 'post') {
+            // Mutations use POST with request body
             requestBody = {
               required: true,
               content: {
                 'application/json': {
                   schema: jsonSchema,
+                  example: generateExampleFromSchema(jsonSchema),
                 },
               },
+              description: `Input data for ${procedure.type} procedure. Schema: ${schemaName}`,
             }
           } else {
-            // For GET requests, convert schema properties to query parameters
-            // Handle both direct properties and $ref definitions
-            let properties: Record<string, Record<string, unknown>> | undefined
-            let required: string[] | undefined
-
-            if (jsonSchema.properties) {
-              properties = jsonSchema.properties as Record<
-                string,
-                Record<string, unknown>
-              >
-              required = jsonSchema.required as string[] | undefined
-            } else if (jsonSchema.definitions && jsonSchema.$ref) {
-              // Extract the definition name from $ref
-              const refName = (jsonSchema.$ref as string).split('/').pop()
-              if (refName) {
-                const definitions = jsonSchema.definitions as Record<
-                  string,
-                  Record<string, unknown>
-                >
-                const definition = definitions[refName]
-                if (definition) {
-                  properties = definition.properties as Record<
-                    string,
-                    Record<string, unknown>
-                  >
-                  required = definition.required as string[] | undefined
-                }
-              }
-            }
-
-            if (properties) {
-              parameters = Object.entries(properties).map(([name, prop]) => ({
-                name,
+            // Queries use GET with input query parameter containing JSON string
+            parameters = [
+              {
+                name: 'input',
                 in: 'query',
-                required: required?.includes(name) || false,
-                schema: prop,
-                description:
-                  (prop.description as string) || `${name} parameter`,
-              }))
-            }
+                required: false, // NOTE: Most of them have defaults
+                schema: {
+                  type: 'string',
+                  description: `JSON string containing the input object matching ${schemaName}`,
+                },
+                description: `Input data as SuperJSON wrapped JSON string. Schema: ${schemaName}. Can be omitted if all fields have defaults.`,
+                example: JSON.stringify(
+                  { json: generateExampleFromSchema(jsonSchema) },
+                  null,
+                  0,
+                ),
+                'x-input-schema': jsonSchema,
+              },
+            ]
           }
         }
       }
@@ -170,7 +553,7 @@ function generateSwaggerEndpoints(
         requestBody,
         responses: {
           '200': {
-            description: 'Successful response',
+            description: 'Successful tRPC response',
             content: {
               'application/json': {
                 schema: {
@@ -178,7 +561,29 @@ function generateSwaggerEndpoints(
                   properties: {
                     result: {
                       type: 'object',
-                      description: 'tRPC result wrapper',
+                      description:
+                        'tRPC result wrapper containing the actual response data',
+                      properties: {
+                        data: {
+                          type: 'object',
+                          description: `Response data from ${routerInfo.router}.${procedure.name}`,
+                        },
+                      },
+                    },
+                  },
+                  required: ['result'],
+                },
+                examples: {
+                  success: {
+                    summary: 'Successful response',
+                    value: {
+                      result: {
+                        data: generateResponseExampleByStructure(
+                          routerInfo.router,
+                          procedure.name,
+                          procedure.returnStructure || 'generic-object',
+                        ),
+                      },
                     },
                   },
                 },
@@ -186,19 +591,67 @@ function generateSwaggerEndpoints(
             },
           },
           '400': {
-            description: 'Bad Request - Invalid input or parameters',
+            description:
+              'Bad Request - Invalid input parameters or malformed JSON',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TRPCError' },
+                examples: {
+                  invalidInput: {
+                    summary: 'Invalid input example',
+                    value: {
+                      error: {
+                        json: {
+                          message: 'Input validation failed',
+                          code: -32600,
+                          data: {
+                            code: 'BAD_REQUEST',
+                            httpStatus: 400,
+                            path: `${routerInfo.router}.${procedure.name}`,
+                            zodError: {
+                              formErrors: ['Required'],
+                              fieldErrors: {},
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
           '401': {
             description: 'Unauthorized - Authentication required',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TRPCError' },
+              },
+            },
           },
           '403': {
             description: 'Forbidden - Insufficient permissions',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TRPCError' },
+              },
+            },
           },
           '404': {
             description: 'Not Found - Resource not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TRPCError' },
+              },
+            },
           },
           '500': {
             description: 'Internal Server Error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TRPCError' },
+              },
+            },
           },
         },
         security,
@@ -242,9 +695,95 @@ function generateOpenAPISpec(endpoints: SwaggerEndpoint[]) {
   return {
     openapi: '3.0.0',
     info: {
-      title: 'EmuReady Mobile API',
-      description:
-        'Complete API documentation for EmuReady mobile applications. This API provides endpoints for managing game emulation listings, user authentication, device information, and more.',
+      title: 'EmuReady Mobile API (tRPC)',
+      description: `
+# EmuReady Mobile tRPC API
+
+Complete API documentation for EmuReady mobile applications built with tRPC.
+
+## tRPC HTTP Method Conventions
+
+NOTE: the protected routes require authentication via Clerk JWT token in the Authorization header. This isn't implemented yet.
+
+tRPC uses HTTP method semantics with fetchRequestHandler:
+- **Queries** use **GET** requests with input as query parameter
+- **Mutations** use **POST** requests with input in request body
+
+### Usage Examples:
+
+\`\`\`bash
+# Query: Get games with search and limit (GET with SuperJSON wrapped input)
+curl -X GET "https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D" \\
+  -H "Content-Type: application/json"
+
+# Query: Get popular games (GET, no input required)
+curl -X GET "https://www.emuready.com/api/mobile/trpc/games.getPopularGames" \\
+  -H "Content-Type: application/json"
+
+# Query: Get listings with filters (GET with SuperJSON wrapped input)
+curl -X GET "https://www.emuready.com/api/mobile/trpc/listings.getListings?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D" \\
+  -H "Content-Type: application/json"
+
+# Mutation: Create listing (POST with request body)
+curl -X POST "https://www.emuready.com/api/mobile/trpc/listings.createListing" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -d '{"gameId":"uuid","deviceId":"uuid","emulatorId":"uuid","performanceId":"uuid"}'
+
+# Protected query with authentication (GET with query parameter and auth header)
+curl -X GET "https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22userId%22%3A%22uuid%22%7D" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+\`\`\`
+
+### Important Notes:
+
+**For Queries (GET requests):**
+✅ Use GET method
+✅ Send input wrapped in SuperJSON format: \`{"json":{"field":"value"}}\`
+✅ URL-encode the entire JSON string
+✅ Many endpoints have defaults and don't require input
+✅ Input parameter format: \`?input={"json":{"field":"value"}}\` (URL-encoded)
+
+**For Mutations (POST requests):**
+✅ Use POST method
+✅ Send input as JSON in request body
+✅ Set Content-Type: application/json
+
+### Response Format:
+All responses are wrapped in a tRPC result object:
+\`\`\`json
+{
+  "result": {
+    "data": /* response data */
+  }
+}
+\`\`\`
+
+### Error Response Format:
+\`\`\`json
+{
+  "error": {
+    "json": {
+      "message": "Error message",
+      "code": -32600,
+      "data": {
+        "code": "BAD_REQUEST",
+        "httpStatus": 400,
+        "path": "games.getGames"
+      }
+    }
+  }
+}
+\`\`\`
+
+This API provides endpoints for:
+- Game emulation listings management
+- User authentication and profiles  
+- Device and hardware information
+- Emulator data and compatibility
+- Community features (comments, votes)
+      `,
       version: '1.0.0',
       contact: {
         name: 'EmuReady API Support',
@@ -276,25 +815,72 @@ function generateOpenAPISpec(endpoints: SwaggerEndpoint[]) {
         },
       },
       schemas: {
-        // Add common response schemas
+        // Add common response schemas matching actual tRPC error format
         TRPCError: {
           type: 'object',
+          description: 'tRPC error response format',
           properties: {
             error: {
               type: 'object',
               properties: {
-                message: { type: 'string' },
-                code: { type: 'string' },
-                data: {
+                json: {
                   type: 'object',
                   properties: {
-                    code: { type: 'string' },
-                    httpStatus: { type: 'number' },
+                    message: {
+                      type: 'string',
+                      description:
+                        'Error message, often includes validation details',
+                    },
+                    code: {
+                      type: 'number',
+                      description:
+                        'tRPC error code (-32600 for BAD_REQUEST, etc.)',
+                    },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        code: {
+                          type: 'string',
+                          description:
+                            'Error type code (BAD_REQUEST, UNAUTHORIZED, etc.)',
+                        },
+                        httpStatus: {
+                          type: 'number',
+                          description: 'HTTP status code',
+                        },
+                        path: {
+                          type: 'string',
+                          description:
+                            'tRPC procedure path (e.g., "games.getGames")',
+                        },
+                        zodError: {
+                          type: 'object',
+                          description:
+                            'Zod validation error details (if applicable)',
+                          properties: {
+                            formErrors: {
+                              type: 'array',
+                              items: { type: 'string' },
+                            },
+                            fieldErrors: {
+                              type: 'object',
+                              additionalProperties: {
+                                type: 'array',
+                                items: { type: 'string' },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
+                  required: ['message', 'code', 'data'],
                 },
               },
+              required: ['json'],
             },
           },
+          required: ['error'],
         },
       },
     },
@@ -315,7 +901,11 @@ interface EndpointInfo {
     required: boolean
     description?: string
   }>
-  requestBody?: unknown
+  requestBody?: {
+    required?: boolean
+    content?: unknown
+    description?: string
+  }
   security?: unknown[]
 }
 
@@ -341,7 +931,7 @@ function generateMarkdownDocs(
     (e) => e.security && e.security.length > 0,
   )
 
-  const markdown = `# ${info.title}
+  return `# ${info.title}
 
 *Auto-generated on: ${new Date().toISOString()}*
 
@@ -369,17 +959,11 @@ ${publicEndpoints
   .map(
     (endpoint, index) => `
 #### ${index + 1}. **${endpoint.path.split('.').pop()}**
-- **Method**: ${endpoint.method}
+- **Method**: ${endpoint.method.toUpperCase()}
 - **Path**: \`${endpoint.path}\`
 - **Description**: ${endpoint.summary}
 ${endpoint.tags ? `- **Tags**: ${endpoint.tags.join(', ')}` : ''}
-${
-  endpoint.parameters && endpoint.parameters.length > 0
-    ? `- **Parameters**:
-${endpoint.parameters.map((p) => `  - \`${p.name}\` (${p.schema.type}${p.required ? ', required' : ''}): ${p.description || ''}`).join('\n')}`
-    : ''
-}
-${endpoint.requestBody ? `- **Request Body**: JSON object required` : ''}
+${endpoint.requestBody ? `- **Request Body**: JSON object ${endpoint.requestBody.required ? 'required' : 'optional (can be empty: {})'}\n- **Content-Type**: application/json` : ''}
 `,
   )
   .join('')}
@@ -390,17 +974,12 @@ ${protectedEndpoints
   .map(
     (endpoint, index) => `
 #### ${index + 1}. **${endpoint.path.split('.').pop()}**
-- **Method**: ${endpoint.method}
+- **Method**: ${endpoint.method.toUpperCase()}
 - **Path**: \`${endpoint.path}\`
 - **Description**: ${endpoint.summary}
 ${endpoint.tags ? `- **Tags**: ${endpoint.tags.join(', ')}` : ''}
-${
-  endpoint.parameters && endpoint.parameters.length > 0
-    ? `- **Parameters**:
-${endpoint.parameters.map((p) => `  - \`${p.name}\` (${p.schema.type}${p.required ? ', required' : ''}): ${p.description || ''}`).join('\n')}`
-    : ''
-}
-${endpoint.requestBody ? `- **Request Body**: JSON object required` : ''}
+${endpoint.requestBody ? `- **Request Body**: JSON object ${endpoint.requestBody.required ? 'required' : 'optional (can be empty: {})'}\n- **Content-Type**: application/json` : ''}
+- **Authentication**: Bearer token required
 `,
   )
   .join('')}
@@ -432,8 +1011,6 @@ Common error codes:
 ---
 *This documentation is automatically generated from tRPC procedures and OpenAPI specifications.*
 `
-
-  return markdown
 }
 
 async function main() {
@@ -476,7 +1053,7 @@ async function main() {
     mkdirSync(outputDir, { recursive: true })
     mkdirSync(docsDir, { recursive: true })
   } catch {
-    // Directory might already exist
+    // Swallow that shit
   }
 
   // Write OpenAPI spec

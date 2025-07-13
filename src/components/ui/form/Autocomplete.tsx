@@ -38,7 +38,9 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   filterKeys?: (keyof T)[] // Keys to use for client-side fuzzy filtering (if items is provided)
 
   placeholder?: string
+  id?: string
   label?: string
+  name?: string
   leftIcon?: ReactNode
   rightIcon?: ReactNode
   disabled?: boolean
@@ -60,7 +62,9 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   customOptionRenderer,
   filterKeys = [], // Default to empty array, implying label search or specific logic
   placeholder,
+  id,
   label,
+  name,
   leftIcon,
   rightIcon,
   disabled,
@@ -419,7 +423,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     <div className={cn('relative', className)}>
       {label && (
         <label
-          htmlFor={label}
+          htmlFor={id ?? label}
           className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           {label}
@@ -433,7 +437,8 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         )}
         <input
           ref={inputRef}
-          id={label}
+          id={id ?? label}
+          name={name}
           type="text"
           className={cn(
             'w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
@@ -481,22 +486,19 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
             role="listbox"
             className="absolute z-[70] mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
           >
-            {isLoading && (
-              <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
-                Loading...
-              </li>
-            )}
-            {!isLoading && showNoResults && (
-              <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
-                No results found.
-              </li>
-            )}
-            {!isLoading && showMinCharsMessage && (
-              <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
-                Type at least {minCharsToTrigger} characters to search
-              </li>
-            )}
+            <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
+              {isLoading
+                ? 'Loading...'
+                : showNoResults
+                  ? 'No results found.'
+                  : showMinCharsMessage
+                    ? `Type at least ${minCharsToTrigger} characters to search`
+                    : null}
+            </li>
+
             {!isLoading &&
+              !showNoResults &&
+              !showMinCharsMessage &&
               suggestions.map((item, idx) => {
                 const itemValue = optionToValue(item)
                 const isHighlighted = idx === highlightedIndex

@@ -10,7 +10,7 @@ export const CreatePcListingSchema = z.object({
   memorySize: z.number().int().positive().min(1).max(256), // 1GB to 256GB
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
-  notes: z.string().optional(),
+  notes: z.string().max(5000).optional(),
   customFieldValues: z
     .array(
       z.object({
@@ -179,7 +179,7 @@ export const UpdatePcListingUserSchema = z.object({
   memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
-  notes: z.string().nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
   customFieldValues: z
     .array(
       z.object({

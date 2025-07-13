@@ -22,3 +22,14 @@ export interface PcListingsFilter {
   sortDirection?: 'asc' | 'desc'
   myListings?: boolean
 }
+
+export type SortField =
+  | 'game.title'
+  | 'game.system.name'
+  | 'cpu'
+  | 'gpu'
+  | 'emulator.name'
+  | 'performance.rank'
+  | 'author.name'
+  | 'memorySize'
+  | 'createdAt'
