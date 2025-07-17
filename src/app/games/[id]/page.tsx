@@ -52,8 +52,13 @@ function GameDetailsPage() {
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                     {gameQuery.data.title}
+                    {gameQuery.data.isErotic && (
+                      <Badge variant="danger" size="sm">
+                        18+
+                      </Badge>
+                    )}
                   </h1>
                   <div className="mt-2">
                     <Badge variant="default">

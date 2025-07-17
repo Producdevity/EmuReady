@@ -1,9 +1,11 @@
 'use client'
 
 import { Calendar, Monitor, Users, Plus, ImageIcon } from 'lucide-react'
-import { Modal, Button, OptimizedImage } from '@/components/ui'
+import { useState } from 'react'
+import { Modal, Button, OptimizedImage, Input } from '@/components/ui'
 import { formatYear } from '@/utils/date'
 import { extractBoxartUrl } from '../utils/boxartHelpers'
+import { inferRatingAndNsfw } from '../utils/nsfwHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 interface GamePreviewModalProps {
@@ -11,11 +13,18 @@ interface GamePreviewModalProps {
   searchResponse: TGDBGamesByNameResponse | null
   isOpen: boolean
   onClose: () => void
-  onSelect: (game: TGDBGame) => void
+  onSelect: (
+    game: TGDBGame,
+    extras: { ageRating?: string; isErotic: boolean },
+  ) => void
   isSelecting: boolean
 }
 
 function GamePreviewModal(props: GamePreviewModalProps) {
+  const inferred = inferRatingAndNsfw(props.game ?? {})
+  const [ageRating, setAgeRating] = useState(inferred.ageRating || '')
+  const [isErotic, setIsErotic] = useState(inferred.isErotic)
+
   if (!props.game || !props.searchResponse) return null
 
   const boxartUrl = extractBoxartUrl(props.game, props.searchResponse)
@@ -97,7 +106,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
                 </div>
               )}
 
-              {props.game.rating && (
+              {props.game.rating ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600 dark:text-slate-400">
                     Rating:
@@ -106,7 +115,34 @@ function GamePreviewModal(props: GamePreviewModalProps) {
                     {props.game.rating}
                   </span>
                 </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Age Rating:
+                  </span>
+                  <Input
+                    value={ageRating}
+                    onChange={(ev) => setAgeRating(ev.target.value)}
+                    className="w-20"
+                  />
+                </div>
               )}
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="erotic-toggle"
+                  checked={isErotic}
+                  onChange={(e) => setIsErotic(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label
+                  htmlFor="erotic-toggle"
+                  className="text-sm text-slate-600 dark:text-slate-400"
+                >
+                  Erotic 18+
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -131,7 +167,13 @@ function GamePreviewModal(props: GamePreviewModalProps) {
             Close Preview
           </Button>
           <Button
-            onClick={() => props.game && props.onSelect(props.game)}
+            onClick={() =>
+              props.game &&
+              props.onSelect(props.game, {
+                ageRating: ageRating || undefined,
+                isErotic,
+              })
+            }
             disabled={props.isSelecting}
             variant="primary"
             className="flex-1"

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "showNsfw" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Game" ADD COLUMN     "ageRating" TEXT;
+ALTER TABLE "Game" ADD COLUMN     "isErotic" BOOLEAN NOT NULL DEFAULT false;

@@ -8,7 +8,10 @@ import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 interface SearchResultsProps {
   searchResults: TGDBGamesByNameResponse | null
   onPreview: (game: TGDBGame) => void
-  onSelect: (game: TGDBGame) => void
+  onSelect: (
+    game: TGDBGame,
+    extras: { ageRating?: string; isErotic: boolean },
+  ) => void
   isSelecting: boolean
   existingGames: Record<
     number,
