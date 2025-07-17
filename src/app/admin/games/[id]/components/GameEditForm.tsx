@@ -59,6 +59,8 @@ export function GameEditForm(props: Props) {
         imageUrl: props.game.imageUrl ?? '',
         boxartUrl: props.game.boxartUrl ?? '',
         bannerUrl: props.game.bannerUrl ?? '',
+        ageRating: props.game.ageRating ?? '',
+        isErotic: props.game.isErotic ?? false,
       },
     })
 
@@ -187,6 +189,28 @@ export function GameEditForm(props: Props) {
             {formState.errors.bannerUrl.message}
           </p>
         )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Age Rating
+        </label>
+        <Input {...register('ageRating')} placeholder="e.g. M" />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="isErotic"
+          {...register('isErotic')}
+          className="h-4 w-4"
+        />
+        <label
+          htmlFor="isErotic"
+          className="text-sm text-gray-700 dark:text-gray-300"
+        >
+          Erotic 18+
+        </label>
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
