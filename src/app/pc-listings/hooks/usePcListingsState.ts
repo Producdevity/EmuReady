@@ -2,8 +2,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import analytics from '@/lib/analytics'
 import { type SortDirection } from '@/types/api'
+import { type RouterInput } from '@/types/trpc'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
-import { type SortField } from '../types'
+
+type SortField = NonNullable<RouterInput['pcListings']['get']['sortField']>
 
 export default function usePcListingsState() {
   const router = useRouter()
@@ -76,7 +78,7 @@ export default function usePcListingsState() {
       emulatorIds,
       minMemory,
       maxMemory,
-      sortField,
+      sortField: sortField ?? undefined,
       sortDirection,
       myListings,
     })

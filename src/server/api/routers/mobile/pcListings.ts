@@ -40,6 +40,8 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         emulatorId,
         os,
         search,
+        minMemory,
+        maxMemory,
       } = input
       const skip = (page - 1) * limit
 
@@ -62,6 +64,14 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         baseWhere.game = {
           ...(baseWhere.game as Record<string, unknown>),
           systemId,
+        }
+      }
+
+      // Add memory filtering
+      if (minMemory !== undefined || maxMemory !== undefined) {
+        baseWhere.memorySize = {
+          ...(minMemory !== undefined ? { gte: minMemory } : {}),
+          ...(maxMemory !== undefined ? { lte: maxMemory } : {}),
         }
       }
 

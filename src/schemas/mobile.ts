@@ -253,6 +253,8 @@ export const GetPcListingsSchema = z.object({
   emulatorId: z.string().uuid().optional(),
   os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
   search: z.string().optional(),
+  minMemory: z.number().min(1).max(256).optional(),
+  maxMemory: z.number().min(1).max(256).optional(),
 })
 
 export const GetCpusSchema = z.object({

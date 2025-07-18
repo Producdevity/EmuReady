@@ -13,14 +13,13 @@ import SocSelector from './SocSelector'
 
 type UserPreferencesData = RouterOutput['userPreferences']['get']
 
-interface UserPreferencesQuery {
-  data?: UserPreferencesData
-  isPending: boolean
-  error?: unknown
-}
-
 interface Props {
-  preferencesQuery: UserPreferencesQuery
+  // TODO: see if we can use UseQueryResult from @tanstack/react-query instead
+  preferencesQuery: {
+    data?: UserPreferencesData
+    isPending: boolean
+    error?: unknown
+  }
 }
 
 function DeviceAndSocPreferences(props: Props) {

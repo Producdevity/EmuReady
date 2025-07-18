@@ -1,6 +1,5 @@
-import { type SortField } from '@/app/listings/types'
-import { type SortField as PcSortField } from '@/app/pc-listings/types'
 import { type SortDirection } from '@/types/api'
+import { type RouterInput } from '@/types/trpc'
 import { type Role } from '@orm'
 import {
   ADMIN_ACTIONS,
@@ -44,7 +43,7 @@ const analytics = {
 
   // Filter events
   filter: {
-    sort: (sortField: string | SortField | null) => {
+    sort: (sortField: string | RouterInput['listings']['get']['sortField']) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.FILTER,
         action: FILTER_ACTIONS.SORT,
@@ -151,7 +150,7 @@ const analytics = {
       socIds?: string[] | null
       emulatorIds?: string[] | null
       performanceIds?: number[] | null
-      sortField?: SortField | null
+      sortField?: RouterInput['listings']['get']['sortField'] | null
       sortDirection?: SortDirection | null
       myListings?: boolean | null
     }) => {
@@ -187,7 +186,7 @@ const analytics = {
       emulatorIds: string[]
       minMemory: number | null
       maxMemory: number | null
-      sortField: PcSortField | null
+      sortField: RouterInput['pcListings']['get']['sortField']
       sortDirection: SortDirection | null
       myListings: boolean
     }) => {
