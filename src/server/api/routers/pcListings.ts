@@ -100,6 +100,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Exclude Microsoft Windows games since PC listings are for emulation
         game: {
           system: { key: { not: 'microsoft_windows' } },
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
           ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
         },
         ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),

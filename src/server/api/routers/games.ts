@@ -235,6 +235,8 @@ export const gamesRouter = createTRPCRouter({
         boxartUrl: true,
         bannerUrl: true,
         tgdbGameId: true,
+        ageRating: true,
+        isErotic: true,
         status: true,
         submittedBy: true,
         submittedAt: true,
@@ -391,8 +393,11 @@ export const gamesRouter = createTRPCRouter({
           },
         },
       })
-
-      return game ?? ResourceError.game.notFound()
+      if (!game) return ResourceError.game.notFound()
+      if (!ctx.session?.user?.showNsfw && game.isErotic) {
+        return ResourceError.game.notFound()
+      }
+      return game
     }),
 
   checkExistingByTgdbIds: publicProcedure
@@ -631,6 +636,8 @@ export const gamesRouter = createTRPCRouter({
           boxartUrl: true,
           bannerUrl: true,
           tgdbGameId: true,
+          ageRating: true,
+          isErotic: true,
           status: true,
           submittedBy: true,
           submittedAt: true,

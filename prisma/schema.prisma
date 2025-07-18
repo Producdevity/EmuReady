@@ -86,6 +86,7 @@ model User {
   defaultToUserDevices Boolean     @default(false)
   defaultToUserSocs    Boolean     @default(false)
   notifyOnNewListings  Boolean     @default(true)
+  showNsfw            Boolean     @default(false)
   lastUsedDeviceId     String?     // Track the last used device
   // Relations
   comments             Comment[]
@@ -211,6 +212,8 @@ model Game {
   boxartUrl   String?        // TGDB boxart image URL
   bannerUrl   String?        // TGDB banner image URL
   tgdbGameId  Int?           // TheGamesDB game ID for reliable duplicate detection
+  ageRating   String?
+  isErotic    Boolean        @default(false)
   status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
   submittedBy String?                     // null for existing games, userId for new submissions
   submittedAt DateTime?

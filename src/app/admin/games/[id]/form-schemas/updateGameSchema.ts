@@ -12,6 +12,8 @@ const updateGameSchema = z.object({
   imageUrl: imageUrlSchema,
   boxartUrl: imageUrlSchema,
   bannerUrl: imageUrlSchema,
+  ageRating: z.string().optional(),
+  isErotic: z.boolean().optional(),
 })
 
 export default updateGameSchema

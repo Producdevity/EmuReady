@@ -29,6 +29,7 @@ import {
   ApproveButton,
   RejectButton,
   ViewButton,
+  Badge,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -66,6 +67,8 @@ const GAME_APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'submitter', label: 'Submitter', defaultVisible: true },
   { key: 'submittedAt', label: 'Submitted', defaultVisible: true },
   { key: 'status', label: 'Status', defaultVisible: true },
+  { key: 'ageRating', label: 'Rating', defaultVisible: false },
+  { key: 'erotic', label: '18+', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -408,6 +411,16 @@ function GameApprovalsPage() {
                         Status
                       </th>
                     )}
+                    {columnVisibility.isColumnVisible('ageRating') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Rating
+                      </th>
+                    )}
+                    {columnVisibility.isColumnVisible('erotic') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        18+
+                      </th>
+                    )}
                     {columnVisibility.isColumnVisible('actions') && (
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Actions
@@ -561,6 +574,22 @@ function GameApprovalsPage() {
                       {columnVisibility.isColumnVisible('status') && (
                         <td className="px-6 py-4">
                           <ApprovalStatusBadge status={game.status} />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('ageRating') && (
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          {game.ageRating ?? '-'}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('erotic') && (
+                        <td className="px-6 py-4 text-sm">
+                          {game.isErotic ? (
+                            <Badge variant="danger" size="sm">
+                              18+
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('actions') && (

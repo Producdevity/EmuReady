@@ -90,7 +90,11 @@ function DeviceAndSocPreferences(props: Props) {
   }
 
   function handleDevicePreferenceChange(
-    key: 'defaultToUserDevices' | 'defaultToUserSocs' | 'notifyOnNewListings',
+    key:
+      | 'defaultToUserDevices'
+      | 'defaultToUserSocs'
+      | 'notifyOnNewListings'
+      | 'showNsfw',
     value: boolean,
   ) {
     updatePreferences.mutate({ [key]: value })
@@ -253,6 +257,23 @@ function DeviceAndSocPreferences(props: Props) {
               checked={preferences.notifyOnNewListings}
               onChange={(value) =>
                 handleDevicePreferenceChange('notifyOnNewListings', value)
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-gray-900 dark:text-white">
+                Show Mature Content
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Include erotic 18+ games in listings
+              </p>
+            </div>
+            <AnimatedToggle
+              checked={preferences.showNsfw}
+              onChange={(value) =>
+                handleDevicePreferenceChange('showNsfw', value)
               }
             />
           </div>
