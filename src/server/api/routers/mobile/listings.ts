@@ -80,9 +80,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
                 system: { select: { id: true, name: true, key: true } },
               },
             },
-            device: {
-              include: { brand: { select: { id: true, name: true } } },
-            },
+            device: { include: { brand: true, soc: true } },
             emulator: { select: { id: true, name: true, logo: true } },
             performance: { select: { id: true, label: true, rank: true } },
             author: { select: { id: true, name: true } },
@@ -157,7 +155,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         game: {
           include: { system: { select: { id: true, name: true, key: true } } },
         },
-        device: { include: { brand: { select: { id: true, name: true } } } },
+        device: { include: { brand: true, soc: true } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
         author: { select: { id: true, name: true } },
@@ -210,7 +208,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       const listings = await ctx.prisma.listing.findMany({
         where: { gameId: input.gameId, status: ApprovalStatus.APPROVED },
         include: {
-          device: { include: { brand: { select: { id: true, name: true } } } },
+          device: { include: { brand: true, soc: true } },
           emulator: { select: { id: true, name: true, logo: true } },
           performance: { select: { id: true, label: true, rank: true } },
           author: { select: { id: true, name: true } },
@@ -269,7 +267,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               system: { select: { id: true, name: true, key: true } },
             },
           },
-          device: { include: { brand: { select: { id: true, name: true } } } },
+          device: { include: { brand: true, soc: true } },
           emulator: { select: { id: true, name: true, logo: true } },
           performance: { select: { id: true, label: true, rank: true } },
           author: { select: { id: true, name: true } },
