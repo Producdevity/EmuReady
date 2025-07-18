@@ -28,7 +28,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   getListings: mobilePublicProcedure
     .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, gameId, systemId, deviceId, emulatorId, search } =
+      const { page, limit, gameId, systemId, deviceId, emulatorIds, search } =
         input
       const skip = (page - 1) * limit
 
@@ -40,7 +40,9 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
       if (gameId) baseWhere.gameId = gameId
       if (deviceId) baseWhere.deviceId = deviceId
-      if (emulatorId) baseWhere.emulatorId = emulatorId
+      if (emulatorIds && emulatorIds.length > 0) {
+        baseWhere.emulatorId = { in: emulatorIds }
+      }
       if (systemId) {
         baseWhere.game = {
           ...(baseWhere.game as Record<string, unknown>),

@@ -106,7 +106,7 @@ export const GetListingsSchema = z.object({
   gameId: z.string().uuid().optional(),
   systemId: z.string().uuid().optional(),
   deviceId: z.string().uuid().optional(),
-  emulatorId: z.string().uuid().optional(),
+  emulatorIds: z.array(z.string().uuid()).optional(),
   search: z.string().optional(),
 })
 
