@@ -62,7 +62,6 @@ export const CreateGameSchema = z.object({
   boxartUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   tgdbGameId: z.number().optional(),
-  ageRating: z.string().optional(),
   isErotic: z.boolean().optional(),
 })
 
@@ -74,7 +73,6 @@ export const UpdateGameSchema = z.object({
   boxartUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   tgdbGameId: z.number().optional(),
-  ageRating: z.string().optional(),
   isErotic: z.boolean().optional(),
 })
 

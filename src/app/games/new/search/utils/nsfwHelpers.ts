@@ -1,5 +1,4 @@
 export function inferRatingAndNsfw(game: { rating?: string | null }): {
-  ageRating?: string
   isErotic: boolean
 } {
   const rating = game.rating?.trim()
@@ -14,5 +13,5 @@ export function inferRatingAndNsfw(game: { rating?: string | null }): {
       isErotic = true
     }
   }
-  return { ageRating: rating || undefined, isErotic }
+  return { isErotic }
 }

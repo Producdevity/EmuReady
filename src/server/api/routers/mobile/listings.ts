@@ -35,7 +35,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       // Build where clause with proper search filtering
       const baseWhere: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          // Filter NSFW content based on user preferences
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       }
 
       if (gameId) baseWhere.gameId = gameId
@@ -149,7 +153,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     const listings = await ctx.prisma.listing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          // Filter NSFW content based on user preferences
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 10,

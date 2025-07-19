@@ -6954,9 +6954,12 @@
                       "type": "string",
                       "format": "uuid"
                     },
-                    "emulatorId": {
-                      "type": "string",
-                      "format": "uuid"
+                    "emulatorIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
                     },
                     "search": {
                       "type": "string"
@@ -10045,6 +10048,16 @@
                     },
                     "search": {
                       "type": "string"
+                    },
+                    "minMemory": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 256
+                    },
+                    "maxMemory": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 256
                     }
                   },
                   "additionalProperties": false

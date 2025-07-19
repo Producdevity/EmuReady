@@ -390,19 +390,13 @@ function GameDetailsModal(props: Props) {
                   )}
                 </div>
 
-                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Rating
-                  </p>
-                  <p className="text-sm text-gray-900 dark:text-white">
-                    {props.selectedGame.ageRating ?? 'N/A'}
-                  </p>
-                  {props.selectedGame.isErotic && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 font-medium">
+                {props.selectedGame.isErotic && (
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-xs text-red-600 dark:text-red-400 font-medium">
                       Contains erotic content
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Game IDs */}
                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">

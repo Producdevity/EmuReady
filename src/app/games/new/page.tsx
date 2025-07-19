@@ -34,7 +34,6 @@ function AddGamePage() {
   const [title, setTitle] = useState('')
   const [systemId, setSystemId] = useState('')
   const [imageUrl, setImageUrl] = useState('')
-  const [ageRating, setAgeRating] = useState('')
   const [isErotic, setIsErotic] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -95,7 +94,6 @@ function AddGamePage() {
         title,
         systemId,
         imageUrl: imageUrl || undefined,
-        ageRating: ageRating || undefined,
         isErotic,
       })
 
@@ -211,17 +209,6 @@ function AddGamePage() {
           onImageSelect={setImageUrl}
           onError={setError}
         />
-
-        <div>
-          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
-            Age Rating
-          </label>
-          <Input
-            value={ageRating}
-            onChange={(ev) => setAgeRating(ev.target.value)}
-            placeholder="e.g. M"
-          />
-        </div>
 
         <div className="flex items-center gap-2">
           <input

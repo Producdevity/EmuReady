@@ -121,10 +121,7 @@ function GameSearchContent() {
   }, [])
 
   const handleSelectGame = useCallback(
-    async (
-      game: TGDBGame,
-      extras: { ageRating?: string; isErotic: boolean },
-    ) => {
+    async (game: TGDBGame, extras: { isErotic: boolean }) => {
       if (!userQuery.data || !systemsQuery.data) {
         return toast.error('Please sign in to add games')
       }
@@ -180,7 +177,6 @@ function GameSearchContent() {
           boxartUrl: imageResponse?.boxartUrl,
           bannerUrl: imageResponse?.bannerUrl,
           tgdbGameId: game.id,
-          ageRating: extras.ageRating,
           isErotic: extras.isErotic,
         }
 

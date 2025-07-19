@@ -52,7 +52,11 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       // Build where clause with proper search filtering
       const baseWhere: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          // Filter NSFW content based on user preferences
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       }
 
       if (gameId) baseWhere.gameId = gameId

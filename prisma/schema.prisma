@@ -212,7 +212,6 @@ model Game {
   boxartUrl   String?        // TGDB boxart image URL
   bannerUrl   String?        // TGDB banner image URL
   tgdbGameId  Int?           // TheGamesDB game ID for reliable duplicate detection
-  ageRating   String?
   isErotic    Boolean        @default(false)
   status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
   submittedBy String?                     // null for existing games, userId for new submissions
