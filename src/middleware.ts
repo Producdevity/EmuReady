@@ -19,6 +19,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:3001', // dev server backup
   'https://eden-emu.dev', // Eden website
+  'https://eden-emulator-github-io.vercel.app', // Eden staging website
 ]
 
 function getClientIdentifier(req: NextRequest): string {
