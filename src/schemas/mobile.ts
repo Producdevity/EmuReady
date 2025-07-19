@@ -158,6 +158,7 @@ export const UpdateUserPreferencesSchema = z.object({
   defaultToUserSocs: z.boolean().optional(),
   notifyOnNewListings: z.boolean().optional(),
   bio: z.string().optional(),
+  showNsfw: z.boolean().optional(),
 })
 
 export const AddDevicePreferenceSchema = z.object({

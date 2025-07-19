@@ -216,7 +216,14 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .input(GetListingsByGameSchema)
     .query(async ({ ctx, input }) => {
       const listings = await ctx.prisma.listing.findMany({
-        where: { gameId: input.gameId, status: ApprovalStatus.APPROVED },
+        where: {
+          gameId: input.gameId,
+          status: ApprovalStatus.APPROVED,
+          game: {
+            status: ApprovalStatus.APPROVED,
+            ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          },
+        },
         include: {
           device: { include: { brand: true, soc: true } },
           emulator: { select: { id: true, name: true, logo: true } },
