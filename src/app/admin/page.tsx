@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { getCurrentUser } from '@/server/utils/auth'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
+import ApprovalCountBadge from './components/ApprovalCountBadge'
 import {
   moderatorNavItems,
   adminNavItems,
@@ -91,6 +92,7 @@ async function AdminDashboardPage() {
               key={item.href}
               href={item.href}
               className={cn(
+                'relative',
                 'bg-green-50 dark:bg-green-900/20',
                 'p-6 rounded-lg',
                 'border border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-500 transition-colors',
@@ -103,6 +105,7 @@ async function AdminDashboardPage() {
               <p className="text-sm text-green-700 dark:text-green-400">
                 {item.description}
               </p>
+              <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
         {isModerator &&
@@ -111,6 +114,7 @@ async function AdminDashboardPage() {
               key={item.href}
               href={item.href}
               className={cn(
+                'relative',
                 'bg-white dark:bg-gray-800',
                 'p-6 rounded-lg',
                 'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors',
@@ -121,6 +125,7 @@ async function AdminDashboardPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {item.description}
               </p>
+              <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
         {isAdmin &&
@@ -129,6 +134,7 @@ async function AdminDashboardPage() {
               key={item.href}
               href={item.href}
               className={cn(
+                'relative',
                 'bg-white dark:bg-gray-800',
                 'p-6 rounded-lg',
                 'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors',
@@ -139,6 +145,7 @@ async function AdminDashboardPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {item.description}
               </p>
+              <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
 
@@ -148,6 +155,7 @@ async function AdminDashboardPage() {
               key={item.href}
               href={item.href}
               className={cn(
+                'relative',
                 'bg-purple-50 dark:bg-purple-900/20',
                 'p-6 rounded-lg',
                 'border border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-500 transition-colors',
@@ -160,6 +168,7 @@ async function AdminDashboardPage() {
               <p className="text-sm text-purple-700 dark:text-purple-400">
                 {item.description}
               </p>
+              <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
       </div>
