@@ -11836,6 +11836,9 @@
                       },
                       "bio": {
                         "type": "string"
+                      },
+                      "showNsfw": {
+                        "type": "boolean"
                       }
                     },
                     "additionalProperties": false
