@@ -72,41 +72,31 @@ function GamesContent() {
     ) => {
       const params = new URLSearchParams(searchParams.toString())
 
-      // Update or remove a search param
+      // Helper to set or delete params based on default values
+      const setParam = (
+        key: string,
+        value: string | undefined,
+        defaultValue: string,
+      ) => {
+        if (value === defaultValue || !value) {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      }
+
+      // Apply updates
       if (updates.search !== undefined) {
-        const trimmedSearch = updates.search.trim()
-        if (trimmedSearch) {
-          params.set('search', trimmedSearch)
-        } else {
-          params.delete('search')
-        }
+        setParam('search', updates.search.trim(), '')
       }
-
-      // Update or remove systemId param
       if (updates.systemId !== undefined) {
-        if (updates.systemId) {
-          params.set('systemId', updates.systemId)
-        } else {
-          params.delete('systemId')
-        }
+        setParam('systemId', updates.systemId, '')
       }
-
-      // Update or remove page param
       if (updates.page !== undefined) {
-        if (updates.page > 1) {
-          params.set('page', updates.page.toString())
-        } else {
-          params.delete('page')
-        }
+        setParam('page', updates.page.toString(), '1')
       }
-
-      // Update or remove the hideNoListings param
       if (updates.hideNoListings !== undefined) {
-        if (updates.hideNoListings) {
-          params.delete('hideNoListings')
-        } else {
-          params.set('hideNoListings', 'false')
-        }
+        setParam('hideNoListings', updates.hideNoListings.toString(), 'true')
       }
 
       const newUrl = `${pathname}?${params.toString()}`
@@ -250,7 +240,7 @@ function GamesContent() {
   )
 }
 
-function GamesPage() {
+export default function GamesPage() {
   return (
     <Suspense
       fallback={
@@ -262,8 +252,4 @@ function GamesPage() {
       <GamesContent />
     </Suspense>
   )
-}
-
-export default function Page() {
-  return <GamesPage />
 }
