@@ -180,6 +180,9 @@ export const usersRouter = createTRPCRouter({
 
       // Build where clauses for listings filtering
       const listingsWhere: Prisma.ListingWhereInput = {}
+      if (!ctx.session?.user?.showNsfw) {
+        listingsWhere.game = { isErotic: false } as Prisma.GameWhereInput
+      }
 
       // Filter by approval status based on user permissions
       if (canViewBannedUsers) {
@@ -221,6 +224,12 @@ export const usersRouter = createTRPCRouter({
 
       // Build where clauses for votes filtering
       const votesWhere: Prisma.VoteWhereInput = {}
+      if (!ctx.session?.user?.showNsfw) {
+        votesWhere.listing = {
+          ...(votesWhere.listing as Prisma.ListingWhereInput),
+          game: { isErotic: false },
+        } as Prisma.ListingWhereInput
+      }
       if (votesSearch) {
         votesWhere.listing = {
           OR: [

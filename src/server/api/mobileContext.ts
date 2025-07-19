@@ -17,6 +17,7 @@ type User = {
   email: string | null
   name: string | null
   role: Role
+  showNsfw: boolean
 }
 
 type Session = {
@@ -85,6 +86,7 @@ export const createMobileTRPCContext = async (
           email: true,
           name: true,
           role: true,
+          showNsfw: true,
         },
       })
 
@@ -95,6 +97,7 @@ export const createMobileTRPCContext = async (
             email: user.email,
             name: user.name,
             role: user.role,
+            showNsfw: user.showNsfw,
           },
         }
       } else {
@@ -163,6 +166,7 @@ export const createMobileTRPCFetchContext = async (
           email: true,
           name: true,
           role: true,
+          showNsfw: true,
         },
       })
 
@@ -173,6 +177,7 @@ export const createMobileTRPCFetchContext = async (
             email: user.email,
             name: user.name,
             role: user.role,
+            showNsfw: user.showNsfw,
           },
         }
       } else {

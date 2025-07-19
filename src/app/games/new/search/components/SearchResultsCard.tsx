@@ -4,13 +4,14 @@ import { memo } from 'react'
 import { Button, OptimizedImage } from '@/components/ui'
 import { formatYear } from '@/utils/date'
 import { extractBoxartUrl, formatPlatformName } from '../utils/boxartHelpers'
+import { inferRatingAndNsfw } from '../utils/nsfwHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 interface Props {
   game: TGDBGame
   searchResponse: TGDBGamesByNameResponse
   onPreview: (game: TGDBGame) => void
-  onSelect: (game: TGDBGame) => void
+  onSelect: (game: TGDBGame, extras: { isErotic: boolean }) => void
   isSelecting: boolean
   existingGames: Record<
     number,
@@ -139,7 +140,9 @@ const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
             </Button>
           ) : (
             <Button
-              onClick={() => props.onSelect(props.game)}
+              onClick={() =>
+                props.onSelect(props.game, inferRatingAndNsfw(props.game))
+              }
               disabled={props.isSelecting}
               variant="primary"
               size="sm"

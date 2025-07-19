@@ -20,6 +20,7 @@ type User = {
   name: string | null
   role: Role
   permissions: string[] // Array of permission keys
+  showNsfw: boolean
 }
 
 type Session = {
@@ -49,7 +50,7 @@ async function createSessionFromClerkUserId(
   // Find user in database - they should exist due to webhook sync
   let user = await prisma.user.findUnique({
     where: { clerkId: userId },
-    select: { id: true, email: true, name: true, role: true },
+    select: { id: true, email: true, name: true, role: true, showNsfw: true },
   })
 
   // If the user doesn't exist, create them automatically
@@ -91,6 +92,7 @@ async function createSessionFromClerkUserId(
               email: true,
               name: true,
               role: true,
+              showNsfw: true,
             },
           })
         }
@@ -141,6 +143,7 @@ async function createSessionFromClerkUserId(
       name: user.name,
       role: user.role,
       permissions,
+      showNsfw: user.showNsfw,
     },
   }
 }
