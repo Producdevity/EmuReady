@@ -210,7 +210,7 @@ function AdminLayout(props: PropsWithChildren) {
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0">
-            <main className="flex-1 p-6 md:p-10 overflow-auto">
+            <main className="flex-1 p-1 sm:p-6 md:p-10 overflow-auto">
               <div className="max-w-full">{props.children}</div>
             </main>
           </div>
