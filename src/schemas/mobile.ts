@@ -106,7 +106,7 @@ export const GetListingsSchema = z.object({
   gameId: z.string().uuid().optional(),
   systemId: z.string().uuid().optional(),
   deviceId: z.string().uuid().optional(),
-  emulatorId: z.string().uuid().optional(),
+  emulatorIds: z.array(z.string().uuid()).optional(),
   search: z.string().optional(),
 })
 
@@ -158,6 +158,7 @@ export const UpdateUserPreferencesSchema = z.object({
   defaultToUserSocs: z.boolean().optional(),
   notifyOnNewListings: z.boolean().optional(),
   bio: z.string().optional(),
+  showNsfw: z.boolean().optional(),
 })
 
 export const AddDevicePreferenceSchema = z.object({
@@ -253,6 +254,8 @@ export const GetPcListingsSchema = z.object({
   emulatorId: z.string().uuid().optional(),
   os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
   search: z.string().optional(),
+  minMemory: z.number().min(1).max(256).optional(),
+  maxMemory: z.number().min(1).max(256).optional(),
 })
 
 export const GetCpusSchema = z.object({

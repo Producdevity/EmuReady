@@ -18,6 +18,7 @@ const ALLOWED_ORIGINS = [
   'https://dev.emuready.com',
   'http://localhost:3000',
   'http://localhost:3001', // dev server backup
+  'https://eden-emu.dev', // Eden website
 ]
 
 function getClientIdentifier(req: NextRequest): string {
@@ -26,9 +27,7 @@ function getClientIdentifier(req: NextRequest): string {
   const realIp = req.headers.get('x-real-ip')
   const cfConnectingIp = req.headers.get('cf-connecting-ip') // Cloudflare
 
-  if (forwarded) {
-    return forwarded.split(',')[0].trim()
-  }
+  if (forwarded) return forwarded.split(',')[0].trim()
 
   return realIp || cfConnectingIp || 'unknown'
 }
@@ -41,9 +40,7 @@ function checkRateLimit(identifier: string): boolean {
   if (Math.random() < 0.01) {
     // 1% chance per request
     for (const [key, value] of rateLimitMap.entries()) {
-      if (now > value.resetTime) {
-        rateLimitMap.delete(key)
-      }
+      if (now > value.resetTime) rateLimitMap.delete(key)
     }
   }
 
@@ -57,10 +54,8 @@ function checkRateLimit(identifier: string): boolean {
     })
     return true
   }
-
-  if (userLimit.count >= RATE_LIMIT_REQUESTS) {
-    return false // Slow down boy, rate limit exceeded
-  }
+  // Slow down boy, rate limit exceeded
+  if (userLimit.count >= RATE_LIMIT_REQUESTS) return false
 
   userLimit.count++
   return true
@@ -83,16 +78,12 @@ function isValidOrigin(req: NextRequest): boolean {
   }
 
   // Allow requests from valid origins (exact match)
-  if (origin && isExactOriginMatch(origin)) {
-    return true
-  }
+  if (origin && isExactOriginMatch(origin)) return true
 
   // Allow requests with valid referer (exact match)
-  if (referer && isExactOriginMatch(referer)) {
-    return true
-  }
+  if (referer && isExactOriginMatch(referer)) return true
 
-  // Allow requests with no origin/referer (server-side, mobile apps, etc.) but check for API key
+  // Allow requests with no origin/referer (server-side, mobile apps, etc.) but check for the API key
   if (!origin && !referer) {
     const apiKey = req.headers.get('x-api-key')
     const internalApiKey = process.env.INTERNAL_API_KEY
@@ -105,11 +96,11 @@ function isValidOrigin(req: NextRequest): boolean {
 function protectTRPCAPI(req: NextRequest): NextResponse | null {
   const pathname = req.nextUrl.pathname
 
+  // Skip protection for mobile routes - they have their own CORS handling
+  if (pathname.startsWith('/api/mobile/trpc/')) return null
+
   // Only protect TRPC API routes
   if (!pathname.startsWith('/api/trpc/')) return null
-
-  // Skip protection for mobile routes - Mobile app don't send origin headers
-  if (pathname.startsWith('/api/trpc/mobile.')) return null
 
   const clientId = getClientIdentifier(req)
 
@@ -162,9 +153,7 @@ export default clerkMiddleware((auth, req: NextRequest) => {
 
   // Apply API protection first
   const apiProtectionResponse = protectTRPCAPI(req)
-  if (apiProtectionResponse) {
-    return apiProtectionResponse
-  }
+  if (apiProtectionResponse) return apiProtectionResponse
 
   // Skip Clerk middleware for webhook endpoints
   if (pathname.startsWith('/api/webhooks/')) {

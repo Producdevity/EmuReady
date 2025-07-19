@@ -28,19 +28,25 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   getListings: mobilePublicProcedure
     .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, gameId, systemId, deviceId, emulatorId, search } =
+      const { page, limit, gameId, systemId, deviceId, emulatorIds, search } =
         input
       const skip = (page - 1) * limit
 
       // Build where clause with proper search filtering
       const baseWhere: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          // Filter NSFW content based on user preferences
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       }
 
       if (gameId) baseWhere.gameId = gameId
       if (deviceId) baseWhere.deviceId = deviceId
-      if (emulatorId) baseWhere.emulatorId = emulatorId
+      if (emulatorIds && emulatorIds.length > 0) {
+        baseWhere.emulatorId = { in: emulatorIds }
+      }
       if (systemId) {
         baseWhere.game = {
           ...(baseWhere.game as Record<string, unknown>),
@@ -80,9 +86,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
                 system: { select: { id: true, name: true, key: true } },
               },
             },
-            device: {
-              include: { brand: { select: { id: true, name: true } } },
-            },
+            device: { include: { brand: true, soc: true } },
             emulator: { select: { id: true, name: true, logo: true } },
             performance: { select: { id: true, label: true, rank: true } },
             author: { select: { id: true, name: true } },
@@ -149,7 +153,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     const listings = await ctx.prisma.listing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          // Filter NSFW content based on user preferences
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
@@ -157,7 +165,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         game: {
           include: { system: { select: { id: true, name: true, key: true } } },
         },
-        device: { include: { brand: { select: { id: true, name: true } } } },
+        device: { include: { brand: true, soc: true } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
         author: { select: { id: true, name: true } },
@@ -208,9 +216,16 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .input(GetListingsByGameSchema)
     .query(async ({ ctx, input }) => {
       const listings = await ctx.prisma.listing.findMany({
-        where: { gameId: input.gameId, status: ApprovalStatus.APPROVED },
+        where: {
+          gameId: input.gameId,
+          status: ApprovalStatus.APPROVED,
+          game: {
+            status: ApprovalStatus.APPROVED,
+            ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          },
+        },
         include: {
-          device: { include: { brand: { select: { id: true, name: true } } } },
+          device: { include: { brand: true, soc: true } },
           emulator: { select: { id: true, name: true, logo: true } },
           performance: { select: { id: true, label: true, rank: true } },
           author: { select: { id: true, name: true } },
@@ -269,7 +284,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               system: { select: { id: true, name: true, key: true } },
             },
           },
-          device: { include: { brand: { select: { id: true, name: true } } } },
+          device: { include: { brand: true, soc: true } },
           emulator: { select: { id: true, name: true, logo: true } },
           performance: { select: { id: true, label: true, rank: true } },
           author: { select: { id: true, name: true } },

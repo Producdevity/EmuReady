@@ -40,6 +40,8 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         emulatorId,
         os,
         search,
+        minMemory,
+        maxMemory,
       } = input
       const skip = (page - 1) * limit
 
@@ -50,7 +52,11 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       // Build where clause with proper search filtering
       const baseWhere: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          // Filter NSFW content based on user preferences
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       }
 
       if (gameId) baseWhere.gameId = gameId
@@ -62,6 +68,14 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         baseWhere.game = {
           ...(baseWhere.game as Record<string, unknown>),
           systemId,
+        }
+      }
+
+      // Add memory filtering
+      if (minMemory !== undefined || maxMemory !== undefined) {
+        baseWhere.memorySize = {
+          ...(minMemory !== undefined ? { gte: minMemory } : {}),
+          ...(maxMemory !== undefined ? { lte: maxMemory } : {}),
         }
       }
 

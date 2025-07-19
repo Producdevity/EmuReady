@@ -2,8 +2,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import analytics from '@/lib/analytics'
 import { type SortDirection } from '@/types/api'
+import { type RouterInput } from '@/types/trpc'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
-import type { SortField } from '@/app/listings/types'
+
+type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 
 interface FilterParams {
   systemIds?: string[] | null
@@ -153,7 +155,7 @@ function useListingsState() {
   const setSortField = useCallback(
     (value: SortField | null) => {
       updateFilters({ sortField: value })
-      analytics.filter.sort(value)
+      analytics.filter.sort(value ?? undefined)
     },
     [updateFilters],
   )

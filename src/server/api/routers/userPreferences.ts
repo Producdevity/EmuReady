@@ -19,6 +19,7 @@ export const userPreferencesRouter = createTRPCRouter({
         defaultToUserDevices: true,
         defaultToUserSocs: true,
         notifyOnNewListings: true,
+        showNsfw: true,
         devicePreferences: {
           select: {
             id: true,
@@ -60,6 +61,7 @@ export const userPreferencesRouter = createTRPCRouter({
         defaultToUserDevices?: boolean
         defaultToUserSocs?: boolean
         notifyOnNewListings?: boolean
+        showNsfw?: boolean
         bio?: string
       } = {}
 
@@ -71,6 +73,9 @@ export const userPreferencesRouter = createTRPCRouter({
       }
       if (input.notifyOnNewListings !== undefined) {
         updateData.notifyOnNewListings = input.notifyOnNewListings
+      }
+      if (input.showNsfw !== undefined) {
+        updateData.showNsfw = input.showNsfw
       }
       if (input.bio !== undefined) {
         updateData.bio = sanitizeBio(input.bio)
@@ -85,6 +90,7 @@ export const userPreferencesRouter = createTRPCRouter({
           defaultToUserDevices: true,
           defaultToUserSocs: true,
           notifyOnNewListings: true,
+          showNsfw: true,
         },
       })
     }),

@@ -13,13 +13,13 @@ const validHrefs = [
 
 type ValidHref = (typeof validHrefs)[number]
 
+function isValidHref(href: string): href is ValidHref {
+  return validHrefs.includes(href as ValidHref)
+}
+
 interface Props {
   href: string
   className?: string
-}
-
-function isValidHref(href: string): href is ValidHref {
-  return validHrefs.includes(href as ValidHref)
 }
 
 export default function ApprovalCountBadge(props: Props) {

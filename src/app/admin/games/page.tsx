@@ -51,6 +51,7 @@ const GAMES_COLUMNS: ColumnDefinition[] = [
   { key: 'system', label: 'System', defaultVisible: true },
   { key: 'listings', label: 'Listings', defaultVisible: true },
   { key: 'status', label: 'Status', defaultVisible: true },
+  { key: 'erotic', label: '18+', defaultVisible: false },
   { key: 'submitter', label: 'Submitter', defaultVisible: false },
   { key: 'submittedAt', label: 'Submitted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
@@ -310,6 +311,11 @@ function AdminGamesPage() {
                         className="px-6 py-3 text-left"
                       />
                     )}
+                    {columnVisibility.isColumnVisible('erotic') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        18+
+                      </th>
+                    )}
                     {columnVisibility.isColumnVisible('submitter') && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Submitter
@@ -408,6 +414,17 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('status') && (
                         <td className="px-6 py-4">
                           <ApprovalStatusBadge status={game.status} />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('erotic') && (
+                        <td className="px-6 py-4 text-sm">
+                          {game.isErotic ? (
+                            <Badge variant="danger" size="sm">
+                              18+
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('submitter') && (

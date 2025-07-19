@@ -62,6 +62,7 @@ export const CreateGameSchema = z.object({
   boxartUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   tgdbGameId: z.number().optional(),
+  isErotic: z.boolean().optional(),
 })
 
 export const UpdateGameSchema = z.object({
@@ -72,6 +73,7 @@ export const UpdateGameSchema = z.object({
   boxartUrl: z.string().optional(),
   bannerUrl: z.string().optional(),
   tgdbGameId: z.number().optional(),
+  isErotic: z.boolean().optional(),
 })
 
 export const DeleteGameSchema = z.object({ id: z.string().uuid() })
