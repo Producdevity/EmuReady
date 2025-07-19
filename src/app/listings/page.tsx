@@ -33,6 +33,7 @@ import {
 } from '@/hooks'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -40,7 +41,6 @@ import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
 import useListingsState from './hooks/useListingsState'
-import { type ListingsFilter } from './types'
 
 const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -120,7 +120,7 @@ function ListingsPage() {
   const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
-  const filterParams: ListingsFilter = {
+  const filterParams: RouterInput['listings']['get'] = {
     page: listingsState.page,
     limit: 10,
     ...filterNullAndEmpty({

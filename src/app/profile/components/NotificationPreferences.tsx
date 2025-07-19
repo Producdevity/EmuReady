@@ -31,14 +31,12 @@ const allTypes = [
 type NotificationPreferencesData =
   RouterOutput['notifications']['getPreferences']
 
-interface NotificationPreferencesQuery {
-  data?: NotificationPreferencesData
-  isPending: boolean
-  error?: unknown
-}
-
 interface Props {
-  notificationPreferencesQuery: NotificationPreferencesQuery
+  notificationPreferencesQuery: {
+    data?: NotificationPreferencesData
+    isPending: boolean
+    error?: unknown
+  }
 }
 
 function NotificationPreferences(props: Props) {

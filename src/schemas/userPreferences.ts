@@ -4,6 +4,7 @@ export const UpdateUserPreferencesSchema = z.object({
   defaultToUserDevices: z.boolean().optional(),
   defaultToUserSocs: z.boolean().optional(),
   notifyOnNewListings: z.boolean().optional(),
+  showNsfw: z.boolean().optional(),
   bio: z.string().max(500).optional(), // Bio field with XSS protection handled in server
 })
 

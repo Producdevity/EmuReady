@@ -14,12 +14,10 @@ import { ListingsContent } from './components/ListingsContent'
 import { ListingsHeader } from './components/ListingsHeader'
 import { QuickFilters } from './components/QuickFilters'
 import { SearchBar } from './components/SearchBar'
-import type {
-  ListingsFilter,
-  SortDirection,
-  SortField,
-} from '@/app/listings/types'
-import type { RouterOutput } from '@/types/trpc'
+import type { SortDirection } from '@/types/api'
+import type { RouterOutput, RouterInput } from '@/types/trpc'
+
+type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 
 type ListingType = RouterOutput['listings']['get']['listings'][number]
 
@@ -86,7 +84,7 @@ function V2ListingsPage() {
     !userSocFilterDisabled
 
   // Filter params for API call
-  const filterParams: ListingsFilter = useMemo(
+  const filterParams: RouterInput['listings']['get'] = useMemo(
     () => ({
       page: currentPage,
       limit: 15, // Increased for better mobile experience

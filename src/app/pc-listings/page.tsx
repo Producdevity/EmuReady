@@ -30,6 +30,7 @@ import {
 } from '@/hooks'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -37,7 +38,6 @@ import { hasPermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import PcListingsFilters from './components/PcListingsFilters'
 import usePcListingsState from './hooks/usePcListingsState'
-import { type PcListingsFilter } from './types'
 
 const PC_LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -87,7 +87,7 @@ function PcListingsPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
   const systemsQuery = api.systems.get.useQuery()
 
-  const filterParams: PcListingsFilter = {
+  const filterParams: RouterInput['pcListings']['get'] = {
     page: listingsState.page,
     limit: 10,
     ...filterNullAndEmpty({
@@ -107,8 +107,8 @@ function PcListingsPage() {
         listingsState.performanceIds.length > 0
           ? listingsState.performanceIds
           : undefined,
-      minMemory: listingsState.minMemory ?? undefined,
-      maxMemory: listingsState.maxMemory ?? undefined,
+      memoryMin: listingsState.minMemory ?? undefined,
+      memoryMax: listingsState.maxMemory ?? undefined,
       searchTerm: listingsState.search || undefined,
       sortField: listingsState.sortField ?? undefined,
       sortDirection: listingsState.sortDirection ?? undefined,

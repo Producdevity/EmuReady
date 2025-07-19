@@ -45,6 +45,9 @@ export const coreRouter = createTRPCRouter({
       if (input.systemIds && input.systemIds.length > 0) {
         gameFilter.systemId = { in: input.systemIds }
       }
+      if (!ctx.session?.user?.showNsfw) {
+        gameFilter.isErotic = false
+      }
 
       // Game approval status filtering - filter games based on user authentication
       if (ctx.session?.user?.id) {
@@ -1087,7 +1090,10 @@ export const coreRouter = createTRPCRouter({
     const listings = await ctx.prisma.listing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
-        game: { status: ApprovalStatus.APPROVED },
+        game: {
+          status: ApprovalStatus.APPROVED,
+          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 3,

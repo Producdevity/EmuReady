@@ -7,6 +7,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   Suspense,
   type ChangeEvent,
 } from 'react'
@@ -48,17 +49,17 @@ function GamesContent() {
     return urlHideGames !== null ? urlHideGames === 'true' : true
   }
 
-  // Initialize states with URL values
+  // Get values from URL
+  const page = getInitialPage()
+  const systemId = getInitialSystemId()
+  const hideGamesWithNoListings = getInitialHideGames()
+
+  // Only input value needs a local state for debouncing
   const [inputValue, setInputValue] = useState(() => getInitialSearch())
-  const [page, setPage] = useState(() => getInitialPage())
-  const [systemId, setSystemId] = useState(() => getInitialSystemId())
-  const [hideGamesWithNoListings, setHideGamesWithNoListings] = useState(() =>
-    getInitialHideGames(),
-  )
   const debouncedSearch = useDebouncedValue(inputValue, 500)
   const limit = 12
 
-  // Update URL params whenever state changes
+  // Update URL params whenever the state changes
   const updateUrlParams = useCallback(
     (
       updates: {
@@ -71,7 +72,7 @@ function GamesContent() {
     ) => {
       const params = new URLSearchParams(searchParams.toString())
 
-      // Update or remove search param
+      // Update or remove a search param
       if (updates.search !== undefined) {
         const trimmedSearch = updates.search.trim()
         if (trimmedSearch) {
@@ -99,12 +100,12 @@ function GamesContent() {
         }
       }
 
-      // Update or remove hideNoListings param
+      // Update or remove the hideNoListings param
       if (updates.hideNoListings !== undefined) {
         if (updates.hideNoListings) {
-          params.set('hideNoListings', 'true')
-        } else {
           params.delete('hideNoListings')
+        } else {
+          params.set('hideNoListings', 'false')
         }
       }
 
@@ -134,11 +135,29 @@ function GamesContent() {
   const games = gamesQuery.data?.games ?? []
   const pagination = gamesQuery.data?.pagination
 
+  // Track previous search to detect changes
+  const previousSearchRef = useRef(debouncedSearch)
+
   // Update URL when debounced search changes
   useEffect(() => {
-    setPage(1)
-    updateUrlParams({ search: debouncedSearch, page: 1 })
-  }, [debouncedSearch, updateUrlParams])
+    // Only update if search actually changed and it's different from URL
+    const currentUrlSearch = searchParams.get('search') || ''
+    if (
+      previousSearchRef.current !== debouncedSearch &&
+      debouncedSearch !== currentUrlSearch
+    ) {
+      previousSearchRef.current = debouncedSearch
+      updateUrlParams({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, updateUrlParams, searchParams])
+
+  // Sync input value with URL when URL changes (browser navigation)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    if (inputValue !== urlSearch && debouncedSearch !== urlSearch) {
+      setInputValue(urlSearch)
+    }
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
     const newInputValue = ev.target.value
@@ -147,19 +166,14 @@ function GamesContent() {
 
   const handleSystemChange = (value: string | null) => {
     const newSystemId = value || ''
-    setSystemId(newSystemId)
-    setPage(1)
     updateUrlParams({ systemId: newSystemId, page: 1 }, { push: true })
   }
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage)
     updateUrlParams({ page: newPage }, { push: true })
   }
 
   const handleHideGamesWithNoListingsChange = (hide: boolean) => {
-    setHideGamesWithNoListings(hide)
-    setPage(1)
     updateUrlParams({ hideNoListings: hide, page: 1 }, { push: true })
   }
 

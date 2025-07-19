@@ -10,14 +10,12 @@ import getErrorMessage from '@/utils/getErrorMessage'
 
 type UserProfileData = RouterOutput['users']['getProfile']
 
-interface UserProfileQuery {
-  data?: UserProfileData
-  isPending: boolean
-  error?: unknown
-}
-
 interface Props {
-  userQuery: UserProfileQuery
+  userQuery: {
+    data?: UserProfileData
+    isPending: boolean
+    error?: unknown
+  }
 }
 
 function ProfileInformation(props: Props) {

@@ -19,8 +19,11 @@ import { useMemo } from 'react'
 import { Badge, Button, PerformanceBadge } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
-import type { SortDirection, SortField } from '@/app/listings/types'
 import type { api } from '@/lib/api'
+import type { SortDirection } from '@/types/api'
+import type { RouterInput } from '@/types/trpc'
+
+type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 
 interface PerformanceScale {
   id: number
