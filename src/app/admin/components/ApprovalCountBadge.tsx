@@ -5,6 +5,18 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 
+const validHrefs = [
+  '/admin/games/approvals',
+  '/admin/approvals',
+  '/admin/pc-listing-approvals',
+] as const
+
+type ValidHref = (typeof validHrefs)[number]
+
+function isValidHref(href: string): href is ValidHref {
+  return validHrefs.includes(href as ValidHref)
+}
+
 interface Props {
   href: string
   className?: string
@@ -48,21 +60,29 @@ export default function ApprovalCountBadge(props: Props) {
     '/admin/pc-listing-approvals': pcListingStatsQuery,
   } as const
 
-  const count = statsMap[props.href as keyof typeof statsMap]?.data?.pending
+  const count = isValidHref(props.href)
+    ? statsMap[props.href]?.data?.pending
+    : undefined
 
   if (typeof count !== 'number' || count <= 0) return null
 
   return (
-    <Badge
-      variant="danger"
-      size="sm"
-      pill
-      className={cn(
-        'absolute top-2 right-2 transition-all duration-300 ease-in-out',
-        props.className,
-      )}
+    <span
+      role="status"
+      aria-label={`${count} pending approvals`}
+      className="absolute top-2 right-2"
     >
-      {count}
-    </Badge>
+      <Badge
+        variant="danger"
+        size="sm"
+        pill
+        className={cn(
+          'transition-all duration-300 ease-in-out',
+          props.className,
+        )}
+      >
+        {count}
+      </Badge>
+    </span>
   )
 }
