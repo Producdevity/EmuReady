@@ -48,7 +48,7 @@ export default function ApprovalCountBadge(props: Props) {
     '/admin/pc-listing-approvals': pcListingStatsQuery,
   } as const
 
-  const count = statsMap[props.href]?.data?.pending
+  const count = statsMap[props.href as keyof typeof statsMap]?.data?.pending
 
   if (typeof count !== 'number' || count <= 0) return null
 
