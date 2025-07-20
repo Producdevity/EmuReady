@@ -87,6 +87,8 @@ function ListingDetailsClient(props: Props) {
           value: props.userVote, // Send current vote value to toggle it off
         })
       }
+
+      utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
     } catch (error) {
       console.error('Error voting:', error)
       // The mutation's onError will handle user-facing error messages
