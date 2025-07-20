@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useConfirmDialog, TranslatableMarkdown } from '@/components/ui'
+import { RoleBadge } from '@/components/ui/RoleBadge'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
@@ -122,6 +123,7 @@ function PcCommentThread(props: Props) {
               <span className="font-medium text-gray-900 dark:text-white">
                 {comment.user.name || 'Anonymous'}
               </span>
+              {comment.user.role && <RoleBadge role={comment.user.role} />}
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {formatTimeAgo(comment.createdAt)}
               </span>

@@ -65,7 +65,7 @@ export const commentsRouter = createTRPCRouter({
 
       const comment = await ctx.prisma.comment.create({
         data: { content, userId, listingId, parentId },
-        include: { user: { select: { id: true, name: true } } },
+        include: { user: { select: { id: true, name: true, role: true } } },
       })
 
       notificationEventEmitter.emitNotificationEvent({
@@ -123,6 +123,7 @@ export const commentsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
+              role: true,
             },
           },
           replies: {
@@ -135,6 +136,7 @@ export const commentsRouter = createTRPCRouter({
                   id: true,
                   name: true,
                   profileImage: true,
+                  role: true,
                 },
               },
             },
@@ -156,7 +158,9 @@ export const commentsRouter = createTRPCRouter({
           listingId: input.listingId,
         },
         include: {
-          user: { select: { id: true, name: true, profileImage: true } },
+          user: {
+            select: { id: true, name: true, profileImage: true, role: true },
+          },
         },
       })
 
@@ -290,7 +294,9 @@ export const commentsRouter = createTRPCRouter({
           updatedAt: new Date(),
         },
         include: {
-          user: { select: { id: true, name: true, profileImage: true } },
+          user: {
+            select: { id: true, name: true, profileImage: true, role: true },
+          },
         },
       })
 

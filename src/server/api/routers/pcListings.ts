@@ -1102,6 +1102,7 @@ export const pcListingsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
+              role: true,
             },
           },
           replies: {
@@ -1114,6 +1115,7 @@ export const pcListingsRouter = createTRPCRouter({
                   id: true,
                   name: true,
                   profileImage: true,
+                  role: true,
                 },
               },
             },
@@ -1201,6 +1203,7 @@ export const pcListingsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
+              role: true,
             },
           },
         },

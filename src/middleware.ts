@@ -100,6 +100,9 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
   // Skip protection for mobile routes - they have their own CORS handling
   if (pathname.startsWith('/api/mobile/trpc/')) return null
 
+  // Skip protection for REST API v1 - has its own CORS handling
+  if (pathname.startsWith('/api/v1/')) return null
+
   // Only protect TRPC API routes
   if (!pathname.startsWith('/api/trpc/')) return null
 
