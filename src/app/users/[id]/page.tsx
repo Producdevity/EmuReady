@@ -101,7 +101,7 @@ function UserDetailsPage() {
         }
       })
 
-      router.push(`/users/${userId}?${newSearchParams.toString()}`)
+      router.replace(`/users/${userId}?${newSearchParams.toString()}`)
     },
     [router, userId, searchParams],
   )
