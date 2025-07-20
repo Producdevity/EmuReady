@@ -13,11 +13,7 @@ if (process.env.NODE_ENV === 'production') {
   // In production, create a new client with optimized settings
   prisma = new PrismaClient({
     log: ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
+    datasources: { db: { url: process.env.DATABASE_URL } },
   })
 } else {
   // In development, reuse the client across hot reloads with minimal logging
@@ -28,11 +24,7 @@ if (process.env.NODE_ENV === 'production') {
       process.env.PRISMA_DEBUG === 'true'
         ? ['query', 'error', 'warn']
         : ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
+    datasources: { db: { url: process.env.DATABASE_URL } },
   })
   prisma = globalForPrisma.prisma
 }

@@ -99,7 +99,7 @@ function NotificationPreferences(props: Props) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4"></div>
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4" />
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex justify-between items-center">

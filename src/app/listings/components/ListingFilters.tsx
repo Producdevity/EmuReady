@@ -781,7 +781,7 @@ function ListingFilters(props: FiltersProps) {
                             transition={{ delay: 0.1 }}
                             className="flex items-center gap-2"
                           >
-                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full" />
                             Search: &ldquo;{props.searchTerm}&rdquo;
                           </motion.div>
                         )}
@@ -793,7 +793,7 @@ function ListingFilters(props: FiltersProps) {
                             transition={{ delay: 0.15 }}
                             className="flex items-center gap-2"
                           >
-                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            <span className="w-2 h-2 bg-blue-500 rounded-full" />
                             Systems: {props.systemIds.length} selected
                           </motion.div>
                         )}
@@ -805,7 +805,7 @@ function ListingFilters(props: FiltersProps) {
                             transition={{ delay: 0.2 }}
                             className="flex items-center gap-2"
                           >
-                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            <span className="w-2 h-2 bg-green-500 rounded-full" />
                             Devices: {props.deviceIds.length} selected
                           </motion.div>
                         )}
