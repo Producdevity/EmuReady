@@ -11,7 +11,11 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
-import { useConfirmDialog, TranslatableMarkdown } from '@/components/ui'
+import {
+  RoleBadge,
+  useConfirmDialog,
+  TranslatableMarkdown,
+} from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { formatTimeAgo } from '@/utils/date'
@@ -175,10 +179,16 @@ function CommentThread(props: Props) {
                   {comment.user?.name?.[0] ?? '?'}
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-700 dark:text-gray-200">
-                    {comment.user?.name ?? 'Anonymous'}
-                  </span>
-                  <span className="text-xs text-gray-400 ml-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                      {comment.user?.name ?? 'Anonymous'}
+                    </span>
+                    {comment.user?.role && (
+                      <RoleBadge role={comment.user.role} size="sm" />
+                    )}
+                  </div>
+
+                  <span className="text-xs text-gray-400">
                     {formatTimeAgo(comment.createdAt)}
                   </span>
                   {comment.isEdited && (

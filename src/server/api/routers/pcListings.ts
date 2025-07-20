@@ -1102,6 +1102,7 @@ export const pcListingsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
+              role: true,
             },
           },
           replies: {
@@ -1114,6 +1115,7 @@ export const pcListingsRouter = createTRPCRouter({
                   id: true,
                   name: true,
                   profileImage: true,
+                  role: true,
                 },
               },
             },
@@ -1201,6 +1203,7 @@ export const pcListingsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
+              role: true,
             },
           },
         },
@@ -1261,7 +1264,9 @@ export const pcListingsRouter = createTRPCRouter({
           updatedAt: new Date(),
         },
         include: {
-          user: { select: { id: true, name: true, profileImage: true } },
+          user: {
+            select: { id: true, name: true, profileImage: true, role: true },
+          },
         },
       })
     }),
