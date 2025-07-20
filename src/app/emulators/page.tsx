@@ -3,7 +3,7 @@
 import { Search, Monitor, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useMemo, type ChangeEvent } from 'react'
+import { useState, useEffect, useMemo, type ChangeEvent, Suspense } from 'react'
 import { isEmpty } from 'remeda'
 import { EmulatorIcon } from '@/components/icons'
 import {
@@ -320,4 +320,12 @@ function EmulatorsPage() {
   )
 }
 
-export default EmulatorsPage
+function EmulatorsPageWrapper() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading emulators..." />}>
+      <EmulatorsPage />
+    </Suspense>
+  )
+}
+
+export default EmulatorsPageWrapper
