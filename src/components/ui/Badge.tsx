@@ -51,6 +51,13 @@ export function Badge(props: Props) {
         sizeClasses[size],
         props.className,
       )}
+      onKeyDown={
+        props.onClick
+          ? (ev) => ev.key === 'Enter' && props.onClick()
+          : undefined
+      }
+      role={props.onClick ? 'button' : undefined}
+      tabIndex={props.onClick ? 0 : undefined}
     >
       {props.children}
     </span>
