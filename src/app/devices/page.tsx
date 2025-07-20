@@ -14,6 +14,7 @@ import {
   Pagination,
   Badge,
 } from '@/components/ui'
+import { PAGINATION } from '@/constants/app'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -48,7 +49,7 @@ function DevicesPage() {
     sortField: sortField,
     sortDirection: sortDirection,
     page: page,
-    limit: 20,
+    limit: PAGINATION.DEFAULT_LIMIT,
   })
 
   const devices = useMemo(

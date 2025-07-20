@@ -95,7 +95,10 @@ function AdminGamesPage() {
   const deleteGame = api.games.delete.useMutation({
     onSuccess: () => {
       toast.success('Game deleted successfully')
-      gamesQuery.refetch().catch(console.error)
+      gamesQuery.refetch().catch((error) => {
+        console.error('Error refreshing games:', error)
+        toast.error('Failed to refresh games list')
+      })
     },
     onError: (error) => {
       toast.error(`Failed to delete game: ${getErrorMessage(error)}`)

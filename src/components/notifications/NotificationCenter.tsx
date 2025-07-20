@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Check, Trash2, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, type MouseEvent } from 'react'
+import { POLLING_INTERVALS } from '@/constants/app'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -23,11 +24,11 @@ function NotificationCenter(props: Props) {
 
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
-    { enabled: !!user, refetchInterval: 3 * 60 * 1000 }, // 3 minutes
+    { enabled: !!user, refetchInterval: POLLING_INTERVALS.NOTIFICATIONS },
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(
     undefined,
-    { enabled: !!user, refetchInterval: 3 * 60 * 1000 }, // 3 minutes
+    { enabled: !!user, refetchInterval: POLLING_INTERVALS.NOTIFICATIONS },
   )
 
   // Mutations

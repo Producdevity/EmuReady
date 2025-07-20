@@ -8,7 +8,9 @@ import { useState, type FormEvent } from 'react'
 import { Button, Input, Badge, ImageSelectorSwitcher } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
+import { type RouterOutput } from '@/types/trpc'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission } from '@/utils/permissions'
 import { sanitizeString } from '@/utils/validation'
@@ -23,20 +25,7 @@ const imageTypeToLabel: Record<ImageType, string> = {
 }
 
 interface Props {
-  gameData: {
-    id: string
-    title: string
-    systemId: string
-    imageUrl?: string | null
-    boxartUrl?: string | null
-    bannerUrl?: string | null
-    status?: string
-    submittedBy?: string | null
-    system?: {
-      id: string
-      name: string
-    }
-  }
+  gameData: RouterOutput['games']['byId']
 }
 
 export function GameEditForm(props: Props) {
@@ -45,6 +34,7 @@ export function GameEditForm(props: Props) {
   const [imageUrl, setImageUrl] = useState(props.gameData.imageUrl ?? '')
   const [boxartUrl, setBoxartUrl] = useState(props.gameData.boxartUrl ?? '')
   const [bannerUrl, setBannerUrl] = useState(props.gameData.bannerUrl ?? '')
+  const [isErotic, setIsErotic] = useState(props.gameData.isErotic ?? false)
   const [activeImageTab, setActiveImageTab] = useState<ImageType>('imageUrl')
   const [showImageSelector, setShowImageSelector] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -75,11 +65,13 @@ export function GameEditForm(props: Props) {
   const updateGameAdmin = api.games.update.useMutation({
     onSuccess: () => {
       setOpen(false)
+      toast.success('Game updated successfully')
       Promise.all([
         utils.games.byId.invalidate({ id: props.gameData.id }),
         utils.games.get.invalidate(),
       ]).catch((error) => {
         console.error('Error invalidating game cache:', error)
+        toast.error('Failed to refresh game data. Please reload the page.')
         router.refresh()
       })
     },
@@ -92,11 +84,13 @@ export function GameEditForm(props: Props) {
   const updateGameUser = api.games.updateOwnPendingGame.useMutation({
     onSuccess: () => {
       setOpen(false)
+      toast.success('Game updated successfully')
       Promise.all([
         utils.games.byId.invalidate({ id: props.gameData.id }),
         utils.games.get.invalidate(),
       ]).catch((error) => {
         console.error('Error invalidating game cache:', error)
+        toast.error('Failed to refresh game data. Please reload the page.')
         router.refresh()
       })
     },
@@ -127,6 +121,7 @@ export function GameEditForm(props: Props) {
       imageUrl: imageUrl || undefined,
       boxartUrl: boxartUrl || undefined,
       bannerUrl: bannerUrl || undefined,
+      isErotic: isErotic,
     }
 
     // Use appropriate mutation based on user permissions
@@ -205,16 +200,32 @@ export function GameEditForm(props: Props) {
 
   return (
     <div className="relative">
-      <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
+      <Button
+        variant="outline"
+        className="gap-2"
+        onClick={() => {
+          // Reset loading state when opening modal
+          setIsLoading(false)
+          setError('')
+          setOpen(true)
+        }}
+      >
         <Pencil className="h-4 w-4" />
         Edit Game
       </Button>
 
       {open && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-game-title"
+        >
           <div className="bg-white dark:bg-gray-800 rounded-lg flex flex-col max-w-2xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <h2 className="text-xl font-bold">Edit Game </h2>
+              <h2 id="edit-game-title" className="text-xl font-bold">
+                Edit Game
+              </h2>
               <div className="flex items-center gap-2">
                 <Badge variant="default">
                   System: {props.gameData.system?.name ?? 'Unknown System'}
@@ -225,6 +236,7 @@ export function GameEditForm(props: Props) {
                 size="sm"
                 onClick={() => setOpen(false)}
                 className="h-8 w-8 p-0"
+                aria-label="Close edit game dialog"
               >
                 ✕
               </Button>
@@ -341,6 +353,27 @@ export function GameEditForm(props: Props) {
                     </div>
                   </div>
                 </div>
+
+                {/* Only show isErotic checkbox for admins */}
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isErotic}
+                        onChange={(ev) => setIsErotic(ev.target.checked)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <span className="text-sm font-medium">
+                        Mark as 18+ Content (Erotic)
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+                      This game contains adult content and will be filtered
+                      based on user preferences
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">System</label>
