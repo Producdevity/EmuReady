@@ -44,6 +44,7 @@ function CustomFieldTypeDriverVersion<
   const selectOptions: DriverReleaseOption[] = driverVersions?.data
     ? [
         { label: 'Select for Non-Android Device', value: 'N/A' },
+        { label: 'Default System Driver', value: 'Default System Driver' },
         ...(driverVersions?.data ?? []),
       ]
     : []

@@ -103,6 +103,9 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
   // Only protect TRPC API routes
   if (!pathname.startsWith('/api/trpc/')) return null
 
+  // Skip protection for mobile procedures in the main tRPC router
+  if (pathname.startsWith('/api/trpc/mobile.')) return null
+
   const clientId = getClientIdentifier(req)
 
   // Check rate limit
