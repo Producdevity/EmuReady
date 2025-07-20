@@ -2,9 +2,16 @@ import { z } from 'zod'
 
 const imageUrlSchema = z
   .string()
-  .url('Must be a valid URL')
+  .transform((val) => val.trim()) // Trim whitespace
+  .refine(
+    (val) =>
+      val === '' || val.startsWith('http://') || val.startsWith('https://'),
+    {
+      message: 'Must be a valid URL starting with http:// or https://',
+    },
+  )
+  .transform((val) => val || undefined) // Convert empty string to undefined
   .optional()
-  .or(z.literal(''))
 
 const updateGameSchema = z.object({
   title: z.string().min(1, 'Title is required'),

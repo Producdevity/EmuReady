@@ -246,7 +246,7 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
       />
       {props.errorMessage && (
         <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-          <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+          <span className="w-1 h-1 bg-red-500 rounded-full" />
           {props.errorMessage}
         </p>
       )}

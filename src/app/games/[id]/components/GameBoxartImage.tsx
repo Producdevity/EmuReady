@@ -214,7 +214,7 @@ export function GameBoxartImage(props: Props) {
               {updateGameMutation.isPending && (
                 <div className="mt-4 text-center">
                   <div className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                     Updating image...
                   </div>
                 </div>

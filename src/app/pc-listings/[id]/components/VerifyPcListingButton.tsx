@@ -3,7 +3,7 @@
 import GenericVerifyButton from '@/components/verify/GenericVerifyButton'
 
 interface Props {
-  listingId: string
+  pcListingId: string
   emulatorId: string
   authorId: string
   isAlreadyVerified: boolean
@@ -11,16 +11,16 @@ interface Props {
   onSuccess?: () => void
 }
 
-export default function VerifyListingButton(props: Props) {
+export default function VerifyPcListingButton(props: Props) {
   return (
     <GenericVerifyButton
-      listingId={props.listingId}
+      listingId={props.pcListingId}
       emulatorId={props.emulatorId}
       authorId={props.authorId}
       isAlreadyVerified={props.isAlreadyVerified}
       verificationId={props.verificationId}
       onSuccess={props.onSuccess}
-      type="listing"
+      type="pcListing"
     />
   )
 }

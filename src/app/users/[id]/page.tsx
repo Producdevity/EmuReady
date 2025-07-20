@@ -101,7 +101,7 @@ function UserDetailsPage() {
         }
       })
 
-      router.push(`/users/${userId}?${newSearchParams.toString()}`)
+      router.replace(`/users/${userId}?${newSearchParams.toString()}`)
     },
     [router, userId, searchParams],
   )
@@ -158,7 +158,7 @@ function UserDetailsPage() {
               {/* Profile Image & Basic Info */}
               <div className="flex flex-col items-center lg:items-start">
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000" />
                   <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
                     <Image
                       src={user.profileImage ?? '/placeholder/profile.svg'}

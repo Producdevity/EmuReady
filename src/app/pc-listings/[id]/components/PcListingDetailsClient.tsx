@@ -23,6 +23,7 @@ import EditPcListingButton from './EditPcListingButton'
 import PcCommentThread from './PcCommentThread'
 import PcReportListingButton from './PcReportListingButton'
 import PcVoteButtons from './PcVoteButtons'
+import VerifyPcListingButton from './VerifyPcListingButton'
 
 export type PcListing = NonNullable<RouterOutput['pcListings']['byId']> & {
   userVote?: boolean | null
@@ -160,7 +161,15 @@ function PcListingDetailsClient(props: Props) {
                 <Badge variant="default">
                   System: {props.pcListing?.game.system?.name}
                 </Badge>
-                <Badge variant="default">
+                <Badge
+                  onClick={() =>
+                    router.push(
+                      `/emulators?emulatorId=${props.pcListing?.emulator?.id}`,
+                    )
+                  }
+                  variant="default"
+                  className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
                   Emulator: {props.pcListing?.emulator?.name}
                 </Badge>
                 <PerformanceBadge
@@ -364,6 +373,22 @@ function PcListingDetailsClient(props: Props) {
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}
                   authorId={props.pcListing.authorId}
+                  onSuccess={refreshData}
+                />
+                <VerifyPcListingButton
+                  pcListingId={props.pcListing.id}
+                  emulatorId={props.pcListing.emulatorId}
+                  authorId={props.pcListing.authorId}
+                  isAlreadyVerified={
+                    props.pcListing.developerVerifications?.some(
+                      (v) => v.developer.id === currentUserQuery.data?.id,
+                    ) ?? false
+                  }
+                  verificationId={
+                    props.pcListing.developerVerifications?.find(
+                      (v) => v.developer.id === currentUserQuery.data?.id,
+                    )?.id
+                  }
                   onSuccess={refreshData}
                 />
               </div>

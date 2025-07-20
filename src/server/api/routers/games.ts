@@ -393,9 +393,22 @@ export const gamesRouter = createTRPCRouter({
         },
       })
       if (!game) return ResourceError.game.notFound()
-      if (!ctx.session?.user?.showNsfw && game.isErotic) {
+
+      // Admins and moderators can always see all games
+      const isAdminOrModerator = roleIncludesRole(
+        ctx.session?.user?.role,
+        Role.MODERATOR,
+      )
+
+      // For regular users, check NSFW preference
+      if (
+        !isAdminOrModerator &&
+        !ctx.session?.user?.showNsfw &&
+        game.isErotic
+      ) {
         return ResourceError.game.notFound()
       }
+
       return game
     }),
 

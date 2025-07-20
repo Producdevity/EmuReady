@@ -123,6 +123,7 @@ export const commentsRouter = createTRPCRouter({
               id: true,
               name: true,
               profileImage: true,
+              role: true,
             },
           },
           replies: {
@@ -135,6 +136,7 @@ export const commentsRouter = createTRPCRouter({
                   id: true,
                   name: true,
                   profileImage: true,
+                  role: true,
                 },
               },
             },
@@ -156,7 +158,9 @@ export const commentsRouter = createTRPCRouter({
           listingId: input.listingId,
         },
         include: {
-          user: { select: { id: true, name: true, profileImage: true } },
+          user: {
+            select: { id: true, name: true, profileImage: true, role: true },
+          },
         },
       })
 
@@ -278,9 +282,7 @@ export const commentsRouter = createTRPCRouter({
         ctx.session.user.id,
       )
 
-      if (!canEdit) {
-        AppError.forbidden('You do not have permission to edit this comment')
-      }
+      if (!canEdit) return ResourceError.comment.noPermission('edit')
 
       const updatedComment = await ctx.prisma.comment.update({
         where: { id: input.commentId },
@@ -290,7 +292,9 @@ export const commentsRouter = createTRPCRouter({
           updatedAt: new Date(),
         },
         include: {
-          user: { select: { id: true, name: true, profileImage: true } },
+          user: {
+            select: { id: true, name: true, profileImage: true, role: true },
+          },
         },
       })
 
@@ -328,9 +332,7 @@ export const commentsRouter = createTRPCRouter({
         ctx.session.user.id,
       )
 
-      if (!canDelete) {
-        AppError.forbidden('You do not have permission to delete this comment')
-      }
+      if (!canDelete) return ResourceError.comment.noPermission('delete')
 
       const deletedComment = await ctx.prisma.comment.update({
         where: { id: input.commentId },

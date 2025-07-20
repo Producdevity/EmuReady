@@ -56,15 +56,18 @@ export function GameEditForm(props: Props) {
       defaultValues: {
         title: props.game.title,
         systemId: props.game.systemId,
-        imageUrl: props.game.imageUrl ?? '',
-        boxartUrl: props.game.boxartUrl ?? '',
-        bannerUrl: props.game.bannerUrl ?? '',
+        imageUrl: props.game.imageUrl || '',
+        boxartUrl: props.game.boxartUrl || '',
+        bannerUrl: props.game.bannerUrl || '',
         isErotic: props.game.isErotic ?? false,
       },
+      mode: 'onChange', // Enable validation on change to track form state
     })
 
   const onSubmit = (data: UpdateGameInput) => {
+    console.log('Form data being sent:', { id: props.game.id, ...data })
     setIsSubmitting(true)
+    // The schema now handles transformation of empty strings to undefined
     updateGame.mutate({ id: props.game.id, ...data })
   }
 

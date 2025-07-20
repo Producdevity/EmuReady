@@ -5,6 +5,7 @@ import { Database, Zap, Link, X, Check } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
 import { Button, Input, Toggle } from '@/components/ui'
+import getImageUrl from '@/utils/getImageUrl'
 import {
   validateImageUrl,
   getImageValidationError,
@@ -263,7 +264,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                     </p>
                     <div className="flex items-center gap-3">
                       <Image
-                        src={props.selectedImageUrl}
+                        src={getImageUrl(props.selectedImageUrl)}
                         alt="Selected image preview"
                         width={64}
                         height={64}

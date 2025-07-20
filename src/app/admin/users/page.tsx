@@ -138,14 +138,14 @@ function AdminUsersPage() {
   const openUserDetailsModal = (userId: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('userId', userId)
-    router.push(`?${params.toString()}`, { scroll: false })
+    router.replace(`?${params.toString()}`, { scroll: false })
   }
 
   const closeUserDetailsModal = () => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete('userId')
     const newUrl = params.toString() ? `?${params.toString()}` : '/admin/users'
-    router.push(newUrl, { scroll: false })
+    router.replace(newUrl, { scroll: false })
   }
 
   return (

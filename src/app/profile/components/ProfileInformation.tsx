@@ -67,7 +67,7 @@ function ProfileInformation(props: Props) {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="animate-pulse">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
             <div className="space-y-2">
               <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32" />
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48" />

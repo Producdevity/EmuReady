@@ -2,8 +2,8 @@
 
 import { Search, Smartphone, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState, type ChangeEvent } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useMemo, type ChangeEvent, Suspense } from 'react'
 import { isEmpty } from 'remeda'
 import {
   Button,
@@ -14,6 +14,7 @@ import {
   Pagination,
   Badge,
 } from '@/components/ui'
+import { PAGINATION } from '@/constants/app'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -32,12 +33,12 @@ const DEVICES_COLUMNS: ColumnDefinition[] = [
 
 function DevicesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<DeviceSortField>('brand')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
 
   const columnVisibility = useColumnVisibility(DEVICES_COLUMNS, {
     storageKey: storageKeys.columnVisibility.devices,
@@ -48,19 +49,55 @@ function DevicesPage() {
     sortField: sortField,
     sortDirection: sortDirection,
     page: page,
-    limit: 20,
+    limit: PAGINATION.DEFAULT_LIMIT,
   })
 
-  const devices = devicesQuery.data?.devices ?? []
+  const devices = useMemo(
+    () => devicesQuery.data?.devices ?? [],
+    [devicesQuery.data?.devices],
+  )
   const pagination = devicesQuery.data?.pagination
 
+  // Get deviceId from URL params
+  const deviceIdFromUrl = searchParams.get('deviceId')
+  const modalOpen = !!deviceIdFromUrl
+
+  // Check if device is in current page
+  const deviceInCurrentPage = useMemo(
+    () => devices.find((d) => d.id === deviceIdFromUrl),
+    [devices, deviceIdFromUrl],
+  )
+
+  // Fetch single device if it's in URL but not in current page
+  const singleDeviceQuery = api.devices.byId.useQuery(
+    { id: deviceIdFromUrl! },
+    {
+      enabled: !!deviceIdFromUrl && !deviceInCurrentPage,
+    },
+  )
+
+  // Set selected device from either the list or the single query
+  useEffect(() => {
+    if (!deviceIdFromUrl) return setSelectedDevice(null)
+
+    const device = deviceInCurrentPage || singleDeviceQuery.data
+    if (device) setSelectedDevice(device)
+  }, [deviceIdFromUrl, deviceInCurrentPage, singleDeviceQuery.data])
+
   const openModal = (device: DeviceData) => {
+    // Update URL with device ID
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('deviceId', device.id)
+    router.replace(`/devices?${params.toString()}`)
     setSelectedDevice(device)
-    setModalOpen(true)
   }
 
   const closeModal = () => {
-    setModalOpen(false)
+    // Remove deviceId from URL
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('deviceId')
+    const query = params.toString()
+    router.replace(`/devices${query ? `?${query}` : ''}`)
     setSelectedDevice(null)
   }
 
@@ -81,7 +118,7 @@ function DevicesPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24">
+    <div className="container mx-auto px-2 sm:px-4 pt-4">
       {/* Header */}
       <div className="mb-4 md:mb-6">
         <Button variant="outline" size="sm" onClick={() => router.back()}>
@@ -251,6 +288,9 @@ function DevicesPage() {
       {pagination && pagination.pages > 1 && (
         <div className="mt-6">
           <Pagination
+            showLabel
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
             currentPage={pagination.page}
             totalPages={pagination.pages}
             onPageChange={setPage}
@@ -268,4 +308,12 @@ function DevicesPage() {
   )
 }
 
-export default DevicesPage
+function DevicesPageWrapper() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading devices..." />}>
+      <DevicesPage />
+    </Suspense>
+  )
+}
+
+export default DevicesPageWrapper

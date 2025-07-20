@@ -4,15 +4,9 @@ import type { Prisma } from '@orm'
  * Common include for PC listings queries
  */
 export const pcListingInclude = {
-  game: {
-    include: { system: true },
-  },
-  cpu: {
-    include: { brand: true },
-  },
-  gpu: {
-    include: { brand: true },
-  },
+  game: { include: { system: true } },
+  cpu: { include: { brand: true } },
+  gpu: { include: { brand: true } },
   emulator: true,
   performance: true,
   author: true,
@@ -20,9 +14,7 @@ export const pcListingInclude = {
     select: {
       reports: true,
       votes: true,
-      comments: {
-        where: { deletedAt: null },
-      },
+      comments: { where: { deletedAt: null } },
     },
   },
 } as const
@@ -33,22 +25,12 @@ export const pcListingInclude = {
 export const pcListingDetailInclude = {
   ...pcListingInclude,
   emulator: {
-    include: {
-      customFieldDefinitions: {
-        orderBy: { displayOrder: 'asc' },
-      },
-    },
-  },
-  customFieldValues: {
-    include: {
-      customFieldDefinition: true,
-    },
+    include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } },
   },
   developerVerifications: {
-    include: {
-      developer: true,
-    },
+    include: { developer: { select: { id: true, name: true } } },
   },
+  customFieldValues: { include: { customFieldDefinition: true } },
 } as const
 
 /**
@@ -103,9 +85,7 @@ export function buildPcListingOrderBy(
     }
   }
 
-  if (!orderBy.length) {
-    orderBy.push({ createdAt: 'desc' })
-  }
+  if (!orderBy.length) orderBy.push({ createdAt: 'desc' })
 
   return orderBy
 }

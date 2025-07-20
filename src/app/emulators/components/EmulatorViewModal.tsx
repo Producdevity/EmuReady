@@ -1,19 +1,21 @@
 'use client'
 
-import { Monitor, Users, ExternalLink, Github } from 'lucide-react'
+import { Monitor, Users, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { EmulatorIcon } from '@/components/icons'
+import { EmulatorIcon, GitHubIcon } from '@/components/icons'
 import { Modal } from '@/components/ui'
 import { TranslatableMarkdown } from '@/components/ui/form/TranslatableMarkdown'
 import { type RouterOutput } from '@/types/trpc'
 
 type EmulatorData = RouterOutput['emulators']['get']['emulators'][number]
+type EmulatorByIdData = RouterOutput['emulators']['byId']
+type EmulatorUnion = EmulatorData | EmulatorByIdData
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  emulatorData: EmulatorData | null
+  emulatorData: EmulatorUnion | null
 }
 
 function EmulatorViewModal(props: Props) {
@@ -59,7 +61,7 @@ function EmulatorViewModal(props: Props) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
                       >
-                        <Github className="w-3 h-3" />
+                        <GitHubIcon className="w-3 h-3" />
                         Repository
                       </a>
                     )}
@@ -90,8 +92,9 @@ function EmulatorViewModal(props: Props) {
             <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">
-                  {props.emulatorData._count?.systems ?? 0} system
-                  {(props.emulatorData._count?.systems ?? 0) !== 1 ? 's' : ''}
+                  {'systems' in props.emulatorData._count
+                    ? `${props.emulatorData._count.systems} system${props.emulatorData._count.systems !== 1 ? 's' : ''}`
+                    : `${props.emulatorData.systems?.length ?? 0} system${(props.emulatorData.systems?.length ?? 0) !== 1 ? 's' : ''}`}
                 </span>
               </div>
               {props.emulatorData.systems &&

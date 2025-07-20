@@ -1,12 +1,10 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
-import { Send, X } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { Button } from '@/components/ui'
-import { MarkdownEditor } from '@/components/ui/form'
+import {
+  GenericCommentForm,
+  type CommentFormConfig,
+} from '@/components/comments'
 import { api } from '@/lib/api'
-import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 
 type AnyComment = RouterOutput['pcListings']['getComments']['comments'][number]
@@ -20,117 +18,56 @@ interface Props {
 }
 
 function PcCommentForm(props: Props) {
-  const { user } = useUser()
-  const [content, setContent] = useState(props.editingComment?.content ?? '')
+  const createComment = api.pcListings.createComment.useMutation()
+  const updateComment = api.pcListings.updateComment.useMutation()
 
-  const createCommentMutation = api.pcListings.createComment.useMutation()
-  const updateCommentMutation = api.pcListings.updateComment.useMutation()
-
-  const handleSubmit = async (ev: FormEvent) => {
-    ev.preventDefault()
-
-    if (!user?.id) return toast.error('Please sign in to comment')
-
-    if (!content.trim()) return toast.error('Please enter a comment')
-
-    try {
-      if (props.editingComment) {
-        // Update existing comment
-        await updateCommentMutation.mutateAsync({
-          commentId: props.editingComment.id,
-          content: content.trim(),
-        })
-        toast.success('Comment updated successfully')
-      } else {
-        // Create new comment
-        await createCommentMutation.mutateAsync({
-          pcListingId: props.pcListingId,
-          content: content.trim(),
-          parentId: props.parentId,
-        })
-        toast.success('Comment posted successfully')
-      }
-
-      setContent('')
-      props.onSuccess?.()
-    } catch (error) {
-      console.error('Error submitting comment:', error)
-      toast.error('Failed to submit comment. Please try again.')
-    }
+  const config: CommentFormConfig = {
+    entityType: 'pcListing',
+    placeholders: {
+      comment: 'Share your thoughts about this PC configuration...',
+      reply: 'Write your reply...',
+    },
+    maxLength: 2000,
+    enableRecaptcha: false,
+    showSignInPrompt: false,
+    buttonStyle: 'compact',
   }
 
-  const handleCancel = () => {
-    setContent(props.editingComment?.content ?? '')
-    props.onCancel?.()
+  const handleSubmit = async (data: { content: string; parentId?: string }) => {
+    await createComment.mutateAsync({
+      pcListingId: props.pcListingId,
+      content: data.content,
+      parentId: data.parentId,
+    })
   }
 
-  if (!user?.id) {
-    return (
-      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-        Please sign in to leave a comment
-      </div>
-    )
+  const handleUpdate = async (data: { commentId: string; content: string }) => {
+    await updateComment.mutateAsync({
+      commentId: data.commentId,
+      content: data.content,
+    })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <MarkdownEditor
-        value={content}
-        onChange={setContent}
-        placeholder={
-          props.parentId
-            ? 'Write your reply...'
-            : 'Share your thoughts about this PC configuration...'
-        }
-        rows={props.parentId ? 2 : 3}
-        maxLength={2000}
-        disabled={
-          createCommentMutation.isPending || updateCommentMutation.isPending
-        }
-      />
-
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-2">
-          {props.onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              disabled={
-                createCommentMutation.isPending ||
-                updateCommentMutation.isPending
-              }
-            >
-              <X size={16} />
-              Cancel
-            </Button>
-          )}
-
-          <Button
-            type="submit"
-            size="sm"
-            disabled={
-              createCommentMutation.isPending ||
-              updateCommentMutation.isPending ||
-              !content.trim() ||
-              content.length > 2000
+    <GenericCommentForm
+      entityId={props.pcListingId}
+      parentId={props.parentId}
+      editingComment={
+        props.editingComment
+          ? {
+              id: props.editingComment.id,
+              content: props.editingComment.content,
             }
-            isLoading={
-              createCommentMutation.isPending || updateCommentMutation.isPending
-            }
-            className="flex items-center gap-2"
-          >
-            <Send size={16} />
-            {props.editingComment
-              ? 'Update'
-              : props.parentId
-                ? 'Reply'
-                : 'Post Comment'}
-          </Button>
-        </div>
-      </div>
-    </form>
+          : undefined
+      }
+      config={config}
+      onSubmit={handleSubmit}
+      onUpdate={handleUpdate}
+      onSuccess={props.onSuccess}
+      onCancel={props.onCancel}
+      isCreating={createComment.isPending}
+      isUpdating={updateComment.isPending}
+    />
   )
 }
 

@@ -309,6 +309,10 @@ export class ResourceError {
   }
 
   static comment = {
+    noPermission: (action: string) =>
+      AppError.forbidden(
+        `You do not have permission to ${action} this comment`,
+      ),
     notFound: () => AppError.notFound('Comment'),
     parentNotFound: () => AppError.notFound('Parent comment'),
     alreadyDeleted: () => AppError.badRequest('Comment is already deleted'),

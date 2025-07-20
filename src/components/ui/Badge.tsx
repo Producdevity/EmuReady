@@ -33,6 +33,7 @@ interface Props extends PropsWithChildren {
   size?: BadgeSize
   className?: string
   pill?: boolean
+  onClick?: () => void
 }
 
 export function Badge(props: Props) {
@@ -41,13 +42,22 @@ export function Badge(props: Props) {
 
   return (
     <span
+      onClick={props.onClick}
       className={cn(
         'inline-flex items-center justify-center font-medium text-center',
+        props.onClick ? 'cursor-pointer' : 'cursor-default',
         props.pill ? 'rounded-full' : 'rounded',
         variantClasses[variant],
         sizeClasses[size],
         props.className,
       )}
+      onKeyDown={
+        props.onClick
+          ? (ev) => ev.key === 'Enter' && props.onClick?.()
+          : undefined
+      }
+      role={props.onClick ? 'button' : undefined}
+      tabIndex={props.onClick ? 0 : undefined}
     >
       {props.children}
     </span>

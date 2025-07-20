@@ -248,17 +248,18 @@ function CreateBanModal(props: Props) {
                 ref={searchInputRef}
                 type="text"
                 value={userSearch}
-                onChange={(e) => {
-                  setUserSearch(e.target.value)
-                  if (!selectedUser && e.target.value.length >= 2) {
+                onChange={(ev) => {
+                  setUserSearch(ev.target.value)
+                  if (!selectedUser && ev.target.value.length >= 2) {
                     setShowUserDropdown(true)
-                  } else if (e.target.value.length < 2) {
+                  } else if (ev.target.value.length < 2) {
                     setShowUserDropdown(false)
                   }
                   // Clear selection if user starts typing again
                   if (
                     selectedUser &&
-                    e.target.value !== (selectedUser.name || selectedUser.email)
+                    ev.target.value !==
+                      (selectedUser.name || selectedUser.email)
                   ) {
                     setSelectedUser(null)
                   }
@@ -268,7 +269,7 @@ function CreateBanModal(props: Props) {
               />
               {isLoading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                  <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
                 </div>
               )}
             </div>

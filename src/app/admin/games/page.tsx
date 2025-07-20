@@ -25,6 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   useConfirmDialog,
+  ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -94,7 +95,10 @@ function AdminGamesPage() {
   const deleteGame = api.games.delete.useMutation({
     onSuccess: () => {
       toast.success('Game deleted successfully')
-      gamesQuery.refetch().catch(console.error)
+      gamesQuery.refetch().catch((error) => {
+        console.error('Error refreshing games:', error)
+        toast.error('Failed to refresh games list')
+      })
     },
     onError: (error) => {
       toast.error(`Failed to delete game: ${getErrorMessage(error)}`)
@@ -442,6 +446,10 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <ViewButton
+                              href={`/games/${game.id}`}
+                              title="View Game"
+                            />
                             {hasPermission(
                               userQuery.data?.role,
                               Role.MODERATOR,

@@ -527,7 +527,7 @@ function PcListingsPage() {
                               <SystemIcon
                                 name={listing.game.system.name}
                                 systemKey={listing.game.system.key}
-                                size="md"
+                                size="sm"
                               />
                             </div>
                           ) : (
