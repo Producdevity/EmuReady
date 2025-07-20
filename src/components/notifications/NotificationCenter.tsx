@@ -23,11 +23,11 @@ function NotificationCenter(props: Props) {
 
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
-    { enabled: !!user, refetchInterval: 30000 },
+    { enabled: !!user, refetchInterval: 5 * 60 * 1000 }, // 5 minutes
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(
     undefined,
-    { enabled: !!user, refetchInterval: 30000 },
+    { enabled: !!user, refetchInterval: 5 * 60 * 1000 }, // 5 minutes
   )
 
   // Mutations
