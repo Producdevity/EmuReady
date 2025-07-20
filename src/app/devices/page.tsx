@@ -3,7 +3,7 @@
 import { Search, Smartphone, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useMemo, type ChangeEvent } from 'react'
+import { useState, useEffect, useMemo, type ChangeEvent, Suspense } from 'react'
 import { isEmpty } from 'remeda'
 import {
   Button,
@@ -307,4 +307,12 @@ function DevicesPage() {
   )
 }
 
-export default DevicesPage
+function DevicesPageWrapper() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading devices..." />}>
+      <DevicesPage />
+    </Suspense>
+  )
+}
+
+export default DevicesPageWrapper
