@@ -1,9 +1,9 @@
 'use client'
 
-import { Monitor, Users, ExternalLink, Github } from 'lucide-react'
+import { Monitor, Users, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { EmulatorIcon } from '@/components/icons'
+import { EmulatorIcon, GitHubIcon } from '@/components/icons'
 import { Modal } from '@/components/ui'
 import { TranslatableMarkdown } from '@/components/ui/form/TranslatableMarkdown'
 import { type RouterOutput } from '@/types/trpc'
@@ -61,7 +61,7 @@ function EmulatorViewModal(props: Props) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
                       >
-                        <Github className="w-3 h-3" />
+                        <GitHubIcon className="w-3 h-3" />
                         Repository
                       </a>
                     )}
