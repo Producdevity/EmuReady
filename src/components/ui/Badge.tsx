@@ -53,7 +53,7 @@ export function Badge(props: Props) {
       )}
       onKeyDown={
         props.onClick
-          ? (ev) => ev.key === 'Enter' && props.onClick()
+          ? (ev) => ev.key === 'Enter' && props.onClick?.()
           : undefined
       }
       role={props.onClick ? 'button' : undefined}
