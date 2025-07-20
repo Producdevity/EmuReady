@@ -201,11 +201,27 @@ function ListingDetailsClient(props: Props) {
                 <Badge variant="default">
                   System: {props.listing?.game.system?.name}
                 </Badge>
-                <Badge variant="default">
+                <Badge
+                  onClick={() =>
+                    router.push(
+                      `/devices?deviceId=${props.listing?.device?.id}`,
+                    )
+                  }
+                  variant="default"
+                  className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
                   Device: {props.listing?.device?.brand?.name}{' '}
                   {props.listing?.device?.modelName}
                 </Badge>
-                <Badge variant="default">
+                <Badge
+                  onClick={() =>
+                    router.push(
+                      `/emulators?emulatorId=${props.listing?.emulator?.id}`,
+                    )
+                  }
+                  variant="default"
+                  className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
                   Emulator: {props.listing?.emulator?.name}
                 </Badge>
                 <PerformanceBadge

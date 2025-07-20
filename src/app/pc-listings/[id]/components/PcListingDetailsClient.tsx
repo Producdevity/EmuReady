@@ -161,7 +161,15 @@ function PcListingDetailsClient(props: Props) {
                 <Badge variant="default">
                   System: {props.pcListing?.game.system?.name}
                 </Badge>
-                <Badge variant="default">
+                <Badge
+                  onClick={() =>
+                    router.push(
+                      `/emulators?emulatorId=${props.pcListing?.emulator?.id}`,
+                    )
+                  }
+                  variant="default"
+                  className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
                   Emulator: {props.pcListing?.emulator?.name}
                 </Badge>
                 <PerformanceBadge

@@ -9,11 +9,13 @@ import { TranslatableMarkdown } from '@/components/ui/form/TranslatableMarkdown'
 import { type RouterOutput } from '@/types/trpc'
 
 type EmulatorData = RouterOutput['emulators']['get']['emulators'][number]
+type EmulatorByIdData = RouterOutput['emulators']['byId']
+type EmulatorUnion = EmulatorData | EmulatorByIdData
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  emulatorData: EmulatorData | null
+  emulatorData: EmulatorUnion | null
 }
 
 function EmulatorViewModal(props: Props) {
@@ -90,8 +92,9 @@ function EmulatorViewModal(props: Props) {
             <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">
-                  {props.emulatorData._count?.systems ?? 0} system
-                  {(props.emulatorData._count?.systems ?? 0) !== 1 ? 's' : ''}
+                  {'systems' in props.emulatorData._count
+                    ? `${props.emulatorData._count.systems} system${props.emulatorData._count.systems !== 1 ? 's' : ''}`
+                    : `${props.emulatorData.systems?.length ?? 0} system${(props.emulatorData.systems?.length ?? 0) !== 1 ? 's' : ''}`}
                 </span>
               </div>
               {props.emulatorData.systems &&

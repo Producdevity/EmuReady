@@ -2,8 +2,8 @@
 
 import { Search, Monitor, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useMemo, type ChangeEvent } from 'react'
 import { isEmpty } from 'remeda'
 import { EmulatorIcon } from '@/components/icons'
 import {
@@ -24,6 +24,8 @@ import EmulatorViewModal from './components/EmulatorViewModal'
 
 type EmulatorSortField = 'name'
 type EmulatorData = RouterOutput['emulators']['get']['emulators'][number]
+type EmulatorByIdData = RouterOutput['emulators']['byId']
+type EmulatorUnion = EmulatorData | EmulatorByIdData
 
 const EMULATORS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Emulator', defaultVisible: true },
@@ -34,14 +36,13 @@ const EMULATORS_COLUMNS: ColumnDefinition[] = [
 
 function EmulatorsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<EmulatorSortField>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [selectedEmulator, setSelectedEmulator] = useState<EmulatorData | null>(
-    null,
-  )
-  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedEmulator, setSelectedEmulator] =
+    useState<EmulatorUnion | null>(null)
 
   const columnVisibility = useColumnVisibility(EMULATORS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.emulators,
@@ -55,16 +56,57 @@ function EmulatorsPage() {
     limit: 20,
   })
 
-  const emulators = emulatorsQuery.data?.emulators ?? []
+  const emulators = useMemo(
+    () => emulatorsQuery.data?.emulators ?? [],
+    [emulatorsQuery.data?.emulators],
+  )
   const pagination = emulatorsQuery.data?.pagination
 
+  // Get emulatorId from URL params
+  const emulatorIdFromUrl = searchParams.get('emulatorId')
+  const modalOpen = !!emulatorIdFromUrl
+
+  // Check if emulator is in current page
+  const emulatorInCurrentPage = useMemo(
+    () => emulators.find((e) => e.id === emulatorIdFromUrl),
+    [emulators, emulatorIdFromUrl],
+  )
+
+  // Fetch single emulator if it's in URL but not in current page
+  const singleEmulatorQuery = api.emulators.byId.useQuery(
+    { id: emulatorIdFromUrl! },
+    {
+      enabled: !!emulatorIdFromUrl && !emulatorInCurrentPage,
+    },
+  )
+
+  // Set selected emulator from either the list or the single query
+  useEffect(() => {
+    if (!emulatorIdFromUrl) {
+      setSelectedEmulator(null)
+      return
+    }
+
+    const emulator = emulatorInCurrentPage || singleEmulatorQuery.data
+    if (emulator) {
+      setSelectedEmulator(emulator)
+    }
+  }, [emulatorIdFromUrl, emulatorInCurrentPage, singleEmulatorQuery.data])
+
   const openModal = (emulator: EmulatorData) => {
+    // Update URL with emulator ID
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('emulatorId', emulator.id)
+    router.replace(`/emulators?${params.toString()}`)
     setSelectedEmulator(emulator)
-    setModalOpen(true)
   }
 
   const closeModal = () => {
-    setModalOpen(false)
+    // Remove emulatorId from URL
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('emulatorId')
+    const query = params.toString()
+    router.replace(`/emulators${query ? `?${query}` : ''}`)
     setSelectedEmulator(null)
   }
 
@@ -79,13 +121,13 @@ function EmulatorsPage() {
     setPage(1)
   }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value)
+  const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setSearch(ev.target.value)
     setPage(1)
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-24">
+    <div className="container mx-auto px-2 sm:px-4 pt-4">
       {/* Header */}
       <div className="mb-4 md:mb-6">
         <Button variant="outline" size="sm" onClick={() => router.back()}>
@@ -200,7 +242,7 @@ function EmulatorsPage() {
                     )}
                     {columnVisibility.isColumnVisible('systems') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {emulator._count?.systems ?? 0}
+                        <Badge>{emulator._count?.systems ?? 0}</Badge>
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('listings') && (
@@ -258,6 +300,9 @@ function EmulatorsPage() {
       {pagination && pagination.pages > 1 && (
         <div className="mt-6">
           <Pagination
+            showLabel
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
             currentPage={pagination.page}
             totalPages={pagination.pages}
             onPageChange={setPage}
