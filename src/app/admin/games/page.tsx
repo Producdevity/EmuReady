@@ -25,6 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   useConfirmDialog,
+  ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -442,6 +443,10 @@ function AdminGamesPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <ViewButton
+                              href={`/games/${game.id}`}
+                              title="View Game"
+                            />
                             {hasPermission(
                               userQuery.data?.role,
                               Role.MODERATOR,
