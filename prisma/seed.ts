@@ -39,7 +39,6 @@ async function clearDb() {
   await prisma.game.deleteMany()
   await prisma.system.deleteMany()
   await prisma.deviceBrand.deleteMany()
-  // Clear permission system tables
   await prisma.permissionActionLog.deleteMany()
   await prisma.rolePermission.deleteMany()
   await prisma.permission.deleteMany()
