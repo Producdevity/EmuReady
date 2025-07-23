@@ -131,6 +131,7 @@ INTERNAL_API_KEY=your_secure_random_api_key_here
 ```
 
 # Optional: Additional services
+```
 RAWG_API_KEY=your_rawg_api_key_here
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
 RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here

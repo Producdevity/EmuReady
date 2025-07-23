@@ -1,3 +1,5 @@
+'use client'
+
 import { Command as CommandPrimitive } from 'cmdk'
 import { ChevronsUpDown, X, Search } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
