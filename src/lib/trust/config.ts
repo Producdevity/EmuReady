@@ -1,3 +1,4 @@
+import { ms } from '@/utils/time'
 import { TrustAction } from '@orm'
 
 export const TRUST_ACTIONS = {
@@ -63,7 +64,7 @@ export const TRUST_CONFIG = {
 
   // Rate limiting for voting actions
   VOTE_RATE_LIMIT: {
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: ms.minutes(1),
     maxVotes: 10,
   },
 } as const
