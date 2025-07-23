@@ -174,9 +174,7 @@ export async function getGameImages(
 
   // Check cache first
   const cached = tgdbImagesCache.get(cacheKey)
-  if (cached) {
-    return cached
-  }
+  if (cached) return cached
 
   const response = await makeRequest<TGDBGamesImagesResponse>(
     '/v1/Games/Images',
@@ -218,9 +216,7 @@ export async function getGameImageUrls(
 
   // Check cache first
   const cached = tgdbImageUrlsCache.get(cacheKey)
-  if (cached) {
-    return cached
-  }
+  if (cached) return cached
 
   try {
     const imagesResponse = await getGameImages([gameId])
@@ -245,7 +241,8 @@ export async function getGameImageUrls(
       (img) => img.type === 'fanart' || img.type === 'clearlogo',
     )?.fullUrl
 
-    const result = { boxartUrl, bannerUrl }
+    // fallback to boxart if no banner found
+    const result = { boxartUrl, bannerUrl: bannerUrl ? bannerUrl : boxartUrl }
 
     // Cache the result
     tgdbImageUrlsCache.set(cacheKey, result)
@@ -308,9 +305,7 @@ export async function searchGameImages(
         return existingImage ? acc : [...acc, image]
       }, [] as GameImageOption[])
 
-      if (uniqueImages.length > 0) {
-        gameImageMap.set(game.id, uniqueImages)
-      }
+      if (uniqueImages.length > 0) gameImageMap.set(game.id, uniqueImages)
     })
 
     // Cache the result - convert Map to plain object for JSON serialization
@@ -381,13 +376,10 @@ function createOtherImages(
   return imagesResponse.data.base_url
     ? gameImagesData
         .filter((image) => image.filename)
-        .map((image) => {
-          const url = `${imagesResponse.data.base_url!.original}${image.filename}`
-          return {
-            ...image,
-            url,
-          }
-        })
+        .map((image) => ({
+          ...image,
+          url: `${imagesResponse.data.base_url!.original}${image.filename}`,
+        }))
         .filter((image) => isValidImageUrl(image.url))
         .map((image) => ({
           id: `tgdb-${game.id}-${image.type}-${image.id}`,
