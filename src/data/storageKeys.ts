@@ -12,6 +12,13 @@ const storageKeys = {
     voteReminderDismissed: `${PREFIX}vote_reminder_dismissed`,
     betaWarningDismissed: `${PREFIX}beta_warning_dismissed_v2`,
   },
+  cookies: {
+    preferences: `${PREFIX}cookie_preferences`,
+    consent: `${PREFIX}cookie_consent`,
+    consentDate: `${PREFIX}cookie_consent_date`,
+    analyticsEnabled: `${PREFIX}analytics_enabled`,
+    performanceEnabled: `${PREFIX}performance_enabled`,
+  },
   columnVisibility: {
     listings: `${PREFIX}listings_column_visibility`,
     games: `${PREFIX}games_column_visibility`,
