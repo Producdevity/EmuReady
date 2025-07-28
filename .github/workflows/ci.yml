@@ -74,10 +74,16 @@ jobs:
       - name: Build
         run: npm run build
 
-      # - name: Install Playwright browsers
-      #   run: npx playwright install --with-deps
-      #   if: false
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
-      # - name: E2E tests (enable when ready)
-      #   run: npm run test:e2e:ci
-      #   if: false
+      - name: E2E tests
+        run: npm run test:e2e:ci:full
+        env:
+          # Test user credentials
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL || 'user@emuready.com' }}
+          TEST_AUTHOR_EMAIL: ${{ secrets.TEST_AUTHOR_EMAIL || 'author@emuready.com' }}
+          TEST_MODERATOR_EMAIL: ${{ secrets.TEST_MODERATOR_EMAIL || 'moderator@emuready.com' }}
+          TEST_DEVELOPER_EMAIL: ${{ secrets.TEST_DEVELOPER_EMAIL || 'developer@emuready.com' }}
+          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL || 'admin@emuready.com' }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD || 'DevPassword123!' }}
