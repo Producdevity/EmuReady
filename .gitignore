@@ -20,12 +20,16 @@
 /.next/
 /out/
 
+# profiling
+*.cpuprofile
+
 # production
 /build
 
 # misc
 .DS_Store
 *.pem
+.dev-server.pid
 
 # debug
 npm-debug.log*
@@ -70,6 +74,7 @@ node_modules/
 .idea
 .claude
 .gemini
+.github/copilot-instructions.md
 
 # Notes
 CHECKS.md
