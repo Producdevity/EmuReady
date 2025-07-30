@@ -84,26 +84,44 @@ Create a `.env.test.local` file (if not already present) with your Clerk credent
 cp .env.test.example .env.test.local
 ```
 
-```env
-# Clerk Configuration
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+The test environment includes multiple test users with different roles:
 
-# Specify test user credentials 
-# You don't have to change these if you used `npx prisma db seed`
-TEST_USER_EMAIL=test@example.com
-TEST_USER_PASSWORD=TestPassword123!
+```env
+# Regular user
+TEST_USER_EMAIL=user@emuready.com
+TEST_USER_PASSWORD=DevPassword123!
+
+# Author role
+TEST_AUTHOR_EMAIL=author@emuready.com
+TEST_AUTHOR_PASSWORD=DevPassword123!
+
+# Moderator role
+TEST_MODERATOR_EMAIL=moderator@emuready.com
+TEST_MODERATOR_PASSWORD=DevPassword123!
+
+# Developer role
+TEST_DEVELOPER_EMAIL=developer@emuready.com
+TEST_DEVELOPER_PASSWORD=DevPassword123!
+
+# Admin roles
+TEST_ADMIN_EMAIL=admin@emuready.com
+TEST_ADMIN_PASSWORD=DevPassword123!
+TEST_SUPER_ADMIN_EMAIL=admin@emuready.com
+TEST_SUPER_ADMIN_PASSWORD=DevPassword123!
 ```
 
 **Security Note**: Never commit real credentials to version control. Use test-specific keys only.
 
 ### 3. Test User Setup
 
-For comprehensive authentication testing, create test users in your Clerk dashboard:
+The test users should already exist in your Clerk dashboard if you've run the database seed. If not:
 
 1. Go to Clerk Dashboard → Users
-2. Create test users with known credentials
-3. Assign appropriate roles (USER, ADMIN, etc.)
+2. Create test users with the emails above
+3. Set their passwords to `DevPassword123!`
+4. Make sure they're verified/active
+
+**Note:** The user roles are managed in the database, not Clerk. Make sure your database has these users with correct roles.
 
 ## Running Tests
 
@@ -121,6 +139,18 @@ npm run test:e2e:debug
 
 # Headless mode (CI-friendly)
 npm run test:e2e:headless
+
+# Run only unauthenticated tests (no login required)
+npm run test:e2e:unauth
+
+# Generate auth states for all test users (run this first!)
+npx playwright test --project=auth-setup
+
+# Run authenticated tests as regular user
+npx playwright test --project=chromium-auth-user
+
+# Run authenticated tests as admin
+npx playwright test --project=chromium-auth-admin
 ```
 
 ### Test Modes Explained
@@ -188,11 +218,18 @@ test('authentication example', async ({ page }) => {
 
 ### Current Test Files
 
+#### Legacy Tests (may need updates)
 - **`auth.spec.ts`**: Authentication flows, sign in/up, protected routes
 - **`navigation.spec.ts`**: Main navigation, mobile menu, routing
 - **`browse.spec.ts`**: Content browsing, search, responsive design
 - **`add-game.spec.ts`**: Game creation forms and validation
 - **`add-listing.spec.ts`**: Listing creation forms and validation
+
+#### Modern Tests (Page Object Model)
+- **`navigation-modern.spec.ts`**: Navigation with POM architecture
+- **`auth-modern.spec.ts`**: Authentication flows with better error handling
+- **`browsing-modern.spec.ts`**: Content browsing and responsive design
+- **`forms-modern.spec.ts`**: Form interactions and validation
 
 ### File Organization
 
@@ -252,6 +289,34 @@ await nav.isMobileMenuOpen()
 await nav.setViewport('mobile')
 ```
 
+## Setting Up Authentication
+
+### First Time Setup
+
+1. **Ensure test users exist in Clerk**:
+   - Check your Clerk dashboard
+   - Verify all test users are created and active
+
+2. **Generate authentication states**:
+   ```bash
+   npx playwright test --project=auth-setup
+   ```
+   This creates auth state files for all user roles in `tests/.auth/`
+
+3. **Verify auth files were created**:
+   ```bash
+   ls -la tests/.auth/
+   # Should see: user.json, admin.json, moderator.json, etc.
+   ```
+
+### Cookie Banner Issues
+
+If tests fail due to cookie banners:
+
+1. Tests include automatic cookie banner dismissal
+2. For UI mode (`npm run test:e2e`), cookie banners may persist
+3. Use headless mode for more reliable results: `npm run test:e2e:headless`
+
 ## Troubleshooting
 
 ### Common Issues and Solutions
@@ -275,12 +340,19 @@ npx playwright test --timeout=60000
 
 #### 2. Authentication Failures
 
+**Error**: "Error reading storage state from tests/.auth/user.json"
+
+**Solutions**:
+- Run auth setup first: `npx playwright test --project=auth-setup`
+- Verify test users exist in Clerk dashboard
+- Check `.env.test.local` has correct credentials
+
 **Error**: "Sign In button not found"
 
 **Solutions**:
-- Verify Clerk configuration in `.env.local`
+- Verify Clerk configuration in `.env.test.local`
 - Check that Clerk components are loading
-- Use `auth.waitForAuthComponents()` before interactions
+- Cookie banner might be blocking - tests handle this automatically
 
 #### 3. Browser Crashes (WebKit)
 
