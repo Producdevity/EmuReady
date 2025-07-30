@@ -15,8 +15,8 @@
 Protected endpoints require Bearer token authentication using Clerk JWT.
 
 ## Interactive Documentation
-- **Swagger UI**: [/docs/api/swagger](/docs/api/swagger)
-- **OpenAPI JSON**: [/api-docs/mobile-openapi.json](/api-docs/mobile-openapi.json)
+- **Swagger UI**: [/docs/api/swagger](https://emuready.com/docs/api/swagger)
+- **OpenAPI JSON**: [/api-docs/mobile-openapi.json](https://emuready.com/api-docs/mobile-openapi.json)
 
 ## Endpoints
 
