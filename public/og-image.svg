@@ -1,6 +1,21 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg
+    width="1200"
+    height="630"
+    viewBox="0 0 1200 630"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+>
   <rect width="1200" height="630" fill="#111828"/>
-  <rect x="100" y="100" width="1000" height="430" rx="20" fill="#1F2937" stroke="#374151" stroke-width="2"/>
+  <rect
+      x="100"
+      y="100"
+      width="1000"
+      height="430"
+      rx="20"
+      fill="#1F2937"
+      stroke="#374151"
+      stroke-width="2"
+  />
 
   <!-- TODO: replace placeholder with svg logo -->
   <circle cx="600" cy="200" r="50" fill="#bc2cd4"/>
@@ -8,13 +23,39 @@
   <circle cx="600" cy="200" r="20" fill="#0d81ff"/>
 
   <!-- Title -->
-  <text x="600" y="340" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="white">EmuReady</text>
+  <text
+      x="600"
+      y="340"
+      font-family="Arial, sans-serif"
+      font-size="72"
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+  >
+    EmuReady
+  </text>
 
   <!-- Subtitle -->
-  <text x="600" y="400" font-family="Arial, sans-serif" font-size="32" text-anchor="middle" fill="#9CA3AF">Know before you load</text>
+  <text
+      x="600"
+      y="400"
+      font-family="Arial, sans-serif"
+      font-size="32"
+      text-anchor="middle"
+      fill="#9CA3AF"
+  >
+    Know before you load
+  </text>
 
   <!-- Description -->
-  <text x="600" y="460" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#6B7280">The largest emulator compatibility
-    database
+  <text
+      x="600"
+      y="460"
+      font-family="Arial, sans-serif"
+      font-size="24"
+      text-anchor="middle"
+      fill="#6B7280"
+  >
+    The largest emulator compatibility database
   </text>
 </svg>

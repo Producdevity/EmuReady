@@ -1,11 +1,11 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-07-19T20:26:00.334Z*
+*Auto-generated on: 2025-07-29T19:24:35.156Z*
 
 ## Summary
-- **Total Endpoints**: 93
-- **Public Endpoints**: 54
-- **Protected Endpoints**: 39
+- **Total Endpoints**: 86
+- **Public Endpoints**: 49
+- **Protected Endpoints**: 37
 - **OpenAPI Version**: 3.0.0
 
 ## Base URL
@@ -23,38 +23,14 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 ### Public Endpoints (No Authentication Required)
 
 
-#### 1. **signIn**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.signIn`
-- **Description**: Sign in with email and password
-- **Tags**: auth
-- **Request Body**: JSON object required
-- **Content-Type**: application/json
-
-#### 2. **signUp**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.signUp`
-- **Description**: Sign up with email and password
-- **Tags**: auth
-- **Request Body**: JSON object required
-- **Content-Type**: application/json
-
-#### 3. **oauthSignIn**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.oauthSignIn`
-- **Description**: OAuth sign-in (Google, Apple, etc.)
-- **Tags**: auth
-- **Request Body**: JSON object required
-- **Content-Type**: application/json
-
-#### 4. **validateToken**
+#### 1. **validateToken**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/auth.validateToken`
 - **Description**: Validate JWT token
 - **Tags**: auth
 
 
-#### 5. **refreshToken**
+#### 2. **refreshToken**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/auth.refreshToken`
 - **Description**: Refresh token
@@ -62,7 +38,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
 
-#### 6. **verifyEmail**
+#### 3. **verifyEmail**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/auth.verifyEmail`
 - **Description**: Verify email with code
@@ -70,338 +46,322 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
 
-#### 7. **forgotPassword**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.forgotPassword`
-- **Description**: Forgot password
-- **Tags**: auth
-- **Request Body**: JSON object required
-- **Content-Type**: application/json
-
-#### 8. **resetPassword**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.resetPassword`
-- **Description**: Reset password with code
-- **Tags**: auth
-- **Request Body**: JSON object required
-- **Content-Type**: application/json
-
-#### 9. **get**
+#### 4. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/cpus.get`
 - **Description**: Get CPUs with search, filtering, and pagination
 - **Tags**: cpus
 
 
-#### 10. **getById**
+#### 5. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/cpus.getById`
 - **Description**: Get CPU by ID
 - **Tags**: cpus
 
 
-#### 11. **getByEmulator**
+#### 6. **getByEmulator**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/customFieldDefinitions.getByEmulator`
 - **Description**: Get custom field definitions by emulator (for mobile listing creation)
 - **Tags**: customFieldDefinitions
 
 
-#### 12. **get**
+#### 7. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/deviceBrands.get`
 - **Description**: Get device brands with search and sorting
 - **Tags**: deviceBrands
 
 
-#### 13. **getById**
+#### 8. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/deviceBrands.getById`
 - **Description**: Get device brand by ID
 - **Tags**: deviceBrands
 
 
-#### 14. **getDevices**
+#### 9. **getDevices**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/devices.getDevices`
 - **Description**: Get devices with search and filtering
 - **Tags**: devices
 
 
-#### 15. **getDeviceBrands**
+#### 10. **getDeviceBrands**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/devices.getDeviceBrands`
 - **Description**: Get device brands
 - **Tags**: devices
 
 
-#### 16. **getSocs**
+#### 11. **getSocs**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/devices.getSocs`
 - **Description**: Get SOCs (System on Chips)
 - **Tags**: devices
 
 
-#### 17. **getEmulators**
+#### 12. **getEmulators**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/emulators.getEmulators`
 - **Description**: Get emulators with search and filtering
 - **Tags**: emulators
 
 
-#### 18. **getEmulatorById**
+#### 13. **getEmulatorById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/emulators.getEmulatorById`
 - **Description**: Get emulator by ID
 - **Tags**: emulators
 
 
-#### 19. **getGames**
+#### 14. **getGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.getGames`
 - **Description**: Get games with search and filtering
 - **Tags**: games
 
 
-#### 20. **getPopularGames**
+#### 15. **getPopularGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.getPopularGames`
 - **Description**: Get popular games
 - **Tags**: games
 
 
-#### 21. **searchGames**
+#### 16. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.searchGames`
 - **Description**: Search games
 - **Tags**: games
 
 
-#### 22. **getGameById**
+#### 17. **getGameById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.getGameById`
 - **Description**: Get game by ID
 - **Tags**: games
 
 
-#### 23. **findSwitchTitleId**
+#### 18. **findSwitchTitleId**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.findSwitchTitleId`
 - **Description**: Find Nintendo Switch title IDs by game name (fuzzy search)
 - **Tags**: games
 
 
-#### 24. **getBestSwitchTitleId**
+#### 19. **getBestSwitchTitleId**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.getBestSwitchTitleId`
 - **Description**: Get the best matching Nintendo Switch title ID for a game name
 - **Tags**: games
 
 
-#### 25. **getSwitchGamesStats**
+#### 20. **getSwitchGamesStats**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/games.getSwitchGamesStats`
 - **Description**: Get Nintendo Switch games cache statistics
 - **Tags**: games
 
 
-#### 26. **getAppStats**
+#### 21. **getAppStats**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getAppStats`
 - **Description**: Get app statistics
 - **Tags**: general
 
 
-#### 27. **getSystems**
+#### 22. **getSystems**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getSystems`
 - **Description**: Get all systems
 - **Tags**: general
 
 
-#### 28. **getPerformanceScales**
+#### 23. **getPerformanceScales**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getPerformanceScales`
 - **Description**: Get performance scales
 - **Tags**: general
 
 
-#### 29. **getSearchSuggestions**
+#### 24. **getSearchSuggestions**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getSearchSuggestions`
 - **Description**: Get search suggestions
 - **Tags**: general
 
 
-#### 30. **getTrustLevels**
+#### 25. **getTrustLevels**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/general.getTrustLevels`
 - **Description**: Get trust levels (for mobile trust system integration)
 - **Tags**: general
 
 
-#### 31. **get**
+#### 26. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/gpus.get`
 - **Description**: Get GPUs with search, filtering, and pagination
 - **Tags**: gpus
 
 
-#### 32. **getById**
+#### 27. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/gpus.getById`
 - **Description**: Get GPU by ID
 - **Tags**: gpus
 
 
-#### 33. **checkUserHasReports**
+#### 28. **checkUserHasReports**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listingReports.checkUserHasReports`
 - **Description**: Check if a user has reports (for showing warnings)
 - **Tags**: listingReports
 
 
-#### 34. **getListings**
+#### 29. **getListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListings`
 - **Description**: Get listings with pagination and filtering
 - **Tags**: listings
 
 
-#### 35. **getFeaturedListings**
+#### 30. **getFeaturedListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getFeaturedListings`
 - **Description**: Get featured listings
 - **Tags**: listings
 
 
-#### 36. **getListingsByGame**
+#### 31. **getListingsByGame**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListingsByGame`
 - **Description**: Get listings by game
 - **Tags**: listings
 
 
-#### 37. **getListingById**
+#### 32. **getListingById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListingById`
 - **Description**: Get listing by ID
 - **Tags**: listings
 
 
-#### 38. **getListingComments**
+#### 33. **getListingComments**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getListingComments`
 - **Description**: Get listing comments
 - **Tags**: listings
 
 
-#### 39. **getPcListings**
+#### 34. **getPcListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.getPcListings`
 - **Description**: Get PC listings with pagination and filtering
 - **Tags**: pcListings
 
 
-#### 40. **getCpus**
+#### 35. **getCpus**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.getCpus`
 - **Description**: Get CPUs for mobile
 - **Tags**: pcListings
 
 
-#### 41. **getGpus**
+#### 36. **getGpus**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.getGpus`
 - **Description**: Get GPUs for mobile
 - **Tags**: pcListings
 
 
-#### 42. **searchGameImages**
+#### 37. **searchGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.searchGameImages`
 - **Description**: Search for game images in RAWG database
 - **Tags**: rawg
 
 
-#### 43. **searchGames**
+#### 38. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.searchGames`
 - **Description**: Search for games in RAWG database
 - **Tags**: rawg
 
 
-#### 44. **getGameImages**
+#### 39. **getGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.getGameImages`
 - **Description**: Get game images by ID
 - **Tags**: rawg
 
 
-#### 45. **get**
+#### 40. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/socs.get`
 - **Description**: Get SoCs with search, filtering, and pagination
 - **Tags**: socs
 
 
-#### 46. **getById**
+#### 41. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/socs.getById`
 - **Description**: Get SoC by ID
 - **Tags**: socs
 
 
-#### 47. **searchGameImages**
+#### 42. **searchGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.searchGameImages`
 - **Description**: Search for game images in TGDB database
 - **Tags**: tgdb
 
 
-#### 48. **searchGames**
+#### 43. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.searchGames`
 - **Description**: Search for games in TGDB database
 - **Tags**: tgdb
 
 
-#### 49. **getGameImageUrls**
+#### 44. **getGameImageUrls**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getGameImageUrls`
 - **Description**: Get game image URLs for a specific game
 - **Tags**: tgdb
 
 
-#### 50. **getGameImages**
+#### 45. **getGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getGameImages`
 - **Description**: Get game images by game IDs
 - **Tags**: tgdb
 
 
-#### 51. **getPlatforms**
+#### 46. **getPlatforms**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getPlatforms`
 - **Description**: Get available platforms from TGDB
 - **Tags**: tgdb
 
 
-#### 52. **getUserTrustInfo**
+#### 47. **getUserTrustInfo**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/trust.getUserTrustInfo`
 - **Description**: Get trust info for a specific user (public)
 - **Tags**: trust
 
 
-#### 53. **getTrustLevels**
+#### 48. **getTrustLevels**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/trust.getTrustLevels`
 - **Description**: Get trust levels configuration
 - **Tags**: trust
 
 
-#### 54. **getUserById**
+#### 49. **getUserById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/users.getUserById`
 - **Description**: Get user profile by ID (public user profiles)
@@ -412,15 +372,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 ### Protected Endpoints (Authentication Required)
 
 
-#### 1. **signOut**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.signOut`
-- **Description**: Sign out (invalidate session)
-- **Tags**: auth
-
-- **Authentication**: Bearer token required
-
-#### 2. **updateProfile**
+#### 1. **updateProfile**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/auth.updateProfile`
 - **Description**: Update mobile profile
@@ -429,16 +381,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 3. **changePassword**
-- **Method**: POST
-- **Path**: `/api/mobile/trpc/auth.changePassword`
-- **Description**: Change password
-- **Tags**: auth
-- **Request Body**: JSON object required
-- **Content-Type**: application/json
-- **Authentication**: Bearer token required
-
-#### 4. **deleteAccount**
+#### 2. **deleteAccount**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/auth.deleteAccount`
 - **Description**: Delete account
@@ -447,7 +390,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 5. **getMyVerifiedEmulators**
+#### 3. **getMyVerifiedEmulators**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/developers.getMyVerifiedEmulators`
 - **Description**: Get current user's verified emulators
@@ -455,7 +398,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 6. **isVerifiedDeveloper**
+#### 4. **isVerifiedDeveloper**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/developers.isVerifiedDeveloper`
 - **Description**: Check if a user is a verified developer for an emulator
@@ -463,7 +406,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 7. **verifyListing**
+#### 5. **verifyListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/developers.verifyListing`
 - **Description**: Verify a listing as a developer
@@ -472,7 +415,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 8. **removeVerification**
+#### 6. **removeVerification**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/developers.removeVerification`
 - **Description**: Remove a verification
@@ -481,7 +424,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 9. **getListingVerifications**
+#### 7. **getListingVerifications**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/developers.getListingVerifications`
 - **Description**: Get verifications for a listing
@@ -489,7 +432,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 10. **getMyVerifications**
+#### 8. **getMyVerifications**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/developers.getMyVerifications`
 - **Description**: Get current user's verifications
@@ -497,7 +440,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 11. **create**
+#### 9. **create**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listingReports.create`
 - **Description**: Create a new listing report (user-facing)
@@ -505,7 +448,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 12. **getUserListings**
+#### 10. **getUserListings**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getUserListings`
 - **Description**: Get user listings
@@ -513,7 +456,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 13. **createListing**
+#### 11. **createListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.createListing`
 - **Description**: Create a new listing
@@ -522,7 +465,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 14. **updateListing**
+#### 12. **updateListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.updateListing`
 - **Description**: Update a listing
@@ -531,7 +474,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 15. **deleteListing**
+#### 13. **deleteListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.deleteListing`
 - **Description**: Delete a listing
@@ -540,7 +483,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 16. **voteListing**
+#### 14. **voteListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.voteListing`
 - **Description**: Vote on a listing
@@ -549,7 +492,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 17. **getUserVote**
+#### 15. **getUserVote**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/listings.getUserVote`
 - **Description**: Get user's vote on a listing
@@ -557,7 +500,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 18. **createComment**
+#### 16. **createComment**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.createComment`
 - **Description**: Create a comment
@@ -566,7 +509,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 19. **updateComment**
+#### 17. **updateComment**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.updateComment`
 - **Description**: Update a comment
@@ -575,7 +518,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 20. **deleteComment**
+#### 18. **deleteComment**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/listings.deleteComment`
 - **Description**: Delete a comment
@@ -584,7 +527,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 21. **getNotifications**
+#### 19. **getNotifications**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/notifications.getNotifications`
 - **Description**: Get notifications with pagination
@@ -592,7 +535,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 22. **getUnreadNotificationCount**
+#### 20. **getUnreadNotificationCount**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/notifications.getUnreadNotificationCount`
 - **Description**: Get unread notification count
@@ -600,7 +543,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 23. **markNotificationAsRead**
+#### 21. **markNotificationAsRead**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/notifications.markNotificationAsRead`
 - **Description**: Mark notification as read
@@ -609,7 +552,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 24. **markAllNotificationsAsRead**
+#### 22. **markAllNotificationsAsRead**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/notifications.markAllNotificationsAsRead`
 - **Description**: Mark all notifications as read
@@ -617,7 +560,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 25. **createPcListing**
+#### 23. **createPcListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/pcListings.createPcListing`
 - **Description**: Create a new PC listing
@@ -626,7 +569,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 26. **updatePcListing**
+#### 24. **updatePcListing**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/pcListings.updatePcListing`
 - **Description**: Update a PC listing
@@ -635,7 +578,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 27. **get**
+#### 25. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.get`
 - **Description**: PC Presets nested router
@@ -643,7 +586,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 28. **create**
+#### 26. **create**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/pcListings.create`
 - **Description**: PC Presets nested router
@@ -652,7 +595,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 29. **update**
+#### 27. **update**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/pcListings.update`
 - **Description**: PC Presets nested router
@@ -661,7 +604,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 30. **delete**
+#### 28. **delete**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/pcListings.delete`
 - **Description**: PC Presets nested router
@@ -670,7 +613,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 31. **getUserPreferences**
+#### 29. **getUserPreferences**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/preferences.getUserPreferences`
 - **Description**: Get user preferences
@@ -678,7 +621,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 32. **updateUserPreferences**
+#### 30. **updateUserPreferences**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/preferences.updateUserPreferences`
 - **Description**: Update user preferences
@@ -687,7 +630,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 33. **addDevicePreference**
+#### 31. **addDevicePreference**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/preferences.addDevicePreference`
 - **Description**: Add device preference
@@ -696,7 +639,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 34. **removeDevicePreference**
+#### 32. **removeDevicePreference**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/preferences.removeDevicePreference`
 - **Description**: Remove device preference
@@ -705,7 +648,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 35. **bulkUpdateDevicePreferences**
+#### 33. **bulkUpdateDevicePreferences**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/preferences.bulkUpdateDevicePreferences`
 - **Description**: Bulk update device preferences
@@ -714,7 +657,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 36. **bulkUpdateSocPreferences**
+#### 34. **bulkUpdateSocPreferences**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/preferences.bulkUpdateSocPreferences`
 - **Description**: Bulk update SOC preferences
@@ -723,7 +666,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 37. **getUserProfile**
+#### 35. **getUserProfile**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/preferences.getUserProfile`
 - **Description**: Get user profile
@@ -731,7 +674,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 38. **updateProfile**
+#### 36. **updateProfile**
 - **Method**: POST
 - **Path**: `/api/mobile/trpc/preferences.updateProfile`
 - **Description**: Update profile
@@ -740,7 +683,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 39. **getMyTrustInfo**
+#### 37. **getMyTrustInfo**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/trust.getMyTrustInfo`
 - **Description**: Get current user's trust score and level

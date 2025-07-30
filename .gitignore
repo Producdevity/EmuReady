@@ -15,6 +15,7 @@
 
 # testing
 /coverage
+/tests/screenshots
 
 # next.js
 /.next/
@@ -81,6 +82,7 @@ CHECKS.md
 CLAUDE.md
 GEMINI.md
 NOTES.md
+docs/SEO.md
 
 
 # clerk configuration (can include secrets)

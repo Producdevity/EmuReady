@@ -185,6 +185,14 @@ describe('Middleware API Protection', () => {
     })
 
     it('should block requests over rate limit', async () => {
+      // Set NODE_ENV to something other than 'test' to use lower rate limits
+      vi.stubEnv('NODE_ENV', 'development')
+      
+      // Re-import middleware to pick up new env
+      vi.resetModules()
+      const middlewareModule = await import('./middleware')
+      middleware = middlewareModule.default
+
       const request = new NextRequest(
         'http://localhost:3000/api/trpc/listings.get',
         {
@@ -197,7 +205,7 @@ describe('Middleware API Protection', () => {
 
       const mockAuth = { user: { id: 'test-user' } }
 
-      // Make requests to exceed the rate limit (100 requests)
+      // Make requests to exceed the rate limit (100 requests in development)
       for (let i = 0; i < 101; i++) {
         vi.clearAllMocks()
         await middleware(mockAuth, request)

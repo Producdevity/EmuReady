@@ -36,6 +36,34 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    /* Set cookie consent for all tests */
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: 'http://localhost:3000',
+          localStorage: [
+            {
+              name: 'emuready-cookie-consent',
+              value: 'true',
+            },
+            {
+              name: 'emuready-cookie-preferences',
+              value: JSON.stringify({
+                necessary: true,
+                analytics: false,
+                performance: false,
+              }),
+            },
+            {
+              name: 'emuready-cookie-consent-date',
+              value: new Date().toISOString(),
+            },
+          ],
+        },
+      ],
+    },
   },
 
   /* Configure projects for major browsers */
@@ -44,6 +72,13 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: '**/global.setup.ts',
+    },
+
+    // Auth setup project - generates auth state for all roles
+    {
+      name: 'auth-setup',
+      testMatch: '**/auth.setup.ts',
+      dependencies: ['setup'],
     },
 
     // Unauthenticated tests - run on all browsers
@@ -59,45 +94,62 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
-    {
-      name: 'webkit-unauth',
-      use: { ...devices['Desktop Safari'] },
-      dependencies: ['setup'],
-    },
+    // {
+    //   name: 'webkit-unauth',
+    //   use: { ...devices['Desktop Safari'] },
+    //   dependencies: ['setup'],
+    // },
 
-    // Authenticated tests
+    // Authenticated tests for different roles
     {
-      name: 'chromium-auth',
+      name: 'chromium-auth-user',
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'tests/.auth/user.json',
       },
+      dependencies: ['auth-setup'],
+    },
+    {
+      name: 'chromium-auth-admin',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'tests/.auth/admin.json',
+      },
+      dependencies: ['auth-setup'],
+    },
+
+    // Mobile browser tests
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 12'] },
       dependencies: ['setup'],
     },
 
+    // Additional desktop browsers (optional - may slow down tests)
     // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    // {
-    //   name: 'Microsoft Edge',
+    //   name: 'edge',
     //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    //   dependencies: ['setup'],
     // },
     // {
-    //   name: 'Google Chrome',
+    //   name: 'chrome',
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    //   dependencies: ['setup'],
     // },
   ],
 
   webServer: {
-    command: 'npm run dev',
+    command: process.env.USE_DEV_SERVER
+      ? 'npm run dev'
+      : 'NODE_ENV=production npm run start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: process.env.USE_DEV_SERVER ? 120 * 1000 : 30 * 1000, // Shorter timeout for production
+    // Note: Build should be done before running tests
   },
 })

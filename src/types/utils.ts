@@ -8,6 +8,11 @@
 export type Nullable<T> = T | null
 
 /**
+ * Utility type to extract the value type of an object
+ */
+export type ValueOf<T> = Required<T>[keyof T]
+
+/**
  * Maybe type that can be either the type T, null, or undefined
  */
 export type Maybe<T> = T | null | undefined

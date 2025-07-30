@@ -50,17 +50,6 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: ['dev.emuready.com'],
 
-  experimental: {
-    optimizePackageImports: [
-      '@clerk/nextjs',
-      '@tanstack/react-query',
-      'date-fns',
-      'framer-motion',
-      'lucide-react',
-    ],
-    optimizeCss: true,
-  },
-
   turbopack: {
     rules: {
       '*.svg': {
@@ -70,6 +59,29 @@ const nextConfig: NextConfig = {
     },
   },
 
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: [
+      '@clerk/nextjs',
+      '@tanstack/react-query',
+      'date-fns',
+      'framer-motion',
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-tooltip',
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      'react-hook-form',
+      'remeda',
+      '@/components/ui',
+      '@/components/icons',
+      '@/hooks',
+      '@/lib',
+      '@/utils',
+    ],
+  },
+
   serverExternalPackages: [
     '@prisma/client',
     'jsdom',
@@ -77,16 +89,14 @@ const nextConfig: NextConfig = {
     'dompurify',
   ],
 
+  eslint: {
+    dirs: ['src', 'tests'], // Include tests directory in ESLint
+  },
+
   webpack: (config) => {
-    config.module.rules.push({
+    config.module?.rules?.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
-    })
-    // support for importing markdown files for server-side processing
-    // TODO: probably need just this https://nextjs.org/docs/app/guides/mdx
-    config.module.rules.push({
-      test: /\.md$/,
-      type: 'asset/source',
     })
     return config
   },
