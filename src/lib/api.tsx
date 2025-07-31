@@ -1,11 +1,12 @@
 'use client'
 
+import { ms } from '@/utils/time'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
 import { createTRPCReact } from '@trpc/react-query'
 import { useState, type PropsWithChildren } from 'react'
 import superjson from 'superjson'
-import type { AppRouter } from '@/server/api/root'
+import type { AppRouter } from '@/types/trpc'
 
 export const api = createTRPCReact<AppRouter>()
 
@@ -16,8 +17,8 @@ export function TRPCProvider(props: PropsWithChildren) {
         defaultOptions: {
           queries: {
             // Default settings for all queries
-            staleTime: 1000 * 60 * 5, // 5 minutes
-            gcTime: 1000 * 60 * 30, // 30 minutes (was cacheTime in v4)
+            staleTime: ms.minutes(5),
+            gcTime: ms.minutes(30),
             refetchOnWindowFocus: false, // Don't refetch on window focus
             refetchOnReconnect: true, // Refetch when reconnecting
             retry: 3, // Retry failed queries 3 times

@@ -18,6 +18,7 @@ interface Props {
   initialSortBy?: 'newest' | 'oldest' | 'popular'
   gameId?: string
   systemId?: string
+  listingOwnerId?: string
 }
 
 function CommentThread(props: Props) {
@@ -137,17 +138,16 @@ function CommentThread(props: Props) {
     // Track analytics for replies
     if (data.parentId) {
       mutation.then((result) => {
-        if (result?.id) {
-          analytics.engagement.comment({
-            action: 'reply',
-            commentId: result.id,
-            listingId: props.listingId,
-            isReply: true,
-            contentLength: data.content.length,
-            gameId: props.gameId,
-            systemId: props.systemId,
-          })
-        }
+        if (!result?.id) return
+        analytics.engagement.comment({
+          action: 'reply',
+          commentId: result.id,
+          listingId: props.listingId,
+          isReply: true,
+          contentLength: data.content.length,
+          gameId: props.gameId,
+          systemId: props.systemId,
+        })
       })
     }
 
@@ -182,6 +182,7 @@ function CommentThread(props: Props) {
         comments={listingsQuery.data?.comments ?? []}
         isLoading={listingsQuery.isPending}
         userRole={userQuery.data?.role}
+        entityOwnerId={props.listingOwnerId}
         onRefresh={refreshData}
         onVote={handleVote}
         onDelete={handleDelete}

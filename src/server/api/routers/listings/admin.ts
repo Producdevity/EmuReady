@@ -20,15 +20,25 @@ import {
   developerProcedure,
 } from '@/server/api/trpc'
 import {
+  invalidateListing,
+  invalidateListPages,
+  invalidateSitemap,
+} from '@/server/cache/invalidation'
+import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
-import { ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
-import type { Prisma } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
+
+const mode = Prisma.QueryMode.insensitive
 
 export const adminRouter = createTRPCRouter({
   getPending: developerProcedure
@@ -41,12 +51,10 @@ export const adminRouter = createTRPCRouter({
         sortField,
         sortDirection,
       } = input ?? {}
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       // Build where clause for search
-      let where: Prisma.ListingWhereInput = {
-        status: ApprovalStatus.PENDING,
-      }
+      let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
 
       // For developers, only show listings for their verified emulators
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
@@ -62,7 +70,7 @@ export const adminRouter = createTRPCRouter({
           // Developer has no verified emulators, return empty result
           return {
             listings: [],
-            pagination: { page, pages: 0, total: 0, limit },
+            pagination: createPaginationResult(0, { page }, limit, 0),
           }
         }
 
@@ -73,26 +81,12 @@ export const adminRouter = createTRPCRouter({
         where = {
           ...where,
           OR: [
-            { game: { title: { contains: search, mode: 'insensitive' } } },
-            {
-              game: {
-                system: { name: { contains: search, mode: 'insensitive' } },
-              },
-            },
-            {
-              device: { modelName: { contains: search, mode: 'insensitive' } },
-            },
-            {
-              device: {
-                brand: { name: { contains: search, mode: 'insensitive' } },
-              },
-            },
-            {
-              emulator: { name: { contains: search, mode: 'insensitive' } },
-            },
-            {
-              author: { name: { contains: search, mode: 'insensitive' } },
-            },
+            { game: { title: { contains: search, mode } } },
+            { game: { system: { name: { contains: search, mode } } } },
+            { device: { modelName: { contains: search, mode } } },
+            { device: { brand: { name: { contains: search, mode } } } },
+            { emulator: { name: { contains: search, mode } } },
+            { author: { name: { contains: search, mode } } },
           ],
         }
       }
@@ -153,9 +147,7 @@ export const adminRouter = createTRPCRouter({
             }),
             ctx.prisma.listingReport.count({
               where: {
-                listing: {
-                  authorId,
-                },
+                listing: { authorId },
                 status: {
                   in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW],
                 },
@@ -192,12 +184,12 @@ export const adminRouter = createTRPCRouter({
 
       return {
         listings: listingsWithReports,
-        pagination: {
-          total: totalListings,
-          pages: Math.ceil(totalListings / limit),
-          currentPage: page,
+        pagination: createPaginationResult(
+          totalListings,
+          { page },
           limit,
-        },
+          skip,
+        ),
       }
     }),
 
@@ -286,6 +278,11 @@ export const adminRouter = createTRPCRouter({
           processedNotes: null,
         },
       })
+
+      // Invalidate SEO cache
+      await invalidateListing(listingId)
+      await invalidateListPages()
+      await invalidateSitemap()
 
       // Apply trust action for listing approval to the author
       if (listingToApprove.authorId) {
@@ -410,7 +407,7 @@ export const adminRouter = createTRPCRouter({
     .input(GetProcessedSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, filterStatus, search } = input
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.ListingWhereInput = {
         NOT: { status: ApprovalStatus.PENDING },
@@ -420,10 +417,10 @@ export const adminRouter = createTRPCRouter({
       const searchWhere: Prisma.ListingWhereInput = search
         ? {
             OR: [
-              { game: { title: { contains: search, mode: 'insensitive' } } },
-              { author: { name: { contains: search, mode: 'insensitive' } } },
-              { processedNotes: { contains: search, mode: 'insensitive' } },
-              { notes: { contains: search, mode: 'insensitive' } },
+              { game: { title: { contains: search, mode } } },
+              { author: { name: { contains: search, mode } } },
+              { processedNotes: { contains: search, mode } },
+              { notes: { contains: search, mode } },
             ],
           }
         : {}
@@ -456,12 +453,12 @@ export const adminRouter = createTRPCRouter({
 
       return {
         listings,
-        pagination: {
-          total: totalListings,
-          pages: Math.ceil(totalListings / limit),
-          currentPage: page,
+        pagination: createPaginationResult(
+          totalListings,
+          { page },
           limit,
-        },
+          skip,
+        ),
       }
     }),
 
@@ -663,6 +660,13 @@ export const adminRouter = createTRPCRouter({
         const { validListings } = transactionResult
         const approvedAt = new Date()
 
+        // Invalidate SEO cache for all approved listings
+        await Promise.all(
+          validListings.map((listing) => invalidateListing(listing.id)),
+        )
+        await invalidateListPages()
+        await invalidateSitemap()
+
         // Emit notification events for each approved listing
         for (const listing of validListings) {
           try {
@@ -734,10 +738,7 @@ export const adminRouter = createTRPCRouter({
       const transactionResult = await ctx.prisma.$transaction(async (tx) => {
         // Get all listings to reject and verify they are pending
         const listingsToReject = await tx.listing.findMany({
-          where: {
-            id: { in: listingIds },
-            status: ApprovalStatus.PENDING,
-          },
+          where: { id: { in: listingIds }, status: ApprovalStatus.PENDING },
           include: { author: { select: { id: true } } },
         })
 
@@ -806,7 +807,7 @@ export const adminRouter = createTRPCRouter({
         }
       })
 
-      // CRITICAL: Emit notification events AFTER transaction completes successfully
+      // NOTE: Emit notification events AFTER transaction completes successfully
       try {
         const { listingsToReject } = transactionResult
         const rejectedAt = new Date()
@@ -887,7 +888,7 @@ export const adminRouter = createTRPCRouter({
         systemFilter,
         emulatorFilter,
       } = input
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.ListingWhereInput = {
         ...(statusFilter && { status: statusFilter }),
@@ -898,9 +899,9 @@ export const adminRouter = createTRPCRouter({
       const searchWhere: Prisma.ListingWhereInput = search
         ? {
             OR: [
-              { game: { title: { contains: search, mode: 'insensitive' } } },
-              { author: { name: { contains: search, mode: 'insensitive' } } },
-              { notes: { contains: search, mode: 'insensitive' } },
+              { game: { title: { contains: search, mode } } },
+              { author: { name: { contains: search, mode } } },
+              { notes: { contains: search, mode } },
             ],
           }
         : {}

@@ -42,7 +42,7 @@ function ConfirmationModal(props: Props) {
             Cancel
           </Button>
           <Button
-            variant={props.action === 'approve' ? 'primary' : 'danger'}
+            variant={props.action === 'approve' ? 'default' : 'danger'}
             onClick={props.onConfirm}
             disabled={props.isProcessing}
             isLoading={props.isProcessing}
