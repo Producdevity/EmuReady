@@ -407,6 +407,7 @@ function ListingDetailsClient(props: Props) {
               initialSortBy="newest"
               gameId={props.listing?.game.id}
               systemId={props.listing?.game.system?.id}
+              listingOwnerId={props.listing?.authorId}
             />
           </div>
         </Card>

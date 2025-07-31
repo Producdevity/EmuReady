@@ -65,6 +65,9 @@ function GameDetailsModal(props: Props) {
 
   if (!props.selectedGame) return null
 
+  // Create local reference for type safety
+  const selectedGame = props.selectedGame
+
   const handleImageError = (imageType: string) => {
     setImageError((prev) => ({ ...prev, [imageType]: true }))
   }
@@ -72,16 +75,16 @@ function GameDetailsModal(props: Props) {
   const getDisplayImage = () => {
     switch (activeImageTab) {
       case 'boxart':
-        return props.selectedGame?.boxartUrl && !imageError.boxart
-          ? props.selectedGame?.boxartUrl
+        return selectedGame.boxartUrl && !imageError.boxart
+          ? selectedGame.boxartUrl
           : null
       case 'banner':
-        return props.selectedGame?.bannerUrl && !imageError.banner
-          ? props.selectedGame?.bannerUrl
+        return selectedGame.bannerUrl && !imageError.banner
+          ? selectedGame.bannerUrl
           : null
       case 'main':
-        return props.selectedGame?.imageUrl && !imageError.main
-          ? props.selectedGame?.imageUrl
+        return selectedGame.imageUrl && !imageError.main
+          ? selectedGame.imageUrl
           : null
       default:
         return null
@@ -89,16 +92,16 @@ function GameDetailsModal(props: Props) {
   }
 
   const hasAnyImage = Boolean(
-    (props.selectedGame.boxartUrl && !imageError.boxart) ??
-      (props.selectedGame.bannerUrl && !imageError.banner) ??
-      (props.selectedGame.imageUrl && !imageError.main),
+    (selectedGame.boxartUrl && !imageError.boxart) ??
+      (selectedGame.bannerUrl && !imageError.banner) ??
+      (selectedGame.imageUrl && !imageError.main),
   )
 
   const hasOnlyOneImage =
     [
-      props.selectedGame.boxartUrl && !imageError.boxart,
-      props.selectedGame.bannerUrl && !imageError.banner,
-      props.selectedGame.imageUrl && !imageError.main,
+      selectedGame.boxartUrl && !imageError.boxart,
+      selectedGame.bannerUrl && !imageError.banner,
+      selectedGame.imageUrl && !imageError.main,
     ].filter(Boolean).length === 1
 
   const handleCopyToClipboard = (
@@ -122,7 +125,7 @@ function GameDetailsModal(props: Props) {
     setIsImagePreviewOpen(true)
   }
 
-  const displayImage = getImageUrl(getDisplayImage(), props.selectedGame.title)
+  const displayImage = getImageUrl(getDisplayImage(), selectedGame.title)
 
   return (
     <Modal
@@ -138,7 +141,7 @@ function GameDetailsModal(props: Props) {
             <div className="absolute inset-0 bg-black/20">
               <Image
                 src={displayImage ?? ''}
-                alt={props.selectedGame.title}
+                alt={selectedGame.title}
                 fill
                 className="object-cover opacity-30"
                 onError={() => handleImageError(activeImageTab)}
@@ -151,19 +154,19 @@ function GameDetailsModal(props: Props) {
           {/* Game Title Overlay */}
           <div className="absolute bottom-4 left-6 right-6">
             <div className="flex items-center gap-3 mb-2">
-              <ApprovalStatusBadge status={props.selectedGame.status} />
-              {props.selectedGame.tgdbGameId && (
+              <ApprovalStatusBadge status={selectedGame.status} />
+              {selectedGame.tgdbGameId && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-black/30 rounded-full text-xs text-white">
                   <Database className="w-3 h-3" />
-                  TGDB ID: {props.selectedGame.tgdbGameId}
+                  TGDB ID: {selectedGame.tgdbGameId}
                 </div>
               )}
             </div>
             <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
-              {props.selectedGame.title}
+              {selectedGame.title}
             </h1>
             <p className="text-blue-100 font-medium drop-shadow">
-              {props.selectedGame.system.name}
+              {selectedGame.system?.name || 'Unknown System'}
             </p>
           </div>
         </div>
@@ -181,7 +184,7 @@ function GameDetailsModal(props: Props) {
               {/* Image Tabs */}
               {hasOnlyOneImage && (
                 <div className="flex gap-2">
-                  {props.selectedGame.boxartUrl && !imageError.boxart && (
+                  {selectedGame.boxartUrl && !imageError.boxart && (
                     <button
                       type="button"
                       onClick={() => setActiveImageTab('boxart')}
@@ -195,7 +198,7 @@ function GameDetailsModal(props: Props) {
                       Box Art
                     </button>
                   )}
-                  {props.selectedGame.bannerUrl && !imageError.banner && (
+                  {selectedGame.bannerUrl && !imageError.banner && (
                     <button
                       type="button"
                       onClick={() => setActiveImageTab('banner')}
@@ -209,7 +212,7 @@ function GameDetailsModal(props: Props) {
                       Banner
                     </button>
                   )}
-                  {props.selectedGame.imageUrl && !imageError.main && (
+                  {selectedGame.imageUrl && !imageError.main && (
                     <button
                       type="button"
                       onClick={() => setActiveImageTab('main')}
@@ -240,7 +243,7 @@ function GameDetailsModal(props: Props) {
                   >
                     <Image
                       src={displayImage ?? ''}
-                      alt={`${props.selectedGame.title} - ${activeImageTab}`}
+                      alt={`${selectedGame.title} - ${activeImageTab}`}
                       width={800}
                       height={256}
                       className="w-full h-64 object-contain transition-transform duration-300 group-hover:scale-105 cursor-pointer"
@@ -258,7 +261,7 @@ function GameDetailsModal(props: Props) {
                       analytics.contentDiscovery.externalLinkClicked({
                         url: imageUrl,
                         context: 'admin_game_details_image',
-                        entityId: props.selectedGame?.id,
+                        entityId: selectedGame.id,
                       })
                       window.open(imageUrl, '_blank', 'noopener,noreferrer')
                     }}
@@ -284,10 +287,10 @@ function GameDetailsModal(props: Props) {
               <div className="space-y-3">
                 {/* Submitter */}
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                  {props.selectedGame.submitter?.profileImage && (
+                  {selectedGame.submitter?.profileImage && (
                     <Image
-                      src={props.selectedGame.submitter.profileImage}
-                      alt={props.selectedGame.submitter.name ?? 'Submitter'}
+                      src={selectedGame.submitter.profileImage}
+                      alt={selectedGame.submitter.name ?? 'Submitter'}
                       width={32}
                       height={32}
                       className="w-8 h-8 rounded-full object-cover"
@@ -296,41 +299,41 @@ function GameDetailsModal(props: Props) {
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    {props.selectedGame.submitter?.id && isSuperAdmin ? (
+                    {selectedGame.submitter?.id && isSuperAdmin ? (
                       <button
                         onClick={() => {
-                          if (!props.selectedGame?.submitter?.id) return
-                          navigateToUserModal(props.selectedGame?.submitter?.id)
+                          if (!selectedGame.submitter?.id) return
+                          navigateToUserModal(selectedGame.submitter.id)
                         }}
                         className="text-left w-full text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
                         title="View user details"
                       >
-                        {props.selectedGame.submitter.name ?? 'Unknown User'}
+                        {selectedGame.submitter.name ?? 'Unknown User'}
                       </button>
-                    ) : props.selectedGame.submitter?.id && !isSuperAdmin ? (
+                    ) : selectedGame.submitter?.id && !isSuperAdmin ? (
                       <Link
-                        href={`/users/${props.selectedGame.submitter.id}`}
+                        href={`/users/${selectedGame.submitter.id}`}
                         className="text-left w-full text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
                         title="View public profile"
                       >
-                        {props.selectedGame.submitter.name ?? 'Unknown User'}
+                        {selectedGame.submitter.name ?? 'Unknown User'}
                       </Link>
                     ) : (
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {props.selectedGame.submitter?.name ?? 'Unknown User'}
+                        {selectedGame.submitter?.name ?? 'Unknown User'}
                       </p>
                     )}
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {props.selectedGame.submitter?.email}
+                      {selectedGame.submitter?.email}
                     </p>
                   </div>
-                  {props.selectedGame.submitter?.id && (
+                  {selectedGame.submitter?.id && (
                     <button
                       type="button"
                       onClick={() => {
-                        if (!props.selectedGame?.submitter?.id) return
+                        if (!selectedGame.submitter?.id) return
                         handleCopyToClipboard(
-                          props.selectedGame.submitter.id,
+                          selectedGame.submitter.id,
                           'Submitter ID',
                         )
                       }}
@@ -351,10 +354,10 @@ function GameDetailsModal(props: Props) {
                     </span>
                   </div>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {formatDate(props.selectedGame.submittedAt!)}
+                    {formatDate(selectedGame.submittedAt!)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {formatTimeAgo(props.selectedGame.submittedAt!)}
+                    {formatTimeAgo(selectedGame.submittedAt!)}
                   </p>
                 </div>
               </div>
@@ -374,23 +377,23 @@ function GameDetailsModal(props: Props) {
                     Platform
                   </p>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {props.selectedGame.system.name}
+                    {selectedGame.system?.name || 'Unknown System'}
                   </p>
-                  {props.selectedGame.system.key && (
+                  {selectedGame.system?.key && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
                       <span className="font-bold">Key: </span>
-                      {props.selectedGame.system.key}
+                      {selectedGame.system.key}
                     </p>
                   )}
-                  {props.selectedGame.system.tgdbPlatformId && (
+                  {selectedGame.system?.tgdbPlatformId && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       <span className="font-bold">TGDB Platform ID: </span>
-                      {props.selectedGame.system.tgdbPlatformId}
+                      {selectedGame.system.tgdbPlatformId}
                     </p>
                   )}
                 </div>
 
-                {props.selectedGame.isErotic && (
+                {selectedGame.isErotic && (
                   <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <p className="text-xs text-red-600 dark:text-red-400 font-medium">
                       Contains erotic content
@@ -410,17 +413,14 @@ function GameDetailsModal(props: Props) {
                       </span>
                       <div className="flex items-center gap-1 ml-4">
                         <Code
-                          label={`${props.selectedGame.id.slice(0, 10)}...`}
-                          value={props.selectedGame.id}
+                          label={`${selectedGame.id.slice(0, 10)}...`}
+                          value={selectedGame.id}
                         />
                         <button
                           type="button"
                           onClick={() => {
-                            if (!props.selectedGame) return
-                            handleCopyToClipboard(
-                              props.selectedGame.id,
-                              'Game ID',
-                            )
+                            if (!selectedGame) return
+                            handleCopyToClipboard(selectedGame.id, 'Game ID')
                           }}
                           className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                           title="Copy Game ID"
@@ -429,21 +429,21 @@ function GameDetailsModal(props: Props) {
                         </button>
                       </div>
                     </div>
-                    {props.selectedGame.tgdbGameId && (
+                    {selectedGame.tgdbGameId && (
                       <div className="flex items-center">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           TGDB ID:
                         </span>
                         <div className="flex items-center gap-1 ml-4">
                           <Code
-                            value={props.selectedGame.tgdbGameId}
-                            label={props.selectedGame.tgdbGameId ?? 'N/A'}
+                            value={selectedGame.tgdbGameId}
+                            label={selectedGame.tgdbGameId ?? 'N/A'}
                           />
                           <button
                             type="button"
                             onClick={() =>
                               handleCopyToClipboard(
-                                props.selectedGame?.tgdbGameId,
+                                selectedGame.tgdbGameId,
                                 'TheGamesDB ID',
                               )
                             }
@@ -464,7 +464,7 @@ function GameDetailsModal(props: Props) {
           {/* Quick Actions Bar */}
           <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <Link
-              href={`/games/${props.selectedGame.id}`}
+              href={`/games/${selectedGame.id}`}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
             >
               <Eye className="w-4 h-4" />
@@ -484,8 +484,8 @@ function GameDetailsModal(props: Props) {
             <Button
               variant="danger"
               onClick={() => {
-                if (!props.selectedGame?.id) return
-                props.onShowConfirmation(props.selectedGame.id, 'reject')
+                if (!selectedGame.id) return
+                props.onShowConfirmation(selectedGame.id, 'reject')
               }}
               disabled={props.isProcessing}
               isLoading={props.processingAction === 'reject'}
@@ -497,8 +497,8 @@ function GameDetailsModal(props: Props) {
             <Button
               variant="primary"
               onClick={() => {
-                if (!props.selectedGame?.id) return
-                props.onShowConfirmation(props.selectedGame.id, 'approve')
+                if (!selectedGame.id) return
+                props.onShowConfirmation(selectedGame.id, 'approve')
               }}
               disabled={props.isProcessing}
               isLoading={props.processingAction === 'approve'}
@@ -515,7 +515,7 @@ function GameDetailsModal(props: Props) {
       <ImagePreviewModal
         isOpen={isImagePreviewOpen}
         onClose={() => setIsImagePreviewOpen(false)}
-        game={props.selectedGame}
+        game={selectedGame}
         initialImageType={previewImageType}
       />
     </Modal>

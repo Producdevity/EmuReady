@@ -393,8 +393,8 @@ function AdminReportsPage() {
                           >
                             View
                           </Button>
-                          {report.status !== 'RESOLVED' &&
-                            report.status !== 'DISMISSED' && (
+                          {report.status !== ReportStatus.RESOLVED &&
+                            report.status !== ReportStatus.DISMISSED && (
                               <EditButton
                                 onClick={() => handleUpdateStatus(report)}
                                 title="Update Status"

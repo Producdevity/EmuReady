@@ -100,15 +100,26 @@ export const UpdateProfileSchema = z.object({
   bio: z.string().optional(),
 })
 
-export const GetListingsSchema = z.object({
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(50).default(20),
-  gameId: z.string().uuid().optional(),
-  systemId: z.string().uuid().optional(),
-  deviceId: z.string().uuid().optional(),
-  emulatorIds: z.array(z.string().uuid()).optional(),
-  search: z.string().optional(),
-})
+export const GetListingsSchema = z
+  .object({
+    page: z.number().min(1).default(1).describe('Page number for pagination'),
+    limit: z
+      .number()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe('Number of results per page (1-50)'),
+    gameId: z.string().uuid().optional().describe('Filter by game ID'),
+    systemId: z.string().uuid().optional().describe('Filter by system ID'),
+    deviceId: z.string().uuid().optional().describe('Filter by device ID'),
+    emulatorIds: z
+      .array(z.string().uuid())
+      .optional()
+      .describe('Filter by emulator IDs'),
+    search: z.string().optional().describe('Search listings by game name'),
+  })
+  .optional()
+  .describe('Get listings with optional filters and pagination')
 
 export const GetGamesSchema = z
   .object({
@@ -118,11 +129,19 @@ export const GetGamesSchema = z
   })
   .optional()
 
-export const GetDevicesSchema = z.object({
-  search: z.string().optional(),
-  brandId: z.string().uuid().optional(),
-  limit: z.number().min(1).max(100).default(50),
-})
+export const GetDevicesSchema = z
+  .object({
+    search: z.string().optional().describe('Search devices by name'),
+    brandId: z.string().uuid().optional().describe('Filter by brand ID'),
+    limit: z
+      .number()
+      .min(1)
+      .max(1000)
+      .default(50)
+      .describe('Number of results to return (1-1000)'),
+  })
+  .optional()
+  .describe('Get devices with optional filters')
 
 export const GetEmulatorsSchema = z.object({
   systemId: z.string().uuid().optional(),
@@ -134,11 +153,22 @@ export const GetEmulatorByIdSchema = z.object({
   id: z.string().uuid(),
 })
 
-export const GetNotificationsSchema = z.object({
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(50).default(20),
-  unreadOnly: z.boolean().default(false),
-})
+export const GetNotificationsSchema = z
+  .object({
+    page: z.number().min(1).default(1).describe('Page number for pagination'),
+    limit: z
+      .number()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe('Number of results per page (1-50)'),
+    unreadOnly: z
+      .boolean()
+      .default(false)
+      .describe('Show only unread notifications'),
+  })
+  .optional()
+  .describe('Get notifications with optional filters and pagination')
 
 export const MarkNotificationReadSchema = z.object({
   notificationId: z.string().uuid(),

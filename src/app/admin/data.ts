@@ -143,6 +143,12 @@ export const superAdminNavItems: AdminNavItem[] = [
     description: 'Manage roles and permissions.',
   },
   {
+    href: '/admin/monitoring',
+    label: 'System Monitoring',
+    exact: true,
+    description: 'Monitor system performance and metrics.',
+  },
+  {
     href: '/admin/permission-logs',
     label: 'Permission Logs',
     exact: true,

@@ -338,7 +338,7 @@ function ProcessedListingsPage() {
 
       {paginationData && paginationData.pages > 1 && (
         <Pagination
-          currentPage={paginationData.currentPage}
+          currentPage={paginationData.page}
           totalPages={paginationData.pages}
           onPageChange={table.setPage}
           totalItems={paginationData.total}

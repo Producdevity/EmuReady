@@ -17,6 +17,10 @@ import {
   createTRPCRouter,
   managePermissionsProcedure,
 } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import { PermissionActionType, Role } from '@orm'
 
 export const permissionsRouter = createTRPCRouter({
@@ -38,7 +42,7 @@ export const permissionsRouter = createTRPCRouter({
         includeSystemOnly,
       } = input || {}
 
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       // Build where clause
       const where: Record<string, unknown> = {}
@@ -80,7 +84,7 @@ export const permissionsRouter = createTRPCRouter({
           assignedRoles: permission.rolePermissions.map((rp) => rp.role),
           roleCount: permission._count.rolePermissions,
         })),
-        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 

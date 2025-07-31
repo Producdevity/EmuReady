@@ -18,7 +18,6 @@ export const systemsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
     const { search, sortField, sortDirection } = input ?? {}
 
-    // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.SystemOrderByWithRelationInput[] = []
 
     if (sortField && sortDirection) {

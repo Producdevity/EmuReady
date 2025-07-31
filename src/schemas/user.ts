@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { Role } from '@orm'
 
 export const UserSortField = z.enum([
@@ -19,7 +20,12 @@ export const GetAllUsersSchema = z
     sortField: UserSortField.optional(),
     sortDirection: SortDirection.optional(),
     page: z.number().int().min(1).default(1),
-    limit: z.number().int().min(1).max(100).default(20),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(PAGINATION.MAX_LIMIT)
+      .default(PAGINATION.DEFAULT_LIMIT),
   })
   .optional()
 
@@ -46,7 +52,7 @@ export const UpdateUserSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   profileImage: z.string().url().optional(),
-  bio: z.string().max(500).optional(),
+  bio: z.string().max(CHAR_LIMITS.DESCRIPTION).optional(),
 })
 
 export const UpdateUserRoleSchema = z.object({

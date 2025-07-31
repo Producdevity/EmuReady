@@ -15,7 +15,7 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
   getNotifications: mobileProtectedProcedure
     .input(GetNotificationsSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, unreadOnly } = input
+      const { page = 1, limit = 20, unreadOnly = false } = input ?? {}
       const skip = (page - 1) * limit
 
       const baseWhere = {

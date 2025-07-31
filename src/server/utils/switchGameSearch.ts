@@ -4,6 +4,7 @@
  */
 
 import Fuse from 'fuse.js'
+import { ms } from '@/utils/time'
 import { MemoryCache } from './cache'
 
 // Types for Switch game data
@@ -22,13 +23,13 @@ interface SwitchGameSearchResult {
 
 // Cache for Switch games data - longer TTL since data updates weekly
 const switchGamesDataCache = new MemoryCache<SwitchGameEntry[]>({
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
+  ttl: ms.days(1),
   maxSize: 1,
 })
 
 // Cache for Fuse.js search instance - rebuild when data updates
 const switchGamesFuseCache = new MemoryCache<Fuse<SwitchGameEntry>>({
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
+  ttl: ms.days(1),
   maxSize: 1,
 })
 

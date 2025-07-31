@@ -1,5 +1,7 @@
+'use client'
+
 import { motion, useMotionValue, useTransform } from 'framer-motion'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { PanInfo } from 'framer-motion'
 import type { ReactNode } from 'react'
@@ -14,17 +16,11 @@ interface SwipeableCardProps {
   enableHaptics?: boolean
 }
 
-function SwipeableCard({
-  children,
-  onSwipeLeft,
-  onSwipeRight,
-  onClick,
-  className,
-  swipeThreshold = 100,
-  enableHaptics = true,
-}: SwipeableCardProps) {
+export function SwipeableCard(props: SwipeableCardProps) {
+  const swipeThreshold = props.swipeThreshold ?? 100
+  const enableHaptics = props.enableHaptics ?? true
+
   const [isSwiping, setIsSwiping] = useState(false)
-  const startX = useRef(0)
   const x = useMotionValue(0)
 
   // Transform the card's opacity and rotation based on the swipe distance
@@ -41,38 +37,27 @@ function SwipeableCard({
   )
 
   // Handle drag start
-  const handleDragStart = (event: MouseEvent | TouchEvent | PointerEvent) => {
+  const handleDragStart = () => {
     setIsSwiping(true)
-
-    // Store the starting position for touch events
-    if (event.type === 'touchstart') {
-      const touchEvent = event as TouchEvent
-      startX.current = touchEvent.touches[0].clientX
-    } else {
-      startX.current = (event as MouseEvent).clientX
-    }
   }
 
   // Handle drag end
-  const handleDragEnd = (
-    _event: MouseEvent | TouchEvent | PointerEvent,
-    _info: PanInfo,
-  ) => {
+  const handleDragEnd = (_event: unknown, _info: PanInfo) => {
     const xOffset = x.get()
 
     // Reset position
     x.set(0)
 
     // If the card was swiped far enough, trigger the appropriate callback
-    if (xOffset < -swipeThreshold && onSwipeLeft) {
-      onSwipeLeft()
+    if (xOffset < -swipeThreshold && props.onSwipeLeft) {
+      props.onSwipeLeft()
 
       // Trigger haptic feedback if available
       if (enableHaptics && navigator.vibrate) {
         navigator.vibrate(50)
       }
-    } else if (xOffset > swipeThreshold && onSwipeRight) {
-      onSwipeRight()
+    } else if (xOffset > swipeThreshold && props.onSwipeRight) {
+      props.onSwipeRight()
 
       // Trigger haptic feedback if available
       if (enableHaptics && navigator.vibrate) {
@@ -86,14 +71,14 @@ function SwipeableCard({
   // Handle click
   const handleClick = () => {
     // Only trigger click if we're not swiping
-    if (!isSwiping && onClick) {
-      onClick()
+    if (!isSwiping && props.onClick) {
+      props.onClick()
     }
   }
 
   return (
     <motion.div
-      className={cn('touch-manipulation cursor-pointer', className)}
+      className={cn('touch-manipulation cursor-pointer', props.className)}
       style={{
         x,
         opacity,
@@ -108,9 +93,7 @@ function SwipeableCard({
       onClick={handleClick}
       whileTap={{ scale: isSwiping ? 1 : 0.98 }}
     >
-      {children}
+      {props.children}
     </motion.div>
   )
 }
-
-export default SwipeableCard

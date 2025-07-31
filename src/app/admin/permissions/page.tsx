@@ -24,12 +24,12 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
+import { RolePermissionMatrix } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type Role, PermissionCategory } from '@orm'
 import PermissionModal from './components/PermissionModal'
-import RolePermissionMatrix from './components/RolePermissionMatrix'
 
 type PermissionSortField =
   | 'label'

@@ -12,6 +12,11 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+  buildOrderBy,
+} from '@/server/utils/pagination'
 import type { Prisma } from '@orm'
 
 export const devicesRouter = createTRPCRouter({
@@ -28,7 +33,7 @@ export const devicesRouter = createTRPCRouter({
     } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : offset
+    const actualOffset = calculateOffset({ page, offset }, limit)
 
     // Build where clause for filtering
     const where: Prisma.DeviceWhereInput = {
@@ -81,27 +86,18 @@ export const devicesRouter = createTRPCRouter({
         : {}),
     }
 
-    // Build orderBy based on sortField and sortDirection
-    const orderBy: Prisma.DeviceOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'brand':
-          orderBy.push({ brand: { name: sortDirection } })
-          break
-        case 'modelName':
-          orderBy.push({ modelName: sortDirection })
-          break
-        case 'soc':
-          orderBy.push({ soc: { name: sortDirection } })
-          break
-      }
+    const sortConfig = {
+      brand: (dir: 'asc' | 'desc') => ({ brand: { name: dir } }),
+      modelName: (dir: 'asc' | 'desc') => ({ modelName: dir }),
+      soc: (dir: 'asc' | 'desc') => ({ soc: { name: dir } }),
     }
 
-    // Default ordering if no sort specified - prioritize exact matches when searching
-    if (!orderBy.length) {
-      orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
-    }
+    const orderBy = buildOrderBy<Prisma.DeviceOrderByWithRelationInput>(
+      sortConfig,
+      sortField,
+      sortDirection,
+      [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+    )
 
     const total = await ctx.prisma.device.count({ where })
 
@@ -120,13 +116,12 @@ export const devicesRouter = createTRPCRouter({
 
     return {
       devices,
-      pagination: {
+      pagination: createPaginationResult(
         total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        offset: actualOffset,
-        limit: limit,
-      },
+        { page, offset },
+        limit,
+        actualOffset,
+      ),
     }
   }),
 

@@ -39,7 +39,21 @@ import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
 
-type Game = RouterOutput['games']['get']['games'][number]
+type Game = RouterOutput['games']['get']['games'][number] & {
+  system?: {
+    id: string
+    name: string
+  }
+  submitter?: {
+    id: string
+    name: string | null
+    email: string | null
+  } | null
+  _count?: {
+    listings: number
+    pcListings: number
+  }
+}
 type GameSortField =
   | 'title'
   | 'system.name'
@@ -407,12 +421,14 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <Badge variant="default">{game.system.name}</Badge>
+                          <Badge variant="default">
+                            {game.system?.name || game.systemId}
+                          </Badge>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('listings') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game._count.listings} listings
+                          {game._count?.listings || 0} listings
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('status') && (

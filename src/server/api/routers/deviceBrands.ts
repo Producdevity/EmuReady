@@ -20,7 +20,6 @@ export const deviceBrandsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { search, limit, sortField, sortDirection } = input ?? {}
 
-      // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
 
       if (sortField && sortDirection) {

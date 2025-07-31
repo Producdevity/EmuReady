@@ -11,8 +11,8 @@ import {
   renderCustomField,
 } from '@/app/listings/components/shared'
 import { Button, Modal, SelectInput, LoadingSpinner } from '@/components/ui'
-import { MarkdownEditor } from '@/components/ui/form'
 import { api } from '@/lib/api'
+import { MarkdownEditor } from '@/lib/dynamic-imports'
 import { UpdateListingUserSchema } from '@/schemas/listing'
 import type { z } from 'zod'
 

@@ -37,6 +37,30 @@ function ListingEditForm(props: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const utils = api.useUtils()
 
+  const [initialGame] = useState<GameOption>({
+    id: props.listing.game.id,
+    title: props.listing.game.title,
+    system: props.listing.game.system,
+    status: props.listing.game.status,
+  })
+
+  const [initialDevice] = useState<DeviceOption>({
+    id: props.listing.device.id,
+    brand: props.listing.device.brand,
+    modelName: props.listing.device.modelName,
+    soc: props.listing.device.soc || {
+      id: '',
+      name: 'Unknown',
+      manufacturer: 'Unknown',
+    },
+  })
+
+  const [initialEmulator] = useState<EmulatorOption>({
+    id: props.listing.emulator.id,
+    name: props.listing.emulator.name,
+    systems: [],
+  })
+
   // Async loader functions using REAL API endpoints that exist
   const loadGameItems = useCallback(
     async (query: string): Promise<GameOption[]> => {
@@ -230,6 +254,7 @@ function ListingEditForm(props: Props) {
                   label="Game"
                   value={field.value}
                   onChange={field.onChange}
+                  items={[initialGame]}
                   loadItems={loadGameItems}
                   optionToValue={(item) => item.id}
                   optionToLabel={(item) => item.title}
@@ -256,6 +281,7 @@ function ListingEditForm(props: Props) {
                     label="Device"
                     value={field.value}
                     onChange={field.onChange}
+                    items={[initialDevice]}
                     loadItems={loadDeviceItems}
                     optionToValue={(item) => item.id}
                     optionToLabel={(item) =>
@@ -283,6 +309,7 @@ function ListingEditForm(props: Props) {
                     label="Emulator"
                     value={field.value}
                     onChange={field.onChange}
+                    items={[initialEmulator]}
                     loadItems={loadEmulatorItems}
                     optionToValue={(item) => item.id}
                     optionToLabel={(item) => item.name}

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PAGINATION } from '@/data/constants'
 import { ApprovalStatus } from '@orm'
 
 export const CreateListingSchema = z.object({
@@ -50,7 +51,7 @@ export const GetPendingListingsSchema = z
   .object({
     search: z.string().optional(),
     page: z.number().default(1),
-    limit: z.number().default(20),
+    limit: z.number().default(PAGINATION.DEFAULT_LIMIT),
     sortField: z
       .enum([
         'game.title',
@@ -143,7 +144,12 @@ export const UnverifyListingSchema = z.object({
 // Admin schemas for listing management
 export const GetAllListingsAdminSchema = z.object({
   page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(20),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .max(PAGINATION.MAX_LIMIT)
+    .default(PAGINATION.DEFAULT_LIMIT),
   sortField: z
     .enum([
       'game.title',

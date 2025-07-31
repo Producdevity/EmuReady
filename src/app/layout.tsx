@@ -16,6 +16,7 @@ import PageViewTracker from '@/components/PageViewTracker'
 import Providers from '@/components/Providers'
 import SessionTracker from '@/components/SessionTracker'
 import KofiWidget from '@/components/ui/KofiWidget'
+import { defaultMetadata } from '@/lib/seo/metadata'
 import { cn } from '@/lib/utils'
 import Main from './Main'
 
@@ -27,57 +28,10 @@ export const viewport: Viewport = {
   maximumScale: 5,
 }
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://emuready.com'
-
-export const metadata: Metadata = {
-  applicationName: 'EmuReady',
-  title: {
-    template: '%s | EmuReady',
-    default: 'EmuReady',
-  },
-  description: 'Find the perfect emulator settings for your games and devices',
-  creator: 'Producdevity',
-  other: {
-    'theme-color': '#111828',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'EmuReady',
-  },
-  icons: {
-    icon: [
-      { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-    ],
-    apple: [
-      {
-        url: '/favicon/apple-touch-icon.png',
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
-  },
-  metadataBase: new URL(appUrl),
-  openGraph: {
-    type: 'website',
-    url: appUrl,
-    title: 'EmuReady - Know before you load',
-    description:
-      'Find the perfect emulator settings for your games and devices!',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'EmuReady - Know before you load',
-    description: `Find the perfect emulator settings for your games and devices on ${appUrl}`,
-  },
-  alternates: {
-    canonical: appUrl,
-  },
-}
+export const metadata: Metadata = defaultMetadata
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID as string
 const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
 
 export default function RootLayout(props: PropsWithChildren) {
@@ -91,13 +45,20 @@ export default function RootLayout(props: PropsWithChildren) {
           )}
 
           {/* Initialize dataLayer for Google Analytics */}
-          <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-            `}
-          </Script>
+          {IS_PRODUCTION && GA_ID && (
+            <Script
+              id="google-analytics-dataLayer"
+              strategy="beforeInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+              `}
+            </Script>
+          )}
+
+          {/* Google Analytics Configuration */}
         </head>
         <body
           className={cn(
@@ -106,20 +67,24 @@ export default function RootLayout(props: PropsWithChildren) {
           )}
         >
           <Providers>
-            <SessionTracker />
-            <PageViewTracker />
             <Toaster richColors closeButton />
-            <CookieConsent />
+            {IS_PRODUCTION && <CookieConsent />}
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Navbar />
               <Main>{props.children}</Main>
               <Footer />
             </div>
           </Providers>
-          <Analytics />
-          <SpeedInsights />
-          {IS_PRODUCTION && <KofiWidget />}
-          {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
+          {IS_PRODUCTION && (
+            <>
+              <SessionTracker />
+              <PageViewTracker />
+              <Analytics />
+              <SpeedInsights />
+              <KofiWidget />
+              <GoogleAnalytics gaId={GA_ID} />
+            </>
+          )}
         </body>
       </html>
     </ClerkProvider>

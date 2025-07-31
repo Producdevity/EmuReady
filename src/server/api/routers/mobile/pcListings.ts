@@ -18,8 +18,8 @@ import {
 import {
   pcListingInclude,
   buildPcListingWhere,
-  buildPaginationResponse,
 } from '@/server/api/utils/pcListingHelpers'
+import { createPaginationResult } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus } from '@orm'
 
@@ -119,13 +119,11 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         verificationCount: 0, // PC listings use developer verifications differently
         reportCount: listing._count.reports,
       }))
-      const pages = Math.ceil(total / limit)
-
       return {
         listings: listingsWithStats,
         pagination: {
-          ...buildPaginationResponse(total, page, limit),
-          hasNextPage: page < pages,
+          ...createPaginationResult(total, { page }, limit, (page - 1) * limit),
+          hasNextPage: page < Math.ceil(total / limit),
           hasPreviousPage: page > 1,
         },
       }

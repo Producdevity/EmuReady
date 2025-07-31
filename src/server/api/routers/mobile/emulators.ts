@@ -12,23 +12,15 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
   getEmulators: mobilePublicProcedure
     .input(GetEmulatorsSchema)
     .query(async ({ ctx, input }) => {
-      const { systemId, search, limit } = input
+      const { systemId, search, limit } = input ?? {}
 
       const whereClause: Record<string, unknown> = {}
 
       // Add search filtering at database level
-      if (search) {
-        whereClause.name = { contains: search, mode: 'insensitive' }
-      }
+      if (search) whereClause.name = { contains: search, mode: 'insensitive' }
 
       // Add system filtering at database level
-      if (systemId) {
-        whereClause.systems = {
-          some: {
-            id: systemId,
-          },
-        }
-      }
+      if (systemId) whereClause.systems = { some: { id: systemId } }
 
       return await ctx.prisma.emulator.findMany({
         where: whereClause,

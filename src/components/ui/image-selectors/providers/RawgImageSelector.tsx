@@ -410,6 +410,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                 objectFit="contain"
                 className="w-full h-auto max-h-[70vh]"
                 fallbackSrc="/placeholder/game.svg"
+                unoptimized
               />
             </div>
             <div className="flex items-center justify-between">

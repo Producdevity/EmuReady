@@ -28,8 +28,15 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   getListings: mobilePublicProcedure
     .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, gameId, systemId, deviceId, emulatorIds, search } =
-        input
+      const {
+        page = 1,
+        limit = 20,
+        gameId,
+        systemId,
+        deviceId,
+        emulatorIds,
+        search,
+      } = input ?? {}
       const skip = (page - 1) * limit
 
       // Build where clause with proper search filtering
@@ -96,7 +103,6 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         ctx.prisma.listing.count({ where: baseWhere }),
       ])
 
-      // Calculate success rates (search filtering now done at database level)
       const listingsWithStats = await Promise.all(
         listings.map(async (listing) => {
           const [upVotes, userVote] = await Promise.all([
@@ -173,7 +179,6 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       },
     })
 
-    // Calculate success rate for each listing
     return await Promise.all(
       listings.map(async (listing) => {
         const [upVotes, userVote] = await Promise.all([
@@ -307,7 +312,6 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
       if (!listing) return null
 
-      // Calculate success rate and get user vote
       const [upVotes, userVote] = await Promise.all([
         ctx.prisma.vote.count({
           where: { listingId: listing.id, value: true },

@@ -42,7 +42,6 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import {
-  buildPaginationResponse,
   buildPcListingOrderBy,
   buildPcListingWhere,
   pcListingAdminInclude,
@@ -50,9 +49,17 @@ import {
   pcListingInclude,
 } from '@/server/api/utils/pcListingHelpers'
 import {
+  invalidateListPages,
+  invalidateSitemap,
+} from '@/server/cache/invalidation'
+import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
 import {
   canDeleteComment,
@@ -86,7 +93,7 @@ export const pcListingsRouter = createTRPCRouter({
       } = input
 
       const mode = Prisma.QueryMode.insensitive
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
       const canSeeBannedUsers = ctx.session?.user
         ? isModerator(ctx.session.user.role)
         : false
@@ -150,7 +157,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
@@ -407,7 +414,7 @@ export const pcListingsRouter = createTRPCRouter({
           : ApprovalStatus.PENDING
 
       // Create PC listing with custom field values
-      return await ctx.prisma.pcListing.create({
+      const newListing = await ctx.prisma.pcListing.create({
         data: {
           gameId: input.gameId,
           cpuId: input.cpuId,
@@ -439,6 +446,14 @@ export const pcListingsRouter = createTRPCRouter({
         },
         include: pcListingInclude,
       })
+
+      // Invalidate SEO cache if listing is approved
+      if (newListing.status === ApprovalStatus.APPROVED) {
+        await invalidateListPages()
+        await invalidateSitemap()
+      }
+
+      return newListing
     }),
 
   delete: protectedProcedure
@@ -581,7 +596,7 @@ export const pcListingsRouter = createTRPCRouter({
         sortField,
         sortDirection,
       } = input ?? {}
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.PcListingWhereInput = {
         status: ApprovalStatus.PENDING,
@@ -629,7 +644,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
@@ -732,7 +747,7 @@ export const pcListingsRouter = createTRPCRouter({
         osFilter,
       } = input
 
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.PcListingWhereInput = {
         ...(statusFilter ? { status: statusFilter } : {}),
@@ -778,7 +793,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
@@ -1412,7 +1427,7 @@ export const pcListingsRouter = createTRPCRouter({
     .input(GetPcListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const { status, page = 1, limit = 20 } = input
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       const where: Prisma.PcListingReportWhereInput = {}
       if (status) {
@@ -1444,7 +1459,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         reports,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 

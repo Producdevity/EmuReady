@@ -30,6 +30,7 @@ import {
   RejectButton,
   ViewButton,
   Badge,
+  useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -84,6 +85,7 @@ function GameApprovalsPage() {
       action: null,
       gameTitle: '',
     })
+  const confirm = useConfirmDialog()
 
   // Image preview state
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
@@ -135,6 +137,7 @@ function GameApprovalsPage() {
 
       await pendingGamesQuery.refetch()
       await utils.games.getStats.invalidate()
+      await utils.games.get.invalidate()
       setIsModalOpen(false)
       setSelectedGameId(null)
       setProcessingAction(null)
@@ -152,6 +155,7 @@ function GameApprovalsPage() {
       toast.success(result.message)
       await pendingGamesQuery.refetch()
       await utils.games.getStats.invalidate()
+      await utils.games.get.invalidate()
       setSelectedGameIds([])
     },
     onError: (err) => {
@@ -165,6 +169,7 @@ function GameApprovalsPage() {
       toast.success(result.message)
       await pendingGamesQuery.refetch()
       await utils.games.getStats.invalidate()
+      await utils.games.get.invalidate()
       setSelectedGameIds([])
     },
     onError: (err) => {
@@ -187,6 +192,18 @@ function GameApprovalsPage() {
   }
 
   const handleBulkApproveGames = async (ids: string[]) => {
+    const selectedGames = filteredGames.filter((game) => ids.includes(game.id))
+
+    const confirmed = await confirm({
+      title: 'Bulk Approve Games',
+      description: `Are you sure you want to approve ${selectedGames.length} game${
+        selectedGames.length > 1 ? 's' : ''
+      }? This action cannot be undone.`,
+      confirmText: 'Approve All',
+    })
+
+    if (!confirmed) return
+
     await bulkApproveGamesMutation.mutateAsync({ gameIds: ids })
   }
 

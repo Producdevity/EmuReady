@@ -72,7 +72,6 @@ export const cpusRouter = createTRPCRouter({
         : {}),
     }
 
-    // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.CpuOrderByWithRelationInput[] = []
 
     if (sortField && sortDirection) {

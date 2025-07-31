@@ -12,14 +12,15 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   getDevices: mobilePublicProcedure
     .input(GetDevicesSchema)
     .query(async ({ ctx, input }) => {
+      const { brandId, search, limit } = input ?? {}
       const baseWhere: Record<string, unknown> = {}
-      if (input.brandId) baseWhere.brandId = input.brandId
+      if (brandId) baseWhere.brandId = brandId
 
       // Add search filtering at database level
-      if (input.search) {
+      if (search) {
         baseWhere.OR = [
-          { modelName: { contains: input.search, mode: 'insensitive' } },
-          { brand: { name: { contains: input.search, mode: 'insensitive' } } },
+          { modelName: { contains: search, mode: 'insensitive' } },
+          { brand: { name: { contains: search, mode: 'insensitive' } } },
         ]
       }
 
@@ -35,7 +36,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
           },
         },
         orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-        take: input.limit,
+        take: limit,
       })
     }),
 

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { EmulatorIcon } from '@/components/icons'
+import { AuthorDisplay } from '@/components/listings/AuthorDisplay'
 import {
   Badge,
   PerformanceBadge,
@@ -111,27 +112,10 @@ export function GameListingsSection(props: Props) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {listing.author?.id ? (
-                        <Link
-                          href={`/users/${listing.author.id}`}
-                          className="text-blue-600 dark:text-indigo-400 hover:underline"
-                        >
-                          {listing.author?.name ?? 'Anonymous'}
-                        </Link>
-                      ) : (
-                        <span>{listing.author?.name ?? 'Anonymous'}</span>
-                      )}
-                      {canSeeBannedUsers &&
-                        listing.author &&
-                        'userBans' in listing.author &&
-                        Array.isArray(listing.author.userBans) &&
-                        listing.author.userBans.length > 0 && (
-                          <Badge variant="danger" size="sm">
-                            BANNED
-                          </Badge>
-                        )}
-                    </div>
+                    <AuthorDisplay
+                      author={listing.author}
+                      canSeeBannedUsers={canSeeBannedUsers}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{listing._count.comments || 0}</Badge>

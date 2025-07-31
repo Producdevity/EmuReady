@@ -50,18 +50,14 @@ export function AdminImageSelectorSwitcher(props: Props) {
 
   const handleManualUrlChange = (url: string) => {
     setManualUrl(url)
-    if (url.trim()) {
-      validateUrl(url.trim())
-    } else {
-      setIsValidUrl(false)
-    }
+    const trimmedUrl = url.trim()
+    return trimmedUrl ? validateUrl(trimmedUrl) : setIsValidUrl(false)
   }
 
   const handleManualUrlSubmit = () => {
     const trimmedUrl = manualUrl.trim()
     if (trimmedUrl && validateUrl(trimmedUrl)) {
       props.onImageSelect(trimmedUrl)
-      // Show success feedback
       setShowApplied(true)
       setTimeout(() => {
         setShowApplied(false)
@@ -84,21 +80,11 @@ export function AdminImageSelectorSwitcher(props: Props) {
       x: direction > 0 ? 300 : -300,
       opacity: 0,
     }),
-    animate: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        stiffness: 300,
-        damping: 30,
-      },
-    },
+    animate: { x: 0, opacity: 1, transition: { stiffness: 300, damping: 30 } },
     exit: (direction: number) => ({
       x: direction < 0 ? 300 : -300,
       opacity: 0,
-      transition: {
-        stiffness: 300,
-        damping: 30,
-      },
+      transition: { stiffness: 300, damping: 30 },
     }),
   }
 

@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Database, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Toggle } from '@/components/ui'
-import { RawgImageSelector } from './RawgImageSelector'
-import { TGDBImageSelector } from './TGDBImageSelector'
+import { RawgImageSelector } from './providers/RawgImageSelector'
+import { TGDBImageSelector } from './providers/TGDBImageSelector'
 
 interface Props {
   gameTitle?: string

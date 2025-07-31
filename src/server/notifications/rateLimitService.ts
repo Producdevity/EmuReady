@@ -1,28 +1,30 @@
+import { RATE_LIMITS } from '@/data/constants'
 import { prisma } from '@/server/db'
+import { ms } from '@/utils/time'
 import { NotificationType } from '@orm'
 
-interface RateLimitRule {
+export interface RateLimitRule {
   type: NotificationType | 'GLOBAL'
   maxRequests: number
   windowMs: number
   userSpecific: boolean
 }
 
-interface RateLimitStatus {
+export interface RateLimitStatus {
   allowed: boolean
   remaining: number
   resetTime: Date
   reason?: string
 }
 
-interface RateLimitEntry {
+export interface RateLimitEntry {
   key: string
   count: number
   windowStart: Date
   resetTime: Date
 }
 
-class NotificationRateLimitService {
+export class NotificationRateLimitService {
   private limits = new Map<string, RateLimitEntry>()
   private rules: RateLimitRule[] = []
   private cleanupInterval: NodeJS.Timeout | null = null
@@ -38,8 +40,8 @@ class NotificationRateLimitService {
       // Global limits per user
       {
         type: 'GLOBAL',
-        maxRequests: 100,
-        windowMs: 60 * 60 * 1000, // 1 hour
+        maxRequests: RATE_LIMITS.REQUESTS_PER_WINDOW,
+        windowMs: RATE_LIMITS.WINDOW_SIZE_MS,
         userSpecific: true,
       },
 
@@ -47,25 +49,25 @@ class NotificationRateLimitService {
       {
         type: NotificationType.LISTING_COMMENT,
         maxRequests: 10,
-        windowMs: 10 * 60 * 1000, // 10 minutes
+        windowMs: ms.minutes(10),
         userSpecific: true,
       },
       {
         type: NotificationType.LISTING_VOTE_UP,
         maxRequests: 20,
-        windowMs: 15 * 60 * 1000, // 15 minutes
+        windowMs: ms.minutes(15),
         userSpecific: true,
       },
       {
         type: NotificationType.LISTING_VOTE_DOWN,
         maxRequests: 10,
-        windowMs: 15 * 60 * 1000, // 15 minutes
+        windowMs: ms.minutes(15),
         userSpecific: true,
       },
       {
         type: NotificationType.COMMENT_REPLY,
         maxRequests: 15,
-        windowMs: 10 * 60 * 1000, // 10 minutes
+        windowMs: ms.minutes(10),
         userSpecific: true,
       },
 
@@ -73,13 +75,13 @@ class NotificationRateLimitService {
       {
         type: NotificationType.NEW_DEVICE_LISTING,
         maxRequests: 5,
-        windowMs: 30 * 60 * 1000, // 30 minutes
+        windowMs: ms.minutes(30),
         userSpecific: false,
       },
       {
         type: NotificationType.GAME_ADDED,
         maxRequests: 10,
-        windowMs: 60 * 60 * 1000, // 1 hour
+        windowMs: ms.hours(1),
         userSpecific: false,
       },
 
@@ -87,13 +89,13 @@ class NotificationRateLimitService {
       {
         type: NotificationType.MAINTENANCE_NOTICE,
         maxRequests: 1,
-        windowMs: 24 * 60 * 60 * 1000, // 24 hours
+        windowMs: ms.days(1),
         userSpecific: false,
       },
       {
         type: NotificationType.FEATURE_ANNOUNCEMENT,
         maxRequests: 2,
-        windowMs: 12 * 60 * 60 * 1000, // 12 hours
+        windowMs: ms.hours(12),
         userSpecific: false,
       },
 
@@ -101,13 +103,13 @@ class NotificationRateLimitService {
       {
         type: NotificationType.LISTING_APPROVED,
         maxRequests: 50,
-        windowMs: 60 * 60 * 1000, // 1 hour
+        windowMs: ms.hours(1),
         userSpecific: true,
       },
       {
         type: NotificationType.LISTING_REJECTED,
         maxRequests: 50,
-        windowMs: 60 * 60 * 1000, // 1 hour
+        windowMs: ms.hours(1),
         userSpecific: true,
       },
     ]
@@ -143,11 +145,7 @@ class NotificationRateLimitService {
       userId,
       notificationType,
     )
-    if (!preferenceOverride.allowed) {
-      return preferenceOverride
-    }
-
-    return typeStatus
+    return preferenceOverride.allowed ? typeStatus : preferenceOverride
   }
 
   // Record a notification sending attempt
@@ -172,7 +170,7 @@ class NotificationRateLimitService {
       return {
         allowed: true,
         remaining: Infinity,
-        resetTime: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour default
+        resetTime: new Date(now.getTime() + ms.hours(1)),
       }
     }
 
@@ -248,12 +246,7 @@ class NotificationRateLimitService {
   ): Promise<RateLimitStatus> {
     try {
       const preference = await prisma.notificationPreference.findUnique({
-        where: {
-          userId_type: {
-            userId,
-            type: notificationType,
-          },
-        },
+        where: { userId_type: { userId, type: notificationType } },
       })
 
       // If user has disabled this notification type
@@ -261,7 +254,7 @@ class NotificationRateLimitService {
         return {
           allowed: false,
           remaining: 0,
-          resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Reset in 24 hours
+          resetTime: new Date(Date.now() + ms.days(1)),
           reason: 'User has disabled this notification type',
         }
       }
@@ -269,7 +262,7 @@ class NotificationRateLimitService {
       return {
         allowed: true,
         remaining: Infinity,
-        resetTime: new Date(Date.now() + 60 * 60 * 1000),
+        resetTime: new Date(Date.now() + ms.hours(1)),
       }
     } catch (error) {
       console.error('Error checking user preferences:', error)
@@ -277,7 +270,7 @@ class NotificationRateLimitService {
       return {
         allowed: true,
         remaining: Infinity,
-        resetTime: new Date(Date.now() + 60 * 60 * 1000),
+        resetTime: new Date(Date.now() + ms.hours(1)),
       }
     }
   }
@@ -295,9 +288,7 @@ class NotificationRateLimitService {
   // Remove a rate limit rule
   removeRule(type: NotificationType | 'GLOBAL'): void {
     const index = this.rules.findIndex((r) => r.type === type)
-    if (index !== -1) {
-      this.rules.splice(index, 1)
-    }
+    if (index !== -1) this.rules.splice(index, 1)
   }
 
   // Get current rate limit status for a user
@@ -339,14 +330,10 @@ class NotificationRateLimitService {
   resetUserLimits(userId: string): void {
     const keysToDelete = []
     for (const [key] of this.limits) {
-      if (key.includes(userId)) {
-        keysToDelete.push(key)
-      }
+      if (key.includes(userId)) keysToDelete.push(key)
     }
 
-    for (const key of keysToDelete) {
-      this.limits.delete(key)
-    }
+    for (const key of keysToDelete) this.limits.delete(key)
   }
 
   // Get rate limiting statistics
@@ -386,12 +373,9 @@ class NotificationRateLimitService {
 
   // Start cleanup interval to remove expired entries
   private startCleanupInterval(): void {
-    this.cleanupInterval = setInterval(
-      () => {
-        this.cleanup()
-      },
-      5 * 60 * 1000,
-    ) // Cleanup every 5 minutes
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup()
+    }, ms.minutes(5))
     // Let process exit if this is the only timer
     this.cleanupInterval.unref?.()
   }
@@ -402,14 +386,10 @@ class NotificationRateLimitService {
     const expiredKeys = []
 
     for (const [key, entry] of this.limits) {
-      if (now >= entry.resetTime) {
-        expiredKeys.push(key)
-      }
+      if (now >= entry.resetTime) expiredKeys.push(key)
     }
 
-    for (const key of expiredKeys) {
-      this.limits.delete(key)
-    }
+    for (const key of expiredKeys) this.limits.delete(key)
 
     if (expiredKeys.length > 0) {
       console.log(`Cleaned up ${expiredKeys.length} expired rate limit entries`)
@@ -428,6 +408,3 @@ class NotificationRateLimitService {
 
 // Singleton instance
 export const notificationRateLimitService = new NotificationRateLimitService()
-
-export { NotificationRateLimitService }
-export type { RateLimitRule, RateLimitStatus, RateLimitEntry }

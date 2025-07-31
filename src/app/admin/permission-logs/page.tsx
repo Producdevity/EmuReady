@@ -18,7 +18,7 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
-import { PermissionActionType, type Role } from '@orm'
+import { PermissionActionType, Role } from '@orm'
 
 type PermissionLogSortField = 'createdAt' | 'action' | 'userId' | 'targetRole'
 
@@ -34,22 +34,37 @@ const PERMISSION_LOG_COLUMNS: ColumnDefinition[] = [
 
 const PERMISSION_ACTIONS = [
   { value: '', label: 'All Actions' },
-  { value: 'PERMISSION_CREATED', label: 'Permission Created' },
-  { value: 'PERMISSION_UPDATED', label: 'Permission Updated' },
-  { value: 'PERMISSION_DELETED', label: 'Permission Deleted' },
-  { value: 'ROLE_PERMISSION_ASSIGNED', label: 'Permission Assigned' },
-  { value: 'ROLE_PERMISSION_REMOVED', label: 'Permission Removed' },
-  { value: 'USER_ROLE_CHANGED', label: 'User Role Changed' },
+  {
+    value: PermissionActionType.PERMISSION_CREATED,
+    label: 'Permission Created',
+  },
+  {
+    value: PermissionActionType.PERMISSION_UPDATED,
+    label: 'Permission Updated',
+  },
+  {
+    value: PermissionActionType.PERMISSION_DELETED,
+    label: 'Permission Deleted',
+  },
+  {
+    value: PermissionActionType.ROLE_PERMISSION_ASSIGNED,
+    label: 'Permission Assigned',
+  },
+  {
+    value: PermissionActionType.ROLE_PERMISSION_REMOVED,
+    label: 'Permission Removed',
+  },
+  { value: PermissionActionType.USER_ROLE_CHANGED, label: 'User Role Changed' },
 ] as const
 
 const ROLES = [
   { value: '', label: 'All Roles' },
-  { value: 'USER', label: 'User' },
-  { value: 'AUTHOR', label: 'Author' },
-  { value: 'DEVELOPER', label: 'Developer' },
-  { value: 'MODERATOR', label: 'Moderator' },
-  { value: 'ADMIN', label: 'Admin' },
-  { value: 'SUPER_ADMIN', label: 'Super Admin' },
+  { value: Role.USER, label: 'User' },
+  { value: Role.AUTHOR, label: 'Author' },
+  { value: Role.DEVELOPER, label: 'Developer' },
+  { value: Role.MODERATOR, label: 'Moderator' },
+  { value: Role.ADMIN, label: 'Admin' },
+  { value: Role.SUPER_ADMIN, label: 'Super Admin' },
 ] as const
 
 function AdminPermissionLogsPage() {

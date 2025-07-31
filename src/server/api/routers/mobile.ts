@@ -20,6 +20,11 @@ import { mobileTgdbRouter } from './mobile/tgdb'
 import { mobileTrustRouter } from './mobile/trust'
 import { mobileUsersRouter } from './mobile/users'
 
+/**
+ * TODO: remove the "flat" export once all mobile routers are migrated
+ *   - api.mobile.cpus.get() (newer, cleaner way)
+ *   - api.mobile.getCpusData() (older, flat way)
+ */
 export const mobileRouter = createMobileTRPCRouter({
   auth: mobileAuthRouter,
   listings: mobileListingsRouter,
@@ -31,7 +36,6 @@ export const mobileRouter = createMobileTRPCRouter({
   preferences: mobilePreferencesRouter,
   developers: mobileDevelopersRouter,
   general: mobileGeneralRouter,
-  // New routers for feature parity
   listingReports: mobileListingReportsRouter,
   trust: mobileTrustRouter,
   customFieldDefinitions: mobileCustomFieldDefinitionsRouter,

@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import TrustStatsOverview from '@/app/admin/trust-logs/components/TrustStatsOverview'
 import { AdminTableContainer, AdminTableNoResults } from '@/components/admin'
 import {
   Button,
@@ -20,6 +19,7 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
+import { TrustStatsOverview } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'

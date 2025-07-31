@@ -10,7 +10,7 @@ import {
   ChevronUp,
   ChevronRight,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   RoleBadge,
   useConfirmDialog,
@@ -78,6 +78,7 @@ interface GenericCommentThreadProps {
   comments: CommentWithReplies[]
   isLoading: boolean
   userRole?: Role
+  entityOwnerId?: string // ID of the listing/PC listing owner
 
   // Callbacks
   onRefresh: () => void
@@ -91,7 +92,7 @@ interface GenericCommentThreadProps {
     editingComment?: AnyComment
     onSuccess: () => void
     onCancel?: () => void
-  }) => React.ReactNode
+  }) => ReactNode
 }
 
 export function GenericCommentThread(props: GenericCommentThreadProps) {
@@ -142,7 +143,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
     props.onSortChange(newSort)
   }
 
-  const renderComment = (comment: AnyComment, level = 0): React.ReactNode => {
+  const renderComment = (comment: AnyComment, level = 0): ReactNode => {
     if (!comment) return null
 
     const isDeleted = !!comment.deletedAt
@@ -202,6 +203,15 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
                     <span className="font-semibold text-gray-700 dark:text-gray-200">
                       {comment.user?.name ?? 'Anonymous'}
                     </span>
+
+                    {/* Show OP badge if comment author is the listing/PC listing owner */}
+                    {props.entityOwnerId &&
+                      comment.user?.id === props.entityOwnerId && (
+                        <span className="px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                          OP
+                        </span>
+                      )}
+
                     {comment.user?.role && (
                       <RoleBadge role={comment.user.role} size="sm" />
                     )}

@@ -15,6 +15,7 @@ interface Props {
   initialSortBy?: 'newest' | 'oldest' | 'score'
   gameId?: string
   systemId?: string
+  pcListingOwnerId?: string
 }
 
 function PcCommentThread(props: Props) {
@@ -114,6 +115,7 @@ function PcCommentThread(props: Props) {
       comments={pcListingsQuery.data?.comments ?? []}
       isLoading={pcListingsQuery.isLoading}
       userRole={userQuery.data?.role}
+      entityOwnerId={props.pcListingOwnerId}
       onRefresh={refreshComments}
       onDelete={handleDelete}
       onSortChange={(newSort) => setSortBy(newSort as typeof sortBy)}

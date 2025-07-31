@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
 import { api } from '@/lib/api'
+import { CustomFieldList } from '@/lib/dynamic-imports'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
-import CustomFieldList from './components/CustomFieldList'
 
 export default function EmulatorCustomFieldsPage() {
   const params = useParams()

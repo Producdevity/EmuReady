@@ -15,6 +15,10 @@ import {
   publicProcedure,
   superAdminProcedure,
 } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import type { Prisma } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
@@ -39,15 +43,13 @@ export const emulatorsRouter = createTRPCRouter({
       const limit = input?.limit ?? 20
       const offset = input?.offset ?? 0
 
-      // Calculate actual offset based on page or use provided offset
-      const actualOffset = input?.page ? (input.page - 1) * limit : offset
+      const actualOffset = calculateOffset({ page: input?.page, offset }, limit)
 
       // Build where clause for filtering
       const where: Prisma.EmulatorWhereInput | undefined = input?.search
         ? { name: { contains: input.search, mode: 'insensitive' } }
         : undefined
 
-      // Build orderBy based on sortField and sortDirection
       let orderBy: Prisma.EmulatorOrderByWithRelationInput = { name: 'asc' }
 
       if (input?.sortField && input?.sortDirection) {
@@ -86,13 +88,12 @@ export const emulatorsRouter = createTRPCRouter({
 
       return {
         emulators,
-        pagination: {
+        pagination: createPaginationResult(
           total,
-          pages: Math.ceil(total / limit),
-          page: input?.page ?? Math.floor(actualOffset / limit) + 1,
-          offset: actualOffset,
-          limit: limit,
-        },
+          { page: input?.page, offset },
+          limit,
+          actualOffset,
+        ),
       }
     }),
 

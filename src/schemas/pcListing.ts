@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { ApprovalStatus, PcOs } from '@orm'
 
 export const CreatePcListingSchema = z.object({
@@ -124,7 +125,12 @@ export const UnverifyPcListingAdminSchema = z.object({
 // Admin schemas for PC listing management
 export const GetAllPcListingsAdminSchema = z.object({
   page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(20),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .max(PAGINATION.MAX_LIMIT)
+    .default(PAGINATION.DEFAULT_LIMIT),
   sortField: z
     .enum([
       'game.title',
@@ -234,19 +240,23 @@ export const GetPcListingUserVoteSchema = z.object({
 export const GetPcListingCommentsSchema = z.object({
   pcListingId: z.string().uuid(),
   sortBy: z.enum(['newest', 'oldest', 'score']).default('newest'),
-  limit: z.number().min(1).max(100).default(50),
+  limit: z
+    .number()
+    .min(1)
+    .max(PAGINATION.MAX_LIMIT)
+    .default(PAGINATION.LARGE_BATCH_SIZE),
   offset: z.number().min(0).default(0),
 })
 
 export const CreatePcListingCommentSchema = z.object({
   pcListingId: z.string().uuid(),
-  content: z.string().min(1).max(2000),
+  content: z.string().min(1).max(CHAR_LIMITS.COMMENT),
   parentId: z.string().uuid().optional(),
 })
 
 export const UpdatePcListingCommentSchema = z.object({
   commentId: z.string().uuid(),
-  content: z.string().min(1).max(2000),
+  content: z.string().min(1).max(CHAR_LIMITS.COMMENT),
 })
 
 export const DeletePcListingCommentSchema = z.object({

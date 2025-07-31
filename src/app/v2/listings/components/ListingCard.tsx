@@ -16,8 +16,8 @@ import {
   TooltipTrigger,
   TooltipContent,
   ProgressiveImage,
+  SwipeableCard,
 } from '@/components/ui'
-import SwipeableCard from '@/components/ui/SwipeableCard'
 import { cn } from '@/lib/utils'
 import { formatTimeAgo } from '@/utils/date'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
@@ -49,18 +49,12 @@ export function ListingCard({
     if (onLike) onLike()
 
     // Trigger haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(50)
-    }
+    if (navigator.vibrate) navigator.vibrate(50)
   }
 
   const handleComment = () => {
     if (onComment) onComment()
     else router.push(`/listings/${listing.id}#comments`)
-  }
-
-  const navigateToListing = () => {
-    router.push(`/listings/${listing.id}`)
   }
 
   const navigateToGame = (ev: MouseEvent) => {
@@ -85,7 +79,7 @@ export function ListingCard({
     <SwipeableCard
       onSwipeLeft={handleComment}
       onSwipeRight={handleLike}
-      onClick={navigateToListing}
+      onClick={() => router.push(`/listings/${listing.id}`)}
       className={cn(
         'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 group cursor-pointer',
         'hover:shadow-2xl hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50',
@@ -244,8 +238,8 @@ export function ListingCard({
                     isLiked &&
                       'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
                   )}
-                  onClick={(e) => {
-                    e.stopPropagation()
+                  onClick={(ev) => {
+                    ev.stopPropagation()
                     handleLike()
                   }}
                   aria-label={isLiked ? 'Unlike' : 'Like'}

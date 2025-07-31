@@ -2,6 +2,7 @@ import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
 import { hasPermission } from '@/utils/permissions'
+import { ms } from '@/utils/time'
 import {
   DeliveryChannel,
   type NotificationCategory,
@@ -714,26 +715,26 @@ export class NotificationService {
     try {
       // Define deduplication window based on notification type
       const deduplicationWindows: Record<NotificationType, number> = {
-        [NotificationType.LISTING_APPROVED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.LISTING_REJECTED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.LISTING_COMMENT]: 5 * 60 * 1000, // 5 minutes
-        [NotificationType.LISTING_VOTE_UP]: 15 * 60 * 1000, // 15 minutes
-        [NotificationType.LISTING_VOTE_DOWN]: 15 * 60 * 1000, // 15 minutes
-        [NotificationType.COMMENT_REPLY]: 5 * 60 * 1000, // 5 minutes
-        [NotificationType.USER_MENTION]: 5 * 60 * 1000, // 5 minutes
-        [NotificationType.NEW_DEVICE_LISTING]: 30 * 60 * 1000, // 30 minutes
-        [NotificationType.GAME_ADDED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.EMULATOR_UPDATED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.ROLE_CHANGED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.CONTENT_FLAGGED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.MAINTENANCE_NOTICE]: 24 * 60 * 60 * 1000, // 24 hours
-        [NotificationType.FEATURE_ANNOUNCEMENT]: 24 * 60 * 60 * 1000, // 24 hours
-        [NotificationType.NEW_SOC_LISTING]: 30 * 60 * 1000, // 30 minutes
-        [NotificationType.POLICY_UPDATE]: 24 * 60 * 60 * 1000, // 24 hours
-        [NotificationType.ACCOUNT_WARNING]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.LISTING_APPROVED]: ms.hours(1),
+        [NotificationType.LISTING_REJECTED]: ms.hours(1),
+        [NotificationType.LISTING_COMMENT]: ms.minutes(5),
+        [NotificationType.LISTING_VOTE_UP]: ms.minutes(15),
+        [NotificationType.LISTING_VOTE_DOWN]: ms.minutes(15),
+        [NotificationType.COMMENT_REPLY]: ms.minutes(5),
+        [NotificationType.USER_MENTION]: ms.minutes(5),
+        [NotificationType.NEW_DEVICE_LISTING]: ms.minutes(30),
+        [NotificationType.GAME_ADDED]: ms.hours(1),
+        [NotificationType.EMULATOR_UPDATED]: ms.hours(1),
+        [NotificationType.ROLE_CHANGED]: ms.hours(1),
+        [NotificationType.CONTENT_FLAGGED]: ms.hours(1),
+        [NotificationType.MAINTENANCE_NOTICE]: ms.days(1),
+        [NotificationType.FEATURE_ANNOUNCEMENT]: ms.days(1),
+        [NotificationType.NEW_SOC_LISTING]: ms.minutes(30),
+        [NotificationType.POLICY_UPDATE]: ms.days(1),
+        [NotificationType.ACCOUNT_WARNING]: ms.hours(1),
       }
 
-      const windowMs = deduplicationWindows[notificationType] || 30 * 60 * 1000 // Default: 30 minutes
+      const windowMs = deduplicationWindows[notificationType] || ms.minutes(30)
       const windowStart = new Date(Date.now() - windowMs)
 
       // Check for existing similar notifications within the deduplication window

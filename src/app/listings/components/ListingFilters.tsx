@@ -19,7 +19,7 @@ import Link from 'next/link'
 import { useState, useEffect, type ChangeEvent } from 'react'
 import { MultiSelect, Input, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
-import { type AppRouter } from '@/server/api/root'
+import type { AppRouter } from '@/types/trpc'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 type UserPreferences = RouterOutput['userPreferences']['get']

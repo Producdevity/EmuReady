@@ -11,6 +11,8 @@ export const GameSortField = z.enum([
 
 export const SortDirection = z.enum(['asc', 'desc'])
 
+export const GameListingFilter = z.enum(['all', 'withListings', 'noListings'])
+
 export const GameApprovalStatusSchema = z.enum([
   ApprovalStatus.PENDING,
   ApprovalStatus.APPROVED,
@@ -30,7 +32,8 @@ export const GetGamesSchema = z
       .or(z.literal('').transform(() => undefined)),
     status: GameApprovalStatusSchema.optional(),
     submittedBy: z.string().uuid().optional(),
-    hideGamesWithNoListings: z.boolean().optional().default(false),
+    hideGamesWithNoListings: z.boolean().optional().default(false), // Keep for backward compatibility
+    listingFilter: GameListingFilter.optional().default('withListings'),
     limit: z.number().default(100),
     offset: z.number().default(0),
     page: z.number().optional(),
@@ -77,6 +80,12 @@ export const UpdateGameSchema = z.object({
 })
 
 export const DeleteGameSchema = z.object({ id: z.string().uuid() })
+
+export const OverrideGameStatusSchema = z.object({
+  gameId: z.string().uuid(),
+  newStatus: z.nativeEnum(ApprovalStatus),
+  overrideNotes: z.string().optional(),
+})
 
 export const ApproveGameSchema = z.object({
   id: z.string().uuid(),

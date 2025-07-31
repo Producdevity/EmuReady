@@ -13,6 +13,10 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
 
@@ -57,7 +61,7 @@ export const listingReportsRouter = createTRPCRouter({
         limit = 20,
       } = input ?? {}
 
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       // Build where clause
       const where: Prisma.ListingReportWhereInput = {}
@@ -78,7 +82,6 @@ export const listingReportsRouter = createTRPCRouter({
 
       if (reason) where.reason = reason
 
-      // Build orderBy
       const orderBy: Prisma.ListingReportOrderByWithRelationInput = {}
       if (sortField && sortDirection) {
         orderBy[sortField] = sortDirection
@@ -106,11 +109,9 @@ export const listingReportsRouter = createTRPCRouter({
         ctx.prisma.listingReport.count({ where }),
       ])
 
-      const pages = Math.ceil(total / limit)
-
       return {
         reports,
-        pagination: { page, limit, total, pages },
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 

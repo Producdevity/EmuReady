@@ -3,6 +3,7 @@
  * Automatically updates cached game data on a schedule
  */
 
+import { ms } from '@/utils/time'
 import { refreshSwitchGamesData, getSwitchGamesStats } from './switchGameSearch'
 
 export interface RefreshConfig {
@@ -27,7 +28,7 @@ export class SwitchGameRefreshService {
 
   constructor(config: Partial<RefreshConfig> = {}) {
     this.config = {
-      refreshIntervalMs: 60 * 60 * 1000, // 1 hour default
+      refreshIntervalMs: ms.hours(1),
       autoRefreshEnabled: true,
       refreshOnStartup: true,
       ...config,
@@ -192,7 +193,7 @@ export class SwitchGameRefreshService {
 // Singleton instance - configure for production use
 // Refresh every 12 hours since the data updates weekly
 export const switchGameRefreshService = new SwitchGameRefreshService({
-  refreshIntervalMs: 12 * 60 * 60 * 1000, // 12 hours
+  refreshIntervalMs: ms.hours(12),
   autoRefreshEnabled: true,
   refreshOnStartup: true,
 })
