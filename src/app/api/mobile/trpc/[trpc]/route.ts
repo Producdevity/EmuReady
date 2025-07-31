@@ -23,9 +23,20 @@ export async function OPTIONS() {
 
 const handler = async (req: NextRequest) => {
   try {
+    // Create a new request with properly decoded URL to prevent double encoding issues
+    const url = new URL(req.url)
+    const decodedPathname = decodeURIComponent(url.pathname)
+    const correctedUrl = new URL(decodedPathname + url.search, url.origin)
+
+    const correctedRequest = new Request(correctedUrl, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    })
+
     const response = await fetchRequestHandler({
       endpoint: '/api/mobile/trpc',
-      req,
+      req: correctedRequest,
       router: mobileRouter,
       createContext: createMobileTRPCFetchContext,
       onError:
