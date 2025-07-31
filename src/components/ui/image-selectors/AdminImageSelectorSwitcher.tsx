@@ -11,8 +11,8 @@ import {
   getImageValidationError,
   IMAGE_EXTENSIONS,
 } from '@/utils/imageValidation'
-import { RawgImageSelector } from './RawgImageSelector'
-import { TGDBImageSelector } from './TGDBImageSelector'
+import { RawgImageSelector } from './providers/RawgImageSelector'
+import { TGDBImageSelector } from './providers/TGDBImageSelector'
 
 interface Props {
   gameTitle?: string
@@ -40,6 +40,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
   )
   const [manualUrl, setManualUrl] = useState(props.selectedImageUrl || '')
   const [isValidUrl, setIsValidUrl] = useState(false)
+  const [showApplied, setShowApplied] = useState(false)
 
   const validateUrl = (url: string) => {
     const result = validateImageUrl(url)
@@ -60,6 +61,11 @@ export function AdminImageSelectorSwitcher(props: Props) {
     const trimmedUrl = manualUrl.trim()
     if (trimmedUrl && validateUrl(trimmedUrl)) {
       props.onImageSelect(trimmedUrl)
+      // Show success feedback
+      setShowApplied(true)
+      setTimeout(() => {
+        setShowApplied(false)
+      }, 1500)
     } else if (trimmedUrl === '') {
       props.onImageSelect('')
     } else {
@@ -239,10 +245,14 @@ export function AdminImageSelectorSwitcher(props: Props) {
                     onClick={handleManualUrlSubmit}
                     disabled={!!(manualUrl.trim() && !isValidUrl)}
                     size="sm"
-                    className="px-4"
+                    className={`px-4 transition-all duration-200 ${
+                      showApplied
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : ''
+                    }`}
                   >
                     <Check className="h-4 w-4 mr-1" />
-                    Apply
+                    {showApplied ? 'Applied ✓' : 'Apply'}
                   </Button>
                 </div>
 
@@ -252,8 +262,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-sm text-red-600 dark:text-red-400"
                   >
-                    Please enter a valid image URL (must be https:// and end
-                    with .${IMAGE_EXTENSIONS.join(', .')})
+                    {getImageValidationError(manualUrl.trim())}
                   </motion.p>
                 )}
 
