@@ -23,7 +23,7 @@ export function AuthorDisplay(props: Props) {
           {props.author?.name ?? 'Anonymous'}
         </Link>
       ) : (
-        <span>{author?.name ?? 'Anonymous'}</span>
+        <span>{props.author?.name ?? 'Anonymous'}</span>
       )}
       {props.canSeeBannedUsers &&
         props.author &&
