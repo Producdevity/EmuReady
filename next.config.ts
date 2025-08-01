@@ -101,10 +101,6 @@ const nextConfig: NextConfig = {
     return config
   },
 
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
-
   async headers() {
     return [
       {
