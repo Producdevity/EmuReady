@@ -28,6 +28,10 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
+  /* Global timeout for the entire test run */
+  globalTimeout: 30 * 60 * 1000, // 30 minutes
+  /* Test timeout - increased for production build */
+  timeout: process.env.USE_DEV_SERVER ? 60 * 1000 : 30 * 1000, // 60s for dev, 30s for prod
   /* Global setup handled by setup dependency in projects */
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -36,6 +40,12 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    /* Action timeout - how long to wait for element actions */
+    actionTimeout: 10 * 1000, // 10 seconds
+
+    /* Navigation timeout - how long to wait for page loads */
+    navigationTimeout: 30 * 1000, // 30 seconds
 
     /* Set cookie consent for all tests */
     storageState: {
@@ -147,9 +157,10 @@ export default defineConfig({
     command: process.env.USE_DEV_SERVER
       ? 'npm run dev'
       : 'NODE_ENV=production npm run start',
-    url: 'http://localhost:3000',
+    port: 3000,
     reuseExistingServer: !process.env.CI,
-    timeout: process.env.USE_DEV_SERVER ? 120 * 1000 : 30 * 1000, // Shorter timeout for production
-    // Note: Build should be done before running tests
+    timeout: process.env.USE_DEV_SERVER ? 120 * 1000 : 60 * 1000, // Increased production timeout
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 })
