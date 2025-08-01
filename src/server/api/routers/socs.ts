@@ -12,6 +12,7 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from '@/server/api/trpc'
+import { batchQueries } from '@/server/utils/query-performance'
 import type { Prisma } from '@orm'
 
 export const socsRouter = createTRPCRouter({
@@ -226,7 +227,7 @@ export const socsRouter = createTRPCRouter({
   }),
 
   stats: moderatorProcedure.query(async ({ ctx }) => {
-    const [total, withDevices, withoutDevices] = await Promise.all([
+    const [total, withDevices, withoutDevices] = await batchQueries([
       ctx.prisma.soC.count(),
       ctx.prisma.soC.count({
         where: {

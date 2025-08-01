@@ -19,6 +19,11 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import {
+  buildSearchFilter,
+  buildNsfwFilter,
+  buildArrayFilter,
+} from '@/server/utils/query-builders'
 import { ApprovalStatus } from '@orm'
 
 export const mobileListingsRouter = createMobileTRPCRouter({
@@ -37,22 +42,21 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         emulatorIds,
         search,
       } = input ?? {}
-      const skip = (page - 1) * limit
 
       // Build where clause with proper search filtering
       const baseWhere: Record<string, unknown> = {
         status: ApprovalStatus.APPROVED,
         game: {
           status: ApprovalStatus.APPROVED,
-          // Filter NSFW content based on user preferences
-          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
         },
       }
 
       if (gameId) baseWhere.gameId = gameId
       if (deviceId) baseWhere.deviceId = deviceId
-      if (emulatorIds && emulatorIds.length > 0) {
-        baseWhere.emulatorId = { in: emulatorIds }
+      const emulatorFilter = buildArrayFilter(emulatorIds, 'emulatorId')
+      if (emulatorFilter) {
+        Object.assign(baseWhere, emulatorFilter)
       }
       if (systemId) {
         baseWhere.game = {
@@ -62,29 +66,18 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       }
 
       // Add search filtering at database level
-      if (search) {
-        baseWhere.OR = [
-          {
-            game: {
-              title: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          },
-          {
-            notes: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        ]
+      const searchConditions = buildSearchFilter(search, [
+        'game.title',
+        'notes',
+      ])
+      if (searchConditions) {
+        baseWhere.OR = searchConditions
       }
 
       const [listings, total] = await Promise.all([
         ctx.prisma.listing.findMany({
           where: baseWhere,
-          skip,
+          skip: (page - 1) * limit,
           take: limit,
           orderBy: { createdAt: 'desc' },
           include: {
@@ -137,16 +130,16 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         }),
       )
 
-      const pages = Math.ceil(total / limit)
+      const totalPages = Math.ceil(total / limit)
 
       return {
         listings: listingsWithStats,
         pagination: {
           total,
-          pages,
+          pages: totalPages,
           currentPage: page,
           limit,
-          hasNextPage: page < pages,
+          hasNextPage: page < totalPages,
           hasPreviousPage: page > 1,
         },
       }
@@ -161,8 +154,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         status: ApprovalStatus.APPROVED,
         game: {
           status: ApprovalStatus.APPROVED,
-          // Filter NSFW content based on user preferences
-          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -226,7 +218,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           status: ApprovalStatus.APPROVED,
           game: {
             status: ApprovalStatus.APPROVED,
-            ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+            ...buildNsfwFilter(ctx.session?.user?.showNsfw),
           },
         },
         include: {

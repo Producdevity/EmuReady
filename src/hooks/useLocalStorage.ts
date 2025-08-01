@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { type z } from 'zod'
 import toast from '@/lib/toast'
+import { safeParseJSON } from '@/utils/client-validation'
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
   enabled = true,
+  schema?: z.ZodSchema<T>,
 ) {
   const [isHydrated, setIsHydrated] = useState(false)
 
@@ -12,7 +15,12 @@ export function useLocalStorage<T>(
     if (!enabled || typeof window === 'undefined') return initialValue
     try {
       const item = window.localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
+      if (!item) return initialValue
+
+      if (schema) {
+        return safeParseJSON(item, schema, initialValue)
+      }
+      return JSON.parse(item)
     } catch {
       // Silent fail during initialization, handle errors in useEffect
       return initialValue
@@ -35,7 +43,9 @@ export function useLocalStorage<T>(
     try {
       const item = window.localStorage.getItem(key)
       if (item) {
-        const parsed = JSON.parse(item)
+        const parsed = schema
+          ? safeParseJSON(item, schema, storedValueRef.current)
+          : JSON.parse(item)
         setStoredValue(parsed)
       }
     } catch (error) {
@@ -58,7 +68,7 @@ export function useLocalStorage<T>(
         // If even getting the item fails, just ignore
       }
     }
-  }, [key, enabled])
+  }, [key, enabled, schema])
 
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {

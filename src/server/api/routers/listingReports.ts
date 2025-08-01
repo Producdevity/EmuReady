@@ -17,13 +17,14 @@ import {
   calculateOffset,
   createPaginationResult,
 } from '@/server/utils/pagination'
+import { batchQueries } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
     async ({ ctx }) => {
-      const [pending, underReview, resolved, dismissed] = await Promise.all([
+      const [pending, underReview, resolved, dismissed] = await batchQueries([
         ctx.prisma.listingReport.count({
           where: { status: ReportStatus.PENDING },
         }),
@@ -87,7 +88,7 @@ export const listingReportsRouter = createTRPCRouter({
         orderBy[sortField] = sortDirection
       }
 
-      const [reports, total] = await Promise.all([
+      const [reports, total] = await batchQueries([
         ctx.prisma.listingReport.findMany({
           where,
           orderBy,
@@ -263,7 +264,7 @@ export const listingReportsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { userId } = input
 
-      const [reportedListingsCount, totalReports] = await Promise.all([
+      const [reportedListingsCount, totalReports] = await batchQueries([
         ctx.prisma.listingReport.count({
           where: {
             listing: {

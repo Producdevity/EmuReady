@@ -19,11 +19,13 @@ import {
   calculateOffset,
   createPaginationResult,
 } from '@/server/utils/pagination'
+import { buildSearchFilter } from '@/server/utils/query-builders'
+import { batchQueries } from '@/server/utils/query-performance'
 import type { Prisma } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
   getStats: adminProcedure.query(async ({ ctx }) => {
-    const [total, withListings, withSystems] = await Promise.all([
+    const [total, withListings, withSystems] = await batchQueries([
       ctx.prisma.emulator.count(),
       ctx.prisma.emulator.count({ where: { listings: { some: {} } } }),
       ctx.prisma.emulator.count({ where: { systems: { some: {} } } }),
@@ -46,8 +48,9 @@ export const emulatorsRouter = createTRPCRouter({
       const actualOffset = calculateOffset({ page: input?.page, offset }, limit)
 
       // Build where clause for filtering
-      const where: Prisma.EmulatorWhereInput | undefined = input?.search
-        ? { name: { contains: input.search, mode: 'insensitive' } }
+      const searchConditions = buildSearchFilter(input?.search, ['name'])
+      const where: Prisma.EmulatorWhereInput | undefined = searchConditions
+        ? { OR: searchConditions }
         : undefined
 
       let orderBy: Prisma.EmulatorOrderByWithRelationInput = { name: 'asc' }

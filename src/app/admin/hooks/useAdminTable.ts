@@ -2,6 +2,8 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback, type ChangeEvent } from 'react'
 import { UI_CONSTANTS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { AdminTableParamsSchema } from '@/schemas/common'
+import { validateClientData } from '@/utils/client-validation'
 
 export type SortDirection = 'asc' | 'desc' | null
 
@@ -54,36 +56,42 @@ export function useAdminTable<TSortField extends string>(
   const enableUrlState = opts.enableUrlState ?? true
   const searchDebounceMs = opts.searchDebounceMs ?? DEFAULT_SEARCH_DEBOUNCE
 
-  // Initialize state from URL params or defaults
-  const [search, setSearchState] = useState(() => {
-    if (enableUrlState && searchParams.get('search')) {
-      return searchParams.get('search') ?? ''
+  // Initialize state from URL params or defaults with validation
+  const getValidatedParams = () => {
+    if (!enableUrlState) {
+      return {
+        search: '',
+        page: 1,
+        sortField: null,
+        sortDirection: null,
+      }
     }
-    return ''
-  })
 
-  const [page, setPageState] = useState(() => {
-    if (enableUrlState && searchParams.get('page')) {
-      const pageFromUrl = parseInt(searchParams.get('page') ?? '1', 10)
-      return isNaN(pageFromUrl) ? 1 : pageFromUrl
+    const rawParams = {
+      search: searchParams.get('search') ?? '',
+      page: parseInt(searchParams.get('page') ?? '1', 10),
+      sortField: searchParams.get('sortField'),
+      sortDirection: searchParams.get('sortDirection'),
     }
-    return 1
-  })
 
-  const [sortField, setSortFieldState] = useState<TSortField | null>(() => {
-    if (enableUrlState && searchParams.get('sortField')) {
-      return searchParams.get('sortField') as TSortField
-    }
-    return opts.defaultSortField ?? null
-  })
+    return validateClientData(rawParams, AdminTableParamsSchema, {
+      search: '',
+      page: 1,
+      sortField: null,
+      sortDirection: null,
+    })
+  }
 
-  const [sortDirection, setSortDirectionState] = useState<SortDirection>(() => {
-    if (enableUrlState && searchParams.get('sortDirection')) {
-      const direction = searchParams.get('sortDirection')
-      return direction === 'asc' || direction === 'desc' ? direction : null
-    }
-    return opts.defaultSortDirection ?? null
-  })
+  const validatedParams = getValidatedParams()
+
+  const [search, setSearchState] = useState(validatedParams.search)
+  const [page, setPageState] = useState(validatedParams.page)
+  const [sortField, setSortFieldState] = useState<TSortField | null>(
+    (validatedParams.sortField as TSortField) ?? opts.defaultSortField ?? null,
+  )
+  const [sortDirection, setSortDirectionState] = useState<SortDirection>(
+    validatedParams.sortDirection ?? opts.defaultSortDirection ?? null,
+  )
 
   // Initialize additional parameters from URL
   const [additionalParams, setAdditionalParams] = useState<
@@ -120,8 +128,9 @@ export function useAdminTable<TSortField extends string>(
 
     const params = new URLSearchParams()
 
-    if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
-    if (page > 1) params.set('page', page.toString())
+    if (debouncedSearch && debouncedSearch.trim())
+      params.set('search', debouncedSearch.trim())
+    if (page && page > 1) params.set('page', page.toString())
     if (sortField) params.set('sortField', sortField)
     if (sortDirection) params.set('sortDirection', sortDirection)
 
@@ -229,12 +238,12 @@ export function useAdminTable<TSortField extends string>(
   }
 
   return {
-    search,
+    search: search ?? '',
     setSearch,
     handleSearchChange,
-    debouncedSearch,
+    debouncedSearch: debouncedSearch ?? '',
     isSearching,
-    page,
+    page: page ?? 1,
     setPage,
     limit: opts.defaultLimit ?? DEFAULT_LIMIT,
     sortField,

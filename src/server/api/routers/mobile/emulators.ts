@@ -3,6 +3,7 @@ import {
   createMobileTRPCRouter,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import { ApprovalStatus } from '@orm'
 
 export const mobileEmulatorsRouter = createMobileTRPCRouter({
@@ -17,7 +18,8 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
       const whereClause: Record<string, unknown> = {}
 
       // Add search filtering at database level
-      if (search) whereClause.name = { contains: search, mode: 'insensitive' }
+      const searchConditions = buildSearchFilter(search, ['name'])
+      if (searchConditions) whereClause.OR = searchConditions
 
       // Add system filtering at database level
       if (systemId) whereClause.systems = { some: { id: systemId } }

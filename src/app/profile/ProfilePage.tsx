@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { User, Smartphone, Bell, Settings, Computer } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useState, Suspense } from 'react'
-import { PageLoading } from '@/components/ui'
+import { PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -66,7 +66,7 @@ function ProfilePage() {
       enabled: !!user,
     })
 
-  if (!isLoaded) return <PageLoading />
+  if (!isLoaded) return <PageSkeletonLoading />
 
   if (!user) return <ProfilePageUnauthenticated />
 
@@ -129,7 +129,7 @@ function ProfilePage() {
 
 function ProfilePageWithSuspense() {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PageSkeletonLoading />}>
       <ProfilePage />
     </Suspense>
   )

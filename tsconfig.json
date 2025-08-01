@@ -27,5 +27,5 @@
     "next.config.ts",
     "vitest.config.mts"
   ],
-  "exclude": ["node_modules", ".next"]
+  "exclude": ["node_modules", ".next", "tests"]
 }

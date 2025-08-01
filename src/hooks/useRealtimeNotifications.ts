@@ -2,6 +2,8 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { z } from 'zod'
+import { safeParseJSON } from '@/utils/client-validation'
 
 interface RealtimeNotification {
   id: string
@@ -16,6 +18,21 @@ interface SSEMessage {
   type: 'connected' | 'notification' | 'unread_count' | 'ping'
   data: unknown
 }
+
+// Schemas for validation
+const RealtimeNotificationSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  title: z.string(),
+  message: z.string(),
+  actionUrl: z.string().optional(),
+  createdAt: z.string(),
+})
+
+const SSEMessageSchema = z.object({
+  type: z.enum(['connected', 'notification', 'unread_count', 'ping']),
+  data: z.unknown(),
+})
 
 interface UseRealtimeNotificationsReturn {
   isConnected: boolean
@@ -69,7 +86,10 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
 
       eventSource.onmessage = (event) => {
         try {
-          const message: SSEMessage = JSON.parse(event.data)
+          const message = safeParseJSON(event.data, SSEMessageSchema, {
+            type: 'ping',
+            data: null,
+          } as SSEMessage)
 
           switch (message.type) {
             case 'connected':
@@ -77,7 +97,17 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
               break
 
             case 'notification':
-              const notification = message.data as RealtimeNotification
+              const validationResult = RealtimeNotificationSchema.safeParse(
+                message.data,
+              )
+              if (!validationResult.success) {
+                console.warn(
+                  'Invalid notification data:',
+                  validationResult.error,
+                )
+                break
+              }
+              const notification = validationResult.data
               setNotifications((prev) => [notification, ...prev].slice(0, 50)) // Keep last 50
 
               // Show browser notification if permission granted

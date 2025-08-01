@@ -3,6 +3,12 @@ import { AppError } from '@/lib/errors'
 import { seoMetrics, exportMetrics } from '@/lib/monitoring/seo-metrics'
 import { GetCacheEntrySchema, DeleteCacheEntrySchema } from '@/schemas/cache'
 import { createTRPCRouter, superAdminProcedure } from '@/server/api/trpc'
+import {
+  createQueryCacheKey,
+  QueryPerformanceMonitor,
+  suggestIndexes,
+  analyzeQueryComplexity,
+} from '@/server/utils/query-performance'
 import { ApprovalStatus } from '@orm'
 
 export const cacheRouter = createTRPCRouter({
@@ -13,11 +19,13 @@ export const cacheRouter = createTRPCRouter({
     const cacheMetrics = getCacheMetrics()
     const seoData = seoMetrics.getAggregatedMetrics()
     const exportData = exportMetrics()
+    const queryMetrics = QueryPerformanceMonitor.getMetrics()
 
     return {
       cache: cacheMetrics,
       seo: seoData,
       export: exportData,
+      query: queryMetrics,
       timestamp: new Date().toISOString(),
     }
   }),
@@ -27,8 +35,6 @@ export const cacheRouter = createTRPCRouter({
    */
   clear: superAdminProcedure.mutation(async () => {
     try {
-      // Clear the cache (clear method doesn't take arguments)
-      // Use cache.clear() method from LRUCache
       cache.clear()
       seoMetrics.reset()
 
@@ -59,7 +65,7 @@ export const cacheRouter = createTRPCRouter({
 
       // Warm game metadata
       for (const game of popularGames) {
-        const cacheKey = `seo:game:${game.id}`
+        const cacheKey = createQueryCacheKey('seo', 'game', { id: game.id })
         const cacheData = {
           title: game.title,
           description: `${game.title} compatibility information`,
@@ -87,7 +93,9 @@ export const cacheRouter = createTRPCRouter({
 
       // Warm listing metadata
       for (const listing of popularListings) {
-        const cacheKey = `seo:listing:${listing.id}`
+        const cacheKey = createQueryCacheKey('seo', 'listing', {
+          id: listing.id,
+        })
         const cacheData = {
           title: `${listing.game.title} on ${listing.device.brand.name} ${listing.device.modelName}`,
           description: `${listing.game.title} running on ${listing.emulator.name}`,
@@ -144,4 +152,75 @@ export const cacheRouter = createTRPCRouter({
         timestamp: new Date().toISOString(),
       }
     }),
+
+  /**
+   * Analyze query patterns and suggest database indexes
+   */
+  analyzeQueries: superAdminProcedure.query(async () => {
+    // Common query patterns in the application
+    const queryPatterns = [
+      {
+        name: 'Listings by status and author',
+        model: 'listing',
+        where: { status: ApprovalStatus.APPROVED, authorId: 'user_id' },
+        orderBy: { createdAt: 'desc' },
+      },
+      {
+        name: 'Listings by game and device',
+        model: 'listing',
+        where: { gameId: 'game_id', deviceId: 'device_id' },
+        orderBy: { createdAt: 'desc' },
+      },
+      {
+        name: 'Games by system with approval',
+        model: 'game',
+        where: { systemId: 'system_id', status: ApprovalStatus.APPROVED },
+        orderBy: { title: 'asc' },
+      },
+      {
+        name: 'PC Listings by CPU and GPU',
+        model: 'pcListing',
+        where: {
+          cpuId: 'cpu_id',
+          gpuId: 'gpu_id',
+          status: ApprovalStatus.APPROVED,
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+      {
+        name: 'Users with listings count',
+        model: 'user',
+        where: { listings: { some: { status: ApprovalStatus.APPROVED } } },
+      },
+      {
+        name: 'Reports by status',
+        model: 'listingReport',
+        where: { status: 'PENDING' },
+        orderBy: { createdAt: 'desc' },
+      },
+    ]
+
+    const suggestions = queryPatterns.map((pattern) => ({
+      pattern: pattern.name,
+      model: pattern.model,
+      complexity: analyzeQueryComplexity(
+        pattern.model === 'user' ? { listings: true } : undefined,
+        pattern.where,
+      ),
+      indexSuggestions: suggestIndexes(
+        pattern.model,
+        pattern.where,
+        pattern.orderBy,
+      ),
+    }))
+
+    // Get actual query performance metrics
+    const performanceMetrics = QueryPerformanceMonitor.getMetrics()
+
+    return {
+      suggestions,
+      performanceMetrics,
+      timestamp: new Date().toISOString(),
+    }
+  }),
 })

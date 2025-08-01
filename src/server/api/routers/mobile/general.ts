@@ -12,12 +12,16 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
   getAppStats: mobilePublicProcedure.query(async ({ ctx }) => {
     const [
       totalListings,
+      totalPcListings,
       totalGames,
       totalDevices,
       totalEmulators,
       totalUsers,
     ] = await Promise.all([
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
+      ctx.prisma.pcListing.count({
+        where: { status: ApprovalStatus.APPROVED },
+      }),
       ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
       ctx.prisma.device.count(),
       ctx.prisma.emulator.count(),
@@ -26,6 +30,8 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
 
     return {
       totalListings,
+      totalPcListings,
+      totalReports: totalListings + totalPcListings,
       totalGames,
       totalDevices,
       totalEmulators,

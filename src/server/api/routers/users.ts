@@ -24,6 +24,7 @@ import {
   createPaginationResult,
   buildOrderBy,
 } from '@/server/utils/pagination'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
 import { withOptimisticLock } from '@/server/utils/transactions'
@@ -206,22 +207,13 @@ export const usersRouter = createTRPCRouter({
         listingsWhere.status = ApprovalStatus.APPROVED
       }
 
-      if (listingsSearch) {
-        listingsWhere.OR = [
-          {
-            game: { title: { contains: listingsSearch, mode: 'insensitive' } },
-          },
-          {
-            device: {
-              modelName: { contains: listingsSearch, mode: 'insensitive' },
-            },
-          },
-          {
-            emulator: {
-              name: { contains: listingsSearch, mode: 'insensitive' },
-            },
-          },
-        ]
+      const listingsSearchConditions = buildSearchFilter(listingsSearch, [
+        'game.title',
+        'device.modelName',
+        'emulator.name',
+      ])
+      if (listingsSearchConditions) {
+        listingsWhere.OR = listingsSearchConditions
       }
       if (listingsSystem) {
         listingsWhere.device = { brand: { name: listingsSystem } }
@@ -238,22 +230,13 @@ export const usersRouter = createTRPCRouter({
           game: { isErotic: false },
         } as Prisma.ListingWhereInput
       }
-      if (votesSearch) {
-        votesWhere.listing = {
-          OR: [
-            { game: { title: { contains: votesSearch, mode: 'insensitive' } } },
-            {
-              device: {
-                modelName: { contains: votesSearch, mode: 'insensitive' },
-              },
-            },
-            {
-              emulator: {
-                name: { contains: votesSearch, mode: 'insensitive' },
-              },
-            },
-          ],
-        }
+      const votesSearchConditions = buildSearchFilter(votesSearch, [
+        'listing.game.title',
+        'listing.device.modelName',
+        'listing.emulator.name',
+      ])
+      if (votesSearchConditions) {
+        votesWhere.OR = votesSearchConditions
       }
 
       // Get user basic info
@@ -523,12 +506,9 @@ export const usersRouter = createTRPCRouter({
       // Build where clause for search
       const where: Prisma.UserWhereInput = {}
 
-      if (search && search.trim() !== '') {
-        const searchTerm = search.trim()
-        where.OR = [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { email: { contains: searchTerm, mode: 'insensitive' } },
-        ]
+      const searchConditions = buildSearchFilter(search, ['name', 'email'])
+      if (searchConditions) {
+        where.OR = searchConditions
       }
 
       const sortConfig = {
@@ -724,12 +704,9 @@ export const usersRouter = createTRPCRouter({
 
       const where: Prisma.UserWhereInput = {}
 
-      if (query && query.trim().length > 0) {
-        const searchTerm = query.trim()
-        where.OR = [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { email: { contains: searchTerm, mode: 'insensitive' } },
-        ]
+      const searchConditions = buildSearchFilter(query, ['name', 'email'])
+      if (searchConditions) {
+        where.OR = searchConditions
       }
 
       // Filter by minimum role if specified

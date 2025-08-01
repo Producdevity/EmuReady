@@ -16,18 +16,20 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useState, useCallback } from 'react'
 import { isArray, isString } from 'remeda'
+import { z } from 'zod'
 import { SystemIcon } from '@/components/icons'
 import {
   Badge,
   Button,
   Input,
-  PageLoading,
+  PageSkeletonLoading,
   PerformanceBadge,
   Pagination,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
+import { validateClientData } from '@/utils/client-validation'
 import { formatDate, formatTimeAgo } from '@/utils/date'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
@@ -50,8 +52,16 @@ function UserDetailsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   // Pagination and filter state
-  const listingsPage = parseInt(searchParams.get('listingsPage') || '1')
-  const votesPage = parseInt(searchParams.get('votesPage') || '1')
+  const listingsPage = validateClientData(
+    parseInt(searchParams.get('listingsPage') || '1'),
+    z.number().int().positive(),
+    1,
+  )
+  const votesPage = validateClientData(
+    parseInt(searchParams.get('votesPage') || '1'),
+    z.number().int().positive(),
+    1,
+  )
   const [searchFilter, setSearchFilter] = useState(
     searchParams.get('search') || '',
   )
@@ -131,7 +141,7 @@ function UserDetailsPage() {
     updateUrlParams({ votesPage: page })
   }
 
-  if (userQuery.isPending) return <PageLoading />
+  if (userQuery.isPending) return <PageSkeletonLoading />
 
   if (userQuery.error || !userQuery.data) {
     return <UserDetailsPageError errorMessage={userQuery.error?.message} />

@@ -51,15 +51,19 @@ import {
 import {
   invalidateListPages,
   invalidateSitemap,
+  revalidateByTag,
 } from '@/server/cache/invalidation'
 import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import { listingStatsCache } from '@/server/utils/cache'
 import {
   calculateOffset,
   createPaginationResult,
 } from '@/server/utils/pagination'
+import { buildNsfwFilter } from '@/server/utils/query-builders'
+import { createCountQuery } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
 import {
   canDeleteComment,
@@ -107,7 +111,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Exclude Microsoft Windows games since PC listings are for emulation
         game: {
           system: { key: { not: 'microsoft_windows' } },
-          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
           ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
         },
         ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
@@ -447,10 +451,19 @@ export const pcListingsRouter = createTRPCRouter({
         include: pcListingInclude,
       })
 
+      // Invalidate stats cache when PC listing is created
+      listingStatsCache.delete('pc-listing-stats')
+
       // Invalidate SEO cache if listing is approved
       if (newListing.status === ApprovalStatus.APPROVED) {
         await invalidateListPages()
         await invalidateSitemap()
+        await revalidateByTag('pc-listings')
+        await revalidateByTag(`game-${input.gameId}`)
+        await revalidateByTag(`cpu-${input.cpuId}`)
+        if (input.gpuId) {
+          await revalidateByTag(`gpu-${input.gpuId}`)
+        }
       }
 
       return newListing
@@ -470,9 +483,14 @@ export const pcListingsRouter = createTRPCRouter({
         return AppError.forbidden('You can only delete your own PC listings')
       }
 
-      return ctx.prisma.pcListing.delete({
+      const deletedListing = await ctx.prisma.pcListing.delete({
         where: { id: input.id },
       })
+
+      // Invalidate stats cache when PC listing is deleted
+      listingStatsCache.delete('pc-listing-stats')
+
+      return deletedListing
     }),
 
   update: protectedProcedure
@@ -661,7 +679,7 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.pcListing.notPending()
       }
 
-      return ctx.prisma.pcListing.update({
+      const approvedListing = await ctx.prisma.pcListing.update({
         where: { id: input.pcListingId },
         data: {
           status: ApprovalStatus.APPROVED,
@@ -669,6 +687,11 @@ export const pcListingsRouter = createTRPCRouter({
           processedByUserId: ctx.session.user.id,
         },
       })
+
+      // Invalidate stats cache when PC listing is approved
+      listingStatsCache.delete('pc-listing-stats')
+
+      return approvedListing
     }),
 
   reject: moderatorProcedure
@@ -684,7 +707,7 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.pcListing.notPending()
       }
 
-      return ctx.prisma.pcListing.update({
+      const rejectedListing = await ctx.prisma.pcListing.update({
         where: { id: input.pcListingId },
         data: {
           status: ApprovalStatus.REJECTED,
@@ -693,6 +716,11 @@ export const pcListingsRouter = createTRPCRouter({
           processedNotes: input.notes,
         },
       })
+
+      // Invalidate stats cache when PC listing is rejected
+      listingStatsCache.delete('pc-listing-stats')
+
+      return rejectedListing
     }),
 
   bulkApprove: moderatorProcedure
@@ -709,6 +737,9 @@ export const pcListingsRouter = createTRPCRouter({
           processedByUserId: ctx.session.user.id,
         },
       })
+
+      // Invalidate stats cache when PC listings are bulk approved
+      listingStatsCache.delete('pc-listing-stats')
 
       return { count: result.count }
     }),
@@ -728,6 +759,9 @@ export const pcListingsRouter = createTRPCRouter({
           processedNotes: input.notes,
         },
       })
+
+      // Invalidate stats cache when PC listings are bulk rejected
+      listingStatsCache.delete('pc-listing-stats')
 
       return { count: result.count }
     }),
@@ -855,23 +889,32 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   stats: moderatorProcedure.query(async ({ ctx }) => {
+    const STATS_CACHE_KEY = 'pc-listing-stats'
+    const cached = listingStatsCache.get(STATS_CACHE_KEY)
+    if (cached) return cached
+
     const [total, pending, approved, rejected] = await Promise.all([
-      ctx.prisma.pcListing.count(),
-      ctx.prisma.pcListing.count({ where: { status: ApprovalStatus.PENDING } }),
-      ctx.prisma.pcListing.count({
-        where: { status: ApprovalStatus.APPROVED },
+      createCountQuery(ctx.prisma.pcListing, {}),
+      createCountQuery(ctx.prisma.pcListing, {
+        status: ApprovalStatus.PENDING,
       }),
-      ctx.prisma.pcListing.count({
-        where: { status: ApprovalStatus.REJECTED },
+      createCountQuery(ctx.prisma.pcListing, {
+        status: ApprovalStatus.APPROVED,
+      }),
+      createCountQuery(ctx.prisma.pcListing, {
+        status: ApprovalStatus.REJECTED,
       }),
     ])
 
-    return {
+    const stats = {
       total,
       pending,
       approved,
       rejected,
     }
+
+    listingStatsCache.set(STATS_CACHE_KEY, stats)
+    return stats
   }),
 
   // PC Preset procedures

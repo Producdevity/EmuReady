@@ -28,6 +28,7 @@ import {
   invalidateGameRelatedContent,
   invalidateListPages,
   invalidateSitemap,
+  revalidateByTag,
 } from '@/server/cache/invalidation'
 import {
   notificationEventEmitter,
@@ -40,6 +41,7 @@ import {
   buildOrderBy,
 } from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import {
   createCountQuery,
   analyzeQueryComplexity,
@@ -49,6 +51,7 @@ import {
   getBestTitleIdMatch,
   getSwitchGamesStats,
 } from '@/server/utils/switchGameSearch'
+import { transactionalBatch } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
@@ -187,31 +190,9 @@ export const gamesRouter = createTRPCRouter({
       where.status = ApprovalStatus.APPROVED
     }
 
-    if (search) {
-      const searchTerm = search.trim()
-
-      // For multi-word searches, we use a more sophisticated approach
-      if (searchTerm.includes(' ')) {
-        where = {
-          ...where,
-          AND: [
-            {
-              AND: searchTerm
-                .split(/\s+/)
-                .filter((word) => word.length >= 2)
-                .map((word) => ({
-                  title: { contains: word, mode: 'insensitive' },
-                })),
-            },
-          ],
-        }
-      } else {
-        // For single words, a simple contains is sufficient
-        where = {
-          ...where,
-          title: { contains: searchTerm, mode: 'insensitive' },
-        }
-      }
+    const searchConditions = buildSearchFilter(search, ['title'])
+    if (searchConditions) {
+      where.OR = searchConditions
     }
 
     const sortConfig = {
@@ -569,11 +550,14 @@ export const gamesRouter = createTRPCRouter({
 
         // Queue SEO cache invalidation (non-blocking)
         if (result.status === ApprovalStatus.APPROVED) {
-          Promise.all([invalidateListPages(), invalidateSitemap()]).catch(
-            (error) => {
-              console.error('[Games Router] Cache invalidation failed:', error)
-            },
-          )
+          Promise.all([
+            invalidateListPages(),
+            invalidateSitemap(),
+            revalidateByTag('games'),
+            revalidateByTag(`system-${input.systemId}`),
+          ]).catch((error) => {
+            console.error('[Games Router] Cache invalidation failed:', error)
+          })
         }
 
         return result
@@ -610,14 +594,18 @@ export const gamesRouter = createTRPCRouter({
       )
 
       // Queue SEO cache invalidation (non-blocking)
-      Promise.all([invalidateGame(id), invalidateListPages()]).catch(
-        (error) => {
-          console.error(
-            '[Games Router] Cache invalidation failed after update:',
-            error,
-          )
-        },
-      )
+      Promise.all([
+        invalidateGame(id),
+        invalidateListPages(),
+        revalidateByTag('games'),
+        revalidateByTag(`game-${id}`),
+        revalidateByTag(`system-${result.systemId}`),
+      ]).catch((error) => {
+        console.error(
+          '[Games Router] Cache invalidation failed after update:',
+          error,
+        )
+      })
 
       return result
     }),
@@ -654,14 +642,18 @@ export const gamesRouter = createTRPCRouter({
       )
 
       // Queue SEO cache invalidation (non-blocking)
-      Promise.all([invalidateGame(id), invalidateListPages()]).catch(
-        (error) => {
-          console.error(
-            '[Games Router] Cache invalidation failed after update:',
-            error,
-          )
-        },
-      )
+      Promise.all([
+        invalidateGame(id),
+        invalidateListPages(),
+        revalidateByTag('games'),
+        revalidateByTag(`game-${id}`),
+        revalidateByTag(`system-${result.systemId}`),
+      ]).catch((error) => {
+        console.error(
+          '[Games Router] Cache invalidation failed after update:',
+          error,
+        )
+      })
 
       return result
     }),
@@ -721,12 +713,13 @@ export const gamesRouter = createTRPCRouter({
         status: ApprovalStatus.PENDING,
       }
 
-      if (search) {
-        where.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { system: { name: { contains: search, mode: 'insensitive' } } },
-          { submitter: { name: { contains: search, mode: 'insensitive' } } },
-        ]
+      const searchConditions = buildSearchFilter(search, [
+        'title',
+        'system.name',
+        'submitter.name',
+      ])
+      if (searchConditions) {
+        where.OR = searchConditions
       }
 
       const sortConfig = {
@@ -826,6 +819,9 @@ export const gamesRouter = createTRPCRouter({
       await invalidateGameRelatedContent(id)
       if (status === ApprovalStatus.APPROVED) {
         await invalidateSitemap()
+        await revalidateByTag('games')
+        await revalidateByTag(`game-${id}`)
+        await revalidateByTag(`system-${game.systemId}`)
       }
 
       return result
@@ -849,22 +845,33 @@ export const gamesRouter = createTRPCRouter({
         throw AppError.badRequest('No valid pending games found to approve')
       }
 
-      // Then approve them in a transaction
-      await ctx.prisma.game.updateMany({
-        where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
-        data: {
-          status: ApprovalStatus.APPROVED,
-          approvedBy: adminUserId,
-          approvedAt: new Date(),
+      await transactionalBatch(ctx.prisma, [
+        {
+          name: 'approve-games',
+          execute: async (tx) => {
+            return tx.game.updateMany({
+              where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
+              data: {
+                status: ApprovalStatus.APPROVED,
+                approvedBy: adminUserId,
+                approvedAt: new Date(),
+              },
+            })
+          },
         },
-      })
-
-      // Cache invalidation after successful approval
-      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-      // Non-blocking cache invalidation
+        {
+          name: 'clear-cache',
+          execute: async () => {
+            gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+            return Promise.resolve()
+          },
+        },
+      ])
       Promise.all([
         ...gameIds.map((id) => invalidateGameRelatedContent(id)),
+        ...gameIds.map((id) => revalidateByTag(`game-${id}`)),
         invalidateSitemap(),
+        revalidateByTag('games'),
       ]).catch((error) => {
         console.error('[Games Router] Cache invalidation failed:', error)
       })
@@ -1006,6 +1013,9 @@ export const gamesRouter = createTRPCRouter({
       await invalidateGameRelatedContent(gameId)
       if (newStatus === ApprovalStatus.APPROVED) {
         await invalidateSitemap()
+        await revalidateByTag('games')
+        await revalidateByTag(`game-${gameId}`)
+        await revalidateByTag(`system-${gameToOverride.systemId}`)
       }
 
       // Emit notification event for game status override
@@ -1065,6 +1075,9 @@ export const gamesRouter = createTRPCRouter({
       await invalidateGameRelatedContent(gameId)
       if (newStatus === ApprovalStatus.APPROVED) {
         await invalidateSitemap()
+        await revalidateByTag('games')
+        await revalidateByTag(`game-${gameId}`)
+        await revalidateByTag(`system-${gameToUpdate.systemId}`)
       }
 
       return {

@@ -1,6 +1,9 @@
+import { z } from 'zod'
 import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
-import { TrustAction } from '@orm'
+import { withDistributedLock } from '@/server/utils/transactions'
+import { validateData } from '@/server/utils/validation'
+import { TrustAction, type Prisma } from '@orm'
 import {
   TRUST_ACTIONS,
   TRUST_CONFIG,
@@ -34,15 +37,13 @@ export async function applyTrustAction(
 ): Promise<void> {
   const { userId, action, context = {} } = params
 
-  // Validate action exists
   if (!TRUST_ACTIONS[action]) {
     throw new Error(`Invalid trust action: ${action}`)
   }
 
   const weight = TRUST_ACTIONS[action].weight
 
-  try {
-    // Get user's current trust score before applying action
+  await withDistributedLock(prisma, `trust-score-${userId}`, async () => {
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { trustScore: true },
@@ -54,9 +55,7 @@ export async function applyTrustAction(
     const newTrustScore = (currentUser?.trustScore || 0) + weight
     const newTrustLevel = getTrustLevel(newTrustScore)
 
-    // Use a transaction to ensure atomicity
     await prisma.$transaction(async (tx) => {
-      // Update user's trust score
       await tx.user.update({
         where: { id: userId },
         data: {
@@ -67,13 +66,15 @@ export async function applyTrustAction(
         },
       })
 
-      // Create audit log entry
       await tx.trustActionLog.create({
         data: {
           userId,
           action,
           weight,
-          metadata: JSON.parse(JSON.stringify(context)),
+          metadata: validateData(
+            z.record(z.unknown()),
+            context || {},
+          ) as Prisma.InputJsonValue,
         },
       })
     })
@@ -86,7 +87,6 @@ export async function applyTrustAction(
       weight,
     })
 
-    // Track trust level achievement if level changed
     if (currentTrustLevel && currentTrustLevel.name !== newTrustLevel.name) {
       analytics.trust.trustLevelChanged({
         userId,
@@ -95,10 +95,7 @@ export async function applyTrustAction(
         score: newTrustScore,
       })
     }
-  } catch (error) {
-    console.error('Failed to apply trust action:', error)
-    throw new Error('Failed to update trust score')
-  }
+  })
 }
 
 export async function reverseTrustAction(
@@ -134,7 +131,10 @@ export async function reverseTrustAction(
           userId,
           action,
           weight,
-          metadata: JSON.parse(JSON.stringify(context)),
+          metadata: validateData(
+            z.record(z.unknown()),
+            context || {},
+          ) as Prisma.InputJsonValue,
         },
       })
     })

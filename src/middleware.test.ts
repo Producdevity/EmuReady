@@ -187,7 +187,7 @@ describe('Middleware API Protection', () => {
     it('should block requests over rate limit', async () => {
       // Set NODE_ENV to something other than 'test' to use lower rate limits
       vi.stubEnv('NODE_ENV', 'development')
-      
+
       // Re-import middleware to pick up new env
       vi.resetModules()
       const middlewareModule = await import('./middleware')

@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { notFound, useParams, useRouter } from 'next/navigation'
-import { Button, PageLoading } from '@/components/ui'
+import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import EmulatorEditForm from './components/EmulatorEditForm'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
@@ -19,7 +19,8 @@ function EditEmulatorPage() {
 
   const systemsQuery = api.systems.get.useQuery({})
 
-  if (emulatorsQuery.isPending || systemsQuery.isPending) return <PageLoading />
+  if (emulatorsQuery.isPending || systemsQuery.isPending)
+    return <PageSkeletonLoading />
 
   if (emulatorsQuery.error || systemsQuery.error) {
     return (

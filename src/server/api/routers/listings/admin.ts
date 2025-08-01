@@ -23,6 +23,7 @@ import {
   invalidateListing,
   invalidateListPages,
   invalidateSitemap,
+  revalidateByTag,
 } from '@/server/cache/invalidation'
 import {
   notificationEventEmitter,
@@ -283,6 +284,11 @@ export const adminRouter = createTRPCRouter({
       await invalidateListing(listingId)
       await invalidateListPages()
       await invalidateSitemap()
+      await revalidateByTag('listings')
+      await revalidateByTag(`listing-${listingId}`)
+      await revalidateByTag(`game-${listingToApprove.gameId}`)
+      await revalidateByTag(`device-${listingToApprove.deviceId}`)
+      await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
 
       // Apply trust action for listing approval to the author
       if (listingToApprove.authorId) {
@@ -661,11 +667,24 @@ export const adminRouter = createTRPCRouter({
         const approvedAt = new Date()
 
         // Invalidate SEO cache for all approved listings
-        await Promise.all(
-          validListings.map((listing) => invalidateListing(listing.id)),
-        )
+        await Promise.all([
+          ...validListings.map((listing) => invalidateListing(listing.id)),
+          ...validListings.map((listing) =>
+            revalidateByTag(`listing-${listing.id}`),
+          ),
+          ...validListings.map((listing) =>
+            revalidateByTag(`game-${listing.gameId}`),
+          ),
+          ...validListings.map((listing) =>
+            revalidateByTag(`device-${listing.deviceId}`),
+          ),
+          ...validListings.map((listing) =>
+            revalidateByTag(`emulator-${listing.emulatorId}`),
+          ),
+        ])
         await invalidateListPages()
         await invalidateSitemap()
+        await revalidateByTag('listings')
 
         // Emit notification events for each approved listing
         for (const listing of validListings) {

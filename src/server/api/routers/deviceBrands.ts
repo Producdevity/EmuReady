@@ -12,6 +12,7 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from '@/server/api/trpc'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import type { Prisma } from '@orm'
 
 export const deviceBrandsRouter = createTRPCRouter({
@@ -38,10 +39,11 @@ export const deviceBrandsRouter = createTRPCRouter({
         orderBy.push({ name: 'asc' })
       }
 
+      const searchConditions = buildSearchFilter(search, ['name'])
+      const where = searchConditions ? { OR: searchConditions } : undefined
+
       return ctx.prisma.deviceBrand.findMany({
-        where: search
-          ? { name: { contains: search, mode: 'insensitive' } }
-          : undefined,
+        where,
         include: {
           _count: {
             select: {

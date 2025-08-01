@@ -104,9 +104,7 @@ async function getSwitchGamesData(): Promise<SwitchGameEntry[]> {
 
   // Try to get from cache first
   const cachedData = switchGamesDataCache.get(cacheKey)
-  if (cachedData) {
-    return cachedData
-  }
+  if (cachedData) return cachedData
 
   // Fetch fresh data and cache it
   const freshData = await fetchSwitchGamesData()

@@ -27,6 +27,7 @@ import {
 import {
   invalidateListPages,
   invalidateSitemap,
+  revalidateByTag,
 } from '@/server/cache/invalidation'
 import {
   notificationEventEmitter,
@@ -43,6 +44,7 @@ import {
   buildNsfwFilter,
   buildArrayFilter,
 } from '@/server/utils/query-builders'
+import { withSavepoint } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
@@ -771,6 +773,10 @@ export const coreRouter = createTRPCRouter({
         if (newListing.status === ApprovalStatus.APPROVED) {
           await invalidateListPages()
           await invalidateSitemap()
+          await revalidateByTag('listings')
+          await revalidateByTag(`game-${gameId}`)
+          await revalidateByTag(`device-${deviceId}`)
+          await revalidateByTag(`emulator-${emulatorId}`)
         }
 
         return newListing
@@ -1021,6 +1027,7 @@ export const coreRouter = createTRPCRouter({
     return {
       listings: listingsCount,
       pcListings: pcListingsCount,
+      totalReports: listingsCount + pcListingsCount,
       games: gamesCount,
       emulators: emulatorsCount,
       devices: devicesCount,
@@ -1227,11 +1234,13 @@ export const coreRouter = createTRPCRouter({
       return await ctx.prisma.$transaction(async (tx) => {
         // Validate custom fields if provided
         if (input.customFieldValues && input.customFieldValues.length > 0) {
-          await validateCustomFields(
-            tx,
-            listing.emulatorId,
-            input.customFieldValues,
-          )
+          await withSavepoint(tx, 'validate-custom-fields', async () => {
+            await validateCustomFields(
+              tx,
+              listing.emulatorId,
+              input.customFieldValues,
+            )
+          })
         }
 
         // Delete existing custom field values
