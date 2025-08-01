@@ -17,7 +17,7 @@
       stroke-width="2"
   />
 
-  <!-- TODO: replace placeholder with svg logo -->
+  <!-- TODO: replace this ugly ass placeholder with svg logo -->
   <circle cx="600" cy="200" r="50" fill="#bc2cd4"/>
   <circle cx="600" cy="200" r="35" fill="#fe247d"/>
   <circle cx="600" cy="200" r="20" fill="#0d81ff"/>
