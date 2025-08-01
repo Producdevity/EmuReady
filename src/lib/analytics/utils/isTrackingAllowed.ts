@@ -1,8 +1,17 @@
+import { z } from 'zod'
+import { safeParseJSON } from '@/utils/client-validation'
+
 interface LocalPreferences {
   analytics?: boolean
   performance?: boolean
   marketing?: boolean
 }
+
+const LocalPreferencesSchema = z.object({
+  analytics: z.boolean().optional(),
+  performance: z.boolean().optional(),
+  marketing: z.boolean().optional(),
+})
 
 /**
  * Check if analytics tracking is allowed based on cookie consent
@@ -26,7 +35,11 @@ export function isTrackingAllowed(category: string): boolean {
     // Get actual preferences
     const preferencesString = localStorage.getItem('cookiePreferences')
     if (preferencesString) {
-      const preferences = JSON.parse(preferencesString) as LocalPreferences
+      const preferences = safeParseJSON(
+        preferencesString,
+        LocalPreferencesSchema,
+        {} as LocalPreferences,
+      )
 
       // Always allow necessary performance events
       if (necessaryCategories.includes(category as 'performance')) {
