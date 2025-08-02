@@ -6,6 +6,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CustomFieldList } from '@/lib/dynamic-imports'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
 
@@ -17,6 +19,8 @@ export default function EmulatorCustomFieldsPage() {
   const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] =
     useState(false)
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
+
+  const { data: currentUser } = api.users.me.useQuery()
 
   const {
     data: emulator,
@@ -33,6 +37,10 @@ export default function EmulatorCustomFieldsPage() {
     { emulatorId },
     { enabled: !!emulatorId },
   )
+
+  // Check if user can see Apply Templates button (only SUPER_ADMIN)
+  const canApplyTemplates =
+    currentUser && hasPermission(currentUser.role, Role.SUPER_ADMIN)
 
   function handleOpenCreateModal() {
     setEditingFieldId(null)
@@ -85,9 +93,11 @@ export default function EmulatorCustomFieldsPage() {
           Custom Fields for {emulator.name}
         </h1>
         <div className="flex space-x-3">
-          <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
-            <Copy className="mr-2 h-4 w-4" /> Apply Templates
-          </Button>
+          {canApplyTemplates && (
+            <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
+              <Copy className="mr-2 h-4 w-4" /> Apply Templates
+            </Button>
+          )}
           <Button onClick={handleOpenCreateModal}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
           </Button>
@@ -107,9 +117,11 @@ export default function EmulatorCustomFieldsPage() {
             No custom fields defined for this emulator yet.
           </p>
           <div className="mt-4 flex justify-center space-x-3">
-            <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
-              <Copy className="mr-2 h-4 w-4" /> Apply Templates
-            </Button>
+            {canApplyTemplates && (
+              <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
+                <Copy className="mr-2 h-4 w-4" /> Apply Templates
+              </Button>
+            )}
             <Button onClick={handleOpenCreateModal}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
             </Button>

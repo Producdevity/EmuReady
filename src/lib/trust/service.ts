@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
-import { withDistributedLock } from '@/server/utils/transactions'
 import { validateData } from '@/server/utils/validation'
 import { TrustAction, type Prisma } from '@orm'
 import {
@@ -43,8 +42,8 @@ export async function applyTrustAction(
 
   const weight = TRUST_ACTIONS[action].weight
 
-  await withDistributedLock(prisma, `trust-score-${userId}`, async () => {
-    const currentUser = await prisma.user.findUnique({
+  await prisma.$transaction(async (tx) => {
+    const currentUser = await tx.user.findUnique({
       where: { id: userId },
       select: { trustScore: true },
     })
@@ -55,28 +54,24 @@ export async function applyTrustAction(
     const newTrustScore = (currentUser?.trustScore || 0) + weight
     const newTrustLevel = getTrustLevel(newTrustScore)
 
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: {
-            increment: weight,
-          },
-          lastActiveAt: new Date(),
-        },
-      })
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        trustScore: { increment: weight },
+        lastActiveAt: new Date(),
+      },
+    })
 
-      await tx.trustActionLog.create({
-        data: {
-          userId,
-          action,
-          weight,
-          metadata: validateData(
-            z.record(z.unknown()),
-            context || {},
-          ) as Prisma.InputJsonValue,
-        },
-      })
+    await tx.trustActionLog.create({
+      data: {
+        userId,
+        action,
+        weight,
+        metadata: validateData(
+          z.record(z.unknown()),
+          context || {},
+        ) as Prisma.InputJsonValue,
+      },
     })
 
     analytics.trust.trustScoreChanged({
@@ -105,6 +100,7 @@ export async function reverseTrustAction(
 
   // Validate action exists
   if (!TRUST_ACTIONS[action]) {
+    // TODO: consider using a more specific error type
     throw new Error(`Invalid trust action: ${action}`)
   }
 
@@ -118,9 +114,7 @@ export async function reverseTrustAction(
       await tx.user.update({
         where: { id: userId },
         data: {
-          trustScore: {
-            increment: weight,
-          },
+          trustScore: { increment: weight },
           lastActiveAt: new Date(),
         },
       })
@@ -153,12 +147,7 @@ export async function validateTrustActionRate(
   today.setHours(0, 0, 0, 0)
 
   const todayActionsCount = await prisma.trustActionLog.count({
-    where: {
-      userId,
-      createdAt: {
-        gte: today,
-      },
-    },
+    where: { userId, createdAt: { gte: today } },
   })
 
   if (todayActionsCount >= TRUST_CONFIG.MAX_ACTIONS_PER_USER_PER_DAY) {
@@ -174,18 +163,12 @@ export async function validateTrustActionRate(
     const recentVotes = await prisma.trustActionLog.count({
       where: {
         userId,
-        action: {
-          in: [TrustAction.UPVOTE, TrustAction.DOWNVOTE],
-        },
-        createdAt: {
-          gte: rateLimitWindow,
-        },
+        action: { in: [TrustAction.UPVOTE, TrustAction.DOWNVOTE] },
+        createdAt: { gte: rateLimitWindow },
       },
     })
 
-    if (recentVotes >= TRUST_CONFIG.VOTE_RATE_LIMIT.maxVotes) {
-      return false
-    }
+    if (recentVotes >= TRUST_CONFIG.VOTE_RATE_LIMIT.maxVotes) return false
   }
 
   return true
@@ -198,6 +181,7 @@ export async function getUserTrustLevel(userId: string) {
   })
 
   if (!user) {
+    // TODO: use proper error later, there are no lives on the line
     throw new Error('User not found')
   }
 
@@ -228,12 +212,8 @@ export async function getUsersEligibleForMonthlyBonus(): Promise<string[]> {
 
   const eligibleUsers = await prisma.user.findMany({
     where: {
-      createdAt: {
-        lte: cutoffDate, // Account older than 30 days
-      },
-      lastActiveAt: {
-        gte: activityCutoff, // Active within last 30 days
-      },
+      createdAt: { lte: cutoffDate }, // Account older than 30 days
+      lastActiveAt: { gte: activityCutoff }, // Active within last 30 days
     },
     select: { id: true },
   })
@@ -260,9 +240,7 @@ export async function applyMonthlyActiveBonus(): Promise<{
         where: {
           userId,
           action: TrustAction.MONTHLY_ACTIVE_BONUS,
-          createdAt: {
-            gte: thisMonth,
-          },
+          createdAt: { gte: thisMonth },
         },
       })
 
@@ -293,6 +271,7 @@ export async function applyManualTrustAdjustment(params: {
   const { userId, adjustment, reason, adminUserId } = params
 
   if (adjustment === 0) {
+    // TODO: Custom Error, or not to Custom Error, that is the question
     throw new Error('Adjustment cannot be zero')
   }
 

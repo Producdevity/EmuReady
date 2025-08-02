@@ -34,7 +34,7 @@ import { Role } from '@orm'
 import CpuModal from './components/CpuModal'
 import CpuViewModal from './components/CpuViewModal'
 
-type CpuSortField = 'brand' | 'modelName'
+type CpuSortField = 'brand' | 'modelName' | 'pcListings'
 type CpuData = RouterOutput['cpus']['get']['cpus'][number]
 
 const CPUS_COLUMNS: ColumnDefinition[] = [
@@ -223,9 +223,13 @@ function AdminCpusPage() {
                   />
                 )}
                 {columnVisibility.isColumnVisible('listings') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    PC Listings
-                  </th>
+                  <SortableHeader
+                    label="PC Listings"
+                    field="pcListings"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">

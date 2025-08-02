@@ -16,12 +16,14 @@ import {
   OverrideGameStatusSchema,
 } from '@/schemas/game'
 import {
-  adminProcedure,
+  approveGamesProcedure,
   createTRPCRouter,
-  moderatorProcedure,
+  editGamesProcedure,
+  deleteGamesProcedure,
   protectedProcedure,
   publicProcedure,
   superAdminProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import {
   invalidateGame,
@@ -191,9 +193,7 @@ export const gamesRouter = createTRPCRouter({
     }
 
     const searchConditions = buildSearchFilter(search, ['title'])
-    if (searchConditions) {
-      where.OR = searchConditions
-    }
+    if (searchConditions) where.OR = searchConditions
 
     const sortConfig = {
       title: (dir: 'asc' | 'desc') => ({ title: dir }),
@@ -257,13 +257,10 @@ export const gamesRouter = createTRPCRouter({
       actualOffset,
     )
 
-    return {
-      games,
-      pagination,
-    }
+    return { games, pagination }
   }),
 
-  getStats: moderatorProcedure.query(async ({ ctx }) => {
+  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const cached = gameStatsCache.get(GAME_STATS_CACHE_KEY)
     if (cached) return cached
 
@@ -571,7 +568,7 @@ export const gamesRouter = createTRPCRouter({
       }
     }),
 
-  update: moderatorProcedure
+  update: editGamesProcedure
     .input(UpdateGameSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -658,17 +655,15 @@ export const gamesRouter = createTRPCRouter({
       return result
     }),
 
-  delete: adminProcedure
+  delete: deleteGamesProcedure
     .input(DeleteGameSchema)
     .mutation(async ({ ctx, input }) => {
       const game = await ctx.prisma.game.findUnique({
         where: { id: input.id },
-        include: {
-          listings: true,
-        },
+        include: { listings: true },
       })
 
-      if (!game) ResourceError.game.notFound()
+      if (!game) return ResourceError.game.notFound()
 
       if (game!.listings.length > 0) {
         ResourceError.game.inUse(game!.listings.length)
@@ -697,7 +692,7 @@ export const gamesRouter = createTRPCRouter({
     }),
 
   // endpoints for an approval system
-  getPendingGames: moderatorProcedure
+  getPendingGames: approveGamesProcedure
     .input(GetPendingGamesSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -709,18 +704,14 @@ export const gamesRouter = createTRPCRouter({
         sortDirection = 'desc',
       } = input ?? {}
 
-      const where: Prisma.GameWhereInput = {
-        status: ApprovalStatus.PENDING,
-      }
+      const where: Prisma.GameWhereInput = { status: ApprovalStatus.PENDING }
 
       const searchConditions = buildSearchFilter(search, [
         'title',
         'system.name',
         'submitter.name',
       ])
-      if (searchConditions) {
-        where.OR = searchConditions
-      }
+      if (searchConditions) where.OR = searchConditions
 
       const sortConfig = {
         title: (dir: 'asc' | 'desc') => ({ title: dir }),
@@ -776,13 +767,10 @@ export const gamesRouter = createTRPCRouter({
         actualOffset,
       )
 
-      return {
-        games,
-        pagination,
-      }
+      return { games, pagination }
     }),
 
-  approveGame: moderatorProcedure
+  approveGame: approveGamesProcedure
     .input(ApproveGameSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, status } = input
@@ -827,7 +815,7 @@ export const gamesRouter = createTRPCRouter({
       return result
     }),
 
-  bulkApproveGames: moderatorProcedure
+  bulkApproveGames: approveGamesProcedure
     .input(BulkApproveGamesSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
@@ -883,7 +871,7 @@ export const gamesRouter = createTRPCRouter({
       }
     }),
 
-  bulkRejectGames: moderatorProcedure
+  bulkRejectGames: approveGamesProcedure
     .input(BulkRejectGamesSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
@@ -892,10 +880,7 @@ export const gamesRouter = createTRPCRouter({
       return ctx.prisma.$transaction(async (tx) => {
         // Get all games to reject and verify they are pending
         const gamesToReject = await tx.game.findMany({
-          where: {
-            id: { in: gameIds },
-            status: ApprovalStatus.PENDING,
-          },
+          where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
         })
 
         if (gamesToReject.length === 0) {
@@ -1037,12 +1022,12 @@ export const gamesRouter = createTRPCRouter({
 
       return {
         ...updatedGame,
-        overrideNotes, // Include the notes in the response
+        overrideNotes,
       }
     }),
 
   // ADMIN and SUPER_ADMIN: Update game status (same as override but with role check)
-  updateStatus: adminProcedure
+  updateStatus: approveGamesProcedure
     .input(OverrideGameStatusSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameId, newStatus, overrideNotes } = input

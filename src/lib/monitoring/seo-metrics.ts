@@ -65,6 +65,10 @@ class SEOMetricsCollector {
         cacheHitRate: 0,
         staleServeRate: 0,
         sampleSize: 0,
+        p95ResponseTime: 0,
+        maxResponseTime: 0,
+        minResponseTime: 0,
+        medianResponseTime: 0,
       }
     }
 
@@ -80,6 +84,14 @@ class SEOMetricsCollector {
       { cacheLookup: 0, dbQuery: 0, total: 0 },
     )
 
+    // Calculate percentiles and min/max
+    const sortedTimes = this.metrics
+      .map((m) => m.totalTime)
+      .sort((a, b) => a - b)
+
+    const p95Index = Math.floor(sortedTimes.length * 0.95)
+    const medianIndex = Math.floor(sortedTimes.length * 0.5)
+
     return {
       avgCacheLookupTime: Math.round(
         sumMetrics.cacheLookup / this.metrics.length,
@@ -91,6 +103,10 @@ class SEOMetricsCollector {
       cacheHitRate: (cacheHits / this.metrics.length) * 100,
       staleServeRate: (staleServed / this.metrics.length) * 100,
       sampleSize: this.metrics.length,
+      p95ResponseTime: Math.round(sortedTimes[p95Index] || 0),
+      maxResponseTime: Math.round(sortedTimes[sortedTimes.length - 1] || 0),
+      minResponseTime: Math.round(sortedTimes[0] || 0),
+      medianResponseTime: Math.round(sortedTimes[medianIndex] || 0),
     }
   }
 
@@ -161,11 +177,21 @@ export function exportMetrics() {
     }
   })
 
+  // Handle empty cache scenario
+  const totalSize = cacheMetrics.reduce((sum, m) => sum + m.size, 0)
+  const oldestEntry =
+    cacheMetrics.length > 0 ? Math.max(...cacheMetrics.map((m) => m.age)) : 0
+
   return {
     cache: {
       entries: cacheMetrics,
-      totalSize: cacheMetrics.reduce((sum, m) => sum + m.size, 0),
-      oldestEntry: Math.max(...cacheMetrics.map((m) => m.age)),
+      totalSize,
+      oldestEntry,
+      averageSize:
+        cacheMetrics.length > 0
+          ? Math.round(totalSize / cacheMetrics.length)
+          : 0,
+      totalEntries: cacheMetrics.length,
     },
     performance: seoMetrics.getAggregatedMetrics(),
     timestamp: new Date().toISOString(),

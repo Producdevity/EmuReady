@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SortDirection } from '@/schemas/soc'
 
-export const GpuSortField = z.enum(['brand', 'modelName'])
+export const GpuSortField = z.enum(['brand', 'modelName', 'pcListings'])
 
 export const GetGpusSchema = z
   .object({

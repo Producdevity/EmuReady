@@ -8,7 +8,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
+import { PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
 
 interface Props {
@@ -54,9 +54,10 @@ function CreateBanModal(props: Props) {
     Role.SUPER_ADMIN,
   ]
 
-  // Check if current user can ban other users (must be MODERATOR or higher)
-  const canBanUsers =
-    currentUserRole && hasPermission(currentUserRole, Role.MODERATOR)
+  // Check if current user can ban other users (must have manage_user_bans permission)
+  const canBanUsers = currentUserQuery.data?.permissions?.includes(
+    PERMISSIONS.MANAGE_USER_BANS,
+  )
 
   // Function to check if current user can ban a specific user
   const canBanUser = (userRole: string): boolean => {

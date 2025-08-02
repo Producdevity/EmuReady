@@ -38,13 +38,12 @@ function AddGamePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  const utils = api.useUtils()
   const systemsQuery = api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
 
   // Get user role from database using TRPC
-  const userQuery = api.users.me.useQuery(undefined, {
-    enabled: !!user,
-  })
+  const userQuery = api.users.me.useQuery(undefined, { enabled: !!user })
 
   // Get the selected system's name based on systemId
   const selectedSystem = systemId
@@ -96,6 +95,10 @@ function AddGamePage() {
         imageUrl: imageUrl || undefined,
         isErotic,
       })
+
+      // Invalidate games queries to refresh the list
+      await utils.games.get.invalidate()
+      await utils.games.checkExistingByTgdbIds.invalidate()
 
       setSuccess('Game added successfully!')
       const timeoutId = window.setTimeout(

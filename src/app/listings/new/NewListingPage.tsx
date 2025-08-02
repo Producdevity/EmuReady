@@ -304,7 +304,7 @@ function AddListingPage() {
   }, [customFieldDefinitionsQuery.data, form])
 
   const createListingMutation = api.listings.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       analytics.listing.created({
         listingId: data?.id,
         gameId: data?.gameId,
@@ -320,6 +320,12 @@ function AddListingPage() {
           goalType: 'listing_created',
           goalValue: 1,
         })
+      }
+
+      // Invalidate queries to refresh data
+      await utils.listings.get.invalidate()
+      if (data?.gameId) {
+        await utils.games.byId.invalidate({ id: data.gameId })
       }
 
       toast.success('Listing successfully submitted for review!')

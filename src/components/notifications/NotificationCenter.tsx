@@ -35,7 +35,7 @@ function NotificationCenter(props: Props) {
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onMutate: () => setIsLoading(true),
     onSuccess: () => {
-      invalidateNotifications()
+      void invalidateNotifications()
       toast.success('Notification marked as read')
     },
     onError: (error) => {
@@ -47,7 +47,7 @@ function NotificationCenter(props: Props) {
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onMutate: () => setIsLoading(true),
     onSuccess: () => {
-      invalidateNotifications()
+      void invalidateNotifications()
       toast.success('All notifications marked as read')
     },
     onError: (error) => {
@@ -59,7 +59,7 @@ function NotificationCenter(props: Props) {
   const deleteMutation = api.notifications.delete.useMutation({
     onMutate: () => setIsLoading(true),
     onSuccess: () => {
-      invalidateNotifications()
+      void invalidateNotifications()
       toast.success('Notification deleted')
     },
     onError: (error) => {
@@ -68,9 +68,9 @@ function NotificationCenter(props: Props) {
     onSettled: () => setIsLoading(false),
   })
 
-  const invalidateNotifications = () => {
-    utils.notifications.get.refetch().catch(console.error)
-    utils.notifications.getUnreadCount.refetch().catch(console.error)
+  const invalidateNotifications = async () => {
+    await utils.notifications.get.invalidate()
+    await utils.notifications.getUnreadCount.invalidate()
   }
 
   const handleViewAllNotifications = () => {

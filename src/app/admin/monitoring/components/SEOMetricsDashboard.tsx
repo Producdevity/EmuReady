@@ -1,8 +1,13 @@
 'use client'
 
-import { BarChart, Clock, Database, TrendingUp } from 'lucide-react'
+import {
+  BarChart as BarChartIcon,
+  Clock,
+  Database,
+  TrendingUp,
+} from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { Card, Button } from '@/components/ui'
+import { Card, Button, LineChart, DonutChart } from '@/components/ui'
 import { exportMetrics, seoMetrics } from '@/lib/monitoring/seo-metrics'
 import { cn } from '@/lib/utils'
 import { ms } from '@/utils/time'
@@ -10,11 +15,30 @@ import { ms } from '@/utils/time'
 export function SEOMetricsDashboard() {
   const [metrics, setMetrics] = useState(seoMetrics.getAggregatedMetrics())
   const [exportData, setExportData] = useState(exportMetrics())
+  const [timeSeriesData, setTimeSeriesData] = useState<
+    { x: number; y: number; label: string }[]
+  >([])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMetrics(seoMetrics.getAggregatedMetrics())
-      setExportData(exportMetrics())
+      const newMetrics = seoMetrics.getAggregatedMetrics()
+      const newExportData = exportMetrics()
+
+      setMetrics(newMetrics)
+      setExportData(newExportData)
+
+      // Update time series data for response time chart
+      setTimeSeriesData((prev) => {
+        const now = Date.now()
+        const newPoint = {
+          x: now,
+          y: newMetrics.avgTotalTime,
+          label: `${formatMs(newMetrics.avgTotalTime)} at ${new Date(now).toLocaleTimeString()}`,
+        }
+
+        // Keep only last 20 points
+        return [...prev, newPoint].slice(-20)
+      })
     }, ms.seconds(30))
 
     return () => clearInterval(interval)
@@ -69,67 +93,142 @@ export function SEOMetricsDashboard() {
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BarChart className="h-4 w-4" />
+              <BarChartIcon className="h-4 w-4" />
               <span>Cache Performance</span>
             </div>
-            <p className="text-2xl font-bold">
-              {metrics.cacheHitRate.toFixed(1)}%
-            </p>
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span>Stale: {metrics.staleServeRate.toFixed(1)}%</span>
-              <span>Sample: {metrics.sampleSize}</span>
+            <div className="flex items-center gap-4">
+              <DonutChart
+                data={[
+                  {
+                    label: 'Cache Hits',
+                    value: metrics.cacheHitRate,
+                    color: '#10b981',
+                  },
+                  {
+                    label: 'Cache Misses',
+                    value: 100 - metrics.cacheHitRate,
+                    color: '#ef4444',
+                  },
+                ]}
+                size={80}
+                strokeWidth={8}
+                showLabels={false}
+                centerText={`${metrics.cacheHitRate.toFixed(1)}%`}
+              />
+              <div className="space-y-1">
+                <div className="flex gap-4 text-xs text-muted-foreground">
+                  <span>Stale: {metrics.staleServeRate.toFixed(1)}%</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Sample: {metrics.sampleSize}
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Response Time Trend */}
+        {timeSeriesData.length > 1 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4" />
+              <span>Response Time Trend (Last 10 minutes)</span>
+            </div>
+            <div className="rounded-lg border p-4">
+              <LineChart
+                data={timeSeriesData}
+                width={400}
+                height={120}
+                color="#3b82f6"
+                showGrid={true}
+                yAxisLabel="Time (ms)"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Cache Details */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Database className="h-4 w-4" />
-            <span>Cache Storage</span>
+            <span>Cache Storage Details</span>
           </div>
           <div className="rounded-lg border p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Total Size</span>
-              <span className="text-sm">
-                {formatBytes(exportData.cache.totalSize)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Entries</span>
-              <span className="text-sm">{exportData.cache.entries.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Oldest Entry</span>
-              <span className="text-sm">
-                {formatMs(exportData.cache.oldestEntry)}
-              </span>
+            <div className="grid gap-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Total Size</span>
+                <span>{formatBytes(exportData.cache.totalSize)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Total Entries</span>
+                <span>{exportData.cache.totalEntries}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Average Entry Size</span>
+                <span>{formatBytes(exportData.cache.averageSize)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Oldest Entry Age</span>
+                <span>{formatMs(exportData.cache.oldestEntry)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Performance Indicators */}
+        {/* Response Time Statistics */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <TrendingUp className="h-4 w-4" />
-            <span>Performance Indicators</span>
+            <span>Response Time Distribution</span>
           </div>
-          <div className="grid gap-2">
-            <PerformanceIndicator
-              label="Cache Efficiency"
-              value={metrics.cacheHitRate}
-              threshold={80}
-            />
-            <PerformanceIndicator
-              label="Response Time"
-              value={100 - metrics.avgTotalTime / 10}
-              threshold={50}
-            />
-            <PerformanceIndicator
-              label="Stale Serve Rate"
-              value={100 - metrics.staleServeRate}
-              threshold={90}
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-lg border p-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="font-medium">Average</div>
+                  <div className="text-lg font-bold">
+                    {formatMs(metrics.avgTotalTime)}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium">Median</div>
+                  <div className="text-lg font-bold">
+                    {formatMs(metrics.medianResponseTime)}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium">P95</div>
+                  <div className="text-lg font-bold">
+                    {formatMs(metrics.p95ResponseTime)}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium">Max</div>
+                  <div className="text-lg font-bold">
+                    {formatMs(metrics.maxResponseTime)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border p-4">
+              <div className="grid gap-2">
+                <PerformanceIndicator
+                  label="Cache Efficiency"
+                  value={metrics.cacheHitRate}
+                  threshold={80}
+                />
+                <PerformanceIndicator
+                  label="P95 Performance"
+                  value={Math.max(0, 100 - metrics.p95ResponseTime / 10)}
+                  threshold={70}
+                />
+                <PerformanceIndicator
+                  label="Stale Serve Rate"
+                  value={100 - metrics.staleServeRate}
+                  threshold={90}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

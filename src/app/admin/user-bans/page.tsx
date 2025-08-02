@@ -25,8 +25,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { PERMISSIONS } from '@/utils/permission-system'
 import BanDetailsModal from './components/BanDetailsModal'
 import CreateBanModal from './components/CreateBanModal'
 import { type BanModalState, type CreateBanModalState } from './types'
@@ -85,9 +84,10 @@ function AdminUserBansPage() {
     enabled: !!clerkUser,
   })
 
-  const currentUserRole = currentUserQuery.data?.role
+  const currentUserPermissions = currentUserQuery.data?.permissions
   const canCreateBans =
-    currentUserRole && hasPermission(currentUserRole, Role.MODERATOR)
+    currentUserPermissions &&
+    currentUserPermissions.includes(PERMISSIONS.MANAGE_USER_BANS)
 
   const bansStatsQuery = api.userBans.getStats.useQuery()
   const bansQuery = api.userBans.getAll.useQuery({

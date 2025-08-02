@@ -47,6 +47,8 @@ function NotificationsPage() {
   const limit = 20
   const offset = (page - 1) * limit
 
+  const utils = api.useUtils()
+
   const notificationsQuery = api.notifications.get.useQuery({
     limit,
     offset,
@@ -61,9 +63,8 @@ function NotificationsPage() {
 
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
-    onSuccess: () => {
-      notificationsQuery.refetch().catch(console.error)
-      statsQuery.refetch().catch(console.error)
+    onSuccess: async () => {
+      await invalidateQueries()
       setSelectedNotifications(new Set())
     },
     onError: (error) => {
@@ -72,9 +73,8 @@ function NotificationsPage() {
   })
 
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
-    onSuccess: () => {
-      notificationsQuery.refetch().catch(console.error)
-      statsQuery.refetch().catch(console.error)
+    onSuccess: async () => {
+      await invalidateQueries()
       setSelectedNotifications(new Set())
       toast.success('All notifications marked as read')
     },
@@ -84,9 +84,8 @@ function NotificationsPage() {
   })
 
   const deleteMutation = api.notifications.delete.useMutation({
-    onSuccess: () => {
-      notificationsQuery.refetch().catch(console.error)
-      statsQuery.refetch().catch(console.error)
+    onSuccess: async () => {
+      await invalidateQueries()
       setSelectedNotifications(new Set())
       toast.success('Notifications deleted')
     },
@@ -94,6 +93,12 @@ function NotificationsPage() {
       toast.error(`Failed to delete notifications: ${getErrorMessage(error)}`)
     },
   })
+
+  const invalidateQueries = async () => {
+    await utils.notifications.get.invalidate()
+    await utils.notifications.getNotificationStats.invalidate()
+    await utils.notifications.getUnreadCount.invalidate()
+  }
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsReadMutation.mutateAsync({ notificationId })
@@ -117,11 +122,11 @@ function NotificationsPage() {
 
   const handleSelectAll = () => {
     const notifications = notificationsQuery.data?.notifications || []
-    if (selectedNotifications.size === notifications.length) {
-      setSelectedNotifications(new Set())
-    } else {
-      setSelectedNotifications(new Set(notifications.map((n) => n.id)))
-    }
+    const newSelectedNotifications =
+      selectedNotifications.size === notifications.length
+        ? new Set<string>()
+        : new Set<string>(notifications.map((n) => n.id))
+    setSelectedNotifications(newSelectedNotifications)
   }
 
   const handleSelectNotification = (notificationId: string) => {
@@ -140,12 +145,10 @@ function NotificationsPage() {
     actionUrl?: string | null
   }) => {
     if (!notification.isRead) {
-      handleMarkAsRead(notification.id)
+      handleMarkAsRead(notification.id).catch(console.error)
     }
 
-    if (notification.actionUrl) {
-      router.push(notification.actionUrl)
-    }
+    if (notification.actionUrl) router.push(notification.actionUrl)
   }
 
   const notifications = notificationsQuery.data?.notifications || []
@@ -392,9 +395,10 @@ function NotificationsPage() {
                       <div className="flex items-center gap-1">
                         {!notification.isRead && (
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleMarkAsRead(notification.id)
+                            type="button"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              void handleMarkAsRead(notification.id)
                             }}
                             disabled={markAsReadMutation.isPending}
                             className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
@@ -403,8 +407,9 @@ function NotificationsPage() {
                           </button>
                         )}
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation()
                             deleteMutation.mutate({
                               notificationId: notification.id,
                             })

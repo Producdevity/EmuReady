@@ -918,7 +918,12 @@ describe('Autocomplete Component', () => {
     })
 
     it('should handle undefined items', () => {
-      render(<Autocomplete {...defaultProps} items={undefined as any} />)
+      render(
+        <Autocomplete
+          {...defaultProps}
+          items={undefined as unknown as TestOption[]}
+        />,
+      )
 
       const input = screen.getByRole('combobox')
       fireEvent.focus(input)

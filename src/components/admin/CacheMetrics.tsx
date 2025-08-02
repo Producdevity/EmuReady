@@ -1,7 +1,7 @@
 'use client'
 
 import { Loader2, Activity, TrendingUp, Database, Timer } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { Card, DonutChart, BarChart } from '@/components/ui'
 import { POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 
@@ -91,11 +91,57 @@ export function CacheMetrics() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Cache Details</p>
-            <div className="space-y-1 text-sm">
-              <div>Hits: {cacheMetrics.hits.toLocaleString()}</div>
-              <div>Misses: {cacheMetrics.misses.toLocaleString()}</div>
-            </div>
+            <p className="text-sm text-muted-foreground">Cache Performance</p>
+            <DonutChart
+              data={[
+                { label: 'Hits', value: cacheMetrics.hits, color: '#10b981' },
+                {
+                  label: 'Misses',
+                  value: cacheMetrics.misses,
+                  color: '#ef4444',
+                },
+                {
+                  label: 'Stale Hits',
+                  value: cacheMetrics.staleHits,
+                  color: '#f59e0b',
+                },
+              ]}
+              size={120}
+              strokeWidth={12}
+              showLabels={false}
+            />
+          </div>
+        </div>
+
+        {/* Cache Distribution Chart */}
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Cache Request Distribution
+          </p>
+          <div className="rounded-lg border p-4">
+            <BarChart
+              data={[
+                {
+                  label: 'Cache Hits',
+                  value: cacheMetrics.hits,
+                  color: '#10b981',
+                },
+                {
+                  label: 'Cache Misses',
+                  value: cacheMetrics.misses,
+                  color: '#ef4444',
+                },
+                {
+                  label: 'Stale Hits',
+                  value: cacheMetrics.staleHits,
+                  color: '#f59e0b',
+                },
+              ]}
+              width={350}
+              height={200}
+              showGrid={true}
+              showValues={true}
+            />
           </div>
         </div>
 

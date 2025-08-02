@@ -35,11 +35,12 @@ import {
   GetPcListingForUserEditSchema,
 } from '@/schemas/pcListing'
 import {
+  approveListingsProcedure,
   createTRPCRouter,
-  moderatorProcedure,
   permissionProcedure,
   protectedProcedure,
   publicProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import {
   buildPcListingOrderBy,
@@ -182,9 +183,7 @@ export const pcListingsRouter = createTRPCRouter({
           _count: {
             select: {
               votes: true,
-              comments: {
-                where: { deletedAt: null },
-              },
+              comments: { where: { deletedAt: null } },
               reports: true,
             },
           },
@@ -240,11 +239,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
-        select: {
-          authorId: true,
-          status: true,
-          processedAt: true,
-        },
+        select: { authorId: true, status: true, processedAt: true },
       })
 
       if (!pcListing) {
@@ -332,18 +327,12 @@ export const pcListingsRouter = createTRPCRouter({
         include: {
           ...pcListingDetailInclude,
           emulator: {
-            include: {
-              customFieldDefinitions: {
-                orderBy: { label: 'asc' },
-              },
-            },
+            include: { customFieldDefinitions: { orderBy: { label: 'asc' } } },
           },
         },
       })
 
-      if (!pcListing) {
-        throw ResourceError.pcListing.notFound()
-      }
+      if (!pcListing) throw ResourceError.pcListing.notFound()
 
       // Only allow owners or moderators to fetch for editing
       if (
@@ -501,11 +490,7 @@ export const pcListingsRouter = createTRPCRouter({
       // First check if user can edit this PC listing
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
-        select: {
-          authorId: true,
-          status: true,
-          processedAt: true,
-        },
+        select: { authorId: true, status: true, processedAt: true },
       })
 
       if (!pcListing) {
@@ -530,6 +515,7 @@ export const pcListingsRouter = createTRPCRouter({
       // PENDING PC listings can always be edited
       if (pcListing.status === ApprovalStatus.PENDING) {
         // No time restrictions for pending listings
+        // TODO: this shit needs to be cleaned up before anyone else sees it
       } else if (pcListing.status === ApprovalStatus.APPROVED) {
         // APPROVED PC listings have a time limit (except for moderators)
         if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
@@ -564,10 +550,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const updatedPcListing = await ctx.prisma.pcListing.update({
         where: { id },
-        data: {
-          ...updateData,
-          updatedAt: new Date(),
-        },
+        data: { ...updateData, updatedAt: new Date() },
         include: {
           game: { include: { system: true } },
           cpu: { include: { brand: true } },
@@ -575,9 +558,7 @@ export const pcListingsRouter = createTRPCRouter({
           emulator: true,
           performance: true,
           author: true,
-          customFieldValues: {
-            include: { customFieldDefinition: true },
-          },
+          customFieldValues: { include: { customFieldDefinition: true } },
         },
       })
 
@@ -604,7 +585,7 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   // Admin procedures
-  pending: moderatorProcedure
+  pending: approveListingsProcedure
     .input(GetPendingPcListingsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -645,9 +626,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       // Default to ascending for pending items
-      if (!sortField) {
-        orderBy[0] = { createdAt: 'asc' }
-      }
+      if (!sortField) orderBy[0] = { createdAt: 'asc' }
 
       const [pcListings, total] = await Promise.all([
         ctx.prisma.pcListing.findMany({
@@ -666,7 +645,7 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }),
 
-  approve: moderatorProcedure
+  approve: approveListingsProcedure
     .input(ApprovePcListingSchema)
     .mutation(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
@@ -694,7 +673,7 @@ export const pcListingsRouter = createTRPCRouter({
       return approvedListing
     }),
 
-  reject: moderatorProcedure
+  reject: approveListingsProcedure
     .input(RejectPcListingSchema)
     .mutation(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
@@ -723,7 +702,7 @@ export const pcListingsRouter = createTRPCRouter({
       return rejectedListing
     }),
 
-  bulkApprove: moderatorProcedure
+  bulkApprove: approveListingsProcedure
     .input(BulkApprovePcListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.prisma.pcListing.updateMany({
@@ -744,7 +723,7 @@ export const pcListingsRouter = createTRPCRouter({
       return { count: result.count }
     }),
 
-  bulkReject: moderatorProcedure
+  bulkReject: approveListingsProcedure
     .input(BulkRejectPcListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.prisma.pcListing.updateMany({
@@ -766,7 +745,7 @@ export const pcListingsRouter = createTRPCRouter({
       return { count: result.count }
     }),
 
-  getAll: moderatorProcedure
+  getAll: approveListingsProcedure
     .input(GetAllPcListingsAdminSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -831,7 +810,7 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }),
 
-  getForEdit: moderatorProcedure
+  getForEdit: approveListingsProcedure
     .input(GetPcListingForAdminEditSchema)
     .query(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
@@ -839,12 +818,10 @@ export const pcListingsRouter = createTRPCRouter({
         include: pcListingDetailInclude,
       })
 
-      if (!pcListing) return ResourceError.pcListing.notFound()
-
-      return pcListing
+      return pcListing ?? ResourceError.pcListing.notFound()
     }),
 
-  updateAdmin: moderatorProcedure
+  updateAdmin: approveListingsProcedure
     .input(UpdatePcListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, customFieldValues, ...data } = input
@@ -859,10 +836,7 @@ export const pcListingsRouter = createTRPCRouter({
       // Update PC listing and handle custom field values
       const updatedPcListing = await ctx.prisma.pcListing.update({
         where: { id },
-        data: {
-          ...data,
-          updatedAt: new Date(),
-        },
+        data: { ...data, updatedAt: new Date() },
         include: pcListingDetailInclude,
       })
 
@@ -888,13 +862,12 @@ export const pcListingsRouter = createTRPCRouter({
       return updatedPcListing
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const STATS_CACHE_KEY = 'pc-listing-stats'
     const cached = listingStatsCache.get(STATS_CACHE_KEY)
     if (cached) return cached
 
-    const [total, pending, approved, rejected] = await Promise.all([
-      createCountQuery(ctx.prisma.pcListing, {}),
+    const [pending, approved, rejected] = await Promise.all([
       createCountQuery(ctx.prisma.pcListing, {
         status: ApprovalStatus.PENDING,
       }),
@@ -907,7 +880,7 @@ export const pcListingsRouter = createTRPCRouter({
     ])
 
     const stats = {
-      total,
+      total: pending + approved + rejected,
       pending,
       approved,
       rejected,
@@ -948,10 +921,7 @@ export const pcListingsRouter = createTRPCRouter({
       .mutation(async ({ ctx, input }) => {
         // Check if user already has a preset with this name
         const existingPreset = await ctx.prisma.userPcPreset.findFirst({
-          where: {
-            userId: ctx.session.user.id,
-            name: input.name,
-          },
+          where: { userId: ctx.session.user.id, name: input.name },
         })
 
         if (existingPreset) {
@@ -980,12 +950,8 @@ export const pcListingsRouter = createTRPCRouter({
             osVersion: input.osVersion,
           },
           include: {
-            cpu: {
-              include: { brand: true },
-            },
-            gpu: {
-              include: { brand: true },
-            },
+            cpu: { include: { brand: true } },
+            gpu: { include: { brand: true } },
           },
         })
       }),
@@ -1073,9 +1039,7 @@ export const pcListingsRouter = createTRPCRouter({
         where: { id: pcListingId },
       })
 
-      if (!pcListing) {
-        ResourceError.pcListing.notFound()
-      }
+      if (!pcListing) return ResourceError.pcListing.notFound()
 
       // Check if user already voted on this PC listing
       const existingVote = await ctx.prisma.pcListingVote.findUnique({
@@ -1111,10 +1075,7 @@ export const pcListingsRouter = createTRPCRouter({
         entityType: 'pcListing',
         entityId: pcListingId,
         triggeredBy: userId,
-        payload: {
-          pcListingId,
-          voteValue: value,
-        },
+        payload: { pcListingId, voteValue: value },
       })
 
       const finalVoteValue = existingVote?.value === value ? null : value
@@ -1156,17 +1117,10 @@ export const pcListingsRouter = createTRPCRouter({
         },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-              role: true,
-            },
+            select: { id: true, name: true, profileImage: true, role: true },
           },
           replies: {
-            where: {
-              deletedAt: null,
-            },
+            where: { deletedAt: null },
             include: {
               user: {
                 select: {
@@ -1233,9 +1187,7 @@ export const pcListingsRouter = createTRPCRouter({
         where: { id: pcListingId },
       })
 
-      if (!pcListing) {
-        ResourceError.pcListing.notFound()
-      }
+      if (!pcListing) return ResourceError.pcListing.notFound()
 
       // If parentId is provided, check if parent comment exists
       if (parentId) {
@@ -1243,26 +1195,14 @@ export const pcListingsRouter = createTRPCRouter({
           where: { id: parentId },
         })
 
-        if (!parentComment) {
-          ResourceError.comment.parentNotFound()
-        }
+        if (!parentComment) return ResourceError.comment.parentNotFound()
       }
 
       const comment = await ctx.prisma.pcListingComment.create({
-        data: {
-          content,
-          userId,
-          pcListingId,
-          parentId,
-        },
+        data: { content, userId, pcListingId, parentId },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-              role: true,
-            },
+            select: { id: true, name: true, profileImage: true, role: true },
           },
         },
       })

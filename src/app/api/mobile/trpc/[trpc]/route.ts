@@ -32,7 +32,8 @@ const handler = async (req: NextRequest) => {
       method: req.method,
       headers: req.headers,
       body: req.body,
-    })
+      duplex: 'half',
+    } as RequestInit & { duplex: 'half' })
 
     const response = await fetchRequestHandler({
       endpoint: '/api/mobile/trpc',

@@ -14,10 +14,12 @@ import {
   GetAllListingsAdminSchema,
 } from '@/schemas/listing'
 import {
+  approveListingsProcedure,
   createTRPCRouter,
+  deleteAnyListingProcedure,
   superAdminProcedure,
-  moderatorProcedure,
   developerProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import {
   invalidateListing,
@@ -194,7 +196,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  approve: developerProcedure
+  approve: approveListingsProcedure
     .input(ApproveListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId } = input
@@ -322,7 +324,7 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  reject: developerProcedure
+  reject: approveListingsProcedure
     .input(RejectListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, notes } = input
@@ -511,7 +513,7 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  delete: superAdminProcedure
+  delete: deleteAnyListingProcedure
     .input(DeleteListingSchema)
     .mutation(async ({ ctx, input }) => {
       const listing = await ctx.prisma.listing.findUnique({
@@ -529,7 +531,7 @@ export const adminRouter = createTRPCRouter({
       return { success: true, message: 'Listing deleted successfully' }
     }),
 
-  bulkApprove: developerProcedure
+  bulkApprove: approveListingsProcedure
     .input(BulkApproveListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingIds } = input
@@ -740,7 +742,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  bulkReject: developerProcedure
+  bulkReject: approveListingsProcedure
     .input(BulkRejectListingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingIds, notes } = input
@@ -878,7 +880,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  getStats: moderatorProcedure.query(async ({ ctx }) => {
+  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [pending, approved, rejected] = await Promise.all([
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),

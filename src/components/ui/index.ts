@@ -38,6 +38,7 @@ export * from './VirtualScroller'
 export * from './VoteButtons'
 
 // Collection of components
+export * from './charts'
 export * from './form'
 export * from './image-selectors'
 export * from './table-buttons'

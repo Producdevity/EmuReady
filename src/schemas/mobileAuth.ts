@@ -1,13 +1,5 @@
 import { z } from 'zod'
 
-export const RefreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
-})
-
-export const VerifyEmailSchema = z.object({
-  code: z.string().length(6, 'Verification code must be 6 digits'),
-  clerkUserId: z.string().min(1, 'User ID is required'),
-})
 export const ValidateTokenSchema = z.object({
   token: z.string().min(1, 'Token is required'),
 })

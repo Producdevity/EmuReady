@@ -7,7 +7,6 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
   Suspense,
   type ChangeEvent,
 } from 'react'
@@ -26,12 +25,6 @@ function GamesContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
-  // Get initial values from URL
-  const getInitialSearch = () => {
-    const urlSearch = searchParams.get('search')
-    return urlSearch && urlSearch !== 'undefined' ? urlSearch : ''
-  }
 
   const getInitialSystemId = () => {
     const urlSystemId = searchParams.get('systemId')
@@ -71,8 +64,11 @@ function GamesContent() {
   const hideGamesWithNoListings = getInitialHideGames()
   const listingFilter = getInitialListingFilter()
 
-  // Only input value needs a local state for debouncing
-  const [inputValue, setInputValue] = useState(() => getInitialSearch())
+  // Get search from URL directly
+  const search = searchParams.get('search') || ''
+
+  // Only use local state for the input while typing
+  const [inputValue, setInputValue] = useState(search)
   const debouncedSearch = useDebouncedValue(inputValue, 500)
   const limit = 12
 
@@ -147,29 +143,17 @@ function GamesContent() {
   const games = gamesQuery.data?.games ?? []
   const pagination = gamesQuery.data?.pagination
 
-  // Track previous search to detect changes
-  const previousSearchRef = useRef(debouncedSearch)
-
   // Update URL when debounced search changes
   useEffect(() => {
-    // Only update if search actually changed and it's different from URL
-    const currentUrlSearch = searchParams.get('search') || ''
-    if (
-      previousSearchRef.current !== debouncedSearch &&
-      debouncedSearch !== currentUrlSearch
-    ) {
-      previousSearchRef.current = debouncedSearch
+    if (debouncedSearch !== search) {
       updateUrlParams({ search: debouncedSearch, page: 1 })
     }
-  }, [debouncedSearch, updateUrlParams, searchParams])
+  }, [debouncedSearch, search, updateUrlParams])
 
-  // Sync input value with URL when URL changes (browser navigation)
+  // Update input when URL changes (browser back/forward)
   useEffect(() => {
-    const urlSearch = searchParams.get('search') || ''
-    if (inputValue !== urlSearch && debouncedSearch !== urlSearch) {
-      setInputValue(urlSearch)
-    }
-  }, [searchParams, inputValue, debouncedSearch])
+    setInputValue(search)
+  }, [search])
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
     const newInputValue = ev.target.value

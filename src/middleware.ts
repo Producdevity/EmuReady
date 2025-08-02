@@ -169,7 +169,7 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
   return response
 }
 
-export default clerkMiddleware((auth, req: NextRequest) => {
+export default clerkMiddleware((_auth, req: NextRequest) => {
   const pathname = req.nextUrl.pathname
 
   // Apply API protection first

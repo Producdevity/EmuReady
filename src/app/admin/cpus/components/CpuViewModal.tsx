@@ -1,6 +1,6 @@
 'use client'
 
-import { Modal } from '@/components/ui'
+import { Modal, InputPlaceholder } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 
 type CpuData = RouterOutput['cpus']['get']['cpus'][number]
@@ -25,43 +25,15 @@ function CpuViewModal(props: Props) {
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              CPU ID
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md font-mono">
-              {cpuData.id}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Brand
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {cpuData.brand.name}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Model Name
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {cpuData.modelName}
-            </div>
-          </div>
+          <InputPlaceholder label="CPU ID" value={cpuData.id} mono />
+          <InputPlaceholder label="Brand" value={cpuData.brand.name} />
+          <InputPlaceholder label="Model Name" value={cpuData.modelName} />
 
           {cpuData._count && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Total PC Listings
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {cpuData._count.pcListings} PC listing
-                {cpuData._count.pcListings !== 1 ? 's' : ''}
-              </div>
-            </div>
+            <InputPlaceholder
+              label="Total PC Listings"
+              value={`${cpuData._count.pcListings} PC listing${cpuData._count.pcListings !== 1 ? 's' : ''}`}
+            />
           )}
         </div>
 

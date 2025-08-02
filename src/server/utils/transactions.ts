@@ -31,12 +31,6 @@ interface BatchResult<T> {
   errorCount: number
 }
 
-interface LockOptions {
-  timeout?: number
-  retryInterval?: number
-  maxWaitTime?: number
-}
-
 /**
  * Execute a transaction with automatic retry on deadlock
  */
@@ -147,20 +141,14 @@ export async function withOptimisticLock<T>(
       where: { id },
     })
 
-    if (!current) {
-      throw AppError.notFound('Record not found')
-    }
+    if (!current) throw AppError.notFound('Record not found')
 
     const currentVersion = current[versionField]
     const result = await updateFn(current, tx)
 
-    const updated = await model.findUnique({
-      where: { id },
-    })
+    const updated = await model.findUnique({ where: { id } })
 
-    if (!updated) {
-      throw AppError.notFound('Record not found after update')
-    }
+    if (!updated) throw AppError.notFound('Record not found after update')
 
     if (updated[versionField] !== currentVersion) {
       throw AppError.conflict('Record was modified by another process')
@@ -213,9 +201,7 @@ export async function batchOperations<T>(
         const result = await operations[i]()
         results.push(result)
       } catch (error) {
-        if (options?.stopOnError) {
-          throw error
-        }
+        if (options?.stopOnError) throw error
         errors.push({ index: i, error })
       }
     }
@@ -228,46 +214,6 @@ export async function batchOperations<T>(
     successCount: results.length,
     errorCount: errors.length,
   }
-}
-
-/**
- * Create a distributed lock for critical sections
- */
-export async function withDistributedLock<T>(
-  prisma: PrismaClient,
-  lockKey: string,
-  fn: () => Promise<T>,
-  options?: LockOptions,
-): Promise<T> {
-  const lockId = `${lockKey}:${Date.now()}:${Math.random()}`
-  const timeout = options?.timeout ?? 30000
-  const retryInterval = options?.retryInterval ?? 100
-  const maxWaitTime = options?.maxWaitTime ?? 60000
-
-  const startTime = Date.now()
-
-  while (Date.now() - startTime < maxWaitTime) {
-    try {
-      // This is a simplified implementation. In production, use Redis or similar
-      await prisma.$executeRaw`
-        INSERT INTO distributed_locks (lock_key, lock_id, expires_at)
-        VALUES (${lockKey}, ${lockId}, ${new Date(Date.now() + timeout)})
-      `
-
-      try {
-        return await fn()
-      } finally {
-        await prisma.$executeRaw`
-          DELETE FROM distributed_locks
-          WHERE lock_key = ${lockKey} AND lock_id = ${lockId}
-        `
-      }
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, retryInterval))
-    }
-  }
-
-  throw AppError.internalError('Failed to acquire lock')
 }
 
 /**

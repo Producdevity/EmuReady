@@ -9,11 +9,12 @@ import {
   UpdateSupportedSystemsSchema,
 } from '@/schemas/emulator'
 import {
-  adminProcedure,
   createTRPCRouter,
+  manageEmulatorsProcedure,
   protectedProcedure,
   publicProcedure,
   superAdminProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import {
   calculateOffset,
@@ -21,10 +22,11 @@ import {
 } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { batchQueries } from '@/server/utils/query-performance'
-import type { Prisma } from '@orm'
+import { hasPermission } from '@/utils/permissions'
+import { type Prisma, Role } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
-  getStats: adminProcedure.query(async ({ ctx }) => {
+  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withSystems] = await batchQueries([
       ctx.prisma.emulator.count(),
       ctx.prisma.emulator.count({ where: { listings: { some: {} } } }),
@@ -138,7 +140,7 @@ export const emulatorsRouter = createTRPCRouter({
         }),
     ),
 
-  create: adminProcedure
+  create: manageEmulatorsProcedure
     .input(CreateEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
       const emulator = await ctx.prisma.emulator.findUnique({
@@ -150,9 +152,29 @@ export const emulatorsRouter = createTRPCRouter({
       return ctx.prisma.emulator.create({ data: input })
     }),
 
-  update: adminProcedure
+  update: manageEmulatorsProcedure
     .input(UpdateEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
+      // For developers, verify they can manage this emulator
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: input.id,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only manage emulators you are verified for',
+          )
+        }
+      }
+
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: input.id },
       })
@@ -179,9 +201,29 @@ export const emulatorsRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: manageEmulatorsProcedure
     .input(DeleteEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
+      // For developers, verify they can manage this emulator
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: input.id,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only manage emulators you are verified for',
+          )
+        }
+      }
+
       // Check if emulator is used in any listings
       const listingsCount = await ctx.prisma.listing.count({
         where: { emulatorId: input.id },

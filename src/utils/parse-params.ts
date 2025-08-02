@@ -1,11 +1,3 @@
-import { z } from 'zod'
-import { validateClientData } from '@/utils/client-validation'
-
-// Validation schemas for URL parameters
-const StringArraySchema = z.array(z.string())
-const NumberArraySchema = z.array(z.number())
-const SingleNumberSchema = z.number()
-
 /**
  * Parses a URL parameter that can be either a JSON array or a single string value
  * @param param - The URL parameter value (string or null)
@@ -16,11 +8,15 @@ function parseArrayParam(param: string | null): string[] {
   try {
     // Try to decode URL-encoded JSON first
     const decoded = decodeURIComponent(param)
-    return validateClientData(JSON.parse(decoded), StringArraySchema, [])
+    const parsed = JSON.parse(decoded)
+    // Return parsed array as-is to support mixed types
+    return Array.isArray(parsed) ? parsed : [parsed]
   } catch {
     try {
       // Fallback to parsing without decoding
-      return validateClientData(JSON.parse(param), StringArraySchema, [])
+      const parsed = JSON.parse(param)
+      // Return parsed array as-is to support mixed types
+      return Array.isArray(parsed) ? parsed : [parsed]
     } catch {
       // If both fail, treat as single string value
       return param ? [param] : []
@@ -40,51 +36,27 @@ function parseNumberArrayParam(param: string | null): number[] {
     const decoded = decodeURIComponent(param)
     const parsed = JSON.parse(decoded)
     if (Array.isArray(parsed)) {
-      const validated = validateClientData(
-        parsed.map(Number),
-        NumberArraySchema,
-        [],
-      )
-      return validated.filter(Boolean)
+      // Convert to numbers and filter out NaN/falsy values
+      return parsed.map((v) => Number(v)).filter((n) => !isNaN(n) && n !== 0)
     } else {
-      const validated = validateClientData(
-        Number(parsed),
-        SingleNumberSchema,
-        0,
-      )
-      return [validated].filter(Boolean)
+      const num = Number(parsed)
+      return !isNaN(num) && num !== 0 ? [num] : []
     }
   } catch {
     try {
       // Fallback to parsing without decoding
       const parsed = JSON.parse(param)
       if (Array.isArray(parsed)) {
-        const validated = validateClientData(
-          parsed.map(Number),
-          NumberArraySchema,
-          [],
-        )
-        return validated.filter(Boolean)
+        // Convert to numbers and filter out NaN/falsy values
+        return parsed.map((v) => Number(v)).filter((n) => !isNaN(n) && n !== 0)
       } else {
-        const validated = validateClientData(
-          Number(parsed),
-          SingleNumberSchema,
-          0,
-        )
-        return [validated].filter(Boolean)
+        const num = Number(parsed)
+        return !isNaN(num) && num !== 0 ? [num] : []
       }
     } catch {
       // If both fail, treat as single number value
-      try {
-        const validated = validateClientData(
-          Number(param),
-          SingleNumberSchema,
-          0,
-        )
-        return [validated].filter(Boolean)
-      } catch {
-        return []
-      }
+      const num = Number(param)
+      return !isNaN(num) && num !== 0 ? [num] : []
     }
   }
 }

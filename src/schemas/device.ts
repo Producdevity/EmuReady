@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SortDirection } from '@/schemas/soc'
 
-export const DeviceSortField = z.enum(['brand', 'modelName', 'soc'])
+export const DeviceSortField = z.enum(['brand', 'modelName', 'soc', 'listings'])
 
 export const GetDevicesSchema = z
   .object({

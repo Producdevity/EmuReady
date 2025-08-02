@@ -50,6 +50,8 @@ export const trustRouter = createTRPCRouter({
           orderBy.action = sortDirection
         } else if (sortField === 'weight') {
           orderBy.weight = sortDirection
+        } else if (sortField === 'user.trustScore') {
+          orderBy.user = { trustScore: sortDirection }
         }
       } else {
         orderBy.createdAt = 'desc'

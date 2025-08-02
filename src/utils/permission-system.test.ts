@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Role } from '@orm'
+import { Role, type PrismaClient } from '@orm'
 import {
   hasPermission,
   hasAnyPermission,
@@ -38,8 +38,8 @@ describe('Permission System', () => {
             },
           }
         : null,
-    prisma: {} as any,
-    headers: {} as any,
+    prisma: {} as PrismaClient,
+    headers: {} as Headers,
   })
 
   describe('hasPermission', () => {

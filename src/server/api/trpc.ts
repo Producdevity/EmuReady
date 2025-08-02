@@ -19,7 +19,7 @@ type User = {
   email: string | null
   name: string | null
   role: Role
-  permissions: string[] // Array of permission keys
+  permissions: string[] // permission keys
   showNsfw: boolean
 }
 
@@ -34,11 +34,7 @@ type CreateContextOptions = {
 const createInnerTRPCContext = (
   opts: CreateContextOptions & { headers?: Headers },
 ) => {
-  return {
-    session: opts.session,
-    prisma,
-    headers: opts.headers,
-  }
+  return { prisma, session: opts.session, headers: opts.headers }
 }
 
 /**
@@ -61,9 +57,7 @@ async function createSessionFromClerkUserId(
       const clerkUser = await fetch(
         `https://api.clerk.com/v1/users/${userId}`,
         {
-          headers: {
-            Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-          },
+          headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
         },
       )
 
@@ -118,20 +112,12 @@ async function createSessionFromClerkUserId(
     }
   }
 
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   // Fetch user permissions based on their role
   const rolePermissions = await prisma.rolePermission.findMany({
     where: { role: user.role },
-    include: {
-      permission: {
-        select: {
-          key: true,
-        },
-      },
-    },
+    include: { permission: { select: { key: true } } },
   })
 
   const permissions = rolePermissions.map((rp) => rp.permission.key)
@@ -153,14 +139,12 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 
   let session: Nullable<Session> = null
 
-  if (userId) {
-    session = await createSessionFromClerkUserId(userId)
-  }
+  if (userId) session = await createSessionFromClerkUserId(userId)
 
   // Initialize notification service
   initializeNotificationService()
 
-  // Initialize Switch game service
+  // Initialize Switch game service (singleton pattern prevents multiple inits)
   initializeSwitchGameService().catch(console.error)
 
   return createInnerTRPCContext({
@@ -184,7 +168,7 @@ export const createAppRouterTRPCContext = async () => {
   // Initialize notification service
   initializeNotificationService()
 
-  // Initialize Switch game service
+  // Initialize Switch game service (singleton pattern prevents multiple inits)
   initializeSwitchGameService().catch(console.error)
 
   return {
@@ -268,9 +252,7 @@ export const protectedProcedure = t.procedure
 export const authorProcedure = t.procedure
   .use(performanceMiddleware)
   .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      AppError.unauthorized()
-    }
+    if (!ctx.session?.user) return AppError.unauthorized()
 
     // For now, we consider User as Author
     if (!hasPermission(ctx.session.user.role, Role.USER)) {
@@ -286,6 +268,7 @@ export const authorProcedure = t.procedure
 
 /**
  * Middleware to check if a user has Moderator role
+ * TODO: use implementation of this procedure
  */
 export const moderatorProcedure = t.procedure
   .use(performanceMiddleware)
@@ -332,18 +315,14 @@ export const developerProcedure = t.procedure
 export const adminProcedure = t.procedure
   .use(performanceMiddleware)
   .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      AppError.unauthorized()
-    }
+    if (!ctx.session?.user) return AppError.unauthorized()
 
     if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
       AppError.insufficientPermissions(Role.ADMIN)
     }
 
     return next({
-      ctx: {
-        session: { ...ctx.session, user: ctx.session.user },
-      },
+      ctx: { session: { ...ctx.session, user: ctx.session.user } },
     })
   })
 
@@ -360,9 +339,7 @@ export const superAdminProcedure = t.procedure
     }
 
     return next({
-      ctx: {
-        session: { ...ctx.session, user: ctx.session.user },
-      },
+      ctx: { session: { ...ctx.session, user: ctx.session.user } },
     })
   })
 
@@ -373,6 +350,8 @@ export const superAdminProcedure = t.procedure
  *
  * @param emulatorId The ID of the emulator to check access for
  * @returns A procedure that can be used to create router endpoints requiring emulator-specific access
+ * @throws {AppError} if the user does not have access to the emulator
+ * TODO: use implementation of this procedure
  */
 export function developerEmulatorProcedure(emulatorId: string) {
   return protectedProcedure.use(async ({ ctx, next }) => {
@@ -388,12 +367,7 @@ export function developerEmulatorProcedure(emulatorId: string) {
       AppError.forbidden(`You don't have developer access to this emulator`)
     }
 
-    return next({
-      ctx: {
-        ...ctx,
-        emulatorId,
-      },
-    })
+    return next({ ctx: { ...ctx, emulatorId } })
   })
 }
 
@@ -412,10 +386,7 @@ export function permissionProcedure(requiredPermission: string) {
     }
 
     return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
+      ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } },
     })
   })
 }
@@ -423,6 +394,7 @@ export function permissionProcedure(requiredPermission: string) {
 /**
  * Procedure that requires multiple permissions (all must be present)
  * @param requiredPermissions Array of permission keys that are all required
+ * TODO: use implementation of this procedure
  */
 export function multiPermissionProcedure(requiredPermissions: string[]) {
   return protectedProcedure.use(({ ctx, next }) => {
@@ -437,10 +409,7 @@ export function multiPermissionProcedure(requiredPermissions: string[]) {
     }
 
     return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
+      ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } },
     })
   })
 }
@@ -448,6 +417,7 @@ export function multiPermissionProcedure(requiredPermissions: string[]) {
 /**
  * Procedure that requires any one of multiple permissions
  * @param requiredPermissions Array of permission keys (any one is sufficient)
+ * TODO: use implementation of this procedure
  */
 export function anyPermissionProcedure(requiredPermissions: string[]) {
   return protectedProcedure.use(({ ctx, next }) => {
@@ -477,8 +447,16 @@ export const createListingProcedure = permissionProcedure(
 export const approveListingsProcedure = permissionProcedure(
   PERMISSIONS.APPROVE_LISTINGS,
 )
+
+// TODO: use implementation of this procedure
 export const manageUsersProcedure = permissionProcedure(
   PERMISSIONS.MANAGE_USERS,
+)
+export const viewUserBansProcedure = permissionProcedure(
+  PERMISSIONS.VIEW_USER_BANS,
+)
+export const manageUserBansProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_USER_BANS,
 )
 export const managePermissionsProcedure = permissionProcedure(
   PERMISSIONS.MANAGE_PERMISSIONS,
@@ -492,6 +470,29 @@ export const viewStatisticsProcedure = permissionProcedure(
 export const manageEmulatorsProcedure = permissionProcedure(
   PERMISSIONS.MANAGE_EMULATORS,
 )
+export const editGamesProcedure = permissionProcedure(PERMISSIONS.EDIT_GAMES)
+export const deleteGamesProcedure = permissionProcedure(
+  PERMISSIONS.DELETE_GAMES,
+)
+
+// TODO: use implementation of this procedure
 export const manageGamesProcedure = permissionProcedure(
   PERMISSIONS.MANAGE_GAMES,
+)
+export const approveGamesProcedure = permissionProcedure(
+  PERMISSIONS.APPROVE_GAMES,
+)
+export const manageDevicesProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_DEVICES,
+)
+
+// TODO: use implementation of this procedure
+export const manageSystemsProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_SYSTEMS,
+)
+export const deleteAnyListingProcedure = permissionProcedure(
+  PERMISSIONS.DELETE_ANY_LISTING,
+)
+export const manageEmulatorVerifiedDevelopersProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_EMULATOR_VERIFIED_DEVELOPERS,
 )

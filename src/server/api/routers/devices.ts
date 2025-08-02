@@ -9,8 +9,8 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  adminProcedure,
-  moderatorProcedure,
+  manageDevicesProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import {
   calculateOffset,
@@ -90,6 +90,7 @@ export const devicesRouter = createTRPCRouter({
       brand: (dir: 'asc' | 'desc') => ({ brand: { name: dir } }),
       modelName: (dir: 'asc' | 'desc') => ({ modelName: dir }),
       soc: (dir: 'asc' | 'desc') => ({ soc: { name: dir } }),
+      listings: (dir: 'asc' | 'desc') => ({ listings: { _count: dir } }),
     }
 
     const orderBy = buildOrderBy<Prisma.DeviceOrderByWithRelationInput>(
@@ -140,7 +141,7 @@ export const devicesRouter = createTRPCRouter({
       return device ?? ResourceError.device.notFound()
     }),
 
-  create: moderatorProcedure
+  create: manageDevicesProcedure
     .input(CreateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -179,7 +180,7 @@ export const devicesRouter = createTRPCRouter({
       })
     }),
 
-  update: moderatorProcedure
+  update: manageDevicesProcedure
     .input(UpdateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -228,7 +229,7 @@ export const devicesRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: manageDevicesProcedure
     .input(DeleteDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const existingDevice = await ctx.prisma.device.findUnique({
@@ -247,7 +248,7 @@ export const devicesRouter = createTRPCRouter({
       return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([
       ctx.prisma.device.count(),
       ctx.prisma.device.count({ where: { listings: { some: {} } } }),

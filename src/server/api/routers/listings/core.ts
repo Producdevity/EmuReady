@@ -20,6 +20,7 @@ import {
 } from '@/schemas/listing'
 import {
   authorProcedure,
+  createListingProcedure,
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
@@ -603,7 +604,7 @@ export const coreRouter = createTRPCRouter({
       }
     }),
 
-  create: protectedProcedure
+  create: createListingProcedure
     .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
       const {

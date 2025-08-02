@@ -28,7 +28,7 @@ import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { TrustAction } from '@orm'
 
 type TrustLog = RouterOutput['trust']['getTrustLogs']['logs'][number]
-type TrustSortField = 'createdAt' | 'action' | 'weight'
+type TrustSortField = 'createdAt' | 'action' | 'weight' | 'user.trustScore'
 
 const TRUST_LOGS_COLUMNS: ColumnDefinition[] = [
   { key: 'user', label: 'User', defaultVisible: true },
@@ -222,9 +222,14 @@ function AdminTrustLogsPage() {
                     />
                   )}
                   {columnVisibility.isColumnVisible('trustScore') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Current Score
-                    </th>
+                    <SortableHeader
+                      label="Current Score"
+                      field="user.trustScore"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
                   )}
                   {columnVisibility.isColumnVisible('metadata') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

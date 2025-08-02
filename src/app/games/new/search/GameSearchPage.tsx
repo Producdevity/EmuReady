@@ -6,6 +6,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/ui'
+import { UI_CONSTANTS } from '@/data/constants'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
@@ -184,6 +185,7 @@ function GameSearchContent() {
 
         // Invalidate the existing games query to update the UI immediately
         await utils.games.checkExistingByTgdbIds.invalidate()
+        await utils.games.get.invalidate()
 
         // Show success message and redirect
         if (isAdmin) {
@@ -191,7 +193,7 @@ function GameSearchContent() {
         } else {
           toast.success(
             'Game submitted for approval! You can now create listings for this game.',
-            { duration: 4000 },
+            { duration: UI_CONSTANTS.TOAST_DURATION },
           )
           router.push(`/games/${newGame.id}`)
         }

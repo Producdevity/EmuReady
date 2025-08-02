@@ -12,6 +12,8 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
+  viewUserBansProcedure,
+  manageUserBansProcedure,
 } from '@/server/api/trpc'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { Role, type Prisma } from '@orm'
@@ -39,7 +41,7 @@ export const userBansRouter = createTRPCRouter({
     },
   ),
 
-  getAll: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  getAll: viewUserBansProcedure
     .input(GetUserBansSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -65,9 +67,7 @@ export const userBansRouter = createTRPCRouter({
         ]
       }
 
-      if (isActive !== undefined) {
-        where.isActive = isActive
-      }
+      if (isActive !== undefined) where.isActive = isActive
 
       // Build orderBy
       const orderBy: Prisma.UserBanOrderByWithRelationInput = {}
@@ -106,7 +106,7 @@ export const userBansRouter = createTRPCRouter({
       }
     }),
 
-  getById: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  getById: viewUserBansProcedure
     .input(GetUserBanByIdSchema)
     .query(async ({ ctx, input }) => {
       const ban = await ctx.prisma.userBan.findUnique({
@@ -126,12 +126,10 @@ export const userBansRouter = createTRPCRouter({
         },
       })
 
-      if (!ban) ResourceError.userBan.notFound()
-
-      return ban
+      return ban ?? ResourceError.userBan.notFound()
     }),
 
-  create: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  create: manageUserBansProcedure
     .input(CreateUserBanSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, reason, notes, expiresAt } = input
@@ -140,13 +138,14 @@ export const userBansRouter = createTRPCRouter({
       // Check if user exists
       const user = await ctx.prisma.user.findUnique({ where: { id: userId } })
 
-      if (!user) throw ResourceError.user.notFound()
+      if (!user) return ResourceError.user.notFound()
 
       // Prevent banning admins or higher roles (except SUPER_ADMIN can ban anyone)
       if (ctx.session.user.role !== Role.SUPER_ADMIN) {
         const userRole = user.role
         const bannedByRole = ctx.session.user.role
 
+        // TODO: this should not be here, global?
         const roleHierarchy = [
           Role.USER,
           Role.AUTHOR,
@@ -179,7 +178,7 @@ export const userBansRouter = createTRPCRouter({
       })
     }),
 
-  update: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  update: manageUserBansProcedure
     .input(UpdateUserBanSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -199,7 +198,7 @@ export const userBansRouter = createTRPCRouter({
       })
     }),
 
-  lift: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  lift: manageUserBansProcedure
     .input(LiftUserBanSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, notes } = input
@@ -247,7 +246,7 @@ export const userBansRouter = createTRPCRouter({
       }
     }),
 
-  delete: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  delete: manageUserBansProcedure
     .input(DeleteUserBanSchema)
     .mutation(async ({ ctx, input }) => {
       const ban = await ctx.prisma.userBan.findUnique({

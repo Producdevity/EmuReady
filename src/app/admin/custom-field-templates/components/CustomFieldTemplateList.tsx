@@ -2,8 +2,9 @@
 
 import { Edit, Trash2, Eye, Copy } from 'lucide-react'
 import { useState } from 'react'
-import { Button, Card } from '@/components/ui'
+import { Button, Card, useConfirmDialog } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { CustomFieldType } from '@orm'
 import type { JsonValue } from '@prisma/client/runtime/library'
 
@@ -34,41 +35,48 @@ function CustomFieldTemplateList(props: Props) {
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(
     new Set(),
   )
+  const confirm = useConfirmDialog()
 
   const deleteTemplateMutation = api.customFieldTemplates.delete.useMutation({
     onSuccess: () => {
+      toast.success('Template deleted successfully')
       props.onDeleteSuccess()
     },
     onError: (error) => {
       console.error('Failed to delete template:', error)
-      alert('Failed to delete template. Please try again.')
+      toast.error('Failed to delete template. Please try again.')
     },
   })
 
   const duplicateTemplateMutation =
     api.customFieldTemplates.duplicate.useMutation({
       onSuccess: () => {
+        toast.success('Template duplicated successfully')
         props.onDeleteSuccess() // Refresh the list
       },
       onError: (error) => {
         console.error('Failed to duplicate template:', error)
-        alert('Failed to duplicate template. Please try again.')
+        toast.error('Failed to duplicate template. Please try again.')
       },
     })
 
-  function handleDelete(templateId: string, templateName: string) {
-    const confirmed = confirm(
-      `Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`,
-    )
+  async function handleDelete(templateId: string, templateName: string) {
+    const confirmed = await confirm({
+      title: 'Delete Template',
+      description: `Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+    })
     if (confirmed) {
       deleteTemplateMutation.mutate({ id: templateId })
     }
   }
 
-  function handleDuplicate(templateId: string, templateName: string) {
-    const confirmed = confirm(
-      `Create a copy of the template "${templateName}"?`,
-    )
+  async function handleDuplicate(templateId: string, templateName: string) {
+    const confirmed = await confirm({
+      title: 'Duplicate Template',
+      description: `Create a copy of the template "${templateName}"?`,
+      confirmText: 'Duplicate',
+    })
     if (confirmed) {
       duplicateTemplateMutation.mutate({ id: templateId })
     }

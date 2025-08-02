@@ -86,6 +86,7 @@ function AddPcListingPage() {
   const recaptchaHook = useRecaptchaForCreateListing()
 
   // Async load functions for autocomplete
+  // TODO: consider abstracting these into a shared hook
   const loadGameItems = useCallback(
     async (query: string): Promise<GameOption[]> => {
       setGameSearchTerm(query)
@@ -97,10 +98,7 @@ function AddPcListingPage() {
           result.games.map((game) => ({
             id: game.id,
             title: game.title,
-            system: game.system || {
-              id: game.systemId,
-              name: 'Unknown',
-            },
+            system: game.system || { id: game.systemId, name: 'Unknown' },
             status: game.status,
           })) ?? []
         )
@@ -290,6 +288,12 @@ function AddPcListingPage() {
           customFieldCount: parsedCustomFields.length,
         })
 
+        // Invalidate queries to refresh data
+        await utils.pcListings.get.invalidate()
+        if (data.gameId) {
+          await utils.games.byId.invalidate({ id: data.gameId })
+        }
+
         toast.success(
           'PC listing created! It will be reviewed before going live.',
         )
@@ -306,6 +310,7 @@ function AddPcListingPage() {
       selectedGame?.system?.id,
       parsedCustomFields.length,
       router,
+      utils,
     ],
   )
 
@@ -336,9 +341,7 @@ function AddPcListingPage() {
   const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
     if (event.key === 'Enter' && event.target instanceof HTMLElement) {
       // Allow Enter key in textareas for line breaks
-      if (event.target.tagName.toLowerCase() === 'textarea') {
-        return
-      }
+      if (event.target.tagName.toLowerCase() === 'textarea') return
       // Prevent form submission for all other elements
       event.preventDefault()
     }

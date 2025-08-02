@@ -121,13 +121,18 @@ export const GetListingsSchema = z
   .optional()
   .describe('Get listings with optional filters and pagination')
 
+export type GetListingsInput = z.infer<typeof GetListingsSchema>
+
 export const GetGamesSchema = z
   .object({
     search: z.string().optional(),
     systemId: z.string().uuid().optional(),
+    page: z.number().min(1).default(1),
     limit: z.number().min(1).max(50).default(20),
   })
   .optional()
+
+export type GetGamesInput = z.infer<typeof GetGamesSchema>
 
 export const GetDevicesSchema = z
   .object({
@@ -325,4 +330,78 @@ export const UpdatePcPresetSchema = z.object({
 
 export const DeletePcPresetSchema = z.object({
   id: z.string().uuid(),
+})
+
+// ===== Mobile Admin Schemas =====
+
+export const MobileAdminGetStatsSchema = z.object({}).optional()
+
+export const MobileAdminGetPendingListingsSchema = z
+  .object({
+    search: z.string().optional(),
+    page: z.number().min(1).default(1),
+    limit: z.number().min(1).max(100).default(20),
+  })
+  .optional()
+
+export const MobileAdminApproveListingSchema = z.object({
+  listingId: z.string().uuid(),
+})
+
+export const MobileAdminRejectListingSchema = z.object({
+  listingId: z.string().uuid(),
+  notes: z.string().min(1).max(500).optional(),
+})
+
+export const MobileAdminGetPendingGamesSchema = z
+  .object({
+    search: z.string().optional(),
+    page: z.number().min(1).default(1),
+    limit: z.number().min(1).max(100).default(20),
+  })
+  .optional()
+
+export const MobileAdminApproveGameSchema = z.object({
+  gameId: z.string().uuid(),
+})
+
+export const MobileAdminRejectGameSchema = z.object({
+  gameId: z.string().uuid(),
+  notes: z.string().min(1).max(500).optional(),
+})
+
+export const MobileAdminGetReportsSchema = z
+  .object({
+    status: z
+      .enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'])
+      .optional(),
+    page: z.number().min(1).default(1),
+    limit: z.number().min(1).max(100).default(20),
+  })
+  .optional()
+
+export const MobileAdminUpdateReportStatusSchema = z.object({
+  reportId: z.string().uuid(),
+  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']),
+  notes: z.string().min(1).max(500).optional(),
+})
+
+export const MobileAdminGetUserBansSchema = z
+  .object({
+    isActive: z.boolean().optional(),
+    page: z.number().min(1).default(1),
+    limit: z.number().min(1).max(100).default(20),
+  })
+  .optional()
+
+export const MobileAdminCreateUserBanSchema = z.object({
+  userId: z.string().uuid(),
+  reason: z.string().min(1).max(500),
+  expiresAt: z.string().datetime().optional(),
+})
+
+export const MobileAdminUpdateUserBanSchema = z.object({
+  banId: z.string().uuid(),
+  isActive: z.boolean().optional(),
+  expiresAt: z.string().datetime().optional(),
 })

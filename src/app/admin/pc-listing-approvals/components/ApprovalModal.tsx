@@ -131,7 +131,7 @@ function ApprovalModal(props: ApprovalModalProps) {
             </h3>
             <div className="flex items-center gap-2">
               <Link
-                href={`/user/${props.listing.author.name}`}
+                href={`/user/${props.listing.author.id}`}
                 target="_blank"
                 className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
               >

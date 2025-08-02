@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SortDirection } from '@/schemas/soc'
 
-export const CpuSortField = z.enum(['brand', 'modelName'])
+export const CpuSortField = z.enum(['brand', 'modelName', 'pcListings'])
 
 export const GetCpusSchema = z
   .object({

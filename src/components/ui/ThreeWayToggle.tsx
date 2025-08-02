@@ -34,6 +34,7 @@ interface Props<T extends string> {
   size?: 'sm' | 'md' | 'lg'
 }
 
+// TODO: I feel like the english language has a better name for this
 export function ThreeWayToggle<T extends string>(props: Props<T>) {
   const size = props.size ?? 'md'
   const selectedIndex = props.options.findIndex(
@@ -48,19 +49,15 @@ export function ThreeWayToggle<T extends string>(props: Props<T>) {
         props.className,
       )}
     >
-      {/* Sliding background indicator */}
+      {/* Sliding background indicator: TODO: LOOKS LIKE SHIEETTTT */}
       <motion.div
         className="absolute inset-y-1 rounded-lg bg-blue-500 shadow-md"
         initial={false}
         animate={{
-          x: `${selectedIndex * 100}%`,
+          x: `${selectedIndex * (100 / props.options.length)}%`,
           width: `${100 / props.options.length}%`,
         }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 30,
-        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       />
 
       {/* Options */}
