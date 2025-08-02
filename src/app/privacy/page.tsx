@@ -19,7 +19,7 @@ function PrivacyPolicyPage() {
         </h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          <strong>Last updated:</strong> January 2, 2025
+          <strong>Last updated:</strong> August 1, 2025
         </p>
 
         <div className="space-y-8">
