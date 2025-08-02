@@ -13,7 +13,7 @@ import {
   EditButton,
   Input,
   LoadingSpinner,
-  SelectInput,
+  Autocomplete,
   SortableHeader,
   VerifiedDeveloperBadge,
   useConfirmDialog,
@@ -224,15 +224,18 @@ function AdminVerifiedDevelopersPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <SelectInput
-              label="Emulator Filter"
-              hideLabel={true}
+            <Autocomplete
               value={emulatorFilter}
-              onChange={(ev) => {
-                setEmulatorFilter(ev.target.value)
+              onChange={(value) => {
+                setEmulatorFilter(value || '')
                 table.setPage(1)
               }}
-              options={emulatorFilterOptions}
+              items={emulatorFilterOptions}
+              optionToValue={(emulator) => emulator.id}
+              optionToLabel={(emulator) => emulator.name}
+              className="w-full md:w-64"
+              placeholder="Filter by emulator"
+              filterKeys={['name']}
             />
             <Button
               variant="outline"
