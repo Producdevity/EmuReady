@@ -11,7 +11,7 @@ export const mobileTrustRouter = createMobileTRPCRouter({
   /**
    * Get current user's trust score and level
    */
-  getMyTrustInfo: mobileProtectedProcedure.query(async ({ ctx }) => {
+  myInfo: mobileProtectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
       select: { trustScore: true },
@@ -32,6 +32,59 @@ export const mobileTrustRouter = createMobileTRPCRouter({
 
   /**
    * Get trust info for a specific user (public)
+   */
+  userInfo: mobilePublicProcedure
+    .input(GetUserTrustInfoSchema)
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { trustScore: true, name: true },
+      })
+
+      if (!user) return ResourceError.user.notFound()
+
+      // Determine trust level based on score
+      const trustLevel = TRUST_LEVELS.slice()
+        .reverse()
+        .find((level) => user.trustScore >= level.minScore)
+
+      return {
+        trustScore: user.trustScore,
+        trustLevel: trustLevel || TRUST_LEVELS[0],
+        userName: user.name,
+      }
+    }),
+
+  /**
+   * Get trust levels configuration
+   */
+  levels: mobilePublicProcedure.query(() => TRUST_LEVELS),
+
+  // Backward compatibility aliases
+  /**
+   * @deprecated Use 'myInfo' instead
+   */
+  getMyTrustInfo: mobileProtectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { trustScore: true },
+    })
+
+    if (!user) return ResourceError.user.notFound()
+
+    // Determine trust level based on score
+    const trustLevel = TRUST_LEVELS.slice()
+      .reverse()
+      .find((level) => user.trustScore >= level.minScore)
+
+    return {
+      trustScore: user.trustScore,
+      trustLevel: trustLevel || TRUST_LEVELS[0],
+    }
+  }),
+
+  /**
+   * @deprecated Use 'userInfo' instead
    */
   getUserTrustInfo: mobilePublicProcedure
     .input(GetUserTrustInfoSchema)
@@ -56,7 +109,7 @@ export const mobileTrustRouter = createMobileTRPCRouter({
     }),
 
   /**
-   * Get trust levels configuration
+   * @deprecated Use 'levels' instead
    */
   getTrustLevels: mobilePublicProcedure.query(() => TRUST_LEVELS),
 })

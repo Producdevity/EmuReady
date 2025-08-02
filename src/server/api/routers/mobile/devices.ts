@@ -1,3 +1,5 @@
+import { ResourceError } from '@/lib/errors'
+import { GetDeviceByIdSchema } from '@/schemas/device'
 import { GetDevicesSchema } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
@@ -9,7 +11,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
    * Get devices with search and filtering
    */
-  getDevices: mobilePublicProcedure
+  get: mobilePublicProcedure
     .input(GetDevicesSchema)
     .query(async ({ ctx, input }) => {
       const { brandId, search, limit } = input ?? {}
@@ -43,7 +45,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
    * Get device brands
    */
-  getDeviceBrands: mobilePublicProcedure.query(
+  brands: mobilePublicProcedure.query(
     async ({ ctx }) =>
       await ctx.prisma.deviceBrand.findMany({
         select: { id: true, name: true },
@@ -54,6 +56,85 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
    * Get SOCs (System on Chips)
    */
+  socs: mobilePublicProcedure.query(
+    async ({ ctx }) =>
+      await ctx.prisma.soC.findMany({
+        select: { id: true, name: true, manufacturer: true },
+        orderBy: [{ manufacturer: 'asc' }, { name: 'asc' }],
+      }),
+  ),
+
+  /**
+   * Get device by ID
+   */
+  byId: mobilePublicProcedure
+    .input(GetDeviceByIdSchema)
+    .query(async ({ ctx, input }) => {
+      const device = await ctx.prisma.device.findUnique({
+        where: { id: input.id },
+        include: {
+          brand: { select: { id: true, name: true } },
+          soc: { select: { id: true, name: true, manufacturer: true } },
+          _count: {
+            select: {
+              listings: { where: { status: ApprovalStatus.APPROVED } },
+            },
+          },
+        },
+      })
+
+      return device || ResourceError.device.notFound()
+    }),
+
+  // Backward compatibility aliases
+  /**
+   * @deprecated Use 'get' instead
+   */
+  getDevices: mobilePublicProcedure
+    .input(GetDevicesSchema)
+    .query(async ({ ctx, input }) => {
+      const { brandId, search, limit } = input ?? {}
+      const baseWhere: Record<string, unknown> = {}
+      if (brandId) baseWhere.brandId = brandId
+
+      // Add search filtering at database level
+      if (search) {
+        baseWhere.OR = [
+          { modelName: { contains: search, mode: 'insensitive' } },
+          { brand: { name: { contains: search, mode: 'insensitive' } } },
+        ]
+      }
+
+      return await ctx.prisma.device.findMany({
+        where: baseWhere,
+        include: {
+          brand: { select: { id: true, name: true } },
+          soc: { select: { id: true, name: true, manufacturer: true } },
+          _count: {
+            select: {
+              listings: { where: { status: ApprovalStatus.APPROVED } },
+            },
+          },
+        },
+        orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+        take: limit,
+      })
+    }),
+
+  /**
+   * @deprecated Use 'brands' instead
+   */
+  getDeviceBrands: mobilePublicProcedure.query(
+    async ({ ctx }) =>
+      await ctx.prisma.deviceBrand.findMany({
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+  ),
+
+  /**
+   * @deprecated Use 'socs' instead
+   */
   getSocs: mobilePublicProcedure.query(
     async ({ ctx }) =>
       await ctx.prisma.soC.findMany({
@@ -61,4 +142,26 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
         orderBy: [{ manufacturer: 'asc' }, { name: 'asc' }],
       }),
   ),
+
+  /**
+   * @deprecated Use 'byId' instead
+   */
+  getById: mobilePublicProcedure
+    .input(GetDeviceByIdSchema)
+    .query(async ({ ctx, input }) => {
+      const device = await ctx.prisma.device.findUnique({
+        where: { id: input.id },
+        include: {
+          brand: { select: { id: true, name: true } },
+          soc: { select: { id: true, name: true, manufacturer: true } },
+          _count: {
+            select: {
+              listings: { where: { status: ApprovalStatus.APPROVED } },
+            },
+          },
+        },
+      })
+
+      return device || ResourceError.device.notFound()
+    }),
 })

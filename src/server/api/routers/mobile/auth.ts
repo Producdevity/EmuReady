@@ -3,10 +3,8 @@ import { AppError, ResourceError } from '@/lib/errors'
 import {
   DeleteMobileAccountSchema,
   MobileSessionSchema,
-  RefreshTokenSchema,
   UpdateMobileProfileSchema,
   ValidateTokenSchema,
-  VerifyEmailSchema,
 } from '@/schemas/mobileAuth'
 import {
   createMobileTRPCRouter,
@@ -44,29 +42,6 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         }
       }
     }),
-
-  /**
-   * Refresh token
-   */
-  refreshToken: mobilePublicProcedure
-    .input(RefreshTokenSchema)
-    .mutation(async () => {
-      return AppError.badRequest(
-        'Token refresh should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
-  /**
-   * Verify email with code
-   */
-  verifyEmail: mobilePublicProcedure
-    .input(VerifyEmailSchema)
-    .mutation(async () => {
-      return AppError.badRequest(
-        'Email verification should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
   /**
    * Get current user session info
    */
@@ -81,6 +56,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
           email: user.email,
           name: user.name,
           role: user.role,
+          permissions: user.permissions,
         },
         isAuthenticated: true,
       }
