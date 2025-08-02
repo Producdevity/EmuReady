@@ -165,7 +165,16 @@ const eslintConfig = [
 
   // Test file rules
   {
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: ['./tsconfig.json', './tests/tsconfig.json'],
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+      },
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@next/next/no-img-element': 'off',
