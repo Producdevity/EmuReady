@@ -20,7 +20,6 @@
     "db:migrate:status": "./scripts/db-cmd.sh prisma migrate status",
     "db:push": "./scripts/db-cmd.sh prisma db push",
     "db:seed": "./scripts/db-cmd.sh npx tsx prisma/seed.ts",
-    "db:seed:permissions": "./scripts/db-cmd.sh npx tsx prisma/seeders/productionPermissionsSeeder.ts",
     "db:studio": "./scripts/db-cmd.sh npx prisma studio",
     "dev": "next dev --turbopack",
     "dev:tracing": "NEXT_TURBOPACK_TRACING=1 next dev --turbopack",
