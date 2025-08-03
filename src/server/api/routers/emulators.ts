@@ -122,6 +122,84 @@ export const emulatorsRouter = createTRPCRouter({
       return emulator ?? ResourceError.emulator.notFound()
     }),
 
+  // Get emulators for admin dashboard - filters for developers
+  getForAdmin: protectedProcedure
+    .input(GetEmulatorsSchema)
+    .query(async ({ ctx, input }) => {
+      const limit = input?.limit ?? 20
+      const offset = input?.offset ?? 0
+
+      const actualOffset = calculateOffset({ page: input?.page, offset }, limit)
+
+      // Build where clause for filtering
+      const searchConditions = buildSearchFilter(input?.search, ['name'])
+      let where: Prisma.EmulatorWhereInput | undefined = searchConditions
+        ? { OR: searchConditions }
+        : undefined
+
+      // If user is a developer (not moderator+), only show their assigned emulators
+      if (
+        ctx.session.user.role === Role.DEVELOPER &&
+        !hasPermission(ctx.session.user.role, Role.MODERATOR)
+      ) {
+        const developerFilter: Prisma.EmulatorWhereInput = {
+          verifiedDevelopers: {
+            some: {
+              userId: ctx.session.user.id,
+            },
+          },
+        }
+
+        where = where ? { AND: [where, developerFilter] } : developerFilter
+      }
+
+      let orderBy: Prisma.EmulatorOrderByWithRelationInput = { name: 'asc' }
+
+      if (input?.sortField && input?.sortDirection) {
+        switch (input.sortField) {
+          case 'name':
+            orderBy = { name: input.sortDirection }
+            break
+          case 'systemCount':
+            orderBy = { systems: { _count: input.sortDirection } }
+            break
+          case 'listingCount':
+            orderBy = { listings: { _count: input.sortDirection } }
+            break
+        }
+      }
+
+      // Always run count query for consistent pagination
+      const total = await ctx.prisma.emulator.count({ where })
+
+      // Get emulators with pagination and include systems data
+      const emulators = await ctx.prisma.emulator.findMany({
+        where,
+        include: {
+          systems: { select: { id: true, name: true, key: true } },
+          verifiedDevelopers: {
+            include: {
+              user: { select: { id: true, name: true, profileImage: true } },
+            },
+          },
+          _count: { select: { listings: true, systems: true } },
+        },
+        orderBy,
+        skip: actualOffset,
+        take: limit,
+      })
+
+      return {
+        emulators,
+        pagination: createPaginationResult(
+          total,
+          { page: input?.page, offset },
+          limit,
+          actualOffset,
+        ),
+      }
+    }),
+
   getVerifiedDeveloper: protectedProcedure
     .input(GetVerifiedDevelopersForEmulatorSchema)
     .query(
@@ -204,24 +282,11 @@ export const emulatorsRouter = createTRPCRouter({
   delete: manageEmulatorsProcedure
     .input(DeleteEmulatorSchema)
     .mutation(async ({ ctx, input }) => {
-      // For developers, verify they can manage this emulator
+      // Developers can NEVER delete emulators
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
-          {
-            where: {
-              userId_emulatorId: {
-                userId: ctx.session.user.id,
-                emulatorId: input.id,
-              },
-            },
-          },
+        return AppError.forbidden(
+          'You do not have permission to delete emulators',
         )
-
-        if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage emulators you are verified for',
-          )
-        }
       }
 
       // Check if emulator is used in any listings
