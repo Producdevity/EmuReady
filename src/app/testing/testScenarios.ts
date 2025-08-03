@@ -71,11 +71,35 @@ export const testScenarios: TestRole[] = [
           { id: 'signin', description: 'Sign in successfully' },
           { id: 'profile', description: 'View and update profile information' },
           { id: 'avatar', description: 'Upload profile image' },
+          { id: 'bio', description: 'Update bio/description' },
           {
             id: 'prefs',
             description: 'Update preferences (NSFW, notifications)',
           },
           { id: 'signout', description: 'Sign out successfully' },
+        ],
+      },
+      {
+        id: 'profile-settings',
+        name: 'Profile Settings & Defaults',
+        scenarios: [
+          { id: 'select-device', description: 'Select default device' },
+          { id: 'select-soc', description: 'Select default SoC' },
+          {
+            id: 'device-filter',
+            description:
+              'Verify listings page shows results for selected device by default',
+          },
+          {
+            id: 'create-pc-preset',
+            description: 'Create new PC preset configuration',
+          },
+          { id: 'edit-pc-preset', description: 'Edit existing PC preset' },
+          { id: 'delete-pc-preset', description: 'Delete PC preset' },
+          {
+            id: 'use-pc-preset',
+            description: 'Use PC preset when creating PC listing',
+          },
         ],
       },
       {

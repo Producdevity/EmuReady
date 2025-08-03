@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuth, useSignIn, useUser } from '@clerk/nextjs'
 import {
   CheckCircle2,
   Circle,
@@ -10,9 +11,12 @@ import {
   User,
   Copy,
   CheckCheck,
+  LogIn,
+  Shield,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { Button, Card, Input } from '@/components/ui'
+import { Button, Card, Input, LoadingSpinner } from '@/components/ui'
+import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { testScenarios, testAccounts } from './testScenarios'
 
@@ -38,6 +42,25 @@ export default function TestingPage() {
   )
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [copiedPassword, setCopiedPassword] = useState(false)
+  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [isAllowed, setIsAllowed] = useState<boolean | null>(null)
+
+  const { signOut, isSignedIn } = useAuth()
+  const { signIn, setActive } = useSignIn()
+  const { user } = useUser()
+
+  // Check if we're on an allowed environment
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname
+      const allowedHosts = [
+        'localhost',
+        'staging.emuready.com',
+        'dev.emuready.com',
+      ]
+      setIsAllowed(allowedHosts.some((host) => hostname.includes(host)))
+    }
+  }, [])
 
   // Load saved data on mount
   useEffect(() => {
@@ -99,6 +122,56 @@ export default function TestingPage() {
     } else {
       setCopiedPassword(true)
       setTimeout(() => setCopiedPassword(false), 2000)
+    }
+  }
+
+  const handleQuickSignIn = async (email: string, password: string) => {
+    if (!signIn) {
+      toast.error('Sign in not available')
+      return
+    }
+
+    setIsSigningIn(true)
+    try {
+      // First sign out if already signed in
+      if (isSignedIn) {
+        await signOut()
+        // Wait a bit for sign out to complete
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+
+      // Sign in with the test account
+      const result = await signIn.create({
+        identifier: email,
+        password: password,
+      })
+
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+        toast.success(`Signed in as ${email}!`)
+        // Stay on the testing page instead of redirecting
+        // The UI will update automatically when signed in
+      } else if (result.status === 'needs_first_factor') {
+        // Handle MFA if enabled (unlikely for test accounts)
+        toast.error('This account requires additional authentication')
+      } else {
+        toast.error('Sign in incomplete')
+      }
+    } catch (error) {
+      console.error('Sign in error:', error)
+      const err = error as {
+        errors?: Array<{ message: string }>
+        message?: string
+      }
+      if (err?.errors?.[0]?.message) {
+        toast.error(err.errors[0].message)
+      } else if (err?.message) {
+        toast.error(err.message)
+      } else {
+        toast.error('Failed to sign in. Please use manual sign in.')
+      }
+    } finally {
+      setIsSigningIn(false)
     }
   }
 
@@ -221,12 +294,57 @@ export default function TestingPage() {
   const currentRole = testScenarios.find((r) => r.id === selectedRole)
   const currentAccount = testAccounts[selectedRole]
 
+  // Show loading while checking environment
+  if (isAllowed === null) {
+    return <LoadingSpinner size="lg" text="Checking environment..." />
+  }
+
+  // Block access on production
+  if (!isAllowed) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-2xl text-center">
+        <Card className="p-8">
+          <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            This testing page is only available on staging and development
+            environments.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">
-          EmuReady Staging Test Checklist
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold">EmuReady Test Checklist</h1>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {typeof window !== 'undefined' && window.location.hostname}
+            </span>
+          </div>
+        </div>
+
+        {/* Current User Info */}
+        {isSignedIn && user && (
+          <Card className="p-4 mb-4 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium">
+                  Currently signed in as:{' '}
+                  <strong>{user.emailAddresses[0]?.emailAddress}</strong>
+                </span>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => signOut()}>
+                Sign Out
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Header Info */}
         <Card className="p-6 mb-6">
@@ -365,17 +483,66 @@ export default function TestingPage() {
               </div>
             </div>
 
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              <strong>Quick Access:</strong>{' '}
-              <a
-                href={`https://staging.emuready.com/sign-in`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                Open Staging Login →
-              </a>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="primary"
+                  onClick={() =>
+                    handleQuickSignIn(
+                      currentAccount.email,
+                      currentAccount.password,
+                    )
+                  }
+                  disabled={isSigningIn}
+                  className="flex-1"
+                >
+                  {isSigningIn ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Quick Sign In as {currentRole.name.split(' - ')[0]}
+                    </>
+                  )}
+                </Button>
+                {isSignedIn && (
+                  <Button
+                    variant="outline"
+                    onClick={() => signOut()}
+                    className="flex-1"
+                  >
+                    Sign Out Current Session
+                  </Button>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                <strong>Manual Sign In:</strong>{' '}
+                <a
+                  href={`/sign-in`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  Open Sign In Page →
+                </a>
+              </p>
             </div>
+          </Card>
+
+          {/* Quick Sign In Info */}
+          <Card className="p-4 mb-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+            <p className="text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <span>
+                <strong>Quick Sign In:</strong> Click the &quot;Quick Sign
+                In&quot; button above to instantly switch to this test account.
+                The page will stay open so you can continue testing. Sign out
+                when done to test another role.
+              </span>
+            </p>
           </Card>
 
           {/* Role Note */}
@@ -502,47 +669,27 @@ export default function TestingPage() {
               Quick Links for {currentRole.name.split(' - ')[0]} Testing
             </h3>
             <div className="flex flex-wrap gap-2">
-              <a
-                href="https://staging.emuready.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="/" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   Home
                 </Button>
               </a>
-              <a
-                href="https://staging.emuready.com/games"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="/games" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   Games
                 </Button>
               </a>
-              <a
-                href="https://staging.emuready.com/listings"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="/listings" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   Handheld Listings
                 </Button>
               </a>
-              <a
-                href="https://staging.emuready.com/pc-listings"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="/pc-listings" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   PC Listings
                 </Button>
               </a>
-              <a
-                href="https://staging.emuready.com/profile"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="/profile" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   Profile
                 </Button>
@@ -550,11 +697,7 @@ export default function TestingPage() {
               {['moderator', 'admin', 'superadmin', 'developer'].includes(
                 selectedRole,
               ) && (
-                <a
-                  href="https://staging.emuready.com/admin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="/admin" target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="sm">
                     Admin Dashboard
                   </Button>
