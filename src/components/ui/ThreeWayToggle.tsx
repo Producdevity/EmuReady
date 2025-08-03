@@ -1,6 +1,5 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import { type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -37,29 +36,15 @@ interface Props<T extends string> {
 // TODO: I feel like the english language has a better name for this
 export function ThreeWayToggle<T extends string>(props: Props<T>) {
   const size = props.size ?? 'md'
-  const selectedIndex = props.options.findIndex(
-    (opt) => opt.value === props.value,
-  )
 
   return (
     <div
       className={cn(
-        'relative flex items-center rounded-xl bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 shadow-sm p-1',
+        'relative inline-grid grid-cols-3 gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm p-1',
         sizeClasses[size],
         props.className,
       )}
     >
-      {/* Sliding background indicator: TODO: LOOKS LIKE SHIEETTTT */}
-      <motion.div
-        className="absolute inset-y-1 rounded-lg bg-blue-500 shadow-md"
-        initial={false}
-        animate={{
-          x: `${selectedIndex * (100 / props.options.length)}%`,
-          width: `${100 / props.options.length}%`,
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      />
-
       {/* Options */}
       {props.options.map((option) => (
         <button
@@ -67,10 +52,10 @@ export function ThreeWayToggle<T extends string>(props: Props<T>) {
           type="button"
           onClick={() => props.onChange(option.value)}
           className={cn(
-            'relative z-10 flex-1 flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors duration-200',
+            'relative flex items-center justify-center gap-1.5 font-medium rounded-lg transition-all duration-200',
             paddingClasses[size],
             props.value === option.value
-              ? 'text-white'
+              ? 'bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200',
           )}
         >
