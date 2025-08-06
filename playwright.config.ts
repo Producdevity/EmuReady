@@ -55,11 +55,11 @@ export default defineConfig({
           origin: 'http://localhost:3000',
           localStorage: [
             {
-              name: 'emuready-cookie-consent',
+              name: '@TestEmuReady_cookie_consent',
               value: 'true',
             },
             {
-              name: 'emuready-cookie-preferences',
+              name: '@TestEmuReady_cookie_preferences',
               value: JSON.stringify({
                 necessary: true,
                 analytics: false,
@@ -67,8 +67,16 @@ export default defineConfig({
               }),
             },
             {
-              name: 'emuready-cookie-consent-date',
+              name: '@TestEmuReady_cookie_consent_date',
               value: new Date().toISOString(),
+            },
+            {
+              name: '@TestEmuReady_analytics_enabled',
+              value: 'false',
+            },
+            {
+              name: '@TestEmuReady_performance_enabled',
+              value: 'false',
             },
           ],
         },

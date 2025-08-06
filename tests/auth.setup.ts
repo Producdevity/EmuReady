@@ -15,30 +15,58 @@ const authFiles = {
 async function authenticateUser(page: Page, email: string, password: string) {
   const auth = new AuthHelpers(page)
 
+  // Set cookie consent before navigation to prevent banner
+  await page.addInitScript(() => {
+    const PREFIX = '@TestEmuReady_'
+    localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
+    localStorage.setItem(
+      `${PREFIX}cookie_preferences`,
+      JSON.stringify({
+        necessary: true,
+        analytics: false,
+        performance: false,
+      }),
+    )
+    localStorage.setItem(
+      `${PREFIX}cookie_consent_date`,
+      new Date().toISOString(),
+    )
+    localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
+    localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
+  })
+
   // Go to the app
   await page.goto('/')
 
-  // Dismiss cookie banner if present
-  const dismissButtons = [
-    page.getByRole('button', { name: /accept all/i }),
-    page.getByRole('button', { name: /necessary only/i }),
-    page.getByRole('button', { name: /close cookie banner/i }),
-    page.getByRole('button', { name: /accept/i }),
-    page.getByRole('button', { name: /ok|got it|i understand/i }),
-  ]
+  // Check if cookie banner is still present (shouldn't be)
+  const cookieBanner = page
+    .locator('.fixed.inset-0.z-\\[70\\]')
+    .filter({ hasText: /Cookie Preferences/i })
+  const isBannerVisible = await cookieBanner
+    .isVisible({ timeout: 1000 })
+    .catch(() => false)
 
-  for (const button of dismissButtons) {
-    const isVisible = await button
-      .isVisible({ timeout: 1000 })
-      .catch(() => false)
-    if (isVisible) {
-      console.log(
-        `Dismissing cookie banner with button: ${await button.textContent()}`,
-      )
-      await button.click()
+  if (isBannerVisible) {
+    console.log('Cookie banner detected, attempting to dismiss...')
+
+    // Try clicking Accept All button first
+    const acceptButton = page.getByRole('button', { name: /accept all/i })
+    if (await acceptButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await acceptButton.click()
       await page.waitForTimeout(1000)
-      break
+    } else {
+      // Try clicking the backdrop to dismiss
+      const backdrop = page.locator('.absolute.inset-0.bg-black\\/30')
+      if (await backdrop.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await backdrop.click({ force: true, position: { x: 10, y: 10 } })
+        await page.waitForTimeout(1000)
+      }
     }
+
+    // Wait for banner to disappear
+    await cookieBanner
+      .waitFor({ state: 'hidden', timeout: 5000 })
+      .catch(() => {})
   }
 
   // Check if already authenticated

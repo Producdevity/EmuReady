@@ -45,10 +45,59 @@ export class HomePage extends BasePage {
 
   // Actions specific to home page
   async goto() {
+    // Set cookie consent before navigation
+    await this.page.addInitScript(() => {
+      const PREFIX = '@TestEmuReady_'
+      localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
+      localStorage.setItem(
+        `${PREFIX}cookie_preferences`,
+        JSON.stringify({
+          necessary: true,
+          analytics: false,
+          performance: false,
+        }),
+      )
+      localStorage.setItem(
+        `${PREFIX}cookie_consent_date`,
+        new Date().toISOString(),
+      )
+      localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
+      localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
+    })
+
     await this.page.goto('/')
     await this.waitForPageLoad()
-    // Extra check for cookie banner on home page
-    await this.cookieBanner.dismissIfPresent()
+
+    // Force dismiss cookie banner if it still appears
+    const maxAttempts = 3
+    let attempts = 0
+
+    while ((await this.cookieBanner.isVisible()) && attempts < maxAttempts) {
+      console.log(
+        `Cookie banner still visible, attempt ${attempts + 1} to dismiss...`,
+      )
+      await this.cookieBanner.dismissIfPresent()
+
+      // If still visible after dismissal attempt, force click backdrop
+      if (await this.cookieBanner.isVisible()) {
+        try {
+          await this.page.locator('.fixed.inset-0.z-\\[70\\]').click({
+            force: true,
+            position: { x: 10, y: 10 },
+            timeout: 2000,
+          })
+        } catch {
+          // Try clicking the accept button directly
+          await this.page
+            .getByRole('button', { name: /accept all/i })
+            .click({ timeout: 2000 })
+            .catch(() => {})
+        }
+      }
+
+      attempts++
+      await this.page.waitForTimeout(300)
+    }
   }
 
   async clickJoinCommunity() {

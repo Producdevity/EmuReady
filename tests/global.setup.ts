@@ -17,11 +17,12 @@ setup('global setup', async () => {
   try {
     await page.goto('http://localhost:3000')
 
-    // Set cookie consent in localStorage
+    // Set cookie consent in localStorage with correct prefix for test environment
     await page.evaluate(() => {
-      localStorage.setItem('emuready-cookie-consent', 'true')
+      const PREFIX = '@TestEmuReady_'
+      localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
       localStorage.setItem(
-        'emuready-cookie-preferences',
+        `${PREFIX}cookie_preferences`,
         JSON.stringify({
           necessary: true,
           analytics: false,
@@ -29,9 +30,11 @@ setup('global setup', async () => {
         }),
       )
       localStorage.setItem(
-        'emuready-cookie-consent-date',
+        `${PREFIX}cookie_consent_date`,
         new Date().toISOString(),
       )
+      localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
+      localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
     })
 
     console.log('✅ Cookie consent configured')

@@ -20,11 +20,14 @@ export const test = base.extend({
 
     // Log slow responses in dev mode
     if (process.env.DEBUG) {
-      page.on('response', (response) => {
-        const timing = response.timing()
-        if (timing && timing.responseEnd - timing.requestStart > 5000) {
+      page.on('response', async (response) => {
+        const timing = response.request().timing()
+        if (
+          timing.responseEnd &&
+          timing.responseEnd - timing.responseStart > 5000
+        ) {
           console.warn(
-            `Slow response: ${response.url()} took ${timing.responseEnd - timing.requestStart}ms`,
+            `Slow response: ${response.url()} took ${Math.round(timing.responseEnd - timing.responseStart)}ms`,
           )
         }
       })
@@ -40,9 +43,10 @@ export const test = base.extend({
   ) => {
     // Add cookie consent to context
     await context.addInitScript(() => {
-      localStorage.setItem('emuready-cookie-consent', 'true')
+      const PREFIX = '@TestEmuReady_'
+      localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
       localStorage.setItem(
-        'emuready-cookie-preferences',
+        `${PREFIX}cookie_preferences`,
         JSON.stringify({
           necessary: true,
           analytics: false,
@@ -50,9 +54,11 @@ export const test = base.extend({
         }),
       )
       localStorage.setItem(
-        'emuready-cookie-consent-date',
+        `${PREFIX}cookie_consent_date`,
         new Date().toISOString(),
       )
+      localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
+      localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
     })
 
     await applyContext(context)

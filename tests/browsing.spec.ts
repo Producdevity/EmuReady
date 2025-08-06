@@ -72,8 +72,6 @@ test.describe('Modern Browsing Tests', () => {
   })
 
   test('should navigate between different content areas', async ({ page }) => {
-    test.setTimeout(45000) // Increase timeout for this test
-
     const homePage = new HomePage(page)
     const gamesPage = new GamesPage(page)
     const listingsPage = new ListingsPage(page)

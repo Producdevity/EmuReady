@@ -45,7 +45,8 @@ export const TEST_CONFIG = {
   // Test data
   testData: {
     defaultWaitForSelector: '[data-testid], [role], a, button',
-    cookieConsentKey: 'emuready-cookie-consent',
+    cookieConsentKey: '@TestEmuReady_cookie_consent',
+    cookiePrefix: '@TestEmuReady_',
   },
 } as const
 

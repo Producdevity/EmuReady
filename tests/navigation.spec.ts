@@ -7,7 +7,6 @@ test.describe('Modern Navigation Tests', () => {
   test('should navigate between main pages using page objects', async ({
     page,
   }) => {
-    test.setTimeout(45000) // Increase timeout for this test
     // Start at home page
     const homePage = new HomePage(page)
     await homePage.goto()
