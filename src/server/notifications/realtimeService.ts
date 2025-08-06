@@ -77,9 +77,7 @@ class RealtimeNotificationService {
     message: { type: string; data: unknown },
   ): boolean {
     const connection = this.connections.get(userId)
-    if (!connection) {
-      return false
-    }
+    if (!connection) return false
 
     try {
       const sseData = `data: ${JSON.stringify(message)}\n\n`
