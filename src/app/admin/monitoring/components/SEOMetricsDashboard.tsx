@@ -20,7 +20,7 @@ export function SEOMetricsDashboard() {
   >([])
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const updateMetrics = () => {
       const newMetrics = seoMetrics.getAggregatedMetrics()
       const newExportData = exportMetrics()
 
@@ -39,9 +39,15 @@ export function SEOMetricsDashboard() {
         // Keep only last 20 points
         return [...prev, newPoint].slice(-20)
       })
-    }, ms.seconds(30))
+    }
 
-    return () => clearInterval(interval)
+    updateMetrics()
+
+    const interval = setInterval(updateMetrics, ms.seconds(30))
+
+    return () => {
+      clearInterval(interval)
+    }
   }, [])
 
   const formatMs = (ms: number) => {
