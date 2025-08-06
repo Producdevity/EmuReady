@@ -43,9 +43,6 @@
     "types": "tsc --noEmit",
     "vercel:build": "prisma migrate deploy && next build"
   },
-  "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@clerk/nextjs": "^6.24.0",
     "@clerk/themes": "^2.2.48",
