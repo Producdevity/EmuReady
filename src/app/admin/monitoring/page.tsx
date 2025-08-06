@@ -21,7 +21,6 @@ export default function MonitoringDashboard() {
       </div>
 
       <div className="space-y-6">
-        {/* Overview Cards */}
         <MonitoringOverview />
 
         {/* Main Dashboard Sections */}
