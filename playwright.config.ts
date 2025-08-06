@@ -55,11 +55,15 @@ export default defineConfig({
           origin: 'http://localhost:3000',
           localStorage: [
             {
-              name: '@TestEmuReady_cookie_consent',
+              name: '@EmuReady_playwright_test',
               value: 'true',
             },
             {
-              name: '@TestEmuReady_cookie_preferences',
+              name: '@EmuReady_cookie_consent',
+              value: 'true',
+            },
+            {
+              name: '@EmuReady_cookie_preferences',
               value: JSON.stringify({
                 necessary: true,
                 analytics: false,
@@ -67,15 +71,15 @@ export default defineConfig({
               }),
             },
             {
-              name: '@TestEmuReady_cookie_consent_date',
+              name: '@EmuReady_cookie_consent_date',
               value: new Date().toISOString(),
             },
             {
-              name: '@TestEmuReady_analytics_enabled',
+              name: '@EmuReady_analytics_enabled',
               value: 'false',
             },
             {
-              name: '@TestEmuReady_performance_enabled',
+              name: '@EmuReady_performance_enabled',
               value: 'false',
             },
           ],
@@ -164,7 +168,7 @@ export default defineConfig({
   webServer: {
     command: process.env.USE_DEV_SERVER
       ? 'npm run dev'
-      : 'NODE_ENV=production npm run start',
+      : 'NODE_ENV=production PLAYWRIGHT_TEST=true npm run start',
     port: 3000,
     reuseExistingServer: !process.env.CI,
     timeout: process.env.USE_DEV_SERVER ? 120 * 1000 : 60 * 1000, // Increased production timeout
