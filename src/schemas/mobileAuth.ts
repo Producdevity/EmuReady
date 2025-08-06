@@ -17,7 +17,7 @@ export const DeleteMobileAccountSchema = z.object({
 })
 
 export const MobileSessionSchema = z.object({
-  // TODO: figure out if we need this
+  // Optional device info for session tracking and analytics
   deviceInfo: z
     .object({
       deviceId: z.string().optional(),
