@@ -1,5 +1,3 @@
-import { type NextRequest } from 'next/server'
-
 interface SSEConnection {
   userId: string
   controller: ReadableStreamDefaultController
@@ -184,15 +182,4 @@ export function createSSEResponse(
       'Access-Control-Allow-Credentials': 'true',
     },
   })
-}
-
-// Helper function to extract user ID from request
-export function getUserIdFromRequest(request: NextRequest): string | null {
-  // This would typically extract from JWT token or session
-  // For now, we'll use a header or query parameter
-  const userId =
-    request.headers.get('x-user-id') ||
-    request.nextUrl.searchParams.get('userId')
-
-  return userId
 }
