@@ -90,14 +90,18 @@ function ListingsPage() {
     : false
 
   // Get user's preferred device IDs if defaultToUserDevices is enabled
-  const userDeviceIds = userPreferencesQuery.data?.defaultToUserDevices
-    ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
-    : []
+  const userDeviceIds =
+    userPreferencesQuery.data?.defaultToUserDevices &&
+    userPreferencesQuery.data.devicePreferences
+      ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
+      : []
 
   // Get user's preferred SoC IDs if defaultToUserSocs is enabled
-  const userSocIds = userPreferencesQuery.data?.defaultToUserSocs
-    ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
-    : []
+  const userSocIds =
+    userPreferencesQuery.data?.defaultToUserSocs &&
+    userPreferencesQuery.data.socPreferences
+      ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
+      : []
 
   // Apply user device filter if enabled and no manual device filter is set and not explicitly disabled
   const shouldUseUserDeviceFilter =

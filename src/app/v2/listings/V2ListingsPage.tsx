@@ -52,7 +52,8 @@ function V2ListingsPage() {
   // Get user's preferred device IDs if defaultToUserDevices is enabled
   const userDeviceIds = useMemo(
     () =>
-      userPreferencesQuery.data?.defaultToUserDevices
+      userPreferencesQuery.data?.defaultToUserDevices &&
+      userPreferencesQuery.data.devicePreferences
         ? userPreferencesQuery.data.devicePreferences.map(
             (pref) => pref.deviceId,
           )
@@ -63,7 +64,8 @@ function V2ListingsPage() {
   // Get user's preferred SoC IDs if defaultToUserSocs is enabled
   const userSocIds = useMemo(
     () =>
-      userPreferencesQuery.data?.defaultToUserSocs
+      userPreferencesQuery.data?.defaultToUserSocs &&
+      userPreferencesQuery.data.socPreferences
         ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
         : [],
     [userPreferencesQuery.data],

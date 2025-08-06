@@ -191,10 +191,9 @@ function DeviceAndSocPreferences(props: Props) {
   const { data: preferences } = props.preferencesQuery
 
   // Map the data structure to what the selectors expect
-  const selectedDevices = preferences.devicePreferences.map(
-    (pref) => pref.device,
-  )
-  const selectedSocs = preferences.socPreferences.map((pref) => pref.soc)
+  const selectedDevices =
+    preferences.devicePreferences?.map((pref) => pref.device) || []
+  const selectedSocs = preferences.socPreferences?.map((pref) => pref.soc) || []
 
   return (
     <div className="space-y-8">

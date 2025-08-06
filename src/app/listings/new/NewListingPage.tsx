@@ -92,8 +92,8 @@ function AddListingPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
   const customFieldDefinitionsQuery =
     api.customFieldDefinitions.getByEmulator.useQuery(
-      { emulatorId: selectedEmulatorId! },
-      { enabled: !!selectedEmulatorId },
+      { emulatorId: selectedEmulatorId },
+      { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
     )
 
   const currentUserQuery = api.users.me.useQuery()

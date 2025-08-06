@@ -194,8 +194,8 @@ function AddPcListingPage() {
   const selectedEmulatorId = form.watch('emulatorId')
   const customFieldDefinitionsQuery =
     api.customFieldDefinitions.getByEmulator.useQuery(
-      { emulatorId: selectedEmulatorId! },
-      { enabled: !!selectedEmulatorId },
+      { emulatorId: selectedEmulatorId },
+      { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
     )
 
   // Update custom field definitions when emulator changes
