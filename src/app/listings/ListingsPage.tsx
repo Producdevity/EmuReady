@@ -556,8 +556,6 @@ function ListingsPage() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Link
-                                  // TODO: A/B test what users expect when they click a game name
-                                  // href={`/games/${listing.game.id}`}
                                   href={`/listings/${listing.id}`}
                                   className="hover:text-blue-600 dark:hover:text-blue-400"
                                 >
