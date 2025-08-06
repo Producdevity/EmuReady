@@ -51,9 +51,7 @@ async function getGamesQuery(
 
   // Filter NSFW content based on user preferences (default to hiding NSFW if no user session)
   const showNsfw = ctx.session?.user?.showNsfw ?? false
-  if (!showNsfw) {
-    whereClause.isErotic = false
-  }
+  if (!showNsfw) whereClause.isErotic = false
 
   const [games, total] = await Promise.all([
     ctx.prisma.game.findMany({
@@ -146,10 +144,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
       return await ctx.prisma.game.findMany({
         where: {
           status: ApprovalStatus.APPROVED,
-          title: {
-            contains: input.query,
-            mode: 'insensitive',
-          },
+          title: { contains: input.query, mode: 'insensitive' },
         },
         select: {
           id: true,
@@ -268,11 +263,4 @@ export const mobileGamesRouter = createMobileTRPCRouter({
         return AppError.internalError('Failed to get Switch games statistics')
       }
     }),
-
-  /**
-   * @deprecated Use 'get' instead. This endpoint is kept for backward compatibility.
-   */
-  getGames: mobilePublicProcedure
-    .input(GetGamesSchema)
-    .query(async ({ ctx, input }) => getGamesQuery(ctx, input)),
 })
