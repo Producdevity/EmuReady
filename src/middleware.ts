@@ -3,12 +3,13 @@ import { NextResponse } from 'next/server'
 import { ms } from '@/utils/time'
 import type { NextRequest } from 'next/server'
 
-// TODO: Simple in-memory rate limiting (in production, use Redis or similar)
+// In-memory rate limiting with automatic cleanup
+// TODO: For distributed deployments, consider Redis or database-backed rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
 // Rate limiting configuration
 const RATE_LIMIT_REQUESTS = 100 // requests per window
-const RATE_LIMIT_WINDOW = ms.minutes(3) // 3-minute window
+const RATE_LIMIT_WINDOW = ms.minutes(3)
 
 // Allowed origins for API access
 const ALLOWED_ORIGINS = [
