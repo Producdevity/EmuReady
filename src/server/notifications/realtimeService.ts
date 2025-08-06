@@ -159,15 +159,29 @@ class RealtimeNotificationService {
 // Singleton instance
 export const realtimeNotificationService = new RealtimeNotificationService()
 
-// Helper function to create SSE response
-export function createSSEResponse(stream: ReadableStream): Response {
+// Helper function to create SSE response with proper CORS
+export function createSSEResponse(
+  stream: ReadableStream,
+  origin?: string,
+): Response {
+  // Use same CORS logic as other endpoints
+  const allowedOrigins =
+    process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) || []
+  const allowOrigin =
+    allowedOrigins.length === 0
+      ? '*' // Backward compatibility
+      : origin && allowedOrigins.includes(origin)
+        ? origin
+        : allowedOrigins[0] || '*'
+
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowOrigin,
       'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Credentials': 'true',
     },
   })
 }
