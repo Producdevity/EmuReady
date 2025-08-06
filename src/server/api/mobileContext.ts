@@ -100,13 +100,7 @@ export const createMobileTRPCContext = async (
         // Fetch user permissions based on their role
         const rolePermissions = await prisma.rolePermission.findMany({
           where: { role: user.role },
-          include: {
-            permission: {
-              select: {
-                key: true,
-              },
-            },
-          },
+          include: { permission: { select: { key: true } } },
         })
 
         const permissions = rolePermissions.map((rp) => rp.permission.key)
@@ -195,13 +189,7 @@ export const createMobileTRPCFetchContext = async (
         // Fetch user permissions based on their role
         const rolePermissions = await prisma.rolePermission.findMany({
           where: { role: user.role },
-          include: {
-            permission: {
-              select: {
-                key: true,
-              },
-            },
-          },
+          include: { permission: { select: { key: true } } },
         })
 
         const permissions = rolePermissions.map((rp) => rp.permission.key)

@@ -10,7 +10,7 @@ import Script from 'next/script'
 import { type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
 import CookieConsent from '@/components/CookieConsent'
-import { Footer } from '@/components/footer/Footer'
+import Footer from '@/components/footer/Footer'
 import Navbar from '@/components/navbar/Navbar'
 import PageViewTracker from '@/components/PageViewTracker'
 import Providers from '@/components/Providers'
@@ -33,6 +33,8 @@ export const metadata: Metadata = defaultMetadata
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID as string
 const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
+const DISABLE_COOKIE_BANNER =
+  process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true'
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
@@ -68,7 +70,7 @@ export default function RootLayout(props: PropsWithChildren) {
         >
           <Providers>
             <Toaster richColors closeButton />
-            {IS_PRODUCTION && <CookieConsent />}
+            {IS_PRODUCTION && !DISABLE_COOKIE_BANNER && <CookieConsent />}
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Navbar />
               <Main>{props.children}</Main>

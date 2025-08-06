@@ -13,7 +13,7 @@ const githubSupportUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?templ
 const githubContributingUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/CONTRIBUTING.md`
 const githubRequestEmulatorUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=emulator_request.md`
 
-export function Footer() {
+function Footer() {
   return (
     <footer className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -246,3 +246,5 @@ export function Footer() {
     </footer>
   )
 }
+
+export default Footer
