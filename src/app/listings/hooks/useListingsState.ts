@@ -206,7 +206,8 @@ function useListingsState() {
   return {
     // Current filter values (with search from local state)
     ...filters,
-    search: searchInput,
+    search: filters.search, // Keep the URL value as search
+    searchInput, // Expose the local input state separately
 
     // Individual setter functions
     setSystemIds,

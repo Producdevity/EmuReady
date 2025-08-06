@@ -239,7 +239,7 @@ function ListingsPage() {
             socIds={listingsState.socIds}
             emulatorIds={listingsState.emulatorIds}
             performanceIds={listingsState.performanceIds}
-            searchTerm={listingsState.search}
+            searchTerm={listingsState.searchInput}
             systems={systemsQuery.data ?? []}
             devices={devicesQuery.data?.devices ?? []}
             socs={socsQuery.data?.socs ?? []}
@@ -302,7 +302,7 @@ function ListingsPage() {
                     socIds={listingsState.socIds}
                     emulatorIds={listingsState.emulatorIds}
                     performanceIds={listingsState.performanceIds}
-                    searchTerm={listingsState.search}
+                    searchTerm={listingsState.searchInput}
                     systems={systemsQuery.data ?? []}
                     devices={devicesQuery.data?.devices ?? []}
                     socs={socsQuery.data?.socs ?? []}
