@@ -56,6 +56,11 @@ jobs:
           node-version: 22.16.0
           cache: npm
 
+      - name: Install system dependencies for Sharp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvips-dev
+
       - name: Install dependencies
         run: npm ci
 
