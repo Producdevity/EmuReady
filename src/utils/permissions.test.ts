@@ -47,7 +47,13 @@ describe('canEditComment', () => {
     expect(canEditComment(Role.AUTHOR, commentUserId, currentUserId)).toBe(
       false,
     )
-    expect(canEditComment(Role.ADMIN, commentUserId, currentUserId)).toBe(false)
+  })
+
+  it('should allow moderators and higher to edit others comments', () => {
+    expect(canEditComment(Role.MODERATOR, commentUserId, currentUserId)).toBe(
+      true,
+    )
+    expect(canEditComment(Role.ADMIN, commentUserId, currentUserId)).toBe(true)
   })
 
   it('should not allow editing without a role', () => {
