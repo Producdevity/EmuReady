@@ -1,3 +1,5 @@
+import { getAllowedOrigins } from '@/lib/cors'
+
 interface SSEConnection {
   userId: string
   controller: ReadableStreamDefaultController
@@ -155,20 +157,26 @@ class RealtimeNotificationService {
 // Singleton instance
 export const realtimeNotificationService = new RealtimeNotificationService()
 
-// Helper function to create SSE response with proper CORS
+/**
+ * Helper function to create SSE response with proper CORS
+ * @param stream
+ * @param origin
+ */
 export function createSSEResponse(
   stream: ReadableStream,
   origin?: string,
 ): Response {
-  // Use same CORS logic as other endpoints
-  const allowedOrigins =
-    process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) || []
-  const allowOrigin =
-    allowedOrigins.length === 0
-      ? '*' // Backward compatibility
-      : origin && allowedOrigins.includes(origin)
-        ? origin
-        : allowedOrigins[0] || '*'
+  // Use centralized CORS configuration
+  const allowedOrigins = getAllowedOrigins()
+
+  // Allow mobile apps (no origin) or explicitly allowed origins
+  const allowOrigin = !origin
+    ? '*' // No origin header (mobile apps)
+    : allowedOrigins.length === 0
+      ? '*' // No origins configured (dev mode)
+      : allowedOrigins.includes(origin)
+        ? origin // Origin is allowed
+        : allowedOrigins[0] || '*' // Fallback to first allowed origin
 
   return new Response(stream, {
     headers: {
