@@ -22,7 +22,17 @@ export function getAllowedOrigins(): string[] {
     return []
   }
 
-  return envOrigins.split(',').map((origin) => origin.trim())
+  const origins = envOrigins.split(',').map((origin) => origin.trim())
+
+  // Always include mobile app origins if not already present
+  const mobileOrigins = ['capacitor://localhost', 'ionic://localhost']
+  for (const mobileOrigin of mobileOrigins) {
+    if (!origins.includes(mobileOrigin)) {
+      origins.push(mobileOrigin)
+    }
+  }
+
+  return origins
 }
 
 /**

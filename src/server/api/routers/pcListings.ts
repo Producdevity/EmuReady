@@ -505,20 +505,20 @@ export const pcListingsRouter = createTRPCRouter({
         throw AppError.forbidden('You can only edit your own PC listings')
       }
 
-      // REJECTED PC listings cannot be edited
-      if (pcListing.status === ApprovalStatus.REJECTED) {
-        throw AppError.badRequest(
-          'Rejected PC listings cannot be edited. Please create a new listing.',
-        )
-      }
+      // Check edit permissions based on PC listing status
+      switch (pcListing.status) {
+        case ApprovalStatus.REJECTED:
+          throw AppError.badRequest(
+            'Rejected PC listings cannot be edited. Please create a new listing.',
+          )
 
-      // PENDING PC listings can always be edited
-      if (pcListing.status === ApprovalStatus.PENDING) {
-        // No time restrictions for pending listings
-        // TODO: this shit needs to be cleaned up before anyone else sees it
-      } else if (pcListing.status === ApprovalStatus.APPROVED) {
-        // APPROVED PC listings have a time limit (except for moderators)
-        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        case ApprovalStatus.APPROVED:
+          // Moderators can always edit approved listings
+          if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+            break
+          }
+
+          // Regular users have a time limit for editing approved listings
           if (!pcListing.processedAt) {
             throw AppError.badRequest('PC listing approval time not found')
           }
@@ -533,7 +533,14 @@ export const pcListingsRouter = createTRPCRouter({
               `You can only edit PC listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
             )
           }
-        }
+          break
+
+        case ApprovalStatus.PENDING:
+          // Pending listings can always be edited by their author
+          break
+
+        default:
+          throw AppError.badRequest('Invalid PC listing status')
       }
 
       // Validate referenced entities exist
