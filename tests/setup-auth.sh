@@ -12,7 +12,9 @@ if [ ! -f ".env.test.local" ]; then
 fi
 
 # Load environment variables
-export $(cat .env.test.local | grep -v '^#' | xargs)
+set -a
+source .env.test.local
+set +a
 
 # Check if required variables are set
 if [ -z "$TEST_USER_EMAIL" ] || [ -z "$TEST_USER_PASSWORD" ]; then
@@ -38,7 +40,9 @@ if [ -f "tests/.auth/user.json" ]; then
     echo "✅ Authentication setup complete!"
     echo ""
     echo "📁 Generated auth files:"
-    ls -la tests/.auth/*.json 2>/dev/null | grep -v ".gitkeep"
+    for file in tests/.auth/*.json; do
+        [ -f "$file" ] && [ "${file##*/}" != ".gitkeep" ] && ls -la "$file"
+    done
     echo ""
     echo "🎯 You can now run authenticated tests:"
     echo "  npx playwright test --project=chromium-auth-user"

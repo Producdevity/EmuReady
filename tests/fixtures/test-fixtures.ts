@@ -36,31 +36,10 @@ export const test = base.extend({
     await applyPage(page)
   },
 
-  // Auto-dismiss cookie consent for all tests
   context: async (
     { context },
     applyContext: (ctx: BrowserContext) => Promise<void>,
   ) => {
-    // Add cookie consent to context
-    await context.addInitScript(() => {
-      const PREFIX = '@TestEmuReady_'
-      localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
-      localStorage.setItem(
-        `${PREFIX}cookie_preferences`,
-        JSON.stringify({
-          necessary: true,
-          analytics: false,
-          performance: false,
-        }),
-      )
-      localStorage.setItem(
-        `${PREFIX}cookie_consent_date`,
-        new Date().toISOString(),
-      )
-      localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
-      localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
-    })
-
     await applyContext(context)
   },
 })
