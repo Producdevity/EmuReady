@@ -74,7 +74,7 @@ function PcListingsPage() {
 
   const userQuery = api.users.me.useQuery()
 
-  const userRole = userQuery?.data?.role as Role | undefined
+  const userRole = userQuery?.data?.role
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
   const isModerator = userRole
     ? roleIncludesRole(userRole, Role.MODERATOR)

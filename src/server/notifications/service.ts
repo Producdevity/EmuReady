@@ -324,7 +324,7 @@ export class NotificationService {
           where: {
             userId_listingId: {
               userId,
-              listingId: eventData.payload.listingId as string,
+              listingId: eventData.payload.listingId,
             },
           },
         })
@@ -563,7 +563,7 @@ export class NotificationService {
         // Get listing author (but not the person who triggered the event)
         if (eventData.payload?.listingId && eventData.triggeredBy) {
           const listing = await prisma.listing.findUnique({
-            where: { id: eventData.payload.listingId as string },
+            where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
           if (listing && listing.authorId !== eventData.triggeredBy) {
@@ -598,7 +598,7 @@ export class NotificationService {
       case 'user.mentioned':
         // Get mentioned user
         if (eventData.payload?.userId) {
-          userIds.push(eventData.payload.userId as string)
+          userIds.push(eventData.payload.userId)
         }
         break
 
@@ -607,7 +607,7 @@ export class NotificationService {
         // Get listing author
         if (eventData.payload?.listingId) {
           const listing = await prisma.listing.findUnique({
-            where: { id: eventData.payload.listingId as string },
+            where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
           if (listing) {
@@ -619,7 +619,7 @@ export class NotificationService {
       case 'user.role_changed':
         // Get the user whose role was changed
         if (eventData.payload?.userId) {
-          userIds.push(eventData.payload.userId as string)
+          userIds.push(eventData.payload.userId)
         }
         break
 
@@ -785,7 +785,7 @@ export class NotificationService {
       // Enrich based on notification type and available data
       if (payload.listingId) {
         const listing = await prisma.listing.findUnique({
-          where: { id: payload.listingId as string },
+          where: { id: payload.listingId },
           include: {
             game: { select: { title: true, id: true } },
             device: {
@@ -819,7 +819,7 @@ export class NotificationService {
           notificationType === NotificationType.USER_MENTION)
       ) {
         const comment = await prisma.comment.findUnique({
-          where: { id: payload.commentId as string },
+          where: { id: payload.commentId },
           select: {
             id: true,
             content: true,
@@ -853,7 +853,7 @@ export class NotificationService {
       // Handle game-specific data
       if (payload.gameId) {
         const game = await prisma.game.findUnique({
-          where: { id: payload.gameId as string },
+          where: { id: payload.gameId },
           select: { title: true, id: true },
         })
         if (game) {
@@ -868,7 +868,7 @@ export class NotificationService {
         notificationType === NotificationType.NEW_DEVICE_LISTING
       ) {
         const device = await prisma.device.findUnique({
-          where: { id: payload.deviceId as string },
+          where: { id: payload.deviceId },
           include: {
             brand: { select: { name: true } },
           },
@@ -885,7 +885,7 @@ export class NotificationService {
         notificationType === NotificationType.NEW_SOC_LISTING
       ) {
         const soc = await prisma.soC.findUnique({
-          where: { id: payload.socId as string },
+          where: { id: payload.socId },
           select: { id: true, name: true, manufacturer: true },
         })
         if (soc) {
@@ -897,7 +897,7 @@ export class NotificationService {
       // Handle emulator-specific data
       if (payload.emulatorId) {
         const emulator = await prisma.emulator.findUnique({
-          where: { id: payload.emulatorId as string },
+          where: { id: payload.emulatorId },
           select: { id: true, name: true },
         })
         if (emulator) {
@@ -948,7 +948,7 @@ export class NotificationService {
       // Copy over any additional metadata
       Object.keys(payload).forEach((key) => {
         if (!context[key]) {
-          context[key] = payload[key] as unknown
+          context[key] = payload[key]
         }
       })
     } catch (error) {

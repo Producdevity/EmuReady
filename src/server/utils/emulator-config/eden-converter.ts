@@ -43,14 +43,16 @@ import type {
   OptimizeSpirvOutput,
   MaxAnisotropy,
 } from './types/eden'
+import type { Prisma } from '@orm'
 
 export interface CustomFieldValue {
   customFieldDefinition: {
     name: string
     label: string
     type: string
+    options?: Prisma.JsonValue | null
   }
-  value: unknown
+  value: Prisma.JsonValue
 }
 
 export interface EdenConfigInput {

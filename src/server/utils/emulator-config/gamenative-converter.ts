@@ -23,14 +23,16 @@ import type {
   Box64Version,
   Box86_64Preset,
 } from './types/gamenative'
+import type { Prisma } from '@orm'
 
 export interface CustomFieldValue {
   customFieldDefinition: {
     name: string
     label: string
     type: string
+    options?: Prisma.JsonValue | null
   }
-  value: unknown
+  value: Prisma.JsonValue
 }
 
 export interface GameNativeConfigInput {
@@ -60,9 +62,7 @@ const FIELD_MAPPINGS: Record<
       const resStr = String(value)
       // Extract resolution from formats like "1920x1080 (16:9)" or just "1920x1080"
       const match = resStr.match(/(\d+x\d+)/)
-      return match
-        ? (match[1] as ScreenSize)
-        : GameNativeDefaults.getDefaultScreenSize()
+      return match ? match[1] : GameNativeDefaults.getDefaultScreenSize()
     },
   },
 

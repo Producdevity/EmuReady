@@ -83,8 +83,8 @@ const eslintConfig = [
       ],
       'react-hooks/exhaustive-deps': 'error',
       'react-hooks/rules-of-hooks': 'error',
-      '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -99,15 +99,11 @@ const eslintConfig = [
   // Import plugin
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      import: importPlugin,
-    },
+    plugins: { import: importPlugin },
     settings: {
       'import/resolver': {
         typescript: { project: './tsconfig.json' },
-        node: {
-          extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        },
+        node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
       },
       'import/parsers': {
         '@typescript-eslint/parser': ['.ts', '.tsx'],

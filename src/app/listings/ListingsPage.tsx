@@ -83,7 +83,7 @@ function ListingsPage() {
     gcTime: ms.minutes(5), // Keep in cache for 5 minutes
   })
 
-  const userRole = userQuery?.data?.role as Role | undefined
+  const userRole = userQuery?.data?.role
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
   const isModerator = userRole
     ? roleIncludesRole(userRole, Role.MODERATOR)

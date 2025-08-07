@@ -14,6 +14,7 @@ import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
 } from './gamenative-converter'
+import type { Prisma } from '@orm'
 
 export interface EmulatorConfigResult {
   type: EmulatorConfigType
@@ -109,8 +110,9 @@ export function generateEmulatorConfig(input: {
       name: string
       label: string
       type: string
+      options?: Prisma.JsonValue | null
     }
-    value: unknown
+    value: Prisma.JsonValue
   }>
 }): EmulatorConfigResult {
   const configType = detectEmulatorConfigType(input.emulatorName)

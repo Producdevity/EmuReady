@@ -229,7 +229,7 @@ export async function getGameImageUrls(
       .filter((image) => image.filename && imagesResponse.data.base_url)
       .map((image) => ({
         ...image,
-        fullUrl: `${imagesResponse.data.base_url!.original}${image.filename}`,
+        fullUrl: `${imagesResponse.data.base_url.original}${image.filename}`,
       }))
       .filter((image) => isValidImageUrl(image.fullUrl))
 
@@ -378,7 +378,7 @@ function createOtherImages(
         .filter((image) => image.filename)
         .map((image) => ({
           ...image,
-          url: `${imagesResponse.data.base_url!.original}${image.filename}`,
+          url: `${imagesResponse.data.base_url.original}${image.filename}`,
         }))
         .filter((image) => isValidImageUrl(image.url))
         .map((image) => ({

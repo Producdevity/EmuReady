@@ -10,6 +10,7 @@ import {
   ConfigTypeUtils,
   type EmulatorConfigType,
 } from '@/server/utils/emulator-config/constants'
+import { getConfigDisplayName } from '@/server/utils/emulator-config/emulator-detector'
 
 interface Props {
   isOpen: boolean
@@ -80,7 +81,7 @@ function ViewConfigModal(props: Props) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex-1">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Emulator Configuration
+              {getConfigDisplayName(props.configData.type)}
             </h2>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               <span className="font-medium">

@@ -209,7 +209,7 @@ export const GameNativeDefaults = {
 
   // Graphics driver detection with smart fallback for legacy TEXT values
   detectGraphicsDriver: (value: string): GraphicsDriver => {
-    if (!value || typeof value !== 'string') {
+    if (!value) {
       return DEFAULT_GRAPHICS_DRIVER
     }
 
@@ -225,9 +225,7 @@ export const GameNativeDefaults = {
 
     // Try exact match after normalization
     for (const [key, driver] of Object.entries(GRAPHICS_DRIVER_MAPPING)) {
-      if (key.toLowerCase() === normalizedValue) {
-        return driver
-      }
+      if (key.toLowerCase() === normalizedValue) return driver
     }
 
     // Try substring matching for legacy TEXT entries (handles messy user input)
@@ -237,12 +235,8 @@ export const GameNativeDefaults = {
     ) {
       return 'turnip'
     }
-    if (normalizedValue.includes('virgl')) {
-      return 'virgl'
-    }
-    if (normalizedValue.includes('vortek')) {
-      return 'vortek'
-    }
+    if (normalizedValue.includes('virgl')) return 'virgl'
+    if (normalizedValue.includes('vortek')) return 'vortek'
 
     // If we can't determine, fall back to default
     return DEFAULT_GRAPHICS_DRIVER

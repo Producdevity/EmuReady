@@ -511,13 +511,13 @@ export const gamesRouter = createTRPCRouter({
       if (existingGame) {
         // Use AppError.conflict with cause for duplicate game error
         const error = AppError.conflict(
-          `A game titled "${input.title}" already exists for the system "${system!.name}"`,
+          `A game titled "${input.title}" already exists for the system "${system.name}"`,
         )
         // Add cause information for frontend duplicate handling
         ;(error as Error & { cause?: Record<string, unknown> }).cause = {
           existingGameId: existingGame.id,
           existingGameTitle: existingGame.title,
-          systemName: system!.name,
+          systemName: system.name,
         }
         throw error
       }
@@ -562,7 +562,7 @@ export const gamesRouter = createTRPCRouter({
         if (
           isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
         ) {
-          return ResourceError.game.alreadyExists(input.title, system!.name)
+          return ResourceError.game.alreadyExists(input.title, system.name)
         }
         throw error
       }
@@ -665,8 +665,8 @@ export const gamesRouter = createTRPCRouter({
 
       if (!game) return ResourceError.game.notFound()
 
-      if (game!.listings.length > 0) {
-        ResourceError.game.inUse(game!.listings.length)
+      if (game.listings.length > 0) {
+        ResourceError.game.inUse(game.listings.length)
       }
 
       try {

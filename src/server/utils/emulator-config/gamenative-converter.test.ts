@@ -603,7 +603,7 @@ describe('GameNative Converter', () => {
               label: 'Graphics Driver',
               type: 'TEXT',
             },
-            value: undefined,
+            value: null,
           },
           {
             customFieldDefinition: {

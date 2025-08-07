@@ -239,8 +239,8 @@ export async function getBestTitleIdMatch(
   const results = await findTitleIdForGameName(gameName, 1)
 
   // Return the best match if score is good enough (>= 50% for more flexibility)
-  if (results.length > 0 && results[0]!.score >= 50) {
-    return results[0]!.titleId
+  if (results.length > 0 && results[0].score >= 50) {
+    return results[0].titleId
   }
 
   return null

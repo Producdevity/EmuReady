@@ -1043,6 +1043,104 @@ describe('Eden Converter', () => {
         expect(config.GpuDriver?.driver_path?.value).toBe('')
       })
     })
+
+    it('should handle driver field as SELECT type with new dropdown values', () => {
+      const testCases = [
+        {
+          input:
+            '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
+          expected:
+            '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip_mrpurple-T19-toasted.adpkg.zip',
+        },
+        {
+          input: '[RandomUser/random-repo] custom-driver.adpkg',
+          expected:
+            '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/custom-driver.adpkg.zip',
+        },
+        {
+          input: 'N/A',
+          expected: '',
+        },
+        {
+          input: 'Default System Driver',
+          expected: '',
+        },
+      ]
+
+      testCases.forEach(({ input, expected }) => {
+        const config = convertToEdenConfig({
+          listingId: 'test-id',
+          gameId: 'game-id',
+          customFieldValues: [
+            {
+              customFieldDefinition: {
+                name: 'dynamic_driver_version',
+                label: 'Graphics Driver',
+                type: 'SELECT', // New SELECT type
+                options: [
+                  'N/A',
+                  'Default System Driver',
+                  '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
+                  '[RandomUser/random-repo] custom-driver.adpkg',
+                ],
+              },
+              value: input,
+            },
+          ],
+        })
+
+        if (expected === '') {
+          expect(config.GpuDriver?.driver_path?.use_global).toBe(true)
+          expect(config.GpuDriver?.driver_path?.value).toBe('')
+        } else {
+          expect(config.GpuDriver?.driver_path?.use_global).toBe(false)
+          expect(config.GpuDriver?.driver_path?.value).toBe(expected)
+        }
+      })
+    })
+
+    it('should handle mixed legacy TEXT and new SELECT driver fields', () => {
+      // Test backwards compatibility - old listings with TEXT field should still work
+      const configText = convertToEdenConfig({
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'dynamic_driver_version',
+              label: 'Driver Version',
+              type: 'TEXT', // Legacy TEXT field
+            },
+            value: 'turnip-driver.adpkg',
+          },
+        ],
+      })
+
+      expect(configText.GpuDriver?.driver_path?.value).toBe(
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip-driver.adpkg.zip',
+      )
+
+      // New SELECT field should work the same way
+      const configSelect = convertToEdenConfig({
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'dynamic_driver_version',
+              label: 'Graphics Driver',
+              type: 'SELECT', // New SELECT field
+              options: ['N/A', 'turnip-driver.adpkg'],
+            },
+            value: 'turnip-driver.adpkg',
+          },
+        ],
+      })
+
+      expect(configSelect.GpuDriver?.driver_path?.value).toBe(
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip-driver.adpkg.zip',
+      )
+    })
   })
 
   describe('convertToEdenConfig - Range Values', () => {
