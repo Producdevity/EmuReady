@@ -97,7 +97,6 @@ self.addEventListener(
   'fetch',
   /** @param {SWFetchEvent} event */ (event) => {
     // Only handle GET for http(s) and same‑origin assets.
-    return // temporarily disabled
     if (event.request.method !== 'GET') return
     if (
       !event.request.url.startsWith('http://') &&
