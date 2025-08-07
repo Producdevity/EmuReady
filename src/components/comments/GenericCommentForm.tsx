@@ -212,20 +212,18 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
         maxLength={maxLength}
         className={cn(isReply && 'text-sm')}
       />
-      <div className="flex justify-end gap-2 mt-2">
+      <div className="flex justify-end gap-2 mt-2 mb-8">
         {(!!props.editingComment || isReply) && props.onCancel && (
-          <Button
-            onClick={handleCancel}
-            className="px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white text-sm"
-          >
+          <Button type="button" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
         )}
         <Button
           type="submit"
+          variant="primary"
+          size="sm"
           isLoading={isLoading}
           disabled={!content.trim() || isLoading}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           {props.editingComment
             ? 'Save Changes'

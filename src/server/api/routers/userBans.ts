@@ -1,4 +1,4 @@
-import { ResourceError } from '@/lib/errors'
+import { ResourceError, AppError } from '@/lib/errors'
 import {
   CheckUserBanStatusSchema,
   CreateUserBanSchema,
@@ -13,9 +13,10 @@ import {
   permissionProcedure,
   publicProcedure,
   viewUserBansProcedure,
-  manageUserBansProcedure,
+  protectedProcedure,
 } from '@/server/api/trpc'
 import { PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission } from '@/utils/permissions'
 import { Role, type Prisma } from '@orm'
 
 export const userBansRouter = createTRPCRouter({
@@ -129,9 +130,15 @@ export const userBansRouter = createTRPCRouter({
       return ban ?? ResourceError.userBan.notFound()
     }),
 
-  create: manageUserBansProcedure
+  create: protectedProcedure
     .input(CreateUserBanSchema)
     .mutation(async ({ ctx, input }) => {
+      // Allow moderators and above to create bans
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to ban users',
+        )
+      }
       const { userId, reason, notes, expiresAt } = input
       const bannedById = ctx.session.user.id
 
@@ -178,9 +185,15 @@ export const userBansRouter = createTRPCRouter({
       })
     }),
 
-  update: manageUserBansProcedure
+  update: protectedProcedure
     .input(UpdateUserBanSchema)
     .mutation(async ({ ctx, input }) => {
+      // Allow moderators and above to update bans
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to update bans',
+        )
+      }
       const { id, ...data } = input
 
       const ban = await ctx.prisma.userBan.findUnique({ where: { id } })
@@ -198,9 +211,15 @@ export const userBansRouter = createTRPCRouter({
       })
     }),
 
-  lift: manageUserBansProcedure
+  lift: protectedProcedure
     .input(LiftUserBanSchema)
     .mutation(async ({ ctx, input }) => {
+      // Allow moderators and above to lift bans
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to lift bans',
+        )
+      }
       const { id, notes } = input
       const unbannedById = ctx.session.user.id
 
@@ -246,9 +265,15 @@ export const userBansRouter = createTRPCRouter({
       }
     }),
 
-  delete: manageUserBansProcedure
+  delete: protectedProcedure
     .input(DeleteUserBanSchema)
     .mutation(async ({ ctx, input }) => {
+      // Allow moderators and above to delete bans
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to delete bans',
+        )
+      }
       const ban = await ctx.prisma.userBan.findUnique({
         where: { id: input.id },
       })

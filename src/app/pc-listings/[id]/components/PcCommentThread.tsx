@@ -84,7 +84,7 @@ function PcCommentThread(props: Props) {
   }
 
   const handleDelete = async (commentId: string) => {
-    deleteComment.mutate({ commentId })
+    await deleteComment.mutateAsync({ commentId })
   }
 
   const handleCreateComment = async (data: {

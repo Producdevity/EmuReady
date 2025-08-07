@@ -42,8 +42,10 @@ function CustomFieldList(props: CustomFieldListProps) {
   const confirm = useConfirmDialog()
   const [isReorderMode, setIsReorderMode] = useState(false)
   const [orderedFields, setOrderedFields] = useState<CustomFieldDefinition[]>(
-    () =>
-      [...props.customFields].sort((a, b) => a.displayOrder - b.displayOrder),
+    () => {
+      const fields = props.customFields ?? []
+      return [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
+    },
   )
   const [previousOrder, setPreviousOrder] = useState<CustomFieldDefinition[]>(
     [],
@@ -53,7 +55,8 @@ function CustomFieldList(props: CustomFieldListProps) {
   useEffect(() => {
     // Keep local state in sync if initialCustomFields prop changes and not in reorder mode or dirty
     if (!isReorderMode && !isDirty) {
-      const sortedInitialFields = [...props.customFields].sort(
+      const fields = props.customFields ?? []
+      const sortedInitialFields = [...fields].sort(
         (a, b) => a.displayOrder - b.displayOrder,
       )
       setOrderedFields(sortedInitialFields)
@@ -121,7 +124,8 @@ function CustomFieldList(props: CustomFieldListProps) {
     if (isReorderMode && isDirty) {
       // If exiting reorder mode with unsaved changes, revert them
       // and reset dirty state.
-      const sortedInitialFields = [...props.customFields].sort(
+      const fields = props.customFields ?? []
+      const sortedInitialFields = [...fields].sort(
         (a, b) => a.displayOrder - b.displayOrder,
       )
       setOrderedFields(sortedInitialFields)

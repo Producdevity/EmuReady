@@ -14,12 +14,12 @@ import {
   GetAllListingsAdminSchema,
 } from '@/schemas/listing'
 import {
-  approveListingsProcedure,
   createTRPCRouter,
   deleteAnyListingProcedure,
   superAdminProcedure,
   developerProcedure,
   viewStatisticsProcedure,
+  protectedProcedure,
 } from '@/server/api/trpc'
 import {
   invalidateListing,
@@ -196,9 +196,19 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  approve: approveListingsProcedure
+  approve: protectedProcedure
     .input(ApproveListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve listings',
+        )
+      }
       const { listingId } = input
       const adminUserId = ctx.session.user.id
 
@@ -324,9 +334,19 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  reject: approveListingsProcedure
+  reject: protectedProcedure
     .input(RejectListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject listings',
+        )
+      }
       const { listingId, notes } = input
       const adminUserId = ctx.session.user.id
 
@@ -531,9 +551,19 @@ export const adminRouter = createTRPCRouter({
       return { success: true, message: 'Listing deleted successfully' }
     }),
 
-  bulkApprove: approveListingsProcedure
+  bulkApprove: protectedProcedure
     .input(BulkApproveListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve listings',
+        )
+      }
       const { listingIds } = input
       const adminUserId = ctx.session.user.id
 
@@ -742,9 +772,19 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  bulkReject: approveListingsProcedure
+  bulkReject: protectedProcedure
     .input(BulkRejectListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject listings',
+        )
+      }
       const { listingIds, notes } = input
       const adminUserId = ctx.session.user.id
 
@@ -994,9 +1034,15 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  getForEdit: superAdminProcedure
+  getForEdit: protectedProcedure
     .input(GetListingForEditSchema)
     .query(async ({ ctx, input }) => {
+      // Allow moderators and above to edit listings
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to edit listings',
+        )
+      }
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: input.id },
         include: {
@@ -1016,9 +1062,15 @@ export const adminRouter = createTRPCRouter({
       return listing || ResourceError.listing.notFound()
     }),
 
-  updateListing: superAdminProcedure
+  updateListing: protectedProcedure
     .input(UpdateListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
+      // Allow moderators and above to update listings
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to update listings',
+        )
+      }
       const { id, customFieldValues, ...updateData } = input
       const adminUserId = ctx.session.user.id
 

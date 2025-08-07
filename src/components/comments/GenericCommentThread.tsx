@@ -320,8 +320,8 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
 
                 {/* Reply and expand/collapse */}
                 <div className="flex items-center space-x-2">
-                  {/* Reply button */}
-                  {user && level === 0 && (
+                  {/* Reply button - allow replies at any level */}
+                  {user && (
                     <button
                       type="button"
                       onClick={() =>

@@ -35,7 +35,6 @@ import {
   GetPcListingForUserEditSchema,
 } from '@/schemas/pcListing'
 import {
-  approveListingsProcedure,
   createTRPCRouter,
   permissionProcedure,
   protectedProcedure,
@@ -592,9 +591,19 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   // Admin procedures
-  pending: approveListingsProcedure
+  pending: protectedProcedure
     .input(GetPendingPcListingsSchema)
     .query(async ({ ctx, input }) => {
+      // Check if user has permission to view pending listings
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to view pending PC listings',
+        )
+      }
+
       const {
         search,
         page = 1,
@@ -604,8 +613,29 @@ export const pcListingsRouter = createTRPCRouter({
       } = input ?? {}
       const offset = calculateOffset({ page }, limit)
 
+      // For developers, filter by their assigned emulators
+      let emulatorFilter: Prisma.PcListingWhereInput = {}
+      if (!isModerator && isDeveloper) {
+        const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
+          where: { userId: ctx.session.user.id },
+          select: { emulatorId: true },
+        })
+
+        const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+        if (emulatorIds.length === 0) {
+          // Developer has no assigned emulators, return empty results
+          return {
+            pcListings: [],
+            pagination: createPaginationResult(0, { page }, limit, offset),
+          }
+        }
+
+        emulatorFilter = { emulatorId: { in: emulatorIds } }
+      }
+
       const baseWhere: Prisma.PcListingWhereInput = {
         status: ApprovalStatus.PENDING,
+        ...emulatorFilter,
         ...(search
           ? {
               OR: [
@@ -652,9 +682,19 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }),
 
-  approve: approveListingsProcedure
+  approve: protectedProcedure
     .input(ApprovePcListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve PC listings',
+        )
+      }
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.pcListingId },
       })
@@ -663,6 +703,26 @@ export const pcListingsRouter = createTRPCRouter({
 
       if (pcListing.status !== ApprovalStatus.PENDING) {
         return ResourceError.pcListing.notPending()
+      }
+
+      // For developers, verify they can approve this emulator's listings
+      if (!isModerator && isDeveloper) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: pcListing.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only approve PC listings for emulators you are verified for',
+          )
+        }
       }
 
       const approvedListing = await ctx.prisma.pcListing.update({
@@ -680,9 +740,19 @@ export const pcListingsRouter = createTRPCRouter({
       return approvedListing
     }),
 
-  reject: approveListingsProcedure
+  reject: protectedProcedure
     .input(RejectPcListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject PC listings',
+        )
+      }
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.pcListingId },
       })
@@ -691,6 +761,26 @@ export const pcListingsRouter = createTRPCRouter({
 
       if (pcListing.status !== ApprovalStatus.PENDING) {
         return ResourceError.pcListing.notPending()
+      }
+
+      // For developers, verify they can reject this emulator's listings
+      if (!isModerator && isDeveloper) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: pcListing.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only reject PC listings for emulators you are verified for',
+          )
+        }
       }
 
       const rejectedListing = await ctx.prisma.pcListing.update({
@@ -709,9 +799,19 @@ export const pcListingsRouter = createTRPCRouter({
       return rejectedListing
     }),
 
-  bulkApprove: approveListingsProcedure
+  bulkApprove: protectedProcedure
     .input(BulkApprovePcListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve PC listings',
+        )
+      }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
           id: { in: input.pcListingIds },
@@ -730,9 +830,19 @@ export const pcListingsRouter = createTRPCRouter({
       return { count: result.count }
     }),
 
-  bulkReject: approveListingsProcedure
+  bulkReject: protectedProcedure
     .input(BulkRejectPcListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject PC listings',
+        )
+      }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
           id: { in: input.pcListingIds },
@@ -752,7 +862,7 @@ export const pcListingsRouter = createTRPCRouter({
       return { count: result.count }
     }),
 
-  getAll: approveListingsProcedure
+  getAll: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(GetAllPcListingsAdminSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -817,7 +927,7 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }),
 
-  getForEdit: approveListingsProcedure
+  getForEdit: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(GetPcListingForAdminEditSchema)
     .query(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
@@ -828,7 +938,7 @@ export const pcListingsRouter = createTRPCRouter({
       return pcListing ?? ResourceError.pcListing.notFound()
     }),
 
-  updateAdmin: approveListingsProcedure
+  updateAdmin: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(UpdatePcListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, customFieldValues, ...data } = input

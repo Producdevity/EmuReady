@@ -118,7 +118,7 @@ function CommentThread(props: Props) {
   }
 
   const handleDelete = async (commentId: string) => {
-    deleteComment.mutate({
+    await deleteComment.mutateAsync({
       commentId,
     } satisfies RouterInput['listings']['deleteComment'])
   }

@@ -20,9 +20,9 @@ import {
   notificationEventEmitter,
 } from '@/server/notifications/eventEmitter'
 import {
+  buildOrderBy,
   calculateOffset,
   createPaginationResult,
-  buildOrderBy,
 } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
@@ -455,12 +455,13 @@ export const usersRouter = createTRPCRouter({
         }
       }
 
-      // Update user in database with optimistic locking
-      const updatedUser = await withOptimisticLock(
+      // Update user in database with optimistic locking using lastActiveAt as version field
+
+      return await withOptimisticLock(
         ctx.prisma,
         ctx.prisma.user,
         userId,
-        'updatedAt',
+        'lastActiveAt',
         async (currentUser, tx) => {
           const result = await tx.user.update({
             where: { id: userId },
@@ -469,6 +470,7 @@ export const usersRouter = createTRPCRouter({
               ...(email && { email }),
               ...(profileImage && { profileImage }),
               ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
+              lastActiveAt: new Date(), // Update lastActiveAt for versioning
             },
             select: {
               id: true,
@@ -486,8 +488,6 @@ export const usersRouter = createTRPCRouter({
           return result
         },
       )
-
-      return updatedUser
     }),
 
   // Admin-only routes
@@ -507,9 +507,7 @@ export const usersRouter = createTRPCRouter({
       const where: Prisma.UserWhereInput = {}
 
       const searchConditions = buildSearchFilter(search, ['name', 'email'])
-      if (searchConditions) {
-        where.OR = searchConditions
-      }
+      if (searchConditions) where.OR = searchConditions
 
       const sortConfig = {
         name: (dir: 'asc' | 'desc') => ({ name: dir }),

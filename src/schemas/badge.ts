@@ -92,7 +92,6 @@ export const GetUserBadgesSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
 })
 
-// Alternative removal schema by badge ID
 export const RemoveBadgeByIdSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
   badgeId: z.string().uuid('Invalid badge ID'),
