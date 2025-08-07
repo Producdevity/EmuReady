@@ -346,8 +346,6 @@ test.describe('Mobile Performance Tests', () => {
   })
 
   test('should minimize layout shifts', async ({ page }) => {
-    let cumulativeLayoutShift = 0
-
     // Monitor layout shifts
     await page.addInitScript(() => {
       let cls = 0
@@ -371,7 +369,7 @@ test.describe('Mobile Performance Tests', () => {
     await page.waitForLoadState('networkidle')
 
     // Get CLS value
-    cumulativeLayoutShift = await page.evaluate(
+    const cumulativeLayoutShift = await page.evaluate(
       () => (window as any).getCLS?.() || 0,
     )
 
