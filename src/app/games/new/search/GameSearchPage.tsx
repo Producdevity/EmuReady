@@ -10,6 +10,7 @@ import { UI_CONSTANTS } from '@/data/constants'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
+import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
 import SearchForm from './components/SearchForm'
@@ -52,7 +53,7 @@ function GameSearchContent() {
     { tgdbGameIds },
     {
       enabled: tgdbGameIds.length > 0,
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+      staleTime: ms.minutes(5),
     },
   )
 
@@ -60,12 +61,8 @@ function GameSearchContent() {
   const updateSearchParams = useCallback(
     (query: string, systemId?: string) => {
       const params = new URLSearchParams()
-      if (query.trim()) {
-        params.set('q', query.trim())
-      }
-      if (systemId) {
-        params.set('system', systemId)
-      }
+      if (query.trim()) params.set('q', query.trim())
+      if (systemId) params.set('system', systemId)
       const searchString = params.toString()
       const newUrl = searchString ? `?${searchString}` : pathname
       router.replace(newUrl, { scroll: false })

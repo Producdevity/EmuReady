@@ -69,3 +69,7 @@ export const SearchUsersSchema = z.object({
   limit: z.number().min(1).max(50).default(20),
   minRole: z.nativeEnum(Role).optional(),
 })
+
+export const IsVerifiedDeveloperSchema = z.object({
+  emulatorId: z.string().uuid(),
+})

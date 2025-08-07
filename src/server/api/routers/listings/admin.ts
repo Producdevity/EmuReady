@@ -12,6 +12,7 @@ import {
   GetListingForEditSchema,
   UpdateListingAdminSchema,
   GetAllListingsAdminSchema,
+  GetListingByIdSchema,
 } from '@/schemas/listing'
 import {
   createTRPCRouter,
@@ -32,6 +33,7 @@ import {
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
+import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import {
   calculateOffset,
   createPaginationResult,
@@ -1116,5 +1118,98 @@ export const adminRouter = createTRPCRouter({
 
         return updatedListing
       })
+    }),
+
+  getListingConfig: protectedProcedure
+    .input(GetListingByIdSchema)
+    .query(async ({ ctx, input }) => {
+      // Check if user has admin permissions or is a verified developer for this emulator
+      const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isAdmin && !isDeveloper) {
+        return AppError.forbidden('Admin or Developer access required')
+      }
+
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        include: {
+          game: {
+            select: {
+              id: true,
+              title: true,
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          emulator: { select: { id: true, name: true } },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: {
+                select: {
+                  id: true,
+                  name: true,
+                  label: true,
+                  type: true,
+                  options: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!listing) {
+        return ResourceError.listing.notFound()
+      }
+
+      // For developers, verify they can access this emulator's config
+      if (isDeveloper && !isAdmin) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: listing.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only view configs for emulators you are verified for',
+          )
+        }
+      }
+
+      try {
+        // Generate config using the emulator detector
+        const configResult = generateEmulatorConfig({
+          listingId: listing.id,
+          gameId: listing.game.id,
+          emulatorName: listing.emulator.name,
+          customFieldValues: listing.customFieldValues.map((cfv) => ({
+            customFieldDefinition: cfv.customFieldDefinition,
+            value: cfv.value,
+          })),
+        })
+
+        return {
+          type: configResult.type,
+          filename: configResult.filename,
+          content: configResult.serialized,
+          listing: {
+            id: listing.id,
+            game: listing.game.title,
+            system: listing.game.system.name,
+            emulator: listing.emulator.name,
+          },
+        }
+      } catch (error) {
+        console.error('Error generating config:', error)
+        throw AppError.internalError(
+          `Failed to generate config: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        )
+      }
     }),
 })

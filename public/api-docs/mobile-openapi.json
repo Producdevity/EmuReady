@@ -858,6 +858,32 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#"
       },
+      "GetListingEmulatorConfigSchema": {
+        "$ref": "#/definitions/GetListingEmulatorConfigSchema",
+        "definitions": {
+          "GetListingEmulatorConfigSchema": {
+            "type": "object",
+            "properties": {
+              "listingId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "emulatorType": {
+                "type": "string",
+                "enum": [
+                  "eden",
+                  "gamenative"
+                ]
+              }
+            },
+            "required": [
+              "listingId"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
       "GetNotificationsSchema": {
         "$ref": "#/definitions/GetNotificationsSchema",
         "definitions": {
@@ -7848,6 +7874,150 @@
             "ClerkAuth": []
           }
         ]
+      }
+    },
+    "/api/mobile/trpc/listings.getEmulatorConfig": {
+      "get": {
+        "summary": "Delete a comment",
+        "description": "Delete a comment",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching GetListingEmulatorConfigSchema schema. See components/schemas/GetListingEmulatorConfigSchema for structure.",
+            "example": "{\"json\":{\"listingId\":\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"}}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from listings.getEmulatorConfig"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from listings.getEmulatorConfig",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "listings.getEmulatorConfig",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
       }
     },
     "/api/mobile/trpc/notifications.get": {

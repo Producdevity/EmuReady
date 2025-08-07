@@ -7,6 +7,7 @@ import {
   SearchUsersSchema,
   UpdateUserRoleSchema,
   UpdateUserSchema,
+  IsVerifiedDeveloperSchema,
 } from '@/schemas/user'
 import {
   createTRPCRouter,
@@ -734,5 +735,20 @@ export const usersRouter = createTRPCRouter({
         orderBy: [{ name: 'asc' }, { email: 'asc' }],
         take: limit,
       })
+    }),
+
+  isVerifiedDeveloper: protectedProcedure
+    .input(IsVerifiedDeveloperSchema)
+    .query(async ({ ctx, input }) => {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: ctx.session.user.id,
+            emulatorId: input.emulatorId,
+          },
+        },
+      })
+
+      return !!verifiedDeveloper
     }),
 })

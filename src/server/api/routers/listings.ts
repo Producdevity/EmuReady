@@ -30,4 +30,5 @@ export const listingsRouter = createTRPCRouter({
   getAllListings: adminRouter.getAll,
   getForEdit: adminRouter.getForEdit,
   updateListingAdmin: adminRouter.updateListing,
+  getListingConfig: adminRouter.getListingConfig,
 })

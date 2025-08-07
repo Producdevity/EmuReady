@@ -6,6 +6,7 @@ import {
   DeleteListingSchema,
   GetListingByIdSchema,
   GetListingCommentsSchema,
+  GetListingEmulatorConfigSchema,
   GetListingsByGameSchema,
   GetListingsSchema,
   type GetListingsInput,
@@ -20,6 +21,14 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import {
+  convertToEdenConfig,
+  serializeEdenConfig,
+} from '@/server/utils/emulator-config/eden-converter'
+import {
+  convertToGameNativeConfig,
+  serializeGameNativeConfig,
+} from '@/server/utils/emulator-config/gamenative-converter'
 import {
   buildSearchFilter,
   buildNsfwFilter,
@@ -40,10 +49,7 @@ async function calculateListingStats(
     userId
       ? prisma.vote.findUnique({
           where: {
-            userId_listingId: {
-              userId: userId,
-              listingId: listing.id,
-            },
+            userId_listingId: { userId: userId, listingId: listing.id },
           },
         })
       : null,
@@ -106,9 +112,7 @@ async function getListingsHelper(
 
   // Add search filtering at database level
   const searchConditions = buildSearchFilter(search, ['game.title', 'notes'])
-  if (searchConditions) {
-    baseWhere.OR = searchConditions
-  }
+  if (searchConditions) baseWhere.OR = searchConditions
 
   const [listings, total] = await Promise.all([
     ctx.prisma.listing.findMany({
@@ -522,5 +526,121 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       return existing.userId !== ctx.session.user.id
         ? AppError.forbidden('You can only delete your own comments')
         : await ctx.prisma.comment.delete({ where: { id: input.commentId } })
+    }),
+
+  /**
+   * Get emulator configuration for a listing
+   * Returns the configuration file content that the mobile app can use
+   * to launch the game with the correct settings
+   */
+  getEmulatorConfig: mobilePublicProcedure
+    .input(GetListingEmulatorConfigSchema)
+    .query(async ({ ctx, input }) => {
+      // Fetch the listing with all required data
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.listingId },
+        include: {
+          game: {
+            select: {
+              id: true,
+              title: true,
+              system: {
+                select: {
+                  id: true,
+                  name: true,
+                  key: true,
+                },
+              },
+            },
+          },
+          emulator: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: {
+                select: {
+                  id: true,
+                  name: true,
+                  label: true,
+                  type: true,
+                  options: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!listing) {
+        return AppError.notFound('Listing')
+      }
+
+      // Determine emulator type
+      const emulatorName = listing.emulator.name.toLowerCase()
+      const emulatorType =
+        input.emulatorType ??
+        (emulatorName.includes('eden')
+          ? 'eden'
+          : emulatorName.includes('gamenative')
+            ? 'gamenative'
+            : 'eden') // Default to Eden
+
+      if (emulatorType === 'eden') {
+        // Convert to Eden configuration
+        const edenConfig = convertToEdenConfig({
+          listingId: listing.id,
+          gameId: listing.game.id,
+          customFieldValues: listing.customFieldValues.map((cfv) => ({
+            customFieldDefinition: cfv.customFieldDefinition,
+            value: cfv.value,
+          })),
+        })
+
+        // Serialize to .ini format
+        const configContent = serializeEdenConfig(edenConfig)
+
+        return {
+          type: 'eden',
+          filename: `${listing.game.id}.ini`,
+          content: configContent,
+          mimeType: 'text/plain',
+          metadata: {
+            gameTitle: listing.game.title,
+            systemName: listing.game.system.name,
+            emulatorName: listing.emulator.name,
+          },
+        }
+      } else if (emulatorType === 'gamenative') {
+        // Convert to GameNative configuration
+        const gameNativeConfig = convertToGameNativeConfig({
+          listingId: listing.id,
+          gameId: listing.game.id,
+          customFieldValues: listing.customFieldValues.map((cfv) => ({
+            customFieldDefinition: cfv.customFieldDefinition,
+            value: cfv.value,
+          })),
+        })
+
+        // Serialize to JSON format
+        const configContent = serializeGameNativeConfig(gameNativeConfig)
+
+        return {
+          type: 'gamenative',
+          filename: `${listing.game.id}.json`,
+          content: configContent,
+          mimeType: 'application/json',
+          metadata: {
+            gameTitle: listing.game.title,
+            systemName: listing.game.system.name,
+            emulatorName: listing.emulator.name,
+          },
+        }
+      } else {
+        return AppError.badRequest('Unsupported emulator type')
+      }
     }),
 })

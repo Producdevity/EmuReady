@@ -1,10 +1,10 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-08-06T17:12:07.618Z*
+*Auto-generated on: 2025-08-07T16:30:18.500Z*
 
 ## Summary
-- **Total Endpoints**: 78
-- **Public Endpoints**: 47
+- **Total Endpoints**: 79
+- **Public Endpoints**: 48
 - **Protected Endpoints**: 31
 - **OpenAPI Version**: 3.0.0
 
@@ -247,105 +247,112 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Tags**: listings
 
 
-#### 33. **get**
+#### 33. **getEmulatorConfig**
+- **Method**: GET
+- **Path**: `/api/mobile/trpc/listings.getEmulatorConfig`
+- **Description**: Delete a comment
+- **Tags**: listings
+
+
+#### 34. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.get`
 - **Description**: Get PC listings with pagination and filtering
 - **Tags**: pcListings
 
 
-#### 34. **cpus**
+#### 35. **cpus**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.cpus`
 - **Description**: Get CPUs for mobile
 - **Tags**: pcListings
 
 
-#### 35. **gpus**
+#### 36. **gpus**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/pcListings.gpus`
 - **Description**: Get GPUs for mobile
 - **Tags**: pcListings
 
 
-#### 36. **searchGameImages**
+#### 37. **searchGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.searchGameImages`
 - **Description**: Search for game images in RAWG database
 - **Tags**: rawg
 
 
-#### 37. **searchGames**
+#### 38. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.searchGames`
 - **Description**: Search for games in RAWG database
 - **Tags**: rawg
 
 
-#### 38. **getGameImages**
+#### 39. **getGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/rawg.getGameImages`
 - **Description**: Get game images by ID
 - **Tags**: rawg
 
 
-#### 39. **get**
+#### 40. **get**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/socs.get`
 - **Description**: Get SoCs with search, filtering, and pagination
 - **Tags**: socs
 
 
-#### 40. **getById**
+#### 41. **getById**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/socs.getById`
 - **Description**: Get SoC by ID
 - **Tags**: socs
 
 
-#### 41. **searchGameImages**
+#### 42. **searchGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.searchGameImages`
 - **Description**: Search for game images in TGDB database
 - **Tags**: tgdb
 
 
-#### 42. **searchGames**
+#### 43. **searchGames**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.searchGames`
 - **Description**: Search for games in TGDB database
 - **Tags**: tgdb
 
 
-#### 43. **getGameImageUrls**
+#### 44. **getGameImageUrls**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getGameImageUrls`
 - **Description**: Get game image URLs for a specific game
 - **Tags**: tgdb
 
 
-#### 44. **getGameImages**
+#### 45. **getGameImages**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getGameImages`
 - **Description**: Get game images by game IDs
 - **Tags**: tgdb
 
 
-#### 45. **getPlatforms**
+#### 46. **getPlatforms**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/tgdb.getPlatforms`
 - **Description**: Get available platforms from TGDB
 - **Tags**: tgdb
 
 
-#### 46. **userInfo**
+#### 47. **userInfo**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/trust.userInfo`
 - **Description**: Get trust info for a specific user (public)
 - **Tags**: trust
 
 
-#### 47. **byId**
+#### 48. **byId**
 - **Method**: GET
 - **Path**: `/api/mobile/trpc/users.byId`
 - **Description**: Get user profile by ID (public user profiles)

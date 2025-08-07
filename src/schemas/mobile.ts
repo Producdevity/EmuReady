@@ -8,6 +8,11 @@ export const GetListingByIdSchema = z.object({
   id: z.string().uuid(),
 })
 
+export const GetListingEmulatorConfigSchema = z.object({
+  listingId: z.string().uuid(),
+  emulatorType: z.enum(['eden', 'gamenative']).optional(),
+})
+
 export const GetListingsByGameSchema = z.object({
   gameId: z.string().uuid(),
 })
