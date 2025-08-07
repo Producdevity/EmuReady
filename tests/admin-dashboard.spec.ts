@@ -320,9 +320,9 @@ test.describe('Admin Dashboard Data Visualizations - Requires Admin Role', () =>
     }
 
     // Should show last updated time
-    const lastUpdated = page.locator(
-      '[data-testid*="last-updated"], .last-updated, text=/updated.*ago/i',
-    )
+    const lastUpdated = page
+      .locator('[data-testid*="last-updated"], .last-updated')
+      .or(page.locator('text=/updated.*ago/i'))
     if (await lastUpdated.isVisible({ timeout: 2000 })) {
       await expect(lastUpdated).not.toBeEmpty()
     }

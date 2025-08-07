@@ -90,7 +90,10 @@ export abstract class BasePage {
       }
     }
 
-    await this.page.waitForURL('/', { timeout: 15000 })
+    await this.page.waitForURL('/', {
+      timeout: 15000,
+      waitUntil: 'domcontentloaded',
+    })
   }
 
   async navigateToHandheld() {
@@ -238,7 +241,10 @@ export abstract class BasePage {
       }
     }
 
-    await this.page.waitForURL('/games', { timeout: 15000 })
+    await this.page.waitForURL('/games', {
+      timeout: 15000,
+      waitUntil: 'domcontentloaded',
+    })
   }
 
   async clickLogo() {

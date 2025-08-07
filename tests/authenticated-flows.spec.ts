@@ -12,10 +12,11 @@ test.describe('Authenticated User Flow Tests - Requires User Authentication', ()
     // Start at home page
     await homePage.goto()
 
-    // Navigate to auth
+    // Navigate to auth - use first visible sign-in button
     const signInButton = page
       .locator('button, a')
       .filter({ hasText: /sign.*in|log.*in/i })
+      .first()
     if (await signInButton.isVisible({ timeout: 3000 })) {
       await signInButton.click()
 
