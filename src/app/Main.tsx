@@ -48,13 +48,8 @@ function Main(props: PropsWithChildren) {
     // Log reset event to Sentry
     Sentry.captureMessage('Error boundary was reset', {
       level: 'info',
-      tags: {
-        'error.boundary.reset': true,
-        pathname,
-      },
-      extra: {
-        reason: details.reason,
-      },
+      tags: { 'error.boundary.reset': true, pathname },
+      extra: { reason: details.reason },
     })
 
     console.error('ErrorBoundary reset', details)
