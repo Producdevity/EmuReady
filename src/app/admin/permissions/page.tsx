@@ -20,6 +20,7 @@ import {
   useConfirmDialog,
   Badge,
   Code,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -31,12 +32,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { type Role, PermissionCategory } from '@orm'
 import PermissionModal from './components/PermissionModal'
 
-type PermissionSortField =
-  | 'label'
-  | 'key'
-  | 'category'
-  | 'createdAt'
-  | 'updatedAt'
+type PermissionSortField = 'label' | 'key' | 'category' | 'createdAt' | 'updatedAt'
 
 const PERMISSION_COLUMNS: ColumnDefinition[] = [
   { key: 'id', label: 'ID', defaultVisible: false },
@@ -212,9 +208,7 @@ function AdminPermissionsPage() {
         {permissionsQuery.isPending ? (
           <LoadingSpinner text="Loading permissions..." />
         ) : permissions.length === 0 ? (
-          <AdminTableNoResults
-            hasQuery={!!table.search || !!selectedCategory}
-          />
+          <AdminTableNoResults hasQuery={!!table.search || !!selectedCategory} />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
@@ -314,9 +308,7 @@ function AdminPermissionsPage() {
                   )}
                   {columnVisibility.isColumnVisible('category') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {permission.category && (
-                        <Badge>{permission.category}</Badge>
-                      )}
+                      {permission.category && <Badge>{permission.category}</Badge>}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('roles') && (
@@ -335,7 +327,7 @@ function AdminPermissionsPage() {
                   )}
                   {columnVisibility.isColumnVisible('createdAt') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(permission.createdAt).toLocaleDateString()}
+                      <LocalizedDate date={permission.createdAt} format="date" />
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (

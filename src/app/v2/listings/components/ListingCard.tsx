@@ -1,10 +1,4 @@
-import {
-  ExternalLink,
-  Clock,
-  Heart,
-  MessageSquare,
-  ThumbsUp,
-} from 'lucide-react'
+import { ExternalLink, Clock, Heart, MessageSquare, ThumbsUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, type MouseEvent } from 'react'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
@@ -17,9 +11,9 @@ import {
   TooltipContent,
   ProgressiveImage,
   SwipeableCard,
+  LocalizedDate,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { formatTimeAgo } from '@/utils/date'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { ApprovalStatus } from '@orm'
 import type { RouterOutput } from '@/types/trpc'
@@ -213,20 +207,17 @@ export function ListingCard({
                   {successRate}%
                 </span>
               </div>
-              <SuccessRateBar
-                rate={listing.successRate * 100}
-                voteCount={listing._count.votes}
-              />
+              <SuccessRateBar rate={listing.successRate * 100} voteCount={listing._count.votes} />
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                <span className="font-medium">
-                  {listing.author?.name ?? 'Anonymous'}
-                </span>
+                <span className="font-medium">{listing.author?.name ?? 'Anonymous'}</span>
                 <span className="mx-1">•</span>
-                <span>{formatTimeAgo(listing.createdAt)}</span>
+                <span>
+                  <LocalizedDate date={listing.createdAt} format="timeAgo" />
+                </span>
               </div>
 
               <div className="flex items-center gap-1">
@@ -235,8 +226,7 @@ export function ListingCard({
                   size="sm"
                   className={cn(
                     'p-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
-                    isLiked &&
-                      'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+                    isLiked && 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
                   )}
                   onClick={(ev) => {
                     ev.stopPropagation()
@@ -310,22 +300,16 @@ export function ListingCard({
                           size="sm"
                         />
                       ) : (
-                        <span className="truncate max-w-[120px]">
-                          {listing.game.system?.name}
-                        </span>
+                        <span className="truncate max-w-[120px]">{listing.game.system?.name}</span>
                       )}
                     </span>
                     <span className="text-gray-400 flex-shrink-0">•</span>
-                    <span className="truncate flex-1 min-w-0">
-                      {deviceName}
-                    </span>
+                    <span className="truncate flex-1 min-w-0">{deviceName}</span>
                   </div>
 
                   {listing.emulator && (
                     <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                      <span className="text-gray-500 flex-shrink-0">
-                        Emulator:
-                      </span>
+                      <span className="text-gray-500 flex-shrink-0">Emulator:</span>
                       <EmulatorIcon
                         name={listing.emulator.name}
                         logo={listing.emulator.logo}
@@ -340,7 +324,9 @@ export function ListingCard({
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   <span>{listing.author?.name ?? 'Anonymous'}</span>
                   <span className="mx-1">•</span>
-                  <span>{formatTimeAgo(listing.createdAt)}</span>
+                  <span>
+                    <LocalizedDate date={listing.createdAt} format="timeAgo" />
+                  </span>
                 </div>
               </div>
 
@@ -383,8 +369,7 @@ export function ListingCard({
                   size="sm"
                   className={cn(
                     'p-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
-                    isLiked &&
-                      'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+                    isLiked && 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
                   )}
                   onClick={(e) => {
                     e.stopPropagation()

@@ -14,6 +14,7 @@ import {
   SortableHeader,
   Badge,
   Pagination,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -219,11 +220,7 @@ function AdminPermissionLogsPage() {
         {logs.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search ||
-              selectedAction ||
-              selectedRole ||
-              dateFrom ||
-              dateTo
+              {table.search || selectedAction || selectedRole || dateFrom || dateTo
                 ? 'No permission logs found matching your criteria.'
                 : 'No permission logs found.'}
             </p>
@@ -304,11 +301,13 @@ function AdminPermissionLogsPage() {
                     {columnVisibility.isColumnVisible('createdAt') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         <div>
-                          <div>
-                            {new Date(log.createdAt).toLocaleDateString()}
-                          </div>
+                          <LocalizedDate date={log.createdAt} format="date" />
                           <div className="text-xs">
-                            {new Date(log.createdAt).toLocaleTimeString()}
+                            <LocalizedDate
+                              date={log.createdAt}
+                              format="dateTime"
+                              className="text-xs"
+                            />
                           </div>
                         </div>
                       </td>
@@ -323,9 +322,7 @@ function AdminPermissionLogsPage() {
                     {columnVisibility.isColumnVisible('user') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         <div>
-                          <div className="font-medium">
-                            {log.user?.name || 'Unknown'}
-                          </div>
+                          <div className="font-medium">{log.user?.name || 'Unknown'}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {log.user?.email}
                           </div>

@@ -15,11 +15,11 @@ import {
   TooltipTrigger,
   TooltipContent,
   useConfirmDialog,
+  LocalizedDate,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 type BadgeWithDetails = RouterOutput['badges']['getById']
@@ -42,10 +42,7 @@ export default function BadgeDetailsModal({
   const [isDeleting, setIsDeleting] = useState(false)
   const confirm = useConfirmDialog()
 
-  const badgeQuery = api.badges.getById.useQuery(
-    { id: badgeId! },
-    { enabled: Boolean(badgeId) },
-  )
+  const badgeQuery = api.badges.getById.useQuery({ id: badgeId! }, { enabled: Boolean(badgeId) })
 
   const deleteBadgeMutation = api.badges.delete.useMutation({
     onSuccess: () => {
@@ -66,8 +63,7 @@ export default function BadgeDetailsModal({
 
     const confirmed = await confirm({
       title: 'Delete Badge',
-      description:
-        'Are you sure you want to delete this badge? This action cannot be undone.',
+      description: 'Are you sure you want to delete this badge? This action cannot be undone.',
       confirmText: 'Delete',
     })
 
@@ -135,16 +131,12 @@ export default function BadgeDetailsModal({
               </div>
 
               {badge.description && (
-                <p className="text-gray-700 dark:text-gray-300 mb-4">
-                  {badge.description}
-                </p>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">{badge.description}</p>
               )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Color:
-                  </span>
+                  <span className="text-gray-600 dark:text-gray-400">Color:</span>
                   <div className="flex items-center gap-2 mt-1">
                     <div
                       className="w-4 h-4 rounded border"
@@ -154,24 +146,18 @@ export default function BadgeDetailsModal({
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Icon:
-                  </span>
+                  <span className="text-gray-600 dark:text-gray-400">Icon:</span>
                   <p className="mt-1">{badge.icon || 'None'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Created by:
-                  </span>
-                  <p className="mt-1">
-                    {badge.creator.name || badge.creator.email}
-                  </p>
+                  <span className="text-gray-600 dark:text-gray-400">Created by:</span>
+                  <p className="mt-1">{badge.creator.name || badge.creator.email}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Created at:
-                  </span>
-                  <p className="mt-1">{formatDate(badge.createdAt)}</p>
+                  <span className="text-gray-600 dark:text-gray-400">Created at:</span>
+                  <p className="mt-1">
+                    <LocalizedDate date={badge.createdAt} format="date" />
+                  </p>
                 </div>
               </div>
             </div>
@@ -208,12 +194,10 @@ export default function BadgeDetailsModal({
                       <div className="text-right">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           <Calendar className="w-3 h-3 inline mr-1" />
-                          {formatDate(userBadge.assignedAt)}
+                          <LocalizedDate date={userBadge.assignedAt} format="date" />
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          by{' '}
-                          {userBadge.assignedByUser.name ||
-                            userBadge.assignedByUser.email}
+                          by {userBadge.assignedByUser.name || userBadge.assignedByUser.email}
                         </p>
                       </div>
                     </div>
@@ -243,9 +227,7 @@ export default function BadgeDetailsModal({
                   </Button>
                 </TooltipTrigger>
                 {badge._count.userBadges > 0 && (
-                  <TooltipContent>
-                    Cannot delete badge with active assignments
-                  </TooltipContent>
+                  <TooltipContent>Cannot delete badge with active assignments</TooltipContent>
                 )}
               </Tooltip>
             </>

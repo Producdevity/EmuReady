@@ -27,6 +27,7 @@ import {
   Pagination,
   BulkActions,
   Button,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -38,13 +39,11 @@ import {
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
 import ApprovalModal from './components/ApprovalModal'
 
-type PendingPcListing =
-  RouterOutput['pcListings']['pending']['pcListings'][number]
+type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 type ApprovalSortField =
   | 'game.title'
   | 'cpu'
@@ -76,16 +75,17 @@ function PcListingApprovalsPage() {
     storageKey: storageKeys.columnVisibility.adminApprovals,
   })
 
-  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
-    useLocalStorage(storageKeys.showSystemIcons, false)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
+    storageKeys.showSystemIcons,
+    false,
+  )
 
   const emulatorLogos = useEmulatorLogos()
   const confirm = useConfirmDialog()
 
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
   const [showModal, setShowModal] = useState(false)
-  const [selectedListing, setSelectedListing] =
-    useState<PendingPcListing | null>(null)
+  const [selectedListing, setSelectedListing] = useState<PendingPcListing | null>(null)
 
   const pendingPcListingsQuery = api.pcListings.pending.useQuery({
     page: table.page,
@@ -156,10 +156,7 @@ function PcListingApprovalsPage() {
 
   const handleBulkApprove = async () => {
     const hasReportedUsers = pendingPcListingsQuery.data?.pcListings.some(
-      (listing) =>
-        listing.id &&
-        selectedRows.has(listing.id) &&
-        (listing._count?.reports ?? 0) > 0,
+      (listing) => listing.id && selectedRows.has(listing.id) && (listing._count?.reports ?? 0) > 0,
     )
 
     if (hasReportedUsers) {
@@ -204,9 +201,7 @@ function PcListingApprovalsPage() {
     const newSet =
       selectedRows.size === pendingPcListingsQuery.data.pcListings.length
         ? new Set<string>()
-        : new Set(
-            pendingPcListingsQuery.data.pcListings.map((listing) => listing.id),
-          )
+        : new Set(pendingPcListingsQuery.data.pcListings.map((listing) => listing.id))
     setSelectedRows(newSet)
   }
 
@@ -255,15 +250,11 @@ function PcListingApprovalsPage() {
         </td>
       )}
       {columnVisibility.isColumnVisible('game') && (
-        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-          {listing.game.title}
-        </td>
+        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{listing.game.title}</td>
       )}
       {columnVisibility.isColumnVisible('system') && (
         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-          {isSystemIconsHydrated &&
-          showSystemIcons &&
-          listing.game.system?.key ? (
+          {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
             <div className="flex items-center gap-2">
               <SystemIcon
                 name={listing.game.system.name}
@@ -291,9 +282,7 @@ function PcListingApprovalsPage() {
           <EmulatorIcon
             name={listing.emulator.name}
             logo={listing.emulator.logo}
-            showLogo={
-              emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos
-            }
+            showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
             size="sm"
           />
         </td>
@@ -323,10 +312,12 @@ function PcListingApprovalsPage() {
           <Tooltip>
             <TooltipTrigger>
               <span className="cursor-help">
-                {formatTimeAgo(listing.createdAt)}
+                <LocalizedDate date={listing.createdAt} format="timeAgo" />
               </span>
             </TooltipTrigger>
-            <TooltipContent>{formatDateTime(listing.createdAt)}</TooltipContent>
+            <TooltipContent>
+              <LocalizedDate date={listing.createdAt} format="dateTime" />
+            </TooltipContent>
           </Tooltip>
         </td>
       )}
@@ -342,10 +333,7 @@ function PcListingApprovalsPage() {
             disabled={rejectMutation.isPending}
             title="Reject PC Listing"
           />
-          <ViewButton
-            href={`/pc-listings/${listing.id}`}
-            title="View PC Listing"
-          />
+          <ViewButton href={`/pc-listings/${listing.id}`} title="View PC Listing" />
         </div>
       </td>
     </tr>
@@ -360,13 +348,9 @@ function PcListingApprovalsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
           <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading pending listings:{' '}
-            {pendingPcListingsQuery.error.message}
+            Error loading pending listings: {pendingPcListingsQuery.error.message}
           </p>
-          <Button
-            onClick={() => pendingPcListingsQuery.refetch()}
-            className="mt-4"
-          >
+          <Button onClick={() => pendingPcListingsQuery.refetch()} className="mt-4">
             Try Again
           </Button>
         </div>
@@ -427,10 +411,7 @@ function PcListingApprovalsPage() {
         isLoading={pcListingsStatsQuery.isPending}
       />
 
-      <AdminSearchFilters<ApprovalSortField>
-        table={table}
-        searchPlaceholder="Search listings..."
-      />
+      <AdminSearchFilters<ApprovalSortField> table={table} searchPlaceholder="Search listings..." />
 
       {/* Bulk Actions */}
       {pcListings.length > 0 && (
@@ -465,10 +446,7 @@ function PcListingApprovalsPage() {
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={
-                        pcListings.length > 0 &&
-                        selectedRows.size === pcListings.length
-                      }
+                      checked={pcListings.length > 0 && selectedRows.size === pcListings.length}
                       onChange={handleSelectAll}
                       className="rounded border-gray-300 dark:border-gray-600"
                     />

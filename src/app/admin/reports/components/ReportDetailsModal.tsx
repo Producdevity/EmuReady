@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Modal, Badge } from '@/components/ui'
+import { Button, Modal, Badge, LocalizedDate } from '@/components/ui'
 import { type ListingReportWithDetails } from '../types'
 
 interface Props {
@@ -15,12 +15,7 @@ function ReportDetailsModal(props: Props) {
   const { report } = props
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="Report Details"
-      size="lg"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Report Details" size="lg">
       <div className="space-y-6">
         {/* Report Info */}
         <div>
@@ -45,7 +40,7 @@ function ReportDetailsModal(props: Props) {
                 Reported On
               </label>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {new Date(report.createdAt).toLocaleString()}
+                <LocalizedDate date={report.createdAt} format="dateTime" />
               </p>
             </div>
             {report.reviewedAt && (
@@ -54,7 +49,7 @@ function ReportDetailsModal(props: Props) {
                   Reviewed On
                 </label>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {new Date(report.reviewedAt).toLocaleString()}
+                  <LocalizedDate date={report.reviewedAt} format="dateTime" />
                 </p>
               </div>
             )}
@@ -73,9 +68,7 @@ function ReportDetailsModal(props: Props) {
 
         {/* Reported User */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Reported By
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Reported By</h3>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
             <div className="flex items-center justify-between">
               <div>
@@ -101,9 +94,7 @@ function ReportDetailsModal(props: Props) {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Game
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {report.listing.game.title}
-                </p>
+                <p className="text-sm text-gray-900 dark:text-white">{report.listing.game.title}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -140,9 +131,7 @@ function ReportDetailsModal(props: Props) {
               Review Notes
             </h3>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded">
-              <p className="text-sm text-blue-900 dark:text-blue-100">
-                {report.reviewNotes}
-              </p>
+              <p className="text-sm text-blue-900 dark:text-blue-100">{report.reviewNotes}</p>
               {report.reviewedBy && (
                 <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
                   — {report.reviewedBy.name}
@@ -157,11 +146,7 @@ function ReportDetailsModal(props: Props) {
           <Button variant="outline" onClick={props.onClose}>
             Close
           </Button>
-          <Button
-            onClick={() =>
-              window.open(`/listings/${report.listing.id}`, '_blank')
-            }
-          >
+          <Button onClick={() => window.open(`/listings/${report.listing.id}`, '_blank')}>
             View Listing
           </Button>
         </div>

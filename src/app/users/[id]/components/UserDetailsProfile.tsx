@@ -1,4 +1,4 @@
-import { formatDate } from '@/utils/date'
+import { LocalizedDate } from '@/components/ui'
 import type { RouterOutput } from '@/types/trpc'
 
 type UserProfile = RouterOutput['users']['getUserById']
@@ -18,20 +18,16 @@ function UserDetailsProfile(props: Props) {
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Name
-          </h2>
+          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h2>
           <p className="mt-1 text-lg text-gray-900 dark:text-white">
             {props.userProfile.name ?? 'No name provided'}
           </p>
         </div>
 
         <div>
-          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Member Since
-          </h2>
+          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Member Since</h2>
           <p className="mt-1 text-lg text-gray-900 dark:text-white">
-            {formatDate(props.userProfile.createdAt ?? new Date())}
+            <LocalizedDate date={props.userProfile.createdAt ?? new Date()} format="date" />
           </p>
         </div>
       </div>

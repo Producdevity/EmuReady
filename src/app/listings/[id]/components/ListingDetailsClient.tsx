@@ -15,11 +15,11 @@ import {
   VerifiedDeveloperBadge,
   ListingVerificationBadge,
   ApprovalStatusBadge,
+  LocalizedDate,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { CustomFieldType, Role } from '@orm'
@@ -48,10 +48,7 @@ function ListingDetailsClient(props: Props) {
 
   // Get current user to check if they can see banned user indicators
   const currentUserQuery = api.users.me.useQuery()
-  const canViewBannedUsers = roleIncludesRole(
-    currentUserQuery.data?.role,
-    Role.MODERATOR,
-  )
+  const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
   const refreshData = () => {
     utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
@@ -170,12 +167,7 @@ function ListingDetailsClient(props: Props) {
       >
         {/* Back Navigation */}
         <div className="mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="mb-4"
-          >
+          <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
@@ -199,26 +191,17 @@ function ListingDetailsClient(props: Props) {
                 </Link>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="default">
-                  System: {props.listing?.game.system?.name}
-                </Badge>
+                <Badge variant="default">System: {props.listing?.game.system?.name}</Badge>
                 <Badge
-                  onClick={() =>
-                    router.push(
-                      `/devices?deviceId=${props.listing?.device?.id}`,
-                    )
-                  }
+                  onClick={() => router.push(`/devices?deviceId=${props.listing?.device?.id}`)}
                   variant="default"
                   className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Device: {props.listing?.device?.brand?.name}{' '}
-                  {props.listing?.device?.modelName}
+                  Device: {props.listing?.device?.brand?.name} {props.listing?.device?.modelName}
                 </Badge>
                 <Badge
                   onClick={() =>
-                    router.push(
-                      `/emulators?emulatorId=${props.listing?.emulator?.id}`,
-                    )
+                    router.push(`/emulators?emulatorId=${props.listing?.emulator?.id}`)
                   }
                   variant="default"
                   className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -244,9 +227,7 @@ function ListingDetailsClient(props: Props) {
                       showTooltip={true}
                     />
                   )}
-                {canViewBannedUsers && (
-                  <ApprovalStatusBadge status={props.listing.status} />
-                )}
+                {canViewBannedUsers && <ApprovalStatusBadge status={props.listing.status} />}
               </div>
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
@@ -266,37 +247,34 @@ function ListingDetailsClient(props: Props) {
               </div>
 
               {/* Custom Fields Section */}
-              {props.listing?.customFieldValues &&
-                props.listing.customFieldValues.length > 0 && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
-                      Emulator-Specific Details
-                    </h2>
-                    <div className="space-y-3">
-                      {props.listing.customFieldValues
-                        .filter(
-                          (fieldValue) =>
-                            !isNullish(fieldValue.value) &&
-                            fieldValue.value !== '',
-                        )
-                        .map((fieldValue) => (
-                          <div
-                            key={fieldValue.id}
-                            className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 sm:min-w-[120px] sm:flex-shrink-0">
-                                {fieldValue.customFieldDefinition.label}:
-                              </span>
-                              <span className="text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere min-w-0 flex-1">
-                                {renderCustomFieldValue(fieldValue)}
-                              </span>
-                            </div>
+              {props.listing?.customFieldValues && props.listing.customFieldValues.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                    Emulator-Specific Details
+                  </h2>
+                  <div className="space-y-3">
+                    {props.listing.customFieldValues
+                      .filter(
+                        (fieldValue) => !isNullish(fieldValue.value) && fieldValue.value !== '',
+                      )
+                      .map((fieldValue) => (
+                        <div
+                          key={fieldValue.id}
+                          className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                            <span className="font-medium text-gray-700 dark:text-gray-300 sm:min-w-[120px] sm:flex-shrink-0">
+                              {fieldValue.customFieldDefinition.label}:
+                            </span>
+                            <span className="text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere min-w-0 flex-1">
+                              {renderCustomFieldValue(fieldValue)}
+                            </span>
                           </div>
-                        ))}
-                    </div>
+                        </div>
+                      ))}
                   </div>
-                )}
+                </div>
+              )}
               <div id="vote-section" className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   Success Rate
@@ -357,24 +335,19 @@ function ListingDetailsClient(props: Props) {
               {/* Posted Date */}
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Posted
-                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Posted</div>
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {formatTimeAgo(props.listing.createdAt)}
+                    <LocalizedDate date={props.listing.createdAt} format="timeAgo" />
                   </div>
                   <div className="text-xs text-gray-400 dark:text-gray-500">
-                    {formatDateTime(props.listing.createdAt)}
+                    <LocalizedDate date={props.listing.createdAt} format="dateTime" />
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="mt-2 flex flex-col gap-2">
-                <EditListingButton
-                  listingId={props.listing.id}
-                  onSuccess={refreshData}
-                />
+                <EditListingButton listingId={props.listing.id} onSuccess={refreshData} />
                 <ReportListingButton
                   listingId={props.listing.id}
                   authorId={props.listing.authorId}
@@ -386,14 +359,12 @@ function ListingDetailsClient(props: Props) {
                   authorId={props.listing.authorId}
                   isAlreadyVerified={
                     props.listing.developerVerifications?.some(
-                      (verification) =>
-                        verification.developer.id === currentUserQuery.data?.id,
+                      (verification) => verification.developer.id === currentUserQuery.data?.id,
                     ) ?? false
                   }
                   verificationId={
                     props.listing.developerVerifications?.find(
-                      (verification) =>
-                        verification.developer.id === currentUserQuery.data?.id,
+                      (verification) => verification.developer.id === currentUserQuery.data?.id,
                     )?.id
                   }
                   onSuccess={refreshData}

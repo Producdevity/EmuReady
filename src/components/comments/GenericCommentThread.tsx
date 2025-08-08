@@ -2,21 +2,9 @@
 
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  MessageCircle,
-  Pencil,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  ChevronRight,
-} from 'lucide-react'
+import { MessageCircle, Pencil, Trash2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import {
-  RoleBadge,
-  useConfirmDialog,
-  TranslatableMarkdown,
-} from '@/components/ui'
-import { formatTimeAgo } from '@/utils/date'
+import { RoleBadge, useConfirmDialog, TranslatableMarkdown, LocalizedDate } from '@/components/ui'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
 import type { Role } from '@orm'
 
@@ -99,9 +87,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
   const { user } = useUser()
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
-  const [expandedComments, setExpandedComments] = useState<
-    Record<string, boolean>
-  >({})
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
   const [sortBy, setSortBy] = useState(props.config.defaultSort)
 
   const confirm = useConfirmDialog()
@@ -126,14 +112,10 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
   }
 
   const isCommentExpanded = (commentId: string, comment: AnyComment) => {
-    if (expandedComments[commentId] !== undefined) {
-      return expandedComments[commentId]
-    }
+    if (expandedComments[commentId] !== undefined) return expandedComments[commentId]
 
     // Default to expanded if 3 or fewer replies
-    if ('replies' in comment) {
-      return comment.replies.length <= 3
-    }
+    if ('replies' in comment) return comment.replies.length <= 3
 
     return true
   }
@@ -153,11 +135,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
 
     const canEdit = canEditComment(props.userRole, comment.user.id, user?.id)
 
-    const canDelete = canDeleteComment(
-      props.userRole,
-      comment.user.id,
-      user?.id,
-    )
+    const canDelete = canDeleteComment(props.userRole, comment.user.id, user?.id)
 
     const leftMargin = level > 0 ? `ml-${Math.min(level * 4, 12)}` : ''
     const borderStyle =
@@ -165,8 +143,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
         ? 'border-l-2 border-gray-200 dark:border-gray-700 pl-4'
         : ''
 
-    const hasReplies =
-      'replies' in comment && comment.replies && comment.replies.length > 0
+    const hasReplies = 'replies' in comment && comment.replies && comment.replies.length > 0
 
     return (
       <motion.div
@@ -205,25 +182,20 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
                     </span>
 
                     {/* Show OP badge if comment author is the listing/PC listing owner */}
-                    {props.entityOwnerId &&
-                      comment.user?.id === props.entityOwnerId && (
-                        <span className="px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
-                          OP
-                        </span>
-                      )}
-
-                    {comment.user?.role && (
-                      <RoleBadge role={comment.user.role} size="sm" />
+                    {props.entityOwnerId && comment.user?.id === props.entityOwnerId && (
+                      <span className="px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                        OP
+                      </span>
                     )}
+
+                    {comment.user?.role && <RoleBadge role={comment.user.role} size="sm" />}
                   </div>
 
                   <span className="text-xs text-gray-400">
-                    {formatTimeAgo(comment.createdAt)}
+                    <LocalizedDate date={comment.createdAt} format="timeAgo" />
                   </span>
                   {comment.isEdited && (
-                    <span className="text-xs text-gray-400 italic ml-1">
-                      (edited)
-                    </span>
+                    <span className="text-xs text-gray-400 italic ml-1">(edited)</span>
                   )}
                 </div>
               </div>
@@ -255,9 +227,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
             {/* Comment content */}
             <div className="mb-3">
               {isDeleted ? (
-                <em className="text-gray-500 dark:text-gray-400">
-                  This comment has been deleted.
-                </em>
+                <em className="text-gray-500 dark:text-gray-400">This comment has been deleted.</em>
               ) : (
                 <TranslatableMarkdown
                   content={comment.content}
@@ -313,9 +283,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
 
                 {/* For PC listings without voting, show score */}
                 {!props.config.enableVoting && comment.score !== undefined && (
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {comment.score} points
-                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">{comment.score} points</span>
                 )}
 
                 {/* Reply and expand/collapse */}
@@ -324,11 +292,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
                   {user && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setReplyingTo(
-                          replyingTo === comment.id ? null : comment.id,
-                        )
-                      }
+                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                       className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center"
                     >
                       <MessageCircle className="h-4 w-4 mr-1" />
@@ -393,9 +357,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
                 transition={{ duration: 0.3 }}
                 className="mt-2"
               >
-                {comment.replies.map((reply) =>
-                  renderComment(reply, level + 1),
-                )}
+                {comment.replies.map((reply) => renderComment(reply, level + 1))}
               </motion.div>
             )}
           </AnimatePresence>
@@ -408,10 +370,7 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-gray-200 dark:bg-gray-700 rounded-lg h-24 animate-pulse"
-          />
+          <div key={i} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-24 animate-pulse" />
         ))}
       </div>
     )

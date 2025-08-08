@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion'
 import { Eye, ImageIcon, Plus, CheckCircle, ExternalLink } from 'lucide-react'
 import { memo } from 'react'
-import { Button, OptimizedImage } from '@/components/ui'
-import { formatYear } from '@/utils/date'
+import { Button, OptimizedImage, LocalizedDate } from '@/components/ui'
 import { extractBoxartUrl, formatPlatformName } from '../utils/boxartHelpers'
 import { inferRatingAndNsfw } from '../utils/nsfwHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
@@ -13,10 +12,7 @@ interface Props {
   onPreview: (game: TGDBGame) => void
   onSelect: (game: TGDBGame, extras: { isErotic: boolean }) => void
   isSelecting: boolean
-  existingGames: Record<
-    number,
-    { id: string; title: string; systemName: string }
-  >
+  existingGames: Record<number, { id: string; title: string; systemName: string }>
 }
 
 const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
@@ -109,7 +105,7 @@ const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
 
             {props.game.release_date && (
               <div className="text-sm text-slate-600 dark:text-slate-400">
-                Released {formatYear(props.game.release_date)}
+                Released <LocalizedDate date={props.game.release_date} format="year" />
               </div>
             )}
 
@@ -125,11 +121,7 @@ const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
           {isExisting ? (
             <Button
               onClick={() =>
-                window.open(
-                  `/games/${existingGame.id}`,
-                  '_blank',
-                  'noopener,noreferrer',
-                )
+                window.open(`/games/${existingGame.id}`, '_blank', 'noopener,noreferrer')
               }
               variant="outline"
               size="sm"
@@ -140,9 +132,7 @@ const SearchResultsCard = memo(function SearchResultsCard(props: Props) {
             </Button>
           ) : (
             <Button
-              onClick={() =>
-                props.onSelect(props.game, inferRatingAndNsfw(props.game))
-              }
+              onClick={() => props.onSelect(props.game, inferRatingAndNsfw(props.game))}
               disabled={props.isSelecting}
               variant="primary"
               size="sm"

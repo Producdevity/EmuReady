@@ -17,12 +17,12 @@ import {
   SortableHeader,
   VerifiedDeveloperBadge,
   useConfirmDialog,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import EditVerifiedDeveloperModal from './components/EditVerifiedDeveloperModal'
 import VerifyDeveloperModal from './components/VerifyDeveloperModal'
@@ -76,8 +76,7 @@ function AdminVerifiedDevelopersPage() {
   const confirm = useConfirmDialog()
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedDeveloper, setSelectedDeveloper] =
-    useState<VerifiedDeveloper | null>(null)
+  const [selectedDeveloper, setSelectedDeveloper] = useState<VerifiedDeveloper | null>(null)
   const [emulatorFilter, setEmulatorFilter] = useState('')
 
   const emulatorsQuery = api.emulators.get.useQuery({
@@ -86,13 +85,12 @@ function AdminVerifiedDevelopersPage() {
     sortDirection: 'asc',
   })
 
-  const verifiedDevelopersQuery =
-    api.verifiedDevelopers.getVerifiedDevelopers.useQuery({
-      page: table.page,
-      limit: table.limit,
-      search: table.search || undefined,
-      emulatorFilter: emulatorFilter || undefined,
-    })
+  const verifiedDevelopersQuery = api.verifiedDevelopers.getVerifiedDevelopers.useQuery({
+    page: table.page,
+    limit: table.limit,
+    search: table.search || undefined,
+    emulatorFilter: emulatorFilter || undefined,
+  })
 
   const removeVerifiedDeveloperMutation =
     api.verifiedDevelopers.removeVerifiedDeveloper.useMutation({
@@ -101,9 +99,7 @@ function AdminVerifiedDevelopersPage() {
         utils.verifiedDevelopers.getVerifiedDevelopers.invalidate()
       },
       onError: (err) => {
-        toast.error(
-          `Failed to remove verified developer: ${getErrorMessage(err)}`,
-        )
+        toast.error(`Failed to remove verified developer: ${getErrorMessage(err)}`)
       },
     })
 
@@ -146,20 +142,14 @@ function AdminVerifiedDevelopersPage() {
   ]
 
   if (verifiedDevelopersQuery.error) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Failed to load verified developers.
-      </div>
-    )
+    return <div className="p-8 text-center text-red-500">Failed to load verified developers.</div>
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Verified Developers
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Verified Developers</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage verified developers for emulators
           </p>
@@ -169,10 +159,7 @@ function AdminVerifiedDevelopersPage() {
             columns={VERIFIED_DEVELOPERS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2"
-          >
+          <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
             Verify Developer
           </Button>
@@ -190,18 +177,14 @@ function AdminVerifiedDevelopersPage() {
             {
               label: 'Emulators Covered',
               value: new Set(
-                verifiedDevelopersQuery.data.verifiedDevelopers.map(
-                  (vd) => vd.emulator.id,
-                ),
+                verifiedDevelopersQuery.data.verifiedDevelopers.map((vd) => vd.emulator.id),
               ).size,
               color: 'gray',
             },
             {
               label: 'Unique Developers',
               value: new Set(
-                verifiedDevelopersQuery.data.verifiedDevelopers.map(
-                  (vd) => vd.user.id,
-                ),
+                verifiedDevelopersQuery.data.verifiedDevelopers.map((vd) => vd.user.id),
               ).size,
               color: 'gray',
             },
@@ -237,11 +220,7 @@ function AdminVerifiedDevelopersPage() {
               placeholder="Filter by emulator"
               filterKeys={['name']}
             />
-            <Button
-              variant="outline"
-              onClick={handleClearFilters}
-              className="h-full"
-            >
+            <Button variant="outline" onClick={handleClearFilters} className="h-full">
               Clear
             </Button>
           </div>
@@ -300,97 +279,87 @@ function AdminVerifiedDevelopersPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {verifiedDevelopersQuery.data?.verifiedDevelopers.map(
-                (verifiedDev) => (
-                  <tr
-                    key={verifiedDev.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                  >
-                    {columnVisibility.isColumnVisible('user') && (
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {verifiedDev.user.profileImage && (
-                            <Image
-                              src={verifiedDev.user.profileImage}
-                              alt={
-                                verifiedDev.user.name || verifiedDev.user.email
-                              }
-                              width={32}
-                              height={32}
-                              className="rounded-full mr-3"
-                              unoptimized
-                            />
-                          )}
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                              {verifiedDev.user.name || verifiedDev.user.email}
-                              <VerifiedDeveloperBadge size="sm" />
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {verifiedDev.user.email}
-                            </div>
+              {verifiedDevelopersQuery.data?.verifiedDevelopers.map((verifiedDev) => (
+                <tr
+                  key={verifiedDev.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                >
+                  {columnVisibility.isColumnVisible('user') && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {verifiedDev.user.profileImage && (
+                          <Image
+                            src={verifiedDev.user.profileImage}
+                            alt={verifiedDev.user.name || verifiedDev.user.email}
+                            width={32}
+                            height={32}
+                            className="rounded-full mr-3"
+                            unoptimized
+                          />
+                        )}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                            {verifiedDev.user.name || verifiedDev.user.email}
+                            <VerifiedDeveloperBadge size="sm" />
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {verifiedDev.user.email}
                           </div>
                         </div>
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('emulator') && (
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {verifiedDev.emulator.logo && (
-                            <EmulatorIcon
-                              logo={verifiedDev.emulator.logo}
-                              name={verifiedDev.emulator.name}
-                              showLogo={true}
-                              size="md"
-                            />
-                          )}
-                          <span className="text-sm text-gray-900 dark:text-white">
-                            {verifiedDev.emulator.name}
-                          </span>
-                        </div>
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('verifier') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {verifiedDev.verifier.name ||
-                          verifiedDev.verifier.email}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('verifiedAt') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        <div title={formatDateTime(verifiedDev.verifiedAt)}>
-                          {formatTimeAgo(verifiedDev.verifiedAt)}
-                        </div>
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('notes') && (
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                        {verifiedDev.notes || '-'}
-                      </td>
-                    )}
-                    {columnVisibility.isColumnVisible('actions') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-2">
-                          <EditButton
-                            onClick={() => handleEdit(verifiedDev)}
-                            title="Edit Verified Developer"
+                      </div>
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('emulator') && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {verifiedDev.emulator.logo && (
+                          <EmulatorIcon
+                            logo={verifiedDev.emulator.logo}
+                            name={verifiedDev.emulator.name}
+                            showLogo={true}
+                            size="md"
                           />
-                          <DeleteButton
-                            onClick={() => handleRemove(verifiedDev.id)}
-                            title="Remove Verification"
-                            isLoading={
-                              removeVerifiedDeveloperMutation.isPending
-                            }
-                            disabled={removeVerifiedDeveloperMutation.isPending}
-                          />
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ),
-              )}
-              {verifiedDevelopersQuery.data?.verifiedDevelopers.length ===
-                0 && (
+                        )}
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {verifiedDev.emulator.name}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('verifier') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {verifiedDev.verifier.name || verifiedDev.verifier.email}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('verifiedAt') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <LocalizedDate date={verifiedDev.verifiedAt} format="timeAgo" />
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('notes') && (
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                      {verifiedDev.notes || '-'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <EditButton
+                          onClick={() => handleEdit(verifiedDev)}
+                          title="Edit Verified Developer"
+                        />
+                        <DeleteButton
+                          onClick={() => handleRemove(verifiedDev.id)}
+                          title="Remove Verification"
+                          isLoading={removeVerifiedDeveloperMutation.isPending}
+                          disabled={removeVerifiedDeveloperMutation.isPending}
+                        />
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+              {verifiedDevelopersQuery.data?.verifiedDevelopers.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}

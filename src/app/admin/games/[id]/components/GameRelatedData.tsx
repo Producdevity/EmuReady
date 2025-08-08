@@ -5,9 +5,9 @@ import {
   ApprovalStatusBadge,
   EditButton,
   ViewButton,
+  LocalizedDate,
 } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
-import { formatTimeAgo } from '@/utils/date'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
 
@@ -23,9 +23,7 @@ export function GameRelatedData(props: Props) {
       </h2>
 
       {props.game.listings.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">
-          No listings for this game yet.
-        </p>
+        <p className="text-gray-500 dark:text-gray-400">No listings for this game yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -56,16 +54,11 @@ export function GameRelatedData(props: Props) {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {props.game.listings.map((listing) => (
-                <tr
-                  key={listing.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
+                <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {listing.device.brand.name} {listing.device.modelName}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {listing.emulator.name}
-                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">{listing.emulator.name}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <PerformanceBadge
                       rank={listing.performance.rank}
@@ -80,17 +73,11 @@ export function GameRelatedData(props: Props) {
                     <ApprovalStatusBadge status={listing.status} />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatTimeAgo(listing.createdAt)}
+                    <LocalizedDate date={listing.createdAt} format="timeAgo" />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <EditButton
-                      href={`/admin/listings/${listing.id}/edit`}
-                      title="Edit Listing"
-                    />
-                    <ViewButton
-                      href={`/listings/${listing.id}`}
-                      title="View Details"
-                    />
+                    <EditButton href={`/admin/listings/${listing.id}/edit`} title="Edit Listing" />
+                    <ViewButton href={`/listings/${listing.id}`} title="View Details" />
                   </td>
                 </tr>
               ))}

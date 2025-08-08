@@ -2,7 +2,7 @@
 
 import { Copy, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
-import { Button, Modal, Badge } from '@/components/ui'
+import { Button, Modal, Badge, LocalizedDate } from '@/components/ui'
 import toast from '@/lib/toast'
 import { type UserBanWithDetails } from '../types'
 
@@ -44,25 +44,16 @@ function BanDetailsModal(props: Props) {
   }
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="Ban Details"
-      size="lg"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Ban Details" size="lg">
       <div className="space-y-6">
         {/* Ban Status */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Ban Status
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Ban Status</h3>
           <div className="flex items-center gap-2">
-            <Badge variant={getBanStatusBadgeVariant()}>
-              {getBanStatusText()}
-            </Badge>
+            <Badge variant={getBanStatusBadgeVariant()}>{getBanStatusText()}</Badge>
             {ban.isActive && ban.expiresAt && (
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Expires: {new Date(ban.expiresAt).toLocaleDateString()}
+                Expires: <LocalizedDate date={ban.expiresAt} format="date" />
               </span>
             )}
           </div>
@@ -70,9 +61,7 @@ function BanDetailsModal(props: Props) {
 
         {/* Banned User */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Banned User
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Banned User</h3>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -87,9 +76,7 @@ function BanDetailsModal(props: Props) {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {ban.user.email}
-                </p>
+                <p className="text-sm text-gray-900 dark:text-white">{ban.user.email}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -123,7 +110,7 @@ function BanDetailsModal(props: Props) {
                     Member Since
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(ban.user.createdAt).toLocaleDateString()}
+                    <LocalizedDate date={ban.user.createdAt} format="date" />
                   </p>
                 </div>
               )}
@@ -145,9 +132,7 @@ function BanDetailsModal(props: Props) {
 
         {/* Ban Details */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Ban Details
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Ban Details</h3>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -182,7 +167,7 @@ function BanDetailsModal(props: Props) {
                     Expires On
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(ban.expiresAt).toLocaleString()}
+                    <LocalizedDate date={ban.expiresAt} format="dateTime" />
                   </p>
                 </div>
               )}
@@ -209,7 +194,7 @@ function BanDetailsModal(props: Props) {
                 Banned On
               </label>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {new Date(ban.bannedAt).toLocaleString()}
+                <LocalizedDate date={ban.bannedAt} format="dateTime" />
               </p>
             </div>
             {ban.unbannedBy && (
@@ -227,9 +212,11 @@ function BanDetailsModal(props: Props) {
                     Unbanned On
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {ban.unbannedAt
-                      ? new Date(ban.unbannedAt).toLocaleString()
-                      : 'N/A'}
+                    {ban.unbannedAt ? (
+                      <LocalizedDate date={ban.unbannedAt} format="dateTime" />
+                    ) : (
+                      'N/A'
+                    )}
                   </p>
                 </div>
               </>
@@ -248,9 +235,7 @@ function BanDetailsModal(props: Props) {
                   onClick={() => copyToClipboard(ban.id, 'Ban ID')}
                   className="p-1 h-6 w-6"
                 >
-                  <Copy
-                    className={`w-3 h-3 ${copiedId === ban.id ? 'text-green-600' : ''}`}
-                  />
+                  <Copy className={`w-3 h-3 ${copiedId === ban.id ? 'text-green-600' : ''}`} />
                 </Button>
               </div>
             </div>

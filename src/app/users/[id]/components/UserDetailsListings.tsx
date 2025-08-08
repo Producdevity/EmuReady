@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { formatDate } from '@/utils/date'
+import { LocalizedDate } from '@/components/ui'
 import type { RouterOutput } from '@/types/trpc'
 
 type UserProfile = RouterOutput['users']['getUserById']
@@ -12,18 +12,13 @@ interface Props {
 function UserDetailsListings(props: Props) {
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
-        Listings
-      </h3>
+      <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Listings</h3>
       <div className="space-y-4">
         {props.listings.length > 0 ? (
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
             <div className="flex flex-col gap-4">
               {props.listings.map((listing: UserListing) => (
-                <div
-                  key={listing.id}
-                  className="flex flex-row gap-4 items-center"
-                >
+                <div key={listing.id} className="flex flex-row gap-4 items-center">
                   {/* Game Placeholder */}
                   <div className="flex-shrink-0">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
@@ -34,16 +29,12 @@ function UserDetailsListings(props: Props) {
                   {/* Game Info */}
                   <div className="flex-1 min-w-0">
                     <h4 className="text-lg font-medium text-gray-900 dark:text-white truncate">
-                      <Link
-                        href={`/listings/${listing.id}`}
-                        className="hover:underline"
-                      >
+                      <Link href={`/listings/${listing.id}`} className="hover:underline">
                         {listing.game?.title}
                       </Link>
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                      on {listing.device?.brand.name}{' '}
-                      {listing.device?.modelName}
+                      on {listing.device?.brand.name} {listing.device?.modelName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500">
                       Performance: {listing.performance?.label}
@@ -53,7 +44,7 @@ function UserDetailsListings(props: Props) {
                   {/* Date */}
                   <div className="flex-shrink-0 text-right">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(listing.createdAt)}
+                      <LocalizedDate date={listing.createdAt} format="date" />
                     </p>
                   </div>
                 </div>

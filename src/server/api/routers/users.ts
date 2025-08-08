@@ -16,24 +16,13 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { invalidateUser } from '@/server/cache/invalidation'
-import {
-  NOTIFICATION_EVENTS,
-  notificationEventEmitter,
-} from '@/server/notifications/eventEmitter'
-import {
-  buildOrderBy,
-  calculateOffset,
-  createPaginationResult,
-} from '@/server/utils/pagination'
+import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { buildOrderBy, calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
 import { withOptimisticLock } from '@/server/utils/transactions'
-import {
-  hasPermissionInContext,
-  PERMISSIONS,
-  roleIncludesRole,
-} from '@/utils/permission-system'
+import { hasPermissionInContext, PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
 import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
@@ -144,364 +133,343 @@ export const usersRouter = createTRPCRouter({
     return user ?? ResourceError.user.notFound()
   }),
 
-  getUserById: publicProcedure
-    .input(GetUserByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        userId,
-        listingsPage = 1,
-        listingsLimit = 12,
-        listingsSearch,
-        listingsSystem,
-        listingsEmulator,
-        votesPage = 1,
-        votesLimit = 12,
-        votesSearch,
-      } = input
+  getUserById: publicProcedure.input(GetUserByIdSchema).query(async ({ ctx, input }) => {
+    const {
+      userId,
+      listingsPage = 1,
+      listingsLimit = 12,
+      listingsSearch,
+      listingsSystem,
+      listingsEmulator,
+      votesPage = 1,
+      votesLimit = 12,
+      votesSearch,
+    } = input
 
-      // Check if user exists and get ban status
-      const userWithBanStatus = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
+    // Check if user exists and get ban status
+    const userWithBanStatus = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        userBans: {
+          where: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+          select: { id: true },
+        },
+      },
+    })
+
+    if (!userWithBanStatus) return ResourceError.user.notFound()
+
+    // Check if user is banned and if current user can view banned profiles
+    const isBanned = userWithBanStatus.userBans.length > 0
+    const currentUserRole = ctx.session?.user?.role
+    const canViewBannedUsers = roleIncludesRole(currentUserRole, Role.MODERATOR)
+
+    if (isBanned && !canViewBannedUsers) {
+      throw AppError.forbidden('This user profile is not accessible.')
+    }
+
+    // Build where clauses for listings filtering
+    const listingsWhere: Prisma.ListingWhereInput = {}
+    if (!ctx.session?.user?.showNsfw) {
+      listingsWhere.game = { isErotic: false } as Prisma.GameWhereInput
+    }
+
+    // Filter by approval status based on user permissions
+    if (canViewBannedUsers) {
+      // Moderators can see all statuses including rejected
+      // No additional filtering needed
+    } else if (ctx.session?.user?.id === userId) {
+      // Users can see their own approved and pending listings, but NOT rejected
+      listingsWhere.status = {
+        in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
+      }
+    } else {
+      // Regular users (including signed out) can ONLY see approved listings from others
+      listingsWhere.status = ApprovalStatus.APPROVED
+    }
+
+    const listingsSearchConditions = buildSearchFilter(listingsSearch, [
+      'game.title',
+      'device.modelName',
+      'emulator.name',
+    ])
+    if (listingsSearchConditions) {
+      listingsWhere.OR = listingsSearchConditions
+    }
+    if (listingsSystem) {
+      listingsWhere.device = { brand: { name: listingsSystem } }
+    }
+    if (listingsEmulator) {
+      listingsWhere.emulator = { name: listingsEmulator }
+    }
+
+    // Build where clauses for votes filtering
+    const votesWhere: Prisma.VoteWhereInput = {}
+    if (!ctx.session?.user?.showNsfw) {
+      votesWhere.listing = {
+        ...(votesWhere.listing as Prisma.ListingWhereInput),
+        game: { isErotic: false },
+      } as Prisma.ListingWhereInput
+    }
+    const votesSearchConditions = buildSearchFilter(votesSearch, [
+      'listing.game.title',
+      'listing.device.modelName',
+      'listing.emulator.name',
+    ])
+    if (votesSearchConditions) {
+      votesWhere.OR = votesSearchConditions
+    }
+
+    // Get user basic info
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        profileImage: true,
+        role: true,
+        trustScore: true,
+        createdAt: true,
+        trustActionLogs: {
+          select: { id: true, action: true, weight: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        },
+        // Include ban status for moderators
+        ...(canViewBannedUsers && {
           userBans: {
             where: {
               isActive: true,
               OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
-            select: { id: true },
+            select: {
+              id: true,
+              reason: true,
+              expiresAt: true,
+              bannedBy: { select: { name: true } },
+              createdAt: true,
+            },
           },
+        }),
+        userBadges: {
+          where: { badge: { isActive: true } },
+          select: {
+            id: true,
+            assignedAt: true,
+            color: true,
+            badge: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                color: true,
+                icon: true,
+              },
+            },
+          },
+          orderBy: { assignedAt: 'desc' },
         },
-      })
+        _count: { select: { listings: true, votes: true } },
+      },
+    })
 
-      if (!userWithBanStatus) return ResourceError.user.notFound()
-
-      // Check if user is banned and if current user can view banned profiles
-      const isBanned = userWithBanStatus.userBans.length > 0
-      const currentUserRole = ctx.session?.user?.role
-      const canViewBannedUsers = roleIncludesRole(
-        currentUserRole,
-        Role.MODERATOR,
-      )
-
-      if (isBanned && !canViewBannedUsers) {
-        throw AppError.forbidden('This user profile is not accessible.')
-      }
-
-      // Build where clauses for listings filtering
-      const listingsWhere: Prisma.ListingWhereInput = {}
-      if (!ctx.session?.user?.showNsfw) {
-        listingsWhere.game = { isErotic: false } as Prisma.GameWhereInput
-      }
-
-      // Filter by approval status based on user permissions
-      if (canViewBannedUsers) {
-        // Moderators can see all statuses including rejected
-        // No additional filtering needed
-      } else if (ctx.session?.user?.id === userId) {
-        // Users can see their own approved and pending listings, but NOT rejected
-        listingsWhere.status = {
-          in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
-        }
-      } else {
-        // Regular users (including signed out) can ONLY see approved listings from others
-        listingsWhere.status = ApprovalStatus.APPROVED
-      }
-
-      const listingsSearchConditions = buildSearchFilter(listingsSearch, [
-        'game.title',
-        'device.modelName',
-        'emulator.name',
-      ])
-      if (listingsSearchConditions) {
-        listingsWhere.OR = listingsSearchConditions
-      }
-      if (listingsSystem) {
-        listingsWhere.device = { brand: { name: listingsSystem } }
-      }
-      if (listingsEmulator) {
-        listingsWhere.emulator = { name: listingsEmulator }
-      }
-
-      // Build where clauses for votes filtering
-      const votesWhere: Prisma.VoteWhereInput = {}
-      if (!ctx.session?.user?.showNsfw) {
-        votesWhere.listing = {
-          ...(votesWhere.listing as Prisma.ListingWhereInput),
-          game: { isErotic: false },
-        } as Prisma.ListingWhereInput
-      }
-      const votesSearchConditions = buildSearchFilter(votesSearch, [
-        'listing.game.title',
-        'listing.device.modelName',
-        'listing.emulator.name',
-      ])
-      if (votesSearchConditions) {
-        votesWhere.OR = votesSearchConditions
-      }
-
-      // Get user basic info
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
+    // Get paginated listings with filtering
+    const listingsSkip = (listingsPage - 1) * listingsLimit
+    const [listings, listingsTotal] = await Promise.all([
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId, ...listingsWhere },
         select: {
           id: true,
-          name: true,
-          profileImage: true,
-          role: true,
-          trustScore: true,
           createdAt: true,
-          trustActionLogs: {
-            select: { id: true, action: true, weight: true, createdAt: true },
-            orderBy: { createdAt: 'desc' },
-            take: 10,
-          },
-          // Include ban status for moderators
-          ...(canViewBannedUsers && {
-            userBans: {
-              where: {
-                isActive: true,
-                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-              },
-              select: {
-                id: true,
-                reason: true,
-                expiresAt: true,
-                bannedBy: { select: { name: true } },
-                createdAt: true,
-              },
+          status: true,
+          device: {
+            select: {
+              brand: { select: { id: true, name: true } },
+              modelName: true,
             },
-          }),
-          userBadges: {
-            where: { badge: { isActive: true } },
+          },
+          game: {
+            select: {
+              title: true,
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          emulator: { select: { name: true } },
+          performance: { select: { label: true, rank: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: listingsSkip,
+        take: listingsLimit,
+      }),
+      ctx.prisma.listing.count({
+        where: { authorId: userId, ...listingsWhere },
+      }),
+    ])
+
+    // Get paginated votes with filtering
+    const votesSkip = (votesPage - 1) * votesLimit
+    const [votes, votesTotal] = await Promise.all([
+      ctx.prisma.vote.findMany({
+        where: { userId, ...votesWhere },
+        select: {
+          id: true,
+          value: true,
+          listing: {
             select: {
               id: true,
-              assignedAt: true,
-              color: true,
-              badge: {
+              device: {
                 select: {
-                  id: true,
-                  name: true,
-                  description: true,
-                  color: true,
-                  icon: true,
+                  brand: { select: { id: true, name: true } },
+                  modelName: true,
                 },
               },
+              game: {
+                select: {
+                  title: true,
+                  system: { select: { id: true, name: true, key: true } },
+                },
+              },
+              emulator: { select: { name: true } },
+              performance: { select: { label: true, rank: true } },
             },
-            orderBy: { assignedAt: 'desc' },
           },
-          _count: { select: { listings: true, votes: true } },
         },
+        orderBy: { id: 'desc' }, // Use id for consistent ordering since votes don't have timestamps
+        skip: votesSkip,
+        take: votesLimit,
+      }),
+      ctx.prisma.vote.count({ where: { userId, ...votesWhere } }),
+    ])
+
+    // Get filter options (for frontend dropdowns)
+    const [availableSystems, availableEmulators] = await Promise.all([
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId },
+        select: { device: { select: { brand: { select: { name: true } } } } },
+        distinct: ['deviceId'],
+      }),
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId },
+        select: { emulator: { select: { name: true } } },
+        distinct: ['emulatorId'],
+      }),
+    ])
+
+    return {
+      ...user,
+      listings: {
+        items: listings,
+        pagination: {
+          total: listingsTotal,
+          pages: Math.ceil(listingsTotal / listingsLimit),
+          page: listingsPage,
+          limit: listingsLimit,
+        },
+      },
+      votes: {
+        items: votes,
+        pagination: {
+          total: votesTotal,
+          pages: Math.ceil(votesTotal / votesLimit),
+          page: votesPage,
+          limit: votesLimit,
+        },
+      },
+      filterOptions: {
+        systems: [...new Set(availableSystems.map((l) => l.device.brand.name))],
+        emulators: [...new Set(availableEmulators.map((l) => l.emulator?.name).filter(Boolean))],
+      },
+    }
+  }),
+
+  update: protectedProcedure.input(UpdateUserSchema).mutation(async ({ ctx, input }) => {
+    const { name, email, profileImage, bio } = input
+    const userId = ctx.session.user.id
+
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, clerkId: true },
+    })
+
+    if (!user) return ResourceError.user.notFound()
+
+    if (email && email !== user.email) {
+      const existingUser = await ctx.prisma.user.findUnique({ where: { email } })
+
+      if (existingUser) return ResourceError.user.emailExists()
+    }
+
+    // Check for username conflicts if name is being updated
+    if (name && name.trim()) {
+      const existingUserWithName = await ctx.prisma.user.findFirst({
+        // Exclude current user
+        where: { name: name.trim(), id: { not: userId } },
       })
 
-      // Get paginated listings with filtering
-      const listingsSkip = (listingsPage - 1) * listingsLimit
-      const [listings, listingsTotal] = await Promise.all([
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId, ...listingsWhere },
+      if (existingUserWithName) return ResourceError.user.usernameExists()
+    }
+
+    // Sync name changes back to Clerk if username is being updated
+    if (name !== undefined && user.clerkId) {
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server')
+        const clerk = await clerkClient()
+
+        // Update username in Clerk to keep them in sync
+        await clerk.users.updateUser(user.clerkId, {
+          username: name || undefined, // Clear username if name is empty
+        })
+      } catch (clerkError) {
+        console.error('Failed to sync username to Clerk:', clerkError)
+        // Continue with database update even if Clerk sync fails
+        // The webhook will eventually sync it back if Clerk is updated manually
+      }
+    }
+
+    // Update user in database with optimistic locking using lastActiveAt as version field
+
+    return await withOptimisticLock(
+      ctx.prisma,
+      ctx.prisma.user,
+      userId,
+      'lastActiveAt',
+      async (currentUser, tx) => {
+        const result = await tx.user.update({
+          where: { id: userId },
+          data: {
+            ...(name !== undefined && { name: name?.trim() || null }),
+            ...(email && { email }),
+            ...(profileImage && { profileImage }),
+            ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
+            lastActiveAt: new Date(), // Update lastActiveAt for versioning
+          },
           select: {
             id: true,
-            createdAt: true,
-            status: true,
-            device: {
-              select: {
-                brand: { select: { id: true, name: true } },
-                modelName: true,
-              },
-            },
-            game: {
-              select: {
-                title: true,
-                system: { select: { id: true, name: true, key: true } },
-              },
-            },
-            emulator: { select: { name: true } },
-            performance: { select: { label: true, rank: true } },
+            name: true,
+            email: true,
+            bio: true,
+            profileImage: true,
+            role: true,
           },
-          orderBy: { createdAt: 'desc' },
-          skip: listingsSkip,
-          take: listingsLimit,
-        }),
-        ctx.prisma.listing.count({
-          where: { authorId: userId, ...listingsWhere },
-        }),
-      ])
-
-      // Get paginated votes with filtering
-      const votesSkip = (votesPage - 1) * votesLimit
-      const [votes, votesTotal] = await Promise.all([
-        ctx.prisma.vote.findMany({
-          where: { userId, ...votesWhere },
-          select: {
-            id: true,
-            value: true,
-            listing: {
-              select: {
-                id: true,
-                device: {
-                  select: {
-                    brand: { select: { id: true, name: true } },
-                    modelName: true,
-                  },
-                },
-                game: {
-                  select: {
-                    title: true,
-                    system: { select: { id: true, name: true, key: true } },
-                  },
-                },
-                emulator: { select: { name: true } },
-                performance: { select: { label: true, rank: true } },
-              },
-            },
-          },
-          orderBy: { id: 'desc' }, // Use id for consistent ordering since votes don't have timestamps
-          skip: votesSkip,
-          take: votesLimit,
-        }),
-        ctx.prisma.vote.count({ where: { userId, ...votesWhere } }),
-      ])
-
-      // Get filter options (for frontend dropdowns)
-      const [availableSystems, availableEmulators] = await Promise.all([
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId },
-          select: { device: { select: { brand: { select: { name: true } } } } },
-          distinct: ['deviceId'],
-        }),
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId },
-          select: { emulator: { select: { name: true } } },
-          distinct: ['emulatorId'],
-        }),
-      ])
-
-      return {
-        ...user,
-        listings: {
-          items: listings,
-          pagination: {
-            total: listingsTotal,
-            pages: Math.ceil(listingsTotal / listingsLimit),
-            page: listingsPage,
-            limit: listingsLimit,
-          },
-        },
-        votes: {
-          items: votes,
-          pagination: {
-            total: votesTotal,
-            pages: Math.ceil(votesTotal / votesLimit),
-            page: votesPage,
-            limit: votesLimit,
-          },
-        },
-        filterOptions: {
-          systems: [
-            ...new Set(availableSystems.map((l) => l.device.brand.name)),
-          ],
-          emulators: [
-            ...new Set(
-              availableEmulators.map((l) => l.emulator?.name).filter(Boolean),
-            ),
-          ],
-        },
-      }
-    }),
-
-  update: protectedProcedure
-    .input(UpdateUserSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { name, email, profileImage, bio } = input
-      const userId = ctx.session.user.id
-
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, clerkId: true },
-      })
-
-      if (!user) return ResourceError.user.notFound()
-
-      if (email && email !== user.email) {
-        const existingUser = await ctx.prisma.user.findUnique({
-          where: { email },
         })
 
-        if (existingUser) return ResourceError.user.emailExists()
-      }
+        // Invalidate SEO cache for user profile
+        await invalidateUser(userId)
 
-      // Check for username conflicts if name is being updated
-      if (name && name.trim()) {
-        const existingUserWithName = await ctx.prisma.user.findFirst({
-          // Exclude current user
-          where: { name: name.trim(), id: { not: userId } },
-        })
-
-        if (existingUserWithName) return ResourceError.user.usernameExists()
-      }
-
-      // Sync name changes back to Clerk if username is being updated
-      if (name !== undefined && user.clerkId) {
-        try {
-          const { clerkClient } = await import('@clerk/nextjs/server')
-          const clerk = await clerkClient()
-
-          // Update username in Clerk to keep them in sync
-          await clerk.users.updateUser(user.clerkId, {
-            username: name || undefined, // Clear username if name is empty
-          })
-        } catch (clerkError) {
-          console.error('Failed to sync username to Clerk:', clerkError)
-          // Continue with database update even if Clerk sync fails
-          // The webhook will eventually sync it back if Clerk is updated manually
-        }
-      }
-
-      // Update user in database with optimistic locking using lastActiveAt as version field
-
-      return await withOptimisticLock(
-        ctx.prisma,
-        ctx.prisma.user,
-        userId,
-        'lastActiveAt',
-        async (currentUser, tx) => {
-          const result = await tx.user.update({
-            where: { id: userId },
-            data: {
-              ...(name !== undefined && { name: name?.trim() || null }),
-              ...(email && { email }),
-              ...(profileImage && { profileImage }),
-              ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
-              lastActiveAt: new Date(), // Update lastActiveAt for versioning
-            },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              bio: true,
-              profileImage: true,
-              role: true,
-            },
-          })
-
-          // Invalidate SEO cache for user profile
-          await invalidateUser(userId)
-
-          return result
-        },
-      )
-    }),
+        return result
+      },
+    )
+  }),
 
   // Admin-only routes
   getAll: permissionProcedure(PERMISSIONS.MANAGE_USERS)
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
-      const {
-        search,
-        sortField,
-        sortDirection,
-        page = 1,
-        limit = 20,
-      } = input ?? {}
+      const { search, sortField, sortDirection, page = 1, limit = 20 } = input ?? {}
       const skip = calculateOffset({ page }, limit)
 
       // Build where clause for search
@@ -553,55 +521,48 @@ export const usersRouter = createTRPCRouter({
       }
     }),
 
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
-    async ({ ctx }) => {
-      const [
-        userCount,
-        authorCount,
-        developerCount,
-        moderatorCount,
-        adminCount,
-        superAdminCount,
-        bannedUsersCount,
-      ] = await Promise.all([
-        createCountQuery(ctx.prisma.user, { role: Role.USER }),
-        createCountQuery(ctx.prisma.user, { role: Role.AUTHOR }),
-        createCountQuery(ctx.prisma.user, { role: Role.DEVELOPER }),
-        createCountQuery(ctx.prisma.user, { role: Role.MODERATOR }),
-        createCountQuery(ctx.prisma.user, { role: Role.ADMIN }),
-        createCountQuery(ctx.prisma.user, { role: Role.SUPER_ADMIN }),
-        createCountQuery(ctx.prisma.user, {
-          userBans: {
-            some: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
+  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+    const [
+      userCount,
+      authorCount,
+      developerCount,
+      moderatorCount,
+      adminCount,
+      superAdminCount,
+      bannedUsersCount,
+    ] = await Promise.all([
+      createCountQuery(ctx.prisma.user, { role: Role.USER }),
+      createCountQuery(ctx.prisma.user, { role: Role.AUTHOR }),
+      createCountQuery(ctx.prisma.user, { role: Role.DEVELOPER }),
+      createCountQuery(ctx.prisma.user, { role: Role.MODERATOR }),
+      createCountQuery(ctx.prisma.user, { role: Role.ADMIN }),
+      createCountQuery(ctx.prisma.user, { role: Role.SUPER_ADMIN }),
+      createCountQuery(ctx.prisma.user, {
+        userBans: {
+          some: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
-        }),
-      ])
-
-      const total =
-        userCount +
-        developerCount +
-        moderatorCount +
-        authorCount +
-        adminCount +
-        superAdminCount
-
-      return {
-        total,
-        byRole: {
-          user: userCount,
-          author: authorCount,
-          developer: developerCount,
-          moderator: moderatorCount,
-          admin: adminCount,
-          superAdmin: superAdminCount,
         },
-        bannedUsers: bannedUsersCount,
-      }
-    },
-  ),
+      }),
+    ])
+
+    const total =
+      userCount + developerCount + moderatorCount + authorCount + adminCount + superAdminCount
+
+    return {
+      total,
+      byRole: {
+        user: userCount,
+        author: authorCount,
+        developer: developerCount,
+        moderator: moderatorCount,
+        admin: adminCount,
+        superAdmin: superAdminCount,
+      },
+      bannedUsers: bannedUsersCount,
+    }
+  }),
 
   updateRole: permissionProcedure(PERMISSIONS.CHANGE_USER_ROLES)
     .input(UpdateUserRoleSchema)
@@ -631,9 +592,7 @@ export const usersRouter = createTRPCRouter({
         targetUser.role === Role.SUPER_ADMIN &&
         !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        return AppError.forbidden(
-          'You need permission to modify super admin users',
-        )
+        return AppError.forbidden('You need permission to modify super admin users')
       }
 
       // Only users with MODIFY_SUPER_ADMIN_USERS permission can assign SUPER_ADMIN role
@@ -641,9 +600,7 @@ export const usersRouter = createTRPCRouter({
         role === Role.SUPER_ADMIN &&
         !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        return AppError.forbidden(
-          'You need permission to assign super admin role',
-        )
+        return AppError.forbidden('You need permission to assign super admin role')
       }
 
       // Use the role sync utility to update both database and Clerk

@@ -2,8 +2,7 @@
 
 import { Calendar, Monitor, Users, Plus, ImageIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Modal, Button, OptimizedImage } from '@/components/ui'
-import { formatYear } from '@/utils/date'
+import { Modal, Button, OptimizedImage, LocalizedDate } from '@/components/ui'
 import { extractBoxartUrl } from '../utils/boxartHelpers'
 import { inferRatingAndNsfw } from '../utils/nsfwHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
@@ -69,9 +68,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
               {platforms.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Monitor className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Platform:
-                  </span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Platform:</span>
                   <span className="text-sm font-medium text-slate-900 dark:text-white">
                     {platforms.join(', ')}
                   </span>
@@ -81,11 +78,9 @@ function GamePreviewModal(props: GamePreviewModalProps) {
               {props.game.release_date && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Released:
-                  </span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Released:</span>
                   <span className="text-sm font-medium text-slate-900 dark:text-white">
-                    {formatYear(props.game.release_date)}
+                    <LocalizedDate date={props.game.release_date} format="year" />
                   </span>
                 </div>
               )}
@@ -93,9 +88,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
               {props.game.players && (
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Players:
-                  </span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Players:</span>
                   <span className="text-sm font-medium text-slate-900 dark:text-white">
                     {props.game.players}
                   </span>
@@ -104,9 +97,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
 
               {props.game.rating && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Rating:
-                  </span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Rating:</span>
                   <span className="text-sm font-medium text-slate-900 dark:text-white">
                     {props.game.rating}
                   </span>
@@ -135,9 +126,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
         {/* Overview */}
         {props.game.overview && (
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">
-              Overview
-            </h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Overview</h3>
             <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
               <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 {props.game.overview}

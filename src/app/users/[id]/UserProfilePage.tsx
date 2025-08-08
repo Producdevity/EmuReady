@@ -25,12 +25,12 @@ import {
   PageSkeletonLoading,
   PerformanceBadge,
   Pagination,
+  LocalizedDate,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 import { validateClientData } from '@/utils/client-validation'
-import { formatDate, formatTimeAgo } from '@/utils/date'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 import UserDetailsPageError from './components/UserDetailsPageError'
@@ -40,15 +40,10 @@ function UserDetailsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const userId = isString(params.id)
-    ? params.id
-    : isArray(params.id)
-      ? params.id[0]
-      : ''
+  const userId = isString(params.id) ? params.id : isArray(params.id) ? params.id[0] : ''
 
   // Get current tab from URL params
-  const activeTab =
-    (searchParams.get('tab') as 'listings' | 'votes') || 'listings'
+  const activeTab = (searchParams.get('tab') as 'listings' | 'votes') || 'listings'
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   // Pagination and filter state
@@ -62,15 +57,9 @@ function UserDetailsPage() {
     z.number().int().positive(),
     1,
   )
-  const [searchFilter, setSearchFilter] = useState(
-    searchParams.get('search') || '',
-  )
-  const [systemFilter, setSystemFilter] = useState(
-    searchParams.get('system') || '',
-  )
-  const [emulatorFilter, setEmulatorFilter] = useState(
-    searchParams.get('emulator') || '',
-  )
+  const [searchFilter, setSearchFilter] = useState(searchParams.get('search') || '')
+  const [systemFilter, setSystemFilter] = useState(searchParams.get('system') || '')
+  const [emulatorFilter, setEmulatorFilter] = useState(searchParams.get('emulator') || '')
 
   const [debouncedSearch, setDebouncedSearch] = useState(searchFilter)
   useMemo(() => {
@@ -91,10 +80,7 @@ function UserDetailsPage() {
   })
 
   const currentUserQuery = api.users.me.useQuery()
-  const canViewBannedUsers = roleIncludesRole(
-    currentUserQuery.data?.role,
-    Role.MODERATOR,
-  )
+  const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
   // Update URL params when filters change
   const updateUrlParams = useCallback(
@@ -133,14 +119,6 @@ function UserDetailsPage() {
     updateUrlParams({ emulator: value, listingsPage: 1 })
   }
 
-  const handleListingsPageChange = (page: number) => {
-    updateUrlParams({ listingsPage: page })
-  }
-
-  const handleVotesPageChange = (page: number) => {
-    updateUrlParams({ votesPage: page })
-  }
-
   if (userQuery.isPending) return <PageSkeletonLoading />
 
   if (userQuery.error || !userQuery.data) {
@@ -149,8 +127,7 @@ function UserDetailsPage() {
 
   const user = userQuery.data
   const userTrustLevel =
-    TRUST_LEVELS.find((level) => (user.trustScore ?? 0) >= level.minScore) ||
-    TRUST_LEVELS[0]
+    TRUST_LEVELS.find((level) => (user.trustScore ?? 0) >= level.minScore) || TRUST_LEVELS[0]
 
   const currentListings = user.listings.items
   const currentVotes = user.votes.items
@@ -196,9 +173,7 @@ function UserDetailsPage() {
                         </Badge>
                       )}
                     <Badge
-                      variant={
-                        userTrustLevel.name === 'New' ? 'default' : 'success'
-                      }
+                      variant={userTrustLevel.name === 'New' ? 'default' : 'success'}
                       className="text-sm flex items-center gap-1"
                     >
                       <Medal className="w-3 h-3" />
@@ -208,7 +183,7 @@ function UserDetailsPage() {
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 justify-center lg:justify-start">
                     <Calendar className="w-4 h-4" />
                     <span className="text-sm">
-                      Joined {formatDate(user.createdAt ?? new Date())}
+                      Joined <LocalizedDate date={user.createdAt ?? new Date()} format="date" />
                     </span>
                   </div>
                 </div>
@@ -225,9 +200,7 @@ function UserDetailsPage() {
                       <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                         {user._count?.listings ?? 0}
                       </p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Listings
-                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">Listings</p>
                     </div>
                   </div>
                 </div>
@@ -241,9 +214,7 @@ function UserDetailsPage() {
                       <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                         {upvoteCount}
                       </p>
-                      <p className="text-sm text-green-700 dark:text-green-300">
-                        Upvotes
-                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">Upvotes</p>
                     </div>
                   </div>
                 </div>
@@ -257,9 +228,7 @@ function UserDetailsPage() {
                       <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
                         {user.trustScore}
                       </p>
-                      <p className="text-sm text-orange-700 dark:text-orange-300">
-                        Trust Score
-                      </p>
+                      <p className="text-sm text-orange-700 dark:text-orange-300">Trust Score</p>
                     </div>
                   </div>
                 </div>
@@ -273,9 +242,7 @@ function UserDetailsPage() {
                       <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                         {user._count?.votes ?? 0}
                       </p>
-                      <p className="text-sm text-purple-700 dark:text-purple-300">
-                        Total Votes
-                      </p>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">Total Votes</p>
                     </div>
                   </div>
                 </div>
@@ -407,8 +374,7 @@ function UserDetailsPage() {
                                 {listing.game?.title}
                               </h3>
                               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {listing.device?.brand.name}{' '}
-                                {listing.device?.modelName}
+                                {listing.device?.brand.name} {listing.device?.modelName}
                               </p>
                               <div className="flex items-center gap-2 mt-2">
                                 <Badge variant="default" size="sm">
@@ -422,7 +388,7 @@ function UserDetailsPage() {
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                {formatTimeAgo(listing.createdAt)}
+                                <LocalizedDate date={listing.createdAt} format="timeAgo" />
                               </p>
                             </div>
                           </div>
@@ -451,7 +417,7 @@ function UserDetailsPage() {
                         totalPages={user.listings.pagination.pages}
                         totalItems={user.listings.pagination.total}
                         itemsPerPage={user.listings.pagination.limit}
-                        onPageChange={handleListingsPageChange}
+                        onPageChange={(page) => updateUrlParams({ listingsPage: page })}
                       />
                     </div>
                   )}
@@ -497,8 +463,7 @@ function UserDetailsPage() {
                                 {vote.listing.game?.title}
                               </p>
                               <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {vote.listing.device?.brand.name}{' '}
-                                {vote.listing.device?.modelName}
+                                {vote.listing.device?.brand.name} {vote.listing.device?.modelName}
                               </p>
                             </div>
                           </div>
@@ -527,7 +492,7 @@ function UserDetailsPage() {
                         totalPages={user.votes.pagination.pages}
                         totalItems={user.votes.pagination.total}
                         itemsPerPage={user.votes.pagination.limit}
-                        onPageChange={handleVotesPageChange}
+                        onPageChange={(page) => updateUrlParams({ votesPage: page })}
                       />
                     </div>
                   )}

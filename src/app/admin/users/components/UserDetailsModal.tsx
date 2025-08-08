@@ -18,21 +18,13 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
-import {
-  Modal,
-  Code,
-  Button,
-  Badge,
-  LoadingSpinner,
-  Input,
-} from '@/components/ui'
+import { Modal, Code, Button, Badge, LoadingSpinner, Input, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 import { getRoleVariant, getTrustActionBadgeColor } from '@/utils/badgeColors'
 import { copyToClipboard } from '@/utils/copyToClipboard'
-import { formatDate, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -52,10 +44,7 @@ function UserDetailsModal(props: Props) {
 
   // Get current user to check if they're SUPER_ADMIN
   const currentUserQuery = api.users.me.useQuery()
-  const isSuperAdmin = hasPermission(
-    currentUserQuery.data?.role,
-    Role.SUPER_ADMIN,
-  )
+  const isSuperAdmin = hasPermission(currentUserQuery.data?.role, Role.SUPER_ADMIN)
 
   // Get ban status and report statistics
   const banStatusQuery = api.userBans.checkUserBanStatus.useQuery(
@@ -80,9 +69,7 @@ function UserDetailsModal(props: Props) {
       setAdjustmentReason('')
       setIsAdjusting(false)
       if (!props.userId) return
-      utils.users.getUserById
-        .invalidate({ userId: props.userId })
-        .catch(console.error)
+      utils.users.getUserById.invalidate({ userId: props.userId }).catch(console.error)
     },
     onError: (error) => {
       toast.error(`Failed to adjust trust score: ${getErrorMessage(error)}`)
@@ -168,7 +155,7 @@ function UserDetailsModal(props: Props) {
                   </Badge>
                   <span className="text-white/80 text-sm">
                     Member since{' '}
-                    {formatDate(userQuery.data.createdAt ?? new Date())}
+                    <LocalizedDate date={userQuery.data.createdAt ?? new Date()} format="date" />
                   </span>
                 </div>
               </div>
@@ -216,8 +203,7 @@ function UserDetailsModal(props: Props) {
                 <p className="text-xs text-orange-700 dark:text-orange-300">
                   {TRUST_LEVELS.find(
                     (level) =>
-                      userQuery.data?.trustScore &&
-                      userQuery.data.trustScore >= level.minScore,
+                      userQuery.data?.trustScore && userQuery.data.trustScore >= level.minScore,
                   )?.name || 'Unranked'}
                 </p>
               </div>
@@ -230,7 +216,7 @@ function UserDetailsModal(props: Props) {
                   </span>
                 </div>
                 <p className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                  {formatTimeAgo(userQuery.data.createdAt ?? new Date())}
+                  <LocalizedDate date={userQuery.data.createdAt ?? new Date()} format="timeAgo" />
                 </p>
               </div>
 
@@ -245,8 +231,7 @@ function UserDetailsModal(props: Props) {
                   {reportStatsQuery.data?.totalReports ?? 0}
                 </p>
                 <p className="text-xs text-red-700 dark:text-red-300">
-                  {reportStatsQuery.data?.reportedListingsCount ?? 0} listings
-                  reported
+                  {reportStatsQuery.data?.reportedListingsCount ?? 0} listings reported
                 </p>
               </div>
             </div>
@@ -274,9 +259,7 @@ function UserDetailsModal(props: Props) {
                         />
                         <button
                           type="button"
-                          onClick={() =>
-                            copyToClipboard(userQuery.data?.id ?? null)
-                          }
+                          onClick={() => copyToClipboard(userQuery.data?.id ?? null)}
                           className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
                           title="Copy User ID"
                         >
@@ -294,11 +277,7 @@ function UserDetailsModal(props: Props) {
                       </span>
                       <div className="flex items-center gap-2">
                         <ShieldUser className="w-4 h-4 text-gray-500" />
-                        <Badge
-                          variant={getRoleVariant(
-                            userQuery.data.role ?? 'USER',
-                          )}
-                        >
+                        <Badge variant={getRoleVariant(userQuery.data.role ?? 'USER')}>
                           {userQuery.data.role}
                         </Badge>
                       </div>
@@ -311,10 +290,13 @@ function UserDetailsModal(props: Props) {
                       Member Since
                     </span>
                     <p className="text-sm text-gray-900 dark:text-white">
-                      {formatDate(userQuery.data.createdAt ?? new Date())}
+                      <LocalizedDate date={userQuery.data.createdAt ?? new Date()} format="date" />
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatTimeAgo(userQuery.data.createdAt ?? new Date())}
+                      <LocalizedDate
+                        date={userQuery.data.createdAt ?? new Date()}
+                        format="timeAgo"
+                      />
                     </p>
                   </div>
 
@@ -357,16 +339,15 @@ function UserDetailsModal(props: Props) {
                               Reason: {banStatusQuery.data.ban.reason}
                             </p>
                             <p className="text-xs text-red-700 dark:text-red-300">
-                              Banned by:{' '}
-                              {banStatusQuery.data.ban.bannedBy?.name ||
-                                'Unknown'}
+                              Banned by: {banStatusQuery.data.ban.bannedBy?.name || 'Unknown'}
                             </p>
                             {banStatusQuery.data.ban.expiresAt && (
                               <p className="text-xs text-red-700 dark:text-red-300">
                                 Expires:{' '}
-                                {formatDate(
-                                  new Date(banStatusQuery.data.ban.expiresAt),
-                                )}
+                                <LocalizedDate
+                                  date={new Date(banStatusQuery.data.ban.expiresAt)}
+                                  format="date"
+                                />
                               </p>
                             )}
                           </>
@@ -402,23 +383,18 @@ function UserDetailsModal(props: Props) {
 
                     {userQuery.data.listings.items.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.listings.items
-                          .slice(0, 3)
-                          .map((listing) => (
-                            <div
-                              key={listing.id}
-                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
-                            >
-                              <span className="truncate">
-                                {listing.game.title} on{' '}
-                                {listing.device.brand.name}{' '}
-                                {listing.device.modelName}
-                              </span>
-                              <span className="text-gray-500 ml-2">
-                                {listing.performance.label}
-                              </span>
-                            </div>
-                          ))}
+                        {userQuery.data.listings.items.slice(0, 3).map((listing) => (
+                          <div
+                            key={listing.id}
+                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
+                          >
+                            <span className="truncate">
+                              {listing.game.title} on {listing.device.brand.name}{' '}
+                              {listing.device.modelName}
+                            </span>
+                            <span className="text-gray-500 ml-2">{listing.performance.label}</span>
+                          </div>
+                        ))}
                         {userQuery.data.listings.items.length > 3 && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             +{userQuery.data.listings.items.length - 3} more...
@@ -450,14 +426,9 @@ function UserDetailsModal(props: Props) {
                             key={vote.id}
                             className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
                           >
-                            <span className="truncate">
-                              {vote.listing.game.title}
-                            </span>
+                            <span className="truncate">{vote.listing.game.title}</span>
                             <span
-                              className={cn(
-                                'ml-2',
-                                vote.value ? 'text-green-600' : 'text-red-600',
-                              )}
+                              className={cn('ml-2', vote.value ? 'text-green-600' : 'text-red-600')}
                             >
                               {vote.value ? '👍' : '👎'}
                             </span>
@@ -465,15 +436,12 @@ function UserDetailsModal(props: Props) {
                         ))}
                         {userQuery.data.votes.items.length > 3 && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.votes.items.length - 3} more
-                            votes...
+                            +{userQuery.data.votes.items.length - 3} more votes...
                           </p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        No votes cast yet
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">No votes cast yet</p>
                     )}
                   </div>
 
@@ -489,42 +457,36 @@ function UserDetailsModal(props: Props) {
                       </span>
                     </div>
 
-                    {userQuery.data.trustActionLogs &&
-                    userQuery.data.trustActionLogs.length > 0 ? (
+                    {userQuery.data.trustActionLogs && userQuery.data.trustActionLogs.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.trustActionLogs
-                          .slice(0, 3)
-                          .map((log) => (
-                            <div
-                              key={log.id}
-                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
-                            >
-                              <span className="truncate flex items-center gap-1">
-                                <Badge
-                                  variant={getTrustActionBadgeColor(log.action)}
-                                  size="sm"
-                                  className="text-xs"
-                                >
-                                  {log.action}
-                                </Badge>
-                              </span>
-                              <span
-                                className={cn(
-                                  'ml-2 font-medium',
-                                  log.weight > 0
-                                    ? 'text-green-600'
-                                    : 'text-red-600',
-                                )}
+                        {userQuery.data.trustActionLogs.slice(0, 3).map((log) => (
+                          <div
+                            key={log.id}
+                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
+                          >
+                            <span className="truncate flex items-center gap-1">
+                              <Badge
+                                variant={getTrustActionBadgeColor(log.action)}
+                                size="sm"
+                                className="text-xs"
                               >
-                                {log.weight > 0 ? '+' : ''}
-                                {log.weight}
-                              </span>
-                            </div>
-                          ))}
+                                {log.action}
+                              </Badge>
+                            </span>
+                            <span
+                              className={cn(
+                                'ml-2 font-medium',
+                                log.weight > 0 ? 'text-green-600' : 'text-red-600',
+                              )}
+                            >
+                              {log.weight > 0 ? '+' : ''}
+                              {log.weight}
+                            </span>
+                          </div>
+                        ))}
                         {userQuery.data.trustActionLogs.length > 3 && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.trustActionLogs.length - 3} more
-                            actions...
+                            +{userQuery.data.trustActionLogs.length - 3} more actions...
                           </p>
                         )}
                       </div>
@@ -560,12 +522,8 @@ function UserDetailsModal(props: Props) {
                                 key={value}
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                  handleTrustScoreAdjustment(value)
-                                }
-                                disabled={
-                                  isAdjusting || !adjustmentReason.trim()
-                                }
+                                onClick={() => handleTrustScoreAdjustment(value)}
+                                disabled={isAdjusting || !adjustmentReason.trim()}
                                 className={cn(
                                   'h-8 px-2 text-xs min-w-[44px] transition-all duration-200',
                                   value > 0
@@ -593,9 +551,7 @@ function UserDetailsModal(props: Props) {
                             type="number"
                             placeholder="±points"
                             value={customAdjustment}
-                            onChange={(e) =>
-                              setCustomAdjustment(e.target.value)
-                            }
+                            onChange={(e) => setCustomAdjustment(e.target.value)}
                             disabled={isAdjusting}
                             className="h-8 text-xs w-20"
                             min="-1000"
@@ -609,15 +565,11 @@ function UserDetailsModal(props: Props) {
                               if (!isNaN(adjustment) && adjustment !== 0) {
                                 handleTrustScoreAdjustment(adjustment)
                               } else {
-                                toast.error(
-                                  'Please enter a valid non-zero number',
-                                )
+                                toast.error('Please enter a valid non-zero number')
                               }
                             }}
                             disabled={
-                              isAdjusting ||
-                              !customAdjustment.trim() ||
-                              !adjustmentReason.trim()
+                              isAdjusting || !customAdjustment.trim() || !adjustmentReason.trim()
                             }
                             className="h-8 px-3 text-xs"
                           >
@@ -630,9 +582,7 @@ function UserDetailsModal(props: Props) {
                           <Input
                             placeholder="Reason for adjustment (required)"
                             value={adjustmentReason}
-                            onChange={(e) =>
-                              setAdjustmentReason(e.target.value)
-                            }
+                            onChange={(e) => setAdjustmentReason(e.target.value)}
                             disabled={isAdjusting}
                             className="h-8 text-xs"
                             maxLength={500}
@@ -665,11 +615,7 @@ function UserDetailsModal(props: Props) {
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button
-                variant="outline"
-                onClick={props.onClose}
-                className="min-w-[100px]"
-              >
+              <Button variant="outline" onClick={props.onClose} className="min-w-[100px]">
                 Close
               </Button>
             </div>

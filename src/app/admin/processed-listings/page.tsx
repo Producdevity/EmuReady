@@ -20,6 +20,7 @@ import {
   Pagination,
   RejectButton,
   SelectInput,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -28,13 +29,11 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { getApprovalStatusColor } from '@/utils/badgeColors'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { ApprovalStatus } from '@orm'
 import OverrideStatusModal from './components/OverrideStatusModal'
 
-type ProcessedListing =
-  RouterOutput['listings']['getProcessed']['listings'][number]
+type ProcessedListing = RouterOutput['listings']['getProcessed']['listings'][number]
 
 const statusOptions = [
   { id: 'all' as const, name: 'All Processed' },
@@ -82,8 +81,7 @@ function ProcessedListingsPage() {
   const [selectedListingForOverride, setSelectedListingForOverride] =
     useState<ProcessedListing | null>(null)
   const [overrideNotes, setOverrideNotes] = useState('')
-  const [newStatusForOverride, setNewStatusForOverride] =
-    useState<ApprovalStatus | null>(null)
+  const [newStatusForOverride, setNewStatusForOverride] = useState<ApprovalStatus | null>(null)
 
   const utils = api.useUtils()
   const overrideMutation = api.listings.overrideApprovalStatus.useMutation({
@@ -100,10 +98,7 @@ function ProcessedListingsPage() {
     },
   })
 
-  const openOverrideModal = (
-    listing: ProcessedListing,
-    targetStatus: ApprovalStatus,
-  ) => {
+  const openOverrideModal = (listing: ProcessedListing, targetStatus: ApprovalStatus) => {
     setSelectedListingForOverride(listing)
     setNewStatusForOverride(targetStatus)
     setOverrideNotes(listing.processedNotes ?? '')
@@ -281,17 +276,12 @@ function ProcessedListingsPage() {
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('processedAt') && (
-                    <td
-                      className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-                      title={
-                        listing.processedAt
-                          ? formatDateTime(listing.processedAt)
-                          : 'N/A'
-                      }
-                    >
-                      {listing.processedAt
-                        ? formatTimeAgo(listing.processedAt)
-                        : 'N/A'}
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {listing.processedAt ? (
+                        <LocalizedDate date={listing.processedAt} format="timeAgo" />
+                      ) : (
+                        'N/A'
+                      )}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
@@ -299,25 +289,19 @@ function ProcessedListingsPage() {
                       {listing.status === ApprovalStatus.APPROVED && (
                         <RejectButton
                           title="Override to Rejected"
-                          onClick={() =>
-                            openOverrideModal(listing, ApprovalStatus.REJECTED)
-                          }
+                          onClick={() => openOverrideModal(listing, ApprovalStatus.REJECTED)}
                         />
                       )}
                       {listing.status === ApprovalStatus.REJECTED && (
                         <ApproveButton
                           title="Override to Approved"
-                          onClick={() =>
-                            openOverrideModal(listing, ApprovalStatus.APPROVED)
-                          }
+                          onClick={() => openOverrideModal(listing, ApprovalStatus.APPROVED)}
                         />
                       )}
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() =>
-                          openOverrideModal(listing, ApprovalStatus.PENDING)
-                        }
+                        onClick={() => openOverrideModal(listing, ApprovalStatus.PENDING)}
                         title="Revert to Pending"
                         className="text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                       >

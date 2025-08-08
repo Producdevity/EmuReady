@@ -10,14 +10,13 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  LocalizedDate,
 } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
-import { formatDateTime } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
 
-type PendingPcListing =
-  RouterOutput['pcListings']['pending']['pcListings'][number]
+type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 
 interface ApprovalModalProps {
   listing: PendingPcListing
@@ -42,9 +41,7 @@ function ApprovalModal(props: ApprovalModalProps) {
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
               <Flag className="w-5 h-5" />
-              <p className="font-medium">
-                Warning: This listing has active reports
-              </p>
+              <p className="font-medium">Warning: This listing has active reports</p>
             </div>
             <p className="text-sm text-red-600 dark:text-red-300 mt-1">
               Please review this PC listing carefully before approving.
@@ -56,16 +53,11 @@ function ApprovalModal(props: ApprovalModalProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Game Info */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Game
-            </h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Game</h3>
             <div className="flex items-center gap-3">
               {props.listing.game.imageUrl && (
                 <Image
-                  src={getImageUrl(
-                    props.listing.game.imageUrl,
-                    props.listing.game.title,
-                  )}
+                  src={getImageUrl(props.listing.game.imageUrl, props.listing.game.title)}
                   alt={props.listing.game.title}
                   width={48}
                   height={48}
@@ -91,26 +83,22 @@ function ApprovalModal(props: ApprovalModalProps) {
 
           {/* Hardware Info */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Hardware
-            </h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Hardware</h3>
             <div className="space-y-1">
               <p className="text-sm text-gray-900 dark:text-white">
-                <span className="font-medium">CPU:</span>{' '}
-                {props.listing.cpu.brand.name} {props.listing.cpu.modelName}
+                <span className="font-medium">CPU:</span> {props.listing.cpu.brand.name}{' '}
+                {props.listing.cpu.modelName}
               </p>
               <p className="text-sm text-gray-900 dark:text-white">
-                <span className="font-medium">GPU:</span>{' '}
-                {props.listing.gpu?.brand.name} {props.listing.gpu?.modelName}
+                <span className="font-medium">GPU:</span> {props.listing.gpu?.brand.name}{' '}
+                {props.listing.gpu?.modelName}
               </p>
             </div>
           </div>
 
           {/* Emulator Info */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Emulator
-            </h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Emulator</h3>
             <div className="flex items-center gap-2">
               <EmulatorIcon
                 logo={props.listing.emulator.logo}
@@ -118,9 +106,7 @@ function ApprovalModal(props: ApprovalModalProps) {
                 size="md"
                 showLogo={emulatorLogos.showEmulatorLogos}
               />
-              <span className="text-gray-900 dark:text-white">
-                {props.listing.emulator.name}
-              </span>
+              <span className="text-gray-900 dark:text-white">{props.listing.emulator.name}</span>
             </div>
           </div>
 
@@ -142,14 +128,12 @@ function ApprovalModal(props: ApprovalModalProps) {
                   <TooltipTrigger>
                     <Flag className="w-4 h-4 text-red-500" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    This listing has active reports
-                  </TooltipContent>
+                  <TooltipContent>This listing has active reports</TooltipContent>
                 </Tooltip>
               )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {formatDateTime(props.listing.createdAt)}
+              <LocalizedDate date={props.listing.createdAt} format="dateTime" />
             </p>
           </div>
         </div>
@@ -174,9 +158,7 @@ function ApprovalModal(props: ApprovalModalProps) {
         {/* Notes */}
         {props.listing.notes && (
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Notes
-            </h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Notes</h3>
             <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
               {props.listing.notes}
             </p>
@@ -186,23 +168,15 @@ function ApprovalModal(props: ApprovalModalProps) {
 
       {/* Actions */}
       <div className="mt-6 flex justify-end gap-3">
-        <Button
-          variant="outline"
-          onClick={props.onClose}
-          disabled={props.isLoading}
-        >
+        <Button variant="outline" onClick={props.onClose} disabled={props.isLoading}>
           Cancel
         </Button>
         <Button
-          variant={
-            (props.listing._count?.reports ?? 0) > 0 ? 'destructive' : 'default'
-          }
+          variant={(props.listing._count?.reports ?? 0) > 0 ? 'destructive' : 'default'}
           onClick={handleApprove}
           disabled={props.isLoading}
         >
-          {(props.listing._count?.reports ?? 0) > 0
-            ? 'Approve Anyway'
-            : 'Approve PC Listing'}
+          {(props.listing._count?.reports ?? 0) > 0 ? 'Approve Anyway' : 'Approve PC Listing'}
         </Button>
       </div>
     </Modal>

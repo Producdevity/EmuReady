@@ -28,6 +28,7 @@ import {
   TooltipTrigger,
   useConfirmDialog,
   ViewButton,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -35,7 +36,6 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
-import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission } from '@/utils/permissions'
@@ -56,12 +56,7 @@ type Game = RouterOutput['games']['get']['games'][number] & {
     pcListings: number
   }
 }
-type GameSortField =
-  | 'title'
-  | 'system.name'
-  | 'listingsCount'
-  | 'submittedAt'
-  | 'status'
+type GameSortField = 'title' | 'system.name' | 'listingsCount' | 'submittedAt' | 'status'
 
 const GAMES_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -76,15 +71,11 @@ const GAMES_COLUMNS: ColumnDefinition[] = [
 
 function AdminGamesPage() {
   const [systemId, setSystemId] = useState('')
-  const [statusFilter, setStatusFilter] =
-    useState<Nullable<ApprovalStatus>>(null)
+  const [statusFilter, setStatusFilter] = useState<Nullable<ApprovalStatus>>(null)
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
-  const [selectedGameForImagePreview, setSelectedGameForImagePreview] =
-    useState<Game | null>(null)
+  const [selectedGameForImagePreview, setSelectedGameForImagePreview] = useState<Game | null>(null)
   const [processingGameId, setProcessingGameId] = useState<string | null>(null)
-  const [processingAction, setProcessingAction] = useState<
-    'approve' | 'reject' | null
-  >(null)
+  const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | null>(null)
   const confirm = useConfirmDialog()
 
   const table = useAdminTable<GameSortField>({ defaultLimit: 20 })
@@ -233,12 +224,8 @@ function AdminGamesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Games Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all games in the system
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Games Management</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage all games in the system</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -257,33 +244,25 @@ function AdminGamesPage() {
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {gameStatsQuery.data.total}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total Games
-            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total Games</div>
           </Card>
           <Card>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {gameStatsQuery.data.approved}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Approved
-            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Approved</div>
           </Card>
           <Card>
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {gameStatsQuery.data.pending}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Pending
-            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Pending</div>
           </Card>
           <Card>
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {gameStatsQuery.data.rejected}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Rejected
-            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Rejected</div>
           </Card>
         </div>
       )}
@@ -417,10 +396,7 @@ function AdminGamesPage() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {gamesQuery.data?.games.map((game) => (
-                    <tr
-                      key={game.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
+                    <tr key={game.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-6 py-4">
                           <div className="flex items-center">
@@ -453,9 +429,7 @@ function AdminGamesPage() {
                                       {game.title.substring(0, 30)}...
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    {game.title}
-                                  </TooltipContent>
+                                  <TooltipContent side="top">{game.title}</TooltipContent>
                                 </Tooltip>
                               ) : (
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -470,9 +444,7 @@ function AdminGamesPage() {
                                     {game.id.length > 8 && '...'}
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="bottom">
-                                  ID: {game.id}
-                                </TooltipContent>
+                                <TooltipContent side="bottom">ID: {game.id}</TooltipContent>
                               </Tooltip>
                             </div>
                           </div>
@@ -480,9 +452,7 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <Badge variant="default">
-                            {game.system?.name || game.systemId}
-                          </Badge>
+                          <Badge variant="default">{game.system?.name || game.systemId}</Badge>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('listings') && (
@@ -513,26 +483,19 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('submittedAt') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game.submittedAt
-                            ? formatDate(game.submittedAt)
-                            : 'N/A'}
+                          {game.submittedAt ? (
+                            <LocalizedDate date={game.submittedAt} format="date" />
+                          ) : (
+                            'N/A'
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <ViewButton
-                              href={`/games/${game.id}`}
-                              title="View Game"
-                            />
-                            {hasPermission(
-                              userQuery.data?.role,
-                              Role.MODERATOR,
-                            ) && (
-                              <EditButton
-                                href={`/admin/games/${game.id}`}
-                                title="Edit Game"
-                              />
+                            <ViewButton href={`/games/${game.id}`} title="View Game" />
+                            {hasPermission(userQuery.data?.role, Role.MODERATOR) && (
+                              <EditButton href={`/admin/games/${game.id}`} title="Edit Game" />
                             )}
                             {hasPermission(userQuery.data?.role, Role.ADMIN) &&
                               game.status === ApprovalStatus.REJECTED && (
@@ -540,8 +503,7 @@ function AdminGamesPage() {
                                   onClick={() => handleApproveGame(game)}
                                   title="Approve Game"
                                   isLoading={
-                                    processingGameId === game.id &&
-                                    processingAction === 'approve'
+                                    processingGameId === game.id && processingAction === 'approve'
                                   }
                                   disabled={processingGameId === game.id}
                                 />
@@ -552,16 +514,12 @@ function AdminGamesPage() {
                                   onClick={() => handleRejectGame(game)}
                                   title="Reject Game"
                                   isLoading={
-                                    processingGameId === game.id &&
-                                    processingAction === 'reject'
+                                    processingGameId === game.id && processingAction === 'reject'
                                   }
                                   disabled={processingGameId === game.id}
                                 />
                               )}
-                            {hasPermission(
-                              userQuery.data?.role,
-                              Role.ADMIN,
-                            ) && (
+                            {hasPermission(userQuery.data?.role, Role.ADMIN) && (
                               <DeleteButton
                                 onClick={() => handleDelete(game)}
                                 title="Delete Game"
@@ -578,16 +536,15 @@ function AdminGamesPage() {
               </table>
             </div>
 
-            {gamesQuery.data?.pagination &&
-              gamesQuery.data.pagination.pages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                  <Pagination
-                    currentPage={table.page}
-                    totalPages={gamesQuery.data.pagination.pages}
-                    onPageChange={table.setPage}
-                  />
-                </div>
-              )}
+            {gamesQuery.data?.pagination && gamesQuery.data.pagination.pages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <Pagination
+                  currentPage={table.page}
+                  totalPages={gamesQuery.data.pagination.pages}
+                  onPageChange={table.setPage}
+                />
+              </div>
+            )}
           </>
         )}
       </AdminTableContainer>
