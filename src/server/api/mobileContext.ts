@@ -7,6 +7,7 @@ import superjson from 'superjson'
 import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
+import { log } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
@@ -59,7 +60,7 @@ export const createMobileTRPCContext = async (
     const webAuth = await auth()
     clerkUserId = webAuth.userId
   } catch (error) {
-    console.error('Web auth failed, try mobile JWT token', error)
+    log.error('Web auth failed, try mobile JWT token', error)
   }
 
   // If no web auth, try mobile JWT token from Authorization header

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { keys } from 'remeda'
 import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
@@ -240,44 +241,60 @@ export const coreRouter = createTRPCRouter({
 
       // For success rate sorting, we need to fetch ALL listings, calculate rates, sort, then paginate
       if (isSortingBySuccessRate) {
-        const allListings = await ctx.prisma.listing.findMany({
-          where: combinedFilters,
-          include: {
-            game: { include: { system: true } },
-            device: { include: { brand: true, soc: true } },
-            emulator: true,
-            performance: true,
-            author: {
-              select: {
-                id: true,
-                name: true,
-                userBans: canSeeBannedUsers
-                  ? {
-                      where: {
-                        isActive: true,
-                        OR: [
-                          { expiresAt: null },
-                          { expiresAt: { gt: new Date() } },
-                        ],
-                      },
-                      select: { id: true, reason: true, bannedAt: true },
-                    }
-                  : false,
-              },
-            },
-            developerVerifications: {
-              include: { developer: { select: { id: true, name: true } } },
-            },
-            _count: { select: { votes: true, comments: true } },
-            votes: ctx.session
-              ? {
-                  where: { userId: ctx.session.user.id },
-                  select: { value: true },
-                }
-              : undefined,
+        const allListings = await Sentry.startSpan(
+          {
+            op: 'db.query',
+            name: 'listings.fetchAllForSuccessRateSort',
           },
-          orderBy: { createdAt: 'desc' }, // fallback ordering
-        })
+          async (span) => {
+            span.setAttribute(
+              'filters.count',
+              Object.keys(combinedFilters).length,
+            )
+
+            const listings = await ctx.prisma.listing.findMany({
+              where: combinedFilters,
+              include: {
+                game: { include: { system: true } },
+                device: { include: { brand: true, soc: true } },
+                emulator: true,
+                performance: true,
+                author: {
+                  select: {
+                    id: true,
+                    name: true,
+                    userBans: canSeeBannedUsers
+                      ? {
+                          where: {
+                            isActive: true,
+                            OR: [
+                              { expiresAt: null },
+                              { expiresAt: { gt: new Date() } },
+                            ],
+                          },
+                          select: { id: true, reason: true, bannedAt: true },
+                        }
+                      : false,
+                  },
+                },
+                developerVerifications: {
+                  include: { developer: { select: { id: true, name: true } } },
+                },
+                _count: { select: { votes: true, comments: true } },
+                votes: ctx.session
+                  ? {
+                      where: { userId: ctx.session.user.id },
+                      select: { value: true },
+                    }
+                  : undefined,
+              },
+              orderBy: { createdAt: 'desc' }, // fallback ordering
+            })
+
+            span.setAttribute('listings.totalFetched', listings.length)
+            return listings
+          },
+        )
 
         // Calculate success rates for all listings
         const allListingsWithStats = await Promise.all(

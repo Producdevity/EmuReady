@@ -36,14 +36,8 @@ const switchGamesFuseCache = new MemoryCache<Fuse<SwitchGameEntry>>({
 // Configuration for fuzzy search
 const FUSE_OPTIONS = {
   keys: [
-    {
-      name: 'name',
-      weight: 0.7,
-    },
-    {
-      name: 'title_normalized',
-      weight: 0.3,
-    },
+    { name: 'name', weight: 0.7 },
+    { name: 'title_normalized', weight: 0.3 },
   ],
   threshold: 0.4, // More strict threshold for better matches
   distance: 50, // Reduced distance for better precision
@@ -61,39 +55,31 @@ const SWITCH_GAMES_URL =
  * Fetches Switch games data from external source
  */
 async function fetchSwitchGamesData(): Promise<SwitchGameEntry[]> {
-  try {
-    const response = await fetch(SWITCH_GAMES_URL, {
-      headers: {
-        'User-Agent': 'EmuReady-GameSearch/1.0',
-      },
-    })
+  const response = await fetch(SWITCH_GAMES_URL, {
+    headers: { 'User-Agent': 'EmuReady-GameSearch/1.0' },
+  })
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch Switch games data: ${response.status} ${response.statusText}`,
-      )
-    }
-
-    const data = (await response.json()) as SwitchGameEntry[]
-
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid Switch games data format: expected array')
-    }
-
-    // Validate data structure
-    for (const entry of data.slice(0, 5)) {
-      // Check first 5 entries
-      if (!entry.program_id || !entry.name || !entry.title_normalized) {
-        throw new Error('Invalid Switch game entry structure')
-      }
-    }
-
-    return data
-  } catch (error) {
+  if (!response.ok) {
     throw new Error(
-      `Error fetching Switch games data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Failed to fetch Switch games data: ${response.status} ${response.statusText}`,
     )
   }
+
+  const data = (await response.json()) as SwitchGameEntry[]
+
+  if (!Array.isArray(data)) {
+    throw new Error('Invalid Switch games data format: expected array')
+  }
+
+  // Validate data structure
+  for (const entry of data.slice(0, 5)) {
+    // Check first 5 entries
+    if (!entry.program_id || !entry.name || !entry.title_normalized) {
+      throw new Error('Invalid Switch game entry structure')
+    }
+  }
+
+  return data
 }
 
 /**
@@ -107,10 +93,17 @@ async function getSwitchGamesData(): Promise<SwitchGameEntry[]> {
   if (cachedData) return cachedData
 
   // Fetch fresh data and cache it
-  const freshData = await fetchSwitchGamesData()
-  switchGamesDataCache.set(cacheKey, freshData)
-
-  return freshData
+  try {
+    const freshData = await fetchSwitchGamesData()
+    switchGamesDataCache.set(cacheKey, freshData)
+    return freshData
+  } catch (error) {
+    // Add context to the error without losing the original stack trace
+    if (error instanceof Error) {
+      error.message = `Switch games data fetch failed: ${error.message}`
+    }
+    throw error
+  }
 }
 
 /**
@@ -239,11 +232,9 @@ export async function getBestTitleIdMatch(
   const results = await findTitleIdForGameName(gameName, 1)
 
   // Return the best match if score is good enough (>= 50% for more flexibility)
-  if (results.length > 0 && results[0].score >= 50) {
-    return results[0].titleId
-  }
-
-  return null
+  return results.length > 0 && results[0].score >= 50
+    ? results[0].titleId
+    : null
 }
 
 /**

@@ -5,8 +5,6 @@ import * as Sentry from '@sentry/nextjs'
  * Use this instead of console.log/error for better observability
  */
 
-const { logger } = Sentry
-
 export const log = {
   /**
    * Log debug information (only in development)
@@ -15,7 +13,7 @@ export const log = {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DEBUG] ${message}`, extra)
     }
-    logger.debug(message, extra)
+    Sentry.logger.debug(message, extra)
   },
 
   /**
@@ -23,7 +21,7 @@ export const log = {
    */
   info: (message: string, extra?: Record<string, unknown>) => {
     console.log(`[INFO] ${message}`, extra)
-    logger.info(message, extra)
+    Sentry.logger.info(message, extra)
   },
 
   /**
@@ -31,7 +29,7 @@ export const log = {
    */
   warn: (message: string, extra?: Record<string, unknown>) => {
     console.warn(`[WARN] ${message}`, extra)
-    logger.warn(message, extra)
+    Sentry.logger.warn(message, extra)
   },
 
   /**
@@ -57,7 +55,7 @@ export const log = {
         })
       })
     } else {
-      logger.error(message, {
+      Sentry.logger.error(message, {
         ...extra,
         error: error ? String(error) : undefined,
       })
@@ -88,7 +86,7 @@ export const log = {
         })
       })
     } else {
-      logger.fatal(message, {
+      Sentry.logger.fatal(message, {
         ...extra,
         error: error ? String(error) : undefined,
       })
