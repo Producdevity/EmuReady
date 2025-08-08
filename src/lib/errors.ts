@@ -2,6 +2,7 @@
  * @documentation /docs/ERROR_HANDLING.md
  */
 import { TRPCError } from '@trpc/server'
+import { toArray } from '@/utils/array'
 import { formatUserRole } from '@/utils/format'
 import { type Role } from '@orm'
 
