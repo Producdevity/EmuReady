@@ -105,7 +105,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(GetCustomFieldDefinitionByIdSchema)
     .query(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+        AppError.insufficientRole(Role.SUPER_ADMIN)
       }
       const field = await prisma.customFieldDefinition.findUnique({
         where: { id: input.id },
@@ -249,7 +249,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(UpdateCustomFieldDefinitionOrderSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+        AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
       return ctx.prisma.$transaction(

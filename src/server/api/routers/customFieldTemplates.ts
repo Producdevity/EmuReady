@@ -60,13 +60,13 @@ function createFieldData(field: TemplateField, index: number) {
 
 async function requireSuperAdminPermission(ctx: TRPCContext) {
   if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-    AppError.insufficientPermissions(Role.SUPER_ADMIN)
+    AppError.insufficientRole(Role.SUPER_ADMIN)
   }
 }
 
 async function requireAdminPermission(ctx: TRPCContext) {
   if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.ADMIN)) {
-    AppError.insufficientPermissions(Role.ADMIN)
+    AppError.insufficientRole(Role.ADMIN)
   }
 }
 

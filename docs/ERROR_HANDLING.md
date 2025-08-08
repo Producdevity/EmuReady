@@ -51,7 +51,7 @@ import { AppError } from '@/lib/errors'
 // Authentication & Authorization
 AppError.unauthorized()
 AppError.forbidden()
-AppError.insufficientPermissions('ADMIN')
+AppError.insufficientRole('ADMIN')
 
 // Resource errors
 AppError.notFound('User')
@@ -211,7 +211,7 @@ ValidationError.invalidOptions('SELECT')
 
 // After
 + if (!hasPermission(user.role, Role.ADMIN)) {
-+   AppError.insufficientPermissions('ADMIN')
++   AppError.insufficientRole('ADMIN')
 + }
 ```
 

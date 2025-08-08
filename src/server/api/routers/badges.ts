@@ -265,7 +265,7 @@ export const badgesRouter = createTRPCRouter({
 
     // Check permissions - users can only see their own badges
     if (userId !== ctx.session.user.id && !hasPermission(ctx.session.user.role, Role.ADMIN)) {
-      return AppError.insufficientPermissions()
+      return AppError.insufficientRole()
     }
 
     return await ctx.prisma.userBadge.findMany({

@@ -260,7 +260,7 @@ export const moderatorProcedure = t.procedure.use(performanceMiddleware).use(({ 
   }
 
   if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-    AppError.insufficientPermissions(Role.MODERATOR)
+    AppError.insufficientRole(Role.MODERATOR)
   }
 
   return next({
@@ -279,7 +279,7 @@ export const developerProcedure = t.procedure.use(performanceMiddleware).use(({ 
   }
 
   if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
-    AppError.insufficientPermissions(Role.DEVELOPER)
+    AppError.insufficientRole(Role.DEVELOPER)
   }
 
   return next({
@@ -296,7 +296,7 @@ export const adminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx,
   if (!ctx.session?.user) return AppError.unauthorized()
 
   if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-    AppError.insufficientPermissions(Role.ADMIN)
+    AppError.insufficientRole(Role.ADMIN)
   }
 
   return next({
@@ -311,7 +311,7 @@ export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({
   if (!ctx.session?.user) return AppError.unauthorized()
 
   if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-    AppError.insufficientPermissions(Role.SUPER_ADMIN)
+    AppError.insufficientRole(Role.SUPER_ADMIN)
   }
 
   return next({

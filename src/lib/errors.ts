@@ -67,12 +67,24 @@ export class AppError {
     })
   }
 
-  static insufficientPermissions(requiredRole?: Role): never {
+  static insufficientRole(requiredRole?: Role): never {
     const formattedRole = requiredRole ? formatUserRole(requiredRole) : null
     const message = formattedRole
       ? `You need ${formattedRole} permissions to perform this action`
       : ERROR_MESSAGES.INSUFFICIENT_PERMISSIONS
 
+    throw new TRPCError({ code: ERROR_CODES.FORBIDDEN, message })
+  }
+
+  static insufficientRoles(roles: Role[] | string[]): never {
+    const formattedRoles = roles.map((role) => formatUserRole(role as Role)).join(' or ')
+    const message = `You need one of the following roles to perform this action: ${formattedRoles}`
+
+    throw new TRPCError({ code: ERROR_CODES.FORBIDDEN, message })
+  }
+
+  static insufficientPermissions(permissions: string | string[]): never {
+    const message = `You need the following permissions: ${toArray(permissions).join(', ')}`
     throw new TRPCError({ code: ERROR_CODES.FORBIDDEN, message })
   }
 

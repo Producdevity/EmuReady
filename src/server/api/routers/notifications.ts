@@ -89,7 +89,7 @@ export const notificationsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
       if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-        return AppError.insufficientPermissions()
+        return AppError.insufficientRole()
       }
 
       // Get all users
@@ -150,6 +150,6 @@ export const notificationsRouter = createTRPCRouter({
   getBatchingStatus: protectedProcedure.query(async ({ ctx }) => {
     return hasPermission(ctx.session.user.role, Role.ADMIN)
       ? notificationService.getBatchingQueueStatus()
-      : AppError.insufficientPermissions()
+      : AppError.insufficientRole()
   }),
 })

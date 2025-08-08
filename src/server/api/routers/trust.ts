@@ -16,7 +16,7 @@ export const trustRouter = createTRPCRouter({
   // Get trust logs for admin dashboard (SUPER_ADMIN only)
   getTrustLogs: protectedProcedure.input(GetTrustLogsSchema).query(async ({ ctx, input }) => {
     if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      AppError.insufficientPermissions(Role.SUPER_ADMIN)
+      AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
     const { page, limit, sortField, sortDirection, search, action } = input
@@ -81,7 +81,7 @@ export const trustRouter = createTRPCRouter({
   // Get trust system statistics (SUPER_ADMIN only)
   getTrustStats: protectedProcedure.input(GetTrustStatsSchema).query(async ({ ctx }) => {
     if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      AppError.insufficientPermissions(Role.SUPER_ADMIN)
+      AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
     const [totalActions, totalUsers, levelDistribution] = await Promise.all([
@@ -129,7 +129,7 @@ export const trustRouter = createTRPCRouter({
     .input(RunMonthlyActiveBonusSchema)
     .mutation(async ({ ctx }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+        AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
       return await applyMonthlyActiveBonus()
@@ -140,7 +140,7 @@ export const trustRouter = createTRPCRouter({
     .input(ManualTrustAdjustmentSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+        AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
       await applyManualTrustAdjustment({

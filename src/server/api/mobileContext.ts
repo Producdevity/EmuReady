@@ -66,14 +66,42 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
 
     if (token) {
       try {
+        // Check if we have the right secret key for the token type
+        const secretKey = process.env.CLERK_SECRET_KEY!
+
+        // Log key type mismatch in production
+        if (process.env.NODE_ENV === 'production') {
+          const isTestKey = secretKey.startsWith('sk_test_')
+
+          // JWT tokens from live keys have different signatures than test keys
+          if (isTestKey) {
+            console.warn('Warning: Using test secret key in production environment')
+          }
+        }
+
+        // Verify token with options optimized for mobile apps
         const payload = await verifyToken(token, {
-          secretKey: process.env.CLERK_SECRET_KEY!,
+          secretKey,
+          // Skip authorized parties check for mobile tokens (they often don't have azp claim)
+          skipJwksCache: false,
+          // Add clock skew tolerance for mobile devices with incorrect time
+          clockSkewInMs: 60000, // 60 seconds tolerance
         })
         clerkUserId = payload.sub
       } catch (error) {
         // Invalid or expired token - continue without auth for public endpoints
         if (process.env.NODE_ENV === 'development') {
           console.warn('Mobile JWT token verification failed:', error)
+        }
+        // Log production errors for debugging
+        if (process.env.NODE_ENV === 'production' && error instanceof Error) {
+          console.error('Mobile auth error:', error.message)
+          // Check for common issues
+          if (error.message.includes('signature')) {
+            console.error(
+              'Token signature mismatch - check if CLERK_SECRET_KEY matches the token environment (live vs test)',
+            )
+          }
         }
       }
     }
@@ -150,14 +178,42 @@ export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOpt
 
   if (token) {
     try {
+      // Check if we have the right secret key for the token type
+      const secretKey = process.env.CLERK_SECRET_KEY!
+
+      // Log key type mismatch in production
+      if (process.env.NODE_ENV === 'production') {
+        const isTestKey = secretKey.startsWith('sk_test_')
+
+        // JWT tokens from live keys have different signatures than test keys
+        if (isTestKey) {
+          console.warn('Warning: Using test secret key in production environment')
+        }
+      }
+
+      // Verify token with options optimized for mobile apps
       const payload = await verifyToken(token, {
-        secretKey: process.env.CLERK_SECRET_KEY!,
+        secretKey,
+        // Skip authorized parties check for mobile tokens (they often don't have azp claim)
+        skipJwksCache: false,
+        // Add clock skew tolerance for mobile devices with incorrect time
+        clockSkewInMs: 60000, // 60 seconds tolerance
       })
       clerkUserId = payload.sub
     } catch (error) {
       // Invalid or expired token - continue without auth for public endpoints
       if (process.env.NODE_ENV === 'development') {
         console.warn('Mobile JWT token verification failed:', error)
+      }
+      // Log production errors for debugging
+      if (process.env.NODE_ENV === 'production' && error instanceof Error) {
+        console.error('Mobile auth error:', error.message)
+        // Check for common issues
+        if (error.message.includes('signature')) {
+          console.error(
+            'Token signature mismatch - check if CLERK_SECRET_KEY matches the token environment (live vs test)',
+          )
+        }
       }
     }
   }
@@ -296,7 +352,7 @@ export const mobileAdminProcedure = mt.procedure
     }
 
     if (ctx.session.user.role !== Role.ADMIN && ctx.session.user.role !== Role.SUPER_ADMIN) {
-      AppError.insufficientPermissions(Role.ADMIN)
+      AppError.insufficientRole(Role.ADMIN)
     }
 
     return next({
@@ -318,7 +374,7 @@ export const mobileModeratorProcedure = mt.procedure
 
     const allowedRoles: Role[] = [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN]
     if (!allowedRoles.includes(ctx.session.user.role)) {
-      AppError.insufficientPermissions(Role.MODERATOR)
+      AppError.insufficientRole(Role.MODERATOR)
     }
 
     return next({
@@ -359,7 +415,7 @@ export const mobileDeveloperProcedure = mt.procedure
     }
 
     if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
-      AppError.insufficientPermissions(Role.DEVELOPER)
+      AppError.insufficientRole(Role.DEVELOPER)
     }
 
     return next({
@@ -378,7 +434,7 @@ export const mobileSuperAdminProcedure = mt.procedure
     if (!ctx.session?.user) return AppError.unauthorized()
 
     if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      AppError.insufficientPermissions(Role.SUPER_ADMIN)
+      AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
     return next({
@@ -402,16 +458,9 @@ export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
 
     const hasAccess = await hasDeveloperAccessToEmulator(userId, emulatorId, ctx.prisma)
 
-    if (!hasAccess) {
-      AppError.forbidden(`You don't have developer access to this emulator`)
-    }
+    if (!hasAccess) return AppError.insufficientRole(Role.DEVELOPER)
 
-    return next({
-      ctx: {
-        ...ctx,
-        emulatorId,
-      },
-    })
+    return next({ ctx: { ...ctx, emulatorId } })
   })
 }
 
@@ -424,15 +473,10 @@ export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
 export function mobilePermissionProcedure(requiredPermission: string) {
   return mobileProtectedProcedure.use(({ ctx, next }) => {
     if (!hasPermissionInContext(ctx, requiredPermission)) {
-      AppError.forbidden(`You need the '${requiredPermission}' permission to perform this action`)
+      return AppError.insufficientPermissions(requiredPermission)
     }
 
-    return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
 }
 
@@ -446,16 +490,9 @@ export function mobileMultiPermissionProcedure(requiredPermissions: string[]) {
       (permission) => !hasPermissionInContext(ctx, permission),
     )
 
-    if (missingPermissions.length > 0) {
-      AppError.forbidden(`You need the following permissions: ${missingPermissions.join(', ')}`)
-    }
+    if (missingPermissions.length > 0) return AppError.insufficientPermissions(missingPermissions)
 
-    return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
 }
 
@@ -469,18 +506,9 @@ export function mobileAnyPermissionProcedure(requiredPermissions: string[]) {
       hasPermissionInContext(ctx, permission),
     )
 
-    if (!hasAnyPermission) {
-      AppError.forbidden(
-        `You need one of the following permissions: ${requiredPermissions.join(', ')}`,
-      )
-    }
+    if (!hasAnyPermission) return AppError.insufficientRoles(requiredPermissions)
 
-    return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
 }
 
