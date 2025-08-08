@@ -13,13 +13,18 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
+import { batchQueries } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
     async ({ ctx }) => {
-      const [pending, underReview, resolved, dismissed] = await Promise.all([
+      const [pending, underReview, resolved, dismissed] = await batchQueries([
         ctx.prisma.listingReport.count({
           where: { status: ReportStatus.PENDING },
         }),
@@ -57,7 +62,7 @@ export const listingReportsRouter = createTRPCRouter({
         limit = 20,
       } = input ?? {}
 
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       // Build where clause
       const where: Prisma.ListingReportWhereInput = {}
@@ -78,13 +83,12 @@ export const listingReportsRouter = createTRPCRouter({
 
       if (reason) where.reason = reason
 
-      // Build orderBy
       const orderBy: Prisma.ListingReportOrderByWithRelationInput = {}
       if (sortField && sortDirection) {
         orderBy[sortField] = sortDirection
       }
 
-      const [reports, total] = await Promise.all([
+      const [reports, total] = await batchQueries([
         ctx.prisma.listingReport.findMany({
           where,
           orderBy,
@@ -106,11 +110,9 @@ export const listingReportsRouter = createTRPCRouter({
         ctx.prisma.listingReport.count({ where }),
       ])
 
-      const pages = Math.ceil(total / limit)
-
       return {
         reports,
-        pagination: { page, limit, total, pages },
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
@@ -262,7 +264,7 @@ export const listingReportsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { userId } = input
 
-      const [reportedListingsCount, totalReports] = await Promise.all([
+      const [reportedListingsCount, totalReports] = await batchQueries([
         ctx.prisma.listingReport.count({
           where: {
             listing: {

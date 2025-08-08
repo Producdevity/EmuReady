@@ -12,6 +12,7 @@ import permissionsSeeder from './seeders/permissionsSeeder'
 import socSeeder from './seeders/socSeeder'
 import systemsSeeder from './seeders/systemsSeeder'
 import usersSeeder from './seeders/usersSeeder'
+import { batchOperations } from '../src/server/utils/transactions'
 
 const prisma = new PrismaClient()
 
@@ -19,30 +20,40 @@ async function clearDb() {
   console.warn('🗑️ Clearing database...')
   console.warn('I hope you know what you are doing 😅')
 
-  // Clear all data in the correct order (children before parents)
-  await prisma.vote.deleteMany()
-  await prisma.commentVote.deleteMany()
-  await prisma.comment.deleteMany()
-  await prisma.listingCustomFieldValue.deleteMany()
-  await prisma.pcListingCustomFieldValue.deleteMany()
-  await prisma.listing.deleteMany()
-  await prisma.pcListing.deleteMany()
-  await prisma.customFieldDefinition.deleteMany()
-  await prisma.customFieldTemplateField.deleteMany()
-  await prisma.customFieldTemplate.deleteMany()
-  await prisma.performanceScale.deleteMany()
-  await prisma.device.deleteMany()
-  await prisma.cpu.deleteMany()
-  await prisma.gpu.deleteMany()
-  await prisma.soC.deleteMany()
-  await prisma.emulator.deleteMany()
-  await prisma.game.deleteMany()
-  await prisma.system.deleteMany()
-  await prisma.deviceBrand.deleteMany()
-  // Clear permission system tables
-  await prisma.permissionActionLog.deleteMany()
-  await prisma.rolePermission.deleteMany()
-  await prisma.permission.deleteMany()
+  const deleteOperations = [
+    () => prisma.vote.deleteMany(),
+    () => prisma.commentVote.deleteMany(),
+    () => prisma.comment.deleteMany(),
+    () => prisma.listingCustomFieldValue.deleteMany(),
+    () => prisma.pcListingCustomFieldValue.deleteMany(),
+    () => prisma.listing.deleteMany(),
+    () => prisma.pcListing.deleteMany(),
+    () => prisma.customFieldDefinition.deleteMany(),
+    () => prisma.customFieldTemplateField.deleteMany(),
+    () => prisma.customFieldTemplate.deleteMany(),
+    () => prisma.performanceScale.deleteMany(),
+    () => prisma.device.deleteMany(),
+    () => prisma.cpu.deleteMany(),
+    () => prisma.gpu.deleteMany(),
+    () => prisma.soC.deleteMany(),
+    () => prisma.emulator.deleteMany(),
+    () => prisma.game.deleteMany(),
+    () => prisma.system.deleteMany(),
+    () => prisma.deviceBrand.deleteMany(),
+    () => prisma.permissionActionLog.deleteMany(),
+    () => prisma.rolePermission.deleteMany(),
+    () => prisma.permission.deleteMany(),
+  ]
+
+  const result = await batchOperations(deleteOperations, {
+    batchSize: 5,
+    parallel: false,
+    stopOnError: true,
+  })
+
+  console.log(
+    `✅ Deleted ${result.successCount} tables, ${result.errorCount} errors`,
+  )
 }
 
 async function main() {

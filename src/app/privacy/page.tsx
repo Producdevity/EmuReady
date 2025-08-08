@@ -19,7 +19,7 @@ function PrivacyPolicyPage() {
         </h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          <strong>Last updated:</strong> {new Date().toLocaleDateString()}
+          <strong>Last updated:</strong> August 1, 2025
         </p>
 
         <div className="space-y-8">
@@ -77,6 +77,49 @@ function PrivacyPolicyPage() {
                 improve our services
               </li>
             </ul>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-3 mt-6">
+              2.3 Mobile App Information
+            </h3>
+            <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+              <li>
+                <strong>Device Identifiers:</strong> For analytics and crash
+                reporting
+              </li>
+              <li>
+                <strong>App Information:</strong> App version, build number, and
+                performance data
+              </li>
+              <li>
+                <strong>Operating System:</strong> Version and device
+                model/manufacturer
+              </li>
+              <li>
+                <strong>Crash Logs:</strong> Technical data to help us fix app
+                issues
+              </li>
+            </ul>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-3 mt-6">
+              2.4 Device Permissions (Mobile App)
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
+              Our mobile app may request the following permissions:
+            </p>
+            <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+              <li>
+                <strong>Storage:</strong> To save app preferences and cache data
+                for offline access
+              </li>
+              <li>
+                <strong>Network:</strong> To communicate with our servers and
+                sync your data
+              </li>
+              <li>
+                <strong>Push Notifications:</strong> To send you updates about
+                your reports and community activity (opt-in)
+              </li>
+            </ul>
           </section>
 
           <section>
@@ -90,9 +133,10 @@ function PrivacyPolicyPage() {
               <li>Provide and maintain our services</li>
               <li>Authenticate users</li>
               <li>Enable community features like comments and ratings</li>
+              <li>Send important service updates and notifications (opt-in)</li>
               <li>
-                Send important service updates and notifications (This is
-                opt-in)
+                Send push notifications about new reports, updates, and
+                community activity (mobile app, opt-in)
               </li>
               <li>Improve our platform through analytics and user feedback</li>
               <li>Ensure compliance with our Terms of Service</li>
@@ -182,6 +226,11 @@ function PrivacyPolicyPage() {
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
               You have the following rights regarding your information:
             </p>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+              <strong>Note:</strong> Account creation is required to submit
+              emulation reports and participate in community features. You can
+              browse public content without an account.
+            </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
                 <strong>Access:</strong> Request access to your personal
@@ -249,7 +298,33 @@ function PrivacyPolicyPage() {
 
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-              11. Contact Us
+              11. Data Retention
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              We retain your personal information for as long as necessary to
+              provide our services and comply with legal obligations. Account
+              data is retained while your account is active. You can request
+              deletion of your account and associated data at any time through
+              your account settings or by contacting us. Some information may be
+              retained in anonymized form for analytics purposes.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+              12. Platform Compliance
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              This app complies with the Google Play Store and Apple App Store
+              privacy requirements and guidelines. We are committed to
+              maintaining transparency about our data practices and ensuring
+              compliance with all applicable platform policies.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+              13. Contact Us
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
               If you have questions about this Privacy Policy or our data

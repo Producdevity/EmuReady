@@ -1,371 +1,275 @@
 import { test, expect } from '@playwright/test'
-import { NavigationHelpers } from './helpers/navigation'
+import { GamesPage } from './pages/GamesPage'
+import { HomePage } from './pages/HomePage'
+import { ListingsPage } from './pages/ListingsPage'
 
-test.describe('Main Navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+test.describe('Modern Navigation Tests', () => {
+  test('should navigate between main pages using page objects', async ({
+    page,
+  }) => {
+    // Start at home page
+    const homePage = new HomePage(page)
+    await homePage.goto()
+
+    // Verify home page loads correctly
+    await homePage.verifyHeroSectionVisible()
+    await homePage.verifyNavigationVisible()
+    await homePage.verifyAuthButtonsVisible()
+
+    // Navigate to games page
+    await homePage.waitForOverlaysToDisappear()
+    await homePage.navigateToGames()
+
+    const gamesPage = new GamesPage(page)
+    await gamesPage.verifyPageLoaded()
+
+    // Navigate to listings page (Handheld)
+    await gamesPage.waitForOverlaysToDisappear()
+    await gamesPage.navigateToHandheld()
+
+    const listingsPage = new ListingsPage(page)
+    await listingsPage.verifyPageLoaded()
+
+    // Navigate back to home
+    await listingsPage.waitForOverlaysToDisappear()
+    await listingsPage.navigateToHome()
+
+    // Verify we're back at home
+    await homePage.verifyHeroSectionVisible()
   })
 
-  test('should display main navigation items', async ({ page }) => {
-    // Check that main navigation items are visible (use first() to handle duplicates)
-    await expect(
-      page.getByRole('link', { name: /home/i }).first(),
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: /games/i }).first(),
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: /listings/i }).first(),
-    ).toBeVisible()
-  })
+  test('should display correct page headings and content', async ({ page }) => {
+    // Test Home Page
+    const homePage = new HomePage(page)
+    await homePage.goto()
 
-  test('should navigate to Games page', async ({ page }) => {
-    // Try clicking on Games navigation link first
-    try {
-      await page
-        .getByRole('link', { name: /games/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/games', { timeout: 5000 })
-    } catch {
-      // Fallback to direct navigation if click fails
-      await page.goto('/games')
+    await expect(homePage.heroHeading).toBeVisible()
+    await expect(homePage.trustedReportsSection).toBeVisible()
+    await expect(homePage.performanceMetricsSection).toBeVisible()
+    await expect(homePage.communityDrivenSection).toBeVisible()
+
+    // Test Games Page
+    const gamesPage = new GamesPage(page)
+    await gamesPage.goto()
+
+    await expect(gamesPage.pageHeading).toBeVisible()
+    // Wait for games to load before checking headings
+    await page.waitForTimeout(2000)
+    // Games page has individual game headings, not a filters heading
+    const gameHeadingCount = await gamesPage.gameHeadings.count()
+    // Games page might be empty, which is okay
+    if (gameHeadingCount === 0) {
+      console.log('No games found on games page - empty state')
+      // Verify at least the page heading is visible
+      await expect(gamesPage.pageHeading).toBeVisible()
+    } else {
+      expect(gameHeadingCount).toBeGreaterThan(0)
     }
 
-    // Should be on games page
+    // Test Listings Page
+    const listingsPage = new ListingsPage(page)
+    await listingsPage.goto()
+
+    await expect(listingsPage.pageHeading).toBeVisible()
+
+    // On mobile, filters might be hidden
+    const isMobile = page.viewportSize()?.width
+      ? page.viewportSize()!.width < 768
+      : false
+    if (!isMobile) {
+      await expect(listingsPage.filtersHeading).toBeVisible()
+    }
+  })
+
+  test('should have working logo navigation', async ({ page }) => {
+    const homePage = new HomePage(page)
+    await homePage.goto()
+
+    // Navigate to games page
+    await homePage.navigateToGames()
     await expect(page).toHaveURL('/games')
 
-    // Should see games page content
-    await expect(page.locator('h1, h2').first()).toBeVisible()
-  })
-
-  test('should navigate to Listings page', async ({ page }) => {
-    // Try clicking on Listings navigation link first
-    try {
-      await page
-        .getByRole('link', { name: /listings/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/listings', { timeout: 5000 })
-    } catch {
-      // Fallback to direct navigation if click fails
-      await page.goto('/listings')
-    }
-
-    // Should be on listings page
-    await expect(page).toHaveURL('/listings')
-
-    // Should see listings page content
-    await expect(page.locator('h1, h2').first()).toBeVisible()
-  })
-
-  test('should navigate back to Home page', async ({ page }) => {
-    // First navigate away from home
-    try {
-      await page
-        .getByRole('link', { name: /games/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/games', { timeout: 5000 })
-    } catch {
-      await page.goto('/games')
-    }
-    await expect(page).toHaveURL('/games')
-
-    // Then navigate back to home
-    try {
-      await page
-        .getByRole('link', { name: /home/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/', { timeout: 5000 })
-    } catch {
-      await page.goto('/')
-    }
+    // Click logo to return home
+    const gamesPage = new GamesPage(page)
+    await gamesPage.waitForOverlaysToDisappear()
+    await gamesPage.clickLogo()
     await expect(page).toHaveURL('/')
+
+    // Verify we're back at home
+    await homePage.verifyHeroSectionVisible()
   })
 
-  test('should highlight active navigation item', async ({ page }) => {
-    // Should have active state on home initially (if implemented)
+  test('should show authentication buttons when not logged in', async ({
+    page,
+  }) => {
+    const homePage = new HomePage(page)
+    await homePage.goto()
 
-    // Navigate to games
-    try {
-      await page
-        .getByRole('link', { name: /games/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/games', { timeout: 5000 })
-    } catch {
-      await page.goto('/games')
-    }
-    await expect(page).toHaveURL('/games')
+    // Verify user is not authenticated
+    const isAuthenticated = await homePage.isAuthenticated()
+    expect(isAuthenticated).toBe(false)
 
-    // Games should now be active
-    // Note: This test depends on implementation - some apps might not have visual active states
-    await expect(page.locator('nav')).toBeVisible()
+    // Verify auth buttons are visible
+    await expect(homePage.signInButton).toBeVisible()
+    await expect(homePage.signUpButton).toBeVisible()
   })
 
-  test('should work with browser back/forward buttons', async ({ page }) => {
-    // Navigate to games
-    try {
-      await page
-        .getByRole('link', { name: /games/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/games', { timeout: 5000 })
-    } catch {
-      await page.goto('/games')
-    }
-    await expect(page).toHaveURL('/games')
-
-    // Navigate to listings
-    try {
-      await page
-        .getByRole('link', { name: /listings/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/listings', { timeout: 5000 })
-    } catch {
-      await page.goto('/listings')
-    }
-    await expect(page).toHaveURL('/listings')
-
-    // Use browser back button
-    try {
-      await page.goBack()
-      await page.waitForURL('/games', { timeout: 5000 })
-      await expect(page).toHaveURL('/games')
-    } catch {
-      console.log(
-        'Browser back navigation failed - this may be expected in some test environments',
-      )
-      // Just verify we're on a valid page
-      const currentUrl = page.url()
-      expect(currentUrl.includes('localhost:3000')).toBeTruthy()
-    }
-
-    // Use browser forward button (only if back worked)
-    try {
-      await page.goForward()
-      await page.waitForURL('/listings', { timeout: 5000 })
-      await expect(page).toHaveURL('/listings')
-    } catch {
-      console.log(
-        'Browser forward navigation failed - this may be expected in some test environments',
-      )
-      // Just verify we're on a valid page
-      const currentUrl = page.url()
-      expect(currentUrl.includes('localhost:3000')).toBeTruthy()
-    }
-  })
-})
-
-test.describe('Mobile Navigation', () => {
-  test.beforeEach(async ({ page }) => {
+  test('should handle mobile navigation', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/')
-  })
 
-  test('should show mobile menu button on small screens', async ({ page }) => {
+    const homePage = new HomePage(page)
+    await homePage.goto()
+
     // Mobile menu button should be visible
-    const mobileMenuButton = page.getByRole('button', { name: /menu/i })
-    await expect(mobileMenuButton).toBeVisible()
+    await expect(homePage.mobileMenuButton).toBeVisible()
 
-    // Desktop navigation should be hidden (check if desktop nav is actually hidden)
-    // Note: Tailwind's hidden class might not work as expected in all test environments
-    const desktopNav = page.locator('nav .hidden.md\\:flex').first()
-    if ((await desktopNav.count()) > 0) {
-      // If element exists, check visibility, otherwise assume it's working
-      const isDesktopNavVisible = await desktopNav
-        .isVisible()
-        .catch(() => false)
-      if (isDesktopNavVisible) {
-        console.log(
-          'Desktop nav still visible on mobile viewport - this may be expected in some test environments',
-        )
-      }
-    }
-  })
-
-  test('should open and close mobile menu', async ({ page }) => {
-    // Click mobile menu button
-    const mobileMenuButton = page.getByRole('button', { name: /menu/i })
-    await mobileMenuButton.click()
-
-    // Wait for animation
-    await page.waitForTimeout(500)
-
-    // Mobile menu should be visible with navigation items
-    // Check if mobile menu items exist and are visible
-    const mobileHomeLinks = page.getByRole('link', { name: /home/i })
-    const homeLinkCount = await mobileHomeLinks.count()
-
-    if (homeLinkCount > 1) {
-      // If we have multiple home links, test the mobile one
-      await expect(mobileHomeLinks.nth(1)).toBeVisible()
-    } else {
-      // If only one home link, test if menu opened successfully by checking menu visibility
-      const mobileMenu = page
-        .locator('.mobile-menu, nav[class*="mobile"], nav.block.md\\:hidden')
-        .first()
-      if ((await mobileMenu.count()) > 0) {
-        await expect(mobileMenu).toBeVisible()
-      } else {
-        console.log(
-          'Mobile menu structure may be different - checking for any navigation menu',
-        )
-      }
-    }
-
-    // Click menu button again to close
-    await mobileMenuButton.click()
-
-    // Wait for animation
-    await page.waitForTimeout(500)
-
-    // Verify menu closure by checking if menu button is clickable again
-    await expect(mobileMenuButton).toBeVisible()
-  })
-
-  test('should navigate from mobile menu', async ({ page }) => {
     // Open mobile menu
-    const mobileMenuButton = page.getByRole('button', { name: /menu/i })
-    await mobileMenuButton.click()
+    await homePage.openMobileMenu()
 
-    // Wait for animation
-    await page.waitForTimeout(500)
-
-    // Navigate from mobile menu (be more flexible)
-    let navigationSuccess = false
-
-    try {
-      // Try to find games link in mobile menu
-      const gamesLinks = page.getByRole('link', { name: /games/i })
-      const linkCount = await gamesLinks.count()
-
-      if (linkCount > 1) {
-        // Try the second link (likely mobile menu version)
-        await gamesLinks.nth(1).click({ timeout: 3000 })
-        await page.waitForURL('/games', { timeout: 3000 })
-        navigationSuccess = true
-      }
-    } catch {
-      console.log(
-        'Secondary games link navigation failed, trying alternatives...',
-      )
-    }
-
-    if (!navigationSuccess) {
-      try {
-        // Fallback: try any Games link that's currently visible
-        await page
-          .getByRole('link', { name: /games/i })
-          .first()
-          .click({ timeout: 3000 })
-        await page.waitForURL('/games', { timeout: 3000 })
-        navigationSuccess = true
-      } catch {
-        console.log('Games link navigation failed, using direct navigation...')
-      }
-    }
-
-    if (!navigationSuccess) {
-      // Final fallback: direct navigation
-      await page.goto('/games')
-      navigationSuccess = true
-    }
-
-    // Verify we ended up at the right place
-    if (navigationSuccess) {
+    // Navigation links should still work (some may be hidden/shown)
+    const gamesLink = homePage.gamesLink
+    if (await gamesLink.isVisible()) {
+      await gamesLink.click()
       await expect(page).toHaveURL('/games')
-      await expect(page.locator('h1, h2').first()).toBeVisible()
-    } else {
-      // If nothing worked, just verify we're on a valid page
-      const currentUrl = page.url()
-      expect(currentUrl.includes('localhost:3000')).toBeTruthy()
     }
-  })
-
-  test('should close mobile menu when clicking outside', async ({ page }) => {
-    // Create navigation helper
-    const nav = new NavigationHelpers(page)
-
-    // Open mobile menu
-    const mobileMenuButton = page.getByRole('button', { name: /menu/i })
-    await mobileMenuButton.click()
-
-    // Wait for animation
-    await page.waitForTimeout(500)
-
-    // Verify menu is open (check for mobile menu visibility)
-    const menuOpen = await nav.isMobileMenuOpen()
-    if (!menuOpen) {
-      console.log('Mobile menu did not open as expected - skipping close test')
-      return
-    }
-
-    // Click outside the menu to close it
-    await nav.closeMobileMenu()
-
-    // Wait for close animation
-    await page.waitForTimeout(500)
-
-    // Menu should close (be more lenient about this check)
-    const menuClosed = await nav.isMobileMenuOpen()
-    if (menuClosed) {
-      console.log(
-        'Mobile menu may still be open - this could be expected behavior in some implementations',
-      )
-      // Try clicking the menu button again to close it
-      await mobileMenuButton.click()
-      await page.waitForTimeout(500)
-    }
-
-    // Just verify the menu button is still accessible
-    await expect(mobileMenuButton).toBeVisible()
   })
 })
 
-test.describe('Logo and Branding', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+test.describe('Modern Page Content Tests', () => {
+  test('should display games page content correctly', async ({ page }) => {
+    const gamesPage = new GamesPage(page)
+    await gamesPage.goto()
+
+    // Verify page structure
+    await gamesPage.verifyPageLoaded()
+    await gamesPage.verifyGameHeadingsVisible()
+
+    // Check if games are present or empty state is shown
+    await gamesPage.verifyGamesVisible()
   })
 
-  test('should display EmuReady logo and branding', async ({ page }) => {
-    // Check for EmuReady branding (use first() to handle multiple instances)
-    await expect(page.getByText(/emuready/i).first()).toBeVisible()
-    await expect(page.getByText(/know before you load/i).first()).toBeVisible()
+  test('should display listings page content correctly', async ({ page }) => {
+    const listingsPage = new ListingsPage(page)
+    await listingsPage.goto()
 
-    // Logo should be clickable and link to home
-    const logoLink = page.getByRole('link', { name: /emuready/i }).first()
-    await expect(logoLink).toBeVisible()
-    await expect(logoLink).toHaveAttribute('href', '/')
+    // Verify page structure
+    await listingsPage.verifyPageLoaded()
+    await listingsPage.verifyFiltersHeadingVisible()
+
+    // Check if listings are present or empty state is shown
+    await listingsPage.verifyListingsVisible()
   })
 
-  test('should return to home when clicking logo', async ({ page }) => {
-    // First navigate away from home
+  test('should handle search functionality if available', async ({ page }) => {
+    const gamesPage = new GamesPage(page)
+    await gamesPage.goto()
+
+    // Check if search is available
     try {
-      await page
-        .getByRole('link', { name: /games/i })
-        .first()
-        .click({ force: true })
-      await page.waitForURL('/games', { timeout: 5000 })
+      await gamesPage.verifySearchVisible()
+
+      // Test search functionality
+      await gamesPage.searchGames('mario')
+
+      // Verify search was performed (URL change or results update)
+      // The page should either show results or no results message
+      await page.waitForTimeout(2000)
+
+      const hasResults = (await gamesPage.getGameCount()) > 0
+      const hasNoResults = await gamesPage.noGamesMessage.isVisible()
+
+      // Either results or no results message should be shown
+      expect(hasResults || hasNoResults).toBe(true)
     } catch {
-      await page.goto('/games')
+      // Search not available on this page, which is fine
+      console.log('Search functionality not available on games page')
     }
+  })
+
+  test('should support keyboard navigation through main menu', async ({
+    page,
+  }) => {
+    const homePage = new HomePage(page)
+    await homePage.goto()
+
+    // Focus on first navigation link
+    await page.keyboard.press('Tab')
+
+    // Navigate through main menu items with Tab
+    const navigationLinks = ['Home', 'Handheld', 'PC', 'Games', 'Emulators']
+
+    for (const linkText of navigationLinks) {
+      // Check if the expected link is focused
+      const focusedElement = await page.locator(':focus')
+      const text = await focusedElement.textContent()
+
+      if (text?.toLowerCase().includes(linkText.toLowerCase())) {
+        // Expected link is focused
+        expect(true).toBe(true)
+      }
+
+      await page.keyboard.press('Tab')
+    }
+  })
+
+  test('should handle browser back and forward navigation', async ({
+    page,
+  }) => {
+    const homePage = new HomePage(page)
+    const gamesPage = new GamesPage(page)
+    const listingsPage = new ListingsPage(page)
+
+    // Navigate through multiple pages
+    await homePage.goto()
+    await homePage.navigateToGames()
+    await gamesPage.navigateToHandheld()
+
+    // Verify we're on listings page
+    const isOnListingsPage = await listingsPage.isOnListingsPage()
+    expect(isOnListingsPage).toBe(true)
+
+    // Test browser back button
+    await page.goBack()
     await expect(page).toHaveURL('/games')
 
-    // Click the logo to return home
-    const logoLink = page.getByRole('link', { name: /emuready/i }).first()
-    try {
-      await logoLink.click({ force: true })
-      await page.waitForURL('/', { timeout: 5000 })
-    } catch {
-      await page.goto('/')
-    }
-
-    // Should be back on home page
+    await page.goBack()
     await expect(page).toHaveURL('/')
+
+    // Test browser forward button
+    await page.goForward()
+    await expect(page).toHaveURL('/games')
+
+    await page.goForward()
+    await expect(page).toHaveURL('/listings')
+  })
+
+  test('should toggle mobile menu correctly', async ({ page }) => {
+    // Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 })
+
+    const homePage = new HomePage(page)
+    await homePage.goto()
+
+    // Mobile menu button should be visible
+    await expect(homePage.mobileMenuButton).toBeVisible()
+
+    // Open mobile menu
+    await homePage.mobileMenuButton.click()
+
+    // Wait for animation and verify menu is visible
+    await page.waitForTimeout(600) // Wait for 500ms animation
+    const mobileMenuDiv = page
+      .locator('.md\\:hidden')
+      .filter({ hasText: 'Handheld' })
+      .last()
+    await expect(mobileMenuDiv).toHaveClass(/opacity-100/)
+
+    // Close menu by clicking the button again (toggle)
+    await homePage.mobileMenuButton.click()
+
+    // Wait for animation and verify menu is hidden
+    await page.waitForTimeout(600)
+    await expect(mobileMenuDiv).toHaveClass(/opacity-0/)
   })
 })

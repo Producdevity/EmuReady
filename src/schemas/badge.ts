@@ -23,7 +23,6 @@ const TAILWIND_COLORS = [
   'stone',
 ] as const
 
-// Badge CRUD schemas
 export const CreateBadgeSchema = z.object({
   name: z
     .string()
@@ -93,7 +92,6 @@ export const GetUserBadgesSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
 })
 
-// Alternative removal schema by badge ID
 export const RemoveBadgeByIdSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
   badgeId: z.string().uuid('Invalid badge ID'),
@@ -114,15 +112,3 @@ export const BulkRemoveBadgesSchema = z.object({
     .min(1, 'At least one user ID is required'),
   badgeId: z.string().uuid('Invalid badge ID'),
 })
-
-// Type exports
-export type CreateBadgeInput = z.infer<typeof CreateBadgeSchema>
-export type UpdateBadgeInput = z.infer<typeof UpdateBadgeSchema>
-export type DeleteBadgeInput = z.infer<typeof DeleteBadgeSchema>
-export type GetBadgeInput = z.infer<typeof GetBadgeSchema>
-export type GetBadgesInput = z.infer<typeof GetBadgesSchema>
-export type AssignBadgeToUserInput = z.infer<typeof AssignBadgeToUserSchema>
-export type RemoveBadgeFromUserInput = z.infer<typeof RemoveBadgeFromUserSchema>
-export type GetUserBadgesInput = z.infer<typeof GetUserBadgesSchema>
-export type BulkAssignBadgesInput = z.infer<typeof BulkAssignBadgesSchema>
-export type BulkRemoveBadgesInput = z.infer<typeof BulkRemoveBadgesSchema>

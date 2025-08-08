@@ -5,13 +5,14 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { toSnakeCase } from 'remeda'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
+import { type FilterValue } from '@/schemas/common'
 import { CustomFieldType } from '@orm'
 
 interface TemplateField {
   name: string
   label: string
   type: CustomFieldType
-  options: { value: string; label: string }[]
+  options: FilterValue[]
   defaultValue?: string | boolean | number | null
   placeholder?: string
   isRequired: boolean
@@ -29,7 +30,7 @@ interface Props {
   onClose: () => void
 }
 
-const FIELD_TYPES = [
+const FIELD_TYPES: FilterValue[] = [
   { value: CustomFieldType.TEXT, label: 'Text' },
   { value: CustomFieldType.TEXTAREA, label: 'Long Text' },
   { value: CustomFieldType.URL, label: 'URL' },
@@ -412,7 +413,7 @@ function CustomFieldTemplateFormModal(props: Props) {
       closeOnEscape={false}
       size="3xl"
     >
-      {customFieldTemplateQuery.isPending ? (
+      {props.templateIdToEdit && customFieldTemplateQuery.isPending ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>

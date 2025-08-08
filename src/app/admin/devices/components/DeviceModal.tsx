@@ -31,9 +31,9 @@ function DeviceModal(props: Props) {
   // Update form fields when deviceData changes
   useEffect(() => {
     if (props.deviceData) {
-      setBrandId(props.deviceData.brand.id)
+      setBrandId(props.deviceData.brandId)
       setModelName(props.deviceData.modelName)
-      setSocId(props.deviceData.soc?.id ?? '')
+      setSocId(props.deviceData.socId ?? '')
     } else {
       setBrandId('')
       setModelName('')

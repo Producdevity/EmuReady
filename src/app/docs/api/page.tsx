@@ -1,4 +1,12 @@
+import { type Metadata } from 'next'
 import Link from 'next/link'
+import { generatePageMetadata } from '@/lib/seo/metadata'
+
+export const metadata: Metadata = generatePageMetadata(
+  'Mobile API Documentation',
+  'Complete API documentation for EmuReady mobile applications. 90+ endpoints for listings, games, devices, and user management.',
+  '/docs/api',
+)
 
 function MobileApiDocsPage() {
   return (

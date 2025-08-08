@@ -7,6 +7,7 @@ import {
   SearchUsersSchema,
   UpdateUserRoleSchema,
   UpdateUserSchema,
+  IsVerifiedDeveloperSchema,
 } from '@/schemas/user'
 import {
   createTRPCRouter,
@@ -14,11 +15,20 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { invalidateUser } from '@/server/cache/invalidation'
 import {
   NOTIFICATION_EVENTS,
   notificationEventEmitter,
 } from '@/server/notifications/eventEmitter'
+import {
+  buildOrderBy,
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
+import { buildSearchFilter } from '@/server/utils/query-builders'
+import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
+import { withOptimisticLock } from '@/server/utils/transactions'
 import {
   hasPermissionInContext,
   PERMISSIONS,
@@ -198,22 +208,13 @@ export const usersRouter = createTRPCRouter({
         listingsWhere.status = ApprovalStatus.APPROVED
       }
 
-      if (listingsSearch) {
-        listingsWhere.OR = [
-          {
-            game: { title: { contains: listingsSearch, mode: 'insensitive' } },
-          },
-          {
-            device: {
-              modelName: { contains: listingsSearch, mode: 'insensitive' },
-            },
-          },
-          {
-            emulator: {
-              name: { contains: listingsSearch, mode: 'insensitive' },
-            },
-          },
-        ]
+      const listingsSearchConditions = buildSearchFilter(listingsSearch, [
+        'game.title',
+        'device.modelName',
+        'emulator.name',
+      ])
+      if (listingsSearchConditions) {
+        listingsWhere.OR = listingsSearchConditions
       }
       if (listingsSystem) {
         listingsWhere.device = { brand: { name: listingsSystem } }
@@ -230,22 +231,13 @@ export const usersRouter = createTRPCRouter({
           game: { isErotic: false },
         } as Prisma.ListingWhereInput
       }
-      if (votesSearch) {
-        votesWhere.listing = {
-          OR: [
-            { game: { title: { contains: votesSearch, mode: 'insensitive' } } },
-            {
-              device: {
-                modelName: { contains: votesSearch, mode: 'insensitive' },
-              },
-            },
-            {
-              emulator: {
-                name: { contains: votesSearch, mode: 'insensitive' },
-              },
-            },
-          ],
-        }
+      const votesSearchConditions = buildSearchFilter(votesSearch, [
+        'listing.game.title',
+        'listing.device.modelName',
+        'listing.emulator.name',
+      ])
+      if (votesSearchConditions) {
+        votesWhere.OR = votesSearchConditions
       }
 
       // Get user basic info
@@ -280,9 +272,7 @@ export const usersRouter = createTRPCRouter({
             },
           }),
           userBadges: {
-            where: {
-              badge: { isActive: true },
-            },
+            where: { badge: { isActive: true } },
             select: {
               id: true,
               assignedAt: true,
@@ -442,10 +432,8 @@ export const usersRouter = createTRPCRouter({
       // Check for username conflicts if name is being updated
       if (name && name.trim()) {
         const existingUserWithName = await ctx.prisma.user.findFirst({
-          where: {
-            name: name.trim(),
-            id: { not: userId }, // Exclude current user
-          },
+          // Exclude current user
+          where: { name: name.trim(), id: { not: userId } },
         })
 
         if (existingUserWithName) return ResourceError.user.usernameExists()
@@ -468,24 +456,39 @@ export const usersRouter = createTRPCRouter({
         }
       }
 
-      // Update user in database
-      return await ctx.prisma.user.update({
-        where: { id: userId },
-        data: {
-          ...(name !== undefined && { name: name?.trim() || null }),
-          ...(email && { email }),
-          ...(profileImage && { profileImage }),
-          ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
+      // Update user in database with optimistic locking using lastActiveAt as version field
+
+      return await withOptimisticLock(
+        ctx.prisma,
+        ctx.prisma.user,
+        userId,
+        'lastActiveAt',
+        async (currentUser, tx) => {
+          const result = await tx.user.update({
+            where: { id: userId },
+            data: {
+              ...(name !== undefined && { name: name?.trim() || null }),
+              ...(email && { email }),
+              ...(profileImage && { profileImage }),
+              ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
+              lastActiveAt: new Date(), // Update lastActiveAt for versioning
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              bio: true,
+              profileImage: true,
+              role: true,
+            },
+          })
+
+          // Invalidate SEO cache for user profile
+          await invalidateUser(userId)
+
+          return result
         },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          bio: true,
-          profileImage: true,
-          role: true,
-        },
-      })
+      )
     }),
 
   // Admin-only routes
@@ -499,55 +502,31 @@ export const usersRouter = createTRPCRouter({
         page = 1,
         limit = 20,
       } = input ?? {}
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       // Build where clause for search
       const where: Prisma.UserWhereInput = {}
 
-      if (search && search.trim() !== '') {
-        const searchTerm = search.trim()
-        where.OR = [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { email: { contains: searchTerm, mode: 'insensitive' } },
-        ]
+      const searchConditions = buildSearchFilter(search, ['name', 'email'])
+      if (searchConditions) where.OR = searchConditions
+
+      const sortConfig = {
+        name: (dir: 'asc' | 'desc') => ({ name: dir }),
+        email: (dir: 'asc' | 'desc') => ({ email: dir }),
+        role: (dir: 'asc' | 'desc') => ({ role: dir }),
+        createdAt: (dir: 'asc' | 'desc') => ({ createdAt: dir }),
+        listingsCount: (dir: 'asc' | 'desc') => ({ listings: { _count: dir } }),
+        votesCount: (dir: 'asc' | 'desc') => ({ votes: { _count: dir } }),
+        commentsCount: (dir: 'asc' | 'desc') => ({ comments: { _count: dir } }),
+        trustScore: (dir: 'asc' | 'desc') => ({ trustScore: dir }),
       }
 
-      // Build orderBy based on sortField and sortDirection
-      const orderBy: Prisma.UserOrderByWithRelationInput[] = []
-
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'name':
-            orderBy.push({ name: sortDirection })
-            break
-          case 'email':
-            orderBy.push({ email: sortDirection })
-            break
-          case 'role':
-            orderBy.push({ role: sortDirection })
-            break
-          case 'createdAt':
-            orderBy.push({ createdAt: sortDirection })
-            break
-          case 'listingsCount':
-            orderBy.push({ listings: { _count: sortDirection } })
-            break
-          case 'votesCount':
-            orderBy.push({ votes: { _count: sortDirection } })
-            break
-          case 'commentsCount':
-            orderBy.push({ comments: { _count: sortDirection } })
-            break
-          case 'trustScore':
-            orderBy.push({ trustScore: sortDirection })
-            break
-        }
-      }
-
-      // Default ordering if no sort specified
-      if (!orderBy.length) {
-        orderBy.push({ createdAt: 'desc' })
-      }
+      const orderBy = buildOrderBy<Prisma.UserOrderByWithRelationInput>(
+        sortConfig,
+        sortField,
+        sortDirection,
+        { createdAt: 'desc' },
+      )
 
       const [users, totalUsers] = await Promise.all([
         ctx.prisma.user.findMany({
@@ -565,17 +544,12 @@ export const usersRouter = createTRPCRouter({
           skip,
           take: limit,
         }),
-        ctx.prisma.user.count({ where }),
+        createCountQuery(ctx.prisma.user, where),
       ])
 
       return {
         users,
-        pagination: {
-          total: totalUsers,
-          pages: Math.ceil(totalUsers / limit),
-          page,
-          limit,
-        },
+        pagination: createPaginationResult(totalUsers, { page }, limit, skip),
       }
     }),
 
@@ -590,19 +564,17 @@ export const usersRouter = createTRPCRouter({
         superAdminCount,
         bannedUsersCount,
       ] = await Promise.all([
-        ctx.prisma.user.count({ where: { role: Role.USER } }),
-        ctx.prisma.user.count({ where: { role: Role.AUTHOR } }),
-        ctx.prisma.user.count({ where: { role: Role.DEVELOPER } }),
-        ctx.prisma.user.count({ where: { role: Role.MODERATOR } }),
-        ctx.prisma.user.count({ where: { role: Role.ADMIN } }),
-        ctx.prisma.user.count({ where: { role: Role.SUPER_ADMIN } }),
-        ctx.prisma.user.count({
-          where: {
-            userBans: {
-              some: {
-                isActive: true,
-                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-              },
+        createCountQuery(ctx.prisma.user, { role: Role.USER }),
+        createCountQuery(ctx.prisma.user, { role: Role.AUTHOR }),
+        createCountQuery(ctx.prisma.user, { role: Role.DEVELOPER }),
+        createCountQuery(ctx.prisma.user, { role: Role.MODERATOR }),
+        createCountQuery(ctx.prisma.user, { role: Role.ADMIN }),
+        createCountQuery(ctx.prisma.user, { role: Role.SUPER_ADMIN }),
+        createCountQuery(ctx.prisma.user, {
+          userBans: {
+            some: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
           },
         }),
@@ -651,7 +623,7 @@ export const usersRouter = createTRPCRouter({
         roleIncludesRole(currentUserRole, Role.ADMIN) &&
         !roleIncludesRole(role, Role.ADMIN)
       ) {
-        ResourceError.user.cannotDemoteSelf()
+        return ResourceError.user.cannotDemoteSelf()
       }
 
       // Only users with MODIFY_SUPER_ADMIN_USERS permission can modify SUPER_ADMIN users
@@ -700,10 +672,15 @@ export const usersRouter = createTRPCRouter({
       })
 
       // Return updated user data
-      return await ctx.prisma.user.findUnique({
+      const updatedUser = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, name: true, email: true, role: true },
       })
+
+      // Invalidate SEO cache for user profile
+      await invalidateUser(userId)
+
+      return updatedUser
     }),
 
   delete: permissionProcedure(PERMISSIONS.MANAGE_USERS)
@@ -726,12 +703,9 @@ export const usersRouter = createTRPCRouter({
 
       const where: Prisma.UserWhereInput = {}
 
-      if (query && query.trim().length > 0) {
-        const searchTerm = query.trim()
-        where.OR = [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { email: { contains: searchTerm, mode: 'insensitive' } },
-        ]
+      const searchConditions = buildSearchFilter(query, ['name', 'email'])
+      if (searchConditions) {
+        where.OR = searchConditions
       }
 
       // Filter by minimum role if specified
@@ -761,5 +735,20 @@ export const usersRouter = createTRPCRouter({
         orderBy: [{ name: 'asc' }, { email: 'asc' }],
         take: limit,
       })
+    }),
+
+  isVerifiedDeveloper: protectedProcedure
+    .input(IsVerifiedDeveloperSchema)
+    .query(async ({ ctx, input }) => {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: ctx.session.user.id,
+            emulatorId: input.emulatorId,
+          },
+        },
+      })
+
+      return !!verifiedDeveloper
     }),
 })

@@ -1,26 +1,16 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { getAllowedOrigins } from '@/lib/cors'
+import { ms } from '@/utils/time'
 import type { NextRequest } from 'next/server'
 
-// Simple in-memory rate limiting (in production, use Redis or similar)
+// In-memory rate limiting with automatic cleanup
+// TODO: For distributed deployments, consider Redis or database-backed rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
 // Rate limiting configuration
-// TODO: experiment with different values
 const RATE_LIMIT_REQUESTS = 100 // requests per window
-const RATE_LIMIT_WINDOW = 3 * 60 * 1000 // 3 minutes
-
-// Allowed origins for API access
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-  'https://emuready.com',
-  'https://www.emuready.com',
-  'https://dev.emuready.com',
-  'http://localhost:3000',
-  'http://localhost:3001', // dev server backup
-  'https://eden-emu.dev', // Eden website
-  'https://eden-emulator-github-io.vercel.app', // Eden staging website
-]
+const RATE_LIMIT_WINDOW = ms.minutes(3)
 
 function getClientIdentifier(req: NextRequest): string {
   // Use IP from forwarded headers or fallback
@@ -34,10 +24,20 @@ function getClientIdentifier(req: NextRequest): string {
 }
 
 function checkRateLimit(identifier: string): boolean {
+  // Skip rate limiting for localhost in test environment
+  if (
+    process.env.NODE_ENV === 'test' &&
+    (identifier === '::1' ||
+      identifier === '127.0.0.1' ||
+      identifier === 'localhost')
+  ) {
+    return true
+  }
+
   const now = Date.now()
 
   // Clean up expired entries to prevent memory leaks
-  // Only clean every 100 requests to avoid performance impact
+  // Only clean every 100-ish requests to avoid performance impact
   if (Math.random() < 0.01) {
     // 1% chance per request
     for (const [key, value] of rateLimitMap.entries()) {
@@ -66,15 +66,18 @@ function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
 
+  // Get the centralized allowed origins
+  const allowedOrigins = getAllowedOrigins()
+
   // Helper function to check if a URL exactly matches an allowed origin
   const isExactOriginMatch = (url: string): boolean => {
     try {
       const urlObj = new URL(url)
       const baseUrl = `${urlObj.protocol}//${urlObj.host}`
-      return ALLOWED_ORIGINS.includes(baseUrl)
+      return allowedOrigins.includes(baseUrl)
     } catch {
       // Invalid URL, check for exact string match
-      return ALLOWED_ORIGINS.includes(url)
+      return allowedOrigins.includes(url)
     }
   }
 
@@ -108,8 +111,15 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
 
   const clientId = getClientIdentifier(req)
 
-  // Check rate limit
-  if (!checkRateLimit(clientId)) {
+  // Check rate limit (skip in test environment for localhost)
+  const isTestLocalhost =
+    process.env.NODE_ENV === 'test' &&
+    (clientId === '::1' ||
+      clientId === '127.0.0.1' ||
+      clientId === 'localhost' ||
+      clientId === 'unknown')
+
+  if (!isTestLocalhost && !checkRateLimit(clientId)) {
     console.warn(
       `Rate limit exceeded for client: ${clientId}, path: ${pathname}`,
     )
@@ -152,7 +162,7 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
   return response
 }
 
-export default clerkMiddleware((auth, req: NextRequest) => {
+export default clerkMiddleware((_auth, req: NextRequest) => {
   const pathname = req.nextUrl.pathname
 
   // Apply API protection first
@@ -168,12 +178,6 @@ export default clerkMiddleware((auth, req: NextRequest) => {
   // Skip Clerk middleware for mobile API routes to prevent CORS issues
   if (pathname.startsWith('/api/mobile/')) {
     console.info('Skipping Clerk middleware for mobile API:', pathname)
-    return
-  }
-
-  // Skip Clerk middleware for the mobile test endpoint (TODO: remove later)
-  if (pathname === '/api/mobile/test') {
-    console.info('Skipping Clerk middleware for mobile test:', pathname)
     return
   }
 

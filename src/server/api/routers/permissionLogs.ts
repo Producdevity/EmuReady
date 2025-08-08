@@ -7,7 +7,12 @@ import {
   ExportPermissionLogsSchema,
 } from '@/schemas/permission'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
+import { ms } from '@/utils/time'
 
 export const permissionLogsRouter = createTRPCRouter({
   /**
@@ -29,7 +34,7 @@ export const permissionLogsRouter = createTRPCRouter({
         dateTo,
       } = input || {}
 
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       // Build where clause
       const where: Record<string, unknown> = {}
@@ -68,7 +73,7 @@ export const permissionLogsRouter = createTRPCRouter({
 
       return {
         logs,
-        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
@@ -78,9 +83,9 @@ export const permissionLogsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS).query(
     async ({ ctx }) => {
       const now = new Date()
-      const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-      const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      const last24Hours = new Date(now.getTime() - ms.days(1))
+      const last7Days = new Date(now.getTime() - ms.days(7))
+      const last30Days = new Date(now.getTime() - ms.days(30))
 
       const [
         totalLogs,

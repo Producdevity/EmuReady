@@ -76,14 +76,15 @@ const eslintConfig = [
     },
     rules: {
       ...typescriptEslint.configs.recommended.rules,
+      '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
       'react-hooks/exhaustive-deps': 'error',
       'react-hooks/rules-of-hooks': 'error',
-      '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -98,15 +99,11 @@ const eslintConfig = [
   // Import plugin
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      import: importPlugin,
-    },
+    plugins: { import: importPlugin },
     settings: {
       'import/resolver': {
         typescript: { project: './tsconfig.json' },
-        node: {
-          extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        },
+        node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
       },
       'import/parsers': {
         '@typescript-eslint/parser': ['.ts', '.tsx'],
@@ -164,7 +161,16 @@ const eslintConfig = [
 
   // Test file rules
   {
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: ['./tsconfig.json', './tests/tsconfig.json'],
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+      },
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@next/next/no-img-element': 'off',

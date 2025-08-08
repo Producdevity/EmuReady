@@ -5,14 +5,13 @@ import {
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { ApprovalStatus, Role } from '@orm'
-import type { Prisma } from '@orm'
+import { ApprovalStatus, Role, Prisma } from '@orm'
 
 export const mobileUsersRouter = createMobileTRPCRouter({
   /**
    * Get user profile by ID (public user profiles)
    */
-  getUserById: mobilePublicProcedure
+  byId: mobilePublicProcedure
     .input(GetUserByIdSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -26,6 +25,8 @@ export const mobileUsersRouter = createMobileTRPCRouter({
         votesLimit = 12,
         votesSearch,
       } = input
+
+      const mode = Prisma.QueryMode.insensitive
 
       // Check if user exists and get ban status
       const userWithBanStatus = await ctx.prisma.user.findUnique({
@@ -75,20 +76,10 @@ export const mobileUsersRouter = createMobileTRPCRouter({
 
       if (listingsSearch) {
         listingsWhere.OR = [
-          {
-            game: { title: { contains: listingsSearch, mode: 'insensitive' } },
-          },
-          {
-            device: {
-              modelName: { contains: listingsSearch, mode: 'insensitive' },
-            },
-          },
-          {
-            emulator: {
-              name: { contains: listingsSearch, mode: 'insensitive' },
-            },
-          },
-        ] as Prisma.ListingWhereInput['OR']
+          { game: { title: { contains: listingsSearch, mode } } },
+          { device: { modelName: { contains: listingsSearch, mode } } },
+          { emulator: { name: { contains: listingsSearch, mode } } },
+        ]
       }
       if (listingsSystem) {
         listingsWhere.device = { brand: { name: listingsSystem } }
@@ -106,19 +97,9 @@ export const mobileUsersRouter = createMobileTRPCRouter({
         votesWhere.listing = {
           status: ApprovalStatus.APPROVED,
           OR: [
-            {
-              game: { title: { contains: votesSearch, mode: 'insensitive' } },
-            },
-            {
-              device: {
-                modelName: { contains: votesSearch, mode: 'insensitive' },
-              },
-            },
-            {
-              emulator: {
-                name: { contains: votesSearch, mode: 'insensitive' },
-              },
-            },
+            { game: { title: { contains: votesSearch, mode } } },
+            { device: { modelName: { contains: votesSearch, mode } } },
+            { emulator: { name: { contains: votesSearch, mode } } },
           ],
         }
       }
@@ -127,6 +108,7 @@ export const mobileUsersRouter = createMobileTRPCRouter({
       const listingsOffset = (listingsPage - 1) * listingsLimit
       const votesOffset = (votesPage - 1) * votesLimit
 
+      // TODO: if this code was public, I would be ashamed of it.
       // Fetch user data with paginated listings and votes
       const [user, listingsTotal, votesTotal] = await Promise.all([
         ctx.prisma.user.findUnique({
@@ -152,18 +134,10 @@ export const mobileUsersRouter = createMobileTRPCRouter({
                     brand: { select: { id: true, name: true } },
                   },
                 },
-                game: {
-                  select: { id: true, title: true },
-                },
-                emulator: {
-                  select: { id: true, name: true },
-                },
-                performance: {
-                  select: { id: true, label: true, rank: true },
-                },
-                _count: {
-                  select: { votes: true, comments: true },
-                },
+                game: { select: { id: true, title: true } },
+                emulator: { select: { id: true, name: true } },
+                performance: { select: { id: true, label: true, rank: true } },
+                _count: { select: { votes: true, comments: true } },
               },
               orderBy: { createdAt: 'desc' },
               skip: listingsOffset,
@@ -184,12 +158,8 @@ export const mobileUsersRouter = createMobileTRPCRouter({
                         brand: { select: { id: true, name: true } },
                       },
                     },
-                    game: {
-                      select: { id: true, title: true },
-                    },
-                    emulator: {
-                      select: { id: true, name: true },
-                    },
+                    game: { select: { id: true, title: true } },
+                    emulator: { select: { id: true, name: true } },
                     performance: {
                       select: { id: true, label: true, rank: true },
                     },
@@ -201,12 +171,8 @@ export const mobileUsersRouter = createMobileTRPCRouter({
             },
             _count: {
               select: {
-                listings: {
-                  where: listingsWhere,
-                },
-                votes: {
-                  where: votesWhere,
-                },
+                listings: { where: listingsWhere },
+                votes: { where: votesWhere },
                 submittedGames: true,
               },
             },

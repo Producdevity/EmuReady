@@ -9,10 +9,11 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  adminProcedure,
-  moderatorProcedure,
+  manageDevicesProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
-import type { Prisma } from '@orm'
+import { batchQueries } from '@/server/utils/query-performance'
+import { Prisma } from '@orm'
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
@@ -28,33 +29,26 @@ export const socsRouter = createTRPCRouter({
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
 
+    const mode = Prisma.QueryMode.insensitive
+
     // Build where clause for filtering with more restrictive search
+    // TODO: look into this, there's no way this is fast
     const where: Prisma.SoCWhereInput = search
       ? {
           OR: [
             // Exact name match (highest priority)
-            { name: { equals: search, mode: 'insensitive' as const } },
+            { name: { equals: search, mode } },
             // Exact manufacturer match
-            { manufacturer: { equals: search, mode: 'insensitive' as const } },
+            { manufacturer: { equals: search, mode } },
             // Name starts with search term
-            { name: { startsWith: search, mode: 'insensitive' as const } },
+            { name: { startsWith: search, mode } },
             // Manufacturer starts with search term
-            {
-              manufacturer: {
-                startsWith: search,
-                mode: 'insensitive' as const,
-              },
-            },
+            { manufacturer: { startsWith: search, mode } },
             // Only allow contains search for longer terms (3+ characters)
             ...(search.length >= 3
               ? [
-                  { name: { contains: search, mode: 'insensitive' as const } },
-                  {
-                    manufacturer: {
-                      contains: search,
-                      mode: 'insensitive' as const,
-                    },
-                  },
+                  { name: { contains: search, mode } },
+                  { manufacturer: { contains: search, mode } },
                 ]
               : []),
             // Combined manufacturer + name search for multi-word terms only
@@ -63,18 +57,8 @@ export const socsRouter = createTRPCRouter({
                   {
                     AND: search.split(' ').map((term) => ({
                       OR: [
-                        {
-                          manufacturer: {
-                            contains: term,
-                            mode: 'insensitive' as const,
-                          },
-                        },
-                        {
-                          name: {
-                            contains: term,
-                            mode: 'insensitive' as const,
-                          },
-                        },
+                        { manufacturer: { contains: term, mode } },
+                        { name: { contains: term, mode } },
                       ],
                     })),
                   },
@@ -84,7 +68,6 @@ export const socsRouter = createTRPCRouter({
         }
       : {}
 
-    // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.SoCOrderByWithRelationInput[] = []
 
     if (sortField && sortDirection) {
@@ -138,10 +121,10 @@ export const socsRouter = createTRPCRouter({
         include: { _count: { select: { devices: true } } },
       })
 
-      return soc || ResourceError.soc.notFound()
+      return soc ?? ResourceError.soc.notFound()
     }),
 
-  create: moderatorProcedure
+  create: manageDevicesProcedure
     .input(CreateSoCSchema)
     .mutation(async ({ ctx, input }) => {
       const existingSoC = await ctx.prisma.soC.findUnique({
@@ -149,7 +132,7 @@ export const socsRouter = createTRPCRouter({
       })
 
       if (existingSoC) {
-        AppError.alreadyExists('SoC', `name "${input.name}"`)
+        return AppError.alreadyExists('SoC', `name "${input.name}"`)
       }
 
       return ctx.prisma.soC.create({
@@ -158,14 +141,12 @@ export const socsRouter = createTRPCRouter({
       })
     }),
 
-  update: moderatorProcedure
+  update: manageDevicesProcedure
     .input(UpdateSoCSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input
 
-      const existingSoC = await ctx.prisma.soC.findUnique({
-        where: { id },
-      })
+      const existingSoC = await ctx.prisma.soC.findUnique({ where: { id } })
 
       if (!existingSoC) return ResourceError.soc.notFound()
 
@@ -176,7 +157,7 @@ export const socsRouter = createTRPCRouter({
         })
 
         if (socWithSameName) {
-          AppError.alreadyExists('SoC', `name "${updateData.name}"`)
+          return AppError.alreadyExists('SoC', `name "${updateData.name}"`)
         }
       }
 
@@ -187,18 +168,12 @@ export const socsRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: manageDevicesProcedure
     .input(DeleteSoCSchema)
     .mutation(async ({ ctx, input }) => {
       const existingSoC = await ctx.prisma.soC.findUnique({
         where: { id: input.id },
-        include: {
-          _count: {
-            select: {
-              devices: true,
-            },
-          },
-        },
+        include: { _count: { select: { devices: true } } },
       })
 
       if (!existingSoC) return ResourceError.soc.notFound()
@@ -214,39 +189,22 @@ export const socsRouter = createTRPCRouter({
 
   getManufacturers: publicProcedure.query(async ({ ctx }) => {
     const manufacturers = await ctx.prisma.soC.findMany({
-      select: {
-        manufacturer: true,
-      },
+      select: { manufacturer: true },
       distinct: ['manufacturer'],
-      orderBy: {
-        manufacturer: 'asc',
-      },
+      orderBy: { manufacturer: 'asc' },
     })
 
     return manufacturers.map((soc) => soc.manufacturer)
   }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
-    const [total, withDevices, withoutDevices] = await Promise.all([
-      ctx.prisma.soC.count(),
-      ctx.prisma.soC.count({
-        where: {
-          devices: {
-            some: {},
-          },
-        },
-      }),
-      ctx.prisma.soC.count({
-        where: {
-          devices: {
-            none: {},
-          },
-        },
-      }),
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
+    const [withDevices, withoutDevices] = await batchQueries([
+      ctx.prisma.soC.count({ where: { devices: { some: {} } } }),
+      ctx.prisma.soC.count({ where: { devices: { none: {} } } }),
     ])
 
     return {
-      total,
+      total: withDevices + withoutDevices,
       withDevices,
       withoutDevices,
     }

@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
@@ -56,13 +56,34 @@ export default function BadgeModal({
   const form = useForm<BadgeFormData>({
     resolver: zodResolver(badgeSchema),
     defaultValues: {
-      name: badge?.name || '',
-      description: badge?.description || '',
-      color: badge?.color || '#3B82F6',
-      icon: badge?.icon || '',
-      isActive: badge?.isActive ?? true,
+      name: '',
+      description: '',
+      color: '#3B82F6',
+      icon: '',
+      isActive: true,
     },
   })
+
+  // Update form values when badge prop changes
+  useEffect(() => {
+    if (badge) {
+      form.reset({
+        name: badge.name,
+        description: badge.description || '',
+        color: badge.color,
+        icon: badge.icon || '',
+        isActive: badge.isActive,
+      })
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        color: '#3B82F6',
+        icon: '',
+        isActive: true,
+      })
+    }
+  }, [badge, form])
 
   const createBadgeMutation = api.badges.create.useMutation({
     onSuccess: () => {

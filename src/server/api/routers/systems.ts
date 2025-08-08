@@ -11,6 +11,8 @@ import {
   publicProcedure,
   permissionProcedure,
 } from '@/server/api/trpc'
+import { buildSearchFilter } from '@/server/utils/query-builders'
+import { batchQueries } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
 import type { Prisma } from '@orm'
 
@@ -18,7 +20,6 @@ export const systemsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
     const { search, sortField, sortDirection } = input ?? {}
 
-    // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.SystemOrderByWithRelationInput[] = []
 
     if (sortField && sortDirection) {
@@ -37,10 +38,11 @@ export const systemsRouter = createTRPCRouter({
       orderBy.push({ name: 'asc' })
     }
 
+    const searchConditions = buildSearchFilter(search, ['name'])
+    const where = searchConditions ? { OR: searchConditions } : undefined
+
     return await ctx.prisma.system.findMany({
-      where: search
-        ? { name: { contains: search, mode: 'insensitive' } }
-        : undefined,
+      where,
       include: { _count: { select: { games: true } } },
       orderBy,
     })
@@ -126,7 +128,7 @@ export const systemsRouter = createTRPCRouter({
 
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
     async ({ ctx }) => {
-      const [total, withGames, withoutGames] = await Promise.all([
+      const [total, withGames, withoutGames] = await batchQueries([
         ctx.prisma.system.count(),
         ctx.prisma.system.count({
           where: {

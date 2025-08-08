@@ -103,7 +103,7 @@ describe('useColumnVisibility', () => {
       )
 
       expect(consoleErrorMock).toHaveBeenCalledWith(
-        'Failed to load column visibility from localStorage:',
+        'Error reading localStorage key "test-columns":',
         'localStorage error',
       )
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Modal } from '@/components/ui'
+import { Modal, InputPlaceholder } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 
 type SocData = RouterOutput['socs']['get']['socs'][number]
@@ -14,8 +14,6 @@ interface Props {
 function SocViewModal(props: Props) {
   if (!props.socData) return null
 
-  const { socData } = props
-
   return (
     <Modal
       isOpen={props.isOpen}
@@ -26,85 +24,43 @@ function SocViewModal(props: Props) {
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              SoC ID
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md font-mono">
-              {socData.id}
-            </div>
+          <InputPlaceholder label="SoC ID" value={props.socData.id} mono />
+
+          <div className="grid grid-cols-2 gap-4">
+            <InputPlaceholder label="Name" value={props.socData.name} />
+            <InputPlaceholder
+              label="Manufacturer"
+              value={props.socData.manufacturer}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Name
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData.name}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Manufacturer
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData.manufacturer}
-              </div>
-            </div>
+            <InputPlaceholder
+              label="Architecture"
+              value={props.socData.architecture || 'Not specified'}
+            />
+            <InputPlaceholder
+              label="Process Node"
+              value={props.socData.processNode || 'Not specified'}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Architecture
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData.architecture || 'Not specified'}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Process Node
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData.processNode || 'Not specified'}
-              </div>
-            </div>
+            <InputPlaceholder
+              label="CPU Cores"
+              value={props.socData.cpuCores?.toString() || 'Not specified'}
+            />
+            <InputPlaceholder
+              label="GPU Model"
+              value={props.socData.gpuModel || 'Not specified'}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                CPU Cores
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData.cpuCores || 'Not specified'}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                GPU Model
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData.gpuModel || 'Not specified'}
-              </div>
-            </div>
-          </div>
-
-          {socData._count && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Devices Using This SoC
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {socData._count.devices} device
-                {socData._count.devices !== 1 ? 's' : ''}
-              </div>
-            </div>
+          {props.socData._count && (
+            <InputPlaceholder
+              label="Devices Using This SoC"
+              value={`${props.socData._count.devices} device${props.socData._count.devices !== 1 ? 's' : ''}`}
+            />
           )}
         </div>
 

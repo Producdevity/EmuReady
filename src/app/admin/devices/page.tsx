@@ -31,13 +31,14 @@ import { Role } from '@orm'
 import DeviceModal from './components/DeviceModal'
 import DeviceViewModal from './components/DeviceViewModal'
 
-type DeviceSortField = 'brand' | 'modelName' | 'soc'
+type DeviceSortField = 'brand' | 'modelName' | 'soc' | 'listings'
 type DeviceData = RouterOutput['devices']['get']['devices'][number]
 
 const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'brand', label: 'Brand', defaultVisible: true },
   { key: 'model', label: 'Model', defaultVisible: true },
   { key: 'soc', label: 'SoC', defaultVisible: true },
+  { key: 'listings', label: 'Listings', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -219,6 +220,15 @@ function AdminDevicesPage() {
                     onSort={table.handleSort}
                   />
                 )}
+                {columnVisibility.isColumnVisible('listings') && (
+                  <SortableHeader
+                    label="Listings"
+                    field="listings"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
+                )}
                 {columnVisibility.isColumnVisible('actions') && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Actions
@@ -245,6 +255,11 @@ function AdminDevicesPage() {
                   {columnVisibility.isColumnVisible('soc') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {device.soc?.name ?? 'No SoC assigned'}
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('listings') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
+                      {device._count.listings}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
@@ -275,7 +290,7 @@ function AdminDevicesPage() {
                 devicesQuery.data?.devices.length === 0 && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={columnVisibility.visibleColumns.size}
                       className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                     >
                       {table.search || table.additionalParams.brandId

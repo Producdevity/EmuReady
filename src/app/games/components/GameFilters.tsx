@@ -1,8 +1,16 @@
 'use client'
 
-import { Joystick, Search, Filter } from 'lucide-react'
+import { Joystick, Search, Filter, Eye, EyeOff, List } from 'lucide-react'
 import { type ChangeEvent } from 'react'
-import { Input, Autocomplete } from '@/components/ui'
+import {
+  Input,
+  Autocomplete,
+  ThreeWayToggle,
+  type ThreeWayToggleOption,
+} from '@/components/ui'
+import { api } from '@/lib/api'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import type { AutocompleteOptionBase } from '@/components/ui/form/Autocomplete'
 
 interface SystemOption extends AutocompleteOptionBase {
@@ -10,17 +18,47 @@ interface SystemOption extends AutocompleteOptionBase {
   name: string
 }
 
+type ListingFilterValue = 'all' | 'withListings' | 'noListings'
+
 interface Props {
   search: string
   systemId: string
   hideGamesWithNoListings: boolean
+  listingFilter?: ListingFilterValue
   systems: Array<{ id: string; name: string }> | undefined
   onSearchChange: (ev: ChangeEvent<HTMLInputElement>) => void
   onSystemChange: (value: string | null) => void
   onHideGamesWithNoListingsChange: (hide: boolean) => void
+  onListingFilterChange?: (filter: ListingFilterValue) => void
 }
 
 function GameFilters(props: Props) {
+  const userQuery = api.users.me.useQuery()
+  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
+
+  const listingFilterOptions: [
+    ThreeWayToggleOption<ListingFilterValue>,
+    ThreeWayToggleOption<ListingFilterValue>,
+    ThreeWayToggleOption<ListingFilterValue>,
+  ] = [
+    { value: 'all', label: 'All', icon: <List className="w-4 h-4" /> },
+    {
+      value: 'withListings',
+      label: 'With Listings',
+      icon: <Eye className="w-4 h-4" />,
+    },
+    {
+      value: 'noListings',
+      label: 'No Listings',
+      icon: <EyeOff className="w-4 h-4" />,
+    },
+  ]
+
+  // Convert between old checkbox and new filter value
+  const currentFilter: ListingFilterValue =
+    props.listingFilter ||
+    (props.hideGamesWithNoListings ? 'withListings' : 'all')
+
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-8">
       <Input
@@ -51,18 +89,27 @@ function GameFilters(props: Props) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-700/80 transition-colors shadow-sm">
-        <Filter className="w-4 h-4" />
-        <input
-          type="checkbox"
-          checked={props.hideGamesWithNoListings}
-          onChange={(e) =>
-            props.onHideGamesWithNoListingsChange(e.target.checked)
-          }
-          className="rounded border-gray-300 dark:border-gray-600"
+      {isModerator && props.onListingFilterChange ? (
+        <ThreeWayToggle
+          options={listingFilterOptions}
+          value={currentFilter}
+          onChange={props.onListingFilterChange}
+          className="min-w-fit"
         />
-        <span>Hide games with no listings</span>
-      </label>
+      ) : (
+        <label className="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-700/80 transition-colors shadow-sm">
+          <Filter className="w-4 h-4" />
+          <input
+            type="checkbox"
+            checked={props.hideGamesWithNoListings}
+            onChange={(e) =>
+              props.onHideGamesWithNoListingsChange(e.target.checked)
+            }
+            className="rounded border-gray-300 dark:border-gray-600"
+          />
+          <span>Hide games with no listings</span>
+        </label>
+      )}
     </div>
   )
 }

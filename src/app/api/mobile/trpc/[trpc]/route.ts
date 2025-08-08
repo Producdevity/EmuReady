@@ -1,31 +1,48 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { type NextRequest, NextResponse } from 'next/server'
+import { getCORSHeaders } from '@/lib/cors'
 import { createMobileTRPCFetchContext } from '@/server/api/mobileContext'
 import { mobileRouter } from '@/server/api/routers/mobile'
 
-// CORS headers for mobile API
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'Content-Type, Authorization, x-trpc-source, x-client-type',
-  'Access-Control-Expose-Headers': 'x-trpc-source',
-  'Access-Control-Max-Age': '86400', // 24 hours
+// Get CORS headers with additional tRPC headers
+function getTRPCCorsHeaders(request: NextRequest) {
+  const baseHeaders = getCORSHeaders(request)
+  return {
+    ...baseHeaders,
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, x-trpc-source, x-client-type',
+    'Access-Control-Expose-Headers': 'x-trpc-source',
+    'Access-Control-Max-Age': '86400', // 24 hours
+  }
 }
 
 // Handle preflight OPTIONS requests
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getTRPCCorsHeaders(request),
   })
 }
 
 const handler = async (req: NextRequest) => {
+  const corsHeaders = getTRPCCorsHeaders(req)
+
   try {
+    // Create a new request with properly decoded URL to prevent double encoding issues
+    const url = new URL(req.url)
+    const decodedPathname = decodeURIComponent(url.pathname)
+    const correctedUrl = new URL(decodedPathname + url.search, url.origin)
+
+    const correctedRequest = new Request(correctedUrl, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+      duplex: 'half',
+    } as RequestInit & { duplex: 'half' })
+
     const response = await fetchRequestHandler({
       endpoint: '/api/mobile/trpc',
-      req,
+      req: correctedRequest,
       router: mobileRouter,
       createContext: createMobileTRPCFetchContext,
       onError:
@@ -53,13 +70,16 @@ const handler = async (req: NextRequest) => {
     // If anything fails, return an error response with CORS headers
     console.error('Mobile tRPC handler error:', error)
 
+    // Server-side error filtering - don't expose details in production
+    const errorMessage =
+      process.env.NODE_ENV === 'development' && error instanceof Error
+        ? error.message
+        : 'An error occurred'
+
     return new NextResponse(
       JSON.stringify({
         error: 'Internal server error',
-        message:
-          process.env.NODE_ENV === 'development'
-            ? (error as Error).message
-            : 'An error occurred',
+        message: errorMessage,
       }),
       {
         status: 500,

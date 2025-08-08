@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { EmulatorIcon, GitHubIcon } from '@/components/icons'
 import { Modal } from '@/components/ui'
-import { TranslatableMarkdown } from '@/components/ui/form/TranslatableMarkdown'
+import { TranslatableMarkdown } from '@/lib/dynamic-imports'
 import { type RouterOutput } from '@/types/trpc'
 
 type EmulatorData = RouterOutput['emulators']['get']['emulators'][number]

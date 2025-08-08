@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
-import { RECAPTCHA_CONFIG, isCaptchaEnabled } from './config'
+import { isCaptchaEnabled, RECAPTCHA_CONFIG } from './config'
 
 interface UseRecaptchaResult {
   executeRecaptcha: (action: string) => Promise<string | null>
@@ -26,8 +26,7 @@ export function useRecaptcha(): UseRecaptchaResult {
       }
 
       try {
-        const token = await executeGoogleRecaptcha(action)
-        return token
+        return await executeGoogleRecaptcha(action)
       } catch (error) {
         console.error('Error executing reCAPTCHA:', error)
         return null

@@ -62,6 +62,7 @@ export const NOTIFICATION_EVENTS = {
   MAINTENANCE_SCHEDULED: 'maintenance.scheduled',
   FEATURE_ANNOUNCED: 'feature.announced',
   USER_ROLE_CHANGED: 'user.role_changed',
+  GAME_STATUS_OVERRIDDEN: 'game.status_overridden',
 } as const
 
 export type NotificationEventType =

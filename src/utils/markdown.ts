@@ -10,6 +10,14 @@ const md = new MarkdownIt({
   typographer: false, // Disable smart quotes for security
 })
 
+// Configure link renderer to add target and rel attributes
+md.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
+  const token = tokens[idx]
+  token.attrSet('target', '_blank')
+  token.attrSet('rel', 'noopener noreferrer')
+  return renderer.renderToken(tokens, idx, options)
+}
+
 //  DOMPurify with safe settings for markdown
 const ALLOWED_TAGS = [
   'p',
@@ -50,6 +58,8 @@ const ALLOWED_ATTR = [
   'alt',
   'src',
   'class', // For code highlighting
+  'target', // For opening links in new tab
+  'rel', // For security (noopener noreferrer)
 ]
 
 const PURIFY_CONFIG = {

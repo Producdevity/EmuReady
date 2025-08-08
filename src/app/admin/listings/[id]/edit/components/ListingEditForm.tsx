@@ -37,6 +37,30 @@ function ListingEditForm(props: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const utils = api.useUtils()
 
+  const [initialGame] = useState<GameOption>({
+    id: props.listing.game.id,
+    title: props.listing.game.title,
+    system: props.listing.game.system,
+    status: props.listing.game.status,
+  })
+
+  const [initialDevice] = useState<DeviceOption>({
+    id: props.listing.device.id,
+    brand: props.listing.device.brand,
+    modelName: props.listing.device.modelName,
+    soc: props.listing.device.soc || {
+      id: '',
+      name: 'Unknown',
+      manufacturer: 'Unknown',
+    },
+  })
+
+  const [initialEmulator] = useState<EmulatorOption>({
+    id: props.listing.emulator.id,
+    name: props.listing.emulator.name,
+    systems: [],
+  })
+
   // Async loader functions using REAL API endpoints that exist
   const loadGameItems = useCallback(
     async (query: string): Promise<GameOption[]> => {
@@ -45,10 +69,11 @@ function ListingEditForm(props: Props) {
         if (!query || query.trim().length === 0) {
           return []
         }
-        const result = await utils.client.mobile.searchGames.query({
-          query: query,
+        const result = await utils.client.games.get.query({
+          search: query,
+          limit: 50,
         })
-        return result.map((game) => ({
+        return result.games.map((game) => ({
           id: game.id,
           title: game.title,
           system: game.system,
@@ -220,7 +245,7 @@ function ListingEditForm(props: Props) {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Game Selection - Using simple Autocomplete instead of shared component */}
+          {/* Game Selection */}
           <div>
             <Controller
               name="gameId"
@@ -230,6 +255,7 @@ function ListingEditForm(props: Props) {
                   label="Game"
                   value={field.value}
                   onChange={field.onChange}
+                  items={[initialGame]}
                   loadItems={loadGameItems}
                   optionToValue={(item) => item.id}
                   optionToLabel={(item) => item.title}
@@ -246,7 +272,7 @@ function ListingEditForm(props: Props) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Device Selection - Using simple Autocomplete */}
+            {/* Device Selection */}
             <div>
               <Controller
                 name="deviceId"
@@ -256,6 +282,7 @@ function ListingEditForm(props: Props) {
                     label="Device"
                     value={field.value}
                     onChange={field.onChange}
+                    items={[initialDevice]}
                     loadItems={loadDeviceItems}
                     optionToValue={(item) => item.id}
                     optionToLabel={(item) =>
@@ -273,7 +300,7 @@ function ListingEditForm(props: Props) {
               )}
             </div>
 
-            {/* Emulator Selection - Using simple Autocomplete */}
+            {/* Emulator Selection */}
             <div>
               <Controller
                 name="emulatorId"
@@ -283,6 +310,7 @@ function ListingEditForm(props: Props) {
                     label="Emulator"
                     value={field.value}
                     onChange={field.onChange}
+                    items={[initialEmulator]}
                     loadItems={loadEmulatorItems}
                     optionToValue={(item) => item.id}
                     optionToLabel={(item) => item.name}
@@ -378,7 +406,7 @@ function ListingEditForm(props: Props) {
             )}
           </div>
 
-          {/* Custom Fields - Using shared sophisticated renderer */}
+          {/* Custom Fields */}
           {customFieldsQuery.data && customFieldsQuery.data.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -397,7 +425,6 @@ function ListingEditForm(props: Props) {
             </div>
           )}
 
-          {/* Form Validation Summary - Using shared sophisticated summary */}
           <FormValidationSummary errors={formState.errors} />
 
           {/* Form Actions */}

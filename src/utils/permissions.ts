@@ -42,7 +42,9 @@ export function canEditComment(
   currentUserId?: string,
 ): boolean {
   if (!currentUserId || !commentUserId) return false
-  if (hasPermission(userRole, Role.SUPER_ADMIN)) return true
+  // Moderators and above can edit any comment
+  if (hasPermission(userRole, Role.MODERATOR)) return true
+  // Users can edit their own comments
   return commentUserId === currentUserId
 }
 
@@ -59,7 +61,9 @@ export function canDeleteComment(
   currentUserId?: string,
 ): boolean {
   if (!currentUserId || !commentUserId) return false
-  if (hasPermission(userRole, Role.ADMIN)) return true
+  // Moderators and above can delete any comment (for offensive/inappropriate content)
+  if (hasPermission(userRole, Role.MODERATOR)) return true
+  // Users can delete their own comments
   return commentUserId === currentUserId
 }
 
@@ -68,10 +72,7 @@ export function canDeleteComment(
  * @param userRole - The role to check
  * @returns boolean
  */
-export function isModerator(userRole?: Role | string | null): boolean {
+export function isModerator(userRole?: Role | null): boolean {
   if (!userRole) return false
-  if (typeof userRole === 'string') {
-    return hasPermission(userRole as Role, Role.MODERATOR)
-  }
   return hasPermission(userRole, Role.MODERATOR)
 }

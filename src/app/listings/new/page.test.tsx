@@ -132,8 +132,19 @@ vi.mock('@/lib/toast', () => ({
 }))
 
 // Mock the child components that are already tested separately
+interface GameSelectorProps {
+  onGameSelect: (
+    game: {
+      id: string
+      title: string
+      system: { id: string; name: string }
+    } | null,
+  ) => void
+  _control: unknown
+}
+
 vi.mock('./components/GameSelector', () => ({
-  default: ({ onGameSelect, _control }: any) => (
+  default: ({ onGameSelect }: GameSelectorProps) => (
     <div data-testid="game-selector">
       <button
         onClick={() =>
@@ -150,8 +161,12 @@ vi.mock('./components/GameSelector', () => ({
   ),
 }))
 
+interface EmulatorSelectorProps {
+  setValue: (field: string, value: string) => void
+}
+
 vi.mock('./components/EmulatorSelector', () => ({
-  default: ({ setValue }: any) => (
+  default: ({ setValue }: EmulatorSelectorProps) => (
     <div data-testid="emulator-selector">
       <button onClick={() => setValue('emulatorId', 'emulator-with-fields')}>
         Select Emulator
@@ -182,8 +197,10 @@ describe.skip('AddListingPage Integration Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(useRouter as any).mockReturnValue({ push: mockPush })
-    ;(useSearchParams as any).mockReturnValue({ get: mockGet })
+    ;(useRouter as ReturnType<typeof vi.fn>).mockReturnValue({ push: mockPush })
+    ;(useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue({
+      get: mockGet,
+    })
   })
 
   it('should display custom field validation errors when required fields are empty', async () => {
@@ -309,12 +326,14 @@ describe.skip('AddListingPage Integration Tests', () => {
   it('should not show custom fields when emulator has none', async () => {
     // Mock API to return emulator without custom fields
     const { api } = await import('@/lib/api')
-    ;(api.customFieldDefinitions.getByEmulator.useQuery as any).mockReturnValue(
-      {
-        data: [],
-        isLoading: false,
-      },
-    )
+    ;(
+      api.customFieldDefinitions.getByEmulator.useQuery as ReturnType<
+        typeof vi.fn
+      >
+    ).mockReturnValue({
+      data: [],
+      isLoading: false,
+    })
 
     render(
       <TestWrapper>

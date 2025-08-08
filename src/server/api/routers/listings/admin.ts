@@ -12,23 +12,38 @@ import {
   GetListingForEditSchema,
   UpdateListingAdminSchema,
   GetAllListingsAdminSchema,
+  GetListingByIdSchema,
 } from '@/schemas/listing'
 import {
   createTRPCRouter,
+  deleteAnyListingProcedure,
   superAdminProcedure,
-  moderatorProcedure,
   developerProcedure,
+  viewStatisticsProcedure,
+  protectedProcedure,
 } from '@/server/api/trpc'
+import {
+  invalidateListing,
+  invalidateListPages,
+  invalidateSitemap,
+  revalidateByTag,
+} from '@/server/cache/invalidation'
 import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
+import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
-import { ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
-import type { Prisma } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
+
+const mode = Prisma.QueryMode.insensitive
 
 export const adminRouter = createTRPCRouter({
   getPending: developerProcedure
@@ -41,12 +56,10 @@ export const adminRouter = createTRPCRouter({
         sortField,
         sortDirection,
       } = input ?? {}
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       // Build where clause for search
-      let where: Prisma.ListingWhereInput = {
-        status: ApprovalStatus.PENDING,
-      }
+      let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
 
       // For developers, only show listings for their verified emulators
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
@@ -62,7 +75,7 @@ export const adminRouter = createTRPCRouter({
           // Developer has no verified emulators, return empty result
           return {
             listings: [],
-            pagination: { page, pages: 0, total: 0, limit },
+            pagination: createPaginationResult(0, { page }, limit, 0),
           }
         }
 
@@ -73,26 +86,12 @@ export const adminRouter = createTRPCRouter({
         where = {
           ...where,
           OR: [
-            { game: { title: { contains: search, mode: 'insensitive' } } },
-            {
-              game: {
-                system: { name: { contains: search, mode: 'insensitive' } },
-              },
-            },
-            {
-              device: { modelName: { contains: search, mode: 'insensitive' } },
-            },
-            {
-              device: {
-                brand: { name: { contains: search, mode: 'insensitive' } },
-              },
-            },
-            {
-              emulator: { name: { contains: search, mode: 'insensitive' } },
-            },
-            {
-              author: { name: { contains: search, mode: 'insensitive' } },
-            },
+            { game: { title: { contains: search, mode } } },
+            { game: { system: { name: { contains: search, mode } } } },
+            { device: { modelName: { contains: search, mode } } },
+            { device: { brand: { name: { contains: search, mode } } } },
+            { emulator: { name: { contains: search, mode } } },
+            { author: { name: { contains: search, mode } } },
           ],
         }
       }
@@ -153,9 +152,7 @@ export const adminRouter = createTRPCRouter({
             }),
             ctx.prisma.listingReport.count({
               where: {
-                listing: {
-                  authorId,
-                },
+                listing: { authorId },
                 status: {
                   in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW],
                 },
@@ -192,18 +189,28 @@ export const adminRouter = createTRPCRouter({
 
       return {
         listings: listingsWithReports,
-        pagination: {
-          total: totalListings,
-          pages: Math.ceil(totalListings / limit),
-          currentPage: page,
+        pagination: createPaginationResult(
+          totalListings,
+          { page },
           limit,
-        },
+          skip,
+        ),
       }
     }),
 
-  approve: developerProcedure
+  approve: protectedProcedure
     .input(ApproveListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve listings',
+        )
+      }
       const { listingId } = input
       const adminUserId = ctx.session.user.id
 
@@ -287,6 +294,16 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
+      // Invalidate SEO cache
+      await invalidateListing(listingId)
+      await invalidateListPages()
+      await invalidateSitemap()
+      await revalidateByTag('listings')
+      await revalidateByTag(`listing-${listingId}`)
+      await revalidateByTag(`game-${listingToApprove.gameId}`)
+      await revalidateByTag(`device-${listingToApprove.deviceId}`)
+      await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
+
       // Apply trust action for listing approval to the author
       if (listingToApprove.authorId) {
         await applyTrustAction({
@@ -319,9 +336,19 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  reject: developerProcedure
+  reject: protectedProcedure
     .input(RejectListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject listings',
+        )
+      }
       const { listingId, notes } = input
       const adminUserId = ctx.session.user.id
 
@@ -410,7 +437,7 @@ export const adminRouter = createTRPCRouter({
     .input(GetProcessedSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, filterStatus, search } = input
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.ListingWhereInput = {
         NOT: { status: ApprovalStatus.PENDING },
@@ -420,10 +447,10 @@ export const adminRouter = createTRPCRouter({
       const searchWhere: Prisma.ListingWhereInput = search
         ? {
             OR: [
-              { game: { title: { contains: search, mode: 'insensitive' } } },
-              { author: { name: { contains: search, mode: 'insensitive' } } },
-              { processedNotes: { contains: search, mode: 'insensitive' } },
-              { notes: { contains: search, mode: 'insensitive' } },
+              { game: { title: { contains: search, mode } } },
+              { author: { name: { contains: search, mode } } },
+              { processedNotes: { contains: search, mode } },
+              { notes: { contains: search, mode } },
             ],
           }
         : {}
@@ -456,12 +483,12 @@ export const adminRouter = createTRPCRouter({
 
       return {
         listings,
-        pagination: {
-          total: totalListings,
-          pages: Math.ceil(totalListings / limit),
-          currentPage: page,
+        pagination: createPaginationResult(
+          totalListings,
+          { page },
           limit,
-        },
+          skip,
+        ),
       }
     }),
 
@@ -508,7 +535,7 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  delete: superAdminProcedure
+  delete: deleteAnyListingProcedure
     .input(DeleteListingSchema)
     .mutation(async ({ ctx, input }) => {
       const listing = await ctx.prisma.listing.findUnique({
@@ -526,9 +553,19 @@ export const adminRouter = createTRPCRouter({
       return { success: true, message: 'Listing deleted successfully' }
     }),
 
-  bulkApprove: developerProcedure
+  bulkApprove: protectedProcedure
     .input(BulkApproveListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve listings',
+        )
+      }
       const { listingIds } = input
       const adminUserId = ctx.session.user.id
 
@@ -663,6 +700,26 @@ export const adminRouter = createTRPCRouter({
         const { validListings } = transactionResult
         const approvedAt = new Date()
 
+        // Invalidate SEO cache for all approved listings
+        await Promise.all([
+          ...validListings.map((listing) => invalidateListing(listing.id)),
+          ...validListings.map((listing) =>
+            revalidateByTag(`listing-${listing.id}`),
+          ),
+          ...validListings.map((listing) =>
+            revalidateByTag(`game-${listing.gameId}`),
+          ),
+          ...validListings.map((listing) =>
+            revalidateByTag(`device-${listing.deviceId}`),
+          ),
+          ...validListings.map((listing) =>
+            revalidateByTag(`emulator-${listing.emulatorId}`),
+          ),
+        ])
+        await invalidateListPages()
+        await invalidateSitemap()
+        await revalidateByTag('listings')
+
         // Emit notification events for each approved listing
         for (const listing of validListings) {
           try {
@@ -717,9 +774,19 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  bulkReject: developerProcedure
+  bulkReject: protectedProcedure
     .input(BulkRejectListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through APPROVE_LISTINGS permission or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject listings',
+        )
+      }
       const { listingIds, notes } = input
       const adminUserId = ctx.session.user.id
 
@@ -734,10 +801,7 @@ export const adminRouter = createTRPCRouter({
       const transactionResult = await ctx.prisma.$transaction(async (tx) => {
         // Get all listings to reject and verify they are pending
         const listingsToReject = await tx.listing.findMany({
-          where: {
-            id: { in: listingIds },
-            status: ApprovalStatus.PENDING,
-          },
+          where: { id: { in: listingIds }, status: ApprovalStatus.PENDING },
           include: { author: { select: { id: true } } },
         })
 
@@ -806,7 +870,7 @@ export const adminRouter = createTRPCRouter({
         }
       })
 
-      // CRITICAL: Emit notification events AFTER transaction completes successfully
+      // NOTE: Emit notification events AFTER transaction completes successfully
       try {
         const { listingsToReject } = transactionResult
         const rejectedAt = new Date()
@@ -858,7 +922,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  getStats: moderatorProcedure.query(async ({ ctx }) => {
+  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [pending, approved, rejected] = await Promise.all([
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
@@ -887,7 +951,7 @@ export const adminRouter = createTRPCRouter({
         systemFilter,
         emulatorFilter,
       } = input
-      const skip = (page - 1) * limit
+      const skip = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.ListingWhereInput = {
         ...(statusFilter && { status: statusFilter }),
@@ -898,9 +962,9 @@ export const adminRouter = createTRPCRouter({
       const searchWhere: Prisma.ListingWhereInput = search
         ? {
             OR: [
-              { game: { title: { contains: search, mode: 'insensitive' } } },
-              { author: { name: { contains: search, mode: 'insensitive' } } },
-              { notes: { contains: search, mode: 'insensitive' } },
+              { game: { title: { contains: search, mode } } },
+              { author: { name: { contains: search, mode } } },
+              { notes: { contains: search, mode } },
             ],
           }
         : {}
@@ -972,9 +1036,15 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  getForEdit: superAdminProcedure
+  getForEdit: protectedProcedure
     .input(GetListingForEditSchema)
     .query(async ({ ctx, input }) => {
+      // Allow moderators and above to edit listings
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to edit listings',
+        )
+      }
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: input.id },
         include: {
@@ -994,9 +1064,15 @@ export const adminRouter = createTRPCRouter({
       return listing || ResourceError.listing.notFound()
     }),
 
-  updateListing: superAdminProcedure
+  updateListing: protectedProcedure
     .input(UpdateListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
+      // Allow moderators and above to update listings
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        return AppError.forbidden(
+          'You need to be at least a Moderator to update listings',
+        )
+      }
       const { id, customFieldValues, ...updateData } = input
       const adminUserId = ctx.session.user.id
 
@@ -1042,5 +1118,98 @@ export const adminRouter = createTRPCRouter({
 
         return updatedListing
       })
+    }),
+
+  getListingConfig: protectedProcedure
+    .input(GetListingByIdSchema)
+    .query(async ({ ctx, input }) => {
+      // Check if user has admin permissions or is a verified developer for this emulator
+      const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isAdmin && !isDeveloper) {
+        return AppError.forbidden('Admin or Developer access required')
+      }
+
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.id },
+        include: {
+          game: {
+            select: {
+              id: true,
+              title: true,
+              system: { select: { id: true, name: true, key: true } },
+            },
+          },
+          emulator: { select: { id: true, name: true } },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: {
+                select: {
+                  id: true,
+                  name: true,
+                  label: true,
+                  type: true,
+                  options: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!listing) {
+        return ResourceError.listing.notFound()
+      }
+
+      // For developers, verify they can access this emulator's config
+      if (isDeveloper && !isAdmin) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: listing.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only view configs for emulators you are verified for',
+          )
+        }
+      }
+
+      try {
+        // Generate config using the emulator detector
+        const configResult = generateEmulatorConfig({
+          listingId: listing.id,
+          gameId: listing.game.id,
+          emulatorName: listing.emulator.name,
+          customFieldValues: listing.customFieldValues.map((cfv) => ({
+            customFieldDefinition: cfv.customFieldDefinition,
+            value: cfv.value,
+          })),
+        })
+
+        return {
+          type: configResult.type,
+          filename: configResult.filename,
+          content: configResult.serialized,
+          listing: {
+            id: listing.id,
+            game: listing.game.title,
+            system: listing.game.system.name,
+            emulator: listing.emulator.name,
+          },
+        }
+      } catch (error) {
+        console.error('Error generating config:', error)
+        throw AppError.internalError(
+          `Failed to generate config: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        )
+      }
     }),
 })

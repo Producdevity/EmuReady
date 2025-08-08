@@ -3,32 +3,26 @@ import {
   createMobileTRPCRouter,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import { ApprovalStatus } from '@orm'
 
 export const mobileEmulatorsRouter = createMobileTRPCRouter({
   /**
    * Get emulators with search and filtering
    */
-  getEmulators: mobilePublicProcedure
+  get: mobilePublicProcedure
     .input(GetEmulatorsSchema)
     .query(async ({ ctx, input }) => {
-      const { systemId, search, limit } = input
+      const { systemId, search, limit } = input ?? {}
 
       const whereClause: Record<string, unknown> = {}
 
       // Add search filtering at database level
-      if (search) {
-        whereClause.name = { contains: search, mode: 'insensitive' }
-      }
+      const searchConditions = buildSearchFilter(search, ['name'])
+      if (searchConditions) whereClause.OR = searchConditions
 
       // Add system filtering at database level
-      if (systemId) {
-        whereClause.systems = {
-          some: {
-            id: systemId,
-          },
-        }
-      }
+      if (systemId) whereClause.systems = { some: { id: systemId } }
 
       return await ctx.prisma.emulator.findMany({
         where: whereClause,
@@ -48,7 +42,7 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
   /**
    * Get emulator by ID
    */
-  getEmulatorById: mobilePublicProcedure
+  byId: mobilePublicProcedure
     .input(GetEmulatorByIdSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.prisma.emulator.findUnique({

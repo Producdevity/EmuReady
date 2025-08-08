@@ -1,4 +1,4 @@
-import { type NextRequest } from 'next/server'
+import { getAllowedOrigins } from '@/lib/cors'
 
 interface SSEConnection {
   userId: string
@@ -10,20 +10,52 @@ class RealtimeNotificationService {
   private connections = new Map<string, SSEConnection>()
   private pingInterval: NodeJS.Timeout | null = null
 
+  // Connection limits
+  private readonly MAX_CONNECTIONS = 1000 // Maximum total connections
+  private readonly MAX_CONNECTIONS_PER_IP = 10 // Maximum connections per IP
+  private connectionsByIp = new Map<string, Set<string>>() // IP -> Set of userIds
+
   constructor() {
     this.startPingInterval()
   }
 
   // Create SSE connection for a user
-  createSSEConnection(userId: string): ReadableStream {
+  createSSEConnection(userId: string, clientIp?: string): ReadableStream {
+    // Check total connection limit
+    if (this.connections.size >= this.MAX_CONNECTIONS) {
+      throw new Error('Server connection limit reached')
+    }
+
+    // Check per-IP connection limit if IP is provided
+    if (clientIp) {
+      const ipConnections = this.connectionsByIp.get(clientIp) || new Set()
+      if (ipConnections.size >= this.MAX_CONNECTIONS_PER_IP) {
+        throw new Error('Connection limit exceeded for this IP')
+      }
+    }
+
     return new ReadableStream({
       start: (controller) => {
+        // Close existing connection for this user if any
+        if (this.connections.has(userId)) {
+          const existing = this.connections.get(userId)
+          existing?.controller.close()
+          this.connections.delete(userId)
+        }
+
         // Store connection
         this.connections.set(userId, {
           userId,
           controller,
           lastPing: Date.now(),
         })
+
+        // Track IP connection if provided
+        if (clientIp) {
+          const ipConnections = this.connectionsByIp.get(clientIp) || new Set()
+          ipConnections.add(userId)
+          this.connectionsByIp.set(clientIp, ipConnections)
+        }
 
         // Send initial connection message
         this.sendToUser(userId, {
@@ -35,6 +67,18 @@ class RealtimeNotificationService {
       },
       cancel: () => {
         this.connections.delete(userId)
+
+        // Clean up IP tracking
+        if (clientIp) {
+          const ipConnections = this.connectionsByIp.get(clientIp)
+          if (ipConnections) {
+            ipConnections.delete(userId)
+            if (ipConnections.size === 0) {
+              this.connectionsByIp.delete(clientIp)
+            }
+          }
+        }
+
         console.log(`SSE connection closed for user: ${userId}`)
       },
     })
@@ -79,9 +123,7 @@ class RealtimeNotificationService {
     message: { type: string; data: unknown },
   ): boolean {
     const connection = this.connections.get(userId)
-    if (!connection) {
-      return false
-    }
+    if (!connection) return false
 
     try {
       const sseData = `data: ${JSON.stringify(message)}\n\n`
@@ -153,32 +195,42 @@ class RealtimeNotificationService {
     }
 
     this.connections.clear()
+    this.connectionsByIp.clear()
   }
 }
 
 // Singleton instance
 export const realtimeNotificationService = new RealtimeNotificationService()
 
-// Helper function to create SSE response
-export function createSSEResponse(stream: ReadableStream): Response {
+/**
+ * Helper function to create SSE response with proper CORS
+ * @param stream
+ * @param origin
+ */
+export function createSSEResponse(
+  stream: ReadableStream,
+  origin?: string,
+): Response {
+  // Use centralized CORS configuration
+  const allowedOrigins = getAllowedOrigins()
+
+  // Allow mobile apps (no origin) or explicitly allowed origins
+  const allowOrigin = !origin
+    ? '*' // No origin header (mobile apps)
+    : allowedOrigins.length === 0
+      ? '*' // No origins configured (dev mode)
+      : allowedOrigins.includes(origin)
+        ? origin // Origin is allowed
+        : allowedOrigins[0] || '*' // Fallback to first allowed origin
+
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowOrigin,
       'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Credentials': 'true',
     },
   })
-}
-
-// Helper function to extract user ID from request
-export function getUserIdFromRequest(request: NextRequest): string | null {
-  // This would typically extract from JWT token or session
-  // For now, we'll use a header or query parameter
-  const userId =
-    request.headers.get('x-user-id') ||
-    request.nextUrl.searchParams.get('userId')
-
-  return userId
 }

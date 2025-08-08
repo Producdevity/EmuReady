@@ -26,7 +26,7 @@ If you aren't planning to test or work on anything related to Clerk webhooks, yo
 The app will still function correctly with seeded test users and roles.
 Just keep it in mind when something like `Roles` don't appear to be working as expected, this might be the reason.
 
-Feel free to ask for help in the #dev channel on the [Discord server](https://discord.gg/YyWueNxmzM) if you run into any issues!
+Feel free to ask for help in the #dev channel on the [Discord server](https://discord.gg/fWQXvFeZcY) if you run into any issues!
 
 ## Optional: Webhook Setup (For Production-Like Testing)
 
@@ -131,6 +131,7 @@ INTERNAL_API_KEY=your_secure_random_api_key_here
 ```
 
 # Optional: Additional services
+```
 RAWG_API_KEY=your_rawg_api_key_here
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
 RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here

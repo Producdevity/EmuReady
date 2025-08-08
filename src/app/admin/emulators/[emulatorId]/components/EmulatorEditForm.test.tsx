@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { type ReactNode } from 'react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -16,6 +17,9 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
+const mockUpdateMutation = vi.mocked(api.emulators.update.useMutation)
+const mockUtils = vi.mocked(api.useUtils)
+
 vi.mock('@/lib/toast', () => ({
   default: {
     success: vi.fn(),
@@ -23,47 +27,31 @@ vi.mock('@/lib/toast', () => ({
   },
 }))
 
+interface MotionProps {
+  children: ReactNode
+  whileHover?: unknown
+  whileTap?: unknown
+  initial?: unknown
+  animate?: unknown
+  transition?: unknown
+  [key: string]: unknown
+}
+
 // Mock framer-motion to properly handle all motion props
 vi.mock('framer-motion', () => ({
   motion: {
-    form: ({
-      children,
-      whileHover,
-      whileTap,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: any) => <form {...props}>{children}</form>,
-    p: ({
-      children,
-      whileHover,
-      whileTap,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: any) => <p {...props}>{children}</p>,
-    button: ({
-      children,
-      whileHover,
-      whileTap,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: any) => <button {...props}>{children}</button>,
-    div: ({
-      children,
-      whileHover,
-      whileTap,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: any) => <div {...props}>{children}</div>,
+    form: ({ children, ...props }: MotionProps) => (
+      <form {...props}>{children}</form>
+    ),
+    p: ({ children, ...props }: MotionProps) => <p {...props}>{children}</p>,
+    button: ({ children, ...props }: MotionProps) => (
+      <button {...props}>{children}</button>
+    ),
+    div: ({ children, ...props }: MotionProps) => (
+      <div {...props}>{children}</div>
+    ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 
 const mockEmulator = {
@@ -87,19 +75,56 @@ describe('EmulatorEditForm', () => {
     vi.clearAllMocks()
 
     // Setup API mocks
-    ;(api.emulators.update.useMutation as any).mockReturnValue({
+    mockUpdateMutation.mockReturnValue({
       mutate: mockMutate,
-    })
-    ;(api.useUtils as any).mockReturnValue({
+      mutateAsync: vi.fn(),
+      status: 'idle',
+      isIdle: true,
+      isLoading: false,
+      isSuccess: false,
+      isError: false,
+      data: undefined,
+      error: null,
+      trpc: {},
+    } as any)
+    mockUtils.mockReturnValue({
       emulators: {
         byId: {
           invalidate: mockInvalidate,
+          queryOptions: vi.fn(),
+          infiniteQueryOptions: vi.fn(),
+          fetch: vi.fn(),
+          fetchInfinite: vi.fn(),
+          refetch: vi.fn(),
+          cancel: vi.fn(),
+          ensureData: vi.fn(),
+          getData: vi.fn(),
+          setData: vi.fn(),
+          setInfiniteData: vi.fn(),
+          getInfiniteData: vi.fn(),
+          reset: vi.fn(),
+          refetchQueries: vi.fn(),
+          cancelQueries: vi.fn(),
         },
         get: {
           invalidate: mockInvalidate,
+          queryOptions: vi.fn(),
+          infiniteQueryOptions: vi.fn(),
+          fetch: vi.fn(),
+          fetchInfinite: vi.fn(),
+          refetch: vi.fn(),
+          cancel: vi.fn(),
+          ensureData: vi.fn(),
+          getData: vi.fn(),
+          setData: vi.fn(),
+          setInfiniteData: vi.fn(),
+          getInfiniteData: vi.fn(),
+          reset: vi.fn(),
+          refetchQueries: vi.fn(),
+          cancelQueries: vi.fn(),
         },
       },
-    })
+    } as any)
   })
 
   it('renders the form with initial values', () => {
@@ -176,12 +201,21 @@ describe('EmulatorEditForm', () => {
   it('submits form with valid data', async () => {
     const onSuccessMock = vi.fn()
 
-    ;(api.emulators.update.useMutation as any).mockReturnValue({
+    mockUpdateMutation.mockReturnValue({
       mutate: mockMutate.mockImplementation((_data) => {
         // Simulate successful mutation
         onSuccessMock()
       }),
-    })
+      mutateAsync: vi.fn(),
+      status: 'idle',
+      isIdle: true,
+      isLoading: false,
+      isSuccess: false,
+      isError: false,
+      data: undefined,
+      error: null,
+      trpc: {},
+    } as any)
 
     render(<EmulatorEditForm emulator={mockEmulator} />)
 
@@ -211,7 +245,7 @@ describe('EmulatorEditForm', () => {
 
     // Mock the mutation to return a mutation with proper onError handling
     const mockOnError = vi.fn()
-    ;(api.emulators.update.useMutation as any).mockReturnValue({
+    mockUpdateMutation.mockReturnValue({
       mutate: vi.fn().mockImplementation((_data) => {
         // Simulate the onError callback being triggered
         setTimeout(() => {
@@ -219,7 +253,16 @@ describe('EmulatorEditForm', () => {
           toast.error(`Failed to update emulator: ${errorMessage}`)
         }, 0)
       }),
-    })
+      mutateAsync: vi.fn(),
+      status: 'idle',
+      isIdle: true,
+      isLoading: false,
+      isSuccess: false,
+      isError: false,
+      data: undefined,
+      error: null,
+      trpc: {},
+    } as any)
 
     render(<EmulatorEditForm emulator={mockEmulator} />)
 

@@ -4,9 +4,11 @@ coverage/
 # Node.js dependencies
 node_modules/
 
-# Test files
-/test-results
-/tests/.auth
+# Test files and reports
+tests/.auth
+test-results
+playwright-report/
+blob-report/
 
 # Lock files
 package-lock.json

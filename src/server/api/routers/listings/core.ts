@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { keys } from 'remeda'
 import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
@@ -20,64 +21,67 @@ import {
 } from '@/schemas/listing'
 import {
   authorProcedure,
+  createListingProcedure,
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
 import {
+  invalidateListPages,
+  invalidateSitemap,
+  revalidateByTag,
+} from '@/server/cache/invalidation'
+import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import {
+  calculateOffset,
+  createPaginationResult,
+  buildOrderBy,
+} from '@/server/utils/pagination'
+import {
+  buildShadowBanFilter,
+  buildApprovalStatusFilter,
+  buildNsfwFilter,
+  buildArrayFilter,
+} from '@/server/utils/query-builders'
+import { withSavepoint } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
 
 const EDIT_TIME_LIMIT_MINUTES = 60
+const mode = Prisma.QueryMode.insensitive
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure
     .input(GetListingsSchema)
     .query(async ({ ctx, input }) => {
-      const skip = (input.page - 1) * input.limit
+      const skip = calculateOffset({ page: input.page }, input.limit)
+      const userRole = ctx.session?.user?.role
+      const userId = ctx.session?.user?.id
+      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
-      const gameFilter: Prisma.GameWhereInput = {}
-      if (input.systemIds && input.systemIds.length > 0) {
-        gameFilter.systemId = { in: input.systemIds }
-      }
-      if (!ctx.session?.user?.showNsfw) {
-        gameFilter.isErotic = false
-      }
-
-      // Game approval status filtering - filter games based on user authentication
-      if (ctx.session?.user?.id) {
-        // Authenticated users see listings for approved games + their own pending games
-        gameFilter.OR = [
-          { status: ApprovalStatus.APPROVED },
-          {
-            status: ApprovalStatus.PENDING,
-            submittedBy: ctx.session.user.id,
-          },
-        ]
-      } else {
-        // Public users only see listings for approved games
-        gameFilter.status = ApprovalStatus.APPROVED
+      // Build game filters
+      const gameFilter: Prisma.GameWhereInput = {
+        ...(buildArrayFilter(input.systemIds, 'systemId') || {}),
+        ...(buildNsfwFilter(ctx.session?.user?.showNsfw) || {}),
+        // Games have their own approval logic, not using buildApprovalStatusFilter
       }
 
       const filters: Prisma.ListingWhereInput = {
-        ...(input.emulatorIds && input.emulatorIds.length > 0
-          ? { emulatorId: { in: input.emulatorIds } }
-          : {}),
-        ...(input.performanceIds && input.performanceIds.length > 0
-          ? { performanceId: { in: input.performanceIds } }
-          : {}),
+        ...(buildArrayFilter(input.emulatorIds, 'emulatorId') || {}),
+        ...(buildArrayFilter(input.performanceIds, 'performanceId') || {}),
       }
 
       // Handle device and SoC filters with OR logic
       const deviceSocConditions: Prisma.ListingWhereInput[] = []
 
-      if (input.deviceIds && input.deviceIds.length > 0) {
-        deviceSocConditions.push({ deviceId: { in: input.deviceIds } })
+      const deviceFilter = buildArrayFilter(input.deviceIds, 'deviceId')
+      if (deviceFilter && Object.keys(deviceFilter).length > 0) {
+        deviceSocConditions.push(deviceFilter)
       }
 
       if (input.socIds && input.socIds.length > 0) {
@@ -94,19 +98,11 @@ export const coreRouter = createTRPCRouter({
       if (input.approvalStatus) {
         statusFilter = { status: input.approvalStatus }
       } else {
-        // Default behavior: show approved listings + user's own pending listings
-        if (ctx.session) {
-          statusFilter = {
-            OR: [
-              { status: ApprovalStatus.APPROVED },
-              {
-                status: ApprovalStatus.PENDING,
-                authorId: ctx.session.user.id,
-              },
-            ],
-          }
+        const approvalFilter = buildApprovalStatusFilter(userRole, userId)
+        if (Array.isArray(approvalFilter)) {
+          statusFilter = { OR: approvalFilter }
         } else {
-          statusFilter = { status: ApprovalStatus.APPROVED }
+          statusFilter = approvalFilter || {}
         }
       }
 
@@ -149,56 +145,26 @@ export const coreRouter = createTRPCRouter({
                 game: {
                   is: {
                     ...gameFilter,
-                    title: {
-                      contains: input.searchTerm,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
+                    title: { contains: input.searchTerm, mode },
                   },
                 },
               }
             : {
-                game: {
-                  is: {
-                    title: {
-                      contains: input.searchTerm,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
+                game: { is: { title: { contains: input.searchTerm, mode } } },
               },
           {
-            notes: {
-              contains: input.searchTerm,
-              mode: Prisma.QueryMode.insensitive,
-            },
+            notes: { contains: input.searchTerm, mode },
           },
           {
             device: {
               OR: [
-                {
-                  modelName: {
-                    contains: input.searchTerm,
-                    mode: Prisma.QueryMode.insensitive,
-                  },
-                },
-                {
-                  brand: {
-                    name: {
-                      contains: input.searchTerm,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
+                { modelName: { contains: input.searchTerm, mode } },
+                { brand: { name: { contains: input.searchTerm, mode } } },
               ],
             },
           },
           {
-            emulator: {
-              name: {
-                contains: input.searchTerm,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
+            emulator: { name: { contains: input.searchTerm, mode } },
           },
         ]
 
@@ -237,108 +203,98 @@ export const coreRouter = createTRPCRouter({
       }
 
       // Shadow ban logic: Hide listings from banned users for non-moderators
-      const userRole = ctx.session?.user?.role
-      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
-
-      if (!canSeeBannedUsers) {
-        // For regular users, exclude listings from banned users
-        combinedFilters.author = {
-          userBans: {
-            none: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
-          },
-        }
+      const shadowBanFilter = buildShadowBanFilter(userRole, userId)
+      if (shadowBanFilter) {
+        combinedFilters.author = shadowBanFilter
       }
 
       const total = await ctx.prisma.listing.count({ where: combinedFilters })
 
       // Build orderBy based on sortField and sortDirection
-      const orderBy: Prisma.ListingOrderByWithRelationInput[] = []
-
-      // Special handling for success rate sorting - we need to fetch all data first
       const isSortingBySuccessRate = input.sortField === 'successRate'
 
-      if (input.sortField && input.sortDirection && !isSortingBySuccessRate) {
-        switch (input.sortField) {
-          case 'game.title':
-            orderBy.push({ game: { title: input.sortDirection } })
-            break
-          case 'game.system.name':
-            orderBy.push({ game: { system: { name: input.sortDirection } } })
-            break
-          case 'device':
-            orderBy.push({ device: { brand: { name: input.sortDirection } } })
-            orderBy.push({ device: { modelName: input.sortDirection } })
-            break
-          case 'emulator.name':
-            orderBy.push({ emulator: { name: input.sortDirection } })
-            break
-          case 'performance.rank':
-            orderBy.push({ performance: { rank: input.sortDirection } })
-            break
-          case 'author.name':
-            orderBy.push({ author: { name: input.sortDirection } })
-            break
-          case 'createdAt':
-            orderBy.push({ createdAt: input.sortDirection })
-            break
-        }
+      const sortConfig = {
+        'game.title': (dir: 'asc' | 'desc') => ({ game: { title: dir } }),
+        'game.system.name': (dir: 'asc' | 'desc') => ({
+          game: { system: { name: dir } },
+        }),
+        device: (dir: 'asc' | 'desc') => [
+          { device: { brand: { name: dir } } },
+          { device: { modelName: dir } },
+        ],
+        'emulator.name': (dir: 'asc' | 'desc') => ({ emulator: { name: dir } }),
+        'performance.rank': (dir: 'asc' | 'desc') => ({
+          performance: { rank: dir },
+        }),
+        'author.name': (dir: 'asc' | 'desc') => ({ author: { name: dir } }),
+        createdAt: (dir: 'asc' | 'desc') => ({ createdAt: dir }),
       }
 
-      // Default ordering if no sort specified or for secondary sort
-      if (
-        !orderBy.length ||
-        (input.sortField !== 'createdAt' && !isSortingBySuccessRate)
-      ) {
-        orderBy.push({ createdAt: 'desc' })
-      }
+      const orderBy = isSortingBySuccessRate
+        ? ([] as Prisma.ListingOrderByWithRelationInput[])
+        : buildOrderBy<Prisma.ListingOrderByWithRelationInput>(
+            sortConfig,
+            input.sortField,
+            input.sortDirection ?? undefined,
+            { createdAt: 'desc' },
+          )
 
       // For success rate sorting, we need to fetch ALL listings, calculate rates, sort, then paginate
       if (isSortingBySuccessRate) {
-        const allListings = await ctx.prisma.listing.findMany({
-          where: combinedFilters,
-          include: {
-            game: { include: { system: true } },
-            device: { include: { brand: true, soc: true } },
-            emulator: true,
-            performance: true,
-            author: {
-              select: {
-                id: true,
-                name: true,
-                userBans: canSeeBannedUsers
-                  ? {
-                      where: {
-                        isActive: true,
-                        OR: [
-                          { expiresAt: null },
-                          { expiresAt: { gt: new Date() } },
-                        ],
-                      },
-                      select: { id: true, reason: true, bannedAt: true },
-                    }
-                  : false,
-              },
-            },
-            developerVerifications: {
-              include: {
-                developer: {
-                  select: { id: true, name: true },
-                },
-              },
-            },
-            _count: { select: { votes: true, comments: true } },
-            votes: ctx.session
-              ? {
-                  where: { userId: ctx.session.user.id },
-                  select: { value: true },
-                }
-              : undefined,
+        const allListings = await Sentry.startSpan(
+          {
+            op: 'db.query',
+            name: 'listings.fetchAllForSuccessRateSort',
           },
-          orderBy: { createdAt: 'desc' }, // fallback ordering
-        })
+          async (span) => {
+            span.setAttribute(
+              'filters.count',
+              Object.keys(combinedFilters).length,
+            )
+
+            const listings = await ctx.prisma.listing.findMany({
+              where: combinedFilters,
+              include: {
+                game: { include: { system: true } },
+                device: { include: { brand: true, soc: true } },
+                emulator: true,
+                performance: true,
+                author: {
+                  select: {
+                    id: true,
+                    name: true,
+                    userBans: canSeeBannedUsers
+                      ? {
+                          where: {
+                            isActive: true,
+                            OR: [
+                              { expiresAt: null },
+                              { expiresAt: { gt: new Date() } },
+                            ],
+                          },
+                          select: { id: true, reason: true, bannedAt: true },
+                        }
+                      : false,
+                  },
+                },
+                developerVerifications: {
+                  include: { developer: { select: { id: true, name: true } } },
+                },
+                _count: { select: { votes: true, comments: true } },
+                votes: ctx.session
+                  ? {
+                      where: { userId: ctx.session.user.id },
+                      select: { value: true },
+                    }
+                  : undefined,
+              },
+              orderBy: { createdAt: 'desc' }, // fallback ordering
+            })
+
+            span.setAttribute('listings.totalFetched', listings.length)
+            return listings
+          },
+        )
 
         // Calculate success rates for all listings
         const allListingsWithStats = await Promise.all(
@@ -416,9 +372,8 @@ export const coreRouter = createTRPCRouter({
             }
 
             // 3. If success rates are equal, prioritize by total vote count (more votes = more significant)
-            if (a.totalVotes !== b.totalVotes) {
+            if (a.totalVotes !== b.totalVotes)
               return b.totalVotes - a.totalVotes
-            }
 
             // 4. If vote counts are equal, prioritize by upvotes (more upvotes = more positive)
             return b.upVotes - a.upVotes
@@ -503,7 +458,7 @@ export const coreRouter = createTRPCRouter({
           const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
 
           const userVote =
-            ctx.session && listing.votes.length > 0
+            ctx.session && listing.votes && listing.votes.length > 0
               ? listing.votes[0].value
               : null
 
@@ -534,12 +489,12 @@ export const coreRouter = createTRPCRouter({
 
       return {
         listings: listingsWithStats,
-        pagination: {
+        pagination: createPaginationResult(
           total,
-          pages: Math.ceil(total / input.limit),
-          page: input.page,
-          limit: input.limit,
-        },
+          { page: input.page },
+          input.limit,
+          skip,
+        ),
       }
     }),
 
@@ -666,7 +621,7 @@ export const coreRouter = createTRPCRouter({
       }
     }),
 
-  create: protectedProcedure
+  create: createListingProcedure
     .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
       const {
@@ -830,6 +785,16 @@ export const coreRouter = createTRPCRouter({
             userId: authorId,
             action: 'first_listing',
           })
+        }
+
+        // Invalidate SEO cache if listing is approved
+        if (newListing.status === ApprovalStatus.APPROVED) {
+          await invalidateListPages()
+          await invalidateSitemap()
+          await revalidateByTag('listings')
+          await revalidateByTag(`game-${gameId}`)
+          await revalidateByTag(`device-${deviceId}`)
+          await revalidateByTag(`emulator-${emulatorId}`)
         }
 
         return newListing
@@ -1080,6 +1045,7 @@ export const coreRouter = createTRPCRouter({
     return {
       listings: listingsCount,
       pcListings: pcListingsCount,
+      totalReports: listingsCount + pcListingsCount,
       games: gamesCount,
       emulators: emulatorsCount,
       devices: devicesCount,
@@ -1286,11 +1252,13 @@ export const coreRouter = createTRPCRouter({
       return await ctx.prisma.$transaction(async (tx) => {
         // Validate custom fields if provided
         if (input.customFieldValues && input.customFieldValues.length > 0) {
-          await validateCustomFields(
-            tx,
-            listing.emulatorId,
-            input.customFieldValues,
-          )
+          await withSavepoint(tx, 'validate-custom-fields', async () => {
+            await validateCustomFields(
+              tx,
+              listing.emulatorId,
+              input.customFieldValues,
+            )
+          })
         }
 
         // Delete existing custom field values

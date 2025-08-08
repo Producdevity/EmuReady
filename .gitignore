@@ -15,10 +15,15 @@
 
 # testing
 /coverage
+/tests/screenshots
+test-results.log
 
 # next.js
 /.next/
 /out/
+
+# profiling
+*.cpuprofile
 
 # production
 /build
@@ -26,6 +31,7 @@
 # misc
 .DS_Store
 *.pem
+.dev-server.pid
 
 # debug
 npm-debug.log*
@@ -70,12 +76,15 @@ node_modules/
 .idea
 .claude
 .gemini
+.github/copilot-instructions.md
 
 # Notes
 CHECKS.md
 CLAUDE.md
 GEMINI.md
 NOTES.md
+notes
+docs/SEO.md
 
 
 # clerk configuration (can include secrets)
@@ -83,3 +92,6 @@ NOTES.md
 
 # Database backups
 /backups/
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -423,6 +423,7 @@ function PcListingDetailsClient(props: Props) {
               pcListingId={props.pcListing.id}
               gameId={props.pcListing.game.id}
               systemId={props.pcListing.game.system?.id}
+              pcListingOwnerId={props.pcListing.authorId}
             />
           </div>
         </Card>

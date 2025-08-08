@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode } from 'react'
 import {
   Controller,
   type Control,
@@ -36,8 +36,6 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
 function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
-  const [displayValue, setDisplayValue] = useState<string>('')
-
   const min = props.fieldDef.rangeMin ?? 0
   const max = props.fieldDef.rangeMax ?? 100
   const unit = props.fieldDef.rangeUnit ?? ''
@@ -76,11 +74,8 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
               ? field.value
               : parseValue(String(field.value))
 
-          // Update display value when current value changes
-          const formattedValue = formatValue(currentValue)
-          if (displayValue !== formattedValue) {
-            setDisplayValue(formattedValue)
-          }
+          // Format the current value for display
+          const displayValue = formatValue(currentValue)
 
           return (
             <div className="mt-3 space-y-6">
@@ -97,7 +92,6 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
                     onChange={(e) => {
                       const newValue = parseFloat(e.target.value)
                       field.onChange(newValue)
-                      setDisplayValue(formatValue(newValue))
                     }}
                     className="range-slider w-full h-3 bg-transparent cursor-pointer appearance-none focus:outline-none relative z-10"
                   />
@@ -215,7 +209,6 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
                             Math.min(max, newValue),
                           )
                           field.onChange(clampedValue)
-                          setDisplayValue(formatValue(clampedValue))
                         }
                       }}
                       className={cn(

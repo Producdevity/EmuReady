@@ -7,7 +7,7 @@ import { type Game, ApprovalStatus } from '@orm'
 interface Props {
   game: Game & {
     system?: { name: string } | null
-    _count: { listings: number }
+    _count: { listings: number; pcListings: number }
   }
 }
 
@@ -43,8 +43,11 @@ function GameCard(props: Props) {
             )}
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {props.game._count.listings}{' '}
-          {props.game._count.listings === 1 ? 'listing' : 'listings'}
+          {(() => {
+            const totalListings =
+              props.game._count.listings + props.game._count.pcListings
+            return `${totalListings} ${totalListings === 1 ? 'listing' : 'listings'}`
+          })()}
         </div>
       </div>
     </Link>

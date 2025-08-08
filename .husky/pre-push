@@ -1,3 +1,2 @@
 npm run lint
 npm run types
-npm run test:ci

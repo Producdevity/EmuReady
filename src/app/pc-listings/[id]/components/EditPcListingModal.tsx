@@ -12,8 +12,8 @@ import {
   PerformanceSelector,
 } from '@/app/listings/components/shared'
 import { Button, Modal, LoadingSpinner, SelectInput } from '@/components/ui'
-import { MarkdownEditor } from '@/components/ui/form'
 import { api } from '@/lib/api'
+import { MarkdownEditor } from '@/lib/dynamic-imports'
 import { UpdatePcListingUserSchema } from '@/schemas/pcListing'
 import { PcOs } from '@orm'
 import type { z } from 'zod'

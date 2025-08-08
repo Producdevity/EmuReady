@@ -85,12 +85,6 @@ export const adminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Manage performance scales.',
   },
-  {
-    href: '/admin/badges',
-    label: 'Badges',
-    exact: true,
-    description: 'Manage user badges and assignments.',
-  },
 ]
 
 export const superAdminNavItems: AdminNavItem[] = [
@@ -143,10 +137,22 @@ export const superAdminNavItems: AdminNavItem[] = [
     description: 'Manage roles and permissions.',
   },
   {
+    href: '/admin/monitoring',
+    label: 'System Monitoring',
+    exact: true,
+    description: 'Monitor system performance and metrics.',
+  },
+  {
     href: '/admin/permission-logs',
     label: 'Permission Logs',
     exact: true,
     description: 'Monitor permission changes and audit trail.',
+  },
+  {
+    href: '/admin/badges',
+    label: 'Badges',
+    exact: true,
+    description: 'Manage user badges and assignments.',
   },
 ]
 

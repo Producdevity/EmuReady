@@ -113,19 +113,3 @@ export function buildPcListingWhere(
 
   return where
 }
-
-/**
- * Standard pagination response structure
- */
-export function buildPaginationResponse(
-  total: number,
-  page: number,
-  limit: number,
-) {
-  return {
-    total,
-    pages: Math.ceil(total / limit),
-    page,
-    limit,
-  }
-}

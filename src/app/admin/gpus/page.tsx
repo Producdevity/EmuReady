@@ -34,7 +34,7 @@ import { Role } from '@orm'
 import GpuModal from './components/GpuModal'
 import GpuViewModal from './components/GpuViewModal'
 
-type GpuSortField = 'brand' | 'modelName'
+type GpuSortField = 'brand' | 'modelName' | 'pcListings'
 type GpuData = RouterOutput['gpus']['get']['gpus'][number]
 
 const GPUS_COLUMNS: ColumnDefinition[] = [
@@ -223,9 +223,13 @@ function AdminGpusPage() {
                   />
                 )}
                 {columnVisibility.isColumnVisible('listings') && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    PC Listings
-                  </th>
+                  <SortableHeader
+                    label="PC Listings"
+                    field="pcListings"
+                    currentSortField={table.sortField}
+                    currentSortDirection={table.sortDirection}
+                    onSort={table.handleSort}
+                  />
                 )}
                 {columnVisibility.isColumnVisible('actions') && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">

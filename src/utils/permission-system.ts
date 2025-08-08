@@ -107,6 +107,8 @@ export const PERMISSIONS = {
   DELETE_ANY_COMMENT: 'delete_any_comment',
 
   // Game Management
+  EDIT_GAMES: 'edit_games',
+  DELETE_GAMES: 'delete_games',
   MANAGE_GAMES: 'manage_games',
   APPROVE_GAMES: 'approve_games',
 
@@ -119,6 +121,10 @@ export const PERMISSIONS = {
   MANAGE_USERS: 'manage_users',
   CHANGE_USER_ROLES: 'change_user_roles',
   MODIFY_SUPER_ADMIN_USERS: 'modify_super_admin_users',
+
+  // User Moderation
+  VIEW_USER_BANS: 'view_user_bans',
+  MANAGE_USER_BANS: 'manage_user_bans',
 
   // System Access
   ACCESS_ADMIN_PANEL: 'access_admin_panel',

@@ -9,9 +9,14 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  adminProcedure,
-  moderatorProcedure,
+  manageDevicesProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import {
+  calculateOffset,
+  createPaginationResult,
+  buildOrderBy,
+} from '@/server/utils/pagination'
 import type { Prisma } from '@orm'
 
 export const devicesRouter = createTRPCRouter({
@@ -28,7 +33,7 @@ export const devicesRouter = createTRPCRouter({
     } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : offset
+    const actualOffset = calculateOffset({ page, offset }, limit)
 
     // Build where clause for filtering
     const where: Prisma.DeviceWhereInput = {
@@ -81,27 +86,19 @@ export const devicesRouter = createTRPCRouter({
         : {}),
     }
 
-    // Build orderBy based on sortField and sortDirection
-    const orderBy: Prisma.DeviceOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'brand':
-          orderBy.push({ brand: { name: sortDirection } })
-          break
-        case 'modelName':
-          orderBy.push({ modelName: sortDirection })
-          break
-        case 'soc':
-          orderBy.push({ soc: { name: sortDirection } })
-          break
-      }
+    const sortConfig = {
+      brand: (dir: 'asc' | 'desc') => ({ brand: { name: dir } }),
+      modelName: (dir: 'asc' | 'desc') => ({ modelName: dir }),
+      soc: (dir: 'asc' | 'desc') => ({ soc: { name: dir } }),
+      listings: (dir: 'asc' | 'desc') => ({ listings: { _count: dir } }),
     }
 
-    // Default ordering if no sort specified - prioritize exact matches when searching
-    if (!orderBy.length) {
-      orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
-    }
+    const orderBy = buildOrderBy<Prisma.DeviceOrderByWithRelationInput>(
+      sortConfig,
+      sortField,
+      sortDirection,
+      [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
+    )
 
     const total = await ctx.prisma.device.count({ where })
 
@@ -120,13 +117,12 @@ export const devicesRouter = createTRPCRouter({
 
     return {
       devices,
-      pagination: {
+      pagination: createPaginationResult(
         total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        offset: actualOffset,
-        limit: limit,
-      },
+        { page, offset },
+        limit,
+        actualOffset,
+      ),
     }
   }),
 
@@ -145,7 +141,7 @@ export const devicesRouter = createTRPCRouter({
       return device ?? ResourceError.device.notFound()
     }),
 
-  create: moderatorProcedure
+  create: manageDevicesProcedure
     .input(CreateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -184,7 +180,7 @@ export const devicesRouter = createTRPCRouter({
       })
     }),
 
-  update: moderatorProcedure
+  update: manageDevicesProcedure
     .input(UpdateDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -233,7 +229,7 @@ export const devicesRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: manageDevicesProcedure
     .input(DeleteDeviceSchema)
     .mutation(async ({ ctx, input }) => {
       const existingDevice = await ctx.prisma.device.findUnique({
@@ -252,7 +248,7 @@ export const devicesRouter = createTRPCRouter({
       return ctx.prisma.device.delete({ where: { id: input.id } })
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([
       ctx.prisma.device.count(),
       ctx.prisma.device.count({ where: { listings: { some: {} } } }),

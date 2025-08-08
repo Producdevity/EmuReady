@@ -1,4 +1,5 @@
 import NextBundleAnalyzer from '@next/bundle-analyzer'
+import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
@@ -50,17 +51,6 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: ['dev.emuready.com'],
 
-  experimental: {
-    optimizePackageImports: [
-      '@clerk/nextjs',
-      '@tanstack/react-query',
-      'date-fns',
-      'framer-motion',
-      'lucide-react',
-    ],
-    optimizeCss: true,
-  },
-
   turbopack: {
     rules: {
       '*.svg': {
@@ -70,6 +60,29 @@ const nextConfig: NextConfig = {
     },
   },
 
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: [
+      '@clerk/nextjs',
+      '@tanstack/react-query',
+      'date-fns',
+      'framer-motion',
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-tooltip',
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      'react-hook-form',
+      'remeda',
+      '@/components/ui',
+      '@/components/icons',
+      '@/hooks',
+      '@/lib',
+      '@/utils',
+    ],
+  },
+
   serverExternalPackages: [
     '@prisma/client',
     'jsdom',
@@ -77,22 +90,16 @@ const nextConfig: NextConfig = {
     'dompurify',
   ],
 
+  eslint: {
+    dirs: ['src', 'tests'], // Include tests directory in ESLint
+  },
+
   webpack: (config) => {
-    config.module.rules.push({
+    config.module?.rules?.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     })
-    // support for importing markdown files for server-side processing
-    // TODO: probably need just this https://nextjs.org/docs/app/guides/mdx
-    config.module.rules.push({
-      test: /\.md$/,
-      type: 'asset/source',
-    })
     return config
-  },
-
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 
   async headers() {
@@ -129,7 +136,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://storage.ko-fi.com https://fonts.googleapis.com https://unpkg.com",
               "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com https://cdn.thegamesdb.net https://media.rawg.io https://www.googletagmanager.com https://assets.nintendo.com https://*.google-analytics.com https://storage.ko-fi.com https://vercel.com",
               "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://fonts.gstatic.com https://fonts.googleapis.com https://vercel.live data:",
-              "connect-src 'self' https://*.google-analytics.com https://www.googletagmanager.com https://api.mymemory.translated.net https://fonts.googleapis.com https://fonts.gstatic.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://va.vercel-scripts.com https://challenges.cloudflare.com https://storage.ko-fi.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live wss://ws-us3.pusher.com https://api.github.com",
+              "connect-src 'self' https://*.google-analytics.com https://www.googletagmanager.com https://api.mymemory.translated.net https://fonts.googleapis.com https://fonts.gstatic.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://va.vercel-scripts.com https://challenges.cloudflare.com https://storage.ko-fi.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live wss://ws-us3.pusher.com https://api.github.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
               "frame-src 'self' blob: https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live https://ko-fi.com",
               "worker-src 'self' blob:",
               "object-src 'none'",
@@ -162,4 +169,34 @@ const withBundleAnalyzer = NextBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })
 
-export default withBundleAnalyzer(nextConfig)
+export default withSentryConfig(withBundleAnalyzer(nextConfig), {
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+
+  org: 'hexelnet',
+  project: 'emuready',
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // This can increase your server load as well as your hosting bill.
+  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+  // side errors will fail.
+  // tunnelRoute: "/monitoring",
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+  // See the following for more information:
+  // https://docs.sentry.io/product/crons/
+  // https://vercel.com/docs/cron-jobs
+  automaticVercelMonitors: true,
+})

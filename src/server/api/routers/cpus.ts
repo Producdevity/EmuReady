@@ -9,8 +9,8 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  moderatorProcedure,
-  adminProcedure,
+  manageDevicesProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { Prisma } from '@orm'
 
@@ -72,7 +72,6 @@ export const cpusRouter = createTRPCRouter({
         : {}),
     }
 
-    // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.CpuOrderByWithRelationInput[] = []
 
     if (sortField && sortDirection) {
@@ -82,6 +81,9 @@ export const cpusRouter = createTRPCRouter({
           break
         case 'modelName':
           orderBy.push({ modelName: sortDirection })
+          break
+        case 'pcListings':
+          orderBy.push({ pcListings: { _count: sortDirection } })
           break
       }
     }
@@ -125,7 +127,7 @@ export const cpusRouter = createTRPCRouter({
       return cpu ?? ResourceError.cpu.notFound()
     }),
 
-  create: moderatorProcedure
+  create: manageDevicesProcedure
     .input(CreateCpuSchema)
     .mutation(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -149,7 +151,7 @@ export const cpusRouter = createTRPCRouter({
       })
     }),
 
-  update: moderatorProcedure
+  update: manageDevicesProcedure
     .input(UpdateCpuSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -181,7 +183,7 @@ export const cpusRouter = createTRPCRouter({
       })
     }),
 
-  delete: adminProcedure
+  delete: manageDevicesProcedure
     .input(DeleteCpuSchema)
     .mutation(async ({ ctx, input }) => {
       const existingCpu = await ctx.prisma.cpu.findUnique({
@@ -200,7 +202,7 @@ export const cpusRouter = createTRPCRouter({
       return ctx.prisma.cpu.delete({ where: { id: input.id } })
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([
       ctx.prisma.cpu.count(),
       ctx.prisma.cpu.count({ where: { pcListings: { some: {} } } }),

@@ -1,6 +1,11 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
-import { DeliveryChannel, NotificationCategory, NotificationType } from '@orm'
+import {
+  NotificationDeliveryStatus,
+  DeliveryChannel,
+  NotificationCategory,
+  NotificationType,
+} from '@orm'
 import { createEmailService } from './emailService'
 import { realtimeNotificationService } from './realtimeService'
 import type { NotificationData } from './types'
@@ -201,8 +206,8 @@ export class NotificationBatchingService {
           message: data.message,
           actionUrl: data.actionUrl,
           metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
-          deliveryChannel: data.deliveryChannel || 'IN_APP',
-          deliveryStatus: 'PENDING',
+          deliveryChannel: data.deliveryChannel || DeliveryChannel.IN_APP,
+          deliveryStatus: NotificationDeliveryStatus.PENDING,
         },
       })
 
@@ -211,8 +216,8 @@ export class NotificationBatchingService {
 
       // In-app delivery
       if (
-        data.deliveryChannel === 'IN_APP' ||
-        data.deliveryChannel === 'BOTH'
+        data.deliveryChannel === DeliveryChannel.IN_APP ||
+        data.deliveryChannel === DeliveryChannel.BOTH
       ) {
         deliveryPromises.push(this.deliverInApp(dbNotification.id, data))
       }
@@ -232,7 +237,9 @@ export class NotificationBatchingService {
       await prisma.notification.update({
         where: { id: dbNotification.id },
         data: {
-          deliveryStatus: success ? 'SENT' : 'FAILED',
+          deliveryStatus: success
+            ? NotificationDeliveryStatus.SENT
+            : NotificationDeliveryStatus.FAILED,
         },
       })
 

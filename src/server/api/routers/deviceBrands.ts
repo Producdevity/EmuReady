@@ -9,9 +9,10 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  adminProcedure,
-  moderatorProcedure,
+  manageDevicesProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import type { Prisma } from '@orm'
 
 export const deviceBrandsRouter = createTRPCRouter({
@@ -20,7 +21,6 @@ export const deviceBrandsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { search, limit, sortField, sortDirection } = input ?? {}
 
-      // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
 
       if (sortField && sortDirection) {
@@ -35,21 +35,14 @@ export const deviceBrandsRouter = createTRPCRouter({
       }
 
       // Default ordering if no sort specified
-      if (!orderBy.length) {
-        orderBy.push({ name: 'asc' })
-      }
+      if (!orderBy.length) orderBy.push({ name: 'asc' })
+
+      const searchConditions = buildSearchFilter(search, ['name'])
+      const where = searchConditions ? { OR: searchConditions } : undefined
 
       return ctx.prisma.deviceBrand.findMany({
-        where: search
-          ? { name: { contains: search, mode: 'insensitive' } }
-          : undefined,
-        include: {
-          _count: {
-            select: {
-              devices: true,
-            },
-          },
-        },
+        where,
+        include: { _count: { select: { devices: true } } },
         take: limit,
         orderBy,
       })
@@ -61,11 +54,10 @@ export const deviceBrandsRouter = createTRPCRouter({
       const brand = await ctx.prisma.deviceBrand.findUnique({
         where: { id: input.id },
       })
-
       return brand || ResourceError.deviceBrand.notFound()
     }),
 
-  create: moderatorProcedure
+  create: manageDevicesProcedure
     .input(CreateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand with the same name already exists
@@ -78,7 +70,7 @@ export const deviceBrandsRouter = createTRPCRouter({
         : ctx.prisma.deviceBrand.create({ data: input })
     }),
 
-  update: moderatorProcedure
+  update: manageDevicesProcedure
     .input(UpdateDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -100,7 +92,7 @@ export const deviceBrandsRouter = createTRPCRouter({
         : ctx.prisma.deviceBrand.update({ where: { id }, data })
     }),
 
-  delete: adminProcedure
+  delete: manageDevicesProcedure
     .input(DeleteDeviceBrandSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if brand is used in any devices
@@ -113,7 +105,7 @@ export const deviceBrandsRouter = createTRPCRouter({
         : ctx.prisma.deviceBrand.delete({ where: { id: input.id } })
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [withDevices, withoutDevices] = await Promise.all([
       ctx.prisma.deviceBrand.count({ where: { devices: { some: {} } } }),
       ctx.prisma.deviceBrand.count({ where: { devices: { none: {} } } }),

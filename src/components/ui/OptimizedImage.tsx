@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+import Image, { type ImageProps } from 'next/image'
 import { useState } from 'react'
 import { LoadingSpinner } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -17,12 +17,13 @@ const objectFitMap: Record<ObjectFit, string> = {
 
 interface Props {
   src: string
-  alt: string
+  alt: ImageProps['alt']
   width?: number
   height?: number
   className?: string
   imageClassName?: string
-  priority?: boolean
+  priority?: ImageProps['priority']
+  unoptimized?: ImageProps['unoptimized']
   quality?: number
   fallbackSrc?: string
   objectFit?: ObjectFit
@@ -59,7 +60,7 @@ export function OptimizedImage(props: Props) {
         quality={props.quality ?? 85}
         onLoad={() => setIsLoading(false)}
         onError={handleError}
-        unoptimized // temporarily disable Next.js image optimization because MONEYYYYY
+        unoptimized={props.unoptimized ?? false}
       />
     </div>
   )

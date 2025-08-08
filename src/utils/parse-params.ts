@@ -8,11 +8,15 @@ function parseArrayParam(param: string | null): string[] {
   try {
     // Try to decode URL-encoded JSON first
     const decoded = decodeURIComponent(param)
-    return JSON.parse(decoded)
+    const parsed = JSON.parse(decoded)
+    // Return parsed array as-is to support mixed types
+    return Array.isArray(parsed) ? parsed : [parsed]
   } catch {
     try {
       // Fallback to parsing without decoding
-      return JSON.parse(param)
+      const parsed = JSON.parse(param)
+      // Return parsed array as-is to support mixed types
+      return Array.isArray(parsed) ? parsed : [parsed]
     } catch {
       // If both fail, treat as single string value
       return param ? [param] : []
@@ -32,26 +36,27 @@ function parseNumberArrayParam(param: string | null): number[] {
     const decoded = decodeURIComponent(param)
     const parsed = JSON.parse(decoded)
     if (Array.isArray(parsed)) {
-      return parsed.map(Number).filter(Boolean)
-    } else if (typeof parsed === 'number') {
-      return [parsed].filter(Boolean)
+      // Convert to numbers and filter out NaN/falsy values
+      return parsed.map((v) => Number(v)).filter((n) => !isNaN(n) && n !== 0)
     } else {
-      return []
+      const num = Number(parsed)
+      return !isNaN(num) && num !== 0 ? [num] : []
     }
   } catch {
     try {
       // Fallback to parsing without decoding
       const parsed = JSON.parse(param)
       if (Array.isArray(parsed)) {
-        return parsed.map(Number).filter(Boolean)
-      } else if (typeof parsed === 'number') {
-        return [parsed].filter(Boolean)
+        // Convert to numbers and filter out NaN/falsy values
+        return parsed.map((v) => Number(v)).filter((n) => !isNaN(n) && n !== 0)
       } else {
-        return []
+        const num = Number(parsed)
+        return !isNaN(num) && num !== 0 ? [num] : []
       }
     } catch {
       // If both fail, treat as single number value
-      return param ? [Number(param)].filter(Boolean) : []
+      const num = Number(param)
+      return !isNaN(num) && num !== 0 ? [num] : []
     }
   }
 }

@@ -68,7 +68,6 @@ export const mobileGpusRouter = createMobileTRPCRouter({
           : {}),
       }
 
-      // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.GpuOrderByWithRelationInput[] = []
 
       if (sortField && sortDirection) {

@@ -6,8 +6,10 @@ import {
   DeleteListingSchema,
   GetListingByIdSchema,
   GetListingCommentsSchema,
+  GetListingEmulatorConfigSchema,
   GetListingsByGameSchema,
   GetListingsSchema,
+  type GetListingsInput,
   GetUserListingsSchema,
   GetUserVoteSchema,
   UpdateCommentSchema,
@@ -19,144 +21,167 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
-import { ApprovalStatus } from '@orm'
+import {
+  convertToEdenConfig,
+  serializeEdenConfig,
+} from '@/server/utils/emulator-config/eden-converter'
+import {
+  convertToGameNativeConfig,
+  serializeGameNativeConfig,
+} from '@/server/utils/emulator-config/gamenative-converter'
+import {
+  buildSearchFilter,
+  buildNsfwFilter,
+  buildArrayFilter,
+} from '@/server/utils/query-builders'
+import { ApprovalStatus, type PrismaClient } from '@orm'
+
+// Helper function to calculate listing stats
+async function calculateListingStats(
+  listing: { id: string },
+  prisma: PrismaClient,
+  userId?: string,
+) {
+  const [upVotes, userVote] = await Promise.all([
+    prisma.vote.count({
+      where: { listingId: listing.id, value: true },
+    }),
+    userId
+      ? prisma.vote.findUnique({
+          where: {
+            userId_listingId: { userId: userId, listingId: listing.id },
+          },
+        })
+      : null,
+  ])
+  const downVotes = await prisma.vote.count({
+    where: { listingId: listing.id, value: false },
+  })
+  const totalVotes = upVotes + downVotes
+  const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
+
+  return {
+    ...listing,
+    successRate,
+    upVotes,
+    downVotes,
+    totalVotes,
+    userVote: userVote?.value ?? null,
+  }
+}
+
+// Helper for getting listings
+async function getListingsHelper(
+  ctx: {
+    prisma: PrismaClient
+    session?: { user?: { id: string; showNsfw?: boolean } } | null
+  },
+  input: GetListingsInput,
+) {
+  const {
+    page = 1,
+    limit = 20,
+    gameId,
+    systemId,
+    deviceId,
+    emulatorIds,
+    search,
+  } = input ?? {}
+
+  // Build where clause with proper search filtering
+  const baseWhere: Record<string, unknown> = {
+    status: ApprovalStatus.APPROVED,
+    game: {
+      status: ApprovalStatus.APPROVED,
+      ...buildNsfwFilter(ctx.session?.user?.showNsfw),
+    },
+  }
+
+  if (gameId) baseWhere.gameId = gameId
+  if (deviceId) baseWhere.deviceId = deviceId
+  const emulatorFilter = buildArrayFilter(emulatorIds, 'emulatorId')
+  if (emulatorFilter) {
+    Object.assign(baseWhere, emulatorFilter)
+  }
+  if (systemId) {
+    baseWhere.game = {
+      ...(baseWhere.game as Record<string, unknown>),
+      systemId,
+    }
+  }
+
+  // Add search filtering at database level
+  const searchConditions = buildSearchFilter(search, ['game.title', 'notes'])
+  if (searchConditions) baseWhere.OR = searchConditions
+
+  const [listings, total] = await Promise.all([
+    ctx.prisma.listing.findMany({
+      where: baseWhere,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        game: {
+          include: {
+            system: { select: { id: true, name: true, key: true } },
+          },
+        },
+        device: { include: { brand: true, soc: true } },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
+      },
+    }),
+    ctx.prisma.listing.count({ where: baseWhere }),
+  ])
+
+  const listingsWithStats = await Promise.all(
+    listings.map((listing) =>
+      calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id),
+    ),
+  )
+
+  const totalPages = Math.ceil(total / limit)
+
+  return {
+    listings: listingsWithStats,
+    pagination: {
+      total,
+      pages: totalPages,
+      currentPage: page,
+      limit,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  }
+}
 
 export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Get listings with pagination and filtering
    */
+  get: mobilePublicProcedure
+    .input(GetListingsSchema)
+    .query(async ({ ctx, input }) => getListingsHelper(ctx, input)),
+
+  /**
+   * @deprecated Use 'get' instead - kept for backwards compatibility with Eden
+   */
   getListings: mobilePublicProcedure
     .input(GetListingsSchema)
-    .query(async ({ ctx, input }) => {
-      const { page, limit, gameId, systemId, deviceId, emulatorIds, search } =
-        input
-      const skip = (page - 1) * limit
-
-      // Build where clause with proper search filtering
-      const baseWhere: Record<string, unknown> = {
-        status: ApprovalStatus.APPROVED,
-        game: {
-          status: ApprovalStatus.APPROVED,
-          // Filter NSFW content based on user preferences
-          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
-        },
-      }
-
-      if (gameId) baseWhere.gameId = gameId
-      if (deviceId) baseWhere.deviceId = deviceId
-      if (emulatorIds && emulatorIds.length > 0) {
-        baseWhere.emulatorId = { in: emulatorIds }
-      }
-      if (systemId) {
-        baseWhere.game = {
-          ...(baseWhere.game as Record<string, unknown>),
-          systemId,
-        }
-      }
-
-      // Add search filtering at database level
-      if (search) {
-        baseWhere.OR = [
-          {
-            game: {
-              title: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          },
-          {
-            notes: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        ]
-      }
-
-      const [listings, total] = await Promise.all([
-        ctx.prisma.listing.findMany({
-          where: baseWhere,
-          skip,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            game: {
-              include: {
-                system: { select: { id: true, name: true, key: true } },
-              },
-            },
-            device: { include: { brand: true, soc: true } },
-            emulator: { select: { id: true, name: true, logo: true } },
-            performance: { select: { id: true, label: true, rank: true } },
-            author: { select: { id: true, name: true } },
-            _count: { select: { votes: true, comments: true } },
-          },
-        }),
-        ctx.prisma.listing.count({ where: baseWhere }),
-      ])
-
-      // Calculate success rates (search filtering now done at database level)
-      const listingsWithStats = await Promise.all(
-        listings.map(async (listing) => {
-          const [upVotes, userVote] = await Promise.all([
-            ctx.prisma.vote.count({
-              where: { listingId: listing.id, value: true },
-            }),
-            ctx.session?.user.id
-              ? ctx.prisma.vote.findUnique({
-                  where: {
-                    userId_listingId: {
-                      userId: ctx.session.user.id,
-                      listingId: listing.id,
-                    },
-                  },
-                })
-              : null,
-          ])
-          const downVotes = await ctx.prisma.vote.count({
-            where: { listingId: listing.id, value: false },
-          })
-          const totalVotes = upVotes + downVotes
-          const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
-
-          return {
-            ...listing,
-            successRate,
-            upVotes,
-            downVotes,
-            totalVotes,
-            userVote: userVote?.value ?? null,
-          }
-        }),
-      )
-
-      const pages = Math.ceil(total / limit)
-
-      return {
-        listings: listingsWithStats,
-        pagination: {
-          total,
-          pages,
-          currentPage: page,
-          limit,
-          hasNextPage: page < pages,
-          hasPreviousPage: page > 1,
-        },
-      }
-    }),
+    .query(async ({ ctx, input }) => getListingsHelper(ctx, input)),
 
   /**
    * Get featured listings
    */
-  getFeaturedListings: mobilePublicProcedure.query(async ({ ctx }) => {
+  featured: mobilePublicProcedure.query(async ({ ctx }) => {
     const listings = await ctx.prisma.listing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
         game: {
           status: ApprovalStatus.APPROVED,
-          // Filter NSFW content based on user preferences
-          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -173,46 +198,17 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       },
     })
 
-    // Calculate success rate for each listing
     return await Promise.all(
-      listings.map(async (listing) => {
-        const [upVotes, userVote] = await Promise.all([
-          ctx.prisma.vote.count({
-            where: { listingId: listing.id, value: true },
-          }),
-          ctx.session?.user.id
-            ? ctx.prisma.vote.findUnique({
-                where: {
-                  userId_listingId: {
-                    userId: ctx.session.user.id,
-                    listingId: listing.id,
-                  },
-                },
-              })
-            : null,
-        ])
-        const downVotes = await ctx.prisma.vote.count({
-          where: { listingId: listing.id, value: false },
-        })
-        const totalVotes = upVotes + downVotes
-        const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
-
-        return {
-          ...listing,
-          successRate,
-          upVotes,
-          downVotes,
-          totalVotes,
-          userVote: userVote?.value ?? null,
-        }
-      }),
+      listings.map((listing) =>
+        calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id),
+      ),
     )
   }),
 
   /**
    * Get listings by game
    */
-  getListingsByGame: mobilePublicProcedure
+  byGame: mobilePublicProcedure
     .input(GetListingsByGameSchema)
     .query(async ({ ctx, input }) => {
       const listings = await ctx.prisma.listing.findMany({
@@ -221,7 +217,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           status: ApprovalStatus.APPROVED,
           game: {
             status: ApprovalStatus.APPROVED,
-            ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+            ...buildNsfwFilter(ctx.session?.user?.showNsfw),
           },
         },
         include: {
@@ -234,46 +230,17 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         orderBy: { createdAt: 'desc' },
       })
 
-      // Calculate success rate for each listing
       return await Promise.all(
-        listings.map(async (listing) => {
-          const [upVotes, userVote] = await Promise.all([
-            ctx.prisma.vote.count({
-              where: { listingId: listing.id, value: true },
-            }),
-            ctx.session?.user.id
-              ? ctx.prisma.vote.findUnique({
-                  where: {
-                    userId_listingId: {
-                      userId: ctx.session.user.id,
-                      listingId: listing.id,
-                    },
-                  },
-                })
-              : null,
-          ])
-          const downVotes = await ctx.prisma.vote.count({
-            where: { listingId: listing.id, value: false },
-          })
-          const totalVotes = upVotes + downVotes
-          const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
-
-          return {
-            ...listing,
-            successRate,
-            upVotes,
-            downVotes,
-            totalVotes,
-            userVote: userVote?.value ?? null,
-          }
-        }),
+        listings.map((listing) =>
+          calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id),
+        ),
       )
     }),
 
   /**
    * Get listing by ID
    */
-  getListingById: mobilePublicProcedure
+  byId: mobilePublicProcedure
     .input(GetListingByIdSchema)
     .query(async ({ ctx, input }) => {
       const listing = await ctx.prisma.listing.findUnique({
@@ -307,42 +274,17 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
       if (!listing) return null
 
-      // Calculate success rate and get user vote
-      const [upVotes, userVote] = await Promise.all([
-        ctx.prisma.vote.count({
-          where: { listingId: listing.id, value: true },
-        }),
-        ctx.session?.user.id
-          ? ctx.prisma.vote.findUnique({
-              where: {
-                userId_listingId: {
-                  userId: ctx.session.user.id,
-                  listingId: listing.id,
-                },
-              },
-            })
-          : null,
-      ])
-      const downVotes = await ctx.prisma.vote.count({
-        where: { listingId: listing.id, value: false },
-      })
-      const totalVotes = upVotes + downVotes
-      const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
-
-      return {
-        ...listing,
-        successRate,
-        upVotes,
-        downVotes,
-        totalVotes,
-        userVote: userVote?.value ?? null,
-      }
+      return await calculateListingStats(
+        listing,
+        ctx.prisma,
+        ctx.session?.user?.id,
+      )
     }),
 
   /**
    * Get user listings
    */
-  getUserListings: mobileProtectedProcedure
+  byUser: mobileProtectedProcedure
     .input(GetUserListingsSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.prisma.listing.findMany({
@@ -367,7 +309,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Create a new listing
    */
-  createListing: mobileProtectedProcedure
+  create: mobileProtectedProcedure
     .input(CreateListingSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.prisma.listing.create({
@@ -406,7 +348,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Update a listing
    */
-  updateListing: mobileProtectedProcedure
+  update: mobileProtectedProcedure
     .input(UpdateListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, customFieldValues, ...updateData } = input
@@ -455,7 +397,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Delete a listing
    */
-  deleteListing: mobileProtectedProcedure
+  delete: mobileProtectedProcedure
     .input(DeleteListingSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if user owns the listing
@@ -474,7 +416,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Vote on a listing
    */
-  voteListing: mobileProtectedProcedure
+  vote: mobileProtectedProcedure
     .input(VoteListingSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if user already voted
@@ -504,7 +446,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Get user's vote on a listing
    */
-  getUserVote: mobileProtectedProcedure
+  userVote: mobileProtectedProcedure
     .input(GetUserVoteSchema)
     .query(async ({ ctx, input }) => {
       const vote = await ctx.prisma.vote.findUnique({
@@ -523,7 +465,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   /**
    * Get listing comments
    */
-  getListingComments: mobilePublicProcedure
+  comments: mobilePublicProcedure
     .input(GetListingCommentsSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.prisma.comment.findMany({
@@ -591,5 +533,121 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       return existing.userId !== ctx.session.user.id
         ? AppError.forbidden('You can only delete your own comments')
         : await ctx.prisma.comment.delete({ where: { id: input.commentId } })
+    }),
+
+  /**
+   * Get emulator configuration for a listing
+   * Returns the configuration file content that the mobile app can use
+   * to launch the game with the correct settings
+   */
+  getEmulatorConfig: mobilePublicProcedure
+    .input(GetListingEmulatorConfigSchema)
+    .query(async ({ ctx, input }) => {
+      // Fetch the listing with all required data
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: input.listingId },
+        include: {
+          game: {
+            select: {
+              id: true,
+              title: true,
+              system: {
+                select: {
+                  id: true,
+                  name: true,
+                  key: true,
+                },
+              },
+            },
+          },
+          emulator: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          customFieldValues: {
+            include: {
+              customFieldDefinition: {
+                select: {
+                  id: true,
+                  name: true,
+                  label: true,
+                  type: true,
+                  options: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!listing) {
+        return AppError.notFound('Listing')
+      }
+
+      // Determine emulator type
+      const emulatorName = listing.emulator.name.toLowerCase()
+      const emulatorType =
+        input.emulatorType ??
+        (emulatorName.includes('eden')
+          ? 'eden'
+          : emulatorName.includes('gamenative')
+            ? 'gamenative'
+            : 'eden') // Default to Eden
+
+      if (emulatorType === 'eden') {
+        // Convert to Eden configuration
+        const edenConfig = convertToEdenConfig({
+          listingId: listing.id,
+          gameId: listing.game.id,
+          customFieldValues: listing.customFieldValues.map((cfv) => ({
+            customFieldDefinition: cfv.customFieldDefinition,
+            value: cfv.value,
+          })),
+        })
+
+        // Serialize to .ini format
+        const configContent = serializeEdenConfig(edenConfig)
+
+        return {
+          type: 'eden',
+          filename: `${listing.game.id}.ini`,
+          content: configContent,
+          mimeType: 'text/plain',
+          metadata: {
+            gameTitle: listing.game.title,
+            systemName: listing.game.system.name,
+            emulatorName: listing.emulator.name,
+          },
+        }
+      } else if (emulatorType === 'gamenative') {
+        // Convert to GameNative configuration
+        const gameNativeConfig = convertToGameNativeConfig({
+          listingId: listing.id,
+          gameId: listing.game.id,
+          customFieldValues: listing.customFieldValues.map((cfv) => ({
+            customFieldDefinition: cfv.customFieldDefinition,
+            value: cfv.value,
+          })),
+        })
+
+        // Serialize to JSON format
+        const configContent = serializeGameNativeConfig(gameNativeConfig)
+
+        return {
+          type: 'gamenative',
+          filename: `${listing.game.id}.json`,
+          content: configContent,
+          mimeType: 'application/json',
+          metadata: {
+            gameTitle: listing.game.title,
+            systemName: listing.game.system.name,
+            emulatorName: listing.emulator.name,
+          },
+        }
+      } else {
+        return AppError.badRequest('Unsupported emulator type')
+      }
     }),
 })

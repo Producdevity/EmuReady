@@ -7,8 +7,13 @@ import {
   DeleteCustomFieldDefinitionSchema,
   UpdateCustomFieldDefinitionOrderSchema,
 } from '@/schemas/customFieldDefinition'
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  permissionProcedure,
+} from '@/server/api/trpc'
 import { prisma } from '@/server/db'
+import { PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { CustomFieldType, Prisma, Role } from '@orm'
 
@@ -17,12 +22,30 @@ type CustomFieldOptionArray = {
   label: string
 }[]
 
+const manageCustomFieldsProcedure = permissionProcedure(
+  PERMISSIONS.MANAGE_CUSTOM_FIELDS,
+)
+
 export const customFieldDefinitionRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: manageCustomFieldsProcedure
     .input(CreateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
+      // For developers, verify they can manage this emulator
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
+          where: {
+            userId_emulatorId: {
+              userId: ctx.session.user.id,
+              emulatorId: input.emulatorId,
+            },
+          },
+        })
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only manage custom fields for emulators you are verified for',
+          )
+        }
       }
 
       if (input.type === CustomFieldType.SELECT) {
@@ -103,13 +126,9 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       return field
     }),
 
-  update: protectedProcedure
+  update: manageCustomFieldsProcedure
     .input(UpdateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
-      }
-
       const fieldToUpdate = await prisma.customFieldDefinition.findUnique({
         where: { id: input.id },
       })
@@ -117,6 +136,24 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       if (!fieldToUpdate) {
         ResourceError.customField.notFound()
         return // This will never execute, but helps TypeScript understand
+      }
+
+      // For developers, verify they can manage this emulator
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
+          where: {
+            userId_emulatorId: {
+              userId: ctx.session.user.id,
+              emulatorId: fieldToUpdate.emulatorId,
+            },
+          },
+        })
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only manage custom fields for emulators you are verified for',
+          )
+        }
       }
 
       const newType = input.type ?? fieldToUpdate.type
@@ -192,18 +229,32 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       })
     }),
 
-  delete: protectedProcedure
+  delete: manageCustomFieldsProcedure
     .input(DeleteCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientPermissions(Role.SUPER_ADMIN)
-      }
-
       const fieldToDelete = await prisma.customFieldDefinition.findUnique({
         where: { id: input.id },
       })
 
       if (!fieldToDelete) return ResourceError.customField.notFound()
+
+      // For developers, verify they can manage this emulator
+      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
+          where: {
+            userId_emulatorId: {
+              userId: ctx.session.user.id,
+              emulatorId: fieldToDelete.emulatorId,
+            },
+          },
+        })
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only manage custom fields for emulators you are verified for',
+          )
+        }
+      }
 
       return prisma.customFieldDefinition.delete({
         where: { id: input.id },

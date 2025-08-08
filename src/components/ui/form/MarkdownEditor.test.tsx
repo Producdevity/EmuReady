@@ -1,15 +1,22 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { type PropsWithChildren } from 'react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { MarkdownEditor } from './MarkdownEditor'
+
+interface MotionProps extends PropsWithChildren {
+  [key: string]: unknown
+}
 
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
+    div: ({ children, ...props }: MotionProps) => (
+      <div {...props}>{children}</div>
+    ),
+    p: ({ children, ...props }: MotionProps) => <p {...props}>{children}</p>,
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: (props: PropsWithChildren) => props.children,
 }))
 
 describe('MarkdownEditor Resize Functionality', () => {

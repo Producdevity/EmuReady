@@ -476,10 +476,12 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
   }
 }
 
-function generateSwaggerEndpoints(
-  routerInfos: RouterInfo[],
-): SwaggerEndpoint[] {
+function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
+  endpoints: SwaggerEndpoint[]
+  schemas: Record<string, unknown>
+} {
   const endpoints: SwaggerEndpoint[] = []
+  const schemas: Record<string, unknown> = {}
 
   for (const routerInfo of routerInfos) {
     for (const procedure of routerInfo.procedures) {
@@ -503,36 +505,39 @@ function generateSwaggerEndpoints(
             schemaName,
           ) as Record<string, unknown>
 
+          // Add schema to components/schemas
+          schemas[schemaName] = jsonSchema
+
           if (method === 'post') {
             // Mutations use POST with request body
             requestBody = {
               required: true,
               content: {
                 'application/json': {
-                  schema: jsonSchema,
+                  schema: { $ref: `#/components/schemas/${schemaName}` },
                   example: generateExampleFromSchema(jsonSchema),
                 },
               },
-              description: `Input data for ${procedure.type} procedure. Schema: ${schemaName}`,
+              description: `Input data for ${procedure.type} procedure.`,
             }
           } else {
             // Queries use GET with input query parameter containing JSON string
+            const schemaExample = generateExampleFromSchema(jsonSchema)
+            const hasRequiredFields =
+              jsonSchema.required &&
+              (jsonSchema.required as string[]).length > 0
+
             parameters = [
               {
                 name: 'input',
                 in: 'query',
-                required: false, // NOTE: Most of them have defaults
+                required: hasRequiredFields,
                 schema: {
                   type: 'string',
-                  description: `JSON string containing the input object matching ${schemaName}`,
+                  description: 'SuperJSON wrapped input object',
                 },
-                description: `Input data as SuperJSON wrapped JSON string. Schema: ${schemaName}. Can be omitted if all fields have defaults.`,
-                example: JSON.stringify(
-                  { json: generateExampleFromSchema(jsonSchema) },
-                  null,
-                  0,
-                ),
-                'x-input-schema': jsonSchema,
+                description: `SuperJSON wrapped input matching ${schemaName} schema. See components/schemas/${schemaName} for structure.`,
+                example: JSON.stringify({ json: schemaExample }, null, 0),
               },
             ]
           }
@@ -661,10 +666,13 @@ function generateSwaggerEndpoints(
     }
   }
 
-  return endpoints
+  return { endpoints, schemas }
 }
 
-function generateOpenAPISpec(endpoints: SwaggerEndpoint[]) {
+function generateOpenAPISpec(
+  endpoints: SwaggerEndpoint[],
+  schemas: Record<string, unknown>,
+) {
   // Group endpoints by path for OpenAPI spec
   const paths: Record<string, unknown> = {}
 
@@ -709,10 +717,15 @@ tRPC uses HTTP method semantics with fetchRequestHandler:
 - **Queries** use **GET** requests with input as query parameter
 - **Mutations** use **POST** requests with input in request body
 
+### Schema References:
+
+All input schemas are defined in the **components/schemas** section. When you see a parameter referencing a schema (e.g., GetEmulatorsSchema), check the schemas section for the complete structure with field types, validations, and defaults.
+
 ### Usage Examples:
 
 \`\`\`bash
 # Query: Get games with search and limit (GET with SuperJSON wrapped input)
+# Schema: See components/schemas/GetGamesSchema
 curl -X GET "https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D" \\
   -H "Content-Type: application/json"
 
@@ -882,6 +895,7 @@ This API provides endpoints for:
           },
           required: ['error'],
         },
+        ...schemas,
       },
     },
     tags,
@@ -948,8 +962,8 @@ function generateMarkdownDocs(
 Protected endpoints require Bearer token authentication using Clerk JWT.
 
 ## Interactive Documentation
-- **Swagger UI**: [/docs/api/swagger](/docs/api/swagger)
-- **OpenAPI JSON**: [/api-docs/mobile-openapi.json](/api-docs/mobile-openapi.json)
+- **Swagger UI**: [/docs/api/swagger](https://emuready.com/docs/api/swagger)
+- **OpenAPI JSON**: [/api-docs/mobile-openapi.json](https://emuready.com/api-docs/mobile-openapi.json)
 
 ## Endpoints
 
@@ -1036,11 +1050,12 @@ async function main() {
   }
 
   console.log('\n🔧 Generating Swagger endpoints...')
-  const endpoints = generateSwaggerEndpoints(routerInfos)
+  const { endpoints, schemas } = generateSwaggerEndpoints(routerInfos)
   console.log(`Generated ${endpoints.length} API endpoints`)
+  console.log(`Collected ${Object.keys(schemas).length} schema definitions`)
 
   console.log('\n📝 Creating OpenAPI specification...')
-  const openApiSpec = generateOpenAPISpec(endpoints)
+  const openApiSpec = generateOpenAPISpec(endpoints, schemas)
 
   // Create output directory
   const outputDir = join(process.cwd(), 'public/api-docs')

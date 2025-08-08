@@ -36,13 +36,12 @@ import {
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
-  moderatorProcedure,
   permissionProcedure,
   protectedProcedure,
   publicProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import {
-  buildPaginationResponse,
   buildPcListingOrderBy,
   buildPcListingWhere,
   pcListingAdminInclude,
@@ -50,9 +49,21 @@ import {
   pcListingInclude,
 } from '@/server/api/utils/pcListingHelpers'
 import {
+  invalidateListPages,
+  invalidateSitemap,
+  revalidateByTag,
+} from '@/server/cache/invalidation'
+import {
   notificationEventEmitter,
   NOTIFICATION_EVENTS,
 } from '@/server/notifications/eventEmitter'
+import { listingStatsCache } from '@/server/utils/cache'
+import {
+  calculateOffset,
+  createPaginationResult,
+} from '@/server/utils/pagination'
+import { buildNsfwFilter } from '@/server/utils/query-builders'
+import { createCountQuery } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
 import {
   canDeleteComment,
@@ -86,7 +97,7 @@ export const pcListingsRouter = createTRPCRouter({
       } = input
 
       const mode = Prisma.QueryMode.insensitive
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
       const canSeeBannedUsers = ctx.session?.user
         ? isModerator(ctx.session.user.role)
         : false
@@ -100,7 +111,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Exclude Microsoft Windows games since PC listings are for emulation
         game: {
           system: { key: { not: 'microsoft_windows' } },
-          ...(ctx.session?.user?.showNsfw ? {} : { isErotic: false }),
+          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
           ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
         },
         ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
@@ -150,7 +161,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
@@ -171,9 +182,7 @@ export const pcListingsRouter = createTRPCRouter({
           _count: {
             select: {
               votes: true,
-              comments: {
-                where: { deletedAt: null },
-              },
+              comments: { where: { deletedAt: null } },
               reports: true,
             },
           },
@@ -229,11 +238,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
-        select: {
-          authorId: true,
-          status: true,
-          processedAt: true,
-        },
+        select: { authorId: true, status: true, processedAt: true },
       })
 
       if (!pcListing) {
@@ -321,18 +326,12 @@ export const pcListingsRouter = createTRPCRouter({
         include: {
           ...pcListingDetailInclude,
           emulator: {
-            include: {
-              customFieldDefinitions: {
-                orderBy: { label: 'asc' },
-              },
-            },
+            include: { customFieldDefinitions: { orderBy: { label: 'asc' } } },
           },
         },
       })
 
-      if (!pcListing) {
-        throw ResourceError.pcListing.notFound()
-      }
+      if (!pcListing) throw ResourceError.pcListing.notFound()
 
       // Only allow owners or moderators to fetch for editing
       if (
@@ -407,7 +406,7 @@ export const pcListingsRouter = createTRPCRouter({
           : ApprovalStatus.PENDING
 
       // Create PC listing with custom field values
-      return await ctx.prisma.pcListing.create({
+      const newListing = await ctx.prisma.pcListing.create({
         data: {
           gameId: input.gameId,
           cpuId: input.cpuId,
@@ -439,6 +438,23 @@ export const pcListingsRouter = createTRPCRouter({
         },
         include: pcListingInclude,
       })
+
+      // Invalidate stats cache when PC listing is created
+      listingStatsCache.delete('pc-listing-stats')
+
+      // Invalidate SEO cache if listing is approved
+      if (newListing.status === ApprovalStatus.APPROVED) {
+        await invalidateListPages()
+        await invalidateSitemap()
+        await revalidateByTag('pc-listings')
+        await revalidateByTag(`game-${input.gameId}`)
+        await revalidateByTag(`cpu-${input.cpuId}`)
+        if (input.gpuId) {
+          await revalidateByTag(`gpu-${input.gpuId}`)
+        }
+      }
+
+      return newListing
     }),
 
   delete: protectedProcedure
@@ -455,9 +471,14 @@ export const pcListingsRouter = createTRPCRouter({
         return AppError.forbidden('You can only delete your own PC listings')
       }
 
-      return ctx.prisma.pcListing.delete({
+      const deletedListing = await ctx.prisma.pcListing.delete({
         where: { id: input.id },
       })
+
+      // Invalidate stats cache when PC listing is deleted
+      listingStatsCache.delete('pc-listing-stats')
+
+      return deletedListing
     }),
 
   update: protectedProcedure
@@ -468,11 +489,7 @@ export const pcListingsRouter = createTRPCRouter({
       // First check if user can edit this PC listing
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.id },
-        select: {
-          authorId: true,
-          status: true,
-          processedAt: true,
-        },
+        select: { authorId: true, status: true, processedAt: true },
       })
 
       if (!pcListing) {
@@ -487,19 +504,20 @@ export const pcListingsRouter = createTRPCRouter({
         throw AppError.forbidden('You can only edit your own PC listings')
       }
 
-      // REJECTED PC listings cannot be edited
-      if (pcListing.status === ApprovalStatus.REJECTED) {
-        throw AppError.badRequest(
-          'Rejected PC listings cannot be edited. Please create a new listing.',
-        )
-      }
+      // Check edit permissions based on PC listing status
+      switch (pcListing.status) {
+        case ApprovalStatus.REJECTED:
+          throw AppError.badRequest(
+            'Rejected PC listings cannot be edited. Please create a new listing.',
+          )
 
-      // PENDING PC listings can always be edited
-      if (pcListing.status === ApprovalStatus.PENDING) {
-        // No time restrictions for pending listings
-      } else if (pcListing.status === ApprovalStatus.APPROVED) {
-        // APPROVED PC listings have a time limit (except for moderators)
-        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        case ApprovalStatus.APPROVED:
+          // Moderators can always edit approved listings
+          if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+            break
+          }
+
+          // Regular users have a time limit for editing approved listings
           if (!pcListing.processedAt) {
             throw AppError.badRequest('PC listing approval time not found')
           }
@@ -514,7 +532,14 @@ export const pcListingsRouter = createTRPCRouter({
               `You can only edit PC listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
             )
           }
-        }
+          break
+
+        case ApprovalStatus.PENDING:
+          // Pending listings can always be edited by their author
+          break
+
+        default:
+          throw AppError.badRequest('Invalid PC listing status')
       }
 
       // Validate referenced entities exist
@@ -531,10 +556,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const updatedPcListing = await ctx.prisma.pcListing.update({
         where: { id },
-        data: {
-          ...updateData,
-          updatedAt: new Date(),
-        },
+        data: { ...updateData, updatedAt: new Date() },
         include: {
           game: { include: { system: true } },
           cpu: { include: { brand: true } },
@@ -542,9 +564,7 @@ export const pcListingsRouter = createTRPCRouter({
           emulator: true,
           performance: true,
           author: true,
-          customFieldValues: {
-            include: { customFieldDefinition: true },
-          },
+          customFieldValues: { include: { customFieldDefinition: true } },
         },
       })
 
@@ -571,9 +591,19 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   // Admin procedures
-  pending: moderatorProcedure
+  pending: protectedProcedure
     .input(GetPendingPcListingsSchema)
     .query(async ({ ctx, input }) => {
+      // Check if user has permission to view pending listings
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to view pending PC listings',
+        )
+      }
+
       const {
         search,
         page = 1,
@@ -581,10 +611,31 @@ export const pcListingsRouter = createTRPCRouter({
         sortField,
         sortDirection,
       } = input ?? {}
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
+
+      // For developers, filter by their assigned emulators
+      let emulatorFilter: Prisma.PcListingWhereInput = {}
+      if (!isModerator && isDeveloper) {
+        const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
+          where: { userId: ctx.session.user.id },
+          select: { emulatorId: true },
+        })
+
+        const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+        if (emulatorIds.length === 0) {
+          // Developer has no assigned emulators, return empty results
+          return {
+            pcListings: [],
+            pagination: createPaginationResult(0, { page }, limit, offset),
+          }
+        }
+
+        emulatorFilter = { emulatorId: { in: emulatorIds } }
+      }
 
       const baseWhere: Prisma.PcListingWhereInput = {
         status: ApprovalStatus.PENDING,
+        ...emulatorFilter,
         ...(search
           ? {
               OR: [
@@ -612,9 +663,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       // Default to ascending for pending items
-      if (!sortField) {
-        orderBy[0] = { createdAt: 'asc' }
-      }
+      if (!sortField) orderBy[0] = { createdAt: 'asc' }
 
       const [pcListings, total] = await Promise.all([
         ctx.prisma.pcListing.findMany({
@@ -629,13 +678,23 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
-  approve: moderatorProcedure
+  approve: protectedProcedure
     .input(ApprovePcListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve PC listings',
+        )
+      }
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.pcListingId },
       })
@@ -646,7 +705,27 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.pcListing.notPending()
       }
 
-      return ctx.prisma.pcListing.update({
+      // For developers, verify they can approve this emulator's listings
+      if (!isModerator && isDeveloper) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: pcListing.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only approve PC listings for emulators you are verified for',
+          )
+        }
+      }
+
+      const approvedListing = await ctx.prisma.pcListing.update({
         where: { id: input.pcListingId },
         data: {
           status: ApprovalStatus.APPROVED,
@@ -654,11 +733,26 @@ export const pcListingsRouter = createTRPCRouter({
           processedByUserId: ctx.session.user.id,
         },
       })
+
+      // Invalidate stats cache when PC listing is approved
+      listingStatsCache.delete('pc-listing-stats')
+
+      return approvedListing
     }),
 
-  reject: moderatorProcedure
+  reject: protectedProcedure
     .input(RejectPcListingSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject PC listings',
+        )
+      }
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: input.pcListingId },
       })
@@ -669,7 +763,27 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.pcListing.notPending()
       }
 
-      return ctx.prisma.pcListing.update({
+      // For developers, verify they can reject this emulator's listings
+      if (!isModerator && isDeveloper) {
+        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
+          {
+            where: {
+              userId_emulatorId: {
+                userId: ctx.session.user.id,
+                emulatorId: pcListing.emulatorId,
+              },
+            },
+          },
+        )
+
+        if (!verifiedDeveloper) {
+          return AppError.forbidden(
+            'You can only reject PC listings for emulators you are verified for',
+          )
+        }
+      }
+
+      const rejectedListing = await ctx.prisma.pcListing.update({
         where: { id: input.pcListingId },
         data: {
           status: ApprovalStatus.REJECTED,
@@ -678,11 +792,26 @@ export const pcListingsRouter = createTRPCRouter({
           processedNotes: input.notes,
         },
       })
+
+      // Invalidate stats cache when PC listing is rejected
+      listingStatsCache.delete('pc-listing-stats')
+
+      return rejectedListing
     }),
 
-  bulkApprove: moderatorProcedure
+  bulkApprove: protectedProcedure
     .input(BulkApprovePcListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to approve listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to approve PC listings',
+        )
+      }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
           id: { in: input.pcListingIds },
@@ -695,12 +824,25 @@ export const pcListingsRouter = createTRPCRouter({
         },
       })
 
+      // Invalidate stats cache when PC listings are bulk approved
+      listingStatsCache.delete('pc-listing-stats')
+
       return { count: result.count }
     }),
 
-  bulkReject: moderatorProcedure
+  bulkReject: protectedProcedure
     .input(BulkRejectPcListingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user has permission to reject listings
+      // Either through MODERATOR role or being a verified developer
+      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+      if (!isModerator && !isDeveloper) {
+        return AppError.forbidden(
+          'You need to be at least a Developer to reject PC listings',
+        )
+      }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
           id: { in: input.pcListingIds },
@@ -714,10 +856,13 @@ export const pcListingsRouter = createTRPCRouter({
         },
       })
 
+      // Invalidate stats cache when PC listings are bulk rejected
+      listingStatsCache.delete('pc-listing-stats')
+
       return { count: result.count }
     }),
 
-  getAll: moderatorProcedure
+  getAll: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(GetAllPcListingsAdminSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -732,7 +877,7 @@ export const pcListingsRouter = createTRPCRouter({
         osFilter,
       } = input
 
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       const baseWhere: Prisma.PcListingWhereInput = {
         ...(statusFilter ? { status: statusFilter } : {}),
@@ -778,11 +923,11 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 
-  getForEdit: moderatorProcedure
+  getForEdit: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(GetPcListingForAdminEditSchema)
     .query(async ({ ctx, input }) => {
       const pcListing = await ctx.prisma.pcListing.findUnique({
@@ -790,12 +935,10 @@ export const pcListingsRouter = createTRPCRouter({
         include: pcListingDetailInclude,
       })
 
-      if (!pcListing) return ResourceError.pcListing.notFound()
-
-      return pcListing
+      return pcListing ?? ResourceError.pcListing.notFound()
     }),
 
-  updateAdmin: moderatorProcedure
+  updateAdmin: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(UpdatePcListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, customFieldValues, ...data } = input
@@ -810,10 +953,7 @@ export const pcListingsRouter = createTRPCRouter({
       // Update PC listing and handle custom field values
       const updatedPcListing = await ctx.prisma.pcListing.update({
         where: { id },
-        data: {
-          ...data,
-          updatedAt: new Date(),
-        },
+        data: { ...data, updatedAt: new Date() },
         include: pcListingDetailInclude,
       })
 
@@ -839,24 +979,32 @@ export const pcListingsRouter = createTRPCRouter({
       return updatedPcListing
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
-    const [total, pending, approved, rejected] = await Promise.all([
-      ctx.prisma.pcListing.count(),
-      ctx.prisma.pcListing.count({ where: { status: ApprovalStatus.PENDING } }),
-      ctx.prisma.pcListing.count({
-        where: { status: ApprovalStatus.APPROVED },
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
+    const STATS_CACHE_KEY = 'pc-listing-stats'
+    const cached = listingStatsCache.get(STATS_CACHE_KEY)
+    if (cached) return cached
+
+    const [pending, approved, rejected] = await Promise.all([
+      createCountQuery(ctx.prisma.pcListing, {
+        status: ApprovalStatus.PENDING,
       }),
-      ctx.prisma.pcListing.count({
-        where: { status: ApprovalStatus.REJECTED },
+      createCountQuery(ctx.prisma.pcListing, {
+        status: ApprovalStatus.APPROVED,
+      }),
+      createCountQuery(ctx.prisma.pcListing, {
+        status: ApprovalStatus.REJECTED,
       }),
     ])
 
-    return {
-      total,
+    const stats = {
+      total: pending + approved + rejected,
       pending,
       approved,
       rejected,
     }
+
+    listingStatsCache.set(STATS_CACHE_KEY, stats)
+    return stats
   }),
 
   // PC Preset procedures
@@ -890,10 +1038,7 @@ export const pcListingsRouter = createTRPCRouter({
       .mutation(async ({ ctx, input }) => {
         // Check if user already has a preset with this name
         const existingPreset = await ctx.prisma.userPcPreset.findFirst({
-          where: {
-            userId: ctx.session.user.id,
-            name: input.name,
-          },
+          where: { userId: ctx.session.user.id, name: input.name },
         })
 
         if (existingPreset) {
@@ -922,12 +1067,8 @@ export const pcListingsRouter = createTRPCRouter({
             osVersion: input.osVersion,
           },
           include: {
-            cpu: {
-              include: { brand: true },
-            },
-            gpu: {
-              include: { brand: true },
-            },
+            cpu: { include: { brand: true } },
+            gpu: { include: { brand: true } },
           },
         })
       }),
@@ -1015,9 +1156,7 @@ export const pcListingsRouter = createTRPCRouter({
         where: { id: pcListingId },
       })
 
-      if (!pcListing) {
-        ResourceError.pcListing.notFound()
-      }
+      if (!pcListing) return ResourceError.pcListing.notFound()
 
       // Check if user already voted on this PC listing
       const existingVote = await ctx.prisma.pcListingVote.findUnique({
@@ -1053,10 +1192,7 @@ export const pcListingsRouter = createTRPCRouter({
         entityType: 'pcListing',
         entityId: pcListingId,
         triggeredBy: userId,
-        payload: {
-          pcListingId,
-          voteValue: value,
-        },
+        payload: { pcListingId, voteValue: value },
       })
 
       const finalVoteValue = existingVote?.value === value ? null : value
@@ -1098,17 +1234,10 @@ export const pcListingsRouter = createTRPCRouter({
         },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-              role: true,
-            },
+            select: { id: true, name: true, profileImage: true, role: true },
           },
           replies: {
-            where: {
-              deletedAt: null,
-            },
+            where: { deletedAt: null },
             include: {
               user: {
                 select: {
@@ -1175,9 +1304,7 @@ export const pcListingsRouter = createTRPCRouter({
         where: { id: pcListingId },
       })
 
-      if (!pcListing) {
-        ResourceError.pcListing.notFound()
-      }
+      if (!pcListing) return ResourceError.pcListing.notFound()
 
       // If parentId is provided, check if parent comment exists
       if (parentId) {
@@ -1185,26 +1312,14 @@ export const pcListingsRouter = createTRPCRouter({
           where: { id: parentId },
         })
 
-        if (!parentComment) {
-          ResourceError.comment.parentNotFound()
-        }
+        if (!parentComment) return ResourceError.comment.parentNotFound()
       }
 
       const comment = await ctx.prisma.pcListingComment.create({
-        data: {
-          content,
-          userId,
-          pcListingId,
-          parentId,
-        },
+        data: { content, userId, pcListingId, parentId },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-              role: true,
-            },
+            select: { id: true, name: true, profileImage: true, role: true },
           },
         },
       })
@@ -1412,7 +1527,7 @@ export const pcListingsRouter = createTRPCRouter({
     .input(GetPcListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const { status, page = 1, limit = 20 } = input
-      const offset = (page - 1) * limit
+      const offset = calculateOffset({ page }, limit)
 
       const where: Prisma.PcListingReportWhereInput = {}
       if (status) {
@@ -1444,7 +1559,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         reports,
-        pagination: buildPaginationResponse(total, page, limit),
+        pagination: createPaginationResult(total, { page }, limit, offset),
       }
     }),
 

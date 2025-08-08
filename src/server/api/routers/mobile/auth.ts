@@ -1,18 +1,10 @@
 import { createClerkClient } from '@clerk/backend'
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
-  ChangeMobilePasswordSchema,
   DeleteMobileAccountSchema,
-  ForgotPasswordSchema,
-  MobileOAuthSignInSchema,
   MobileSessionSchema,
-  MobileSignInSchema,
-  MobileSignUpSchema,
-  RefreshTokenSchema,
-  ResetPasswordSchema,
   UpdateMobileProfileSchema,
   ValidateTokenSchema,
-  VerifyEmailSchema,
 } from '@/schemas/mobileAuth'
 import {
   createMobileTRPCRouter,
@@ -25,35 +17,6 @@ const clerkClient = createClerkClient({
 })
 
 export const mobileAuthRouter = createMobileTRPCRouter({
-  /**
-   * Sign in with email and password
-   */
-  signIn: mobilePublicProcedure.input(MobileSignInSchema).mutation(async () => {
-    return AppError.badRequest(
-      'Sign-in should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-    )
-  }),
-
-  /**
-   * Sign up with email and password
-   */
-  signUp: mobilePublicProcedure.input(MobileSignUpSchema).mutation(async () => {
-    return AppError.badRequest(
-      'Sign-up should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-    )
-  }),
-
-  /**
-   * OAuth sign-in (Google, Apple, etc.)
-   */
-  oauthSignIn: mobilePublicProcedure
-    .input(MobileOAuthSignInSchema)
-    .mutation(async ({ input }) => {
-      return AppError.badRequest(
-        `${input.provider} authentication should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.`,
-      )
-    }),
-
   /**
    * Validate JWT token
    */
@@ -79,51 +42,6 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         }
       }
     }),
-
-  /**
-   * Refresh token
-   */
-  refreshToken: mobilePublicProcedure
-    .input(RefreshTokenSchema)
-    .mutation(async () => {
-      return AppError.badRequest(
-        'Token refresh should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
-  /**
-   * Verify email with code
-   */
-  verifyEmail: mobilePublicProcedure
-    .input(VerifyEmailSchema)
-    .mutation(async () => {
-      return AppError.badRequest(
-        'Email verification should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
-  /**
-   * Forgot password
-   */
-  forgotPassword: mobilePublicProcedure
-    .input(ForgotPasswordSchema)
-    .mutation(async () => {
-      return AppError.badRequest(
-        'Password reset should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
-  /**
-   * Reset password with code
-   */
-  resetPassword: mobilePublicProcedure
-    .input(ResetPasswordSchema)
-    .mutation(async () => {
-      return AppError.badRequest(
-        'Password reset should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
   /**
    * Get current user session info
    */
@@ -138,17 +56,11 @@ export const mobileAuthRouter = createMobileTRPCRouter({
           email: user.email,
           name: user.name,
           role: user.role,
+          permissions: user.permissions,
         },
         isAuthenticated: true,
       }
     }),
-
-  /**
-   * Sign out (invalidate session)
-   */
-  signOut: mobileProtectedProcedure.mutation(async () => {
-    return { success: true, message: 'Signed out successfully' }
-  }),
 
   /**
    * Update mobile profile
@@ -184,28 +96,6 @@ export const mobileAuthRouter = createMobileTRPCRouter({
     }),
 
   /**
-   * Change password
-   */
-  changePassword: mobileProtectedProcedure
-    .input(ChangeMobilePasswordSchema)
-    .mutation(async ({ ctx }) => {
-      const userId = ctx.session.user.id
-
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: { clerkId: true },
-      })
-
-      if (!user?.clerkId) {
-        return AppError.notFound('User not found')
-      }
-
-      return AppError.badRequest(
-        'Password change should be handled by the mobile app using Clerk SDK. This endpoint is for reference only.',
-      )
-    }),
-
-  /**
    * Delete account
    */
   deleteAccount: mobileProtectedProcedure
@@ -218,9 +108,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         select: { clerkId: true },
       })
 
-      if (!user?.clerkId) {
-        return AppError.notFound('User not found')
-      }
+      if (!user?.clerkId) return ResourceError.user.notFound()
 
       await clerkClient.users.deleteUser(user.clerkId)
 

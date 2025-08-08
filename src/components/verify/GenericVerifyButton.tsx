@@ -1,7 +1,7 @@
 'use client'
 
 import { Shield, ShieldCheck, ShieldX } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import {
   Button,
   Input,
@@ -127,24 +127,16 @@ export default function GenericVerifyButton(props: Props) {
   }
 
   // Don't show button if user is not logged in
-  if (!currentUserQuery.data) {
-    return null
-  }
+  if (!currentUserQuery.data) return null
 
   // Don't show button if user is not a verified developer for this emulator
-  if (!verifiedDeveloperQuery.data) {
-    return null
-  }
+  if (!verifiedDeveloperQuery.data) return null
 
   // Don't show button if user is the author (can't verify own listings)
-  if (props.authorId === userId) {
-    return null
-  }
+  if (props.authorId === userId) return null
 
   // Don't show button if user doesn't have at least DEVELOPER role
-  if (!roleIncludesRole(currentUserQuery.data.role, Role.DEVELOPER)) {
-    return null
-  }
+  if (!roleIncludesRole(currentUserQuery.data.role, Role.DEVELOPER)) return null
 
   const isLoading = isPcListing
     ? verifyPcListingMutation.isPending || removeVerificationMutation.isPending
@@ -184,7 +176,7 @@ export default function GenericVerifyButton(props: Props) {
               <AlertDialogAction
                 onClick={handleUnverify}
                 disabled={isLoading}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <ShieldX className="h-4 w-4 mr-2" />
                 Remove Verification
@@ -239,8 +231,8 @@ export default function GenericVerifyButton(props: Props) {
               placeholder="Add any notes about this verification..."
               value={notes}
               onChange={(
-                e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-              ) => setNotes(e.target.value)}
+                ev: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+              ) => setNotes(ev.target.value)}
               maxLength={500}
               rows={3}
             />

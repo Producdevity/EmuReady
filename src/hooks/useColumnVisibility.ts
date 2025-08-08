@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { ColumnVisibilitySchema } from '@/schemas/common'
 import toggleInSet from '@/utils/toggleInSet'
 import { useLocalStorage } from './useLocalStorage'
 
@@ -48,27 +49,14 @@ export function useColumnVisibility(
   const shouldUseLocalStorage = Boolean(opts?.storageKey)
   const storageKey = opts?.storageKey ?? 'unused-key'
 
-  // Use useLocalStorage with enabled flag
   const [storedColumns, setStoredColumns, isHydrated] = useLocalStorage<
     string[]
-  >(storageKey, getDefaultVisibleColumns(), shouldUseLocalStorage)
-
-  // Handle localStorage read errors for test compliance
-  useEffect(() => {
-    if (!shouldUseLocalStorage || !opts?.storageKey) return
-
-    try {
-      const item = window.localStorage.getItem(opts.storageKey)
-      if (item) {
-        JSON.parse(item)
-      }
-    } catch (error) {
-      console.error(
-        'Failed to load column visibility from localStorage:',
-        (error as Error).message,
-      )
-    }
-  }, [shouldUseLocalStorage, opts?.storageKey])
+  >(
+    storageKey,
+    getDefaultVisibleColumns(),
+    shouldUseLocalStorage,
+    ColumnVisibilitySchema,
+  )
 
   const [visibleColumns, setVisibleColumns] = useState(
     () => new Set(storedColumns),

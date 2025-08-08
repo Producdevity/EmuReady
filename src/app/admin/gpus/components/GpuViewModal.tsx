@@ -1,6 +1,6 @@
 'use client'
 
-import { Modal } from '@/components/ui'
+import { Modal, InputPlaceholder } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 
 type GpuData = RouterOutput['gpus']['get']['gpus'][number]
@@ -14,8 +14,6 @@ interface Props {
 function GpuViewModal(props: Props) {
   if (!props.gpuData) return null
 
-  const { gpuData } = props
-
   return (
     <Modal
       isOpen={props.isOpen}
@@ -25,47 +23,23 @@ function GpuViewModal(props: Props) {
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              GPU ID
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md font-mono">
-              {gpuData.id}
-            </div>
-          </div>
+          <InputPlaceholder label="GPU ID" value={props.gpuData.id} mono />
+          <InputPlaceholder label="Brand" value={props.gpuData.brand.name} />
+          <InputPlaceholder
+            label="Model Name"
+            value={props.gpuData.modelName}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Brand
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {gpuData.brand.name}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Model Name
-            </label>
-            <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-              {gpuData.modelName}
-            </div>
-          </div>
-
-          {gpuData._count && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Total PC Listings
-              </label>
-              <div className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {gpuData._count.pcListings} PC listing
-                {gpuData._count.pcListings !== 1 ? 's' : ''}
-              </div>
-            </div>
+          {props.gpuData._count && (
+            <InputPlaceholder
+              label="Total PC Listings"
+              value={`${props.gpuData._count.pcListings} PC listing${props.gpuData._count.pcListings !== 1 ? 's' : ''}`}
+            />
           )}
         </div>
 
         <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+          {/* TODO: Use the Button component? */}
           <button
             type="button"
             onClick={props.onClose}

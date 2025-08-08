@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { type ReportStatusType } from '@/schemas/listingReport'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { ReportStatus } from '@orm'
 import { type ListingReportWithDetails } from '../types'
 
 interface Props {
@@ -16,13 +17,15 @@ interface Props {
 }
 
 const STATUSES = [
-  { value: 'UNDER_REVIEW', label: 'Under Review' },
-  { value: 'RESOLVED', label: 'Resolved' },
-  { value: 'DISMISSED', label: 'Dismissed' },
+  { value: ReportStatus.UNDER_REVIEW, label: 'Under Review' },
+  { value: ReportStatus.RESOLVED, label: 'Resolved' },
+  { value: ReportStatus.DISMISSED, label: 'Dismissed' },
 ] as const
 
 function ReportStatusModal(props: Props) {
-  const [status, setStatus] = useState<ReportStatusType>('UNDER_REVIEW')
+  const [status, setStatus] = useState<ReportStatusType>(
+    ReportStatus.UNDER_REVIEW,
+  )
   const [reviewNotes, setReviewNotes] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -33,15 +36,15 @@ function ReportStatusModal(props: Props) {
   useEffect(() => {
     if (props.isOpen && props.report) {
       setStatus(
-        props.report.status === 'PENDING'
-          ? 'UNDER_REVIEW'
+        props.report.status === ReportStatus.PENDING
+          ? ReportStatus.UNDER_REVIEW
           : props.report.status,
       )
       setReviewNotes(props.report.reviewNotes || '')
       setError('')
       setSuccess('')
     } else if (!props.isOpen) {
-      setStatus('UNDER_REVIEW')
+      setStatus(ReportStatus.UNDER_REVIEW)
       setReviewNotes('')
       setError('')
       setSuccess('')
@@ -155,7 +158,7 @@ function ReportStatusModal(props: Props) {
         </div>
 
         {/* Status-specific help text */}
-        {status === 'RESOLVED' && (
+        {status === ReportStatus.RESOLVED && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3">
             <p className="text-sm text-green-800 dark:text-green-200">
               <strong>Resolved:</strong> Use this when the report is valid and
@@ -165,7 +168,7 @@ function ReportStatusModal(props: Props) {
           </div>
         )}
 
-        {status === 'DISMISSED' && (
+        {status === ReportStatus.DISMISSED && (
           <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-3">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               <strong>Dismissed:</strong> Use this when the report is invalid or

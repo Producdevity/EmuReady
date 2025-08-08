@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
@@ -57,12 +57,31 @@ export default function PermissionModal(props: Props) {
   const form = useForm<PermissionFormData>({
     resolver: zodResolver(permissionSchema),
     defaultValues: {
-      key: props.permission?.key || '',
-      label: props.permission?.label || '',
-      description: props.permission?.description || '',
-      category: props.permission?.category ?? PermissionCategory.CONTENT,
+      key: '',
+      label: '',
+      description: '',
+      category: PermissionCategory.CONTENT,
     },
   })
+
+  // Update form values when permission prop changes
+  useEffect(() => {
+    if (props.permission) {
+      form.reset({
+        key: props.permission.key,
+        label: props.permission.label,
+        description: props.permission.description || '',
+        category: props.permission.category ?? PermissionCategory.CONTENT,
+      })
+    } else {
+      form.reset({
+        key: '',
+        label: '',
+        description: '',
+        category: PermissionCategory.CONTENT,
+      })
+    }
+  }, [props.permission, form])
 
   const createPermissionMutation = api.permissions.create.useMutation({
     onSuccess: () => {

@@ -15,6 +15,7 @@ import {
   adminProcedure,
   createTRPCRouter,
   protectedProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
@@ -181,7 +182,7 @@ export const badgesRouter = createTRPCRouter({
     }),
 
   // Get badge stats (admin only)
-  getStats: adminProcedure.query(async ({ ctx }) => {
+  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, active, inactive, totalAssignments] = await Promise.all([
       ctx.prisma.badge.count(),
       ctx.prisma.badge.count({ where: { isActive: true } }),

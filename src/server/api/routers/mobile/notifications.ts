@@ -12,15 +12,13 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
   /**
    * Get notifications with pagination
    */
-  getNotifications: mobileProtectedProcedure
+  get: mobileProtectedProcedure
     .input(GetNotificationsSchema)
     .query(async ({ ctx, input }) => {
-      const { page, limit, unreadOnly } = input
+      const { page = 1, limit = 20, unreadOnly = false } = input ?? {}
       const skip = (page - 1) * limit
 
-      const baseWhere = {
-        userId: ctx.session.user.id,
-      }
+      const baseWhere = { userId: ctx.session.user.id }
 
       if (unreadOnly) Object.assign(baseWhere, { isRead: false })
 
@@ -61,21 +59,19 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
   /**
    * Get unread notification count
    */
-  getUnreadNotificationCount: mobileProtectedProcedure.query(
-    async ({ ctx }) => {
-      return await ctx.prisma.notification.count({
-        where: {
-          userId: ctx.session.user.id,
-          isRead: false,
-        },
-      })
-    },
-  ),
+  unreadCount: mobileProtectedProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.notification.count({
+      where: {
+        userId: ctx.session.user.id,
+        isRead: false,
+      },
+    })
+  }),
 
   /**
    * Mark notification as read
    */
-  markNotificationAsRead: mobileProtectedProcedure
+  markAsRead: mobileProtectedProcedure
     .input(MarkNotificationReadSchema)
     .mutation(async ({ ctx, input }) => {
       const notification = await ctx.prisma.notification.findUnique({
@@ -102,14 +98,12 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
   /**
    * Mark all notifications as read
    */
-  markAllNotificationsAsRead: mobileProtectedProcedure.mutation(
-    async ({ ctx }) => {
-      await ctx.prisma.notification.updateMany({
-        where: { userId: ctx.session.user.id, isRead: false },
-        data: { isRead: true },
-      })
+  markAllAsRead: mobileProtectedProcedure.mutation(async ({ ctx }) => {
+    await ctx.prisma.notification.updateMany({
+      where: { userId: ctx.session.user.id, isRead: false },
+      data: { isRead: true },
+    })
 
-      return { success: true }
-    },
-  ),
+    return { success: true }
+  }),
 })

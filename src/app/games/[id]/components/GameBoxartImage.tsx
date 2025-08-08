@@ -2,11 +2,8 @@ import { useUser } from '@clerk/nextjs'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Edit3, X, Image as ImageIconLucide } from 'lucide-react'
 import { useState } from 'react'
-import {
-  Button,
-  OptimizedImage,
-  AdminImageSelectorSwitcher,
-} from '@/components/ui'
+import { Button, OptimizedImage } from '@/components/ui'
+import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'

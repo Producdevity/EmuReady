@@ -11,7 +11,7 @@ export const mobileTrustRouter = createMobileTRPCRouter({
   /**
    * Get current user's trust score and level
    */
-  getMyTrustInfo: mobileProtectedProcedure.query(async ({ ctx }) => {
+  myInfo: mobileProtectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
       select: { trustScore: true },
@@ -33,7 +33,7 @@ export const mobileTrustRouter = createMobileTRPCRouter({
   /**
    * Get trust info for a specific user (public)
    */
-  getUserTrustInfo: mobilePublicProcedure
+  userInfo: mobilePublicProcedure
     .input(GetUserTrustInfoSchema)
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
@@ -54,9 +54,4 @@ export const mobileTrustRouter = createMobileTRPCRouter({
         userName: user.name,
       }
     }),
-
-  /**
-   * Get trust levels configuration
-   */
-  getTrustLevels: mobilePublicProcedure.query(() => TRUST_LEVELS),
 })

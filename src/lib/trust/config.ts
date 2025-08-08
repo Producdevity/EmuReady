@@ -1,14 +1,15 @@
+import { ms } from '@/utils/time'
 import { TrustAction } from '@orm'
 
 export const TRUST_ACTIONS = {
   [TrustAction.UPVOTE]: { weight: 1, description: 'Upvoted a listing' },
-  [TrustAction.DOWNVOTE]: { weight: -1, description: 'Downvoted a listing' },
+  [TrustAction.DOWNVOTE]: { weight: 1, description: 'Downvoted a listing' },
   [TrustAction.LISTING_CREATED]: {
     weight: 1,
     description: 'Created a listing',
   },
   [TrustAction.LISTING_APPROVED]: {
-    weight: 4,
+    weight: 6,
     description: 'Listing was approved',
   },
   [TrustAction.LISTING_REJECTED]: {
@@ -63,7 +64,7 @@ export const TRUST_CONFIG = {
 
   // Rate limiting for voting actions
   VOTE_RATE_LIMIT: {
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: ms.minutes(1),
     maxVotes: 10,
   },
 } as const
@@ -71,9 +72,7 @@ export const TRUST_CONFIG = {
 export function getTrustLevel(score: number): TrustLevel {
   // Find the highest level the user qualifies for
   for (let i = TRUST_LEVELS.length - 1; i >= 0; i--) {
-    if (score >= TRUST_LEVELS[i].minScore) {
-      return TRUST_LEVELS[i]
-    }
+    if (score >= TRUST_LEVELS[i].minScore) return TRUST_LEVELS[i]
   }
   return TRUST_LEVELS[0] // Default to 'New' level
 }
@@ -84,11 +83,9 @@ export function getNextTrustLevel(currentScore: number): TrustLevel | null {
     (level) => level.name === currentLevel.name,
   )
 
-  if (currentIndex < TRUST_LEVELS.length - 1) {
-    return TRUST_LEVELS[currentIndex + 1]
-  }
-
-  return null // Already at max level
+  return currentIndex < TRUST_LEVELS.length - 1
+    ? TRUST_LEVELS[currentIndex + 1]
+    : null // Already at max level
 }
 
 export function getProgressToNextLevel(currentScore: number): number {

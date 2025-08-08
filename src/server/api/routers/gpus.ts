@@ -9,7 +9,8 @@ import {
 import {
   createTRPCRouter,
   publicProcedure,
-  moderatorProcedure,
+  manageDevicesProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import type { Prisma } from '@orm'
 
@@ -70,7 +71,6 @@ export const gpusRouter = createTRPCRouter({
         : {}),
     }
 
-    // Build orderBy based on sortField and sortDirection
     const orderBy: Prisma.GpuOrderByWithRelationInput[] = []
 
     if (sortField && sortDirection) {
@@ -80,6 +80,9 @@ export const gpusRouter = createTRPCRouter({
           break
         case 'modelName':
           orderBy.push({ modelName: sortDirection })
+          break
+        case 'pcListings':
+          orderBy.push({ pcListings: { _count: sortDirection } })
           break
       }
     }
@@ -129,7 +132,7 @@ export const gpusRouter = createTRPCRouter({
       return gpu ?? ResourceError.gpu.notFound()
     }),
 
-  create: moderatorProcedure
+  create: manageDevicesProcedure
     .input(CreateGpuSchema)
     .mutation(async ({ ctx, input }) => {
       const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -158,7 +161,7 @@ export const gpusRouter = createTRPCRouter({
       })
     }),
 
-  update: moderatorProcedure
+  update: manageDevicesProcedure
     .input(UpdateGpuSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -197,7 +200,7 @@ export const gpusRouter = createTRPCRouter({
       })
     }),
 
-  delete: moderatorProcedure
+  delete: manageDevicesProcedure
     .input(DeleteGpuSchema)
     .mutation(async ({ ctx, input }) => {
       const existingGpu = await ctx.prisma.gpu.findUnique({
@@ -216,7 +219,7 @@ export const gpusRouter = createTRPCRouter({
       return ctx.prisma.gpu.delete({ where: { id: input.id } })
     }),
 
-  stats: moderatorProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([
       ctx.prisma.gpu.count(),
       ctx.prisma.gpu.count({ where: { pcListings: { some: {} } } }),

@@ -63,8 +63,8 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
     })
   }
 
-  // Only send to GA on client-side (GA requires browser environment)
-  if (typeof window !== 'undefined') {
+  // Only send to analytics services in production and on client-side
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
     track(params.action, eventData)
     sendGAEvent('event', params.action, {
       event_category: params.category,

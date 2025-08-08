@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import TrustStatsOverview from '@/app/admin/trust-logs/components/TrustStatsOverview'
 import { AdminTableContainer, AdminTableNoResults } from '@/components/admin'
 import {
   Button,
@@ -20,6 +19,7 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
+import { TrustStatsOverview } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'
@@ -28,7 +28,7 @@ import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { TrustAction } from '@orm'
 
 type TrustLog = RouterOutput['trust']['getTrustLogs']['logs'][number]
-type TrustSortField = 'createdAt' | 'action' | 'weight'
+type TrustSortField = 'createdAt' | 'action' | 'weight' | 'user.trustScore'
 
 const TRUST_LOGS_COLUMNS: ColumnDefinition[] = [
   { key: 'user', label: 'User', defaultVisible: true },
@@ -222,9 +222,14 @@ function AdminTrustLogsPage() {
                     />
                   )}
                   {columnVisibility.isColumnVisible('trustScore') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Current Score
-                    </th>
+                    <SortableHeader
+                      label="Current Score"
+                      field="user.trustScore"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
                   )}
                   {columnVisibility.isColumnVisible('metadata') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

@@ -11,6 +11,7 @@ import { useAdminTable } from '@/app/admin/hooks'
 import { AdminTableContainer } from '@/components/admin'
 import {
   ApprovalStatusBadge,
+  ApproveButton,
   Badge,
   Button,
   Card,
@@ -19,6 +20,7 @@ import {
   Input,
   LoadingSpinner,
   Pagination,
+  RejectButton,
   SelectInput,
   SortableHeader,
   Tooltip,
@@ -39,7 +41,21 @@ import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
 
-type Game = RouterOutput['games']['get']['games'][number]
+type Game = RouterOutput['games']['get']['games'][number] & {
+  system?: {
+    id: string
+    name: string
+  }
+  submitter?: {
+    id: string
+    name: string | null
+    email: string | null
+  } | null
+  _count?: {
+    listings: number
+    pcListings: number
+  }
+}
 type GameSortField =
   | 'title'
   | 'system.name'
@@ -65,6 +81,10 @@ function AdminGamesPage() {
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
   const [selectedGameForImagePreview, setSelectedGameForImagePreview] =
     useState<Game | null>(null)
+  const [processingGameId, setProcessingGameId] = useState<string | null>(null)
+  const [processingAction, setProcessingAction] = useState<
+    'approve' | 'reject' | null
+  >(null)
   const confirm = useConfirmDialog()
 
   const table = useAdminTable<GameSortField>({ defaultLimit: 20 })
@@ -106,6 +126,23 @@ function AdminGamesPage() {
     },
   })
 
+  const updateGameStatus = api.games.updateStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Game ${data.status.toLowerCase()} successfully!`)
+      gamesQuery.refetch().catch((error) => {
+        console.error('Error refreshing games:', error)
+      })
+      setProcessingGameId(null)
+      setProcessingAction(null)
+    },
+    onError: (error) => {
+      toast.error(`Failed to update game status: ${getErrorMessage(error)}`)
+      console.error('Error updating game status:', error)
+      setProcessingGameId(null)
+      setProcessingAction(null)
+    },
+  })
+
   const handleDelete = async (game: Game) => {
     const confirmed = await confirm({
       title: 'Delete Game',
@@ -137,6 +174,42 @@ function AdminGamesPage() {
   const handleImageClick = (game: Game) => {
     setSelectedGameForImagePreview(game)
     setIsImagePreviewOpen(true)
+  }
+
+  const handleApproveGame = async (game: Game) => {
+    const confirmed = await confirm({
+      title: 'Approve Game',
+      description: `Are you sure you want to approve "${game.title}"? This will make it visible to all users.`,
+      confirmText: 'Approve',
+    })
+
+    if (!confirmed) return
+
+    setProcessingGameId(game.id)
+    setProcessingAction('approve')
+    updateGameStatus.mutate({
+      gameId: game.id,
+      newStatus: ApprovalStatus.APPROVED,
+      overrideNotes: 'Approved by admin from games management page',
+    })
+  }
+
+  const handleRejectGame = async (game: Game) => {
+    const confirmed = await confirm({
+      title: 'Reject Game',
+      description: `Are you sure you want to reject "${game.title}"? This will hide it from users.`,
+      confirmText: 'Reject',
+    })
+
+    if (!confirmed) return
+
+    setProcessingGameId(game.id)
+    setProcessingAction('reject')
+    updateGameStatus.mutate({
+      gameId: game.id,
+      newStatus: ApprovalStatus.REJECTED,
+      overrideNotes: 'Rejected by admin from games management page',
+    })
   }
 
   // Prepare options for SelectInput components
@@ -407,12 +480,14 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          <Badge variant="default">{game.system.name}</Badge>
+                          <Badge variant="default">
+                            {game.system?.name || game.systemId}
+                          </Badge>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('listings') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game._count.listings} listings
+                          {game._count?.listings || 0} listings
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('status') && (
@@ -459,6 +534,30 @@ function AdminGamesPage() {
                                 title="Edit Game"
                               />
                             )}
+                            {hasPermission(userQuery.data?.role, Role.ADMIN) &&
+                              game.status === ApprovalStatus.REJECTED && (
+                                <ApproveButton
+                                  onClick={() => handleApproveGame(game)}
+                                  title="Approve Game"
+                                  isLoading={
+                                    processingGameId === game.id &&
+                                    processingAction === 'approve'
+                                  }
+                                  disabled={processingGameId === game.id}
+                                />
+                              )}
+                            {hasPermission(userQuery.data?.role, Role.ADMIN) &&
+                              game.status === ApprovalStatus.APPROVED && (
+                                <RejectButton
+                                  onClick={() => handleRejectGame(game)}
+                                  title="Reject Game"
+                                  isLoading={
+                                    processingGameId === game.id &&
+                                    processingAction === 'reject'
+                                  }
+                                  disabled={processingGameId === game.id}
+                                />
+                              )}
                             {hasPermission(
                               userQuery.data?.role,
                               Role.ADMIN,

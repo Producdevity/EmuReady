@@ -6,7 +6,12 @@ const pcListingFormSchema = CreatePcListingSchema.extend({
   cpuId: z.string().min(1, 'CPU is required'),
   gpuId: z.string().optional(), // GPU is optional for integrated graphics
   emulatorId: z.string().min(1, 'Emulator is required'),
-  performanceId: z.coerce.number().min(1, 'Performance rating is required'),
+  performanceId: z.coerce
+    .number({
+      required_error: 'Performance rating is required',
+      invalid_type_error: 'Performance rating is required',
+    })
+    .min(1, 'Performance rating is required'),
   memorySize: z.coerce
     .number()
     .min(1, 'Memory size is required')

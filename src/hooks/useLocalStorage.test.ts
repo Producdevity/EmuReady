@@ -20,11 +20,7 @@ const localStorageMock = (() => {
   }
 })()
 
-vi.mock('@/lib/toast', () => ({
-  default: {
-    warning: vi.fn(),
-  },
-}))
+vi.mock('@/lib/toast', () => ({ default: { warning: vi.fn() } }))
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
@@ -287,7 +283,10 @@ describe('useLocalStorage', () => {
 
       // Test behavior when hook initializes without localStorage access
       const originalLocalStorage = global.localStorage
-      delete (global as any).localStorage
+      Object.defineProperty(global, 'localStorage', {
+        value: undefined,
+        configurable: true,
+      })
 
       const { result } = renderHook(() =>
         useLocalStorage('test-key', 'ssr-value'),
@@ -297,7 +296,10 @@ describe('useLocalStorage', () => {
       expect(value).toBe('ssr-value')
 
       // Restore localStorage
-      global.localStorage = originalLocalStorage
+      Object.defineProperty(global, 'localStorage', {
+        value: originalLocalStorage,
+        configurable: true,
+      })
       consoleErrorSpy.mockRestore()
     })
   })

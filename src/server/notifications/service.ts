@@ -2,6 +2,7 @@ import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
 import { hasPermission } from '@/utils/permissions'
+import { ms } from '@/utils/time'
 import {
   DeliveryChannel,
   type NotificationCategory,
@@ -323,7 +324,7 @@ export class NotificationService {
           where: {
             userId_listingId: {
               userId,
-              listingId: eventData.payload.listingId as string,
+              listingId: eventData.payload.listingId,
             },
           },
         })
@@ -562,7 +563,7 @@ export class NotificationService {
         // Get listing author (but not the person who triggered the event)
         if (eventData.payload?.listingId && eventData.triggeredBy) {
           const listing = await prisma.listing.findUnique({
-            where: { id: eventData.payload.listingId as string },
+            where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
           if (listing && listing.authorId !== eventData.triggeredBy) {
@@ -597,7 +598,7 @@ export class NotificationService {
       case 'user.mentioned':
         // Get mentioned user
         if (eventData.payload?.userId) {
-          userIds.push(eventData.payload.userId as string)
+          userIds.push(eventData.payload.userId)
         }
         break
 
@@ -606,7 +607,7 @@ export class NotificationService {
         // Get listing author
         if (eventData.payload?.listingId) {
           const listing = await prisma.listing.findUnique({
-            where: { id: eventData.payload.listingId as string },
+            where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
           if (listing) {
@@ -618,7 +619,7 @@ export class NotificationService {
       case 'user.role_changed':
         // Get the user whose role was changed
         if (eventData.payload?.userId) {
-          userIds.push(eventData.payload.userId as string)
+          userIds.push(eventData.payload.userId)
         }
         break
 
@@ -714,26 +715,26 @@ export class NotificationService {
     try {
       // Define deduplication window based on notification type
       const deduplicationWindows: Record<NotificationType, number> = {
-        [NotificationType.LISTING_APPROVED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.LISTING_REJECTED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.LISTING_COMMENT]: 5 * 60 * 1000, // 5 minutes
-        [NotificationType.LISTING_VOTE_UP]: 15 * 60 * 1000, // 15 minutes
-        [NotificationType.LISTING_VOTE_DOWN]: 15 * 60 * 1000, // 15 minutes
-        [NotificationType.COMMENT_REPLY]: 5 * 60 * 1000, // 5 minutes
-        [NotificationType.USER_MENTION]: 5 * 60 * 1000, // 5 minutes
-        [NotificationType.NEW_DEVICE_LISTING]: 30 * 60 * 1000, // 30 minutes
-        [NotificationType.GAME_ADDED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.EMULATOR_UPDATED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.ROLE_CHANGED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.CONTENT_FLAGGED]: 60 * 60 * 1000, // 1 hour
-        [NotificationType.MAINTENANCE_NOTICE]: 24 * 60 * 60 * 1000, // 24 hours
-        [NotificationType.FEATURE_ANNOUNCEMENT]: 24 * 60 * 60 * 1000, // 24 hours
-        [NotificationType.NEW_SOC_LISTING]: 30 * 60 * 1000, // 30 minutes
-        [NotificationType.POLICY_UPDATE]: 24 * 60 * 60 * 1000, // 24 hours
-        [NotificationType.ACCOUNT_WARNING]: 60 * 60 * 1000, // 1 hour
+        [NotificationType.LISTING_APPROVED]: ms.hours(1),
+        [NotificationType.LISTING_REJECTED]: ms.hours(1),
+        [NotificationType.LISTING_COMMENT]: ms.minutes(5),
+        [NotificationType.LISTING_VOTE_UP]: ms.minutes(15),
+        [NotificationType.LISTING_VOTE_DOWN]: ms.minutes(15),
+        [NotificationType.COMMENT_REPLY]: ms.minutes(5),
+        [NotificationType.USER_MENTION]: ms.minutes(5),
+        [NotificationType.NEW_DEVICE_LISTING]: ms.minutes(30),
+        [NotificationType.GAME_ADDED]: ms.hours(1),
+        [NotificationType.EMULATOR_UPDATED]: ms.hours(1),
+        [NotificationType.ROLE_CHANGED]: ms.hours(1),
+        [NotificationType.CONTENT_FLAGGED]: ms.hours(1),
+        [NotificationType.MAINTENANCE_NOTICE]: ms.days(1),
+        [NotificationType.FEATURE_ANNOUNCEMENT]: ms.days(1),
+        [NotificationType.NEW_SOC_LISTING]: ms.minutes(30),
+        [NotificationType.POLICY_UPDATE]: ms.days(1),
+        [NotificationType.ACCOUNT_WARNING]: ms.hours(1),
       }
 
-      const windowMs = deduplicationWindows[notificationType] || 30 * 60 * 1000 // Default: 30 minutes
+      const windowMs = deduplicationWindows[notificationType] || ms.minutes(30)
       const windowStart = new Date(Date.now() - windowMs)
 
       // Check for existing similar notifications within the deduplication window
@@ -784,7 +785,7 @@ export class NotificationService {
       // Enrich based on notification type and available data
       if (payload.listingId) {
         const listing = await prisma.listing.findUnique({
-          where: { id: payload.listingId as string },
+          where: { id: payload.listingId },
           include: {
             game: { select: { title: true, id: true } },
             device: {
@@ -818,7 +819,7 @@ export class NotificationService {
           notificationType === NotificationType.USER_MENTION)
       ) {
         const comment = await prisma.comment.findUnique({
-          where: { id: payload.commentId as string },
+          where: { id: payload.commentId },
           select: {
             id: true,
             content: true,
@@ -852,7 +853,7 @@ export class NotificationService {
       // Handle game-specific data
       if (payload.gameId) {
         const game = await prisma.game.findUnique({
-          where: { id: payload.gameId as string },
+          where: { id: payload.gameId },
           select: { title: true, id: true },
         })
         if (game) {
@@ -867,7 +868,7 @@ export class NotificationService {
         notificationType === NotificationType.NEW_DEVICE_LISTING
       ) {
         const device = await prisma.device.findUnique({
-          where: { id: payload.deviceId as string },
+          where: { id: payload.deviceId },
           include: {
             brand: { select: { name: true } },
           },
@@ -884,7 +885,7 @@ export class NotificationService {
         notificationType === NotificationType.NEW_SOC_LISTING
       ) {
         const soc = await prisma.soC.findUnique({
-          where: { id: payload.socId as string },
+          where: { id: payload.socId },
           select: { id: true, name: true, manufacturer: true },
         })
         if (soc) {
@@ -896,7 +897,7 @@ export class NotificationService {
       // Handle emulator-specific data
       if (payload.emulatorId) {
         const emulator = await prisma.emulator.findUnique({
-          where: { id: payload.emulatorId as string },
+          where: { id: payload.emulatorId },
           select: { id: true, name: true },
         })
         if (emulator) {
@@ -947,7 +948,7 @@ export class NotificationService {
       // Copy over any additional metadata
       Object.keys(payload).forEach((key) => {
         if (!context[key]) {
-          context[key] = payload[key] as unknown
+          context[key] = payload[key]
         }
       })
     } catch (error) {

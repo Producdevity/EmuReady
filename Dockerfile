@@ -1,5 +1,4 @@
-# Use Node.js 20 alpine image
-FROM node:20-alpine AS base
+FROM node:22.17-alpine AS base
 
 RUN apk add --no-cache libc6-compat
 WORKDIR /app

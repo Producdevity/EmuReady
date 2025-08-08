@@ -9,15 +9,19 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
   /**
    * Get app statistics
    */
-  getAppStats: mobilePublicProcedure.query(async ({ ctx }) => {
+  stats: mobilePublicProcedure.query(async ({ ctx }) => {
     const [
       totalListings,
+      totalPcListings,
       totalGames,
       totalDevices,
       totalEmulators,
       totalUsers,
     ] = await Promise.all([
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
+      ctx.prisma.pcListing.count({
+        where: { status: ApprovalStatus.APPROVED },
+      }),
       ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
       ctx.prisma.device.count(),
       ctx.prisma.emulator.count(),
@@ -26,6 +30,8 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
 
     return {
       totalListings,
+      totalPcListings,
+      totalReports: totalListings + totalPcListings,
       totalGames,
       totalDevices,
       totalEmulators,
@@ -36,7 +42,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
   /**
    * Get all systems
    */
-  getSystems: mobilePublicProcedure.query(async ({ ctx }) => {
+  systems: mobilePublicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.system.findMany({
       select: { id: true, name: true, key: true, tgdbPlatformId: true },
       orderBy: { name: 'asc' },
@@ -46,7 +52,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
   /**
    * Get performance scales
    */
-  getPerformanceScales: mobilePublicProcedure.query(async ({ ctx }) => {
+  performanceScales: mobilePublicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.performanceScale.findMany({
       select: { id: true, label: true, rank: true },
       orderBy: { rank: 'asc' },
@@ -56,7 +62,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
   /**
    * Get search suggestions
    */
-  getSearchSuggestions: mobilePublicProcedure
+  searchSuggestions: mobilePublicProcedure
     .input(SearchSuggestionsSchema)
     .query(async ({ ctx, input }) => {
       const { query, limit } = input
@@ -140,7 +146,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
   /**
    * Get trust levels (for mobile trust system integration)
    */
-  getTrustLevels: mobilePublicProcedure.query(async () => {
+  trustLevels: mobilePublicProcedure.query(async () => {
     const { TRUST_LEVELS } = await import('@/lib/trust/config')
     return TRUST_LEVELS
   }),

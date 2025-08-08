@@ -13,21 +13,47 @@ import {
   FindSwitchTitleIdSchema,
   GetBestSwitchTitleIdSchema,
   GetSwitchGamesStatsSchema,
+  OverrideGameStatusSchema,
 } from '@/schemas/game'
 import {
-  adminProcedure,
+  approveGamesProcedure,
   createTRPCRouter,
-  moderatorProcedure,
+  editGamesProcedure,
+  deleteGamesProcedure,
   protectedProcedure,
   publicProcedure,
+  superAdminProcedure,
+  viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import {
+  invalidateGame,
+  invalidateGameRelatedContent,
+  invalidateListPages,
+  invalidateSitemap,
+  revalidateByTag,
+} from '@/server/cache/invalidation'
+import {
+  notificationEventEmitter,
+  NOTIFICATION_EVENTS,
+} from '@/server/notifications/eventEmitter'
 import { gameStatsCache } from '@/server/utils/cache'
+import {
+  calculateOffset,
+  createPaginationResult,
+  buildOrderBy,
+} from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
+import { buildSearchFilter } from '@/server/utils/query-builders'
+import {
+  createCountQuery,
+  analyzeQueryComplexity,
+} from '@/server/utils/query-performance'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
   getSwitchGamesStats,
 } from '@/server/utils/switchGameSearch'
+import { transactionalBatch } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
@@ -54,7 +80,7 @@ async function validateGameConflicts(
     })
 
     if (systemConflict) {
-      ResourceError.game.alreadyExists(
+      return ResourceError.game.alreadyExists(
         data.title ?? existingGame.title,
         systemConflict.system.name,
       )
@@ -112,6 +138,7 @@ export const gamesRouter = createTRPCRouter({
       status,
       submittedBy,
       hideGamesWithNoListings = false,
+      listingFilter = 'withListings',
       limit = 100,
       offset = 0,
       page,
@@ -119,24 +146,27 @@ export const gamesRouter = createTRPCRouter({
       sortDirection,
     } = input ?? {}
 
-    // Calculate offset from page if provided
-    const actualOffset = page ? (page - 1) * limit : offset
-
     // Build where clause with optimized search pattern
     let where: Prisma.GameWhereInput = {
       ...(systemId ? { systemId } : {}),
-      ...(hideGamesWithNoListings ? { listings: { some: {} } } : {}),
     }
+
+    // Handle listing filter - use listingFilter if provided, otherwise fall back to hideGamesWithNoListings for backward compatibility
+    if (
+      listingFilter === 'withListings' ||
+      (listingFilter === undefined && hideGamesWithNoListings)
+    ) {
+      where.listings = { some: {} }
+    } else if (listingFilter === 'noListings') {
+      where.listings = { none: {} }
+    }
+    // If listingFilter === 'all', no additional filter is needed
 
     // Handle game approval status filtering
     if (hasPermission(ctx.session?.user?.role, Role.ADMIN)) {
       // Admins can see all games
-      if (status) {
-        where.status = status
-      }
-      if (submittedBy) {
-        where.submittedBy = submittedBy
-      }
+      if (status) where.status = status
+      if (submittedBy) where.submittedBy = submittedBy
     } else if (ctx.session?.user) {
       // Authenticated users see approved games + their own pending games
       if (status === ApprovalStatus.PENDING) {
@@ -162,119 +192,85 @@ export const gamesRouter = createTRPCRouter({
       where.status = ApprovalStatus.APPROVED
     }
 
-    if (search) {
-      const searchTerm = search.trim()
+    const searchConditions = buildSearchFilter(search, ['title'])
+    if (searchConditions) where.OR = searchConditions
 
-      // For multi-word searches, we use a more sophisticated approach
-      if (searchTerm.includes(' ')) {
-        where = {
-          ...where,
-          AND: [
-            {
-              AND: searchTerm
-                .split(/\s+/)
-                .filter((word) => word.length >= 2)
-                .map((word) => ({
-                  title: { contains: word, mode: 'insensitive' },
-                })),
-            },
-          ],
-        }
-      } else {
-        // For single words, a simple contains is sufficient
-        where = {
-          ...where,
-          title: { contains: searchTerm, mode: 'insensitive' },
-        }
-      }
+    const sortConfig = {
+      title: (dir: 'asc' | 'desc') => ({ title: dir }),
+      'system.name': (dir: 'asc' | 'desc') => ({ system: { name: dir } }),
+      listingsCount: (dir: 'asc' | 'desc') => ({ listings: { _count: dir } }),
+      submittedAt: (dir: 'asc' | 'desc') => ({ submittedAt: dir }),
+      status: (dir: 'asc' | 'desc') => ({ status: dir }),
     }
 
-    // Build orderBy based on sortField and sortDirection
-    const orderBy: Prisma.GameOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'title':
-          orderBy.push({ title: sortDirection })
-          break
-        case 'system.name':
-          orderBy.push({ system: { name: sortDirection } })
-          break
-        case 'listingsCount':
-          orderBy.push({ listings: { _count: sortDirection } })
-          break
-        case 'submittedAt':
-          orderBy.push({ submittedAt: sortDirection })
-          break
-        case 'status':
-          orderBy.push({ status: sortDirection })
-          break
-      }
-    }
-
-    // Default ordering if no sort specified
-    if (!orderBy.length) {
-      orderBy.push({ title: 'asc' })
-    }
+    const orderBy = buildOrderBy<Prisma.GameOrderByWithRelationInput>(
+      sortConfig,
+      sortField,
+      sortDirection,
+      { title: 'asc' },
+    )
 
     // For empty search with offset 0, we can optimize by returning fewer results initially
     const effectiveLimit =
-      !search && actualOffset === 0 ? Math.min(limit, 50) : limit
+      !search && offset === 0 && !page ? Math.min(limit, 50) : limit
 
-    // Always run count query for consistent pagination
-    const total = await ctx.prisma.game.count({ where })
+    // Calculate actual offset
+    const actualOffset = calculateOffset(
+      { limit: effectiveLimit, offset, page },
+      effectiveLimit,
+    )
 
-    // Get games with optimized query - only include essential fields for performance
-    const gamesQuery = ctx.prisma.game.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        systemId: true,
-        imageUrl: true,
-        boxartUrl: true,
-        bannerUrl: true,
-        tgdbGameId: true,
-        isErotic: true,
-        status: true,
-        submittedBy: true,
-        submittedAt: true,
-        approvedBy: true,
-        approvedAt: true,
-        createdAt: true,
-        system: { select: { id: true, name: true } },
-        submitter: hasPermission(ctx.session?.user?.role, Role.ADMIN)
-          ? { select: { id: true, name: true, email: true } }
-          : false,
-        _count: { select: { listings: true } },
-      },
-      orderBy,
-      skip: actualOffset,
-      take: effectiveLimit,
-    })
+    // Execute count and findMany in parallel
+    const [total, games] = await Promise.all([
+      createCountQuery(ctx.prisma.game, where),
+      ctx.prisma.game.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          systemId: true,
+          imageUrl: true,
+          boxartUrl: true,
+          bannerUrl: true,
+          tgdbGameId: true,
+          isErotic: true,
+          status: true,
+          submittedBy: true,
+          submittedAt: true,
+          approvedBy: true,
+          approvedAt: true,
+          createdAt: true,
+          system: { select: { id: true, name: true } },
+          submitter: hasPermission(ctx.session?.user?.role, Role.ADMIN)
+            ? { select: { id: true, name: true, email: true } }
+            : false,
+          _count: { select: { listings: true, pcListings: true } },
+        },
+        orderBy: orderBy as Prisma.GameOrderByWithRelationInput,
+        skip: actualOffset,
+        take: effectiveLimit,
+      }),
+    ])
 
-    const games = await gamesQuery
+    // Create pagination result
+    const pagination = createPaginationResult(
+      total,
+      { limit: effectiveLimit, offset, page },
+      effectiveLimit,
+      actualOffset,
+    )
 
-    return {
-      games,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        offset: actualOffset,
-        limit: effectiveLimit,
-      },
-    }
+    return { games, pagination }
   }),
 
-  getStats: moderatorProcedure.query(async ({ ctx }) => {
+  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const cached = gameStatsCache.get(GAME_STATS_CACHE_KEY)
     if (cached) return cached
 
     const [pending, approved, rejected] = await Promise.all([
-      ctx.prisma.game.count({ where: { status: ApprovalStatus.PENDING } }),
-      ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
-      ctx.prisma.game.count({ where: { status: ApprovalStatus.REJECTED } }),
+      createCountQuery(ctx.prisma.game, { status: ApprovalStatus.PENDING }),
+      createCountQuery(ctx.prisma.game, { status: ApprovalStatus.APPROVED }),
+      createCountQuery(ctx.prisma.game, { status: ApprovalStatus.REJECTED }),
     ])
 
     const stats = {
@@ -299,6 +295,9 @@ export const gamesRouter = createTRPCRouter({
       // Build the listings where clause with shadow ban filtering and approval status
       const listingsWhere: Prisma.ListingWhereInput = {}
 
+      // Build the PC listings where clause with shadow ban filtering and approval status
+      const pcListingsWhere: Prisma.PcListingWhereInput = {}
+
       // CRITICAL: Filter by approval status - REJECTED listings should NEVER be visible to regular users
       if (canSeeBannedUsers) {
         // Moderators can see all statuses including rejected
@@ -306,6 +305,7 @@ export const gamesRouter = createTRPCRouter({
       } else {
         // Regular users can ONLY see approved listings
         listingsWhere.status = ApprovalStatus.APPROVED
+        pcListingsWhere.status = ApprovalStatus.APPROVED
       }
 
       if (!canSeeBannedUsers) {
@@ -318,94 +318,148 @@ export const gamesRouter = createTRPCRouter({
             },
           },
         }
+        pcListingsWhere.author = {
+          userBans: {
+            none: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+          },
+        }
+      }
+
+      // Define include configuration for reusability and complexity analysis
+      const includeConfig = {
+        submitter: { select: { id: true, name: true } },
+        system: { include: { emulators: true } },
+        listings: {
+          where: listingsWhere,
+          select: {
+            id: true,
+            status: true,
+            notes: true,
+            createdAt: true,
+            deviceId: true,
+            gameId: true,
+            emulatorId: true,
+            performanceId: true,
+            authorId: true,
+            processedAt: true,
+            processedNotes: true,
+            processedByUserId: true,
+            device: {
+              select: {
+                id: true,
+                modelName: true,
+                brand: { select: { id: true, name: true } },
+              },
+            },
+            emulator: {
+              select: {
+                id: true,
+                name: true,
+                logo: true,
+                description: true,
+                repositoryUrl: true,
+                officialUrl: true,
+              },
+            },
+            performance: {
+              select: {
+                id: true,
+                label: true,
+                rank: true,
+                description: true,
+              },
+            },
+            author: {
+              select: {
+                id: true,
+                name: true,
+                ...(canSeeBannedUsers && { email: true }),
+                ...(canSeeBannedUsers && {
+                  userBans: {
+                    where: {
+                      isActive: true,
+                      OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
+                      ],
+                    },
+                    select: { id: true },
+                  },
+                }),
+              },
+            },
+            _count: { select: { votes: true, comments: true } },
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+        pcListings: {
+          where: pcListingsWhere,
+          select: {
+            id: true,
+            status: true,
+            notes: true,
+            createdAt: true,
+            gameId: true,
+            authorId: true,
+            processedAt: true,
+            processedNotes: true,
+            processedByUserId: true,
+            performance: {
+              select: {
+                id: true,
+                label: true,
+                rank: true,
+                description: true,
+              },
+            },
+            author: {
+              select: {
+                id: true,
+                name: true,
+                ...(canSeeBannedUsers && { email: true }),
+                ...(canSeeBannedUsers && {
+                  userBans: {
+                    where: {
+                      isActive: true,
+                      OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
+                      ],
+                    },
+                    select: { id: true },
+                  },
+                }),
+              },
+            },
+            _count: { select: { votes: true, comments: true } },
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+      }
+
+      // Analyze query complexity for performance monitoring
+      const complexity = analyzeQueryComplexity(includeConfig)
+      if (complexity.complexity === 'high') {
+        console.warn(
+          `[Games Router] High complexity query detected for game ${input.id}:`,
+          complexity.warnings,
+        )
       }
 
       const game = await ctx.prisma.game.findUnique({
         where: { id: input.id },
-        include: {
-          submitter: { select: { id: true, name: true } },
-          system: { include: { emulators: true } },
-          listings: {
-            where: listingsWhere,
-            select: {
-              id: true,
-              status: true,
-              notes: true,
-              createdAt: true,
-              deviceId: true,
-              gameId: true,
-              emulatorId: true,
-              performanceId: true,
-              authorId: true,
-              processedAt: true,
-              processedNotes: true,
-              processedByUserId: true,
-              device: {
-                select: {
-                  id: true,
-                  modelName: true,
-                  brand: { select: { id: true, name: true } },
-                },
-              },
-              emulator: {
-                select: {
-                  id: true,
-                  name: true,
-                  logo: true,
-                  description: true,
-                  repositoryUrl: true,
-                  officialUrl: true,
-                },
-              },
-              performance: {
-                select: {
-                  id: true,
-                  label: true,
-                  rank: true,
-                  description: true,
-                },
-              },
-              author: {
-                select: {
-                  id: true,
-                  name: true,
-                  // Only expose email to moderators for privacy
-                  ...(canSeeBannedUsers && { email: true }),
-                  // Include ban status for moderators to show banned user badge
-                  ...(canSeeBannedUsers && {
-                    userBans: {
-                      where: {
-                        isActive: true,
-                        OR: [
-                          { expiresAt: null },
-                          { expiresAt: { gt: new Date() } },
-                        ],
-                      },
-                      select: { id: true },
-                    },
-                  }),
-                },
-              },
-              _count: { select: { votes: true, comments: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-          },
-        },
+        include: includeConfig,
       })
       if (!game) return ResourceError.game.notFound()
 
       // Admins and moderators can always see all games
-      const isAdminOrModerator = roleIncludesRole(
-        ctx.session?.user?.role,
-        Role.MODERATOR,
-      )
+      const isAdmin = roleIncludesRole(ctx.session?.user?.role, Role.ADMIN)
 
       // For regular users, check NSFW preference
-      if (
-        !isAdminOrModerator &&
-        !ctx.session?.user?.showNsfw &&
-        game.isErotic
-      ) {
+      if (!isAdmin && !ctx.session?.user?.showNsfw && game.isErotic) {
         return ResourceError.game.notFound()
       }
 
@@ -460,13 +514,13 @@ export const gamesRouter = createTRPCRouter({
       if (existingGame) {
         // Use AppError.conflict with cause for duplicate game error
         const error = AppError.conflict(
-          `A game titled "${input.title}" already exists for the system "${system!.name}"`,
+          `A game titled "${input.title}" already exists for the system "${system.name}"`,
         )
         // Add cause information for frontend duplicate handling
         ;(error as Error & { cause?: Record<string, unknown> }).cause = {
           existingGameId: existingGame.id,
           existingGameTitle: existingGame.title,
-          systemName: system!.name,
+          systemName: system.name,
         }
         throw error
       }
@@ -494,18 +548,30 @@ export const gamesRouter = createTRPCRouter({
         // Invalidate cache when new game is created
         gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
+        // Queue SEO cache invalidation (non-blocking)
+        if (result.status === ApprovalStatus.APPROVED) {
+          Promise.all([
+            invalidateListPages(),
+            invalidateSitemap(),
+            revalidateByTag('games'),
+            revalidateByTag(`system-${input.systemId}`),
+          ]).catch((error) => {
+            console.error('[Games Router] Cache invalidation failed:', error)
+          })
+        }
+
         return result
       } catch (error) {
         if (
           isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
         ) {
-          return ResourceError.game.alreadyExists(input.title, system!.name)
+          return ResourceError.game.alreadyExists(input.title, system.name)
         }
         throw error
       }
     }),
 
-  update: moderatorProcedure
+  update: editGamesProcedure
     .input(UpdateGameSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
@@ -520,7 +586,28 @@ export const gamesRouter = createTRPCRouter({
 
       await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
-      return await performGameUpdate(ctx.prisma, id, data, existingGame!)
+      const result = await performGameUpdate(
+        ctx.prisma,
+        id,
+        data,
+        existingGame!,
+      )
+
+      // Queue SEO cache invalidation (non-blocking)
+      Promise.all([
+        invalidateGame(id),
+        invalidateListPages(),
+        revalidateByTag('games'),
+        revalidateByTag(`game-${id}`),
+        revalidateByTag(`system-${result.systemId}`),
+      ]).catch((error) => {
+        console.error(
+          '[Games Router] Cache invalidation failed after update:',
+          error,
+        )
+      })
+
+      return result
     }),
 
   updateOwnPendingGame: protectedProcedure
@@ -547,23 +634,42 @@ export const gamesRouter = createTRPCRouter({
 
       await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
-      return await performGameUpdate(ctx.prisma, id, data, existingGame!)
+      const result = await performGameUpdate(
+        ctx.prisma,
+        id,
+        data,
+        existingGame!,
+      )
+
+      // Queue SEO cache invalidation (non-blocking)
+      Promise.all([
+        invalidateGame(id),
+        invalidateListPages(),
+        revalidateByTag('games'),
+        revalidateByTag(`game-${id}`),
+        revalidateByTag(`system-${result.systemId}`),
+      ]).catch((error) => {
+        console.error(
+          '[Games Router] Cache invalidation failed after update:',
+          error,
+        )
+      })
+
+      return result
     }),
 
-  delete: adminProcedure
+  delete: deleteGamesProcedure
     .input(DeleteGameSchema)
     .mutation(async ({ ctx, input }) => {
       const game = await ctx.prisma.game.findUnique({
         where: { id: input.id },
-        include: {
-          listings: true,
-        },
+        include: { listings: true },
       })
 
-      if (!game) ResourceError.game.notFound()
+      if (!game) return ResourceError.game.notFound()
 
-      if (game!.listings.length > 0) {
-        ResourceError.game.inUse(game!.listings.length)
+      if (game.listings.length > 0) {
+        ResourceError.game.inUse(game.listings.length)
       }
 
       try {
@@ -589,7 +695,7 @@ export const gamesRouter = createTRPCRouter({
     }),
 
   // endpoints for an approval system
-  getPendingGames: moderatorProcedure
+  getPendingGames: approveGamesProcedure
     .input(GetPendingGamesSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -601,88 +707,76 @@ export const gamesRouter = createTRPCRouter({
         sortDirection = 'desc',
       } = input ?? {}
 
-      const actualOffset = page ? (page - 1) * limit : offset
+      const where: Prisma.GameWhereInput = { status: ApprovalStatus.PENDING }
 
-      const where: Prisma.GameWhereInput = {
-        status: ApprovalStatus.PENDING,
+      const searchConditions = buildSearchFilter(search, [
+        'title',
+        'system.name',
+        'submitter.name',
+      ])
+      if (searchConditions) where.OR = searchConditions
+
+      const sortConfig = {
+        title: (dir: 'asc' | 'desc') => ({ title: dir }),
+        submittedAt: (dir: 'asc' | 'desc') => ({ submittedAt: dir }),
+        'system.name': (dir: 'asc' | 'desc') => ({ system: { name: dir } }),
       }
 
-      if (search) {
-        where.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { system: { name: { contains: search, mode: 'insensitive' } } },
-          { submitter: { name: { contains: search, mode: 'insensitive' } } },
-        ]
-      }
+      const orderBy = buildOrderBy<Prisma.GameOrderByWithRelationInput>(
+        sortConfig,
+        sortField,
+        sortDirection,
+        { submittedAt: 'desc' },
+      )
 
-      // Build orderBy
-      const orderBy: Prisma.GameOrderByWithRelationInput[] = []
+      const actualOffset = calculateOffset({ limit, offset, page }, limit)
 
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'title':
-            orderBy.push({ title: sortDirection })
-            break
-          case 'submittedAt':
-            orderBy.push({ submittedAt: sortDirection })
-            break
-          case 'system.name':
-            orderBy.push({ system: { name: sortDirection } })
-            break
-        }
-      }
-
-      if (!orderBy.length) {
-        orderBy.push({ submittedAt: 'desc' })
-      }
-
-      const total = await ctx.prisma.game.count({ where })
-
-      const games = await ctx.prisma.game.findMany({
-        where,
-        select: {
-          id: true,
-          title: true,
-          systemId: true,
-          imageUrl: true,
-          boxartUrl: true,
-          bannerUrl: true,
-          tgdbGameId: true,
-          isErotic: true,
-          status: true,
-          submittedBy: true,
-          submittedAt: true,
-          approvedBy: true,
-          approvedAt: true,
-          createdAt: true,
-          system: {
-            select: { id: true, name: true, key: true, tgdbPlatformId: true },
+      const [total, games] = await Promise.all([
+        createCountQuery(ctx.prisma.game, where),
+        ctx.prisma.game.findMany({
+          where,
+          select: {
+            id: true,
+            title: true,
+            systemId: true,
+            imageUrl: true,
+            boxartUrl: true,
+            bannerUrl: true,
+            tgdbGameId: true,
+            isErotic: true,
+            status: true,
+            submittedBy: true,
+            submittedAt: true,
+            approvedBy: true,
+            approvedAt: true,
+            createdAt: true,
+            system: {
+              select: { id: true, name: true, key: true, tgdbPlatformId: true },
+            },
+            submitter: {
+              select: { id: true, name: true, email: true, profileImage: true },
+            },
+            approver: {
+              select: { id: true, name: true, email: true, profileImage: true },
+            },
           },
-          submitter: {
-            select: { id: true, name: true, email: true, profileImage: true },
-          },
-          approver: {
-            select: { id: true, name: true, email: true, profileImage: true },
-          },
-        },
-        orderBy,
-        skip: actualOffset,
-        take: limit,
-      })
+          orderBy: orderBy as Prisma.GameOrderByWithRelationInput,
+          skip: actualOffset,
+          take: limit,
+        }),
+      ])
 
-      return {
-        games,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          page: page ?? Math.floor(actualOffset / limit) + 1,
-          offset: actualOffset,
-          limit,
-        },
-      }
+      const pagination = createPaginationResult(
+        total,
+        { limit, offset, page },
+        limit,
+        actualOffset,
+      )
+
+      return { games, pagination }
     }),
 
-  approveGame: moderatorProcedure
+  approveGame: approveGamesProcedure
     .input(ApproveGameSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, status } = input
@@ -715,50 +809,75 @@ export const gamesRouter = createTRPCRouter({
       // Invalidate cache when game status changes
       gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
+      // Invalidate SEO cache
+      await invalidateGameRelatedContent(id)
+      if (status === ApprovalStatus.APPROVED) {
+        await invalidateSitemap()
+        await revalidateByTag('games')
+        await revalidateByTag(`game-${id}`)
+        await revalidateByTag(`system-${game.systemId}`)
+      }
+
       return result
     }),
 
-  bulkApproveGames: moderatorProcedure
+  bulkApproveGames: approveGamesProcedure
     .input(BulkApproveGamesSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
       const adminUserId = ctx.session.user.id
 
-      return ctx.prisma.$transaction(async (tx) => {
-        // Get all games to approve and verify they are pending
-        const gamesToApprove = await tx.game.findMany({
-          where: {
-            id: { in: gameIds },
-            status: ApprovalStatus.PENDING,
-          },
-        })
-
-        if (gamesToApprove.length === 0) {
-          return AppError.badRequest('No valid pending games found to approve')
-        }
-
-        // Update all games to approved
-        await tx.game.updateMany({
-          where: { id: { in: gamesToApprove.map((g) => g.id) } },
-          data: {
-            status: ApprovalStatus.APPROVED,
-            approvedBy: adminUserId,
-            approvedAt: new Date(),
-          },
-        })
-
-        // Invalidate cache
-        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-
-        return {
-          success: true,
-          approvedCount: gamesToApprove.length,
-          message: `Successfully approved ${gamesToApprove.length} game(s)`,
-        }
+      // First validate games exist and are pending
+      const gamesToApprove = await ctx.prisma.game.findMany({
+        where: {
+          id: { in: gameIds },
+          status: ApprovalStatus.PENDING,
+        },
       })
+
+      if (gamesToApprove.length === 0) {
+        throw AppError.badRequest('No valid pending games found to approve')
+      }
+
+      await transactionalBatch(ctx.prisma, [
+        {
+          name: 'approve-games',
+          execute: async (tx) => {
+            return tx.game.updateMany({
+              where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
+              data: {
+                status: ApprovalStatus.APPROVED,
+                approvedBy: adminUserId,
+                approvedAt: new Date(),
+              },
+            })
+          },
+        },
+        {
+          name: 'clear-cache',
+          execute: async () => {
+            gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+            return Promise.resolve()
+          },
+        },
+      ])
+      Promise.all([
+        ...gameIds.map((id) => invalidateGameRelatedContent(id)),
+        ...gameIds.map((id) => revalidateByTag(`game-${id}`)),
+        invalidateSitemap(),
+        revalidateByTag('games'),
+      ]).catch((error) => {
+        console.error('[Games Router] Cache invalidation failed:', error)
+      })
+
+      return {
+        success: true,
+        approvedCount: gamesToApprove.length,
+        message: `Successfully approved ${gamesToApprove.length} game(s)`,
+      }
     }),
 
-  bulkRejectGames: moderatorProcedure
+  bulkRejectGames: approveGamesProcedure
     .input(BulkRejectGamesSchema)
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
@@ -767,10 +886,7 @@ export const gamesRouter = createTRPCRouter({
       return ctx.prisma.$transaction(async (tx) => {
         // Get all games to reject and verify they are pending
         const gamesToReject = await tx.game.findMany({
-          where: {
-            id: { in: gameIds },
-            status: ApprovalStatus.PENDING,
-          },
+          where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
         })
 
         if (gamesToReject.length === 0) {
@@ -851,6 +967,113 @@ export const gamesRouter = createTRPCRouter({
       } catch (error) {
         console.error('Error getting Switch games stats:', error)
         return AppError.internalError('Failed to get Switch games statistics')
+      }
+    }),
+
+  // SUPER_ADMIN only: Override game status regardless of current state
+  overrideStatus: superAdminProcedure
+    .input(OverrideGameStatusSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { gameId, newStatus, overrideNotes } = input
+      const superAdminUserId = ctx.session.user.id
+
+      const gameToOverride = await ctx.prisma.game.findUnique({
+        where: { id: gameId },
+      })
+
+      if (!gameToOverride) return ResourceError.game.notFound()
+
+      const updatedGame = await ctx.prisma.game.update({
+        where: { id: gameId },
+        data: {
+          status: newStatus,
+          approvedBy: superAdminUserId,
+          approvedAt: new Date(),
+        },
+        include: {
+          system: true,
+          submitter: { select: { id: true, name: true, email: true } },
+          approver: { select: { id: true, name: true, email: true } },
+        },
+      })
+
+      // Invalidate cache when game status changes
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+
+      // Invalidate SEO cache
+      await invalidateGameRelatedContent(gameId)
+      if (newStatus === ApprovalStatus.APPROVED) {
+        await invalidateSitemap()
+        await revalidateByTag('games')
+        await revalidateByTag(`game-${gameId}`)
+        await revalidateByTag(`system-${gameToOverride.systemId}`)
+      }
+
+      // Emit notification event for game status override
+      if (gameToOverride.submittedBy) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.GAME_STATUS_OVERRIDDEN,
+          entityType: 'game',
+          entityId: gameId,
+          triggeredBy: superAdminUserId,
+          payload: {
+            gameId,
+            overriddenBy: superAdminUserId,
+            overriddenAt: updatedGame.approvedAt,
+            newStatus,
+            overrideNotes,
+          },
+        })
+      }
+
+      return {
+        ...updatedGame,
+        overrideNotes,
+      }
+    }),
+
+  // ADMIN and SUPER_ADMIN: Update game status (same as override but with role check)
+  updateStatus: approveGamesProcedure
+    .input(OverrideGameStatusSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { gameId, newStatus, overrideNotes } = input
+      const adminUserId = ctx.session.user.id
+
+      const gameToUpdate = await ctx.prisma.game.findUnique({
+        where: { id: gameId },
+      })
+
+      if (!gameToUpdate) return ResourceError.game.notFound()
+
+      const updatedGame = await ctx.prisma.game.update({
+        where: { id: gameId },
+        data: {
+          status: newStatus,
+          approvedBy: adminUserId,
+          approvedAt: new Date(),
+        },
+        include: {
+          system: true,
+          submitter: { select: { id: true, name: true, email: true } },
+          approver: { select: { id: true, name: true, email: true } },
+        },
+      })
+
+      // Invalidate cache when game status changes
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+
+      // Invalidate SEO cache
+      await invalidateGameRelatedContent(gameId)
+      if (newStatus === ApprovalStatus.APPROVED) {
+        await invalidateSitemap()
+        await revalidateByTag('games')
+        await revalidateByTag(`game-${gameId}`)
+        await revalidateByTag(`system-${gameToUpdate.systemId}`)
+      }
+
+      return {
+        ...updatedGame,
+        notes: overrideNotes,
       }
     }),
 })

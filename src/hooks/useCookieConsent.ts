@@ -2,12 +2,20 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
+import { z } from 'zod'
+import { safeParseJSON } from '@/utils/client-validation'
 
 export interface CookiePreferences {
   necessary: boolean
   analytics: boolean
   performance: boolean
 }
+
+const CookiePreferencesSchema = z.object({
+  necessary: z.boolean(),
+  analytics: z.boolean(),
+  performance: z.boolean(),
+})
 
 const DEFAULT_PREFERENCES: CookiePreferences = {
   necessary: true, // Always required
@@ -33,7 +41,11 @@ export function useCookieConsent() {
       const dismissed = localStorage.getItem('cookieDismissed')
 
       if (savedPreferences && consentGiven) {
-        const parsed = JSON.parse(savedPreferences) as CookiePreferences
+        const parsed = safeParseJSON(
+          savedPreferences,
+          CookiePreferencesSchema,
+          DEFAULT_PREFERENCES,
+        )
         setPreferences(parsed)
         setHasConsented(true)
       } else if (dismissed) {

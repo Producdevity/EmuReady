@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks'
 import analytics from '@/lib/analytics'
+import { ms } from '@/utils/time'
 import VotingHelpModal from '../VotingHelpModal'
 import voteReminderMessages from './voteReminderMessages'
 
@@ -15,9 +16,6 @@ interface Props {
   currentVote: boolean | null
   onVote: (value: boolean | null) => void
 }
-
-// Reduced time for easier testing - change to 60 in production
-const TIME_ON_PAGE_SECONDS = 60
 
 function VoteReminderBanner(props: Props) {
   const [isVisible, setIsVisible] = useState(false)
@@ -51,7 +49,7 @@ function VoteReminderBanner(props: Props) {
         listingId: props.listingId,
         timeOnPage: getTimeOnPage(),
       })
-    }, TIME_ON_PAGE_SECONDS * 1000)
+    }, ms.seconds(60))
 
     return () => clearTimeout(timer)
   }, [hasBeenDismissed, props.listingId, props.currentVote])

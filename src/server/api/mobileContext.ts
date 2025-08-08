@@ -7,16 +7,23 @@ import superjson from 'superjson'
 import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
+import { log } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { initializeNotificationService } from '@/server/notifications/init'
+import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
+import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
+
+// ===== Mobile Permission Procedure Shortcuts =====
 
 type User = {
   id: string
   email: string | null
   name: string | null
   role: Role
+  permissions: string[] // Array of permission keys
   showNsfw: boolean
 }
 
@@ -53,7 +60,7 @@ export const createMobileTRPCContext = async (
     const webAuth = await auth()
     clerkUserId = webAuth.userId
   } catch (error) {
-    console.error('Web auth failed, try mobile JWT token', error)
+    log.error('Web auth failed, try mobile JWT token', error)
   }
 
   // If no web auth, try mobile JWT token from Authorization header
@@ -91,12 +98,21 @@ export const createMobileTRPCContext = async (
       })
 
       if (user) {
+        // Fetch user permissions based on their role
+        const rolePermissions = await prisma.rolePermission.findMany({
+          where: { role: user.role },
+          include: { permission: { select: { key: true } } },
+        })
+
+        const permissions = rolePermissions.map((rp) => rp.permission.key)
+
         session = {
           user: {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
+            permissions,
             showNsfw: user.showNsfw,
           },
         }
@@ -171,12 +187,21 @@ export const createMobileTRPCFetchContext = async (
       })
 
       if (user) {
+        // Fetch user permissions based on their role
+        const rolePermissions = await prisma.rolePermission.findMany({
+          where: { role: user.role },
+          include: { permission: { select: { key: true } } },
+        })
+
+        const permissions = rolePermissions.map((rp) => rp.permission.key)
+
         session = {
           user: {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
+            permissions,
             showNsfw: user.showNsfw,
           },
         }
@@ -324,3 +349,207 @@ export const mobileModeratorProcedure = mt.procedure
       },
     })
   })
+
+/**
+ * Mobile author procedure (requires at least Author role)
+ */
+export const mobileAuthorProcedure = mt.procedure
+  .use(mobilePerformanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) return AppError.unauthorized()
+
+    // For now, we consider User as Author
+    if (!hasPermission(ctx.session.user.role, Role.USER)) {
+      AppError.forbidden()
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+
+/**
+ * Mobile developer procedure (requires Developer role)
+ */
+export const mobileDeveloperProcedure = mt.procedure
+  .use(mobilePerformanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      AppError.unauthorized()
+    }
+
+    if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
+      AppError.insufficientPermissions(Role.DEVELOPER)
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+
+/**
+ * Mobile super admin procedure (requires SUPER_ADMIN role)
+ */
+export const mobileSuperAdminProcedure = mt.procedure
+  .use(mobilePerformanceMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) return AppError.unauthorized()
+
+    if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+      AppError.insufficientPermissions(Role.SUPER_ADMIN)
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+
+/**
+ * Mobile developer emulator procedure
+ * Ensures that a developer can only access emulators they're verified for,
+ * while admins and super admins retain access to all emulators.
+ *
+ * @param emulatorId The ID of the emulator to check access for
+ * @returns A procedure that can be used to create router endpoints requiring emulator-specific access
+ */
+export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
+  return mobileProtectedProcedure.use(async ({ ctx, next }) => {
+    const userId = ctx.session.user.id
+
+    const hasAccess = await hasDeveloperAccessToEmulator(
+      userId,
+      emulatorId,
+      ctx.prisma,
+    )
+
+    if (!hasAccess) {
+      AppError.forbidden(`You don't have developer access to this emulator`)
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        emulatorId,
+      },
+    })
+  })
+}
+
+// ===== Permission-Based Procedures =====
+
+/**
+ * Generic mobile permission-based procedure
+ * @param requiredPermission The permission key required to access this procedure
+ */
+export function mobilePermissionProcedure(requiredPermission: string) {
+  return mobileProtectedProcedure.use(({ ctx, next }) => {
+    if (!hasPermissionInContext(ctx, requiredPermission)) {
+      AppError.forbidden(
+        `You need the '${requiredPermission}' permission to perform this action`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+/**
+ * Mobile procedure that requires multiple permissions (all must be present)
+ * @param requiredPermissions Array of permission keys that are all required
+ */
+export function mobileMultiPermissionProcedure(requiredPermissions: string[]) {
+  return mobileProtectedProcedure.use(({ ctx, next }) => {
+    const missingPermissions = requiredPermissions.filter(
+      (permission) => !hasPermissionInContext(ctx, permission),
+    )
+
+    if (missingPermissions.length > 0) {
+      AppError.forbidden(
+        `You need the following permissions: ${missingPermissions.join(', ')}`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+/**
+ * Mobile procedure that requires any one of multiple permissions
+ * @param requiredPermissions Array of permission keys (any one is sufficient)
+ */
+export function mobileAnyPermissionProcedure(requiredPermissions: string[]) {
+  return mobileProtectedProcedure.use(({ ctx, next }) => {
+    const hasAnyPermission = requiredPermissions.some((permission) =>
+      hasPermissionInContext(ctx, permission),
+    )
+
+    if (!hasAnyPermission) {
+      AppError.forbidden(
+        `You need one of the following permissions: ${requiredPermissions.join(', ')}`,
+      )
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    })
+  })
+}
+
+export const mobileCreateListingProcedure = mobilePermissionProcedure(
+  PERMISSIONS.CREATE_LISTING,
+)
+export const mobileApproveListingsProcedure = mobilePermissionProcedure(
+  PERMISSIONS.APPROVE_LISTINGS,
+)
+export const mobileManageUsersProcedure = mobilePermissionProcedure(
+  PERMISSIONS.MANAGE_USERS,
+)
+export const mobileManagePermissionsProcedure = mobilePermissionProcedure(
+  PERMISSIONS.MANAGE_PERMISSIONS,
+)
+export const mobileAccessAdminPanelProcedure = mobilePermissionProcedure(
+  PERMISSIONS.ACCESS_ADMIN_PANEL,
+)
+export const mobileViewStatisticsProcedure = mobilePermissionProcedure(
+  PERMISSIONS.VIEW_STATISTICS,
+)
+export const mobileManageEmulatorsProcedure = mobilePermissionProcedure(
+  PERMISSIONS.MANAGE_EMULATORS,
+)
+export const mobileEditGamesProcedure = mobilePermissionProcedure(
+  PERMISSIONS.EDIT_GAMES,
+)
+export const mobileDeleteGamesProcedure = mobilePermissionProcedure(
+  PERMISSIONS.DELETE_GAMES,
+)
+export const mobileManageGamesProcedure = mobilePermissionProcedure(
+  PERMISSIONS.MANAGE_GAMES,
+)
+export const mobileApproveGamesProcedure = mobilePermissionProcedure(
+  PERMISSIONS.APPROVE_GAMES,
+)
+export const mobileManageDevicesProcedure = mobilePermissionProcedure(
+  PERMISSIONS.MANAGE_DEVICES,
+)
+export const mobileManageSystemsProcedure = mobilePermissionProcedure(
+  PERMISSIONS.MANAGE_SYSTEMS,
+)

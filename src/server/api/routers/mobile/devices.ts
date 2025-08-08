@@ -1,3 +1,5 @@
+import { ResourceError } from '@/lib/errors'
+import { GetDeviceByIdSchema } from '@/schemas/device'
 import { GetDevicesSchema } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
@@ -9,17 +11,18 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
    * Get devices with search and filtering
    */
-  getDevices: mobilePublicProcedure
+  get: mobilePublicProcedure
     .input(GetDevicesSchema)
     .query(async ({ ctx, input }) => {
+      const { brandId, search, limit } = input ?? {}
       const baseWhere: Record<string, unknown> = {}
-      if (input.brandId) baseWhere.brandId = input.brandId
+      if (brandId) baseWhere.brandId = brandId
 
       // Add search filtering at database level
-      if (input.search) {
+      if (search) {
         baseWhere.OR = [
-          { modelName: { contains: input.search, mode: 'insensitive' } },
-          { brand: { name: { contains: input.search, mode: 'insensitive' } } },
+          { modelName: { contains: search, mode: 'insensitive' } },
+          { brand: { name: { contains: search, mode: 'insensitive' } } },
         ]
       }
 
@@ -35,14 +38,14 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
           },
         },
         orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-        take: input.limit,
+        take: limit,
       })
     }),
 
   /**
    * Get device brands
    */
-  getDeviceBrands: mobilePublicProcedure.query(
+  brands: mobilePublicProcedure.query(
     async ({ ctx }) =>
       await ctx.prisma.deviceBrand.findMany({
         select: { id: true, name: true },
@@ -53,11 +56,33 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
    * Get SOCs (System on Chips)
    */
-  getSocs: mobilePublicProcedure.query(
+  socs: mobilePublicProcedure.query(
     async ({ ctx }) =>
       await ctx.prisma.soC.findMany({
         select: { id: true, name: true, manufacturer: true },
         orderBy: [{ manufacturer: 'asc' }, { name: 'asc' }],
       }),
   ),
+
+  /**
+   * Get device by ID
+   */
+  byId: mobilePublicProcedure
+    .input(GetDeviceByIdSchema)
+    .query(async ({ ctx, input }) => {
+      const device = await ctx.prisma.device.findUnique({
+        where: { id: input.id },
+        include: {
+          brand: { select: { id: true, name: true } },
+          soc: { select: { id: true, name: true, manufacturer: true } },
+          _count: {
+            select: {
+              listings: { where: { status: ApprovalStatus.APPROVED } },
+            },
+          },
+        },
+      })
+
+      return device || ResourceError.device.notFound()
+    }),
 })

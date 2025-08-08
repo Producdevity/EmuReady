@@ -1,5 +1,6 @@
 import { type SortDirection } from '@/types/api'
 import { type RouterInput } from '@/types/trpc'
+import { type ValueOf } from '@/types/utils'
 import { type Role } from '@orm'
 import {
   ADMIN_ACTIONS,
@@ -21,7 +22,6 @@ import {
 import { type EngagementAction } from './analytics.types'
 import { sendAnalyticsEvent, filterUndefinedValues } from './utils'
 
-// Main analytics object with typesafe methods
 const analytics = {
   error: {
     imageLoadError: (params: {
@@ -326,31 +326,21 @@ const analytics = {
     }) => {
       const { action, commentId, listingId, ...metadata } = params
 
-      let analyticsAction: EngagementAction
-      switch (action) {
-        case 'created':
-          analyticsAction = ENGAGEMENT_ACTIONS.COMMENT_CREATED
-          break
-        case 'reply':
-          analyticsAction = ENGAGEMENT_ACTIONS.COMMENT_REPLY
-          break
-        case 'edited':
-          analyticsAction = ENGAGEMENT_ACTIONS.COMMENT_EDITED
-          break
-        case 'deleted':
-          analyticsAction = ENGAGEMENT_ACTIONS.COMMENT_DELETED
-          break
+      const commentActionMap: Record<typeof action, EngagementAction> = {
+        created: ENGAGEMENT_ACTIONS.COMMENT_CREATED,
+        reply: ENGAGEMENT_ACTIONS.COMMENT_REPLY,
+        edited: ENGAGEMENT_ACTIONS.COMMENT_EDITED,
+        deleted: ENGAGEMENT_ACTIONS.COMMENT_DELETED,
       }
+
+      const analyticsAction: EngagementAction = commentActionMap[action]
 
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
         action: analyticsAction,
         entityType: 'comment',
         entityId: commentId,
-        metadata: {
-          listingId,
-          ...metadata,
-        },
+        metadata: { listingId, ...metadata },
       })
     },
 
@@ -364,22 +354,15 @@ const analytics = {
     }) => {
       const { entityType, entityId, ...metadata } = params
 
-      let action: EngagementAction
-      switch (entityType) {
-        case 'listing':
-          action = ENGAGEMENT_ACTIONS.LISTING_VIEW
-          break
-        case 'game':
-          action = ENGAGEMENT_ACTIONS.GAME_VIEW
-          break
-        case 'user':
-          action = ENGAGEMENT_ACTIONS.USER_PROFILE_VIEW
-          break
+      const entityTypeMap: Record<typeof entityType, EngagementAction> = {
+        listing: ENGAGEMENT_ACTIONS.LISTING_VIEW,
+        game: ENGAGEMENT_ACTIONS.GAME_VIEW,
+        user: ENGAGEMENT_ACTIONS.USER_PROFILE_VIEW,
       }
 
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
-        action,
+        action: entityTypeMap[entityType],
         entityType,
         entityId,
         metadata,
@@ -392,9 +375,7 @@ const analytics = {
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_SHOWN,
         entityType: 'listing',
         entityId: params.listingId,
-        metadata: {
-          timeOnPage: params.timeOnPage,
-        },
+        metadata: { timeOnPage: params.timeOnPage },
       })
     },
 
@@ -407,9 +388,7 @@ const analytics = {
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_CLICKED,
         entityType: 'listing',
         entityId: params.listingId,
-        metadata: {
-          timeOnPage: params.timeOnPage,
-        },
+        metadata: { timeOnPage: params.timeOnPage },
       })
     },
 
@@ -418,9 +397,7 @@ const analytics = {
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
         action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_DISMISSED,
         entityType: 'popup',
-        metadata: {
-          timeOnPage: params.timeOnPage,
-        },
+        metadata: { timeOnPage: params.timeOnPage },
       })
     },
 
@@ -429,9 +406,7 @@ const analytics = {
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
         action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_CTA,
         entityType: 'popup',
-        metadata: {
-          timeOnPage: params.timeOnPage,
-        },
+        metadata: { timeOnPage: params.timeOnPage },
       })
     },
 
@@ -444,9 +419,7 @@ const analytics = {
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_DISMISSED,
         entityType: 'popup',
         entityId: params.listingId,
-        metadata: {
-          timeOnPage: params.timeOnPage,
-        },
+        metadata: { timeOnPage: params.timeOnPage },
       })
     },
   },
@@ -795,24 +768,18 @@ const analytics = {
     }) => {
       const { userId, action, ...metadata } = params
 
-      let analyticsAction: string
-      switch (action) {
-        case 'first_listing':
-          analyticsAction = USER_JOURNEY_ACTIONS.FIRST_LISTING_CREATED
-          break
-        case 'first_vote':
-          analyticsAction = USER_JOURNEY_ACTIONS.FIRST_VOTE_CAST
-          break
-        case 'first_comment':
-          analyticsAction = USER_JOURNEY_ACTIONS.FIRST_COMMENT_POSTED
-          break
-        default:
-          return
+      const actionMap: Record<
+        typeof action,
+        ValueOf<typeof USER_JOURNEY_ACTIONS>
+      > = {
+        first_listing: USER_JOURNEY_ACTIONS.FIRST_LISTING_CREATED,
+        first_vote: USER_JOURNEY_ACTIONS.FIRST_VOTE_CAST,
+        first_comment: USER_JOURNEY_ACTIONS.FIRST_COMMENT_POSTED,
       }
 
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.USER_JOURNEY,
-        action: analyticsAction,
+        action: actionMap[action],
         userId,
         metadata: filterUndefinedValues(metadata),
       })

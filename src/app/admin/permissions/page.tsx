@@ -24,12 +24,12 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
+import { RolePermissionMatrix } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type Role, PermissionCategory } from '@orm'
 import PermissionModal from './components/PermissionModal'
-import RolePermissionMatrix from './components/RolePermissionMatrix'
 
 type PermissionSortField =
   | 'label'
@@ -72,8 +72,8 @@ function AdminPermissionsPage() {
       label: string
       description?: string | null
       category?: PermissionCategory | null
-    }
-  }>({ isOpen: false })
+    } | null
+  }>({ isOpen: false, permission: null })
 
   const columnVisibility = useColumnVisibility(PERMISSION_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminPermissions,
@@ -113,7 +113,7 @@ function AdminPermissionsPage() {
   }
 
   const handleCreate = () => {
-    setPermissionModal({ isOpen: true })
+    setPermissionModal({ isOpen: true, permission: null })
   }
 
   const handleDelete = async (permission: {
@@ -136,7 +136,7 @@ function AdminPermissionsPage() {
   }
 
   const handleModalSuccess = () => {
-    setPermissionModal({ isOpen: false })
+    setPermissionModal({ isOpen: false, permission: null })
     utils.permissions.getAll.invalidate().catch(console.error)
   }
 
@@ -373,9 +373,9 @@ function AdminPermissionsPage() {
       )}
 
       <PermissionModal
-        permission={permissionModal.permission}
+        permission={permissionModal.permission || undefined}
         isOpen={permissionModal.isOpen}
-        onClose={() => setPermissionModal({ isOpen: false })}
+        onClose={() => setPermissionModal({ isOpen: false, permission: null })}
         onSuccess={handleModalSuccess}
       />
     </AdminPageLayout>

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { cn } from '@/lib/utils'
 
 type CookieCategory = 'necessary' | 'analytics' | 'performance'
@@ -79,23 +81,37 @@ const colorClasses = {
 function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
-  const [preferences, setPreferences] =
-    useState<CookiePreferences>(DEFAULT_PREFERENCES)
+  const [savedPreferences, setSavedPreferences] =
+    useLocalStorage<CookiePreferences | null>(
+      storageKeys.cookies.preferences,
+      null,
+    )
+  const [hasConsented, setHasConsented] = useLocalStorage<boolean>(
+    storageKeys.cookies.consent,
+    false,
+  )
+  const [, setConsentDate] = useLocalStorage<string | null>(
+    storageKeys.cookies.consentDate,
+    null,
+  )
+  const [, setAnalyticsEnabled] = useLocalStorage<boolean>(
+    storageKeys.cookies.analyticsEnabled,
+    false,
+  )
+  const [, setPerformanceEnabled] = useLocalStorage<boolean>(
+    storageKeys.cookies.performanceEnabled,
+    false,
+  )
+  const [preferences, setPreferences] = useState<CookiePreferences>(
+    savedPreferences || DEFAULT_PREFERENCES,
+  )
   const [hasInteracted, setHasInteracted] = useState(false)
 
   useEffect(() => {
     // Check if user has already made a choice
-    const savedPreferences = localStorage.getItem('cookiePreferences')
-    const hasConsented = localStorage.getItem('cookieConsent')
-
     if (savedPreferences) {
-      try {
-        const parsed = JSON.parse(savedPreferences) as CookiePreferences
-        setPreferences(parsed)
-        setHasInteracted(true)
-      } catch (error) {
-        console.error('Error parsing cookie preferences:', error)
-      }
+      setPreferences(savedPreferences)
+      setHasInteracted(true)
     }
 
     // Show banner if user hasn't consented yet
@@ -107,25 +123,16 @@ function CookieConsent() {
 
       return () => clearTimeout(timer)
     }
-  }, [hasInteracted])
+  }, [hasInteracted, savedPreferences, hasConsented])
 
   const savePreferences = (newPreferences: CookiePreferences) => {
-    localStorage.setItem('cookiePreferences', JSON.stringify(newPreferences))
-    localStorage.setItem('cookieConsent', 'true')
-    localStorage.setItem('cookieConsentDate', new Date().toISOString())
+    setSavedPreferences(newPreferences)
+    setHasConsented(true)
+    setConsentDate(new Date().toISOString())
 
     // Apply preferences immediately
-    if (newPreferences.analytics) {
-      localStorage.setItem('analyticsEnabled', 'true')
-    } else {
-      localStorage.removeItem('analyticsEnabled')
-    }
-
-    if (newPreferences.performance) {
-      localStorage.setItem('performanceEnabled', 'true')
-    } else {
-      localStorage.removeItem('performanceEnabled')
-    }
+    setAnalyticsEnabled(newPreferences.analytics)
+    setPerformanceEnabled(newPreferences.performance)
 
     setPreferences(newPreferences)
     setIsVisible(false)

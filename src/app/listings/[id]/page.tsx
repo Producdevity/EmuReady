@@ -1,39 +1,59 @@
-'use client'
+import { type Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { PageWithMetadata } from '@/components/seo/PageWithMetadata'
+import {
+  generatePageMetadata,
+  generateStructuredData,
+} from '@/lib/seo/metadata'
+import { getListingForSEO } from '@/server/db/seo-queries'
+import ListingDetailsPage from './ListingDetailsPage'
 
-import { notFound, useParams } from 'next/navigation'
-import { LoadingSpinner } from '@/components/ui'
-import { api } from '@/lib/api'
-import sanitizeForClient from '@/utils/sanitizeForClient'
-import ListingDetailsClient from './components/ListingDetailsClient'
+interface Props {
+  params: Promise<{ id: string }>
+}
 
-function ListingDetailsPage() {
-  const params = useParams()
+// Revalidate every 30 minutes
+export const revalidate = 1800
 
-  const listingQuery = api.listings.byId.useQuery({ id: params.id as string })
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params
+  const listing = await getListingForSEO(params.id)
 
-  if (listingQuery.isPending) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <LoadingSpinner text="Loading listing details..." />
-        </div>
-      </div>
-    )
+  if (!listing) {
+    return generatePageMetadata('Compatibility Report Not Found')
   }
 
-  if (listingQuery.error || !listingQuery.data) return notFound()
+  const description = `${listing.game.title} running on ${listing.emulator.name} using ${listing.device.brand.name} ${listing.device.modelName}. Performance: ${listing.performance.label}`
 
-  return (
-    <ListingDetailsClient
-      listing={sanitizeForClient(listingQuery.data)}
-      successRate={listingQuery.data.successRate}
-      upVotes={Math.round(
-        listingQuery.data.successRate * listingQuery.data._count.votes,
-      )}
-      totalVotes={listingQuery.data._count.votes}
-      userVote={listingQuery.data.userVote}
-    />
+  return generatePageMetadata(
+    `${listing.game.title} on ${listing.emulator.name}`,
+    description,
+    `/listings/${listing.id}`,
+    listing.game.imageUrl || undefined,
   )
 }
 
-export default ListingDetailsPage
+export default async function Page(props: Props) {
+  const params = await props.params
+  const listing = await getListingForSEO(params.id)
+
+  if (!listing) {
+    notFound()
+  }
+
+  const structuredData = generateStructuredData('Review', {
+    gameName: listing.game.title,
+    emulatorName: listing.emulator.name,
+    deviceName: `${listing.device.brand.name} ${listing.device.modelName}`,
+    authorName: listing.author.name || 'Anonymous',
+    datePublished: listing.createdAt.toISOString(),
+    performanceRating: listing.performance.rank,
+    compatibilityNotes: listing.notes || undefined,
+  })
+
+  return (
+    <PageWithMetadata structuredData={structuredData}>
+      <ListingDetailsPage />
+    </PageWithMetadata>
+  )
+}

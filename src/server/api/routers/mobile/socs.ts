@@ -62,7 +62,6 @@ export const mobileSocsRouter = createMobileTRPCRouter({
           }
         : {}
 
-      // Build orderBy based on sortField and sortDirection
       const orderBy: Prisma.SoCOrderByWithRelationInput[] = []
 
       if (sortField && sortDirection) {

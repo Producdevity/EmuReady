@@ -94,7 +94,7 @@ export function renderCustomField<
         fieldDef={transformedFieldDef}
         fieldName={fieldName}
         index={index}
-        control={control as unknown as Control<FieldValues>}
+        control={control}
         errorMessage={errorMessage}
       />
     </div>

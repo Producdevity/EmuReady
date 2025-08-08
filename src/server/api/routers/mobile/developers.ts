@@ -1,4 +1,4 @@
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
   GetListingVerificationsSchema,
   GetMyVerificationsSchema,
@@ -8,6 +8,7 @@ import {
 } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
+  mobileDeveloperProcedure,
   mobileProtectedProcedure,
 } from '@/server/api/mobileContext'
 
@@ -15,7 +16,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
    * Get current user's verified emulators
    */
-  getMyVerifiedEmulators: mobileProtectedProcedure.query(async ({ ctx }) => {
+  getMyVerifiedEmulators: mobileDeveloperProcedure.query(async ({ ctx }) => {
     const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
       where: { userId: ctx.session.user.id },
       include: { emulator: { select: { id: true, name: true, logo: true } } },
@@ -46,7 +47,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
    * Verify a listing as a developer
    */
-  verifyListing: mobileProtectedProcedure
+  verifyListing: mobileDeveloperProcedure
     .input(VerifyListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, notes } = input
@@ -62,9 +63,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
         },
       })
 
-      if (!listing) {
-        return AppError.notFound('Listing not found')
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       // Check if user is a verified developer for this emulator
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
@@ -90,19 +89,9 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       }
 
       return await ctx.prisma.listingDeveloperVerification.create({
-        data: {
-          listingId,
-          verifiedBy: userId,
-          notes,
-        },
+        data: { listingId, verifiedBy: userId, notes },
         include: {
-          developer: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
-          },
+          developer: { select: { id: true, name: true, profileImage: true } },
         },
       })
     }),
@@ -110,7 +99,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
    * Remove a verification
    */
-  removeVerification: mobileProtectedProcedure
+  removeVerification: mobileDeveloperProcedure
     .input(RemoveVerificationSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id
@@ -137,7 +126,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
    * Get verifications for a listing
    */
-  getListingVerifications: mobileProtectedProcedure
+  getListingVerifications: mobileDeveloperProcedure
     .input(GetListingVerificationsSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.prisma.listingDeveloperVerification.findMany({
@@ -152,7 +141,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
    * Get current user's verifications
    */
-  getMyVerifications: mobileProtectedProcedure
+  getMyVerifications: mobileDeveloperProcedure
     .input(GetMyVerificationsSchema)
     .query(async ({ ctx, input }) => {
       const { limit, page } = input ?? {}
@@ -169,11 +158,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
               include: {
                 game: { select: { title: true } },
                 emulator: { select: { name: true } },
-                device: {
-                  include: {
-                    brand: { select: { name: true } },
-                  },
-                },
+                device: { include: { brand: { select: { name: true } } } },
               },
             },
           },

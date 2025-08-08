@@ -8,14 +8,14 @@ import {
 } from '@/schemas/verifiedDeveloper'
 import {
   createTRPCRouter,
-  adminProcedure,
+  manageEmulatorVerifiedDevelopersProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
 import { hasPermission } from '@/utils/permissions'
 import { Role, Prisma } from '@orm'
 
 export const verifiedDevelopersRouter = createTRPCRouter({
-  getVerifiedDevelopers: adminProcedure
+  getVerifiedDevelopers: manageEmulatorVerifiedDevelopersProcedure
     .input(GetVerifiedDevelopersSchema)
     .query(async ({ ctx, input }) => {
       const { emulatorId, userId, limit, page, search, emulatorFilter } =
@@ -82,7 +82,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       }
     }),
 
-  verifyDeveloper: adminProcedure
+  verifyDeveloper: manageEmulatorVerifiedDevelopersProcedure
     .input(VerifyDeveloperSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, emulatorId, notes } = input
@@ -136,7 +136,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       })
     }),
 
-  removeVerifiedDeveloper: adminProcedure
+  removeVerifiedDeveloper: manageEmulatorVerifiedDevelopersProcedure
     .input(RemoveVerifiedDeveloperSchema)
     .mutation(async ({ ctx, input }) => {
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
@@ -181,7 +181,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
     return verifiedDevelopers.map((vd) => vd.emulator)
   }),
 
-  updateVerifiedDeveloper: adminProcedure
+  updateVerifiedDeveloper: manageEmulatorVerifiedDevelopersProcedure
     .input(UpdateVerifiedDeveloperSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, emulatorId, notes } = input

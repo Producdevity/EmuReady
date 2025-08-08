@@ -4,12 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import {
-  Button,
-  Input,
-  Autocomplete,
-  AdminImageSelectorSwitcher,
-} from '@/components/ui'
+import { Button, Input, Autocomplete } from '@/components/ui'
+import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'

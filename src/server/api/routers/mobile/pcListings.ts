@@ -1,14 +1,10 @@
-import { AppError, ResourceError } from '@/lib/errors'
+import { AppError } from '@/lib/errors'
 import {
   CreatePcListingSchema,
-  CreatePcPresetSchema,
-  DeletePcPresetSchema,
   GetCpusSchema,
   GetGpusSchema,
   GetPcListingsSchema,
-  GetPcPresetsSchema,
   UpdatePcListingSchema,
-  UpdatePcPresetSchema,
 } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
@@ -18,8 +14,8 @@ import {
 import {
   pcListingInclude,
   buildPcListingWhere,
-  buildPaginationResponse,
 } from '@/server/api/utils/pcListingHelpers'
+import { createPaginationResult } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus } from '@orm'
 
@@ -27,7 +23,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
    * Get PC listings with pagination and filtering
    */
-  getPcListings: mobilePublicProcedure
+  get: mobilePublicProcedure
     .input(GetPcListingsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -119,13 +115,11 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         verificationCount: 0, // PC listings use developer verifications differently
         reportCount: listing._count.reports,
       }))
-      const pages = Math.ceil(total / limit)
-
       return {
         listings: listingsWithStats,
         pagination: {
-          ...buildPaginationResponse(total, page, limit),
-          hasNextPage: page < pages,
+          ...createPaginationResult(total, { page }, limit, (page - 1) * limit),
+          hasNextPage: page < Math.ceil(total / limit),
           hasPreviousPage: page > 1,
         },
       }
@@ -134,7 +128,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
    * Create a new PC listing
    */
-  createPcListing: mobileProtectedProcedure
+  create: mobileProtectedProcedure
     .input(CreatePcListingSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.prisma.pcListing.create({
@@ -178,7 +172,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
    * Update a PC listing
    */
-  updatePcListing: mobileProtectedProcedure
+  update: mobileProtectedProcedure
     .input(UpdatePcListingSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, customFieldValues, ...updateData } = input
@@ -228,7 +222,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
    * Get CPUs for mobile
    */
-  getCpus: mobilePublicProcedure
+  cpus: mobilePublicProcedure
     .input(GetCpusSchema)
     .query(async ({ ctx, input }) => {
       const { search, brandId, limit } = input
@@ -262,7 +256,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
    * Get GPUs for mobile
    */
-  getGpus: mobilePublicProcedure
+  gpus: mobilePublicProcedure
     .input(GetGpusSchema)
     .query(async ({ ctx, input }) => {
       const { search, brandId, limit } = input
@@ -292,81 +286,4 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
 
       return { gpus }
     }),
-
-  /**
-   * PC Presets nested router
-   */
-  presets: createMobileTRPCRouter({
-    get: mobileProtectedProcedure
-      .input(GetPcPresetsSchema)
-      .query(async ({ ctx, input }) => {
-        return await ctx.prisma.userPcPreset.findMany({
-          where: { userId: ctx.session.user.id },
-          take: input.limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
-          },
-        })
-      }),
-
-    create: mobileProtectedProcedure
-      .input(CreatePcPresetSchema)
-      .mutation(async ({ ctx, input }) => {
-        return await ctx.prisma.userPcPreset.create({
-          data: {
-            ...input,
-            userId: ctx.session.user.id,
-          },
-          include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
-          },
-        })
-      }),
-
-    update: mobileProtectedProcedure
-      .input(UpdatePcPresetSchema)
-      .mutation(async ({ ctx, input }) => {
-        const { id, ...updateData } = input
-
-        // Check if user owns the preset
-        const existing = await ctx.prisma.userPcPreset.findUnique({
-          where: { id },
-          select: { userId: true },
-        })
-
-        if (!existing) return ResourceError.pcPreset.notFound()
-
-        if (existing.userId !== ctx.session.user.id) {
-          return AppError.forbidden('You can only edit your own PC presets')
-        }
-
-        return await ctx.prisma.userPcPreset.update({
-          where: { id },
-          data: updateData,
-          include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
-          },
-        })
-      }),
-
-    delete: mobileProtectedProcedure
-      .input(DeletePcPresetSchema)
-      .mutation(async ({ ctx, input }) => {
-        // Check if user owns the preset
-        const existing = await ctx.prisma.userPcPreset.findUnique({
-          where: { id: input.id },
-          select: { userId: true },
-        })
-
-        if (!existing) return ResourceError.pcPreset.notFound()
-
-        return existing.userId !== ctx.session.user.id
-          ? AppError.forbidden('You can only delete your own PC presets')
-          : await ctx.prisma.userPcPreset.delete({ where: { id: input.id } })
-      }),
-  }),
 })

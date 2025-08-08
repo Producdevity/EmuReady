@@ -27,6 +27,7 @@ import CommentThread from './CommentThread'
 import EditListingButton from './EditListingButton'
 import ReportListingButton from './ReportListingButton'
 import VerifyListingButton from './VerifyListingButton'
+import ViewConfigButton from './ViewConfigButton'
 import VoteReminderBanner from './vote-reminder/VoteReminderBanner'
 import VoteButtons from './VoteButtons'
 
@@ -369,7 +370,7 @@ function ListingDetailsClient(props: Props) {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex flex-col gap-2">
                 <EditListingButton
                   listingId={props.listing.id}
                   onSuccess={refreshData}
@@ -397,6 +398,10 @@ function ListingDetailsClient(props: Props) {
                   }
                   onSuccess={refreshData}
                 />
+                <ViewConfigButton
+                  listingId={props.listing.id}
+                  emulatorId={props.listing.emulatorId}
+                />
               </div>
             </div>
           </div>
@@ -407,6 +412,7 @@ function ListingDetailsClient(props: Props) {
               initialSortBy="newest"
               gameId={props.listing?.game.id}
               systemId={props.listing?.game.system?.id}
+              listingOwnerId={props.listing?.authorId}
             />
           </div>
         </Card>
