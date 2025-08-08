@@ -92,3 +92,6 @@ docs/SEO.md
 
 # Database backups
 /backups/
+
+# Sentry Config File
+.env.sentry-build-plugin
