@@ -27,7 +27,7 @@ export function getAllowedOrigins(): string[] {
   const envOrigins =
     process.env.NEXT_PUBLIC_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS
 
-  let origins: string[] = []
+  let origins: string[]
 
   if (envOrigins) {
     // Use environment variable origins if provided
@@ -63,16 +63,12 @@ export function getAllowedOrigins(): string[] {
   // Always include mobile app origins
   const mobileOrigins = ['capacitor://localhost', 'ionic://localhost']
   for (const mobileOrigin of mobileOrigins) {
-    if (!origins.includes(mobileOrigin)) {
-      origins.push(mobileOrigin)
-    }
+    if (!origins.includes(mobileOrigin)) origins.push(mobileOrigin)
   }
 
   // Include app URL if set
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
-  if (appUrl && !origins.includes(appUrl)) {
-    origins.push(appUrl)
-  }
+  if (appUrl && !origins.includes(appUrl)) origins.push(appUrl)
 
   return origins
 }
