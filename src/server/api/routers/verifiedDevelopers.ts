@@ -18,8 +18,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
   getVerifiedDevelopers: manageEmulatorVerifiedDevelopersProcedure
     .input(GetVerifiedDevelopersSchema)
     .query(async ({ ctx, input }) => {
-      const { emulatorId, userId, limit, page, search, emulatorFilter } =
-        input ?? {}
+      const { emulatorId, userId, limit, page, search, emulatorFilter } = input ?? {}
       const actualLimit = limit ?? 50
       const actualPage = page ?? 1
       const skip = (actualPage - 1) * actualLimit

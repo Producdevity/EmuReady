@@ -15,6 +15,7 @@ import {
   Badge,
   Code,
   Pagination,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -24,7 +25,6 @@ import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'
 import { getTrustActionBadgeColor } from '@/utils/badgeColors'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { TrustAction } from '@orm'
 
 type TrustLog = RouterOutput['trust']['getTrustLogs']['logs'][number]
@@ -116,9 +116,7 @@ function AdminTrustLogsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Trust System Logs
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trust System Logs</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Monitor and audit all trust score changes
           </p>
@@ -141,9 +139,7 @@ function AdminTrustLogsPage() {
       </div>
 
       {/*TODO: check if we can use AdminStatsDisplay */}
-      {trustStatsQuery.data && (
-        <TrustStatsOverview trustStatsData={trustStatsQuery.data} />
-      )}
+      {trustStatsQuery.data && <TrustStatsOverview trustStatsData={trustStatsQuery.data} />}
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
@@ -161,9 +157,7 @@ function AdminTrustLogsPage() {
             <Input
               as="select"
               value={selectedAction}
-              onChange={(ev) =>
-                setSelectedAction(ev.target.value as TrustAction)
-              }
+              onChange={(ev) => setSelectedAction(ev.target.value as TrustAction)}
               className="w-full"
             >
               <option value="">All Actions</option>
@@ -187,10 +181,7 @@ function AdminTrustLogsPage() {
         {trustLogsQuery.isPending ? (
           <LoadingSpinner text="Loading logs..." />
         ) : logs.length === 0 ? (
-          <AdminTableNoResults
-            icon={Shield}
-            hasQuery={!!table.search || !!selectedAction}
-          />
+          <AdminTableNoResults icon={Shield} hasQuery={!!table.search || !!selectedAction} />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -250,10 +241,7 @@ function AdminTrustLogsPage() {
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {logs.map((log: TrustLog) => (
-                  <tr
-                    key={log.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
+                  <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     {columnVisibility.isColumnVisible('user') && (
                       <td className="px-6 py-4">
                         <div>
@@ -271,10 +259,7 @@ function AdminTrustLogsPage() {
                     )}
                     {columnVisibility.isColumnVisible('action') && (
                       <td className="px-6 py-4">
-                        <Badge
-                          variant={getTrustActionBadgeColor(log.action)}
-                          size="sm"
-                        >
+                        <Badge variant={getTrustActionBadgeColor(log.action)} size="sm">
                           {TRUST_ACTIONS[log.action]?.description ?? log.action}
                         </Badge>
                       </td>
@@ -302,18 +287,15 @@ function AdminTrustLogsPage() {
                     )}
                     {columnVisibility.isColumnVisible('metadata') && (
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        <Code
-                          value={getLogMetadata(log)}
-                          label={getLogMetadata(log)}
-                        />
+                        <Code value={getLogMetadata(log)} label={getLogMetadata(log)} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('timestamp') && (
                       <td
                         className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
-                        title={formatDateTime(log.createdAt)}
+                        title={`Created at ${log.createdAt}`}
                       >
-                        {formatTimeAgo(log.createdAt)}
+                        <LocalizedDate date={log.createdAt} format="timeAgo" />
                       </td>
                     )}
                   </tr>

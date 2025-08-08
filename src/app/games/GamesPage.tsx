@@ -3,13 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import {
-  useState,
-  useEffect,
-  useCallback,
-  Suspense,
-  type ChangeEvent,
-} from 'react'
+import { useState, useEffect, useCallback, Suspense, type ChangeEvent } from 'react'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
@@ -48,10 +42,7 @@ function GamesContent() {
       | 'withListings'
       | 'noListings'
       | null
-    if (
-      urlFilter &&
-      ['all', 'withListings', 'noListings'].includes(urlFilter)
-    ) {
+    if (urlFilter && ['all', 'withListings', 'noListings'].includes(urlFilter)) {
       return urlFilter
     }
     // Default based on old hideNoListings parameter
@@ -87,11 +78,7 @@ function GamesContent() {
       const params = new URLSearchParams(searchParams.toString())
 
       // Helper to set or delete params based on default values
-      const setParam = (
-        key: string,
-        value: string | undefined,
-        defaultValue: string,
-      ) => {
+      const setParam = (key: string, value: string | undefined, defaultValue: string) => {
         if (value === defaultValue || !value) {
           params.delete(key)
         } else {
@@ -173,9 +160,7 @@ function GamesContent() {
     updateUrlParams({ hideNoListings: hide, page: 1 }, { push: true })
   }
 
-  const handleListingFilterChange = (
-    filter: 'all' | 'withListings' | 'noListings',
-  ) => {
+  const handleListingFilterChange = (filter: 'all' | 'withListings' | 'noListings') => {
     updateUrlParams(
       {
         listingFilter: filter,

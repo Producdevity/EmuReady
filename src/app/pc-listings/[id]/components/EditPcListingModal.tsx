@@ -46,12 +46,9 @@ function EditPcListingModal(props: Props) {
     { enabled: props.isOpen && props.canEdit },
   )
 
-  const performanceScalesQuery = api.listings.performanceScales.useQuery(
-    undefined,
-    {
-      enabled: props.isOpen && props.canEdit,
-    },
-  )
+  const performanceScalesQuery = api.listings.performanceScales.useQuery(undefined, {
+    enabled: props.isOpen && props.canEdit,
+  })
 
   const updateMutation = api.pcListings.update.useMutation({
     onSuccess: () => {
@@ -66,19 +63,17 @@ function EditPcListingModal(props: Props) {
     },
   })
 
-  const { control, handleSubmit, formState, reset } =
-    useForm<UpdatePcListingFormData>({
-      resolver: zodResolver(UpdatePcListingUserSchema),
-    })
+  const { control, handleSubmit, formState, reset } = useForm<UpdatePcListingFormData>({
+    resolver: zodResolver(UpdatePcListingUserSchema),
+  })
 
   // Reset form when modal opens or PC listing data changes
   useEffect(() => {
     if (pcListingQuery.data && props.isOpen) {
-      const defaultCustomFieldValues =
-        pcListingQuery.data.customFieldValues.map((cfv) => ({
-          customFieldDefinitionId: cfv.customFieldDefinition.id,
-          value: cfv.value,
-        }))
+      const defaultCustomFieldValues = pcListingQuery.data.customFieldValues.map((cfv) => ({
+        customFieldDefinitionId: cfv.customFieldDefinition.id,
+        value: cfv.value,
+      }))
 
       reset({
         id: pcListingQuery.data.id,
@@ -136,9 +131,8 @@ function EditPcListingModal(props: Props) {
                   Edit Time Expired
                 </h3>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-                  You can only edit PC listings within 60 minutes of approval.
-                  Since this time has passed, you&apos;ll need to create a new
-                  listing if you want to make changes.
+                  You can only edit PC listings within 60 minutes of approval. Since this time has
+                  passed, you&apos;ll need to create a new listing if you want to make changes.
                 </p>
                 <Link href="/pc-listings/new">
                   <Button variant="outline" size="sm" className="gap-2">
@@ -160,8 +154,7 @@ function EditPcListingModal(props: Props) {
             {pcListingQuery.error && (
               <div className="text-center py-8">
                 <p className="text-red-600 dark:text-red-400">
-                  Failed to load PC listing details:{' '}
-                  {pcListingQuery.error.message}
+                  Failed to load PC listing details: {pcListingQuery.error.message}
                 </p>
               </div>
             )}
@@ -170,21 +163,15 @@ function EditPcListingModal(props: Props) {
               <form onSubmit={handleFormSubmit} className="space-y-6">
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Enhanced Editing:</strong> You can now edit
-                    performance rating, PC specifications, custom fields, and
-                    notes.
+                    <strong>Enhanced Editing:</strong> You can now edit performance rating, PC
+                    specifications, custom fields, and notes.
                     {props.isPending && (
-                      <span>
-                        {' '}
-                        You can edit anytime while your PC listing is pending
-                        approval.
-                      </span>
+                      <span> You can edit anytime while your PC listing is pending approval.</span>
                     )}
                     {props.isApproved && (
                       <span>
                         {' '}
-                        After approval, you have {props.remainingMinutes}{' '}
-                        minutes to make edits.
+                        After approval, you have {props.remainingMinutes} minutes to make edits.
                       </span>
                     )}
                   </p>
@@ -200,8 +187,7 @@ function EditPcListingModal(props: Props) {
                       <strong>Game:</strong> {pcListingQuery.data.game.title}
                     </p>
                     <p>
-                      <strong>System:</strong>{' '}
-                      {pcListingQuery.data.game.system?.name}
+                      <strong>System:</strong> {pcListingQuery.data.game.system?.name}
                     </p>
                     <p>
                       <strong>CPU:</strong> {pcListingQuery.data.cpu.brand.name}{' '}
@@ -214,8 +200,7 @@ function EditPcListingModal(props: Props) {
                         : 'Integrated Graphics'}
                     </p>
                     <p>
-                      <strong>Emulator:</strong>{' '}
-                      {pcListingQuery.data.emulator.name}
+                      <strong>Emulator:</strong> {pcListingQuery.data.emulator.name}
                     </p>
                   </div>
                 </div>
@@ -310,8 +295,7 @@ function EditPcListingModal(props: Props) {
 
                 {/* Custom Fields */}
                 {pcListingQuery.data.emulator.customFieldDefinitions &&
-                  pcListingQuery.data.emulator.customFieldDefinitions.length >
-                    0 && (
+                  pcListingQuery.data.emulator.customFieldDefinitions.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         Emulator Settings
@@ -362,11 +346,7 @@ function EditPcListingModal(props: Props) {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    isLoading={isSubmitting}
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
                     Update PC Listing
                   </Button>
                 </div>

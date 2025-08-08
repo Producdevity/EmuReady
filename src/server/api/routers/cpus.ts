@@ -16,15 +16,7 @@ import { Prisma } from '@orm'
 
 export const cpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
-    const {
-      search,
-      brandId,
-      limit = 20,
-      offset = 0,
-      page,
-      sortField,
-      sortDirection,
-    } = input ?? {}
+    const { search, brandId, limit = 20, offset = 0, page, sortField, sortDirection } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
@@ -116,91 +108,83 @@ export const cpusRouter = createTRPCRouter({
     }
   }),
 
-  byId: publicProcedure
-    .input(GetCpuByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const cpu = await ctx.prisma.cpu.findUnique({
-        where: { id: input.id },
-        include: { brand: true, _count: { select: { pcListings: true } } },
-      })
+  byId: publicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {
+    const cpu = await ctx.prisma.cpu.findUnique({
+      where: { id: input.id },
+      include: { brand: true, _count: { select: { pcListings: true } } },
+    })
 
-      return cpu ?? ResourceError.cpu.notFound()
-    }),
+    return cpu ?? ResourceError.cpu.notFound()
+  }),
 
-  create: manageDevicesProcedure
-    .input(CreateCpuSchema)
-    .mutation(async ({ ctx, input }) => {
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.brandId },
-      })
+  create: manageDevicesProcedure.input(CreateCpuSchema).mutation(async ({ ctx, input }) => {
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.brandId },
+    })
 
-      if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) return ResourceError.deviceBrand.notFound()
 
-      const existingCpu = await ctx.prisma.cpu.findFirst({
-        where: {
-          brandId: input.brandId,
-          modelName: { equals: input.modelName, mode: 'insensitive' },
-        },
-      })
+    const existingCpu = await ctx.prisma.cpu.findFirst({
+      where: {
+        brandId: input.brandId,
+        modelName: { equals: input.modelName, mode: 'insensitive' },
+      },
+    })
 
-      if (existingCpu) return ResourceError.cpu.alreadyExists(input.modelName)
+    if (existingCpu) return ResourceError.cpu.alreadyExists(input.modelName)
 
-      return ctx.prisma.cpu.create({
-        data: input,
-        include: { brand: true, _count: { select: { pcListings: true } } },
-      })
-    }),
+    return ctx.prisma.cpu.create({
+      data: input,
+      include: { brand: true, _count: { select: { pcListings: true } } },
+    })
+  }),
 
-  update: manageDevicesProcedure
-    .input(UpdateCpuSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
+  update: manageDevicesProcedure.input(UpdateCpuSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input
 
-      const cpu = await ctx.prisma.cpu.findUnique({ where: { id } })
+    const cpu = await ctx.prisma.cpu.findUnique({ where: { id } })
 
-      if (!cpu) return ResourceError.cpu.notFound()
+    if (!cpu) return ResourceError.cpu.notFound()
 
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.brandId },
-      })
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.brandId },
+    })
 
-      if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) return ResourceError.deviceBrand.notFound()
 
-      const existingCpu = await ctx.prisma.cpu.findFirst({
-        where: {
-          brandId: input.brandId,
-          modelName: { equals: input.modelName, mode: 'insensitive' },
-          id: { not: id },
-        },
-      })
+    const existingCpu = await ctx.prisma.cpu.findFirst({
+      where: {
+        brandId: input.brandId,
+        modelName: { equals: input.modelName, mode: 'insensitive' },
+        id: { not: id },
+      },
+    })
 
-      if (existingCpu) return ResourceError.cpu.alreadyExists(input.modelName)
+    if (existingCpu) return ResourceError.cpu.alreadyExists(input.modelName)
 
-      return ctx.prisma.cpu.update({
-        where: { id },
-        data,
-        include: { brand: true, _count: { select: { pcListings: true } } },
-      })
-    }),
+    return ctx.prisma.cpu.update({
+      where: { id },
+      data,
+      include: { brand: true, _count: { select: { pcListings: true } } },
+    })
+  }),
 
-  delete: manageDevicesProcedure
-    .input(DeleteCpuSchema)
-    .mutation(async ({ ctx, input }) => {
-      const existingCpu = await ctx.prisma.cpu.findUnique({
-        where: { id: input.id },
-        include: { _count: { select: { pcListings: true } } },
-      })
+  delete: manageDevicesProcedure.input(DeleteCpuSchema).mutation(async ({ ctx, input }) => {
+    const existingCpu = await ctx.prisma.cpu.findUnique({
+      where: { id: input.id },
+      include: { _count: { select: { pcListings: true } } },
+    })
 
-      if (!existingCpu) return ResourceError.cpu.notFound()
+    if (!existingCpu) return ResourceError.cpu.notFound()
 
-      if (existingCpu._count.pcListings > 0) {
-        return AppError.conflict(
-          `Cannot delete CPU "${existingCpu.modelName}" because it has ${existingCpu._count.pcListings} active PC listing(s). Please remove all PC listings for this CPU first.`,
-        )
-      }
+    if (existingCpu._count.pcListings > 0) {
+      return AppError.conflict(
+        `Cannot delete CPU "${existingCpu.modelName}" because it has ${existingCpu._count.pcListings} active PC listing(s). Please remove all PC listings for this CPU first.`,
+      )
+    }
 
-      return ctx.prisma.cpu.delete({ where: { id: input.id } })
-    }),
+    return ctx.prisma.cpu.delete({ where: { id: input.id } })
+  }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([

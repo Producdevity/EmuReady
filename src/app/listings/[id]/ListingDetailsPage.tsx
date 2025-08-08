@@ -27,9 +27,7 @@ function ListingDetailsPage() {
     <ListingDetailsClient
       listing={sanitizeForClient(listingQuery.data)}
       successRate={listingQuery.data.successRate}
-      upVotes={Math.round(
-        listingQuery.data.successRate * listingQuery.data._count.votes,
-      )}
+      upVotes={Math.round(listingQuery.data.successRate * listingQuery.data._count.votes)}
       totalVotes={listingQuery.data._count.votes}
       userVote={listingQuery.data.userVote}
     />

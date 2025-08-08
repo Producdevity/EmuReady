@@ -12,10 +12,7 @@ import {
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
-export function Command({
-  className,
-  ...props
-}: ComponentProps<typeof CommandPrimitive>) {
+export function Command({ className, ...props }: ComponentProps<typeof CommandPrimitive>) {
   return (
     <CommandPrimitive
       data-slot="command"
@@ -64,10 +61,7 @@ export function CommandInput({
   ...props
 }: ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div
-      data-slot="command-input-wrapper"
-      className="flex h-9 items-center gap-2 border-b px-3"
-    >
+    <div data-slot="command-input-wrapper" className="flex h-9 items-center gap-2 border-b px-3">
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
         data-slot="command-input"
@@ -81,25 +75,17 @@ export function CommandInput({
   )
 }
 
-export function CommandList({
-  className,
-  ...props
-}: ComponentProps<typeof CommandPrimitive.List>) {
+export function CommandList({ className, ...props }: ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       data-slot="command-list"
-      className={cn(
-        'max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto',
-        className,
-      )}
+      className={cn('max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto', className)}
       {...props}
     />
   )
 }
 
-export function CommandEmpty({
-  ...props
-}: ComponentProps<typeof CommandPrimitive.Empty>) {
+export function CommandEmpty({ ...props }: ComponentProps<typeof CommandPrimitive.Empty>) {
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
@@ -138,10 +124,7 @@ export function CommandSeparator({
   )
 }
 
-export function CommandItem({
-  className,
-  ...props
-}: ComponentProps<typeof CommandPrimitive.Item>) {
+export function CommandItem({ className, ...props }: ComponentProps<typeof CommandPrimitive.Item>) {
   return (
     <CommandPrimitive.Item
       data-slot="command-item"
@@ -154,17 +137,11 @@ export function CommandItem({
   )
 }
 
-export function CommandShortcut({
-  className,
-  ...props
-}: ComponentProps<'span'>) {
+export function CommandShortcut({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span
       data-slot="command-shortcut"
-      className={cn(
-        'text-muted-foreground ml-auto text-xs tracking-widest',
-        className,
-      )}
+      className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)}
       {...props}
     />
   )

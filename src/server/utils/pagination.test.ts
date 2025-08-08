@@ -104,12 +104,7 @@ describe('pagination utilities', () => {
       const where = { status: 'active' }
       const orderBy = { createdAt: 'desc' }
 
-      const result = await paginatedQuery(
-        mockModel,
-        { where, orderBy },
-        { page: 2 },
-        10,
-      )
+      const result = await paginatedQuery(mockModel, { where, orderBy }, { page: 2 }, 10)
 
       expect(mockModel.count).toHaveBeenCalledWith({ where })
       expect(mockModel.findMany).toHaveBeenCalledWith({
@@ -150,16 +145,11 @@ describe('pagination utilities', () => {
     const sortConfig = {
       title: (dir: 'asc' | 'desc') => ({ title: dir }),
       'user.name': (dir: 'asc' | 'desc') => ({ user: { name: dir } }),
-      device: (dir: 'asc' | 'desc') => [
-        { brand: { name: dir } },
-        { modelName: dir },
-      ],
+      device: (dir: 'asc' | 'desc') => [{ brand: { name: dir } }, { modelName: dir }],
     }
 
     it('should build orderBy from sort config', () => {
-      expect(buildOrderBy<any>(sortConfig, 'title', 'asc')).toEqual([
-        { title: 'asc' },
-      ])
+      expect(buildOrderBy<any>(sortConfig, 'title', 'asc')).toEqual([{ title: 'asc' }])
 
       expect(buildOrderBy<any>(sortConfig, 'user.name', 'desc')).toEqual([
         { user: { name: 'desc' } },
@@ -173,16 +163,17 @@ describe('pagination utilities', () => {
 
     it('should return default orderBy when no sort specified', () => {
       const defaultOrderBy = { createdAt: 'desc' }
-      expect(
-        buildOrderBy<any>(sortConfig, undefined, undefined, defaultOrderBy),
-      ).toEqual([{ createdAt: 'desc' }])
+      expect(buildOrderBy<any>(sortConfig, undefined, undefined, defaultOrderBy)).toEqual([
+        { createdAt: 'desc' },
+      ])
     })
 
     it('should add default as secondary sort when sorting by different field', () => {
       const defaultOrderBy = { createdAt: 'desc' }
-      expect(
-        buildOrderBy<any>(sortConfig, 'title', 'asc', defaultOrderBy),
-      ).toEqual([{ title: 'asc' }, { createdAt: 'desc' }])
+      expect(buildOrderBy<any>(sortConfig, 'title', 'asc', defaultOrderBy)).toEqual([
+        { title: 'asc' },
+        { createdAt: 'desc' },
+      ])
     })
 
     it('should not duplicate createdAt when already sorting by it', () => {
@@ -193,12 +184,7 @@ describe('pagination utilities', () => {
       const defaultOrderBy = { createdAt: 'desc' }
 
       expect(
-        buildOrderBy<any>(
-          sortConfigWithCreatedAt,
-          'createdAt',
-          'asc',
-          defaultOrderBy,
-        ),
+        buildOrderBy<any>(sortConfigWithCreatedAt, 'createdAt', 'asc', defaultOrderBy),
       ).toEqual([{ createdAt: 'asc' }])
     })
   })

@@ -82,10 +82,7 @@ export async function retryOperation<T>(
     } catch (error) {
       lastError = error as Error
       if (i < maxRetries - 1) {
-        console.log(
-          `Retry ${i + 1}/${maxRetries} after error:`,
-          lastError.message,
-        )
+        console.log(`Retry ${i + 1}/${maxRetries} after error:`, lastError.message)
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }

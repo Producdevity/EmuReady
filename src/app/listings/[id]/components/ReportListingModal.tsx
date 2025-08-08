@@ -62,9 +62,7 @@ function ReportListingModal(props: Props) {
         description: description.trim() || undefined,
       } satisfies RouterInput['listingReports']['create'])
 
-      toast.success(
-        'Report submitted successfully. Thank you for helping keep our community safe!',
-      )
+      toast.success('Report submitted successfully. Thank you for helping keep our community safe!')
       props.onSuccess()
     } catch (err) {
       console.error(err)
@@ -82,9 +80,8 @@ function ReportListingModal(props: Props) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Help us maintain a safe and accurate community by reporting
-            inappropriate content. All reports are reviewed by our moderation
-            team.
+            Help us maintain a safe and accurate community by reporting inappropriate content. All
+            reports are reviewed by our moderation team.
           </p>
         </div>
 
@@ -116,9 +113,7 @@ function ReportListingModal(props: Props) {
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
             Additional details{' '}
-            {reason === ReportReason.OTHER && (
-              <span className="text-red-500">*</span>
-            )}
+            {reason === ReportReason.OTHER && <span className="text-red-500">*</span>}
           </label>
           <textarea
             id="description"

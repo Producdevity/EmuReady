@@ -3,9 +3,7 @@ import { GamesPage } from './pages/GamesPage'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('Pagination Tests', () => {
-  test('should display pagination controls when content exceeds page limit', async ({
-    page,
-  }) => {
+  test('should display pagination controls when content exceeds page limit', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
     await listingsPage.verifyPageLoaded()
@@ -14,9 +12,7 @@ test.describe('Pagination Tests', () => {
     const paginationControls = page.locator(
       '[data-testid="pagination"], nav[aria-label*="pagination"], .pagination',
     )
-    const hasPagination = await paginationControls
-      .isVisible({ timeout: 3000 })
-      .catch(() => false)
+    const hasPagination = await paginationControls.isVisible({ timeout: 3000 }).catch(() => false)
 
     if (hasPagination) {
       // Verify pagination elements
@@ -44,34 +40,24 @@ test.describe('Pagination Tests', () => {
     }
   })
 
-  test('should navigate through pages using pagination controls', async ({
-    page,
-  }) => {
+  test('should navigate through pages using pagination controls', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
     // Look for pagination
-    const nextButton = page
-      .getByRole('button', { name: /next/i })
-      .or(page.getByLabel(/next page/i))
-    const hasNext = await nextButton
-      .isVisible({ timeout: 3000 })
-      .catch(() => false)
+    const nextButton = page.getByRole('button', { name: /next/i }).or(page.getByLabel(/next page/i))
+    const hasNext = await nextButton.isVisible({ timeout: 3000 }).catch(() => false)
 
     if (hasNext && !(await nextButton.isDisabled())) {
       // Get first item on page 1
-      const firstItemPage1 = await listingsPage.listingItems
-        .first()
-        .textContent()
+      const firstItemPage1 = await listingsPage.listingItems.first().textContent()
 
       // Click next
       await nextButton.click()
       await page.waitForTimeout(1000) // Wait for content update
 
       // Get first item on page 2
-      const firstItemPage2 = await listingsPage.listingItems
-        .first()
-        .textContent()
+      const firstItemPage2 = await listingsPage.listingItems.first().textContent()
 
       // Items should be different
       expect(firstItemPage1).not.toBe(firstItemPage2)
@@ -87,9 +73,7 @@ test.describe('Pagination Tests', () => {
       await page.waitForTimeout(1000)
 
       // Should see same first item as before
-      const firstItemPage1Again = await listingsPage.listingItems
-        .first()
-        .textContent()
+      const firstItemPage1Again = await listingsPage.listingItems.first().textContent()
       expect(firstItemPage1Again).toBe(firstItemPage1)
     } else {
       console.log('No pagination available - not enough content')
@@ -121,10 +105,7 @@ test.describe('Pagination Tests', () => {
 
     // Or try with next button
     const nextButton = page.getByRole('button', { name: /next/i })
-    if (
-      (await nextButton.isVisible({ timeout: 2000 })) &&
-      !(await nextButton.isDisabled())
-    ) {
+    if ((await nextButton.isVisible({ timeout: 2000 })) && !(await nextButton.isDisabled())) {
       const currentUrl = page.url()
       await nextButton.click()
       await page.waitForTimeout(1000)
@@ -151,10 +132,7 @@ test.describe('Pagination Tests', () => {
 
         // Check if pagination still works with filter
         const nextButton = page.getByRole('button', { name: /next/i })
-        if (
-          (await nextButton.isVisible()) &&
-          !(await nextButton.isDisabled())
-        ) {
+        if ((await nextButton.isVisible()) && !(await nextButton.isDisabled())) {
           await nextButton.click()
           await page.waitForTimeout(1000)
 
@@ -204,9 +182,7 @@ test.describe('Pagination Tests', () => {
 
     // Focus on pagination area
     const pagination = page
-      .locator(
-        '[data-testid="pagination"], nav[aria-label*="pagination"], .pagination',
-      )
+      .locator('[data-testid="pagination"], nav[aria-label*="pagination"], .pagination')
       .first()
 
     if (await pagination.isVisible({ timeout: 3000 })) {
@@ -251,14 +227,12 @@ test.describe('Pagination Tests', () => {
       .isVisible({ timeout: 2000 })
       .catch(() => false)
     const hasListings = (await listingsPage.getListingCount()) > 0
-    const isFirstPage =
-      page.url().includes('page=1') || !page.url().includes('page=')
+    const isFirstPage = page.url().includes('page=1') || !page.url().includes('page=')
     const currentUrl = page.url()
     const redirectedToValid = !currentUrl.includes('page=9999')
 
     // One of these should be true: no results shown, has listings, redirected to first page, or redirected to valid page
-    const handledGracefully =
-      noResults || hasListings || isFirstPage || redirectedToValid
+    const handledGracefully = noResults || hasListings || isFirstPage || redirectedToValid
 
     if (!handledGracefully) {
       console.log('Edge case handling failed:', {
@@ -273,9 +247,7 @@ test.describe('Pagination Tests', () => {
     expect(handledGracefully).toBe(true)
   })
 
-  test('should update pagination when changing items per page', async ({
-    page,
-  }) => {
+  test('should update pagination when changing items per page', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
@@ -298,9 +270,7 @@ test.describe('Pagination Tests', () => {
         const newValue = await selector.inputValue()
         expect(newValue).not.toBe(currentValue)
 
-        console.log(
-          `Changed items per page from ${currentValue} to ${newValue}`,
-        )
+        console.log(`Changed items per page from ${currentValue} to ${newValue}`)
         break
       }
     }

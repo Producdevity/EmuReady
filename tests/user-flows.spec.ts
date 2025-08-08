@@ -4,9 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('User Flow Tests', () => {
-  test('should complete flow: browse games → view game → check listings', async ({
-    page,
-  }) => {
+  test('should complete flow: browse games → view game → check listings', async ({ page }) => {
     // Start at home
     const homePage = new HomePage(page)
     await homePage.goto()
@@ -35,9 +33,7 @@ test.describe('User Flow Tests', () => {
 
       // Verify we're viewing the same game we clicked on
       if (firstGameTitle) {
-        expect(detailTitle?.toLowerCase()).toContain(
-          firstGameTitle.toLowerCase().split(' ')[0],
-        )
+        expect(detailTitle?.toLowerCase()).toContain(firstGameTitle.toLowerCase().split(' ')[0])
       }
 
       // Check for listings section
@@ -59,9 +55,7 @@ test.describe('User Flow Tests', () => {
     }
   })
 
-  test('should complete flow: search listings → filter → view details', async ({
-    page,
-  }) => {
+  test('should complete flow: search listings → filter → view details', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
@@ -89,19 +83,14 @@ test.describe('User Flow Tests', () => {
       await page.waitForURL(/\/listings\/[^\/]+/)
 
       // Should show listing information
-      const hasGameTitle = await page
-        .getByRole('heading')
-        .filter({ hasText: /\w+/ })
-        .isVisible()
+      const hasGameTitle = await page.getByRole('heading').filter({ hasText: /\w+/ }).isVisible()
       expect(hasGameTitle).toBe(true)
 
       // Verify the listing details page contains info from the listing we clicked
       if (listingText) {
         const pageContent = await page.textContent('body')
         // Check if the page contains part of the listing text (game name, device, etc)
-        const listingWords = listingText
-          .split(' ')
-          .filter((word) => word.length > 3)
+        const listingWords = listingText.split(' ').filter((word) => word.length > 3)
         const hasListingContent = listingWords.some((word) =>
           pageContent?.toLowerCase().includes(word.toLowerCase()),
         )
@@ -162,9 +151,7 @@ test.describe('User Flow Tests', () => {
       const clearedCount = await listingsPage.getListingCount()
       expect(clearedCount).toBeGreaterThanOrEqual(filteredCount)
 
-      console.log(
-        `Cleared filters: ${filteredCount} → ${clearedCount} listings`,
-      )
+      console.log(`Cleared filters: ${filteredCount} → ${clearedCount} listings`)
     }
   })
 
@@ -199,9 +186,7 @@ test.describe('User Flow Tests', () => {
     await expect(page).toHaveURL(navigationPath[1])
   })
 
-  test('should maintain state during complex interactions', async ({
-    page,
-  }) => {
+  test('should maintain state during complex interactions', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
@@ -282,9 +267,7 @@ test.describe('User Flow Tests', () => {
       await homePage.openMobileMenu()
 
       // Navigate to games via mobile menu
-      const mobileGamesLink = page
-        .getByRole('link', { name: /^games$/i })
-        .last()
+      const mobileGamesLink = page.getByRole('link', { name: /^games$/i }).last()
       await mobileGamesLink.click()
       await expect(page).toHaveURL('/games')
     } else {
@@ -343,9 +326,7 @@ test.describe('User Flow Tests', () => {
 })
 
 test.describe('Cross-Page User Flows', () => {
-  test('should handle flow between PC and handheld listings', async ({
-    page,
-  }) => {
+  test('should handle flow between PC and handheld listings', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
@@ -375,9 +356,7 @@ test.describe('Cross-Page User Flows', () => {
     await gamesPage.goto()
 
     // Look for any view preferences (grid/list toggle, sort options)
-    const viewToggles = page
-      .locator('button')
-      .filter({ hasText: /view|display|layout|grid|list/i })
+    const viewToggles = page.locator('button').filter({ hasText: /view|display|layout|grid|list/i })
 
     if ((await viewToggles.count()) > 0) {
       const toggle = viewToggles.first()
@@ -396,9 +375,7 @@ test.describe('Cross-Page User Flows', () => {
 
       // Preference might be remembered
       const currentState = await toggle.textContent()
-      console.log(
-        `View preference ${currentState === newState ? 'remembered' : 'reset'}`,
-      )
+      console.log(`View preference ${currentState === newState ? 'remembered' : 'reset'}`)
     }
   })
 })

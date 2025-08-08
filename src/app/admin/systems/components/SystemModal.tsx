@@ -56,10 +56,7 @@ function SystemModal(props: Props) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label
-            htmlFor="name"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="name" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             System Name
           </label>
           <Input

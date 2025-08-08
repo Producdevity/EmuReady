@@ -1,9 +1,6 @@
 import { type Metadata } from 'next'
 import { PageWithMetadata } from '@/components/seo/PageWithMetadata'
-import {
-  generatePageMetadata,
-  generateStructuredData,
-} from '@/lib/seo/metadata'
+import { generatePageMetadata, generateStructuredData } from '@/lib/seo/metadata'
 import HomePage from './HomePage'
 
 export const metadata: Metadata = generatePageMetadata(

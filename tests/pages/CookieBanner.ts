@@ -41,9 +41,7 @@ export class CookieBanner {
     return this.page
       .locator('.fixed.inset-0')
       .filter({
-        has: this.page.locator(
-          '[class*="cookie"], [class*="consent"], [class*="gdpr"]',
-        ),
+        has: this.page.locator('[class*="cookie"], [class*="consent"], [class*="gdpr"]'),
       })
       .or(
         this.page.locator(
@@ -79,9 +77,7 @@ export class CookieBanner {
   async dismissIfPresent() {
     try {
       // Check if cookie banner is visible
-      const bannerVisible = await this.cookieBanner
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
+      const bannerVisible = await this.cookieBanner.isVisible({ timeout: 2000 }).catch(() => false)
       if (!bannerVisible) {
         return
       }
@@ -110,12 +106,8 @@ export class CookieBanner {
       }
 
       // Try clicking the backdrop to dismiss
-      const backdrop = this.page.locator(
-        '.absolute.inset-0.bg-black\\/30.backdrop-blur-\\[2px\\]',
-      )
-      const backdropVisible = await backdrop
-        .isVisible({ timeout: 1000 })
-        .catch(() => false)
+      const backdrop = this.page.locator('.absolute.inset-0.bg-black\\/30.backdrop-blur-\\[2px\\]')
+      const backdropVisible = await backdrop.isVisible({ timeout: 1000 }).catch(() => false)
       if (backdropVisible) {
         await backdrop.click({ force: true })
         await this.page.waitForTimeout(500)

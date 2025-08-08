@@ -66,16 +66,12 @@ test.describe('Filtering Tests', () => {
 
           // Verify the listing actually contains the emulator name
           if (emulatorName && firstListingText) {
-            expect(firstListingText.toLowerCase()).toContain(
-              emulatorName.toLowerCase(),
-            )
+            expect(firstListingText.toLowerCase()).toContain(emulatorName.toLowerCase())
           }
         }
 
         // Verify filter is active
-        expect(await listingsPage.emulatorFilter.textContent()).toContain(
-          emulatorName || '',
-        )
+        expect(await listingsPage.emulatorFilter.textContent()).toContain(emulatorName || '')
       }
     }
   })
@@ -113,9 +109,7 @@ test.describe('Filtering Tests', () => {
         }
 
         // Verify filter is applied
-        expect(await listingsPage.performanceFilter.textContent()).toContain(
-          performanceLevel || '',
-        )
+        expect(await listingsPage.performanceFilter.textContent()).toContain(performanceLevel || '')
       }
     }
   })
@@ -151,9 +145,7 @@ test.describe('Filtering Tests', () => {
     if (filtersApplied > 1) {
       // Results should be filtered by both criteria
       const filteredCount = await listingsPage.getListingCount()
-      console.log(
-        `Applied ${filtersApplied} filters, showing ${filteredCount} results`,
-      )
+      console.log(`Applied ${filtersApplied} filters, showing ${filteredCount} results`)
 
       // Clear filters button should be visible
       if (await listingsPage.clearFiltersButton.isVisible({ timeout: 2000 })) {
@@ -226,9 +218,7 @@ test.describe('Filtering Tests', () => {
     }
   })
 
-  test('should show appropriate message when no results match filters', async ({
-    page,
-  }) => {
+  test('should show appropriate message when no results match filters', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
@@ -262,9 +252,7 @@ test.describe('Filtering Tests', () => {
 
       if (resultCount === 0) {
         // Should show no results message
-        const noResultsMessage = await listingsPage.noListingsMessage.isVisible(
-          { timeout: 3000 },
-        )
+        const noResultsMessage = await listingsPage.noListingsMessage.isVisible({ timeout: 3000 })
         expect(noResultsMessage).toBe(true)
 
         // Clear filters should still be available
@@ -279,9 +267,7 @@ test.describe('Filtering Tests', () => {
     }
   })
 
-  test('should handle filter combinations that produce no results', async ({
-    page,
-  }) => {
+  test('should handle filter combinations that produce no results', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
@@ -298,9 +284,7 @@ test.describe('Filtering Tests', () => {
       // Select an emulator that might not support this device
       await listingsPage.emulatorFilter.click()
       const emulatorOptions = page.getByRole('option')
-      const lastOption = emulatorOptions.nth(
-        (await emulatorOptions.count()) - 1,
-      )
+      const lastOption = emulatorOptions.nth((await emulatorOptions.count()) - 1)
       await lastOption.click()
       await page.waitForTimeout(1000)
 
@@ -342,9 +326,7 @@ test.describe('Quick Filter Tests', () => {
       const isActive =
         (await firstQuickFilter.getAttribute('aria-pressed')) === 'true' ||
         (await firstQuickFilter.getAttribute('data-state')) === 'active' ||
-        ((await firstQuickFilter.getAttribute('class')) || '').includes(
-          'active',
-        )
+        ((await firstQuickFilter.getAttribute('class')) || '').includes('active')
 
       expect(isActive).toBe(true)
     } else {
@@ -377,9 +359,7 @@ test.describe('Quick Filter Tests', () => {
         await page.waitForTimeout(500)
 
         // Filters should now be visible
-        await expect(
-          listingsPage.deviceFilter.or(listingsPage.emulatorFilter),
-        ).toBeVisible()
+        await expect(listingsPage.deviceFilter.or(listingsPage.emulatorFilter)).toBeVisible()
       }
 
       console.log('Mobile filter toggle works correctly')

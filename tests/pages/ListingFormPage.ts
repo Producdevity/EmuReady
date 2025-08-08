@@ -30,9 +30,7 @@ export class ListingFormPage extends BasePage {
   }
 
   get performanceRating() {
-    return this.page.locator(
-      '[data-testid="performance-rating"], .performance-rating',
-    )
+    return this.page.locator('[data-testid="performance-rating"], .performance-rating')
   }
 
   get notesTextarea() {
@@ -67,9 +65,7 @@ export class ListingFormPage extends BasePage {
 
   // Custom fields section
   get customFieldsSection() {
-    return this.page.locator(
-      '[data-testid="custom-fields"], .custom-fields, fieldset',
-    )
+    return this.page.locator('[data-testid="custom-fields"], .custom-fields, fieldset')
   }
 
   get customFieldInputs() {
@@ -205,9 +201,7 @@ export class ListingFormPage extends BasePage {
     if (expectedError) {
       const errorText = await this.errorMessages.first().textContent()
       if (!errorText?.toLowerCase().includes(expectedError.toLowerCase())) {
-        throw new Error(
-          `Expected error containing "${expectedError}" but got "${errorText}"`,
-        )
+        throw new Error(`Expected error containing "${expectedError}" but got "${errorText}"`)
       }
     }
   }
@@ -223,9 +217,7 @@ export class ListingFormPage extends BasePage {
 
   async hasValidationErrors(): Promise<boolean> {
     try {
-      await this.errorMessages
-        .first()
-        .waitFor({ state: 'visible', timeout: 2000 })
+      await this.errorMessages.first().waitFor({ state: 'visible', timeout: 2000 })
       return true
     } catch {
       return false

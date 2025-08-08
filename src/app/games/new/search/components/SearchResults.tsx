@@ -10,10 +10,7 @@ interface SearchResultsProps {
   onPreview: (game: TGDBGame) => void
   onSelect: (game: TGDBGame, extras: { isErotic: boolean }) => void
   isSelecting: boolean
-  existingGames: Record<
-    number,
-    { id: string; title: string; systemName: string }
-  >
+  existingGames: Record<number, { id: string; title: string; systemName: string }>
 }
 
 function SearchResults(props: SearchResultsProps) {
@@ -28,9 +25,7 @@ function SearchResults(props: SearchResultsProps) {
         className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center"
       >
         <ImageIcon className="h-16 w-16 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-          No games found
-        </h3>
+        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No games found</h3>
         <p className="text-slate-600 dark:text-slate-400">
           Try adjusting your search query or selecting a different system
         </p>
@@ -45,9 +40,7 @@ function SearchResults(props: SearchResultsProps) {
       transition={{ duration: 0.5, delay: 0.2 }}
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-          Search Results
-        </h2>
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Search Results</h2>
         <div className="text-sm text-slate-600 dark:text-slate-400">
           Found {props.searchResults.data.games.length} game
           {props.searchResults.data.games.length !== 1 ? 's' : ''}

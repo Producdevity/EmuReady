@@ -14,12 +14,8 @@ export default function usePcListingsState() {
   // Parse initial state from URL
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1)
   const [search, setSearch] = useState(searchParams.get('search') || '')
-  const [cpuIds, setCpuIds] = useState<string[]>(
-    parseArrayParam(searchParams.get('cpuIds')),
-  )
-  const [gpuIds, setGpuIds] = useState<string[]>(
-    parseArrayParam(searchParams.get('gpuIds')),
-  )
+  const [cpuIds, setCpuIds] = useState<string[]>(parseArrayParam(searchParams.get('cpuIds')))
+  const [gpuIds, setGpuIds] = useState<string[]>(parseArrayParam(searchParams.get('gpuIds')))
   const [systemIds, setSystemIds] = useState<string[]>(
     parseArrayParam(searchParams.get('systemIds')),
   )
@@ -30,14 +26,10 @@ export default function usePcListingsState() {
     parseArrayParam(searchParams.get('emulatorIds')),
   )
   const [minMemory, setMinMemory] = useState<number | null>(
-    searchParams.get('minMemory')
-      ? Number(searchParams.get('minMemory'))
-      : null,
+    searchParams.get('minMemory') ? Number(searchParams.get('minMemory')) : null,
   )
   const [maxMemory, setMaxMemory] = useState<number | null>(
-    searchParams.get('maxMemory')
-      ? Number(searchParams.get('maxMemory'))
-      : null,
+    searchParams.get('maxMemory') ? Number(searchParams.get('maxMemory')) : null,
   )
   const [sortField, setSortField] = useState<SortField | null>(
     (searchParams.get('sortField') as SortField) || null,
@@ -45,9 +37,7 @@ export default function usePcListingsState() {
   const [sortDirection, setSortDirection] = useState<SortDirection | null>(
     (searchParams.get('sortDirection') as SortDirection) || null,
   )
-  const [myListings, setMyListings] = useState(
-    searchParams.get('myListings') === 'true',
-  )
+  const [myListings, setMyListings] = useState(searchParams.get('myListings') === 'true')
 
   // Update URL when state changes
   useEffect(() => {
@@ -58,10 +48,8 @@ export default function usePcListingsState() {
     if (cpuIds.length) params.set('cpuIds', JSON.stringify(cpuIds))
     if (gpuIds.length) params.set('gpuIds', JSON.stringify(gpuIds))
     if (systemIds.length) params.set('systemIds', JSON.stringify(systemIds))
-    if (performanceIds.length)
-      params.set('performanceIds', JSON.stringify(performanceIds))
-    if (emulatorIds.length)
-      params.set('emulatorIds', JSON.stringify(emulatorIds))
+    if (performanceIds.length) params.set('performanceIds', JSON.stringify(performanceIds))
+    if (emulatorIds.length) params.set('emulatorIds', JSON.stringify(emulatorIds))
     if (minMemory !== null) params.set('minMemory', minMemory.toString())
     if (maxMemory !== null) params.set('maxMemory', maxMemory.toString())
     if (sortField) params.set('sortField', sortField)

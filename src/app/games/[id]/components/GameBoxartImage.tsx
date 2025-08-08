@@ -81,16 +81,11 @@ export function GameBoxartImage(props: Props) {
 
   const getCurrentImageUrl = () => {
     return (
-      getImageUrl(getFieldValue(activeImageType), props.game.title) ||
-      getGameImageUrl(props.game)
+      getImageUrl(getFieldValue(activeImageType), props.game.title) || getGameImageUrl(props.game)
     )
   }
 
-  const availableImageTypes: ImageField[] = [
-    'imageUrl',
-    'boxartUrl',
-    'bannerUrl',
-  ]
+  const availableImageTypes: ImageField[] = ['imageUrl', 'boxartUrl', 'bannerUrl']
 
   return (
     <div className={cn('w-full md:w-1/4 flex-shrink-0', props.className)}>
@@ -119,9 +114,7 @@ export function GameBoxartImage(props: Props) {
                 >
                   <ImageIconLucide className="h-3 w-3" />
                   {getFieldLabel(type)}
-                  {!hasImage && (
-                    <span className="text-[10px] opacity-60">(empty)</span>
-                  )}
+                  {!hasImage && <span className="text-[10px] opacity-60">(empty)</span>}
                 </button>
               )
             })}

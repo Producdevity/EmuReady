@@ -33,8 +33,7 @@ function UserDetailsContributions(props: Props) {
                   </span>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     <Link href={`/listings/${vote.listing.id}`}>
-                      {vote.listing.game?.title} on{' '}
-                      {vote.listing.device?.brand.name}{' '}
+                      {vote.listing.game?.title} on {vote.listing.device?.brand.name}{' '}
                       {vote.listing.device?.modelName}
                     </Link>
                   </h3>

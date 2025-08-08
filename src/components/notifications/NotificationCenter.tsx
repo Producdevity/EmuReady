@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Check, Trash2, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, type MouseEvent } from 'react'
+import { LocalizedDate } from '@/components/ui'
 import { POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -26,10 +27,10 @@ function NotificationCenter(props: Props) {
     { limit: 10, offset: 0 },
     { enabled: !!user, refetchInterval: POLLING_INTERVALS.NOTIFICATIONS },
   )
-  const unreadCountQuery = api.notifications.getUnreadCount.useQuery(
-    undefined,
-    { enabled: !!user, refetchInterval: POLLING_INTERVALS.NOTIFICATIONS },
-  )
+  const unreadCountQuery = api.notifications.getUnreadCount.useQuery(undefined, {
+    enabled: !!user,
+    refetchInterval: POLLING_INTERVALS.NOTIFICATIONS,
+  })
 
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
@@ -103,9 +104,7 @@ function NotificationCenter(props: Props) {
   const handleNotificationClick = (notification: (typeof notifications)[0]) => {
     // Mark as read if not already read (swallow error if it fails)
     if (!notification.isRead) {
-      markAsReadMutation
-        .mutateAsync({ notificationId: notification.id })
-        .catch(console.error)
+      markAsReadMutation.mutateAsync({ notificationId: notification.id }).catch(console.error)
     }
 
     setIsOpen(false)
@@ -169,9 +168,7 @@ function NotificationCenter(props: Props) {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Notifications
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button
@@ -199,8 +196,7 @@ function NotificationCenter(props: Props) {
                 </div>
               ) : notificationsQuery.error ? (
                 <div className="p-4 text-center text-red-600 dark:text-red-400">
-                  Failed to load notifications:{' '}
-                  {getErrorMessage(notificationsQuery.error)}
+                  Failed to load notifications: {getErrorMessage(notificationsQuery.error)}
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-500 dark:text-gray-400">
@@ -217,8 +213,7 @@ function NotificationCenter(props: Props) {
                       onClick={() => handleNotificationClick(notification)}
                       className={cn(
                         'p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer',
-                        !notification.isRead &&
-                          'bg-blue-50 dark:bg-blue-900/20',
+                        !notification.isRead && 'bg-blue-50 dark:bg-blue-900/20',
                       )}
                     >
                       <div className="flex items-start gap-3">
@@ -236,9 +231,7 @@ function NotificationCenter(props: Props) {
                           </p>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {new Date(
-                                notification.createdAt,
-                              ).toLocaleDateString()}
+                              <LocalizedDate date={notification.createdAt} format="date" />
                             </span>
                             <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
                               {notification.category}

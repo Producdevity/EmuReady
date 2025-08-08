@@ -16,9 +16,7 @@ test.describe('Voting Functionality Tests', () => {
 
     if (hasVoteButtons) {
       // Verify upvote and downvote buttons
-      const upvoteButtons = page.locator(
-        '[aria-label*="upvote"], [data-testid="upvote"], .upvote',
-      )
+      const upvoteButtons = page.locator('[aria-label*="upvote"], [data-testid="upvote"], .upvote')
       const downvoteButtons = page.locator(
         '[aria-label*="downvote"], [data-testid="downvote"], .downvote',
       )
@@ -73,8 +71,7 @@ test.describe('Voting Functionality Tests', () => {
           .getByText(/sign in|log in|authenticate/i)
           .isVisible({ timeout: 2000 })
           .catch(() => false)
-        const onAuthPage =
-          page.url().includes('/sign-in') || page.url().includes('/login')
+        const onAuthPage = page.url().includes('/sign-in') || page.url().includes('/login')
         const errorMessage = await page
           .getByText(/must.*log|please.*sign/i)
           .isVisible({ timeout: 2000 })
@@ -91,22 +88,16 @@ test.describe('Voting Functionality Tests', () => {
     await listingsPage.goto()
 
     // Find a listing with vote buttons
-    const voteContainer = page
-      .locator('[data-testid*="vote-container"], .vote-container')
-      .first()
+    const voteContainer = page.locator('[data-testid*="vote-container"], .vote-container').first()
 
     if (await voteContainer.isVisible({ timeout: 3000 })) {
       // Get initial vote count
-      const voteCount = voteContainer.locator(
-        '[data-testid*="vote-count"], .vote-count',
-      )
+      const voteCount = voteContainer.locator('[data-testid*="vote-count"], .vote-count')
       const initialCount = await voteCount.textContent()
       const initialNumber = parseInt(initialCount || '0')
 
       // Click upvote
-      const upvoteButton = voteContainer.locator(
-        '[aria-label*="upvote"], .upvote',
-      )
+      const upvoteButton = voteContainer.locator('[aria-label*="upvote"], .upvote')
 
       if (await upvoteButton.isEnabled()) {
         await upvoteButton.click()
@@ -127,9 +118,7 @@ test.describe('Voting Functionality Tests', () => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
-    const firstListing = page
-      .locator('[data-testid="listing-card"], .listing-item')
-      .first()
+    const firstListing = page.locator('[data-testid="listing-card"], .listing-item').first()
 
     if (await firstListing.isVisible({ timeout: 3000 })) {
       const upvote = firstListing.locator('[aria-label*="upvote"]')
@@ -175,10 +164,7 @@ test.describe('Voting Functionality Tests', () => {
 
     if (await firstVoteButton.isVisible({ timeout: 3000 })) {
       // Remember the listing details
-      const listingText = await page
-        .locator('[data-testid="listing-card"]')
-        .first()
-        .textContent()
+      const listingText = await page.locator('[data-testid="listing-card"]').first().textContent()
 
       // Vote
       await firstVoteButton.click()
@@ -214,9 +200,7 @@ test.describe('Voting Functionality Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Look for detailed voting stats
-      const voteStats = page.locator(
-        '[data-testid*="vote-stats"], .vote-statistics',
-      )
+      const voteStats = page.locator('[data-testid*="vote-stats"], .vote-statistics')
 
       if (await voteStats.isVisible({ timeout: 3000 })) {
         const statsText = await voteStats.textContent()

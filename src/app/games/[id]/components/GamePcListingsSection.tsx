@@ -2,12 +2,7 @@
 
 import Link from 'next/link'
 import { AuthorDisplay } from '@/components/listings/AuthorDisplay'
-import {
-  Badge,
-  PerformanceBadge,
-  EditButton,
-  ViewButton,
-} from '@/components/ui'
+import { Badge, PerformanceBadge, EditButton, ViewButton, LocalizedDate } from '@/components/ui'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ApprovalStatus } from '@orm'
 import type { RouterOutput } from '@/types/trpc'
@@ -54,10 +49,7 @@ export function GamePcListingsSection(props: Props) {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {props.pcListings.map((listing) => (
-                <tr
-                  key={listing.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
+                <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <PerformanceBadge
@@ -70,9 +62,7 @@ export function GamePcListingsSection(props: Props) {
                         listing.status !== ApprovalStatus.APPROVED && (
                           <Badge
                             variant={
-                              listing.status === ApprovalStatus.REJECTED
-                                ? 'danger'
-                                : 'warning'
+                              listing.status === ApprovalStatus.REJECTED ? 'danger' : 'warning'
                             }
                             size="sm"
                           >
@@ -82,16 +72,13 @@ export function GamePcListingsSection(props: Props) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <AuthorDisplay
-                      author={listing.author}
-                      canSeeBannedUsers={canSeeBannedUsers}
-                    />
+                    <AuthorDisplay author={listing.author} canSeeBannedUsers={canSeeBannedUsers} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{listing._count.comments || 0}</Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(listing.createdAt).toLocaleDateString()}
+                    <LocalizedDate date={listing.createdAt} format="date" />
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -101,10 +88,7 @@ export function GamePcListingsSection(props: Props) {
                           title="Edit PC Listing"
                         />
                       )}
-                      <ViewButton
-                        href={`/pc-listings/${listing.id}`}
-                        title="View Details"
-                      />
+                      <ViewButton href={`/pc-listings/${listing.id}`} title="View Details" />
                     </div>
                   </td>
                 </tr>
@@ -114,9 +98,7 @@ export function GamePcListingsSection(props: Props) {
         </div>
       ) : (
         <div className="text-center py-10">
-          <p className="text-gray-500 dark:text-gray-400">
-            No PC listings yet for this game.
-          </p>
+          <p className="text-gray-500 dark:text-gray-400">No PC listings yet for this game.</p>
           <Link
             href={`/pc-listings/new?gameId=${props.gameId}`}
             className="mt-4 inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"

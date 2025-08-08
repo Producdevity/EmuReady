@@ -73,21 +73,16 @@ export function ColorPicker(props: ColorPickerProps) {
             className={cn(
               'w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800',
               COLOR_CLASSES[color],
-              props.selectedColor === color &&
-                'ring-2 ring-blue-500 ring-offset-2 scale-110',
+              props.selectedColor === color && 'ring-2 ring-blue-500 ring-offset-2 scale-110',
             )}
             title={color.charAt(0).toUpperCase() + color.slice(1)}
           >
-            {props.selectedColor === color && (
-              <Check className="w-4 h-4 text-white mx-auto" />
-            )}
+            {props.selectedColor === color && <Check className="w-4 h-4 text-white mx-auto" />}
           </button>
         ))}
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-        Selected:{' '}
-        {props.selectedColor.charAt(0).toUpperCase() +
-          props.selectedColor.slice(1)}
+        Selected: {props.selectedColor.charAt(0).toUpperCase() + props.selectedColor.slice(1)}
       </p>
     </div>
   )

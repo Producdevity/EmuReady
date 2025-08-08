@@ -9,11 +9,10 @@ interface UseLastUsedDeviceReturn {
 }
 
 export function useLastUsedDevice(): UseLastUsedDeviceReturn {
-  const [lastUsedDevice, setLastUsedDevice, isHydrated] =
-    useLocalStorage<DeviceOption | null>(
-      storageKeys.newListing.lastUsedDevice,
-      null,
-    )
+  const [lastUsedDevice, setLastUsedDevice, isHydrated] = useLocalStorage<DeviceOption | null>(
+    storageKeys.newListing.lastUsedDevice,
+    null,
+  )
 
   return {
     lastUsedDevice,

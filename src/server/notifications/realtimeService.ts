@@ -118,10 +118,7 @@ class RealtimeNotificationService {
   }
 
   // Send message to specific user
-  private sendToUser(
-    userId: string,
-    message: { type: string; data: unknown },
-  ): boolean {
+  private sendToUser(userId: string, message: { type: string; data: unknown }): boolean {
     const connection = this.connections.get(userId)
     if (!connection) return false
 
@@ -207,10 +204,7 @@ export const realtimeNotificationService = new RealtimeNotificationService()
  * @param stream
  * @param origin
  */
-export function createSSEResponse(
-  stream: ReadableStream,
-  origin?: string,
-): Response {
+export function createSSEResponse(stream: ReadableStream, origin?: string): Response {
   // Use centralized CORS configuration
   const allowedOrigins = getAllowedOrigins()
 

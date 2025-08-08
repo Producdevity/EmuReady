@@ -9,10 +9,7 @@ export function filterUndefinedValues(
   Object.entries(obj).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       if (typeof value === 'object' && !Array.isArray(value)) {
-        Object.assign(
-          filtered,
-          filterUndefinedValues(value as Record<string, unknown>),
-        )
+        Object.assign(filtered, filterUndefinedValues(value as Record<string, unknown>))
       } else {
         filtered[key] = value as string | number | boolean
       }

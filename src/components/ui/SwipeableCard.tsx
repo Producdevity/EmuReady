@@ -24,17 +24,9 @@ export function SwipeableCard(props: SwipeableCardProps) {
   const x = useMotionValue(0)
 
   // Transform the card's opacity and rotation based on the swipe distance
-  const opacity = useTransform(
-    x,
-    [-swipeThreshold * 2, 0, swipeThreshold * 2],
-    [0.5, 1, 0.5],
-  )
+  const opacity = useTransform(x, [-swipeThreshold * 2, 0, swipeThreshold * 2], [0.5, 1, 0.5])
 
-  const rotate = useTransform(
-    x,
-    [-swipeThreshold * 2, 0, swipeThreshold * 2],
-    [-8, 0, 8],
-  )
+  const rotate = useTransform(x, [-swipeThreshold * 2, 0, swipeThreshold * 2], [-8, 0, 8])
 
   // Handle drag start
   const handleDragStart = () => {

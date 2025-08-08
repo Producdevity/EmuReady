@@ -25,9 +25,7 @@ interface Props {
 export function MultiSelect(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>(
-    'bottom',
-  )
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom')
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -46,9 +44,7 @@ export function MultiSelect(props: Props) {
     return 0
   })
 
-  const selectedOptions = props.options.filter((option) =>
-    props.value.includes(option.id),
-  )
+  const selectedOptions = props.options.filter((option) => props.value.includes(option.id))
 
   const maxDisplayed = props.maxDisplayed ?? 2
   const showSelectedBadges = props.showSelectedBadges ?? true
@@ -62,16 +58,10 @@ export function MultiSelect(props: Props) {
       const spaceAbove = buttonRect.top
 
       // Estimate dropdown height (max-height is 320px + padding)
-      const estimatedDropdownHeight = Math.min(
-        360,
-        filteredOptions.length * 40 + 100,
-      )
+      const estimatedDropdownHeight = Math.min(360, filteredOptions.length * 40 + 100)
 
       // Position upward if there's not enough space below but enough space above
-      if (
-        spaceBelow < estimatedDropdownHeight &&
-        spaceAbove > estimatedDropdownHeight
-      ) {
+      if (spaceBelow < estimatedDropdownHeight && spaceAbove > estimatedDropdownHeight) {
         setDropdownPosition('top')
       } else {
         setDropdownPosition('bottom')
@@ -81,10 +71,7 @@ export function MultiSelect(props: Props) {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
         setSearchQuery('')
       }
@@ -209,9 +196,7 @@ export function MultiSelect(props: Props) {
             className={`absolute z-[9999] w-full bg-white dark:bg-gray-800
               border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg
               animate-in fade-in-0 zoom-in-95 duration-200 ${
-                dropdownPosition === 'top'
-                  ? 'bottom-full mb-1'
-                  : 'top-full mt-1'
+                dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
               }`}
           >
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
@@ -252,8 +237,7 @@ export function MultiSelect(props: Props) {
               ) : (
                 sortedFilteredOptions.map((option, index) => {
                   const isSelected = props.value.includes(option.id)
-                  const isTopSelected =
-                    isSelected && index < selectedOptions.length
+                  const isTopSelected = isSelected && index < selectedOptions.length
 
                   return (
                     <label
@@ -264,9 +248,7 @@ export function MultiSelect(props: Props) {
                         ${isTopSelected ? 'animate-in slide-in-from-top-1 duration-300' : ''}
                         hover:scale-[1.02] hover:shadow-sm`}
                       style={{
-                        animationDelay: isTopSelected
-                          ? `${index * 50}ms`
-                          : '0ms',
+                        animationDelay: isTopSelected ? `${index * 50}ms` : '0ms',
                       }}
                     >
                       <input
@@ -336,9 +318,7 @@ export function MultiSelect(props: Props) {
                   transition-all duration-200 hover:scale-105 hover:shadow-sm"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <span className="truncate max-w-32">
-                  {option.badgeName ?? option.name}
-                </span>
+                <span className="truncate max-w-32">{option.badgeName ?? option.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveOption(option.id)}

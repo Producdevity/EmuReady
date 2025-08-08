@@ -3,9 +3,7 @@ import { AuthPage } from './pages/AuthPage'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('Commenting System Tests', () => {
-  test('should display comment section on listing details', async ({
-    page,
-  }) => {
+  test('should display comment section on listing details', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
@@ -14,9 +12,7 @@ test.describe('Commenting System Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Look for comment section
-      const commentSection = page.locator(
-        '[data-testid*="comment"], .comment-section, #comments',
-      )
+      const commentSection = page.locator('[data-testid*="comment"], .comment-section, #comments')
       const hasCommentSection = await commentSection.isVisible({
         timeout: 3000,
       })
@@ -25,19 +21,11 @@ test.describe('Commenting System Tests', () => {
         console.log('Comment section is present')
 
         // Check for comment form or login prompt
-        const commentForm = page.locator(
-          'form[data-testid*="comment"], .comment-form',
-        )
-        const authPrompt = page.getByText(
-          /sign in to comment|log in to comment/i,
-        )
+        const commentForm = page.locator('form[data-testid*="comment"], .comment-form')
+        const authPrompt = page.getByText(/sign in to comment|log in to comment/i)
 
-        const hasForm = await commentForm
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
-        const hasAuthPrompt = await authPrompt
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
+        const hasForm = await commentForm.isVisible({ timeout: 2000 }).catch(() => false)
+        const hasAuthPrompt = await authPrompt.isVisible({ timeout: 2000 }).catch(() => false)
 
         expect(hasForm || hasAuthPrompt).toBe(true)
       }
@@ -64,33 +52,21 @@ test.describe('Commenting System Tests', () => {
         const firstComment = comments.first()
 
         // Should have author
-        const author = firstComment.locator(
-          '[data-testid*="author"], .comment-author',
-        )
+        const author = firstComment.locator('[data-testid*="author"], .comment-author')
         await expect(author).toBeVisible()
 
         // Should have content
-        const content = firstComment.locator(
-          '[data-testid*="content"], .comment-content',
-        )
+        const content = firstComment.locator('[data-testid*="content"], .comment-content')
         await expect(content).toBeVisible()
 
         // Should have timestamp
-        const timestamp = firstComment.locator(
-          'time, [data-testid*="time"], .comment-time',
-        )
+        const timestamp = firstComment.locator('time, [data-testid*="time"], .comment-time')
         await expect(timestamp).toBeVisible()
       } else {
         // Check for no comments message
         const noComments = page.getByText(/no comments|be the first/i)
-        const hasNoCommentsMsg = await noComments
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
-        console.log(
-          hasNoCommentsMsg
-            ? 'No comments message shown'
-            : 'Comments section empty',
-        )
+        const hasNoCommentsMsg = await noComments.isVisible({ timeout: 2000 }).catch(() => false)
+        console.log(hasNoCommentsMsg ? 'No comments message shown' : 'Comments section empty')
       }
     }
   })
@@ -120,15 +96,12 @@ test.describe('Commenting System Tests', () => {
             .getByText(/sign in|log in|authenticate/i)
             .isVisible({ timeout: 2000 })
             .catch(() => false)
-          const redirected =
-            page.url().includes('/sign-in') || page.url().includes('/login')
+          const redirected = page.url().includes('/sign-in') || page.url().includes('/login')
 
           expect(authRequired || redirected).toBe(true)
         } else {
           // Should show auth prompt instead of form
-          const authPrompt = await page
-            .getByText(/sign in to comment/i)
-            .isVisible()
+          const authPrompt = await page.getByText(/sign in to comment/i).isVisible()
           expect(authPrompt).toBe(true)
         }
       }
@@ -148,9 +121,7 @@ test.describe('Commenting System Tests', () => {
         .filter({ has: page.locator('textarea, input[type="text"]') })
 
       if (await commentForm.isVisible({ timeout: 3000 })) {
-        const commentInput = commentForm
-          .locator('textarea, input[type="text"]')
-          .first()
+        const commentInput = commentForm.locator('textarea, input[type="text"]').first()
         const submitButton = commentForm
           .locator('button[type="submit"], button')
           .filter({ hasText: /post|comment|submit/i })
@@ -189,9 +160,7 @@ test.describe('Commenting System Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Find comments with vote buttons
-      const commentVotes = page.locator(
-        '[data-testid*="comment-vote"], .comment-vote',
-      )
+      const commentVotes = page.locator('[data-testid*="comment-vote"], .comment-vote')
 
       if ((await commentVotes.count()) > 0) {
         const firstVoteButton = commentVotes.first()
@@ -230,25 +199,17 @@ test.describe('Commenting System Tests', () => {
         await replyButtons.first().click()
 
         // Should show reply form or auth prompt
-        const replyForm = page.locator(
-          '[data-testid*="reply-form"], .reply-form',
-        )
+        const replyForm = page.locator('[data-testid*="reply-form"], .reply-form')
         const authPrompt = page.getByText(/sign in.*reply/i)
 
-        const hasReplyForm = await replyForm
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
-        const hasAuthPrompt = await authPrompt
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
+        const hasReplyForm = await replyForm.isVisible({ timeout: 2000 }).catch(() => false)
+        const hasAuthPrompt = await authPrompt.isVisible({ timeout: 2000 }).catch(() => false)
 
         expect(hasReplyForm || hasAuthPrompt).toBe(true)
 
         if (hasReplyForm) {
           // Check for nested structure
-          const nestedComments = page.locator(
-            '.comment-replies, [data-testid*="replies"]',
-          )
+          const nestedComments = page.locator('.comment-replies, [data-testid*="replies"]')
           const hasNestedStructure = (await nestedComments.count()) > 0
           console.log(
             `Comment reply system available${hasNestedStructure ? ' with nested structure' : ''}`,
@@ -278,14 +239,10 @@ test.describe('Commenting System Tests', () => {
         await loadMoreComments.click()
         await page.waitForTimeout(1500)
 
-        const newCommentCount = await page
-          .locator('[data-testid="comment-item"], .comment')
-          .count()
+        const newCommentCount = await page.locator('[data-testid="comment-item"], .comment').count()
 
         expect(newCommentCount).toBeGreaterThan(initialCommentCount)
-        console.log(
-          `Loaded ${newCommentCount - initialCommentCount} more comments`,
-        )
+        console.log(`Loaded ${newCommentCount - initialCommentCount} more comments`)
       }
     }
   })
@@ -298,9 +255,7 @@ test.describe('Commenting System Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Look for markdown editor indicators
-      const markdownToolbar = page.locator(
-        '[data-testid*="markdown-toolbar"], .markdown-toolbar',
-      )
+      const markdownToolbar = page.locator('[data-testid*="markdown-toolbar"], .markdown-toolbar')
       const formattingButtons = page.locator(
         'button[aria-label*="bold"], button[aria-label*="italic"]',
       )
@@ -312,15 +267,11 @@ test.describe('Commenting System Tests', () => {
         console.log('Markdown support detected in comments')
 
         // Check for preview toggle
-        const previewToggle = page
-          .locator('button')
-          .filter({ hasText: /preview/i })
+        const previewToggle = page.locator('button').filter({ hasText: /preview/i })
         if (await previewToggle.isVisible()) {
           await previewToggle.click()
 
-          const preview = page.locator(
-            '[data-testid*="preview"], .markdown-preview',
-          )
+          const preview = page.locator('[data-testid*="preview"], .markdown-preview')
           await expect(preview).toBeVisible()
         }
       }
@@ -335,33 +286,23 @@ test.describe('Commenting System Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Look for moderation options
-      const commentActions = page.locator(
-        '[data-testid*="comment-actions"], .comment-actions',
-      )
+      const commentActions = page.locator('[data-testid*="comment-actions"], .comment-actions')
 
       if ((await commentActions.count()) > 0) {
         const firstActions = commentActions.first()
 
         // Check for report button
-        const reportButton = firstActions
-          .locator('button')
-          .filter({ hasText: /report/i })
+        const reportButton = firstActions.locator('button').filter({ hasText: /report/i })
 
         if (await reportButton.isVisible()) {
           await reportButton.click()
 
           // Should show report dialog or auth prompt
-          const reportDialog = page
-            .locator('[role="dialog"]')
-            .filter({ hasText: /report/i })
+          const reportDialog = page.locator('[role="dialog"]').filter({ hasText: /report/i })
           const authPrompt = page.getByText(/sign in.*report/i)
 
-          const hasDialog = await reportDialog
-            .isVisible({ timeout: 2000 })
-            .catch(() => false)
-          const hasAuth = await authPrompt
-            .isVisible({ timeout: 2000 })
-            .catch(() => false)
+          const hasDialog = await reportDialog.isVisible({ timeout: 2000 }).catch(() => false)
+          const hasAuth = await authPrompt.isVisible({ timeout: 2000 }).catch(() => false)
 
           expect(hasDialog || hasAuth).toBe(true)
         }
@@ -376,9 +317,7 @@ test.describe('Commenting System Tests', () => {
     if ((await listingsPage.getListingCount()) > 0) {
       await listingsPage.clickFirstListing()
 
-      const timestamps = page.locator(
-        'time, [data-testid*="timestamp"], .comment-time',
-      )
+      const timestamps = page.locator('time, [data-testid*="timestamp"], .comment-time')
 
       if ((await timestamps.count()) > 0) {
         const firstTimestamp = timestamps.first()
@@ -408,23 +347,17 @@ test.describe('Comment Interaction Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Check for real-time indicators
-      const liveIndicators = page.locator(
-        '[data-testid*="live"], .live-comments, [aria-live]',
-      )
+      const liveIndicators = page.locator('[data-testid*="live"], .live-comments, [aria-live]')
 
       if ((await liveIndicators.count()) > 0) {
         console.log('Real-time comment updates supported')
 
         // Wait to see if new comments appear
-        const initialCount = await page
-          .locator('[data-testid="comment-item"]')
-          .count()
+        const initialCount = await page.locator('[data-testid="comment-item"]').count()
 
         await page.waitForTimeout(5000)
 
-        const newCount = await page
-          .locator('[data-testid="comment-item"]')
-          .count()
+        const newCount = await page.locator('[data-testid="comment-item"]').count()
 
         if (newCount > initialCount) {
           console.log(`${newCount - initialCount} new comments appeared`)
@@ -452,12 +385,8 @@ test.describe('Comment Interaction Tests', () => {
         const editForm = page.locator('[data-testid*="edit-form"], .edit-form')
         const authPrompt = page.getByText(/sign in.*edit/i)
 
-        const hasEditForm = await editForm
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
-        const hasAuth = await authPrompt
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
+        const hasEditForm = await editForm.isVisible({ timeout: 2000 }).catch(() => false)
+        const hasAuth = await authPrompt.isVisible({ timeout: 2000 }).catch(() => false)
 
         expect(hasEditForm || hasAuth).toBe(true)
       }
@@ -472,28 +401,20 @@ test.describe('Comment Interaction Tests', () => {
       await listingsPage.clickFirstListing()
 
       // Look for delete buttons
-      const deleteButtons = page
-        .locator('button')
-        .filter({ hasText: /delete/i })
+      const deleteButtons = page.locator('button').filter({ hasText: /delete/i })
 
       if ((await deleteButtons.count()) > 0) {
         await deleteButtons.first().click()
 
         // Should show confirmation dialog
-        const confirmDialog = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /confirm|delete/i })
-        const hasConfirm = await confirmDialog
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
+        const confirmDialog = page.locator('[role="dialog"]').filter({ hasText: /confirm|delete/i })
+        const hasConfirm = await confirmDialog.isVisible({ timeout: 2000 }).catch(() => false)
 
         if (hasConfirm) {
           console.log('Comment deletion requires confirmation')
 
           // Cancel deletion
-          const cancelButton = confirmDialog
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = confirmDialog.locator('button').filter({ hasText: /cancel/i })
           if (await cancelButton.isVisible()) {
             await cancelButton.click()
           }

@@ -80,8 +80,7 @@ function AdminSystemsPage() {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete System',
-      description:
-        'Are you sure you want to delete this system? This action cannot be undone.',
+      description: 'Are you sure you want to delete this system? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -101,18 +100,13 @@ function AdminSystemsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Gaming Systems
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gaming Systems</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage all gaming systems in the database
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <ColumnVisibilityControl
-            columns={SYSTEMS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={SYSTEMS_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add System</Button>
         </div>
       </div>
@@ -140,10 +134,7 @@ function AdminSystemsPage() {
         />
       )}
 
-      <AdminSearchFilters<SystemSortField>
-        searchPlaceholder="Search systems..."
-        table={table}
-      />
+      <AdminSearchFilters<SystemSortField> searchPlaceholder="Search systems..." table={table} />
 
       <AdminTableContainer>
         {systemsQuery.isPending ? (
@@ -199,10 +190,7 @@ function AdminSystemsPage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <EditButton
-                            onClick={() => openModal(system)}
-                            title="Edit System"
-                          />
+                          <EditButton onClick={() => openModal(system)} title="Edit System" />
                           <DeleteButton
                             onClick={() => handleDelete(system.id)}
                             title="Delete System"

@@ -11,10 +11,7 @@ interface Props {
 }
 
 export function MarkdownRenderer(props: Props) {
-  const hasMarkdown = useMemo(
-    () => hasMarkdownSyntax(props.content),
-    [props.content],
-  )
+  const hasMarkdown = useMemo(() => hasMarkdownSyntax(props.content), [props.content])
 
   const renderedContent = useMemo(() => {
     if (!props.content) return ''
@@ -33,10 +30,7 @@ export function MarkdownRenderer(props: Props) {
   if (props.fallbackToPlainText && !hasMarkdown) {
     return (
       <div
-        className={cn(
-          'prose dark:prose-invert max-w-none whitespace-pre-wrap',
-          props.className,
-        )}
+        className={cn('prose dark:prose-invert max-w-none whitespace-pre-wrap', props.className)}
       >
         {props.content}
       </div>

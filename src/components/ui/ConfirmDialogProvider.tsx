@@ -28,9 +28,7 @@ interface ConfirmDialogOptions {
 
 type ConfirmFn = (options: ConfirmDialogOptions) => Promise<boolean>
 
-const ConfirmDialogContext = createContext<ConfirmFn>(() =>
-  Promise.resolve(false),
-)
+const ConfirmDialogContext = createContext<ConfirmFn>(() => Promise.resolve(false))
 
 export function ConfirmDialogProvider(props: PropsWithChildren) {
   const [open, setOpen] = useState(false)
@@ -61,13 +59,9 @@ export function ConfirmDialogProvider(props: PropsWithChildren) {
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent title={options.title ?? 'Are you sure?'}>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {options.title ?? 'Are you sure?'}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{options.title ?? 'Are you sure?'}</AlertDialogTitle>
             {options.description && (
-              <AlertDialogDescription>
-                {options.description}
-              </AlertDialogDescription>
+              <AlertDialogDescription>{options.description}</AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>

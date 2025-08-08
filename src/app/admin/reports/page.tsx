@@ -18,15 +18,13 @@ import {
   useConfirmDialog,
   Badge,
   Pagination,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import {
-  type ReportReasonType,
-  type ReportStatusType,
-} from '@/schemas/listingReport'
+import { type ReportReasonType, type ReportStatusType } from '@/schemas/listingReport'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { ReportReason, ReportStatus } from '@orm'
@@ -110,16 +108,12 @@ function AdminReportsPage() {
     storageKey: storageKeys.columnVisibility.adminReports,
   })
 
-  const [selectedReason, setSelectedReason] = useState<ReportReasonType | ''>(
-    '',
-  )
-  const [selectedStatus, setSelectedStatus] = useState<ReportStatusType | ''>(
-    '',
-  )
-  const [reportDetailsModal, setReportDetailsModal] =
-    useState<ReportModalState>({ isOpen: false })
-  const [reportStatusModal, setReportStatusModal] =
-    useState<ReportStatusModalState>({ isOpen: false })
+  const [selectedReason, setSelectedReason] = useState<ReportReasonType | ''>('')
+  const [selectedStatus, setSelectedStatus] = useState<ReportStatusType | ''>('')
+  const [reportDetailsModal, setReportDetailsModal] = useState<ReportModalState>({ isOpen: false })
+  const [reportStatusModal, setReportStatusModal] = useState<ReportStatusModalState>({
+    isOpen: false,
+  })
 
   const reportsStatsQuery = api.listingReports.getStats.useQuery()
   const reportsQuery = api.listingReports.getAll.useQuery({
@@ -204,16 +198,10 @@ function AdminReportsPage() {
       title="Report Management"
       description="Manage user reports for listings"
       headerActions={
-        <ColumnVisibilityControl
-          columns={REPORT_COLUMNS}
-          columnVisibility={columnVisibility}
-        />
+        <ColumnVisibilityControl columns={REPORT_COLUMNS} columnVisibility={columnVisibility} />
       }
     >
-      <AdminStatsDisplay
-        stats={statsData}
-        isLoading={reportsStatsQuery.isPending}
-      />
+      <AdminStatsDisplay stats={statsData} isLoading={reportsStatsQuery.isPending} />
 
       <AdminSearchFilters<ReportSortField>
         table={table}
@@ -222,9 +210,7 @@ function AdminReportsPage() {
         <div className="flex gap-2">
           <select
             value={selectedReason}
-            onChange={(ev) =>
-              setSelectedReason(ev.target.value as ReportReasonType | '')
-            }
+            onChange={(ev) => setSelectedReason(ev.target.value as ReportReasonType | '')}
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >
             {REPORT_REASONS.map((reason) => (
@@ -235,9 +221,7 @@ function AdminReportsPage() {
           </select>
           <select
             value={selectedStatus}
-            onChange={(e) =>
-              setSelectedStatus(e.target.value as ReportStatusType | '')
-            }
+            onChange={(e) => setSelectedStatus(e.target.value as ReportStatusType | '')}
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >
             {REPORT_STATUSES.map((status) => (
@@ -338,8 +322,7 @@ function AdminReportsPage() {
                             {report.listing.game.title}
                           </div>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
-                            {report.listing.device.modelName} •{' '}
-                            {report.listing.emulator.name}
+                            {report.listing.device.modelName} • {report.listing.emulator.name}
                           </div>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
                             by {report.listing.author.name || 'Unknown'}
@@ -380,7 +363,7 @@ function AdminReportsPage() {
                     )}
                     {columnVisibility.isColumnVisible('createdAt') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(report.createdAt).toLocaleDateString()}
+                        <LocalizedDate date={report.createdAt} format="date" />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (

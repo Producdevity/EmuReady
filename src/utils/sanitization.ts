@@ -3,19 +3,13 @@ export function sanitizeText(text: string): string {
   if (!text) return text
 
   // Remove script tags and their content
-  let sanitized = text.replace(
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    '',
-  )
+  let sanitized = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
 
   // Remove HTML tags except allowed ones (basic formatting)
   const allowedTags = /^(b|i|em|strong|br|p)$/i
-  sanitized = sanitized.replace(
-    /<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g,
-    (match, tag) => {
-      return allowedTags.test(tag) ? match : ''
-    },
-  )
+  sanitized = sanitized.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (match, tag) => {
+    return allowedTags.test(tag) ? match : ''
+  })
 
   // Remove javascript: and data: URLs
   sanitized = sanitized.replace(/javascript:/gi, '')

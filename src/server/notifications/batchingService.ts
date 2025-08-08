@@ -93,11 +93,7 @@ export class NotificationBatchingService {
   }
 
   // Schedule maintenance notifications
-  scheduleMaintenanceNotification(
-    scheduledFor: Date,
-    title: string,
-    message: string,
-  ): void {
+  scheduleMaintenanceNotification(scheduledFor: Date, title: string, message: string): void {
     // Get all users who want maintenance notifications
     prisma.user
       .findMany({
@@ -139,9 +135,7 @@ export class NotificationBatchingService {
     const now = new Date()
 
     // Get notifications ready for processing
-    const readyNotifications = this.queue.filter(
-      (notification) => notification.scheduledFor <= now,
-    )
+    const readyNotifications = this.queue.filter((notification) => notification.scheduledFor <= now)
 
     if (readyNotifications.length === 0) {
       this.processing = false
@@ -176,9 +170,7 @@ export class NotificationBatchingService {
           this.removeFromQueue(notification.id)
         } else {
           // Schedule retry
-          notification.scheduledFor = new Date(
-            Date.now() + this.config.retryDelayMs,
-          )
+          notification.scheduledFor = new Date(Date.now() + this.config.retryDelayMs)
           console.log(
             `Notification ${notification.id} scheduled for retry (attempt ${notification.attempts + 1})`,
           )
@@ -190,9 +182,7 @@ export class NotificationBatchingService {
   }
 
   // Process individual notification
-  private async processNotification(
-    notification: BatchedNotification,
-  ): Promise<boolean> {
+  private async processNotification(notification: BatchedNotification): Promise<boolean> {
     try {
       const { data } = notification
 
@@ -256,10 +246,7 @@ export class NotificationBatchingService {
   }
 
   // Deliver in-app notification
-  private async deliverInApp(
-    notificationId: string,
-    data: NotificationData,
-  ): Promise<boolean> {
+  private async deliverInApp(notificationId: string, data: NotificationData): Promise<boolean> {
     try {
       const notification = await prisma.notification.findUnique({
         where: { id: notificationId },
@@ -284,10 +271,7 @@ export class NotificationBatchingService {
         },
       })
 
-      realtimeNotificationService.sendUnreadCountToUser(
-        data.userId,
-        unreadCount,
-      )
+      realtimeNotificationService.sendUnreadCountToUser(data.userId, unreadCount)
 
       return true
     } catch (error) {
@@ -308,10 +292,7 @@ export class NotificationBatchingService {
 
       if (!user?.email) return false
 
-      const result = await this.emailService.sendNotificationEmail(
-        user.email,
-        data,
-      )
+      const result = await this.emailService.sendNotificationEmail(user.email, data)
       return result.success
     } catch (error) {
       console.error('Email delivery error:', error)

@@ -1,10 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Input } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -31,9 +26,9 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   icon: ReactNode
 }
 
-function CustomFieldTypeTextArea<
-  TFieldValues extends FieldValues = FieldValues,
->(props: Props<TFieldValues>) {
+function CustomFieldTypeTextArea<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   return (
     <div key={props.fieldDef.id} className="mb-4">
       <label
@@ -63,9 +58,7 @@ function CustomFieldTypeTextArea<
           />
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>
   )
 }

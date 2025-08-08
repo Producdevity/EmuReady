@@ -40,9 +40,7 @@ describe('useLocalStorage', () => {
 
   describe('basic functionality', () => {
     it('should return initial value when localStorage is empty', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial-value'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial-value'))
 
       const [value] = result.current
       expect(value).toBe('initial-value')
@@ -51,34 +49,25 @@ describe('useLocalStorage', () => {
     it('should return stored value from localStorage', () => {
       localStorageMock.setItem('test-key', JSON.stringify('stored-value'))
 
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial-value'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial-value'))
 
       const [value] = result.current
       expect(value).toBe('stored-value')
     })
 
     it('should update localStorage when value is set', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial-value'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial-value'))
 
       act(() => {
         const [, setValue] = result.current
         setValue('new-value')
       })
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'test-key',
-        JSON.stringify('new-value'),
-      )
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('test-key', JSON.stringify('new-value'))
     })
 
     it('should return isHydrated as true after initial render', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial-value'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial-value'))
 
       const [, , isHydrated] = result.current
       expect(isHydrated).toBe(true)
@@ -99,9 +88,7 @@ describe('useLocalStorage', () => {
     })
 
     it('should handle direct value updates', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial'))
 
       act(() => {
         const [, setValue] = result.current
@@ -116,9 +103,7 @@ describe('useLocalStorage', () => {
   describe('complex data types', () => {
     it('should handle objects', () => {
       const initialObject = { name: 'John', age: 30 }
-      const { result } = renderHook(() =>
-        useLocalStorage('user', initialObject),
-      )
+      const { result } = renderHook(() => useLocalStorage('user', initialObject))
 
       act(() => {
         const [, setValue] = result.current
@@ -142,9 +127,7 @@ describe('useLocalStorage', () => {
     })
 
     it('should handle null and undefined', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage<null | undefined>('nullable', null),
-      )
+      const { result } = renderHook(() => useLocalStorage<null | undefined>('nullable', null))
 
       act(() => {
         const [, setValue] = result.current
@@ -159,16 +142,12 @@ describe('useLocalStorage', () => {
   describe('error handling', () => {
     it('should handle JSON parse errors gracefully', () => {
       // Mock console.error to suppress expected error logs
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // Set invalid JSON in localStorage
       localStorageMock.setItem('test-key', 'invalid-json{')
 
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'fallback'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'fallback'))
 
       // Should fall back to initial value
       const [value] = result.current
@@ -180,9 +159,7 @@ describe('useLocalStorage', () => {
 
     it('should handle localStorage setItem errors', () => {
       // Mock console.warn to suppress expected error logs
-      const consoleWarnSpy = vi
-        .spyOn(console, 'warn')
-        .mockImplementation(() => {})
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       // Create a proper spy that can be restored
       const originalSetItem = localStorageMock.setItem
@@ -191,9 +168,7 @@ describe('useLocalStorage', () => {
         throw new Error('localStorage save error')
       })
 
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial'))
 
       expect(() => {
         act(() => {
@@ -210,9 +185,7 @@ describe('useLocalStorage', () => {
 
     it('should handle localStorage getItem errors during hydration', () => {
       // Mock console.error to suppress expected error logs
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // Create a proper spy that can be restored
       const originalGetItem = localStorageMock.getItem
@@ -221,9 +194,7 @@ describe('useLocalStorage', () => {
         throw new Error('localStorage read error')
       })
 
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'fallback'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'fallback'))
 
       // Should fall back to initial value
       const [value] = result.current
@@ -238,9 +209,7 @@ describe('useLocalStorage', () => {
 
   describe('disabled mode', () => {
     it('should not use localStorage when disabled', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial', false),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial', false))
 
       act(() => {
         const [, setValue] = result.current
@@ -253,9 +222,7 @@ describe('useLocalStorage', () => {
     })
 
     it('should still return isHydrated when disabled', () => {
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'initial', false),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'initial', false))
 
       const [, , isHydrated] = result.current
       expect(isHydrated).toBe(true)
@@ -277,9 +244,7 @@ describe('useLocalStorage', () => {
   describe('SSR compatibility', () => {
     it('should handle server-side rendering', () => {
       // Mock console.error to suppress expected error logs
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // Test behavior when hook initializes without localStorage access
       const originalLocalStorage = global.localStorage
@@ -288,9 +253,7 @@ describe('useLocalStorage', () => {
         configurable: true,
       })
 
-      const { result } = renderHook(() =>
-        useLocalStorage('test-key', 'ssr-value'),
-      )
+      const { result } = renderHook(() => useLocalStorage('test-key', 'ssr-value'))
 
       const [value] = result.current
       expect(value).toBe('ssr-value')
@@ -312,9 +275,7 @@ describe('useLocalStorage', () => {
 
       localStorageMock.setItem('test-key', JSON.stringify('localStorage-value'))
 
-      const { result, rerender } = renderHook(() =>
-        useLocalStorage('test-key', 'initial-value'),
-      )
+      const { result, rerender } = renderHook(() => useLocalStorage('test-key', 'initial-value'))
 
       // Force re-render to trigger hydration effect
       rerender()
@@ -325,9 +286,7 @@ describe('useLocalStorage', () => {
 
     it('should handle hydration with corrupted localStorage data', () => {
       // Mock console.error to suppress expected error logs
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // Clear any existing mocks
       vi.clearAllMocks()
@@ -335,9 +294,7 @@ describe('useLocalStorage', () => {
 
       localStorageMock.setItem('test-key', 'corrupted-json{')
 
-      const { result, rerender } = renderHook(() =>
-        useLocalStorage('test-key', 'fallback-value'),
-      )
+      const { result, rerender } = renderHook(() => useLocalStorage('test-key', 'fallback-value'))
 
       rerender()
 

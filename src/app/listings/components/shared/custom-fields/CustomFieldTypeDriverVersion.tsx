@@ -1,10 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { useDriverVersions } from './hooks/useDriverVersions'
@@ -37,9 +32,9 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   icon: ReactNode
 }
 
-function CustomFieldTypeDriverVersion<
-  TFieldValues extends FieldValues = FieldValues,
->(props: Props<TFieldValues>) {
+function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   const driverVersions = useDriverVersions()
   const selectOptions: DriverReleaseOption[] = driverVersions?.data
     ? [
@@ -72,8 +67,7 @@ function CustomFieldTypeDriverVersion<
             optionToValue={(driverVersion) => driverVersion.value}
             optionToLabel={(driverVersion) => driverVersion.label}
             placeholder={
-              props.fieldDef.placeholder ||
-              `Enter ${props.fieldDef.label.toLowerCase()}`
+              props.fieldDef.placeholder || `Enter ${props.fieldDef.label.toLowerCase()}`
             }
             className={cn(
               'w-full mt-2',
@@ -84,9 +78,7 @@ function CustomFieldTypeDriverVersion<
           />
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>
   )
 }

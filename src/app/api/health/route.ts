@@ -125,8 +125,7 @@ export async function GET(_request: NextRequest) {
 
     // Check if Clerk environment variables are set
     const authAvailable = !!(
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-      process.env.CLERK_SECRET_KEY
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
     )
 
     const healthData: HealthResponse = {

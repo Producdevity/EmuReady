@@ -31,18 +31,13 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
     // Verify first user row has valid email
     const firstRow = userRows.first()
-    const email = await firstRow
-      .locator('td')
-      .filter({ hasText: /@/ })
-      .textContent()
+    const email = await firstRow.locator('td').filter({ hasText: /@/ }).textContent()
     expect(email).toMatch(/^.+@.+\..+$/)
   })
 
   test('should support user search and filtering', async ({ page }) => {
     // Search input must be present
-    const searchInput = page.locator(
-      'input[placeholder*="search"], input[placeholder*="filter"]',
-    )
+    const searchInput = page.locator('input[placeholder*="search"], input[placeholder*="filter"]')
     await expect(searchInput).toBeVisible()
 
     await searchInput.fill('test')
@@ -62,9 +57,7 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
     }
 
     // Role filter should be available
-    const roleFilter = page.locator(
-      'select[name*="role"], [data-testid="role-filter"]',
-    )
+    const roleFilter = page.locator('select[name*="role"], [data-testid="role-filter"]')
     await expect(roleFilter).toBeVisible()
 
     // Test role filtering
@@ -74,9 +67,7 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
   test('should handle user role changes', async ({ page }) => {
     // Role change controls must be present
-    const roleSelects = page.locator(
-      'select[name*="role"], [data-testid*="role-select"]',
-    )
+    const roleSelects = page.locator('select[name*="role"], [data-testid*="role-select"]')
     const roleSelectCount = await roleSelects.count()
     expect(roleSelectCount).toBeGreaterThan(0)
 
@@ -91,20 +82,12 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
     expect(newRole).not.toBe(currentRole)
 
     // Must show confirmation or save button
-    const saveButton = page
-      .locator('button')
-      .filter({ hasText: /save|update|confirm/i })
-    const confirmDialog = page
-      .locator('[role="dialog"]')
-      .filter({ hasText: /confirm.*role/i })
+    const saveButton = page.locator('button').filter({ hasText: /save|update|confirm/i })
+    const confirmDialog = page.locator('[role="dialog"]').filter({ hasText: /confirm.*role/i })
 
     // At least one confirmation method must be present
-    const hasSaveButton = await saveButton
-      .isVisible({ timeout: 2000 })
-      .catch(() => false)
-    const hasConfirmDialog = await confirmDialog
-      .isVisible({ timeout: 2000 })
-      .catch(() => false)
+    const hasSaveButton = await saveButton.isVisible({ timeout: 2000 }).catch(() => false)
+    const hasConfirmDialog = await confirmDialog.isVisible({ timeout: 2000 }).catch(() => false)
 
     expect(hasSaveButton || hasConfirmDialog).toBe(true)
 
@@ -116,9 +99,7 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
   test('should display user details modal', async ({ page }) => {
     // View/edit buttons must be present
-    const viewButtons = page
-      .locator('button, a')
-      .filter({ hasText: /view|edit|details/i })
+    const viewButtons = page.locator('button, a').filter({ hasText: /view|edit|details/i })
     const buttonCount = await viewButtons.count()
     expect(buttonCount).toBeGreaterThan(0)
 
@@ -130,15 +111,11 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
     if (hasModal) {
       // Check for user information
-      const userInfo = modal.locator(
-        '[data-testid*="user-info"], .user-details',
-      )
+      const userInfo = modal.locator('[data-testid*="user-info"], .user-details')
       await expect(userInfo).toBeVisible()
 
       // Should have close button
-      const closeButton = modal
-        .locator('button')
-        .filter({ hasText: /close|cancel/i })
+      const closeButton = modal.locator('button').filter({ hasText: /close|cancel/i })
       await closeButton.click()
 
       console.log('User details modal works')
@@ -155,40 +132,30 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
     if (page.url().includes('/admin/users')) {
       // Look for ban/suspend buttons
-      const banButtons = page
-        .locator('button')
-        .filter({ hasText: /ban|suspend|disable/i })
+      const banButtons = page.locator('button').filter({ hasText: /ban|suspend|disable/i })
 
       if ((await banButtons.count()) > 0) {
         await banButtons.first().click()
 
         // Should show confirmation dialog
         const confirmDialog = page.locator('[role="dialog"]')
-        const hasConfirm = await confirmDialog
-          .isVisible({ timeout: 3000 })
-          .catch(() => false)
+        const hasConfirm = await confirmDialog.isVisible({ timeout: 3000 }).catch(() => false)
 
         if (hasConfirm) {
           // Check for reason input
-          const reasonInput = confirmDialog.locator(
-            'textarea, input[type="text"]',
-          )
+          const reasonInput = confirmDialog.locator('textarea, input[type="text"]')
           if (await reasonInput.isVisible()) {
             await reasonInput.fill('Test suspension reason')
           }
 
           // Check for duration selector
-          const durationSelect = confirmDialog.locator(
-            'select[name*="duration"]',
-          )
+          const durationSelect = confirmDialog.locator('select[name*="duration"]')
           if (await durationSelect.isVisible()) {
             console.log('Ban duration selector available')
           }
 
           // Cancel for safety
-          const cancelButton = confirmDialog
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = confirmDialog.locator('button').filter({ hasText: /cancel/i })
           await cancelButton.click()
 
           console.log('User ban/suspend functionality available')
@@ -211,17 +178,13 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
         await viewButton.click()
 
         // Look for activity/history tab
-        const activityTab = page
-          .locator('button, a')
-          .filter({ hasText: /activity|history|logs/i })
+        const activityTab = page.locator('button, a').filter({ hasText: /activity|history|logs/i })
 
         if (await activityTab.isVisible({ timeout: 3000 })) {
           await activityTab.click()
 
           // Should show activity list
-          const activityList = page.locator(
-            '[data-testid*="activity"], .activity-list',
-          )
+          const activityList = page.locator('[data-testid*="activity"], .activity-list')
 
           if (await activityList.isVisible({ timeout: 2000 })) {
             const activities = activityList.locator('.activity-item, li')
@@ -255,21 +218,14 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
         await checkboxes.nth(2).check()
 
         // Look for bulk action controls
-        const bulkActions = page.locator(
-          '[data-testid*="bulk-actions"], .bulk-actions',
-        )
+        const bulkActions = page.locator('[data-testid*="bulk-actions"], .bulk-actions')
 
         if (await bulkActions.isVisible({ timeout: 2000 })) {
           const actionSelect = bulkActions.locator('select')
 
           if (await actionSelect.isVisible()) {
-            const options = await actionSelect
-              .locator('option')
-              .allTextContents()
-            console.log(
-              'Bulk actions available:',
-              options.filter((o) => o).join(', '),
-            )
+            const options = await actionSelect.locator('option').allTextContents()
+            console.log('Bulk actions available:', options.filter((o) => o).join(', '))
           }
 
           // Uncheck for cleanup
@@ -291,19 +247,11 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
         await exportButton.click()
 
         // Should show export options
-        const exportDialog = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /export/i })
-        const exportMenu = page
-          .locator('[role="menu"]')
-          .filter({ hasText: /csv|excel|json/i })
+        const exportDialog = page.locator('[role="dialog"]').filter({ hasText: /export/i })
+        const exportMenu = page.locator('[role="menu"]').filter({ hasText: /csv|excel|json/i })
 
-        const hasDialog = await exportDialog
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
-        const hasMenu = await exportMenu
-          .isVisible({ timeout: 2000 })
-          .catch(() => false)
+        const hasDialog = await exportDialog.isVisible({ timeout: 2000 }).catch(() => false)
+        const hasMenu = await exportMenu.isVisible({ timeout: 2000 }).catch(() => false)
 
         if (hasDialog || hasMenu) {
           console.log('User export functionality available')
@@ -312,9 +260,7 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
           const formats = ['CSV', 'Excel', 'JSON']
           for (const format of formats) {
             const formatOption = page.getByText(format)
-            if (
-              await formatOption.isVisible({ timeout: 1000 }).catch(() => false)
-            ) {
+            if (await formatOption.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Export format: ${format}`)
             }
           }
@@ -331,23 +277,14 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
     if (page.url().includes('/admin/users')) {
       // Look for user stats
-      const userStats = page.locator(
-        '[data-testid*="user-stats"], .user-statistics',
-      )
+      const userStats = page.locator('[data-testid*="user-stats"], .user-statistics')
 
       if (await userStats.isVisible({ timeout: 3000 })) {
         // Common stats
-        const statLabels = [
-          'Total Users',
-          'Active Users',
-          'New Users',
-          'Banned Users',
-        ]
+        const statLabels = ['Total Users', 'Active Users', 'New Users', 'Banned Users']
 
         for (const label of statLabels) {
-          const stat = page
-            .locator('.stat-card, [data-testid*="stat"]')
-            .filter({ hasText: label })
+          const stat = page.locator('.stat-card, [data-testid*="stat"]').filter({ hasText: label })
           if (await stat.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await stat.locator('.value, .number').textContent()
             console.log(`${label}: ${value}`)
@@ -362,9 +299,7 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
     if (page.url().includes('/admin/users')) {
       // Look for impersonate buttons
-      const impersonateButtons = page
-        .locator('button')
-        .filter({ hasText: /impersonate|login as/i })
+      const impersonateButtons = page.locator('button').filter({ hasText: /impersonate|login as/i })
 
       if ((await impersonateButtons.count()) > 0) {
         await impersonateButtons.first().click()
@@ -382,9 +317,7 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
           await expect(warning).toBeVisible()
 
           // Cancel for safety
-          const cancelButton = confirmDialog
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = confirmDialog.locator('button').filter({ hasText: /cancel/i })
           await cancelButton.click()
         }
       }

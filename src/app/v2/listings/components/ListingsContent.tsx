@@ -103,12 +103,7 @@ export function ListingsContent(props: Props) {
 
   // No listings found
   if (allListings.length === 0) {
-    return (
-      <EmptyState
-        hasActiveFilters={hasActiveFilters}
-        clearAllFilters={clearAllFilters}
-      />
-    )
+    return <EmptyState hasActiveFilters={hasActiveFilters} clearAllFilters={clearAllFilters} />
   }
 
   // Listings content
@@ -188,14 +183,11 @@ export function ListingsContent(props: Props) {
       )}
 
       {/* Loading indicator for mobile grid view only */}
-      {isMobile &&
-        viewMode === 'grid' &&
-        (isLoading || isFetching) &&
-        currentPage > 1 && (
-          <div className="flex justify-center py-4">
-            <LoadingSpinner size="md" />
-          </div>
-        )}
+      {isMobile && viewMode === 'grid' && (isLoading || isFetching) && currentPage > 1 && (
+        <div className="flex justify-center py-4">
+          <LoadingSpinner size="md" />
+        </div>
+      )}
 
       {/* End of results message for mobile grid view only */}
       {isMobile &&

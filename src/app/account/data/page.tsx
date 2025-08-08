@@ -22,9 +22,7 @@ export default function DataExportPage() {
       // Get the filename from the Content-Disposition header
       const contentDisposition = response.headers['content-disposition']
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
-      const filename = filenameMatch
-        ? filenameMatch[1]
-        : 'emuready-data-export.json'
+      const filename = filenameMatch ? filenameMatch[1] : 'emuready-data-export.json'
 
       // Create blob and download
       const blob = new Blob([response.data], { type: 'application/json' })
@@ -103,22 +101,18 @@ export default function DataExportPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">
-              What&apos;s included in your export:
-            </h2>
+            <h2 className="text-xl font-semibold">What&apos;s included in your export:</h2>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               <li className="flex items-start">
                 <span className="mr-2">📝</span>
                 <span>
-                  <strong>Profile Information:</strong> Username, email, bio,
-                  and account settings
+                  <strong>Profile Information:</strong> Username, email, bio, and account settings
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">🎮</span>
                 <span>
-                  <strong>Listings:</strong> All game compatibility reports
-                  you&apos;ve created
+                  <strong>Listings:</strong> All game compatibility reports you&apos;ve created
                 </span>
               </li>
               <li className="flex items-start">
@@ -136,15 +130,13 @@ export default function DataExportPage() {
               <li className="flex items-start">
                 <span className="mr-2">📱</span>
                 <span>
-                  <strong>Devices:</strong> Devices you&apos;ve added to the
-                  database
+                  <strong>Devices:</strong> Devices you&apos;ve added to the database
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">🔔</span>
                 <span>
-                  <strong>Notifications:</strong> Your recent notification
-                  history
+                  <strong>Notifications:</strong> Your recent notification history
                 </span>
               </li>
             </ul>
@@ -175,19 +167,15 @@ export default function DataExportPage() {
           <div className="flex items-start space-x-2 text-sm text-gray-500 dark:text-gray-400">
             <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <p>
-              Your data will be downloaded as a JSON file. This is a
-              machine-readable format that contains all your information. You
-              can open it with any text editor or use it to import your data
-              into other services.
+              Your data will be downloaded as a JSON file. This is a machine-readable format that
+              contains all your information. You can open it with any text editor or use it to
+              import your data into other services.
             </p>
           </div>
         </div>
 
         <div className="text-center">
-          <a
-            href="/account"
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
+          <a href="/account" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
             ← Back to Account Settings
           </a>
         </div>

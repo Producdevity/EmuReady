@@ -13,41 +13,36 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
-import {
-  calculateOffset,
-  createPaginationResult,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
-    async ({ ctx }) => {
-      const [pending, underReview, resolved, dismissed] = await batchQueries([
-        ctx.prisma.listingReport.count({
-          where: { status: ReportStatus.PENDING },
-        }),
-        ctx.prisma.listingReport.count({
-          where: { status: ReportStatus.UNDER_REVIEW },
-        }),
-        ctx.prisma.listingReport.count({
-          where: { status: ReportStatus.RESOLVED },
-        }),
-        ctx.prisma.listingReport.count({
-          where: { status: ReportStatus.DISMISSED },
-        }),
-      ])
+  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+    const [pending, underReview, resolved, dismissed] = await batchQueries([
+      ctx.prisma.listingReport.count({
+        where: { status: ReportStatus.PENDING },
+      }),
+      ctx.prisma.listingReport.count({
+        where: { status: ReportStatus.UNDER_REVIEW },
+      }),
+      ctx.prisma.listingReport.count({
+        where: { status: ReportStatus.RESOLVED },
+      }),
+      ctx.prisma.listingReport.count({
+        where: { status: ReportStatus.DISMISSED },
+      }),
+    ])
 
-      return {
-        total: pending + underReview + resolved + dismissed,
-        pending,
-        underReview,
-        resolved,
-        dismissed,
-      }
-    },
-  ),
+    return {
+      total: pending + underReview + resolved + dismissed,
+      pending,
+      underReview,
+      resolved,
+      dismissed,
+    }
+  }),
 
   getAll: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
     .input(GetListingReportsSchema)
@@ -139,56 +134,54 @@ export const listingReportsRouter = createTRPCRouter({
       return report || ResourceError.listingReport.notFound()
     }),
 
-  create: protectedProcedure
-    .input(CreateListingReportSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { listingId, reason, description } = input
-      const userId = ctx.session.user.id
+  create: protectedProcedure.input(CreateListingReportSchema).mutation(async ({ ctx, input }) => {
+    const { listingId, reason, description } = input
+    const userId = ctx.session.user.id
 
-      // Check if listing exists
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: { author: true },
-      })
+    // Check if listing exists
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: { author: true },
+    })
 
-      if (!listing) return ResourceError.listing.notFound()
+    if (!listing) return ResourceError.listing.notFound()
 
-      // Prevent users from reporting their own listings
-      if (listing.authorId === userId) {
-        return ResourceError.listingReport.cannotReportOwnListing()
-      }
+    // Prevent users from reporting their own listings
+    if (listing.authorId === userId) {
+      return ResourceError.listingReport.cannotReportOwnListing()
+    }
 
-      // Check if user already reported this listing
-      const existingReport = await ctx.prisma.listingReport.findUnique({
-        where: {
-          listingId_reportedById: {
-            listingId,
-            reportedById: userId,
-          },
-        },
-      })
-
-      if (existingReport) return ResourceError.listingReport.alreadyExists()
-
-      // TODO: Send notification to SUPER_ADMIN users
-
-      return await ctx.prisma.listingReport.create({
-        data: {
+    // Check if user already reported this listing
+    const existingReport = await ctx.prisma.listingReport.findUnique({
+      where: {
+        listingId_reportedById: {
           listingId,
           reportedById: userId,
-          reason,
-          description,
         },
-        include: {
-          listing: {
-            include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
-            },
+      },
+    })
+
+    if (existingReport) return ResourceError.listingReport.alreadyExists()
+
+    // TODO: Send notification to SUPER_ADMIN users
+
+    return await ctx.prisma.listingReport.create({
+      data: {
+        listingId,
+        reportedById: userId,
+        reason,
+        description,
+      },
+      include: {
+        listing: {
+          include: {
+            game: { select: { title: true } },
+            author: { select: { name: true } },
           },
         },
-      })
-    }),
+      },
+    })
+  }),
 
   updateStatus: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
     .input(UpdateReportStatusSchema)
@@ -208,10 +201,7 @@ export const listingReportsRouter = createTRPCRouter({
       }
 
       // If resolving the report and marking listing as rejected
-      if (
-        status === ReportStatus.RESOLVED &&
-        report.listing?.status === ApprovalStatus.APPROVED
-      ) {
+      if (status === ReportStatus.RESOLVED && report.listing?.status === ApprovalStatus.APPROVED) {
         // Update the listing status to rejected
         await ctx.prisma.listing.update({
           where: { id: report.listingId },

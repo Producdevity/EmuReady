@@ -12,10 +12,7 @@ import {
   UpdatePcPresetSchema,
   DeletePcPresetSchema,
 } from '@/schemas/mobile'
-import {
-  createMobileTRPCRouter,
-  mobileProtectedProcedure,
-} from '@/server/api/mobileContext'
+import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
 import { sanitizeBio } from '@/utils/sanitization'
 
 export const mobilePreferencesRouter = createMobileTRPCRouter({
@@ -121,12 +118,11 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       if (!device) return ResourceError.device.notFound()
 
       // Check if preference already exists
-      const existingPreference =
-        await ctx.prisma.userDevicePreference.findUnique({
-          where: {
-            userId_deviceId: { userId: user.id, deviceId: input.deviceId },
-          },
-        })
+      const existingPreference = await ctx.prisma.userDevicePreference.findUnique({
+        where: {
+          userId_deviceId: { userId: user.id, deviceId: input.deviceId },
+        },
+      })
 
       if (existingPreference) {
         return ResourceError.userDevicePreference.alreadyExists()
@@ -188,12 +184,8 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
 
         if (devices.length !== input.deviceIds.length) {
           const foundIds = devices.map((d) => d.id)
-          const missingIds = input.deviceIds.filter(
-            (id) => !foundIds.includes(id),
-          )
-          return AppError.badRequest(
-            `Devices not found: ${missingIds.join(', ')}`,
-          )
+          const missingIds = input.deviceIds.filter((id) => !foundIds.includes(id))
+          return AppError.badRequest(`Devices not found: ${missingIds.join(', ')}`)
         }
       }
 
@@ -283,20 +275,18 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
   /**
    * Get user profile by ID
    */
-  profile: mobileProtectedProcedure
-    .input(GetUserProfileSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.user.findUnique({
-        where: { id: input.userId },
-        select: {
-          id: true,
-          name: true,
-          bio: true,
-          createdAt: true,
-          _count: { select: { listings: true, votes: true, comments: true } },
-        },
-      })
-    }),
+  profile: mobileProtectedProcedure.input(GetUserProfileSchema).query(async ({ ctx, input }) => {
+    return await ctx.prisma.user.findUnique({
+      where: { id: input.userId },
+      select: {
+        id: true,
+        name: true,
+        bio: true,
+        createdAt: true,
+        _count: { select: { listings: true, votes: true, comments: true } },
+      },
+    })
+  }),
 
   /**
    * Update profile
@@ -321,19 +311,17 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
    * PC Presets nested router
    */
   pcPresets: createMobileTRPCRouter({
-    get: mobileProtectedProcedure
-      .input(GetPcPresetsSchema)
-      .query(async ({ ctx, input }) => {
-        return await ctx.prisma.userPcPreset.findMany({
-          where: { userId: ctx.session.user.id },
-          take: input.limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
-          },
-        })
-      }),
+    get: mobileProtectedProcedure.input(GetPcPresetsSchema).query(async ({ ctx, input }) => {
+      return await ctx.prisma.userPcPreset.findMany({
+        where: { userId: ctx.session.user.id },
+        take: input.limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          cpu: { include: { brand: { select: { id: true, name: true } } } },
+          gpu: { include: { brand: { select: { id: true, name: true } } } },
+        },
+      })
+    }),
 
     create: mobileProtectedProcedure
       .input(CreatePcPresetSchema)

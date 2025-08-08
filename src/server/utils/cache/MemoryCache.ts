@@ -111,9 +111,7 @@ class MemoryCache<T> {
 
   invalidatePattern(pattern: string): number {
     // Escape special regex characters except for our wildcard *
-    const escapedPattern = pattern
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/\\\*/g, '.*')
+    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*')
     const regex = new RegExp(`^${escapedPattern}$`)
     let deletedCount = 0
 

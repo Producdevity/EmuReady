@@ -10,6 +10,7 @@ import {
   PerformanceBadge,
   Pagination,
   LoadingSpinner,
+  LocalizedDate,
   SortableHeader,
   Button,
   ColumnVisibilityControl,
@@ -32,7 +33,6 @@ import {
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
-import { formatTimeAgo } from '@/utils/date'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
@@ -59,8 +59,10 @@ function PcListingsPage() {
   const listingsState = usePcListingsState()
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
-  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
-    useLocalStorage(storageKeys.showSystemIcons, true)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
+    storageKeys.showSystemIcons,
+    true,
+  )
 
   const {
     showEmulatorLogos,
@@ -76,9 +78,7 @@ function PcListingsPage() {
 
   const userRole = userQuery?.data?.role
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
-  const isModerator = userRole
-    ? roleIncludesRole(userRole, Role.MODERATOR)
-    : false
+  const isModerator = userRole ? roleIncludesRole(userRole, Role.MODERATOR) : false
 
   // TODO: handle MultiSelect async instead of fetching 1000 items
   const cpusQuery = api.cpus.get.useQuery({ limit: 1000 })
@@ -92,22 +92,12 @@ function PcListingsPage() {
     page: listingsState.page,
     limit: 10,
     ...filterNullAndEmpty({
-      cpuIds:
-        listingsState.cpuIds.length > 0 ? listingsState.cpuIds : undefined,
-      gpuIds:
-        listingsState.gpuIds.length > 0 ? listingsState.gpuIds : undefined,
-      systemIds:
-        listingsState.systemIds.length > 0
-          ? listingsState.systemIds
-          : undefined,
-      emulatorIds:
-        listingsState.emulatorIds.length > 0
-          ? listingsState.emulatorIds
-          : undefined,
+      cpuIds: listingsState.cpuIds.length > 0 ? listingsState.cpuIds : undefined,
+      gpuIds: listingsState.gpuIds.length > 0 ? listingsState.gpuIds : undefined,
+      systemIds: listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
+      emulatorIds: listingsState.emulatorIds.length > 0 ? listingsState.emulatorIds : undefined,
       performanceIds:
-        listingsState.performanceIds.length > 0
-          ? listingsState.performanceIds
-          : undefined,
+        listingsState.performanceIds.length > 0 ? listingsState.performanceIds : undefined,
       memoryMin: listingsState.minMemory ?? undefined,
       memoryMax: listingsState.maxMemory ?? undefined,
       searchTerm: listingsState.search || undefined,
@@ -152,11 +142,7 @@ function PcListingsPage() {
   }
 
   if (listingsQuery?.error) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Failed to load PC listings.
-      </div>
-    )
+    return <div className="p-8 text-center text-red-500">Failed to load PC listings.</div>
   }
 
   return (
@@ -295,9 +281,7 @@ function PcListingsPage() {
 
           {/* Mobile Header - Compact */}
           <div className="flex lg:hidden items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              PC Listings
-            </h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">PC Listings</h1>
 
             {/* Mobile Action Menu */}
             <div className="flex items-center gap-2">
@@ -313,12 +297,7 @@ function PcListingsPage() {
                   {listingsState.myListings ? 'All' : 'My'} Listings
                 </Button>
               )}
-              <Button
-                asChild
-                variant="fancy"
-                size="sm"
-                className="px-3 py-1.5 text-xs"
-              >
+              <Button asChild variant="fancy" size="sm" className="px-3 py-1.5 text-xs">
                 <Link href="/pc-listings/new">Add</Link>
               </Button>
 
@@ -329,12 +308,8 @@ function PcListingsPage() {
                   onClick={() => setShowSystemIcons(!showSystemIcons)}
                   className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                   aria-pressed={showSystemIcons}
-                  aria-label={
-                    showSystemIcons ? 'Show System Names' : 'Show System Icons'
-                  }
-                  title={
-                    showSystemIcons ? 'Show System Names' : 'Show System Icons'
-                  }
+                  aria-label={showSystemIcons ? 'Show System Names' : 'Show System Icons'}
+                  title={showSystemIcons ? 'Show System Names' : 'Show System Icons'}
                 >
                   <CpuIcon
                     className={cn(
@@ -347,18 +322,12 @@ function PcListingsPage() {
                   type="button"
                   onClick={toggleEmulatorLogos}
                   className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                  title={
-                    showEmulatorLogos
-                      ? 'Show Emulator Names'
-                      : 'Show Emulator Logos'
-                  }
+                  title={showEmulatorLogos ? 'Show Emulator Names' : 'Show Emulator Logos'}
                 >
                   <GamepadIcon
                     className={cn(
                       'w-4 h-4',
-                      showEmulatorLogos
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : '',
+                      showEmulatorLogos ? 'text-blue-600 dark:text-blue-400' : '',
                     )}
                   />
                 </button>
@@ -490,9 +459,7 @@ function PcListingsPage() {
                                   {listing.game.title.length > 30 && '...'}
                                 </Link>
                               </TooltipTrigger>
-                              <TooltipContent side="top">
-                                {listing.game.title}
-                              </TooltipContent>
+                              <TooltipContent side="top">{listing.game.title}</TooltipContent>
                             </Tooltip>
 
                             {listing.status === ApprovalStatus.PENDING && (
@@ -515,9 +482,7 @@ function PcListingsPage() {
                                       BANNED
                                     </Badge>
                                   </TooltipTrigger>
-                                  <TooltipContent>
-                                    This user has been banned
-                                  </TooltipContent>
+                                  <TooltipContent>This user has been banned</TooltipContent>
                                 </Tooltip>
                               )}
                           </div>
@@ -525,9 +490,7 @@ function PcListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {isSystemIconsHydrated &&
-                          showSystemIcons &&
-                          listing.game.system?.key ? (
+                          {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
                             <div className="flex items-center gap-2">
                               <SystemIcon
                                 name={listing.game.system.name}
@@ -560,9 +523,7 @@ function PcListingsPage() {
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('os') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.os}
-                        </td>
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{listing.os}</td>
                       )}
                       {columnVisibility.isColumnVisible('emulator') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
@@ -571,9 +532,7 @@ function PcListingsPage() {
                               <EmulatorIcon
                                 name={listing.emulator.name}
                                 logo={listing.emulator.logo}
-                                showLogo={
-                                  isEmulatorLogosHydrated && showEmulatorLogos
-                                }
+                                showLogo={isEmulatorLogosHydrated && showEmulatorLogos}
                                 size="sm"
                               />
                             ) : (
@@ -598,14 +557,11 @@ function PcListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('posted') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {formatTimeAgo(listing.createdAt)}
+                          <LocalizedDate date={listing.createdAt} format="timeAgo" />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('actions') && (
-                        <td
-                          className="px-6 py-4 text-right"
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
                             {isAdmin && (
                               <EditButton
@@ -626,24 +582,22 @@ function PcListingsPage() {
               </table>
             )}
 
-            {!listingsQuery.isPending &&
-              listingsQuery.data?.pcListings.length === 0 && (
-                <NoListingsFound />
-              )}
+            {!listingsQuery.isPending && listingsQuery.data?.pcListings.length === 0 && (
+              <NoListingsFound />
+            )}
           </div>
 
-          {listingsQuery.data?.pagination &&
-            listingsQuery.data?.pagination?.pages > 1 && (
-              <Pagination
-                currentPage={listingsState.page}
-                totalPages={listingsQuery.data.pagination.pages}
-                totalItems={listingsQuery.data.pagination.total}
-                itemsPerPage={listingsQuery.data.pagination.limit}
-                onPageChange={(newPage) => {
-                  listingsState.setPage(newPage)
-                }}
-              />
-            )}
+          {listingsQuery.data?.pagination && listingsQuery.data?.pagination?.pages > 1 && (
+            <Pagination
+              currentPage={listingsState.page}
+              totalPages={listingsQuery.data.pagination.pages}
+              totalItems={listingsQuery.data.pagination.total}
+              itemsPerPage={listingsQuery.data.pagination.limit}
+              onPageChange={(newPage) => {
+                listingsState.setPage(newPage)
+              }}
+            />
+          )}
         </section>
       </div>
 

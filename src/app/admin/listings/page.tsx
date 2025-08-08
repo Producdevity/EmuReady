@@ -6,11 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import {
-  AdminPageLayout,
-  AdminTableContainer,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApprovalStatusBadge,
@@ -26,6 +22,7 @@ import {
   SortableHeader,
   ViewButton,
   useConfirmDialog,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -37,7 +34,6 @@ import {
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { ApprovalStatus } from '@orm'
 
@@ -83,8 +79,10 @@ function AdminListingsPage() {
     storageKey: storageKeys.columnVisibility.adminListings,
   })
 
-  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
-    useLocalStorage(storageKeys.showSystemIcons, false)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
+    storageKeys.showSystemIcons,
+    false,
+  )
 
   const emulatorLogos = useEmulatorLogos()
 
@@ -129,8 +127,7 @@ function AdminListingsPage() {
 
     const confirmed = await confirm({
       title: 'Delete Listing',
-      description:
-        'Are you sure you want to delete this listing? This action cannot be undone.',
+      description: 'Are you sure you want to delete this listing? This action cannot be undone.',
     })
 
     if (confirmed) {
@@ -177,10 +174,7 @@ function AdminListingsPage() {
             logoLabel="Show Emulator Logos"
             nameLabel="Show Emulator Names"
           />
-          <ColumnVisibilityControl
-            columns={LISTINGS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={LISTINGS_COLUMNS} columnVisibility={columnVisibility} />
         </>
       }
     >
@@ -378,10 +372,7 @@ function AdminListingsPage() {
               ) : listings.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    {table.search ||
-                    statusFilter ||
-                    systemFilter ||
-                    emulatorFilter
+                    {table.search || statusFilter || systemFilter || emulatorFilter
                       ? 'No listings found matching your filters.'
                       : 'No listings found.'}
                   </p>
@@ -422,9 +413,7 @@ function AdminListingsPage() {
                     )}
                     {columnVisibility.isColumnVisible('system') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {isSystemIconsHydrated &&
-                        showSystemIcons &&
-                        listing.game.system?.key ? (
+                        {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
                           <div className="flex items-center gap-2">
                             <SystemIcon
                               name={listing.game.system.name}
@@ -441,8 +430,7 @@ function AdminListingsPage() {
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                         <div>
                           <div className="font-medium">
-                            {listing.device.brand.name}{' '}
-                            {listing.device.modelName}
+                            {listing.device.brand.name} {listing.device.modelName}
                           </div>
                           {listing.device.soc && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -457,19 +445,14 @@ function AdminListingsPage() {
                         <EmulatorIcon
                           name={listing.emulator.name}
                           logo={listing.emulator.logo}
-                          showLogo={
-                            emulatorLogos.isHydrated &&
-                            emulatorLogos.showEmulatorLogos
-                          }
+                          showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
                           size="sm"
                         />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('performance') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        <div className="font-medium">
-                          {listing.performance.label}
-                        </div>
+                        <div className="font-medium">{listing.performance.label}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           Rank: {listing.performance.rank}
                         </div>
@@ -488,9 +471,9 @@ function AdminListingsPage() {
                     {columnVisibility.isColumnVisible('createdAt') && (
                       <td
                         className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
-                        title={formatDateTime(listing.createdAt)}
+                        title={`Created at ${listing.createdAt}`}
                       >
-                        {formatTimeAgo(listing.createdAt)}
+                        <LocalizedDate date={listing.createdAt} format="timeAgo" />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (

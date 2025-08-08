@@ -10,10 +10,10 @@ import {
   DialogTitle,
   Button,
   ColorPicker,
+  LocalizedDate,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type TailwindColor } from '@orm'
 
@@ -94,15 +94,10 @@ export default function UserBadgeModal(props: Props) {
   const badges = badgesQuery.data?.badges || []
   const userBadges = userBadgesQuery.data?.userBadges || []
   const assignedBadgeIds = new Set(userBadges.map((ub) => ub.badge.id))
-  const availableBadges = badges.filter(
-    (badge) => !assignedBadgeIds.has(badge.id),
-  )
+  const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id))
 
   return (
-    <Dialog
-      open={props.isOpen}
-      onOpenChange={(open) => !open && props.onClose()}
-    >
+    <Dialog open={props.isOpen} onOpenChange={(open) => !open && props.onClose()}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -133,15 +128,14 @@ export default function UserBadgeModal(props: Props) {
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
                         style={{ backgroundColor: userBadge.badge.color }}
                       >
-                        {userBadge.badge.icon ||
-                          userBadge.badge.name.charAt(0).toUpperCase()}
+                        {userBadge.badge.icon || userBadge.badge.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {userBadge.badge.name}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          Assigned {formatDate(userBadge.assignedAt)}
+                          Assigned <LocalizedDate date={userBadge.assignedAt} format="date" />
                         </div>
                       </div>
                       <div className="text-right">
@@ -188,9 +182,7 @@ export default function UserBadgeModal(props: Props) {
                 {selectedBadgeId && (
                   <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     {(() => {
-                      const selectedBadge = badges.find(
-                        (b) => b.id === selectedBadgeId,
-                      )
+                      const selectedBadge = badges.find((b) => b.id === selectedBadgeId)
                       if (!selectedBadge) return null
                       return (
                         <div className="flex items-center gap-3">
@@ -198,8 +190,7 @@ export default function UserBadgeModal(props: Props) {
                             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
                             style={{ backgroundColor: selectedBadge.color }}
                           >
-                            {selectedBadge.icon ||
-                              selectedBadge.name.charAt(0).toUpperCase()}
+                            {selectedBadge.icon || selectedBadge.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">

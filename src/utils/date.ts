@@ -1,8 +1,9 @@
 import { format, formatDistanceToNow } from 'date-fns'
 import { de, enUS, es, fr, nl, type Locale } from 'date-fns/locale'
+import { useEffect, useState } from 'react'
 import { first } from 'remeda'
 
-const localeMap: Record<string, Locale> = {
+export const localeMap: Record<string, Locale> = {
   de: de,
   en: enUS,
   es: es,
@@ -10,7 +11,7 @@ const localeMap: Record<string, Locale> = {
   nl: nl,
 }
 
-function getLocale(): Locale {
+export function getLocale(): Locale {
   // Check if we're in browser environment
   if (typeof window !== 'undefined' && navigator?.language) {
     const lang = first(navigator.language.split('-')) ?? 'en'
@@ -20,46 +21,33 @@ function getLocale(): Locale {
   return localeMap.en
 }
 
-/**
- * Formats a date to show just the month and day
- * @param dateString - Date object or string
- */
-export function formatDate(dateString: Date | string) {
-  return format(new Date(dateString), 'MMM d, yyyy')
+export type DateFormat = 'date' | 'monthYear' | 'dateTime' | 'timeAgo' | 'year'
+
+export const formatters: Record<DateFormat, (date: Date, locale: Locale) => string> = {
+  date: (date, locale) => format(date, 'MMM d, yyyy', { locale }),
+  monthYear: (date, locale) => format(date, 'MMMM yyyy', { locale }),
+  dateTime: (date, locale) => format(date, 'Pp', { locale }),
+  timeAgo: (date, locale) => formatDistanceToNow(date, { addSuffix: true, locale }),
+  year: (date, locale) => format(date, 'yyyy', { locale }),
 }
 
 /**
- * Formats a date to show the month and year
- * @param date - Date object
+ * Hook to get locale-aware formatted dates that are hydration-safe
+ * Returns English on first render, then updates to user's locale
+ * Use this when you need formatted dates as string values (for aria-labels, dynamic content, etc.)
  */
-export function formatMonthYear(date: Date | string) {
-  const locale = getLocale()
-  return format(new Date(date), 'MMMM yyyy', { locale })
-}
+export function useLocalizedDate() {
+  const [locale, setLocale] = useState<Locale>(localeMap.en)
 
-/**
- * Formats a date to show the full date and time
- * @param date - Date object or string
- */
-export function formatDateTime(date: Date | string) {
-  const locale = getLocale()
-  return format(new Date(date), 'Pp', { locale })
-}
+  useEffect(() => {
+    setLocale(getLocale())
+  }, [])
 
-/**
- * Formats a date to show how long ago it was
- * @param date - Date object or string
- */
-export function formatTimeAgo(date: Date | string) {
-  const locale = getLocale()
-  return formatDistanceToNow(new Date(date), { addSuffix: true, locale })
-}
-
-/**
- * Formats a release date to show just the year
- * @param date - Date object or string
- */
-export function formatYear(date: Date | string) {
-  const locale = getLocale()
-  return format(new Date(date), 'yyyy', { locale })
+  return {
+    formatDate: (dateString: Date | string) => formatters.date(new Date(dateString), locale),
+    formatMonthYear: (date: Date | string) => formatters.monthYear(new Date(date), locale),
+    formatDateTime: (date: Date | string) => formatters.dateTime(new Date(date), locale),
+    formatTimeAgo: (date: Date | string) => formatters.timeAgo(new Date(date), locale),
+    formatYear: (date: Date | string) => formatters.year(new Date(date), locale),
+  }
 }

@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  convertToEdenConfig,
-  serializeEdenConfig,
-  type EdenConfigInput,
-} from './eden-converter'
+import { convertToEdenConfig, serializeEdenConfig, type EdenConfigInput } from './eden-converter'
 import type { EdenConfigSection } from './types/eden'
 
 describe('Eden Converter', () => {
@@ -11,8 +7,7 @@ describe('Eden Converter', () => {
     it('should handle various driver path formats correctly', () => {
       const testCases = [
         {
-          input:
-            '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
+          input: '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
           expected:
             '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip_mrpurple-T19-toasted.adpkg.zip',
           description: 'Standard format with brackets',
@@ -308,8 +303,7 @@ describe('Eden Converter', () => {
               label: 'Driver Version',
               type: 'TEXT',
             },
-            value:
-              '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
+            value: '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
           },
           {
             customFieldDefinition: {
@@ -981,8 +975,7 @@ describe('Eden Converter', () => {
               label: 'Driver Version',
               type: 'TEXT',
             },
-            value:
-              '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
+            value: '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
           },
         ],
       }
@@ -1016,12 +1009,7 @@ describe('Eden Converter', () => {
     })
 
     it('should treat non-driver values as system default', () => {
-      const testCases = [
-        'Xclipse Stock',
-        'Default Driver',
-        'System Default',
-        '',
-      ]
+      const testCases = ['Xclipse Stock', 'Default Driver', 'System Default', '']
 
       testCases.forEach((value) => {
         const config = convertToEdenConfig({
@@ -1047,8 +1035,7 @@ describe('Eden Converter', () => {
     it('should handle driver field as SELECT type with new dropdown values', () => {
       const testCases = [
         {
-          input:
-            '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
+          input: '[MrPurple666/purple-turnip] turnip_mrpurple-T19-toasted.adpkg',
           expected:
             '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip_mrpurple-T19-toasted.adpkg.zip',
         },

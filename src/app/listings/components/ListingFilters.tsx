@@ -92,9 +92,7 @@ function ListingFilters(props: FiltersProps) {
     if (values.length === 0) return analytics.filter.clearSocFilter()
     analytics.filter.soc(
       values,
-      props.socs
-        .filter((s) => values.includes(s.id))
-        .map((s) => `${s.manufacturer} ${s.name}`),
+      props.socs.filter((s) => values.includes(s.id)).map((s) => `${s.manufacturer} ${s.name}`),
     )
   }
 
@@ -112,9 +110,7 @@ function ListingFilters(props: FiltersProps) {
     props.onPerformanceChange(numericValues)
     analytics.filter.performance(
       numericValues,
-      props.performanceScales
-        .filter((p) => numericValues.includes(p.id))
-        .map((p) => p.label),
+      props.performanceScales.filter((p) => numericValues.includes(p.id)).map((p) => p.label),
     )
   }
 
@@ -145,10 +141,7 @@ function ListingFilters(props: FiltersProps) {
     search: props.searchTerm ? 1 : 0,
   }
 
-  const totalActiveFilters = Object.values(filterCounts).reduce(
-    (sum, count) => sum + count,
-    0,
-  )
+  const totalActiveFilters = Object.values(filterCounts).reduce((sum, count) => sum + count, 0)
 
   return (
     <motion.div className="relative" initial={false} style={{ zIndex: 10 }}>
@@ -497,9 +490,7 @@ function ListingFilters(props: FiltersProps) {
                   <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
                     <Settings2 className="w-5 h-5 text-white" />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Filters
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Filters</h2>
                   {totalActiveFilters > 0 && (
                     <motion.div
                       initial={{ scale: 0 }}
@@ -575,8 +566,7 @@ function ListingFilters(props: FiltersProps) {
                         </span>
                       </div>
                       <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                        Showing results for {props.userDeviceIds.length} of your
-                        preferred devices
+                        Showing results for {props.userDeviceIds.length} of your preferred devices
                       </p>
                       <div className="flex gap-2">
                         <Link
@@ -663,8 +653,7 @@ function ListingFilters(props: FiltersProps) {
                         </span>
                       </div>
                       <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
-                        Showing results for {props.userSocIds.length} of your
-                        preferred SoCs
+                        Showing results for {props.userSocIds.length} of your preferred SoCs
                       </p>
                       <div className="flex gap-2">
                         <Link

@@ -158,9 +158,7 @@ export default function PcListingsFilters({
             <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
               <Filter className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              PC Filters
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">PC Filters</h2>
             {totalActiveFilters > 0 && (
               <div className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 font-bold">
                 {totalActiveFilters}
@@ -180,9 +178,7 @@ export default function PcListingsFilters({
               type="text"
               placeholder="Search games, notes, emulators..."
               value={searchTerm}
-              onChange={(ev: ChangeEvent<HTMLInputElement>) =>
-                onSearchChange(ev.target.value)
-              }
+              onChange={(ev: ChangeEvent<HTMLInputElement>) => onSearchChange(ev.target.value)}
               className="transition-all duration-200 focus:scale-[1.02]"
             />
           </div>

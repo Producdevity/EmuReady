@@ -19,9 +19,7 @@ export interface CustomFieldDefinitionWithOptions
  *
  * @param customFields
  */
-function createDynamicPcListingSchema(
-  customFields: CustomFieldDefinitionWithOptions[],
-) {
+function createDynamicPcListingSchema(customFields: CustomFieldDefinitionWithOptions[]) {
   if (customFields.length === 0) return pcListingFormSchema
 
   // Create dynamic validation for each custom field
@@ -39,9 +37,7 @@ function createDynamicPcListingSchema(
       customFields.forEach((field, index) => {
         if (!field.isRequired) return
 
-        const fieldValue = values.find(
-          (cfv) => cfv.customFieldDefinitionId === field.id,
-        )
+        const fieldValue = values.find((cfv) => cfv.customFieldDefinitionId === field.id)
 
         let isValid = true
         const errorMessage = `${field.label} is required`
@@ -83,9 +79,7 @@ function createDynamicPcListingSchema(
 
         if (!isValid) {
           // Find the actual index in the values array for this field
-          const valueIndex = values.findIndex(
-            (v) => v.customFieldDefinitionId === field.id,
-          )
+          const valueIndex = values.findIndex((v) => v.customFieldDefinitionId === field.id)
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: errorMessage,

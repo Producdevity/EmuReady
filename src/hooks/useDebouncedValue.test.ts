@@ -198,13 +198,8 @@ describe('useDebouncedValue', () => {
 
     it('should handle null and undefined values', () => {
       const { result, rerender } = renderHook(
-        ({
-          value,
-          delay,
-        }: {
-          value: string | null | undefined
-          delay: number
-        }) => useDebouncedValue(value, delay),
+        ({ value, delay }: { value: string | null | undefined; delay: number }) =>
+          useDebouncedValue(value, delay),
         {
           initialProps: {
             value: 'initial' as string | null | undefined,
@@ -317,14 +312,11 @@ describe('useDebouncedValue', () => {
     })
 
     it('should work for API call optimization', () => {
-      const { result, rerender } = renderHook(
-        ({ filters }) => useDebouncedValue(filters, 500),
-        {
-          initialProps: {
-            filters: { category: 'all', price: { min: 0, max: 100 } },
-          },
+      const { result, rerender } = renderHook(({ filters }) => useDebouncedValue(filters, 500), {
+        initialProps: {
+          filters: { category: 'all', price: { min: 0, max: 100 } },
         },
-      )
+      })
 
       // Simulate rapid filter changes
       rerender({

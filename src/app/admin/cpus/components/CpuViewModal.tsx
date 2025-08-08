@@ -17,12 +17,7 @@ function CpuViewModal(props: Props) {
   const { cpuData } = props
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="CPU Details"
-      size="md"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="CPU Details" size="md">
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
           <InputPlaceholder label="CPU ID" value={cpuData.id} mono />

@@ -29,11 +29,7 @@ import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
 } from '@/server/utils/emulator-config/gamenative-converter'
-import {
-  buildSearchFilter,
-  buildNsfwFilter,
-  buildArrayFilter,
-} from '@/server/utils/query-builders'
+import { buildSearchFilter, buildNsfwFilter, buildArrayFilter } from '@/server/utils/query-builders'
 import { ApprovalStatus, type PrismaClient } from '@orm'
 
 // Helper function to calculate listing stats
@@ -78,15 +74,7 @@ async function getListingsHelper(
   },
   input: GetListingsInput,
 ) {
-  const {
-    page = 1,
-    limit = 20,
-    gameId,
-    systemId,
-    deviceId,
-    emulatorIds,
-    search,
-  } = input ?? {}
+  const { page = 1, limit = 20, gameId, systemId, deviceId, emulatorIds, search } = input ?? {}
 
   // Build where clause with proper search filtering
   const baseWhere: Record<string, unknown> = {
@@ -137,9 +125,7 @@ async function getListingsHelper(
   ])
 
   const listingsWithStats = await Promise.all(
-    listings.map((listing) =>
-      calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id),
-    ),
+    listings.map((listing) => calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)),
   )
 
   const totalPages = Math.ceil(total / limit)
@@ -199,281 +185,255 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     })
 
     return await Promise.all(
-      listings.map((listing) =>
-        calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id),
-      ),
+      listings.map((listing) => calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)),
     )
   }),
 
   /**
    * Get listings by game
    */
-  byGame: mobilePublicProcedure
-    .input(GetListingsByGameSchema)
-    .query(async ({ ctx, input }) => {
-      const listings = await ctx.prisma.listing.findMany({
-        where: {
-          gameId: input.gameId,
+  byGame: mobilePublicProcedure.input(GetListingsByGameSchema).query(async ({ ctx, input }) => {
+    const listings = await ctx.prisma.listing.findMany({
+      where: {
+        gameId: input.gameId,
+        status: ApprovalStatus.APPROVED,
+        game: {
           status: ApprovalStatus.APPROVED,
-          game: {
-            status: ApprovalStatus.APPROVED,
-            ...buildNsfwFilter(ctx.session?.user?.showNsfw),
-          },
+          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
         },
-        include: {
-          device: { include: { brand: true, soc: true } },
-          emulator: { select: { id: true, name: true, logo: true } },
-          performance: { select: { id: true, label: true, rank: true } },
-          author: { select: { id: true, name: true } },
-          _count: { select: { votes: true, comments: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
+      },
+      include: {
+        device: { include: { brand: true, soc: true } },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
 
-      return await Promise.all(
-        listings.map((listing) =>
-          calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id),
-        ),
-      )
-    }),
+    return await Promise.all(
+      listings.map((listing) => calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)),
+    )
+  }),
 
   /**
    * Get listing by ID
    */
-  byId: mobilePublicProcedure
-    .input(GetListingByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.id },
-        include: {
-          game: {
-            include: {
-              system: { select: { id: true, name: true, key: true } },
-            },
+  byId: mobilePublicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: input.id },
+      include: {
+        game: {
+          include: {
+            system: { select: { id: true, name: true, key: true } },
           },
-          device: { include: { brand: true, soc: true } },
-          emulator: { select: { id: true, name: true, logo: true } },
-          performance: { select: { id: true, label: true, rank: true } },
-          author: { select: { id: true, name: true } },
-          _count: { select: { votes: true, comments: true } },
-          customFieldValues: {
-            include: {
-              customFieldDefinition: {
-                select: {
-                  id: true,
-                  name: true,
-                  label: true,
-                  type: true,
-                  options: true,
-                },
+        },
+        device: { include: { brand: true, soc: true } },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
+        customFieldValues: {
+          include: {
+            customFieldDefinition: {
+              select: {
+                id: true,
+                name: true,
+                label: true,
+                type: true,
+                options: true,
               },
             },
           },
         },
-      })
+      },
+    })
 
-      if (!listing) return null
+    if (!listing) return null
 
-      return await calculateListingStats(
-        listing,
-        ctx.prisma,
-        ctx.session?.user?.id,
-      )
-    }),
+    return await calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)
+  }),
 
   /**
    * Get user listings
    */
-  byUser: mobileProtectedProcedure
-    .input(GetUserListingsSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.listing.findMany({
-        where: { authorId: input.userId },
-        include: {
-          game: {
-            include: {
-              system: { select: { id: true, name: true, key: true } },
-            },
+  byUser: mobileProtectedProcedure.input(GetUserListingsSchema).query(async ({ ctx, input }) => {
+    return await ctx.prisma.listing.findMany({
+      where: { authorId: input.userId },
+      include: {
+        game: {
+          include: {
+            system: { select: { id: true, name: true, key: true } },
           },
-          device: {
-            include: { brand: { select: { id: true, name: true } } },
-          },
-          emulator: { select: { id: true, name: true, logo: true } },
-          performance: { select: { id: true, label: true, rank: true } },
-          _count: { select: { votes: true, comments: true } },
         },
-        orderBy: { createdAt: 'desc' },
-      })
-    }),
+        device: {
+          include: { brand: { select: { id: true, name: true } } },
+        },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        _count: { select: { votes: true, comments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+  }),
 
   /**
    * Create a new listing
    */
-  create: mobileProtectedProcedure
-    .input(CreateListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.listing.create({
-        data: {
-          gameId: input.gameId,
-          deviceId: input.deviceId,
-          emulatorId: input.emulatorId,
-          performanceId: input.performanceId,
-          notes: input.notes,
-          authorId: ctx.session.user.id,
-          status: ApprovalStatus.PENDING,
-          customFieldValues: input.customFieldValues
-            ? {
-                create: input.customFieldValues.map((cfv) => ({
-                  customFieldDefinitionId: cfv.customFieldDefinitionId,
-                  value: cfv.value,
-                })),
-              }
-            : undefined,
-        },
-        include: {
-          game: {
-            include: {
-              system: { select: { id: true, name: true, key: true } },
-            },
+  create: mobileProtectedProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.listing.create({
+      data: {
+        gameId: input.gameId,
+        deviceId: input.deviceId,
+        emulatorId: input.emulatorId,
+        performanceId: input.performanceId,
+        notes: input.notes,
+        authorId: ctx.session.user.id,
+        status: ApprovalStatus.PENDING,
+        customFieldValues: input.customFieldValues
+          ? {
+              create: input.customFieldValues.map((cfv) => ({
+                customFieldDefinitionId: cfv.customFieldDefinitionId,
+                value: cfv.value,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        game: {
+          include: {
+            system: { select: { id: true, name: true, key: true } },
           },
-          device: { include: { brand: { select: { id: true, name: true } } } },
-          emulator: { select: { id: true, name: true, logo: true } },
-          performance: { select: { id: true, label: true, rank: true } },
-          author: { select: { id: true, name: true } },
-          _count: { select: { votes: true, comments: true } },
         },
-      })
-    }),
+        device: { include: { brand: { select: { id: true, name: true } } } },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
+      },
+    })
+  }),
 
   /**
    * Update a listing
    */
-  update: mobileProtectedProcedure
-    .input(UpdateListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, customFieldValues, ...updateData } = input
+  update: mobileProtectedProcedure.input(UpdateListingSchema).mutation(async ({ ctx, input }) => {
+    const { id, customFieldValues, ...updateData } = input
 
-      // Check if user owns the listing
-      const existing = await ctx.prisma.listing.findUnique({
-        where: { id },
-        select: { authorId: true },
-      })
+    // Check if user owns the listing
+    const existing = await ctx.prisma.listing.findUnique({
+      where: { id },
+      select: { authorId: true },
+    })
 
-      if (!existing) return AppError.notFound('Listing')
+    if (!existing) return AppError.notFound('Listing')
 
-      if (existing.authorId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only edit your own listings')
-      }
+    if (existing.authorId !== ctx.session.user.id) {
+      return AppError.forbidden('You can only edit your own listings')
+    }
 
-      return await ctx.prisma.listing.update({
-        where: { id },
-        data: {
-          ...updateData,
-          customFieldValues: customFieldValues
-            ? {
-                deleteMany: {},
-                create: customFieldValues.map((cfv) => ({
-                  customFieldDefinitionId: cfv.customFieldDefinitionId,
-                  value: cfv.value,
-                })),
-              }
-            : undefined,
-        },
-        include: {
-          game: {
-            include: {
-              system: { select: { id: true, name: true, key: true } },
-            },
+    return await ctx.prisma.listing.update({
+      where: { id },
+      data: {
+        ...updateData,
+        customFieldValues: customFieldValues
+          ? {
+              deleteMany: {},
+              create: customFieldValues.map((cfv) => ({
+                customFieldDefinitionId: cfv.customFieldDefinitionId,
+                value: cfv.value,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        game: {
+          include: {
+            system: { select: { id: true, name: true, key: true } },
           },
-          device: { include: { brand: { select: { id: true, name: true } } } },
-          emulator: { select: { id: true, name: true, logo: true } },
-          performance: { select: { id: true, label: true, rank: true } },
-          author: { select: { id: true, name: true } },
-          _count: { select: { votes: true, comments: true } },
         },
-      })
-    }),
+        device: { include: { brand: { select: { id: true, name: true } } } },
+        emulator: { select: { id: true, name: true, logo: true } },
+        performance: { select: { id: true, label: true, rank: true } },
+        author: { select: { id: true, name: true } },
+        _count: { select: { votes: true, comments: true } },
+      },
+    })
+  }),
 
   /**
    * Delete a listing
    */
-  delete: mobileProtectedProcedure
-    .input(DeleteListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if user owns the listing
-      const existing = await ctx.prisma.listing.findUnique({
-        where: { id: input.id },
-        select: { authorId: true },
-      })
+  delete: mobileProtectedProcedure.input(DeleteListingSchema).mutation(async ({ ctx, input }) => {
+    // Check if user owns the listing
+    const existing = await ctx.prisma.listing.findUnique({
+      where: { id: input.id },
+      select: { authorId: true },
+    })
 
-      if (!existing) return AppError.notFound('Listing')
+    if (!existing) return AppError.notFound('Listing')
 
-      return existing.authorId !== ctx.session.user.id
-        ? AppError.forbidden('You can only delete your own listings')
-        : await ctx.prisma.listing.delete({ where: { id: input.id } })
-    }),
+    return existing.authorId !== ctx.session.user.id
+      ? AppError.forbidden('You can only delete your own listings')
+      : await ctx.prisma.listing.delete({ where: { id: input.id } })
+  }),
 
   /**
    * Vote on a listing
    */
-  vote: mobileProtectedProcedure
-    .input(VoteListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if user already voted
-      const existingVote = await ctx.prisma.vote.findUnique({
-        where: {
-          userId_listingId: {
-            userId: ctx.session.user.id,
-            listingId: input.listingId,
-          },
+  vote: mobileProtectedProcedure.input(VoteListingSchema).mutation(async ({ ctx, input }) => {
+    // Check if user already voted
+    const existingVote = await ctx.prisma.vote.findUnique({
+      where: {
+        userId_listingId: {
+          userId: ctx.session.user.id,
+          listingId: input.listingId,
         },
-      })
+      },
+    })
 
-      return existingVote
-        ? await ctx.prisma.vote.update({
-            where: { id: existingVote.id },
-            data: { value: input.value },
-          })
-        : await ctx.prisma.vote.create({
-            data: {
-              value: input.value,
-              listingId: input.listingId,
-              userId: ctx.session.user.id,
-            },
-          })
-    }),
+    return existingVote
+      ? await ctx.prisma.vote.update({
+          where: { id: existingVote.id },
+          data: { value: input.value },
+        })
+      : await ctx.prisma.vote.create({
+          data: {
+            value: input.value,
+            listingId: input.listingId,
+            userId: ctx.session.user.id,
+          },
+        })
+  }),
 
   /**
    * Get user's vote on a listing
    */
-  userVote: mobileProtectedProcedure
-    .input(GetUserVoteSchema)
-    .query(async ({ ctx, input }) => {
-      const vote = await ctx.prisma.vote.findUnique({
-        where: {
-          userId_listingId: {
-            userId: ctx.session.user.id,
-            listingId: input.listingId,
-          },
+  userVote: mobileProtectedProcedure.input(GetUserVoteSchema).query(async ({ ctx, input }) => {
+    const vote = await ctx.prisma.vote.findUnique({
+      where: {
+        userId_listingId: {
+          userId: ctx.session.user.id,
+          listingId: input.listingId,
         },
-        select: { value: true },
-      })
+      },
+      select: { value: true },
+    })
 
-      return vote?.value ?? null
-    }),
+    return vote?.value ?? null
+  }),
 
   /**
    * Get listing comments
    */
-  comments: mobilePublicProcedure
-    .input(GetListingCommentsSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.comment.findMany({
-        where: { listingId: input.listingId },
-        include: { user: { select: { id: true, name: true } } },
-        orderBy: { createdAt: 'desc' },
-      })
-    }),
+  comments: mobilePublicProcedure.input(GetListingCommentsSchema).query(async ({ ctx, input }) => {
+    return await ctx.prisma.comment.findMany({
+      where: { listingId: input.listingId },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
+  }),
 
   /**
    * Create a comment

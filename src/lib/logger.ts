@@ -35,11 +35,7 @@ export const log = {
   /**
    * Log errors and capture them in Sentry
    */
-  error: (
-    message: string,
-    error?: Error | unknown,
-    extra?: Record<string, unknown>,
-  ) => {
+  error: (message: string, error?: Error | unknown, extra?: Record<string, unknown>) => {
     console.error(`[ERROR] ${message}`, error, extra)
 
     if (error instanceof Error) {
@@ -65,11 +61,7 @@ export const log = {
   /**
    * Log fatal errors (system-critical issues)
    */
-  fatal: (
-    message: string,
-    error?: Error | unknown,
-    extra?: Record<string, unknown>,
-  ) => {
+  fatal: (message: string, error?: Error | unknown, extra?: Record<string, unknown>) => {
     console.error(`[FATAL] ${message}`, error, extra)
 
     if (error instanceof Error) {

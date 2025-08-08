@@ -11,9 +11,7 @@ interface MotionProps extends PropsWithChildren {
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: MotionProps) => (
-      <div {...props}>{children}</div>
-    ),
+    div: ({ children, ...props }: MotionProps) => <div {...props}>{children}</div>,
     p: ({ children, ...props }: MotionProps) => <p {...props}>{children}</p>,
   },
   AnimatePresence: (props: PropsWithChildren) => props.children,
@@ -35,9 +33,7 @@ describe('MarkdownEditor Resize Functionality', () => {
 
   describe('Desktop Resize Handle', () => {
     it('renders resize handle on desktop', () => {
-      render(
-        <MarkdownEditor onChange={mockOnChange} value="" label="Test Editor" />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" label="Test Editor" />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
       expect(resizeHandle).toBeInTheDocument()
@@ -70,14 +66,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('resizes editor with mouse drag', async () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={120}
-          maxHeight={600}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} maxHeight={600} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
       const textarea = screen.getByRole('textbox')
@@ -99,14 +88,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('respects minHeight constraint', async () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={150}
-          maxHeight={600}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={150} maxHeight={600} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
       const textarea = screen.getByRole('textbox')
@@ -125,14 +107,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('respects maxHeight constraint when provided', async () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={120}
-          maxHeight={300}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} maxHeight={300} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
       const textarea = screen.getByRole('textbox')
@@ -148,9 +123,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('allows unlimited height when no maxHeight is provided', async () => {
-      render(
-        <MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
       const textarea = screen.getByRole('textbox')
@@ -166,9 +139,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('handles touch events for resize on desktop', async () => {
-      render(
-        <MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
       const textarea = screen.getByRole('textbox')
@@ -193,14 +164,7 @@ describe('MarkdownEditor Resize Functionality', () => {
 
   describe('Mobile Expand/Collapse', () => {
     it('shows expand button with correct class', () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={120}
-          maxHeight={600}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} maxHeight={600} />)
 
       const expandButton = screen.getByTitle('Expand editor')
       expect(expandButton).toBeInTheDocument()
@@ -208,14 +172,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('toggles between expand and collapse states', async () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={120}
-          maxHeight={600}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} maxHeight={600} />)
 
       const textarea = screen.getByRole('textbox')
 
@@ -239,14 +196,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('uses correct icons for expand/collapse states', async () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={120}
-          maxHeight={600}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} maxHeight={600} />)
 
       // Check initial state (collapsed - should show Maximize2 icon)
       let button = screen.getByTitle('Expand editor')
@@ -297,22 +247,14 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('expand/collapse works in preview mode', async () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={120}
-          maxHeight={600}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} maxHeight={600} />)
 
       // Switch to preview
       const previewButton = screen.getByRole('button', { name: /preview/i })
       await user.click(previewButton)
 
       // Get the content container (has height styling)
-      const getContentContainer = () =>
-        document.querySelector('div[style*="height"]')
+      const getContentContainer = () => document.querySelector('div[style*="height"]')
 
       expect(getContentContainer()).toHaveStyle({ height: '120px' })
 
@@ -333,9 +275,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('allows unlimited height by default (no maxHeight constraint)', async () => {
-      render(
-        <MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
 
@@ -350,23 +290,14 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
 
     it('accepts custom minHeight and maxHeight', () => {
-      render(
-        <MarkdownEditor
-          onChange={mockOnChange}
-          value=""
-          minHeight={200}
-          maxHeight={400}
-        />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={200} maxHeight={400} />)
 
       const textarea = screen.getByRole('textbox')
       expect(textarea).toHaveStyle({ height: '200px' })
     })
 
     it('respects disabled state for resize controls', async () => {
-      render(
-        <MarkdownEditor onChange={mockOnChange} value="" disabled={true} />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" disabled={true} />)
 
       // Expand button should be disabled
       const expandButton = screen.getByTitle('Expand editor')
@@ -378,9 +309,7 @@ describe('MarkdownEditor Resize Functionality', () => {
     it('cleans up event listeners on unmount', () => {
       const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener')
 
-      const { unmount } = render(
-        <MarkdownEditor onChange={mockOnChange} value="" />,
-      )
+      const { unmount } = render(<MarkdownEditor onChange={mockOnChange} value="" />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
 
@@ -391,22 +320,10 @@ describe('MarkdownEditor Resize Functionality', () => {
       unmount()
 
       // Should clean up listeners
-      expect(removeEventListenerSpy).toHaveBeenCalledWith(
-        'mousemove',
-        expect.any(Function),
-      )
-      expect(removeEventListenerSpy).toHaveBeenCalledWith(
-        'mouseup',
-        expect.any(Function),
-      )
-      expect(removeEventListenerSpy).toHaveBeenCalledWith(
-        'touchmove',
-        expect.any(Function),
-      )
-      expect(removeEventListenerSpy).toHaveBeenCalledWith(
-        'touchend',
-        expect.any(Function),
-      )
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function))
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('mouseup', expect.any(Function))
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('touchmove', expect.any(Function))
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('touchend', expect.any(Function))
 
       removeEventListenerSpy.mockRestore()
     })
@@ -448,9 +365,7 @@ describe('MarkdownEditor Resize Functionality', () => {
 
   describe('Integration with Existing Features', () => {
     it('maintains resize state when switching between edit and preview', async () => {
-      render(
-        <MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />,
-      )
+      render(<MarkdownEditor onChange={mockOnChange} value="" minHeight={120} />)
 
       const resizeHandle = screen.getByTitle('Drag to resize')
 
@@ -460,8 +375,7 @@ describe('MarkdownEditor Resize Functionality', () => {
       fireEvent.mouseUp(document)
 
       // Check initial resize worked
-      const getContentContainer = () =>
-        document.querySelector('div[style*="height"]')
+      const getContentContainer = () => document.querySelector('div[style*="height"]')
       expect(getContentContainer()).toHaveStyle({ height: '220px' })
 
       // Switch to preview

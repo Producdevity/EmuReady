@@ -1,7 +1,6 @@
 import { type RouterOutput } from '@/types/trpc'
 
-export type ListingReportWithDetails =
-  RouterOutput['listingReports']['getAll']['reports'][0]
+export type ListingReportWithDetails = RouterOutput['listingReports']['getAll']['reports'][0]
 
 export interface ReportModalState {
   isOpen: boolean

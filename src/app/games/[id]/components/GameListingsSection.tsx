@@ -3,12 +3,7 @@
 import Link from 'next/link'
 import { EmulatorIcon } from '@/components/icons'
 import { AuthorDisplay } from '@/components/listings/AuthorDisplay'
-import {
-  Badge,
-  PerformanceBadge,
-  EditButton,
-  ViewButton,
-} from '@/components/ui'
+import { Badge, PerformanceBadge, EditButton, ViewButton } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ApprovalStatus } from '@orm'
@@ -60,10 +55,7 @@ export function GameListingsSection(props: Props) {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {props.listings.map((listing) => (
-                <tr
-                  key={listing.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
+                <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex gap-2 items-center text-sm text-gray-600 dark:text-gray-400">
                       <span className="inline-block">
@@ -78,10 +70,7 @@ export function GameListingsSection(props: Props) {
                       <EmulatorIcon
                         name={listing.emulator.name}
                         logo={listing.emulator.logo}
-                        showLogo={
-                          emulatorLogos.isHydrated &&
-                          emulatorLogos.showEmulatorLogos
-                        }
+                        showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
                         size="md"
                       />
                     ) : (
@@ -100,9 +89,7 @@ export function GameListingsSection(props: Props) {
                         listing.status !== ApprovalStatus.APPROVED && (
                           <Badge
                             variant={
-                              listing.status === ApprovalStatus.REJECTED
-                                ? 'danger'
-                                : 'warning'
+                              listing.status === ApprovalStatus.REJECTED ? 'danger' : 'warning'
                             }
                             size="sm"
                           >
@@ -112,10 +99,7 @@ export function GameListingsSection(props: Props) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <AuthorDisplay
-                      author={listing.author}
-                      canSeeBannedUsers={canSeeBannedUsers}
-                    />
+                    <AuthorDisplay author={listing.author} canSeeBannedUsers={canSeeBannedUsers} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{listing._count.comments || 0}</Badge>
@@ -128,10 +112,7 @@ export function GameListingsSection(props: Props) {
                           title="Edit Listing"
                         />
                       )}
-                      <ViewButton
-                        href={`/listings/${listing.id}`}
-                        title="View Details"
-                      />
+                      <ViewButton href={`/listings/${listing.id}`} title="View Details" />
                     </div>
                   </td>
                 </tr>

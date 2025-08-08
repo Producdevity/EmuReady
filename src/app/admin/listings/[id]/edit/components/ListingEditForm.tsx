@@ -17,6 +17,7 @@ import {
   ApprovalStatusBadge,
   SelectInput,
   Autocomplete,
+  LocalizedDate,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -144,9 +145,7 @@ function ListingEditForm(props: Props) {
     onSuccess: () => {
       toast.success('Listing updated successfully')
       utils.listings.getAllListings.invalidate().catch(console.error)
-      utils.listings.getForEdit
-        .invalidate({ id: props.listing.id })
-        .catch(console.error)
+      utils.listings.getForEdit.invalidate({ id: props.listing.id }).catch(console.error)
       router.push('/admin/listings')
     },
     onError: (error) => {
@@ -157,12 +156,10 @@ function ListingEditForm(props: Props) {
   })
 
   // Prepare default values
-  const defaultCustomFieldValues = props.listing.customFieldValues.map(
-    (cfv) => ({
-      customFieldDefinitionId: cfv.customFieldDefinition.id,
-      value: cfv.value,
-    }),
-  )
+  const defaultCustomFieldValues = props.listing.customFieldValues.map((cfv) => ({
+    customFieldDefinitionId: cfv.customFieldDefinition.id,
+    value: cfv.value,
+  }))
 
   const { register, handleSubmit, formState, setValue, watch, control } =
     useForm<UpdateListingFormData>({
@@ -190,9 +187,7 @@ function ListingEditForm(props: Props) {
       // Preserve existing custom field values or set defaults for new fields
       const existingValues = defaultCustomFieldValues
       const newCustomFieldValues = customFieldsQuery.data.map((field) => {
-        const existingValue = existingValues.find(
-          (v) => v.customFieldDefinitionId === field.id,
-        )
+        const existingValue = existingValues.find((v) => v.customFieldDefinitionId === field.id)
         return {
           customFieldDefinitionId: field.id,
           value: existingValue?.value ?? null,
@@ -227,9 +222,7 @@ function ListingEditForm(props: Props) {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Listing Details
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                ID: {props.listing.id}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">ID: {props.listing.id}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Author: {props.listing.author?.name ?? 'Unknown'}
               </p>
@@ -237,8 +230,7 @@ function ListingEditForm(props: Props) {
             <div className="text-right">
               <ApprovalStatusBadge status={props.listing.status} />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Created:{' '}
-                {new Date(props.listing.createdAt).toLocaleDateString()}
+                Created: <LocalizedDate date={props.listing.createdAt} format="date" />
               </p>
             </div>
           </div>
@@ -285,9 +277,7 @@ function ListingEditForm(props: Props) {
                     items={[initialDevice]}
                     loadItems={loadDeviceItems}
                     optionToValue={(item) => item.id}
-                    optionToLabel={(item) =>
-                      `${item.brand.name} ${item.modelName}`
-                    }
+                    optionToLabel={(item) => `${item.brand.name} ${item.modelName}`}
                     placeholder="Search for devices..."
                     minCharsToTrigger={1}
                   />
@@ -347,9 +337,7 @@ function ListingEditForm(props: Props) {
                       })) ?? []
                     }
                     value={field.value.toString()}
-                    onChange={(e) =>
-                      field.onChange(parseInt(e.target.value, 10))
-                    }
+                    onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
                   />
                 )}
               />
@@ -374,9 +362,7 @@ function ListingEditForm(props: Props) {
                     hideLabel
                     options={statusOptions}
                     value={field.value}
-                    onChange={(e) =>
-                      field.onChange(e.target.value as ApprovalStatus)
-                    }
+                    onChange={(e) => field.onChange(e.target.value as ApprovalStatus)}
                   />
                 )}
               />

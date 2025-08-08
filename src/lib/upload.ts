@@ -9,12 +9,7 @@ import { Role } from '@orm'
 export const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 // Allowed image types and extensions
-export const ALLOWED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-]
+export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
 export const ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS
 
@@ -70,9 +65,7 @@ export function getFileExtension(filename: string): ImageExtension {
     : 'jpg'
 }
 
-type PermissionCheckResult =
-  | { success: true }
-  | { success: false; error: string; status: number }
+type PermissionCheckResult = { success: true } | { success: false; error: string; status: number }
 
 // Permission checking
 export async function checkUploadPermissions(
@@ -99,9 +92,7 @@ export async function checkUploadPermissions(
   return { success: true }
 }
 
-type UploadFileResult =
-  | { success: true; imageUrl: string }
-  | { success: false; error: string }
+type UploadFileResult = { success: true; imageUrl: string } | { success: false; error: string }
 
 // File upload logic
 export async function uploadFile(

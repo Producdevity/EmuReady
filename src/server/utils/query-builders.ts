@@ -35,9 +35,7 @@ type ApprovalStatusFilterObject =
 
 type ApprovalStatusFilter = ApprovalStatusFilterObject | undefined
 
-export function buildApprovalStatusFilter<
-  _T extends { status: ApprovalStatus },
->(
+export function buildApprovalStatusFilter<_T extends { status: ApprovalStatus }>(
   userRole?: Role | null,
   userId?: string | null,
   requestedStatus?: ApprovalStatus,
@@ -182,9 +180,7 @@ export function buildArrayFilter<T>(
   values: T[] | undefined | null,
   fieldName: string,
 ): Record<string, { in: T[] }> | undefined {
-  return !values || values.length === 0
-    ? undefined
-    : { [fieldName]: { in: values } }
+  return !values || values.length === 0 ? undefined : { [fieldName]: { in: values } }
 }
 
 /**

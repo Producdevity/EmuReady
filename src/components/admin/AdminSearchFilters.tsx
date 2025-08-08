@@ -10,9 +10,7 @@ interface Props<TSortField extends string> extends PropsWithChildren {
   table: UseAdminTableReturn<TSortField>
 }
 
-export function AdminSearchFilters<TSortField extends string>(
-  props: Props<TSortField>,
-) {
+export function AdminSearchFilters<TSortField extends string>(props: Props<TSortField>) {
   return (
     <div
       className={`bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4 ${props.className || ''}`}
@@ -29,9 +27,7 @@ export function AdminSearchFilters<TSortField extends string>(
             />
           </div>
         </div>
-        {props.children && (
-          <div className="flex gap-2 items-center">{props.children}</div>
-        )}
+        {props.children && <div className="flex gap-2 items-center">{props.children}</div>}
         <div className="flex items-center gap-2">
           <ClearButton
             title="Clear Search"

@@ -35,9 +35,7 @@ const imageServiceMap: Record<ImageService, ImageService> = {
 }
 
 export function AdminImageSelectorSwitcher(props: Props) {
-  const [selectedService, setSelectedService] = useState<ImageService>(
-    imageServiceMap.url,
-  )
+  const [selectedService, setSelectedService] = useState<ImageService>(imageServiceMap.url)
   const [manualUrl, setManualUrl] = useState(props.selectedImageUrl || '')
   const [isValidUrl, setIsValidUrl] = useState(false)
   const [showApplied, setShowApplied] = useState(false)
@@ -116,9 +114,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
             <Toggle
               checked={selectedService !== 'url'}
               onChange={(checked) =>
-                setSelectedService(
-                  checked ? imageServiceMap.rawg : imageServiceMap.url,
-                )
+                setSelectedService(checked ? imageServiceMap.rawg : imageServiceMap.url)
               }
               size="md"
             />
@@ -139,9 +135,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
 
               <Toggle
                 checked={selectedService === 'tgdb'}
-                onChange={(checked) =>
-                  setSelectedService(checked ? 'tgdb' : 'rawg')
-                }
+                onChange={(checked) => setSelectedService(checked ? 'tgdb' : 'rawg')}
                 size="md"
                 disabled={selectedService === 'url'}
               />
@@ -185,9 +179,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
       <div className="relative overflow-hidden">
         <AnimatePresence
           mode="wait"
-          custom={
-            selectedService === 'tgdb' ? 1 : selectedService === 'rawg' ? 0 : -1
-          }
+          custom={selectedService === 'tgdb' ? 1 : selectedService === 'rawg' ? 0 : -1}
         >
           {selectedService === 'url' ? (
             <motion.div
@@ -204,9 +196,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                   <Input
                     value={manualUrl}
                     onChange={(e) => handleManualUrlChange(e.target.value)}
-                    placeholder={
-                      props.placeholder || 'https://example.com/image.jpg'
-                    }
+                    placeholder={props.placeholder || 'https://example.com/image.jpg'}
                     className={`flex-1 transition-all duration-200 ${
                       manualUrl.trim() && !isValidUrl
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
@@ -232,9 +222,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                     disabled={!!(manualUrl.trim() && !isValidUrl)}
                     size="sm"
                     className={`px-4 transition-all duration-200 ${
-                      showApplied
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : ''
+                      showApplied ? 'bg-green-600 hover:bg-green-700 text-white' : ''
                     }`}
                   >
                     <Check className="h-4 w-4 mr-1" />
@@ -254,9 +242,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
 
                 {props.selectedImageUrl && (
                   <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      Current image:
-                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current image:</p>
                     <div className="flex items-center gap-3">
                       <Image
                         src={getImageUrl(props.selectedImageUrl)}

@@ -52,9 +52,7 @@ function PcCommentThread(props: Props) {
   })
 
   const refreshComments = () => {
-    utils.pcListings.getComments
-      .invalidate({ pcListingId: props.pcListingId })
-      .catch(console.error)
+    utils.pcListings.getComments.invalidate({ pcListingId: props.pcListingId }).catch(console.error)
   }
 
   const threadConfig: CommentThreadConfig = {
@@ -87,10 +85,7 @@ function PcCommentThread(props: Props) {
     await deleteComment.mutateAsync({ commentId })
   }
 
-  const handleCreateComment = async (data: {
-    content: string
-    parentId?: string
-  }) => {
+  const handleCreateComment = async (data: { content: string; parentId?: string }) => {
     await createComment.mutateAsync({
       pcListingId: props.pcListingId,
       content: data.content,
@@ -98,10 +93,7 @@ function PcCommentThread(props: Props) {
     })
   }
 
-  const handleUpdateComment = async (data: {
-    commentId: string
-    content: string
-  }) => {
+  const handleUpdateComment = async (data: { commentId: string; content: string }) => {
     await updateComment.mutateAsync({
       commentId: data.commentId,
       content: data.content,

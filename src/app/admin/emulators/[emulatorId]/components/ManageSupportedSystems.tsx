@@ -16,22 +16,16 @@ interface Props {
 
 function ManageSupportedSystems(props: Props) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedSystemIds, setSelectedSystemIds] = useState<Set<string>>(
-    () => new Set(),
-  )
+  const [selectedSystemIds, setSelectedSystemIds] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
-    setSelectedSystemIds(
-      new Set(props.currentlySupportedSystems.map((s) => s.id)),
-    )
+    setSelectedSystemIds(new Set(props.currentlySupportedSystems.map((s) => s.id)))
   }, [props.currentlySupportedSystems])
 
   const filteredSystems = useMemo(
     () =>
       props.allSystems
-        .filter((system) =>
-          system.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
+        .filter((system) => system.name.toLowerCase().includes(searchQuery.toLowerCase()))
         .sort((a, b) => {
           const aSelected = selectedSystemIds.has(a.id) ? -1 : 1
           const bSelected = selectedSystemIds.has(b.id) ? -1 : 1
@@ -104,9 +98,7 @@ function ManageSupportedSystems(props: Props) {
               type="checkbox"
               id={`system-checkbox-${system.id}`}
               checked={selectedSystemIds.has(system.id)}
-              onChange={(e) =>
-                handleCheckboxChange(system.id, e.target.checked)
-              }
+              onChange={(e) => handleCheckboxChange(system.id, e.target.checked)}
               className="mr-3 h-5 w-5 shrink-0 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800 rounded bg-white dark:bg-gray-700 cursor-pointer"
             />
             <label

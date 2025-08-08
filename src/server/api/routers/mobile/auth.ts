@@ -20,28 +20,26 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   /**
    * Validate JWT token
    */
-  validateToken: mobilePublicProcedure
-    .input(ValidateTokenSchema)
-    .query(async ({ input }) => {
-      try {
-        const { verifyToken } = await import('@clerk/backend')
-        const payload = await verifyToken(input.token, {
-          secretKey: process.env.CLERK_SECRET_KEY!,
-        })
+  validateToken: mobilePublicProcedure.input(ValidateTokenSchema).query(async ({ input }) => {
+    try {
+      const { verifyToken } = await import('@clerk/backend')
+      const payload = await verifyToken(input.token, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      })
 
-        return {
-          valid: true,
-          userId: payload.sub,
-          expiresAt: payload.exp ? new Date(payload.exp * 1000) : null,
-        }
-      } catch {
-        return {
-          valid: false,
-          userId: null,
-          expiresAt: null,
-        }
+      return {
+        valid: true,
+        userId: payload.sub,
+        expiresAt: payload.exp ? new Date(payload.exp * 1000) : null,
       }
-    }),
+    } catch {
+      return {
+        valid: false,
+        userId: null,
+        expiresAt: null,
+      }
+    }
+  }),
   /**
    * Get current user session info
    */
@@ -82,8 +80,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
       const updateData: Record<string, string> = {}
       if (input.firstName) updateData.firstName = input.firstName
       if (input.lastName) updateData.lastName = input.lastName
-      if (input.profileImageUrl)
-        updateData.profileImageUrl = input.profileImageUrl
+      if (input.profileImageUrl) updateData.profileImageUrl = input.profileImageUrl
 
       if (Object.keys(updateData).length > 0) {
         await clerkClient.users.updateUser(user.clerkId, updateData)

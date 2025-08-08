@@ -32,9 +32,7 @@ class NotificationEventEmitter extends EventEmitter {
     this.on('notification', callback)
   }
 
-  removeNotificationListener(
-    callback: (data: NotificationEventData) => void,
-  ): void {
+  removeNotificationListener(callback: (data: NotificationEventData) => void): void {
     this.off('notification', callback)
   }
 }
@@ -65,5 +63,4 @@ export const NOTIFICATION_EVENTS = {
   GAME_STATUS_OVERRIDDEN: 'game.status_overridden',
 } as const
 
-export type NotificationEventType =
-  (typeof NOTIFICATION_EVENTS)[keyof typeof NOTIFICATION_EVENTS]
+export type NotificationEventType = (typeof NOTIFICATION_EVENTS)[keyof typeof NOTIFICATION_EVENTS]

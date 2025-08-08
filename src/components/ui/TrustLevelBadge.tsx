@@ -1,20 +1,8 @@
 'use client'
 
-import {
-  UserCheck,
-  Users,
-  Shield,
-  Crown,
-  Star,
-  Award,
-  type LucideIcon,
-} from 'lucide-react'
+import { UserCheck, Users, Shield, Crown, Star, Award, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui'
-import {
-  getTrustLevel,
-  getNextTrustLevel,
-  getProgressToNextLevel,
-} from '@/lib/trust/config'
+import { getTrustLevel, getNextTrustLevel, getProgressToNextLevel } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 
 const TRUST_LEVEL_ICONS: Record<string, LucideIcon> = {
@@ -69,10 +57,7 @@ export function TrustLevelBadge(props: Props) {
 
   return (
     <div className={cn('flex flex-col gap-2', props.className)}>
-      <Badge
-        variant={color}
-        className={cn('flex items-center gap-1.5 w-fit', sizeClasses[size])}
-      >
+      <Badge variant={color} className={cn('flex items-center gap-1.5 w-fit', sizeClasses[size])}>
         <Icon className={iconSizes[size]} />
         <span className="font-medium">{trustLevel.name}</span>
       </Badge>

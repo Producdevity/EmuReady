@@ -169,9 +169,7 @@ export async function warmAllCaches(): Promise<WarmingResult> {
   const totalDuration = Math.max(...results.map((r) => r.duration))
   const allErrors = results.flatMap((r) => r.errors)
 
-  console.info(
-    `[Cache Warming] Completed: ${totalWarmed} items warmed in ${totalDuration}ms`,
-  )
+  console.info(`[Cache Warming] Completed: ${totalWarmed} items warmed in ${totalDuration}ms`)
 
   if (allErrors.length > 0) {
     console.error('[Cache Warming] Errors encountered:', allErrors)

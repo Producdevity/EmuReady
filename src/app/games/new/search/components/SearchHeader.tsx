@@ -17,9 +17,7 @@ function SearchHeader() {
     enabled: !!user,
   })
 
-  const isAdmin = userQuery.data
-    ? hasPermission(userQuery.data.role, Role.ADMIN)
-    : false
+  const isAdmin = userQuery.data ? hasPermission(userQuery.data.role, Role.ADMIN) : false
 
   return (
     <div className="mb-8">
@@ -52,8 +50,7 @@ function SearchHeader() {
           Search Game Database
         </h1>
         <p className="text-slate-600 dark:text-slate-400">
-          Find games from TheGamesDB with accurate metadata and high-quality
-          artwork
+          Find games from TheGamesDB with accurate metadata and high-quality artwork
         </p>
       </motion.div>
     </div>

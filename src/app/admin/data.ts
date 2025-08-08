@@ -261,9 +261,7 @@ export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
  * Server-side function to get developer navigation items for a user
  * @param userId - The developer user ID
  */
-export async function getDeveloperNavItemsForUser(
-  userId: string,
-): Promise<AdminNavItem[]> {
+export async function getDeveloperNavItemsForUser(userId: string): Promise<AdminNavItem[]> {
   const { prisma } = await import('@/server/db')
 
   const verifiedEmulators = await prisma.verifiedDeveloper.findMany({

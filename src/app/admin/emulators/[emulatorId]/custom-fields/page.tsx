@@ -16,8 +16,7 @@ export default function EmulatorCustomFieldsPage() {
   const emulatorId = params.emulatorId as string
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
-  const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] =
-    useState(false)
+  const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] = useState(false)
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
   const { data: currentUser } = api.users.me.useQuery()
@@ -33,14 +32,10 @@ export default function EmulatorCustomFieldsPage() {
     isLoading: isLoadingCustomFields,
     error: customFieldsError,
     refetch: refetchCustomFields,
-  } = api.customFieldDefinitions.getByEmulator.useQuery(
-    { emulatorId },
-    { enabled: !!emulatorId },
-  )
+  } = api.customFieldDefinitions.getByEmulator.useQuery({ emulatorId }, { enabled: !!emulatorId })
 
   // Check if user can see Apply Templates button (only SUPER_ADMIN)
-  const canApplyTemplates =
-    currentUser && hasPermission(currentUser.role, Role.SUPER_ADMIN)
+  const canApplyTemplates = currentUser && hasPermission(currentUser.role, Role.SUPER_ADMIN)
 
   function handleOpenCreateModal() {
     setEditingFieldId(null)
@@ -89,9 +84,7 @@ export default function EmulatorCustomFieldsPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
-          Custom Fields for {emulator.name}
-        </h1>
+        <h1 className="text-3xl font-bold">Custom Fields for {emulator.name}</h1>
         <div className="flex space-x-3">
           {canApplyTemplates && (
             <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>

@@ -21,30 +21,21 @@ const performanceColorMap: Record<number, string> = {
   8: 'bg-red-400 text-red-900 dark:bg-red-600 dark:text-red-100', // Nothing - Darkest Red
 }
 
-const defaultPerformanceColor =
-  'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+const defaultPerformanceColor = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
 
 export function PerformanceBadge(props: Props) {
-  const customColorClass =
-    performanceColorMap[props.rank] ?? defaultPerformanceColor
+  const customColorClass = performanceColorMap[props.rank] ?? defaultPerformanceColor
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div
-          className={cn('flex justify-center items-center', props.className)}
-        >
-          <Badge
-            className={customColorClass}
-            pill={isNullish(props.pill) ? false : props.pill}
-          >
+        <div className={cn('flex justify-center items-center', props.className)}>
+          <Badge className={customColorClass} pill={isNullish(props.pill) ? false : props.pill}>
             {props.label}
           </Badge>
         </div>
       </TooltipTrigger>
-      <TooltipContent>
-        {props.description ?? 'No description available'}
-      </TooltipContent>
+      <TooltipContent>{props.description ?? 'No description available'}</TooltipContent>
     </Tooltip>
   )
 }

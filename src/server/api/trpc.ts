@@ -31,18 +31,14 @@ type CreateContextOptions = {
   session: Nullable<Session>
 }
 
-const createInnerTRPCContext = (
-  opts: CreateContextOptions & { headers?: Headers },
-) => {
+const createInnerTRPCContext = (opts: CreateContextOptions & { headers?: Headers }) => {
   return { prisma, session: opts.session, headers: opts.headers }
 }
 
 /**
  * Creates a session from a Clerk user ID, with auto-creation fallback
  */
-async function createSessionFromClerkUserId(
-  userId: string,
-): Promise<Nullable<Session>> {
+async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Session>> {
   // Find user in database - they should exist due to webhook sync
   let user = await prisma.user.findUnique({
     where: { clerkId: userId },
@@ -54,12 +50,9 @@ async function createSessionFromClerkUserId(
   if (!user) {
     try {
       // Get user info from Clerk
-      const clerkUser = await fetch(
-        `https://api.clerk.com/v1/users/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
-        },
-      )
+      const clerkUser = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+        headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+      })
 
       if (clerkUser.ok) {
         const clerkData = await clerkUser.json()
@@ -70,9 +63,7 @@ async function createSessionFromClerkUserId(
           ) || clerkData.email_addresses?.[0]
 
         if (primaryEmail) {
-          console.log(
-            `🔧 Auto-creating user with clerkId ${userId} in database`,
-          )
+          console.log(`🔧 Auto-creating user with clerkId ${userId} in database`)
           user = await prisma.user.create({
             data: {
               clerkId: userId,
@@ -196,10 +187,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       ...ctx.shape,
       data: {
         ...ctx.shape.data,
-        zodError:
-          ctx.error.cause instanceof ZodError
-            ? ctx.error.cause.flatten()
-            : null,
+        zodError: ctx.error.cause instanceof ZodError ? ctx.error.cause.flatten() : null,
       },
     }
   },
@@ -236,112 +224,100 @@ export const publicProcedure = t.procedure.use(performanceMiddleware)
 /**
  * Middleware to check if a user is signed in
  */
-export const protectedProcedure = t.procedure
-  .use(performanceMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) AppError.unauthorized()
+export const protectedProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
+  if (!ctx.session?.user) AppError.unauthorized()
 
-    return next({
-      ctx: { session: { ...ctx.session, user: ctx.session.user } },
-    })
+  return next({
+    ctx: { session: { ...ctx.session, user: ctx.session.user } },
   })
+})
 
 /**
  * Middleware to check if a user has at least Author role
  */
-export const authorProcedure = t.procedure
-  .use(performanceMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) return AppError.unauthorized()
+export const authorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
+  if (!ctx.session?.user) return AppError.unauthorized()
 
-    // For now, we consider User as Author
-    if (!hasPermission(ctx.session.user.role, Role.USER)) {
-      AppError.forbidden()
-    }
+  // For now, we consider User as Author
+  if (!hasPermission(ctx.session.user.role, Role.USER)) {
+    AppError.forbidden()
+  }
 
-    return next({
-      ctx: {
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+  return next({
+    ctx: {
+      session: { ...ctx.session, user: ctx.session.user },
+    },
   })
+})
 
 /**
  * Middleware to check if a user has Moderator role
  * TODO: use implementation of this procedure
  */
-export const moderatorProcedure = t.procedure
-  .use(performanceMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      AppError.unauthorized()
-    }
+export const moderatorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    AppError.unauthorized()
+  }
 
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      AppError.insufficientPermissions(Role.MODERATOR)
-    }
+  if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    AppError.insufficientRole(Role.MODERATOR)
+  }
 
-    return next({
-      ctx: {
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+  return next({
+    ctx: {
+      session: { ...ctx.session, user: ctx.session.user },
+    },
   })
+})
 
 /**
  * Middleware to check if a user has Developer role
  */
-export const developerProcedure = t.procedure
-  .use(performanceMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      AppError.unauthorized()
-    }
+export const developerProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    AppError.unauthorized()
+  }
 
-    if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
-      AppError.insufficientPermissions(Role.DEVELOPER)
-    }
+  if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
+    AppError.insufficientRole(Role.DEVELOPER)
+  }
 
-    return next({
-      ctx: {
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+  return next({
+    ctx: {
+      session: { ...ctx.session, user: ctx.session.user },
+    },
   })
+})
 
 /**
  * Middleware to check if a user has Admin role
  */
-export const adminProcedure = t.procedure
-  .use(performanceMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) return AppError.unauthorized()
+export const adminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
+  if (!ctx.session?.user) return AppError.unauthorized()
 
-    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
-      AppError.insufficientPermissions(Role.ADMIN)
-    }
+  if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+    AppError.insufficientRole(Role.ADMIN)
+  }
 
-    return next({
-      ctx: { session: { ...ctx.session, user: ctx.session.user } },
-    })
+  return next({
+    ctx: { session: { ...ctx.session, user: ctx.session.user } },
   })
+})
 
 /**
  * Middleware to check if a user has SUPER_ADMIN role
  */
-export const superAdminProcedure = t.procedure
-  .use(performanceMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) return AppError.unauthorized()
+export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
+  if (!ctx.session?.user) return AppError.unauthorized()
 
-    if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      AppError.insufficientPermissions(Role.SUPER_ADMIN)
-    }
+  if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+    AppError.insufficientRole(Role.SUPER_ADMIN)
+  }
 
-    return next({
-      ctx: { session: { ...ctx.session, user: ctx.session.user } },
-    })
+  return next({
+    ctx: { session: { ...ctx.session, user: ctx.session.user } },
   })
+})
 
 /**
  * Middleware to check if a developer has access to a specific emulator
@@ -357,11 +333,7 @@ export function developerEmulatorProcedure(emulatorId: string) {
   return protectedProcedure.use(async ({ ctx, next }) => {
     const userId = ctx.session.user.id
 
-    const hasAccess = await hasDeveloperAccessToEmulator(
-      userId,
-      emulatorId,
-      ctx.prisma,
-    )
+    const hasAccess = await hasDeveloperAccessToEmulator(userId, emulatorId, ctx.prisma)
 
     if (!hasAccess) {
       AppError.forbidden(`You don't have developer access to this emulator`)
@@ -380,9 +352,7 @@ export function developerEmulatorProcedure(emulatorId: string) {
 export function permissionProcedure(requiredPermission: string) {
   return protectedProcedure.use(({ ctx, next }) => {
     if (!hasPermissionInContext(ctx, requiredPermission)) {
-      AppError.forbidden(
-        `You need the '${requiredPermission}' permission to perform this action`,
-      )
+      AppError.forbidden(`You need the '${requiredPermission}' permission to perform this action`)
     }
 
     return next({
@@ -403,9 +373,7 @@ export function multiPermissionProcedure(requiredPermissions: string[]) {
     )
 
     if (missingPermissions.length > 0) {
-      AppError.forbidden(
-        `You need the following permissions: ${missingPermissions.join(', ')}`,
-      )
+      AppError.forbidden(`You need the following permissions: ${missingPermissions.join(', ')}`)
     }
 
     return next({
@@ -441,58 +409,28 @@ export function anyPermissionProcedure(requiredPermissions: string[]) {
 }
 
 // Common permission-based procedures for convenience
-export const createListingProcedure = permissionProcedure(
-  PERMISSIONS.CREATE_LISTING,
-)
-export const approveListingsProcedure = permissionProcedure(
-  PERMISSIONS.APPROVE_LISTINGS,
-)
+export const createListingProcedure = permissionProcedure(PERMISSIONS.CREATE_LISTING)
+export const approveListingsProcedure = permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
 
 // TODO: use implementation of this procedure
-export const manageUsersProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_USERS,
-)
-export const viewUserBansProcedure = permissionProcedure(
-  PERMISSIONS.VIEW_USER_BANS,
-)
-export const manageUserBansProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_USER_BANS,
-)
-export const managePermissionsProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_PERMISSIONS,
-)
-export const accessAdminPanelProcedure = permissionProcedure(
-  PERMISSIONS.ACCESS_ADMIN_PANEL,
-)
-export const viewStatisticsProcedure = permissionProcedure(
-  PERMISSIONS.VIEW_STATISTICS,
-)
-export const manageEmulatorsProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_EMULATORS,
-)
+export const manageUsersProcedure = permissionProcedure(PERMISSIONS.MANAGE_USERS)
+export const viewUserBansProcedure = permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+export const manageUserBansProcedure = permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
+export const managePermissionsProcedure = permissionProcedure(PERMISSIONS.MANAGE_PERMISSIONS)
+export const accessAdminPanelProcedure = permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+export const viewStatisticsProcedure = permissionProcedure(PERMISSIONS.VIEW_STATISTICS)
+export const manageEmulatorsProcedure = permissionProcedure(PERMISSIONS.MANAGE_EMULATORS)
 export const editGamesProcedure = permissionProcedure(PERMISSIONS.EDIT_GAMES)
-export const deleteGamesProcedure = permissionProcedure(
-  PERMISSIONS.DELETE_GAMES,
-)
+export const deleteGamesProcedure = permissionProcedure(PERMISSIONS.DELETE_GAMES)
 
 // TODO: use implementation of this procedure
-export const manageGamesProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_GAMES,
-)
-export const approveGamesProcedure = permissionProcedure(
-  PERMISSIONS.APPROVE_GAMES,
-)
-export const manageDevicesProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_DEVICES,
-)
+export const manageGamesProcedure = permissionProcedure(PERMISSIONS.MANAGE_GAMES)
+export const approveGamesProcedure = permissionProcedure(PERMISSIONS.APPROVE_GAMES)
+export const manageDevicesProcedure = permissionProcedure(PERMISSIONS.MANAGE_DEVICES)
 
 // TODO: use implementation of this procedure
-export const manageSystemsProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_SYSTEMS,
-)
-export const deleteAnyListingProcedure = permissionProcedure(
-  PERMISSIONS.DELETE_ANY_LISTING,
-)
+export const manageSystemsProcedure = permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
+export const deleteAnyListingProcedure = permissionProcedure(PERMISSIONS.DELETE_ANY_LISTING)
 export const manageEmulatorVerifiedDevelopersProcedure = permissionProcedure(
   PERMISSIONS.MANAGE_EMULATOR_VERIFIED_DEVELOPERS,
 )

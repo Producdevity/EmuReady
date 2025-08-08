@@ -203,16 +203,12 @@ function Navbar() {
               <div className="relative w-6 h-6">
                 <Menu
                   className={`absolute inset-0 w-6 h-6 transition-all duration-300 ${
-                    mobileMenuOpen
-                      ? 'opacity-0 rotate-180'
-                      : 'opacity-100 rotate-0'
+                    mobileMenuOpen ? 'opacity-0 rotate-180' : 'opacity-100 rotate-0'
                   }`}
                 />
                 <X
                   className={`absolute inset-0 w-6 h-6 transition-all duration-300 ${
-                    mobileMenuOpen
-                      ? 'opacity-100 rotate-0'
-                      : 'opacity-0 -rotate-180'
+                    mobileMenuOpen ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-180'
                   }`}
                 />
               </div>
@@ -276,9 +272,7 @@ function Navbar() {
                     </Link>
                   )}
                   <div className="px-4 py-3">
-                    <UserButton
-                      appearance={{ elements: { avatarBox: 'h-10 w-10' } }}
-                    />
+                    <UserButton appearance={{ elements: { avatarBox: 'h-10 w-10' } }} />
                   </div>
                 </div>
               ) : (

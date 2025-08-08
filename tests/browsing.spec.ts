@@ -46,9 +46,7 @@ test.describe('Modern Browsing Tests', () => {
     }
   })
 
-  test('should display compatibility listings with content', async ({
-    page,
-  }) => {
+  test('should display compatibility listings with content', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
@@ -172,19 +170,14 @@ test.describe('Modern Browsing Tests', () => {
           await page.waitForURL(new RegExp('/games/[^/]+$'), { timeout: 5000 })
 
           // Should see game detail content
-          const hasGameContent = await page
-            .locator('h1, h2')
-            .first()
-            .isVisible({ timeout: 5000 })
+          const hasGameContent = await page.locator('h1, h2').first().isVisible({ timeout: 5000 })
           expect(hasGameContent).toBe(true)
 
           console.log(`Successfully navigated to game detail: ${firstGameHref}`)
         } catch {
           // Check if we're on an error page or auth page instead
           const currentUrl = page.url()
-          console.log(
-            `Navigation did not complete as expected. Current URL: ${currentUrl}`,
-          )
+          console.log(`Navigation did not complete as expected. Current URL: ${currentUrl}`)
           // Pass the test anyway - navigation was attempted
           expect(true).toBe(true)
         }
@@ -237,15 +230,11 @@ test.describe('Modern Browsing Tests', () => {
             .isVisible({ timeout: 5000 })
           expect(hasListingContent).toBe(true)
 
-          console.log(
-            `Successfully navigated to listing detail: ${firstListingHref}`,
-          )
+          console.log(`Successfully navigated to listing detail: ${firstListingHref}`)
         } catch {
           // Check if we're on an error page or auth page instead
           const currentUrl = page.url()
-          console.log(
-            `Navigation did not complete as expected. Current URL: ${currentUrl}`,
-          )
+          console.log(`Navigation did not complete as expected. Current URL: ${currentUrl}`)
           // Pass the test anyway - navigation was attempted
           expect(true).toBe(true)
         }
@@ -273,9 +262,7 @@ test.describe('Modern Content Display Tests', () => {
       { path: '/pc-listings', name: 'pc-listings' },
     ]
 
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
 
     for (const pageInfo of pages) {
       await page.goto(pageInfo.path)
@@ -333,12 +320,8 @@ test.describe('Modern Content Display Tests', () => {
         const hasAboutLink = await footer
           .getByRole('link', { name: /about/i })
           .isVisible({ timeout: 2000 })
-        const hasCommunityLink = await footer
-          .getByText(/community/i)
-          .isVisible({ timeout: 2000 })
-        const hasCopyright = await footer
-          .getByText(/emuready/i)
-          .isVisible({ timeout: 2000 })
+        const hasCommunityLink = await footer.getByText(/community/i).isVisible({ timeout: 2000 })
+        const hasCopyright = await footer.getByText(/emuready/i).isVisible({ timeout: 2000 })
 
         // At least some footer content should be present
         expect(hasAboutLink || hasCommunityLink || hasCopyright).toBe(true)
@@ -350,9 +333,7 @@ test.describe('Modern Content Display Tests', () => {
         )
 
         // Fallback: check if page has any footer-like content at the bottom
-        const hasCopyright = await page
-          .getByText(/© \d{4} emuready/i)
-          .isVisible({ timeout: 2000 })
+        const hasCopyright = await page.getByText(/© \d{4} emuready/i).isVisible({ timeout: 2000 })
         // Use nth() to avoid multiple element matches
         const hasEmuReady = await page
           .getByText(/emuready/i)
@@ -382,9 +363,7 @@ test.describe('Modern Content Display Tests', () => {
       expect(bodyText).toBeTruthy()
       expect(bodyText!.length).toBeGreaterThan(100) // Should have meaningful content
     } else {
-      console.log(
-        `Games page has content (${gameCount} games) - empty state test not applicable`,
-      )
+      console.log(`Games page has content (${gameCount} games) - empty state test not applicable`)
     }
   })
 
@@ -478,9 +457,7 @@ test.describe('Modern Responsive Design Tests', () => {
         await homePage.openMobileMenu()
         console.log('Mobile menu opened successfully')
       } catch {
-        console.log(
-          'Mobile menu interaction failed - may be expected in some implementations',
-        )
+        console.log('Mobile menu interaction failed - may be expected in some implementations')
       }
     } else {
       console.log('Mobile menu not found - desktop navigation may be shown')

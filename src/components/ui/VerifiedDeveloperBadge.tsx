@@ -28,9 +28,7 @@ export function VerifiedDeveloperBadge(props: Props) {
         )}
       />
       {showText && (
-        <span className="text-blue-600 dark:text-blue-400 font-medium">
-          Verified Developer
-        </span>
+        <span className="text-blue-600 dark:text-blue-400 font-medium">Verified Developer</span>
       )}
     </div>
   )

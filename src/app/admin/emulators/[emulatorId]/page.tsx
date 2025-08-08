@@ -12,15 +12,11 @@ function EditEmulatorPage() {
   const params = useParams()
   const emulatorId = params.emulatorId as string
 
-  const emulatorsQuery = api.emulators.byId.useQuery(
-    { id: emulatorId },
-    { enabled: !!emulatorId },
-  )
+  const emulatorsQuery = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
 
   const systemsQuery = api.systems.get.useQuery({})
 
-  if (emulatorsQuery.isPending || systemsQuery.isPending)
-    return <PageSkeletonLoading />
+  if (emulatorsQuery.isPending || systemsQuery.isPending) return <PageSkeletonLoading />
 
   if (emulatorsQuery.error || systemsQuery.error) {
     return (
@@ -39,21 +35,14 @@ function EditEmulatorPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => router.back()}
-        className="mb-6"
-      >
+      <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
         <ArrowLeft className="h-4 w-4" />
         Back
       </Button>
 
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
         Edit Emulator:{' '}
-        <span className="text-blue-600 dark:text-blue-400">
-          {emulatorsQuery.data.name}
-        </span>
+        <span className="text-blue-600 dark:text-blue-400">{emulatorsQuery.data.name}</span>
       </h1>
 
       <div className="space-y-10">
@@ -81,11 +70,7 @@ function EditEmulatorPage() {
           <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
             Custom Fields
           </h2>
-          <Button
-            onClick={() =>
-              router.push(`/admin/emulators/${emulatorId}/custom-fields`)
-            }
-          >
+          <Button onClick={() => router.push(`/admin/emulators/${emulatorId}/custom-fields`)}>
             Manage Custom Fields
           </Button>
         </section>

@@ -12,9 +12,7 @@ interface Props {
 export function InputPlaceholder(props: Props) {
   return (
     <div className={cn('mb-2', props.className)}>
-      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        {props.label}
-      </p>
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{props.label}</p>
       <div
         role="button"
         tabIndex={0}

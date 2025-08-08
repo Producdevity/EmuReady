@@ -18,19 +18,13 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
     await expect(page).toHaveURL(/\/admin\/(moderation|approvals|pending)/)
   })
 
-  test('should display content moderation queue with required elements', async ({
-    page,
-  }) => {
+  test('should display content moderation queue with required elements', async ({ page }) => {
     // Moderation queue must be present
-    const moderationQueue = page.locator(
-      '[data-testid*="moderation"], .moderation-queue',
-    )
+    const moderationQueue = page.locator('[data-testid*="moderation"], .moderation-queue')
     await expect(moderationQueue).toBeVisible()
 
     // Check for pending items or empty state
-    const pendingItems = moderationQueue.locator(
-      '[data-testid*="pending"], .pending-item',
-    )
+    const pendingItems = moderationQueue.locator('[data-testid*="pending"], .pending-item')
     const itemCount = await pendingItems.count()
 
     if (itemCount > 0) {
@@ -42,12 +36,8 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
       await expect(preview).toBeVisible()
 
       // Must have action buttons
-      const approveButton = firstItem
-        .locator('button')
-        .filter({ hasText: /approve/i })
-      const rejectButton = firstItem
-        .locator('button')
-        .filter({ hasText: /reject/i })
+      const approveButton = firstItem.locator('button').filter({ hasText: /approve/i })
+      const rejectButton = firstItem.locator('button').filter({ hasText: /reject/i })
 
       await expect(approveButton).toBeVisible()
       await expect(rejectButton).toBeVisible()
@@ -65,20 +55,14 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Look for content type filters
-      const typeFilters = page.locator(
-        '[data-testid*="type-filter"], .content-type-filters',
-      )
+      const typeFilters = page.locator('[data-testid*="type-filter"], .content-type-filters')
 
       if (await typeFilters.isVisible({ timeout: 3000 })) {
         const types = ['Listings', 'Comments', 'Games', 'Images']
 
         for (const type of types) {
-          const typeButton = typeFilters
-            .locator('button, label')
-            .filter({ hasText: type })
-          if (
-            await typeButton.isVisible({ timeout: 1000 }).catch(() => false)
-          ) {
+          const typeButton = typeFilters.locator('button, label').filter({ hasText: type })
+          if (await typeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
             await typeButton.click()
             await page.waitForTimeout(1000)
 
@@ -98,17 +82,13 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Find preview button
-      const previewButtons = page
-        .locator('button')
-        .filter({ hasText: /preview|view.*full/i })
+      const previewButtons = page.locator('button').filter({ hasText: /preview|view.*full/i })
 
       if ((await previewButtons.count()) > 0) {
         await previewButtons.first().click()
 
         // Should show preview modal
-        const previewModal = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /preview/i })
+        const previewModal = page.locator('[role="dialog"]').filter({ hasText: /preview/i })
 
         if (await previewModal.isVisible({ timeout: 3000 })) {
           // Check content sections
@@ -127,9 +107,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
           }
 
           // Close preview
-          const closeButton = previewModal
-            .locator('button')
-            .filter({ hasText: /close/i })
+          const closeButton = previewModal.locator('button').filter({ hasText: /close/i })
           await closeButton.click()
         }
       }
@@ -141,9 +119,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Find approve button
-      const approveButtons = page
-        .locator('button')
-        .filter({ hasText: /approve/i })
+      const approveButtons = page.locator('button').filter({ hasText: /approve/i })
 
       if ((await approveButtons.count()) > 0) {
         // Remember item details
@@ -176,9 +152,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
           const successMessage = page
             .locator('[role="alert"]')
             .filter({ hasText: /approved|success/i })
-          const hasSuccess = await successMessage
-            .isVisible({ timeout: 3000 })
-            .catch(() => false)
+          const hasSuccess = await successMessage.isVisible({ timeout: 3000 }).catch(() => false)
 
           if (hasSuccess) {
             console.log('Content approved successfully')
@@ -205,17 +179,13 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Find reject button
-      const rejectButtons = page
-        .locator('button')
-        .filter({ hasText: /reject/i })
+      const rejectButtons = page.locator('button').filter({ hasText: /reject/i })
 
       if ((await rejectButtons.count()) > 0) {
         await rejectButtons.first().click()
 
         // Should show rejection form
-        const rejectionDialog = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /reject/i })
+        const rejectionDialog = page.locator('[role="dialog"]').filter({ hasText: /reject/i })
 
         if (await rejectionDialog.isVisible({ timeout: 3000 })) {
           // Reason selector
@@ -223,13 +193,8 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
           if (await reasonSelect.isVisible()) {
             await reasonSelect.selectOption({ index: 1 })
 
-            const reasons = await reasonSelect
-              .locator('option')
-              .allTextContents()
-            console.log(
-              'Rejection reasons:',
-              reasons.filter((r) => r).join(', '),
-            )
+            const reasons = await reasonSelect.locator('option').allTextContents()
+            console.log('Rejection reasons:', reasons.filter((r) => r).join(', '))
           }
 
           // Additional notes
@@ -248,9 +213,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
           }
 
           // Cancel for safety
-          const cancelButton = rejectionDialog
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = rejectionDialog.locator('button').filter({ hasText: /cancel/i })
           await cancelButton.click()
         }
       }
@@ -262,9 +225,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Look for checkboxes
-      const checkboxes = page
-        .locator('input[type="checkbox"]')
-        .filter({ hasNotText: /all/i })
+      const checkboxes = page.locator('input[type="checkbox"]').filter({ hasNotText: /all/i })
 
       if ((await checkboxes.count()) >= 2) {
         // Select multiple items
@@ -272,22 +233,17 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
         await checkboxes.nth(1).check()
 
         // Look for bulk actions
-        const bulkActions = page.locator(
-          '[data-testid*="bulk-actions"], .bulk-actions',
-        )
+        const bulkActions = page.locator('[data-testid*="bulk-actions"], .bulk-actions')
 
         if (await bulkActions.isVisible({ timeout: 2000 })) {
           const approveAllButton = bulkActions
             .locator('button')
             .filter({ hasText: /approve.*all/i })
-          const rejectAllButton = bulkActions
-            .locator('button')
-            .filter({ hasText: /reject.*all/i })
+          const rejectAllButton = bulkActions.locator('button').filter({ hasText: /reject.*all/i })
 
-          expect(
-            (await approveAllButton.isVisible()) ||
-              (await rejectAllButton.isVisible()),
-          ).toBe(true)
+          expect((await approveAllButton.isVisible()) || (await rejectAllButton.isVisible())).toBe(
+            true,
+          )
 
           console.log('Bulk moderation actions available')
 
@@ -304,26 +260,20 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Look for user info in moderation items
-      const userInfo = page.locator(
-        '[data-testid*="user-info"], .submitter-info',
-      )
+      const userInfo = page.locator('[data-testid*="user-info"], .submitter-info')
 
       if ((await userInfo.count()) > 0) {
         const firstUser = userInfo.first()
 
         // Trust score
-        const trustScore = firstUser.locator(
-          '[data-testid*="trust"], .trust-score',
-        )
+        const trustScore = firstUser.locator('[data-testid*="trust"], .trust-score')
         if (await trustScore.isVisible({ timeout: 2000 })) {
           const score = await trustScore.textContent()
           console.log(`User trust score: ${score}`)
         }
 
         // User history
-        const userHistory = firstUser.locator(
-          '[data-testid*="history"], .user-stats',
-        )
+        const userHistory = firstUser.locator('[data-testid*="history"], .user-stats')
         if (await userHistory.isVisible()) {
           const history = await userHistory.textContent()
           console.log(`User history: ${history}`)
@@ -343,9 +293,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Look for flagged items
-      const flaggedItems = page.locator(
-        '[data-testid*="flagged"], .flagged-item',
-      )
+      const flaggedItems = page.locator('[data-testid*="flagged"], .flagged-item')
 
       if ((await flaggedItems.count()) > 0) {
         console.log(`${await flaggedItems.count()} flagged items found`)
@@ -353,18 +301,14 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
         const firstFlagged = flaggedItems.first()
 
         // Should show flag reason
-        const flagReason = firstFlagged.locator(
-          '[data-testid*="flag-reason"], .flag-reason',
-        )
+        const flagReason = firstFlagged.locator('[data-testid*="flag-reason"], .flag-reason')
         if (await flagReason.isVisible()) {
           const reason = await flagReason.textContent()
           console.log(`Flagged for: ${reason}`)
         }
 
         // Should have elevated review options
-        const escalateButton = firstFlagged
-          .locator('button')
-          .filter({ hasText: /escalate/i })
+        const escalateButton = firstFlagged.locator('button').filter({ hasText: /escalate/i })
         if (await escalateButton.isVisible()) {
           console.log('Can escalate flagged content')
         }
@@ -377,9 +321,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
     if (page.url().includes('moderation') || page.url().includes('approvals')) {
       // Look for metrics section
-      const metricsSection = page.locator(
-        '[data-testid*="moderation-metrics"], .moderation-stats',
-      )
+      const metricsSection = page.locator('[data-testid*="moderation-metrics"], .moderation-stats')
 
       if (await metricsSection.isVisible({ timeout: 3000 })) {
         const metrics = {
@@ -411,16 +353,12 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
         await editButtons.first().click()
 
         // Should show edit form
-        const editDialog = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /edit/i })
+        const editDialog = page.locator('[role="dialog"]').filter({ hasText: /edit/i })
 
         if (await editDialog.isVisible({ timeout: 3000 })) {
           // Check for editable fields
           const titleInput = editDialog.locator('input[name*="title"]')
-          const descriptionInput = editDialog.locator(
-            'textarea[name*="description"]',
-          )
+          const descriptionInput = editDialog.locator('textarea[name*="description"]')
 
           if (await titleInput.isVisible()) {
             const currentTitle = await titleInput.inputValue()
@@ -430,9 +368,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
           if (await descriptionInput.isVisible()) {
             const currentDescription = await descriptionInput.inputValue()
-            await descriptionInput.fill(
-              `${currentDescription}\nEdited by moderator`,
-            )
+            await descriptionInput.fill(`${currentDescription}\nEdited by moderator`)
             console.log('Can edit content description during moderation')
           }
 
@@ -446,9 +382,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
           }
 
           // Cancel edit
-          const cancelButton = editDialog
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = editDialog.locator('button').filter({ hasText: /cancel/i })
           await cancelButton.click()
         }
       }

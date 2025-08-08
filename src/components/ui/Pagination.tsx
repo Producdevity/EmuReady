@@ -29,23 +29,17 @@ export function Pagination(props: Props) {
 
   const pagesAroundCurrent = useMemo(
     () =>
-      Array.from({ length: props.totalPages }, (_, i) => i + 1).filter(
-        (pageNum) => {
-          // Use 2 as default for SSR compatibility, works well on both mobile and desktop
-          const range = 2
-          const isNearCurrent =
-            pageNum >= props.currentPage - range &&
-            pageNum <= props.currentPage + range
-          const isNotFirstPage =
-            props.currentPage > range + 1 ? pageNum !== 1 : true
-          const isNotLastPage =
-            props.currentPage < props.totalPages - range
-              ? pageNum !== props.totalPages
-              : true
+      Array.from({ length: props.totalPages }, (_, i) => i + 1).filter((pageNum) => {
+        // Use 2 as default for SSR compatibility, works well on both mobile and desktop
+        const range = 2
+        const isNearCurrent =
+          pageNum >= props.currentPage - range && pageNum <= props.currentPage + range
+        const isNotFirstPage = props.currentPage > range + 1 ? pageNum !== 1 : true
+        const isNotLastPage =
+          props.currentPage < props.totalPages - range ? pageNum !== props.totalPages : true
 
-          return isNearCurrent && isNotFirstPage && isNotLastPage
-        },
-      ),
+        return isNearCurrent && isNotFirstPage && isNotLastPage
+      }),
     [props.currentPage, props.totalPages],
   )
 
@@ -54,13 +48,9 @@ export function Pagination(props: Props) {
   // Calculate items per page from pagination data or fall back to reasonable default
   const itemsPerPage =
     props.itemsPerPage ??
-    (props.totalItems && props.totalPages
-      ? Math.ceil(props.totalItems / props.totalPages)
-      : 10)
+    (props.totalItems && props.totalPages ? Math.ceil(props.totalItems / props.totalPages) : 10)
 
-  const itemsStart = !props.totalItems
-    ? 0
-    : (props.currentPage - 1) * itemsPerPage + 1
+  const itemsStart = !props.totalItems ? 0 : (props.currentPage - 1) * itemsPerPage + 1
 
   const itemsEnd = !props.totalItems
     ? 0
@@ -73,13 +63,8 @@ export function Pagination(props: Props) {
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
             <span className="hidden sm:inline">
               Showing{' '}
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
-                {itemsStart}
-              </span>{' '}
-              to{' '}
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
-                {itemsEnd}
-              </span>{' '}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{itemsStart}</span>{' '}
+              to <span className="font-semibold text-gray-900 dark:text-gray-100">{itemsEnd}</span>{' '}
               of{' '}
               <span className="font-semibold text-gray-900 dark:text-gray-100">
                 {props.totalItems}
@@ -100,9 +85,7 @@ export function Pagination(props: Props) {
 
         <div className="flex items-center space-x-1">
           <button
-            onClick={() =>
-              props.onPageChange(Math.max(1, props.currentPage - 1))
-            }
+            onClick={() => props.onPageChange(Math.max(1, props.currentPage - 1))}
             disabled={props.currentPage === 1}
             className={cn(
               'relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
@@ -178,11 +161,7 @@ export function Pagination(props: Props) {
 
           <button
             type="button"
-            onClick={() =>
-              props.onPageChange(
-                Math.min(props.totalPages, props.currentPage + 1),
-              )
-            }
+            onClick={() => props.onPageChange(Math.min(props.totalPages, props.currentPage + 1))}
             disabled={props.currentPage === props.totalPages}
             className={`relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               props.currentPage === props.totalPages

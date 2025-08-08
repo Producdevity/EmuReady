@@ -3,8 +3,7 @@ import { type Metadata } from 'next'
 
 const appName = 'EmuReady'
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://emuready.com'
-const appDescription =
-  'Find the perfect emulator settings for your games and devices'
+const appDescription = 'Find the perfect emulator settings for your games and devices'
 
 export const siteConfig = {
   name: appName,
@@ -76,8 +75,7 @@ export const defaultMetadata: Metadata = {
   },
   other: {
     'theme-color': '#111828',
-    'google-site-verification':
-      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '', // TODO: add if we start caring
+    'google-site-verification': process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '', // TODO: add if we start caring
     'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || '', // TODO: add if we start caring
     'yandex-verification': process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || '', // TODO: add if we start caring
     'fb:app_id': process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '', // TODO: add if we start caring
@@ -122,9 +120,7 @@ export function generatePageMetadata(
 
   // Escape user-generated content to prevent XSS
   const escapedTitle = escape(title)
-  const escapedDescription = description
-    ? escape(description)
-    : siteConfig.description
+  const escapedDescription = description ? escape(description) : siteConfig.description
 
   const metadata: Metadata = {
     title: escapedTitle,
@@ -180,13 +176,7 @@ interface StructuredDataBase {
 }
 
 export function generateStructuredData(
-  type:
-    | 'WebSite'
-    | 'WebPage'
-    | 'Review'
-    | 'ItemList'
-    | 'BreadcrumbList'
-    | 'Organization',
+  type: 'WebSite' | 'WebPage' | 'Review' | 'ItemList' | 'BreadcrumbList' | 'Organization',
   data: StructuredDataBase,
 ) {
   const baseData = {
@@ -246,9 +236,7 @@ export function generateStructuredData(
         itemReviewed: {
           '@type': 'SoftwareApplication',
           name: data.gameName ? escape(data.gameName) : undefined,
-          operatingSystem: data.emulatorName
-            ? escape(data.emulatorName)
-            : undefined,
+          operatingSystem: data.emulatorName ? escape(data.emulatorName) : undefined,
           applicationCategory: 'GameApplication',
         },
         about: {

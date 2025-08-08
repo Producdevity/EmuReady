@@ -3,11 +3,7 @@
 import { Search, Plus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
-import {
-  AdminPageLayout,
-  AdminTableContainer,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import {
   Button,
   Input,
@@ -24,13 +20,13 @@ import {
   TooltipTrigger,
   TooltipContent,
   useConfirmDialog,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import BadgeDetailsModal from './components/BadgeDetailsModal'
 import BadgeModal from './components/BadgeModal'
@@ -55,9 +51,7 @@ export default function AdminBadgesPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [editingBadge, setEditingBadge] = useState<BadgeData | null>(null)
-  const [statusFilter, setStatusFilter] = useState<
-    'all' | 'active' | 'inactive'
-  >('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
   const table = useAdminTable<BadgeSortField>({
     defaultLimit: 20,
@@ -112,8 +106,7 @@ export default function AdminBadgesPage() {
   const handleDeleteBadge = async (badgeId: string) => {
     const confirmed = await confirm({
       title: 'Delete Badge',
-      description:
-        'Are you sure you want to delete this badge? This action cannot be undone.',
+      description: 'Are you sure you want to delete this badge? This action cannot be undone.',
       confirmText: 'Delete',
     })
 
@@ -135,11 +128,7 @@ export default function AdminBadgesPage() {
 
     // Using Promise.all for better performance when deleting multiple badges
     try {
-      await Promise.all(
-        badgeIds.map((badgeId) =>
-          deleteBadgeMutation.mutateAsync({ id: badgeId }),
-        ),
-      )
+      await Promise.all(badgeIds.map((badgeId) => deleteBadgeMutation.mutateAsync({ id: badgeId })))
       setSelectedBadgeIds([])
     } catch (error) {
       // Individual errors are handled by the mutation's onError callback
@@ -153,9 +142,7 @@ export default function AdminBadgesPage() {
 
   const handleSelectBadge = (badgeId: string, selected: boolean) => {
     setSelectedBadgeIds(
-      selected
-        ? (prev) => [...prev, badgeId]
-        : (prev) => prev.filter((id) => id !== badgeId),
+      selected ? (prev) => [...prev, badgeId] : (prev) => prev.filter((id) => id !== badgeId),
     )
   }
 
@@ -173,10 +160,7 @@ export default function AdminBadgesPage() {
             <Plus className="w-4 h-4 mr-2" />
             Create Badge
           </Button>
-          <ColumnVisibilityControl
-            columns={BADGE_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={BADGE_COLUMNS} columnVisibility={columnVisibility} />
         </>
       }
     >
@@ -226,9 +210,7 @@ export default function AdminBadgesPage() {
           <div className="flex gap-2">
             <select
               value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')
-              }
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="all">All Status</option>
@@ -272,9 +254,7 @@ export default function AdminBadgesPage() {
         ) : badges.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No badges found matching your search.'
-                : 'No badges created yet.'}
+              {table.search ? 'No badges found matching your search.' : 'No badges created yet.'}
             </p>
           </div>
         ) : (
@@ -286,13 +266,8 @@ export default function AdminBadgesPage() {
                     <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
-                        checked={
-                          selectedBadgeIds.length === badges.length &&
-                          badges.length > 0
-                        }
-                        onChange={(e) =>
-                          handleSelectAllBadges(e.target.checked)
-                        }
+                        checked={selectedBadgeIds.length === badges.length && badges.length > 0}
+                        onChange={(e) => handleSelectAllBadges(e.target.checked)}
                         className="rounded border-gray-300"
                       />
                     </th>
@@ -345,17 +320,12 @@ export default function AdminBadgesPage() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {badges.map((badge) => (
-                    <tr
-                      key={badge.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
+                    <tr key={badge.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedBadgeIds.includes(badge.id)}
-                          onChange={(e) =>
-                            handleSelectBadge(badge.id, e.target.checked)
-                          }
+                          onChange={(e) => handleSelectBadge(badge.id, e.target.checked)}
                           className="rounded border-gray-300"
                         />
                       </td>
@@ -390,14 +360,10 @@ export default function AdminBadgesPage() {
                                     : badge.description}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                {badge.description}
-                              </TooltipContent>
+                              <TooltipContent>{badge.description}</TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-gray-400">
-                              No description
-                            </span>
+                            <span className="text-gray-400">No description</span>
                           )}
                         </td>
                       )}
@@ -411,9 +377,7 @@ export default function AdminBadgesPage() {
                       )}
                       {columnVisibility.isColumnVisible('status') && (
                         <td className="px-6 py-4">
-                          <Badge
-                            variant={badge.isActive ? 'success' : 'default'}
-                          >
+                          <Badge variant={badge.isActive ? 'success' : 'default'}>
                             {badge.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </td>
@@ -425,7 +389,7 @@ export default function AdminBadgesPage() {
                       )}
                       {columnVisibility.isColumnVisible('createdAt') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {formatDate(badge.createdAt)}
+                          <LocalizedDate date={badge.createdAt} format="date" />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('actions') && (
@@ -435,10 +399,7 @@ export default function AdminBadgesPage() {
                               onClick={() => handleViewBadge(badge.id)}
                               title="View Badge Details"
                             />
-                            <EditButton
-                              onClick={() => handleEditBadge(badge)}
-                              title="Edit Badge"
-                            />
+                            <EditButton onClick={() => handleEditBadge(badge)} title="Edit Badge" />
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <DeleteButton

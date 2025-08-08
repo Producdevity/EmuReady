@@ -63,15 +63,11 @@ export class GameFormPage extends BasePage {
 
   // Image selection elements
   get imageSelectionArea() {
-    return this.page.locator(
-      'input[type="file"], [data-testid="image-selector"]',
-    )
+    return this.page.locator('input[type="file"], [data-testid="image-selector"]')
   }
 
   get selectedImage() {
-    return this.page.locator(
-      'img[alt*="cover"], img[alt*="game"], .selected-image',
-    )
+    return this.page.locator('img[alt*="cover"], img[alt*="game"], .selected-image')
   }
 
   // Actions
@@ -185,9 +181,7 @@ export class GameFormPage extends BasePage {
     if (expectedError) {
       const errorText = await this.errorMessages.first().textContent()
       if (!errorText?.toLowerCase().includes(expectedError.toLowerCase())) {
-        throw new Error(
-          `Expected error containing "${expectedError}" but got "${errorText}"`,
-        )
+        throw new Error(`Expected error containing "${expectedError}" but got "${errorText}"`)
       }
     }
   }
@@ -203,9 +197,7 @@ export class GameFormPage extends BasePage {
 
   async hasValidationErrors(): Promise<boolean> {
     try {
-      await this.errorMessages
-        .first()
-        .waitFor({ state: 'visible', timeout: 2000 })
+      await this.errorMessages.first().waitFor({ state: 'visible', timeout: 2000 })
       return true
     } catch {
       return false

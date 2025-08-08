@@ -26,9 +26,7 @@ export function StopKillingGamesPopup() {
     // Don't show on admin pages
     if (window.location.pathname.startsWith('/admin')) return
 
-    const hasBeenDismissed = localStorage.getItem(
-      storageKeys.popups.stopKillingGamesDismissed,
-    )
+    const hasBeenDismissed = localStorage.getItem(storageKeys.popups.stopKillingGamesDismissed)
 
     if (hasBeenDismissed) return
 
@@ -57,12 +55,7 @@ export function StopKillingGamesPopup() {
   if (process.env.NODE_ENV !== 'production' || !isOpen) return null
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleDismiss}
-      hideCloseButton={true}
-      className="max-w-lg"
-    >
+    <Modal isOpen={isOpen} onClose={handleDismiss} hideCloseButton={true} className="max-w-lg">
       <div className="p-6">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
@@ -71,23 +64,19 @@ export function StopKillingGamesPopup() {
 
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              The Community needs your help to{' '}
-              <strong>&#34;Stop Killing Games&#34;</strong>
+              The Community needs your help to <strong>&#34;Stop Killing Games&#34;</strong>
             </h2>
 
             <div className="text-gray-600 dark:text-gray-300 space-y-3 mb-6">
               <p>
-                765,634 people have already signed a petition urging publishers
-                to make future games playable even after servers shut down.
+                765,634 people have already signed a petition urging publishers to make future games
+                playable even after servers shut down.
               </p>
               <p>
-                It calls for offline modes or private server support—to preserve
-                ownership and access.
+                It calls for offline modes or private server support—to preserve ownership and
+                access.
               </p>
-              <p>
-                Once 1 million signatures are reached, the EU Commission must
-                review it.
-              </p>
+              <p>Once 1 million signatures are reached, the EU Commission must review it.</p>
               <p>
                 <strong className="text-gray-800 dark:text-gray-200">
                   Care to help to hit the mark?

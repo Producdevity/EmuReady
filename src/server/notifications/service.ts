@@ -12,10 +12,7 @@ import {
   Role,
 } from '@orm'
 import { createEmailService } from './emailService'
-import {
-  type NotificationEventData,
-  notificationEventEmitter,
-} from './eventEmitter'
+import { type NotificationEventData, notificationEventEmitter } from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'
 import { realtimeNotificationService } from './realtimeService'
 import { notificationTemplateEngine, type TemplateContext } from './templates'
@@ -59,9 +56,7 @@ export class NotificationService {
     )
 
     if (!rateLimitStatus.allowed) {
-      console.warn(
-        `Notification blocked by rate limit: ${rateLimitStatus.reason}`,
-      )
+      console.warn(`Notification blocked by rate limit: ${rateLimitStatus.reason}`)
       throw new Error(`Rate limit exceeded: ${rateLimitStatus.reason}`)
     }
 
@@ -97,10 +92,7 @@ export class NotificationService {
       return notification.id
     } else {
       // Use batching service for better performance and retry logic
-      const batchId = notificationBatchingService.scheduleNotification(
-        data,
-        scheduledFor,
-      )
+      const batchId = notificationBatchingService.scheduleNotification(data, scheduledFor)
 
       console.log(`Notification scheduled for batch processing: ${batchId}`)
       return batchId
@@ -113,17 +105,11 @@ export class NotificationService {
   ): Promise<string | null> {
     try {
       // Map event type to notification type
-      const notificationType = this.mapEventToNotificationType(
-        eventData.eventType,
-      )
+      const notificationType = this.mapEventToNotificationType(eventData.eventType)
       if (!notificationType) return null
 
       // Check user preferences
-      const shouldSend = await this.shouldSendNotification(
-        userId,
-        notificationType,
-        eventData,
-      )
+      const shouldSend = await this.shouldSendNotification(userId, notificationType, eventData)
       if (!shouldSend) return null
 
       // Check for duplicate notifications before creating
@@ -133,17 +119,12 @@ export class NotificationService {
         eventData,
       )
       if (isDuplicate) {
-        console.log(
-          `Skipping duplicate notification for user ${userId}, type ${notificationType}`,
-        )
+        console.log(`Skipping duplicate notification for user ${userId}, type ${notificationType}`)
         return null
       }
 
       // Enrich context with database data
-      const enrichedContext = await this.enrichContextWithData(
-        eventData,
-        notificationType,
-      )
+      const enrichedContext = await this.enrichContextWithData(eventData, notificationType)
 
       // Generate notification content
       const template = notificationTemplateEngine.generateTemplate(
@@ -174,10 +155,7 @@ export class NotificationService {
     }
   }
 
-  private async deliverNotification(
-    notificationId: string,
-    data: NotificationData,
-  ): Promise<void> {
+  private async deliverNotification(notificationId: string, data: NotificationData): Promise<void> {
     const deliveryResults: NotificationDeliveryResult[] = []
 
     // Always deliver in-app notifications
@@ -196,21 +174,14 @@ export class NotificationService {
       })
 
       if (user?.email) {
-        const emailResult = await this.emailService.sendNotificationEmail(
-          user.email,
-          data,
-        )
+        const emailResult = await this.emailService.sendNotificationEmail(user.email, data)
         deliveryResults.push(emailResult)
       }
     }
 
     // Update delivery status based on results
-    const hasSuccessfulDelivery = deliveryResults.some(
-      (result) => result.success,
-    )
-    const allDeliveriesFailed = deliveryResults.every(
-      (result) => !result.success,
-    )
+    const hasSuccessfulDelivery = deliveryResults.some((result) => result.success)
+    const allDeliveriesFailed = deliveryResults.every((result) => !result.success)
 
     await prisma.notification.update({
       where: { id: notificationId },
@@ -235,17 +206,14 @@ export class NotificationService {
       })
 
       if (notification) {
-        const sent = realtimeNotificationService.sendNotificationToUser(
-          data.userId,
-          {
-            id: notification.id,
-            type: notification.type,
-            title: notification.title,
-            message: notification.message,
-            actionUrl: notification.actionUrl || undefined,
-            createdAt: notification.createdAt.toISOString(),
-          },
-        )
+        const sent = realtimeNotificationService.sendNotificationToUser(data.userId, {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          actionUrl: notification.actionUrl || undefined,
+          createdAt: notification.createdAt.toISOString(),
+        })
 
         // Also update unread count
         const unreadCount = await prisma.notification.count({
@@ -255,14 +223,9 @@ export class NotificationService {
           },
         })
 
-        realtimeNotificationService.sendUnreadCountToUser(
-          data.userId,
-          unreadCount,
-        )
+        realtimeNotificationService.sendUnreadCountToUser(data.userId, unreadCount)
 
-        console.log(
-          `Real-time notification ${sent ? 'sent' : 'queued'} for user ${data.userId}`,
-        )
+        console.log(`Real-time notification ${sent ? 'sent' : 'queued'} for user ${data.userId}`)
       }
 
       return {
@@ -319,15 +282,14 @@ export class NotificationService {
 
     // Check per-listing preferences for listing-related notifications
     if (eventData.payload?.listingId) {
-      const listingPreference =
-        await prisma.listingNotificationPreference.findUnique({
-          where: {
-            userId_listingId: {
-              userId,
-              listingId: eventData.payload.listingId,
-            },
+      const listingPreference = await prisma.listingNotificationPreference.findUnique({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId: eventData.payload.listingId,
           },
-        })
+        },
+      })
 
       if (listingPreference && !listingPreference.isEnabled) return false
     }
@@ -335,9 +297,7 @@ export class NotificationService {
     return true
   }
 
-  private mapEventToNotificationType(
-    eventType: string,
-  ): NotificationType | null {
+  private mapEventToNotificationType(eventType: string): NotificationType | null {
     const eventTypeMap: Record<string, NotificationType> = {
       'listing.created': NotificationType.NEW_DEVICE_LISTING,
       'listing.commented': NotificationType.LISTING_COMMENT,
@@ -419,9 +379,7 @@ export class NotificationService {
       // Clear analytics cache since notification status changed
       notificationAnalyticsService.clearCache()
 
-      console.log(
-        `Marked notification ${notificationId} as read for user ${userId}`,
-      )
+      console.log(`Marked notification ${notificationId} as read for user ${userId}`)
     }
   }
 
@@ -440,16 +398,11 @@ export class NotificationService {
       // Clear analytics cache since notification status changed
       notificationAnalyticsService.clearCache()
 
-      console.log(
-        `Marked ${updatedCount.count} notifications as read for user ${userId}`,
-      )
+      console.log(`Marked ${updatedCount.count} notifications as read for user ${userId}`)
     }
   }
 
-  async deleteNotification(
-    notificationId: string,
-    userId: string,
-  ): Promise<void> {
+  async deleteNotification(notificationId: string, userId: string): Promise<void> {
     // First check if the notification exists and is unread
     const notification = await prisma.notification.findFirst({
       where: { id: notificationId, userId },
@@ -527,16 +480,12 @@ export class NotificationService {
     // Prevent duplicate listener registration
     if (this.listenersSetup) return
 
-    notificationEventEmitter.onNotificationEvent(
-      this.handleNotificationEvent.bind(this),
-    )
+    notificationEventEmitter.onNotificationEvent(this.handleNotificationEvent.bind(this))
 
     this.listenersSetup = true
   }
 
-  private async handleNotificationEvent(
-    eventData: NotificationEventData,
-  ): Promise<void> {
+  private async handleNotificationEvent(eventData: NotificationEventData): Promise<void> {
     try {
       // Get users to notify
       const userIds = await this.getUsersForEvent(eventData)
@@ -552,9 +501,7 @@ export class NotificationService {
     }
   }
 
-  private async getUsersForEvent(
-    eventData: NotificationEventData,
-  ): Promise<string[]> {
+  private async getUsersForEvent(eventData: NotificationEventData): Promise<string[]> {
     const userIds: string[] = []
 
     switch (eventData.eventType) {
@@ -588,9 +535,7 @@ export class NotificationService {
       case 'listing.created':
         // Get users with matching device/SOC preferences
         if (eventData.payload?.deviceId || eventData.payload?.socId) {
-          const users = await this.getUsersWithMatchingPreferences(
-            eventData.payload,
-          )
+          const users = await this.getUsersWithMatchingPreferences(eventData.payload)
           userIds.push(...users.map((u) => u.id))
         }
         break
@@ -684,14 +629,10 @@ export class NotificationService {
       const bannedUserIdsSet = new Set(bannedUserIds.map((ban) => ban.userId))
 
       // Filter out banned users
-      const filteredUserIds = userIds.filter(
-        (userId) => !bannedUserIdsSet.has(userId),
-      )
+      const filteredUserIds = userIds.filter((userId) => !bannedUserIdsSet.has(userId))
 
       if (bannedUserIds.length > 0) {
-        console.log(
-          `Filtered out ${bannedUserIds.length} banned users from notification targeting`,
-        )
+        console.log(`Filtered out ${bannedUserIds.length} banned users from notification targeting`)
       }
 
       return filteredUserIds
@@ -863,10 +804,7 @@ export class NotificationService {
       }
 
       // Handle device-specific data for NEW_DEVICE_LISTING
-      if (
-        payload.deviceId &&
-        notificationType === NotificationType.NEW_DEVICE_LISTING
-      ) {
+      if (payload.deviceId && notificationType === NotificationType.NEW_DEVICE_LISTING) {
         const device = await prisma.device.findUnique({
           where: { id: payload.deviceId },
           include: {
@@ -880,10 +818,7 @@ export class NotificationService {
       }
 
       // Handle SOC-specific data for NEW_SOC_LISTING
-      if (
-        payload.socId &&
-        notificationType === NotificationType.NEW_SOC_LISTING
-      ) {
+      if (payload.socId && notificationType === NotificationType.NEW_SOC_LISTING) {
         const soc = await prisma.soC.findUnique({
           where: { id: payload.socId },
           select: { id: true, name: true, manufacturer: true },
@@ -966,11 +901,7 @@ export class NotificationService {
     scheduledFor: Date,
     maxAttempts?: number,
   ): Promise<string> {
-    return notificationBatchingService.scheduleNotification(
-      data,
-      scheduledFor,
-      maxAttempts,
-    )
+    return notificationBatchingService.scheduleNotification(data, scheduledFor, maxAttempts)
   }
 
   /**
@@ -983,16 +914,8 @@ export class NotificationService {
   /**
    * Schedule maintenance notifications for all users
    */
-  scheduleMaintenanceNotification(
-    scheduledFor: Date,
-    title: string,
-    message: string,
-  ): void {
-    notificationBatchingService.scheduleMaintenanceNotification(
-      scheduledFor,
-      title,
-      message,
-    )
+  scheduleMaintenanceNotification(scheduledFor: Date, title: string, message: string): void {
+    notificationBatchingService.scheduleMaintenanceNotification(scheduledFor, title, message)
   }
 
   /**

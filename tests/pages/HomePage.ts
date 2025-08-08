@@ -57,10 +57,7 @@ export class HomePage extends BasePage {
           performance: false,
         }),
       )
-      localStorage.setItem(
-        `${PREFIX}cookie_consent_date`,
-        new Date().toISOString(),
-      )
+      localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
       localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
       localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
     })
@@ -73,9 +70,7 @@ export class HomePage extends BasePage {
     let attempts = 0
 
     while ((await this.cookieBanner.isVisible()) && attempts < maxAttempts) {
-      console.log(
-        `Cookie banner still visible, attempt ${attempts + 1} to dismiss...`,
-      )
+      console.log(`Cookie banner still visible, attempt ${attempts + 1} to dismiss...`)
       await this.cookieBanner.dismissIfPresent()
 
       // If still visible after dismissal attempt, force click backdrop

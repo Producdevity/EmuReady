@@ -4,10 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeClosed, X, Settings2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
-import {
-  type ColumnDefinition,
-  type UseColumnVisibilityReturn,
-} from '@/hooks/useColumnVisibility'
+import { type ColumnDefinition, type UseColumnVisibilityReturn } from '@/hooks/useColumnVisibility'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -112,9 +109,7 @@ export function MobileColumnVisibilityControl(props: Props) {
               {/* Column List */}
               <div className="flex-1 overflow-y-auto">
                 {props.columns.map((column) => {
-                  const isVisible = props.columnVisibility.isColumnVisible(
-                    column.key,
-                  )
+                  const isVisible = props.columnVisibility.isColumnVisible(column.key)
                   const isToggleable = !column.alwaysVisible
 
                   return (
@@ -173,9 +168,7 @@ export function MobileColumnVisibilityControl(props: Props) {
                           <input
                             type="checkbox"
                             checked={isVisible}
-                            onChange={() =>
-                              props.columnVisibility.toggleColumn(column.key)
-                            }
+                            onChange={() => props.columnVisibility.toggleColumn(column.key)}
                             onClick={(e) => e.stopPropagation()}
                             className="sr-only peer"
                           />
@@ -189,11 +182,7 @@ export function MobileColumnVisibilityControl(props: Props) {
 
               {/* Footer */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <Button
-                  onClick={() => setIsOpen(false)}
-                  className="w-full"
-                  variant="primary"
-                >
+                <Button onClick={() => setIsOpen(false)} className="w-full" variant="primary">
                   Done
                 </Button>
               </div>

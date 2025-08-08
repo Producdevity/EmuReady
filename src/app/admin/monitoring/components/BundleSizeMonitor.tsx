@@ -22,15 +22,10 @@ export function BundleSizeMonitor() {
       try {
         // In production, this would connect to your build analytics
         // For now, we'll use performance.getEntriesByType to get script sizes
-        const resources = performance.getEntriesByType(
-          'resource',
-        ) as PerformanceResourceTiming[]
+        const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
 
         const scripts = resources
-          .filter(
-            (resource) =>
-              resource.name.includes('.js') || resource.name.includes('.css'),
-          )
+          .filter((resource) => resource.name.includes('.js') || resource.name.includes('.css'))
           .map((resource) => ({
             name: resource.name.split('/').pop() || 'unknown',
             size: resource.transferSize || 0,
@@ -85,19 +80,14 @@ export function BundleSizeMonitor() {
   }
 
   const totalSize = bundles.reduce((sum, bundle) => sum + bundle.size, 0)
-  const totalGzipSize = bundles.reduce(
-    (sum, bundle) => sum + bundle.gzipSize,
-    0,
-  )
+  const totalGzipSize = bundles.reduce((sum, bundle) => sum + bundle.gzipSize, 0)
 
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold">Bundle Size Monitor</h3>
-          <p className="text-sm text-muted-foreground">
-            Track JavaScript and CSS bundle sizes
-          </p>
+          <p className="text-sm text-muted-foreground">Track JavaScript and CSS bundle sizes</p>
         </div>
         {totalSize > 0 && (
           <div className="text-right">
@@ -108,16 +98,12 @@ export function BundleSizeMonitor() {
         )}
       </div>
       {loading ? (
-        <div className="text-center py-8 text-muted-foreground">
-          Loading bundle information...
-        </div>
+        <div className="text-center py-8 text-muted-foreground">Loading bundle information...</div>
       ) : bundles.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
           <p>No bundle information available</p>
-          <p className="text-xs mt-1">
-            Run a production build to see bundle sizes
-          </p>
+          <p className="text-xs mt-1">Run a production build to see bundle sizes</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -128,13 +114,9 @@ export function BundleSizeMonitor() {
                   <span className={cn(getCategoryColor(bundle.category))}>
                     {getCategoryIcon(bundle.category)}
                   </span>
-                  <span className="font-medium text-sm truncate max-w-[300px]">
-                    {bundle.name}
-                  </span>
+                  <span className="font-medium text-sm truncate max-w-[300px]">{bundle.name}</span>
                 </div>
-                <span className="text-sm font-medium">
-                  {formatBytes(bundle.gzipSize)}
-                </span>
+                <span className="text-sm font-medium">{formatBytes(bundle.gzipSize)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
@@ -165,8 +147,7 @@ export function BundleSizeMonitor() {
 
       <div className="mt-4 pt-4 border-t">
         <p className="text-xs text-muted-foreground">
-          Bundle sizes are measured from loaded resources. For detailed
-          analysis, run{' '}
+          Bundle sizes are measured from loaded resources. For detailed analysis, run{' '}
           <code className="px-1 py-0.5 bg-muted rounded">npm run analyze</code>
         </p>
       </div>

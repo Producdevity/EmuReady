@@ -27,20 +27,10 @@ function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
             errorMessages.push(fieldError.value.message)
           }
         })
-      } else if (
-        error &&
-        typeof error === 'object' &&
-        'message' in error &&
-        error.message
-      ) {
+      } else if (error && typeof error === 'object' && 'message' in error && error.message) {
         errorMessages.push(error.message as string)
       }
-    } else if (
-      error &&
-      typeof error === 'object' &&
-      'message' in error &&
-      error.message
-    ) {
+    } else if (error && typeof error === 'object' && 'message' in error && error.message) {
       errorMessages.push(error.message as string)
     }
   })

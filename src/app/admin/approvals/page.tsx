@@ -21,6 +21,7 @@ import {
   ColumnVisibilityControl,
   DisplayToggleButton,
   LoadingSpinner,
+  LocalizedDate,
   Pagination,
   RejectButton,
   SortableHeader,
@@ -41,7 +42,6 @@ import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { ApprovalStatus } from '@orm'
 import ApprovalModal from './components/ApprovalModal'
@@ -76,8 +76,10 @@ function AdminApprovalsPage() {
     storageKey: storageKeys.columnVisibility.adminApprovals,
   })
 
-  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
-    useLocalStorage(storageKeys.showSystemIcons, false)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
+    storageKeys.showSystemIcons,
+    false,
+  )
 
   const emulatorLogos = useEmulatorLogos()
 
@@ -97,8 +99,7 @@ function AdminApprovalsPage() {
   const [selectedListingForApproval, setSelectedListingForApproval] =
     useState<PendingListing | null>(null)
   const [approvalNotes, setApprovalNotes] = useState('')
-  const [approvalDecision, setApprovalDecision] =
-    useState<ApprovalStatus | null>(null)
+  const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus | null>(null)
   const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
   const confirm = useConfirmDialog()
 
@@ -201,18 +202,14 @@ function AdminApprovalsPage() {
 
   // Handle bulk approval with confirmation for reported users
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
-    const selectedListings = listings.filter((listing) =>
-      listingIds.includes(listing.id),
-    )
+    const selectedListings = listings.filter((listing) => listingIds.includes(listing.id))
     const reportedUserListings = selectedListings.filter(
       (listing) => listing.authorReportStats?.hasReports,
     )
 
     if (reportedUserListings.length > 0) {
       const reportedUsers = [
-        ...new Set(
-          reportedUserListings.map((l) => l.author?.name || 'Unknown'),
-        ),
+        ...new Set(reportedUserListings.map((l) => l.author?.name || 'Unknown')),
       ]
       const totalReports = reportedUserListings.reduce(
         (sum, l) => sum + (l.authorReportStats?.totalReports || 0),
@@ -254,10 +251,7 @@ function AdminApprovalsPage() {
     )
   }
 
-  const openApprovalModal = (
-    listing: PendingListing,
-    decision: ApprovalStatus,
-  ) => {
+  const openApprovalModal = (listing: PendingListing, decision: ApprovalStatus) => {
     setSelectedListingForApproval(listing)
     setApprovalDecision(decision)
     setApprovalNotes('')
@@ -293,10 +287,7 @@ function AdminApprovalsPage() {
           <p className="text-red-600 dark:text-red-400 text-lg">
             Error loading pending listings: {pendingListingsQuery.error.message}
           </p>
-          <Button
-            onClick={() => pendingListingsQuery.refetch()}
-            className="mt-4"
-          >
+          <Button onClick={() => pendingListingsQuery.refetch()} className="mt-4">
             Try Again
           </Button>
         </div>
@@ -370,10 +361,7 @@ function AdminApprovalsPage() {
         />
       )}
 
-      <AdminSearchFilters<ApprovalSortField>
-        table={table}
-        searchPlaceholder="Search listings..."
-      />
+      <AdminSearchFilters<ApprovalSortField> table={table} searchPlaceholder="Search listings..." />
 
       {/* Bulk Actions */}
       {listings.length > 0 && (
@@ -412,10 +400,7 @@ function AdminApprovalsPage() {
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={
-                        selectedListingIds.length === listings.length &&
-                        listings.length > 0
-                      }
+                      checked={selectedListingIds.length === listings.length && listings.length > 0}
                       onChange={(ev) => handleSelectAll(ev.target.checked)}
                       className="rounded border-gray-300"
                     />
@@ -489,17 +474,12 @@ function AdminApprovalsPage() {
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {listings.map((listing: PendingListing) => (
-                  <tr
-                    key={listing.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
+                  <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedListingIds.includes(listing.id)}
-                        onChange={(e) =>
-                          handleSelectListing(listing.id, e.target.checked)
-                        }
+                        onChange={(e) => handleSelectListing(listing.id, e.target.checked)}
                         className="rounded border-gray-300"
                       />
                     </td>
@@ -516,9 +496,7 @@ function AdminApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('system') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {isSystemIconsHydrated &&
-                        showSystemIcons &&
-                        listing.game.system?.key ? (
+                        {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
                           <div className="flex items-center gap-2">
                             <SystemIcon
                               name={listing.game.system.name}
@@ -545,25 +523,17 @@ function AdminApprovalsPage() {
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="text-sm">
-                                  <p className="font-medium text-red-600 mb-1">
-                                    ⚠️ Reported User
+                                  <p className="font-medium text-red-600 mb-1">⚠️ Reported User</p>
+                                  <p>
+                                    This user has {listing.authorReportStats.totalReports} active
+                                    reports
                                   </p>
                                   <p>
-                                    This user has{' '}
-                                    {listing.authorReportStats.totalReports}{' '}
-                                    active reports
-                                  </p>
-                                  <p>
-                                    against{' '}
-                                    {
-                                      listing.authorReportStats
-                                        .reportedListingsCount
-                                    }{' '}
-                                    of their listings.
+                                    against {listing.authorReportStats.reportedListingsCount} of
+                                    their listings.
                                   </p>
                                   <p className="text-xs text-gray-500 mt-1">
-                                    Consider reviewing carefully before
-                                    approval.
+                                    Consider reviewing carefully before approval.
                                   </p>
                                 </div>
                               </TooltipContent>
@@ -582,27 +552,21 @@ function AdminApprovalsPage() {
                         <EmulatorIcon
                           name={listing.emulator.name}
                           logo={listing.emulator.logo}
-                          showLogo={
-                            emulatorLogos.isHydrated &&
-                            emulatorLogos.showEmulatorLogos
-                          }
+                          showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
                           size="sm"
                         />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('submittedAt') && (
-                      <td
-                        className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"
-                        title={formatDateTime(listing.createdAt)}
-                      >
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                         <Tooltip>
                           <TooltipTrigger>
                             <span className="cursor-help">
-                              {formatTimeAgo(listing.createdAt)}
+                              <LocalizedDate date={listing.createdAt} format="timeAgo" />
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {formatDateTime(listing.createdAt)}
+                            <LocalizedDate date={listing.createdAt} format="dateTime" />
                           </TooltipContent>
                         </Tooltip>
                       </td>
@@ -612,27 +576,14 @@ function AdminApprovalsPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <ApproveButton
                             title="Approve Listing"
-                            onClick={() =>
-                              openApprovalModal(
-                                listing,
-                                ApprovalStatus.APPROVED,
-                              )
-                            }
+                            onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
                           />
 
                           <RejectButton
-                            onClick={() =>
-                              openApprovalModal(
-                                listing,
-                                ApprovalStatus.REJECTED,
-                              )
-                            }
+                            onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
                             title="Reject Listing"
                           />
-                          <ViewButton
-                            href={`/listings/${listing.id}`}
-                            title="View Details"
-                          />
+                          <ViewButton href={`/listings/${listing.id}`} title="View Details" />
                         </div>
                       </td>
                     )}

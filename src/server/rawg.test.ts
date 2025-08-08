@@ -7,11 +7,7 @@ import {
   searchGameImages,
   RawgError,
 } from './rawg'
-import type {
-  RawgGameResponse,
-  RawgGameDetails,
-  RawgScreenshotsResponse,
-} from '@/types/rawg'
+import type { RawgGameResponse, RawgGameDetails, RawgScreenshotsResponse } from '@/types/rawg'
 
 vi.mock('axios', () => ({
   default: {
@@ -146,12 +142,8 @@ describe('RAWG API', () => {
     })
 
     it('should throw error for empty query', async () => {
-      await expect(searchGames('')).rejects.toThrow(
-        'Search query cannot be empty',
-      )
-      await expect(searchGames('   ')).rejects.toThrow(
-        'Search query cannot be empty',
-      )
+      await expect(searchGames('')).rejects.toThrow('Search query cannot be empty')
+      await expect(searchGames('   ')).rejects.toThrow('Search query cannot be empty')
     })
   })
 

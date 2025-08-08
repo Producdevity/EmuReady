@@ -3,11 +3,7 @@ import { PAGINATION } from '@/data/constants'
 import { NotificationCategory, NotificationType } from '@orm'
 
 export const GetNotificationsSchema = z.object({
-  limit: z
-    .number()
-    .min(1)
-    .max(PAGINATION.MAX_LIMIT)
-    .default(PAGINATION.DEFAULT_LIMIT),
+  limit: z.number().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   offset: z.number().min(0).default(0),
   isRead: z.boolean().optional(),
   category: z.nativeEnum(NotificationCategory).optional(),

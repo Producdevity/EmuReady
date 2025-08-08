@@ -21,6 +21,7 @@ import {
   TableButton,
   ViewButton,
   useConfirmDialog,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -74,8 +75,7 @@ function AdminUsersPage() {
 
   // Modal state from URL
   const userIdFromUrl = searchParams.get('userId')
-  const [selectedUserForRole, setSelectedUserForRole] =
-    useState<UserForModal | null>(null)
+  const [selectedUserForRole, setSelectedUserForRole] = useState<UserForModal | null>(null)
   const [selectedUserForBadge, setSelectedUserForBadge] = useState<{
     id: string
     name: string | null
@@ -100,8 +100,7 @@ function AdminUsersPage() {
   const handleDelete = async (userId: string) => {
     const confirmed = await confirm({
       title: 'Delete User',
-      description:
-        'Are you sure you want to delete this user? This action cannot be undone.',
+      description: 'Are you sure you want to delete this user? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -153,10 +152,7 @@ function AdminUsersPage() {
       title="Users Management"
       description="Manage user accounts and roles"
       headerActions={
-        <ColumnVisibilityControl
-          columns={USERS_COLUMNS}
-          columnVisibility={columnVisibility}
-        />
+        <ColumnVisibilityControl columns={USERS_COLUMNS} columnVisibility={columnVisibility} />
       }
     >
       <AdminStatsDisplay
@@ -321,9 +317,7 @@ function AdminUsersPage() {
                     )}
                     {columnVisibility.isColumnVisible('role') && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={getRoleVariant(user.role)}>
-                          {user.role}
-                        </Badge>
+                        <Badge variant={getRoleVariant(user.role)}>{user.role}</Badge>
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('trustScore') && (
@@ -333,7 +327,7 @@ function AdminUsersPage() {
                     )}
                     {columnVisibility.isColumnVisible('createdAt') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        <LocalizedDate date={user.createdAt} format="date" />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('listingsCount') && (

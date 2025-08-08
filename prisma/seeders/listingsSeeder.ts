@@ -169,15 +169,11 @@ async function listingsSeeder(prisma: PrismaClient) {
 
   // Create 2 listings per device
   for (const device of devices) {
-    console.info(
-      `Creating listings for ${device.brand.name} ${device.modelName}...`,
-    )
+    console.info(`Creating listings for ${device.brand.name} ${device.modelName}...`)
 
     // Find compatible games (games that have emulators supporting their system)
     const compatibleGames = games.filter((game) =>
-      emulators.some((emulator) =>
-        emulator.systems.some((system) => system.id === game.systemId),
-      ),
+      emulators.some((emulator) => emulator.systems.some((system) => system.id === game.systemId)),
     )
 
     if (compatibleGames.length < 2) {
@@ -199,9 +195,7 @@ async function listingsSeeder(prisma: PrismaClient) {
       )
 
       if (compatibleEmulators.length === 0) {
-        console.warn(
-          `No compatible emulators for ${game.title} on ${game.system.name}`,
-        )
+        console.warn(`No compatible emulators for ${game.title} on ${game.system.name}`)
         continue
       }
 
@@ -210,8 +204,7 @@ async function listingsSeeder(prisma: PrismaClient) {
       const author = getRandomElement(users)
 
       // Get sample notes for this performance level
-      const notesForLevel =
-        sampleNotes[selectedPerformance.label as keyof typeof sampleNotes]
+      const notesForLevel = sampleNotes[selectedPerformance.label as keyof typeof sampleNotes]
       const notes = getRandomElement(notesForLevel)
 
       // First listing per device: PENDING
@@ -220,18 +213,14 @@ async function listingsSeeder(prisma: PrismaClient) {
       const processor = isApproved ? getRandomElement(adminUsers) : null
 
       const processedAt = isApproved
-        ? new Date(
-            Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000,
-          ) // Random date in last 30 days
+        ? new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) // Random date in last 30 days
         : null
 
       const processedNotes =
         isApproved && Math.random() > 0.7
-          ? [
-              'Verified and approved.',
-              'Looks good, approved!',
-              'Testing confirmed, approved.',
-            ][Math.floor(Math.random() * 3)]
+          ? ['Verified and approved.', 'Looks good, approved!', 'Testing confirmed, approved.'][
+              Math.floor(Math.random() * 3)
+            ]
           : null
 
       try {
@@ -243,9 +232,7 @@ async function listingsSeeder(prisma: PrismaClient) {
             performanceId: selectedPerformance.id,
             notes,
             authorId: author.id,
-            status: isApproved
-              ? ApprovalStatus.APPROVED
-              : ApprovalStatus.PENDING,
+            status: isApproved ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
             processedAt,
             processedNotes,
             processedByUserId: processor?.id,

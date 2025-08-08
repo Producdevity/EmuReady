@@ -1,10 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { cn } from '@/lib/utils'
 
 interface CustomFieldDefinitionWithOptions {
@@ -43,16 +38,13 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
   const step = decimals > 0 ? Math.pow(10, -decimals) : 1
 
   const formatValue = (value: number): string => {
-    const formatted =
-      decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
+    const formatted = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
     return unit ? `${formatted}${unit}` : formatted
   }
 
   const parseValue = (value: string): number => {
     const numericValue = parseFloat(value.replace(unit, ''))
-    return isNaN(numericValue)
-      ? min
-      : Math.max(min, Math.min(max, numericValue))
+    return isNaN(numericValue) ? min : Math.max(min, Math.min(max, numericValue))
   }
 
   return (
@@ -70,9 +62,7 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
         rules={props.rules}
         render={({ field }) => {
           const currentValue =
-            typeof field.value === 'number'
-              ? field.value
-              : parseValue(String(field.value))
+            typeof field.value === 'number' ? field.value : parseValue(String(field.value))
 
           // Format the current value for display
           const displayValue = formatValue(currentValue)
@@ -104,8 +94,7 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
                     className="absolute top-1/2 left-0 h-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full pointer-events-none transform -translate-y-1/2 transition-all duration-300 ease-out shadow-lg"
                     style={{
                       width: `${((currentValue - min) / (max - min)) * 100}%`,
-                      boxShadow:
-                        '0 0 20px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(0, 0, 0, 0.1)',
+                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(0, 0, 0, 0.1)',
                     }}
                   />
 
@@ -150,12 +139,8 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
 
                   <div className="flex flex-col items-center">
                     <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-3 rounded-xl shadow-lg border border-blue-400/20">
-                      <div className="p-1 bg-white/20 rounded-full">
-                        {props.icon}
-                      </div>
-                      <span className="font-bold text-lg tracking-wide">
-                        {displayValue}
-                      </span>
+                      <div className="p-1 bg-white/20 rounded-full">{props.icon}</div>
+                      <span className="font-bold text-lg tracking-wide">{displayValue}</span>
                     </div>
                     <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
                       CURRENT VALUE
@@ -204,10 +189,7 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
                       onChange={(e) => {
                         const newValue = parseFloat(e.target.value)
                         if (!isNaN(newValue)) {
-                          const clampedValue = Math.max(
-                            min,
-                            Math.min(max, newValue),
-                          )
+                          const clampedValue = Math.max(min, Math.min(max, newValue))
                           field.onChange(clampedValue)
                         }
                       }}
@@ -228,8 +210,7 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
                     )}
                   </div>
                   <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Enter a value between {formatValue(min)} and{' '}
-                    {formatValue(max)}
+                    Enter a value between {formatValue(min)} and {formatValue(max)}
                   </div>
                 </div>
               </div>

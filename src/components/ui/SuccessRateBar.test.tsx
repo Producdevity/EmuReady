@@ -24,9 +24,7 @@ describe('SuccessRateBar', () => {
   })
 
   it('should hide vote count when hideVoteCount is true', () => {
-    const { container } = render(
-      <SuccessRateBar rate={60} voteCount={150} hideVoteCount />,
-    )
+    const { container } = render(<SuccessRateBar rate={60} voteCount={150} hideVoteCount />)
 
     // When hideVoteCount is true, no text should be rendered at all
     expect(screen.queryByText(/60%/)).not.toBeInTheDocument()
@@ -45,32 +43,24 @@ describe('SuccessRateBar', () => {
   })
 
   it('should apply correct color classes based on rate', () => {
-    const { container: container1 } = render(
-      <SuccessRateBar rate={80} voteCount={100} />,
-    )
+    const { container: container1 } = render(<SuccessRateBar rate={80} voteCount={100} />)
 
     // High rate (80) should be green-400
     let progressBar = container1.querySelector('.bg-green-400')
     expect(progressBar).toBeInTheDocument()
 
     // Medium-high rate (60) should be yellow-400
-    const { container: container2 } = render(
-      <SuccessRateBar rate={60} voteCount={100} />,
-    )
+    const { container: container2 } = render(<SuccessRateBar rate={60} voteCount={100} />)
     progressBar = container2.querySelector('.bg-yellow-400')
     expect(progressBar).toBeInTheDocument()
 
     // Medium-low rate (30) should be orange-500
-    const { container: container3 } = render(
-      <SuccessRateBar rate={30} voteCount={100} />,
-    )
+    const { container: container3 } = render(<SuccessRateBar rate={30} voteCount={100} />)
     progressBar = container3.querySelector('.bg-orange-500')
     expect(progressBar).toBeInTheDocument()
 
     // Low rate (10) should be red-500
-    const { container: container4 } = render(
-      <SuccessRateBar rate={10} voteCount={100} />,
-    )
+    const { container: container4 } = render(<SuccessRateBar rate={10} voteCount={100} />)
     progressBar = container4.querySelector('.bg-red-500')
     expect(progressBar).toBeInTheDocument()
   })
@@ -83,9 +73,7 @@ describe('SuccessRateBar', () => {
   })
 
   it('should handle edge cases', () => {
-    const { rerender, container } = render(
-      <SuccessRateBar rate={0} voteCount={2} />,
-    )
+    const { rerender, container } = render(<SuccessRateBar rate={0} voteCount={2} />)
 
     expect(screen.getByText(/0%/)).toBeInTheDocument()
     let progressBar = container.querySelector('.bg-red-600')

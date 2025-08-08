@@ -85,14 +85,8 @@ function basicSanitize(html: string): string {
       .replace(/data:(?!image\/)/gi, '') // Remove data URLs except images
       .replace(/on\w+\s*=\s*[^>\s]+/gi, '') // Remove event handlers
       // Remove dangerous tags but keep safe ones
-      .replace(
-        /<(script|object|embed|form|input|iframe|link|meta|style)[^>]*>/gi,
-        '',
-      )
-      .replace(
-        /<\/(script|object|embed|form|input|iframe|link|meta|style)>/gi,
-        '',
-      )
+      .replace(/<(script|object|embed|form|input|iframe|link|meta|style)[^>]*>/gi, '')
+      .replace(/<\/(script|object|embed|form|input|iframe|link|meta|style)>/gi, '')
   )
 }
 
@@ -100,9 +94,7 @@ function basicSanitize(html: string): string {
 const isClient = typeof window !== 'undefined'
 
 // needs to work in both environments
-let purify:
-  | typeof DOMPurify
-  | { sanitize: (html: string, options?: unknown) => string }
+let purify: typeof DOMPurify | { sanitize: (html: string, options?: unknown) => string }
 
 if (isClient) {
   // Client-side - use standard DOMPurify
@@ -145,9 +137,7 @@ export function parseMarkdown(markdownText: string): string {
     const html = md.render(markdownText)
 
     // Sanitize the HTML using DOMPurify or basic sanitization
-    return isClient
-      ? purify.sanitize(html, PURIFY_CONFIG)
-      : purify.sanitize(html)
+    return isClient ? purify.sanitize(html, PURIFY_CONFIG) : purify.sanitize(html)
   } catch (error) {
     console.warn('Markdown parsing failed:', error)
     // Return escaped plain text as fallback

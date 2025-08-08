@@ -109,8 +109,7 @@ export async function fetchDriverVersions(): Promise<DriverRelease[]> {
         .toSorted(
           (a, b) =>
             repo.sortMode === 'PublishTime'
-              ? new Date(b.publishedAt).valueOf() -
-                new Date(a.publishedAt).valueOf()
+              ? new Date(b.publishedAt).valueOf() - new Date(a.publishedAt).valueOf()
               : 0, // leave default GitHub order
         )
       return { name: repo.name, releases, sort: repo.sort }

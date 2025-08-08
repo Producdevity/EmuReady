@@ -90,8 +90,7 @@ export function TableButton(props: Props) {
     'group relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 active:scale-95 active:translate-y-0',
     colorClass.base,
     {
-      'opacity-50 cursor-not-allowed hover:scale-100 hover:translate-y-0':
-        props.disabled,
+      'opacity-50 cursor-not-allowed hover:scale-100 hover:translate-y-0': props.disabled,
       'cursor-wait': props.isLoading,
     },
   )
@@ -106,10 +105,7 @@ export function TableButton(props: Props) {
       {...('onClick' in props ? { onClick: props.onClick } : {})}
     >
       <props.icon
-        className={cn(
-          'w-4 h-4 transition-all duration-300 relative z-10',
-          colorClass.icon,
-        )}
+        className={cn('w-4 h-4 transition-all duration-300 relative z-10', colorClass.icon)}
       />
       <div
         className={cn(

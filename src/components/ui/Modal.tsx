@@ -77,9 +77,7 @@ export function Modal({ onClose, ...props }: Props) {
         {(!!props.title || !hideCloseButton) && (
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             {props.title && (
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                {props.title}
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{props.title}</h2>
             )}
             {!hideCloseButton && (
               <button

@@ -29,9 +29,7 @@ export function hasAnyPermission(
 ): boolean {
   if (!userPermissions || userPermissions.length === 0) return false
 
-  return requiredPermissions.some((permission) =>
-    userPermissions.includes(permission),
-  )
+  return requiredPermissions.some((permission) => userPermissions.includes(permission))
 }
 
 /**
@@ -48,9 +46,7 @@ export function hasAllPermissions(
     return false
   }
 
-  return requiredPermissions.every((permission) =>
-    userPermissions.includes(permission),
-  )
+  return requiredPermissions.every((permission) => userPermissions.includes(permission))
 }
 
 /**
@@ -59,10 +55,7 @@ export function hasAllPermissions(
  * @param requiredPermission The permission key to check for
  * @returns boolean indicating if user has the permission
  */
-export function hasPermissionInContext(
-  ctx: TRPCContext,
-  requiredPermission: string,
-): boolean {
+export function hasPermissionInContext(ctx: TRPCContext, requiredPermission: string): boolean {
   return hasPermission(ctx.session?.user?.permissions, requiredPermission)
 }
 
@@ -150,10 +143,7 @@ export const PERMISSIONS = {
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
 // Utility to check if a role hierarchically includes another role (backward compatibility)
-export function roleIncludesRole(
-  userRole: Maybe<Role>,
-  requiredRole: Role,
-): boolean {
+export function roleIncludesRole(userRole: Maybe<Role>, requiredRole: Role): boolean {
   if (!userRole) return false
   const roleHierarchy: Role[] = [
     Role.USER,

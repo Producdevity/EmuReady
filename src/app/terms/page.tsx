@@ -1,9 +1,9 @@
+import { LocalizedDate } from '@/components/ui'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms of Service | EmuReady',
-  description:
-    'Review the terms and conditions for using EmuReady platform and services.',
+  description: 'Review the terms and conditions for using EmuReady platform and services.',
   robots: 'index, follow',
 }
 
@@ -14,12 +14,10 @@ function TermsOfServicePage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="prose prose-lg dark:prose-invert max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-          Terms of Service
-        </h1>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Terms of Service</h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          <strong>Last updated:</strong> {new Date().toLocaleDateString()}
+          <strong>Last updated:</strong> <LocalizedDate date={new Date()} format="date" />
         </p>
 
         <div className="space-y-8">
@@ -28,10 +26,9 @@ function TermsOfServicePage() {
               1. Acceptance of Terms
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              By accessing and using EmuReady (&ldquo;the Service&rdquo;), you
-              accept and agree to be bound by the terms and provision of this
-              agreement. If you do not agree to abide by the above, please do
-              not use this service.
+              By accessing and using EmuReady (&ldquo;the Service&rdquo;), you accept and agree to
+              be bound by the terms and provision of this agreement. If you do not agree to abide by
+              the above, please do not use this service.
             </p>
           </section>
 
@@ -56,25 +53,17 @@ function TermsOfServicePage() {
               3. User Accounts
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-              To access certain features of the Service, you must create an
-              account. You agree to:
+              To access certain features of the Service, you must create an account. You agree to:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-              <li>
-                Provide accurate, current, and complete information during
-                registration
-              </li>
+              <li>Provide accurate, current, and complete information during registration</li>
               <li>Maintain and promptly update your account information</li>
               <li>
-                Maintain the security of your password and accept responsibility
-                for all activities under your account
+                Maintain the security of your password and accept responsibility for all activities
+                under your account
               </li>
-              <li>
-                Notify us immediately of any unauthorized use of your account
-              </li>
-              <li>
-                Not create multiple accounts or share your account with others
-              </li>
+              <li>Notify us immediately of any unauthorized use of your account</li>
+              <li>Not create multiple accounts or share your account with others</li>
             </ul>
           </section>
 
@@ -93,9 +82,7 @@ function TermsOfServicePage() {
               <li>Spam or flood the platform with repetitive content</li>
               <li>Attempt to hack, disrupt, or compromise the Service</li>
               <li>Create fake accounts or manipulate ratings/reviews</li>
-              <li>
-                Use the Service for commercial purposes without authorization
-              </li>
+              <li>Use the Service for commercial purposes without authorization</li>
             </ul>
           </section>
 
@@ -104,8 +91,7 @@ function TermsOfServicePage() {
               5. Contact Information
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              If you have any questions about these Terms of Service, please
-              contact us:
+              If you have any questions about these Terms of Service, please contact us:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300 mt-4">
               <li>

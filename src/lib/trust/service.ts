@@ -3,12 +3,7 @@ import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
 import { validateData } from '@/server/utils/validation'
 import { TrustAction, type Prisma } from '@orm'
-import {
-  TRUST_ACTIONS,
-  TRUST_CONFIG,
-  getTrustLevel,
-  hasTrustLevel,
-} from './config'
+import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
 
 interface TrustActionContext {
   listingId?: string
@@ -31,9 +26,7 @@ interface ReverseTrustActionParams {
   context?: TrustActionContext
 }
 
-export async function applyTrustAction(
-  params: ApplyTrustActionParams,
-): Promise<void> {
+export async function applyTrustAction(params: ApplyTrustActionParams): Promise<void> {
   const { userId, action, context = {} } = params
 
   if (!TRUST_ACTIONS[action]) {
@@ -48,9 +41,7 @@ export async function applyTrustAction(
       select: { trustScore: true },
     })
 
-    const currentTrustLevel = currentUser
-      ? getTrustLevel(currentUser.trustScore)
-      : null
+    const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
     const newTrustScore = (currentUser?.trustScore || 0) + weight
     const newTrustLevel = getTrustLevel(newTrustScore)
 
@@ -67,10 +58,7 @@ export async function applyTrustAction(
         userId,
         action,
         weight,
-        metadata: validateData(
-          z.record(z.unknown()),
-          context || {},
-        ) as Prisma.InputJsonValue,
+        metadata: validateData(z.record(z.unknown()), context || {}) as Prisma.InputJsonValue,
       },
     })
 
@@ -93,9 +81,7 @@ export async function applyTrustAction(
   })
 }
 
-export async function reverseTrustAction(
-  params: ReverseTrustActionParams,
-): Promise<void> {
+export async function reverseTrustAction(params: ReverseTrustActionParams): Promise<void> {
   const { userId, action, context = {} } = params
 
   // Validate action exists
@@ -125,10 +111,7 @@ export async function reverseTrustAction(
           userId,
           action,
           weight,
-          metadata: validateData(
-            z.record(z.unknown()),
-            context || {},
-          ) as Prisma.InputJsonValue,
+          metadata: validateData(z.record(z.unknown()), context || {}) as Prisma.InputJsonValue,
         },
       })
     })
@@ -156,9 +139,7 @@ export async function validateTrustActionRate(
 
   // Special rate limiting for voting actions
   if (action === TrustAction.UPVOTE || action === TrustAction.DOWNVOTE) {
-    const rateLimitWindow = new Date(
-      Date.now() - TRUST_CONFIG.VOTE_RATE_LIMIT.windowMs,
-    )
+    const rateLimitWindow = new Date(Date.now() - TRUST_CONFIG.VOTE_RATE_LIMIT.windowMs)
 
     const recentVotes = await prisma.trustActionLog.count({
       where: {
@@ -201,14 +182,10 @@ export async function canUserAutoApprove(userId: string): Promise<boolean> {
 
 export async function getUsersEligibleForMonthlyBonus(): Promise<string[]> {
   const cutoffDate = new Date()
-  cutoffDate.setDate(
-    cutoffDate.getDate() - TRUST_CONFIG.MIN_ACCOUNT_AGE_FOR_BONUS,
-  )
+  cutoffDate.setDate(cutoffDate.getDate() - TRUST_CONFIG.MIN_ACCOUNT_AGE_FOR_BONUS)
 
   const activityCutoff = new Date()
-  activityCutoff.setDate(
-    activityCutoff.getDate() - TRUST_CONFIG.MAX_DAYS_INACTIVE_FOR_BONUS,
-  )
+  activityCutoff.setDate(activityCutoff.getDate() - TRUST_CONFIG.MAX_DAYS_INACTIVE_FOR_BONUS)
 
   const eligibleUsers = await prisma.user.findMany({
     where: {
@@ -294,9 +271,7 @@ export async function applyManualTrustAdjustment(params: {
 
     // Determine action type based on adjustment direction
     const action =
-      adjustment > 0
-        ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
-        : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
+      adjustment > 0 ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
 
     // Use a transaction to ensure atomicity
     await prisma.$transaction(async (tx) => {

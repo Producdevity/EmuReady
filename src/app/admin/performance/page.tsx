@@ -49,14 +49,12 @@ function AdminPerformancePage() {
     storageKey: storageKeys.columnVisibility.adminPerformance,
   })
 
-  const [performanceModal, setPerformanceModal] =
-    useState<PerformanceModalState>({ isOpen: false })
+  const [performanceModal, setPerformanceModal] = useState<PerformanceModalState>({ isOpen: false })
 
-  const [replacementModal, setReplacementModal] =
-    useState<ReplacementModalState>({
-      isOpen: false,
-      scaleToDelete: null,
-    })
+  const [replacementModal, setReplacementModal] = useState<ReplacementModalState>({
+    isOpen: false,
+    scaleToDelete: null,
+  })
 
   const performanceStatsQuery = api.performanceScales.getStats.useQuery()
   const performanceScalesQuery = api.performanceScales.get.useQuery({
@@ -257,9 +255,7 @@ function AdminPerformancePage() {
 
       <ReplacementSelectionModal
         isOpen={replacementModal.isOpen}
-        onClose={() =>
-          setReplacementModal({ isOpen: false, scaleToDelete: null })
-        }
+        onClose={() => setReplacementModal({ isOpen: false, scaleToDelete: null })}
         scaleToDelete={replacementModal.scaleToDelete}
         onSuccess={() => {
           setReplacementModal({ isOpen: false, scaleToDelete: null })

@@ -26,9 +26,7 @@ export function PerformanceMetrics() {
         )[0] as PerformanceNavigationTiming
         const paint = performance.getEntriesByType('paint')
 
-        const fcp = paint.find(
-          (entry) => entry.name === 'first-contentful-paint',
-        )
+        const fcp = paint.find((entry) => entry.name === 'first-contentful-paint')
 
         const newMetrics: Metric[] = [
           {
@@ -42,10 +40,7 @@ export function PerformanceMetrics() {
             name: 'DOM Content Loaded',
             value: navigation.domContentLoadedEventEnd / 1000,
             unit: 's',
-            status: getStatus(
-              'DOM Content Loaded',
-              navigation.domContentLoadedEventEnd / 1000,
-            ),
+            status: getStatus('DOM Content Loaded', navigation.domContentLoadedEventEnd / 1000),
             description: 'Time until DOM is fully loaded',
           },
           {
@@ -80,10 +75,7 @@ export function PerformanceMetrics() {
     return () => clearInterval(interval)
   }, [])
 
-  const getStatus = (
-    name: string,
-    value: number,
-  ): 'good' | 'warning' | 'error' => {
+  const getStatus = (name: string, value: number): 'good' | 'warning' | 'error' => {
     const thresholds: Record<string, { good: number; warning: number }> = {
       'First Contentful Paint': { good: 1.8, warning: 3.0 },
       'Largest Contentful Paint': { good: 2.5, warning: 4.0 },
@@ -129,9 +121,7 @@ export function PerformanceMetrics() {
         <Activity className="h-5 w-5" />
         <div>
           <h3 className="text-lg font-semibold">Core Web Vitals</h3>
-          <p className="text-sm text-muted-foreground">
-            Real user performance metrics
-          </p>
+          <p className="text-sm text-muted-foreground">Real user performance metrics</p>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -142,23 +132,12 @@ export function PerformanceMetrics() {
               {getStatusIcon(metric.status)}
             </div>
             <div className="flex items-baseline gap-1">
-              <span
-                className={cn(
-                  'text-2xl font-bold',
-                  getStatusColor(metric.status),
-                )}
-              >
+              <span className={cn('text-2xl font-bold', getStatusColor(metric.status))}>
                 {metric.value.toFixed(metric.unit === '' ? 2 : 1)}
               </span>
-              {metric.unit && (
-                <span className="text-sm text-muted-foreground">
-                  {metric.unit}
-                </span>
-              )}
+              {metric.unit && <span className="text-sm text-muted-foreground">{metric.unit}</span>}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {metric.description}
-            </p>
+            <p className="text-xs text-muted-foreground">{metric.description}</p>
           </div>
         ))}
       </div>
@@ -170,8 +149,7 @@ export function PerformanceMetrics() {
             <h4 className="font-medium">Performance Summary</h4>
           </div>
           <p className="text-sm text-muted-foreground">
-            Based on real browser performance data. Metrics update every 10
-            seconds.
+            Based on real browser performance data. Metrics update every 10 seconds.
           </p>
         </div>
       )}

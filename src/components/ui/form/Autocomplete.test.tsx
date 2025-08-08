@@ -81,26 +81,14 @@ describe('Autocomplete Component', () => {
 
     it('should render with custom placeholder', () => {
       render(
-        <Autocomplete
-          {...defaultProps}
-          items={mockStaticItems}
-          placeholder="Search fruits..."
-        />,
+        <Autocomplete {...defaultProps} items={mockStaticItems} placeholder="Search fruits..." />,
       )
 
-      expect(
-        screen.getByPlaceholderText('Search fruits...'),
-      ).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Search fruits...')).toBeInTheDocument()
     })
 
     it('should render with label', () => {
-      render(
-        <Autocomplete
-          {...defaultProps}
-          items={mockStaticItems}
-          label="Select Item"
-        />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} label="Select Item" />)
 
       expect(screen.getByText('Select Item')).toBeInTheDocument()
       expect(screen.getByLabelText('Select Item')).toBeInTheDocument()
@@ -121,22 +109,14 @@ describe('Autocomplete Component', () => {
     })
 
     it('should render as disabled', () => {
-      render(
-        <Autocomplete {...defaultProps} items={mockStaticItems} disabled />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} disabled />)
 
       const input = screen.getByRole('combobox')
       expect(input).toBeDisabled()
     })
 
     it('should apply custom className', () => {
-      render(
-        <Autocomplete
-          {...defaultProps}
-          items={mockStaticItems}
-          className="custom-class"
-        />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} className="custom-class" />)
 
       const container = screen.getByRole('combobox').closest('.custom-class')
       expect(container).toBeInTheDocument()
@@ -172,13 +152,7 @@ describe('Autocomplete Component', () => {
     })
 
     it('should filter items using custom filterKeys', async () => {
-      render(
-        <Autocomplete
-          {...defaultProps}
-          items={mockStaticItems}
-          filterKeys={['category']}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} filterKeys={['category']} />)
 
       const input = screen.getByRole('combobox')
       await user.type(input, 'fruit')
@@ -226,13 +200,7 @@ describe('Autocomplete Component', () => {
 
     it('should select item on click', async () => {
       const mockOnChange = vi.fn()
-      render(
-        <Autocomplete
-          {...defaultProps}
-          items={mockStaticItems}
-          onChange={mockOnChange}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} onChange={mockOnChange} />)
 
       const input = screen.getByRole('combobox')
       await user.click(input)
@@ -292,27 +260,18 @@ describe('Autocomplete Component', () => {
       // Navigate down
       await user.keyboard('{ArrowDown}')
       await waitFor(() => {
-        expect(screen.getAllByRole('option')[0]).toHaveAttribute(
-          'aria-selected',
-          'true',
-        )
+        expect(screen.getAllByRole('option')[0]).toHaveAttribute('aria-selected', 'true')
       })
 
       await user.keyboard('{ArrowDown}')
       await waitFor(() => {
-        expect(screen.getAllByRole('option')[1]).toHaveAttribute(
-          'aria-selected',
-          'true',
-        )
+        expect(screen.getAllByRole('option')[1]).toHaveAttribute('aria-selected', 'true')
       })
 
       // Navigate up
       await user.keyboard('{ArrowUp}')
       await waitFor(() => {
-        expect(screen.getAllByRole('option')[0]).toHaveAttribute(
-          'aria-selected',
-          'true',
-        )
+        expect(screen.getAllByRole('option')[0]).toHaveAttribute('aria-selected', 'true')
       })
     })
 
@@ -332,10 +291,7 @@ describe('Autocomplete Component', () => {
       await user.keyboard('{ArrowDown}') // Select first
       await user.keyboard('{ArrowUp}') // Should wrap to last
       await waitFor(() => {
-        expect(options[options.length - 1]).toHaveAttribute(
-          'aria-selected',
-          'true',
-        )
+        expect(options[options.length - 1]).toHaveAttribute('aria-selected', 'true')
       })
 
       // Navigate down from last item (should wrap to first)
@@ -347,13 +303,7 @@ describe('Autocomplete Component', () => {
 
     it('should select highlighted item on Enter', async () => {
       const mockOnChange = vi.fn()
-      render(
-        <Autocomplete
-          {...defaultProps}
-          items={mockStaticItems}
-          onChange={mockOnChange}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} onChange={mockOnChange} />)
 
       const input = screen.getByRole('combobox')
       await user.click(input)
@@ -523,13 +473,7 @@ describe('Autocomplete Component', () => {
     it('should call loadItems when typing', async () => {
       mockLoadItems.mockResolvedValue(mockStaticItems)
 
-      render(
-        <Autocomplete
-          {...defaultProps}
-          loadItems={mockLoadItems}
-          minCharsToTrigger={2}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
       const input = screen.getByRole('combobox')
       await user.type(input, 'ap')
@@ -542,13 +486,7 @@ describe('Autocomplete Component', () => {
     it('should not call loadItems before minCharsToTrigger', async () => {
       mockLoadItems.mockResolvedValue(mockStaticItems)
 
-      render(
-        <Autocomplete
-          {...defaultProps}
-          loadItems={mockLoadItems}
-          minCharsToTrigger={3}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={3} />)
 
       const input = screen.getByRole('combobox')
 
@@ -576,13 +514,7 @@ describe('Autocomplete Component', () => {
       })
       mockLoadItems.mockReturnValue(promise)
 
-      render(
-        <Autocomplete
-          {...defaultProps}
-          loadItems={mockLoadItems}
-          minCharsToTrigger={2}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
       const input = screen.getByRole('combobox')
       await user.type(input, 'ap')
@@ -603,19 +535,11 @@ describe('Autocomplete Component', () => {
 
     it('should handle error state on failed load gracefully', async () => {
       // Mock console.error to suppress expected error logs
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       mockLoadItems.mockRejectedValue(new Error('Failed to load'))
 
-      render(
-        <Autocomplete
-          {...defaultProps}
-          loadItems={mockLoadItems}
-          minCharsToTrigger={2}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
       const input = screen.getByRole('combobox')
       await user.type(input, 'ap')
@@ -686,17 +610,9 @@ describe('Autocomplete Component', () => {
         secondResolve = resolve
       })
 
-      mockLoadItems
-        .mockReturnValueOnce(firstPromise)
-        .mockReturnValueOnce(secondPromise)
+      mockLoadItems.mockReturnValueOnce(firstPromise).mockReturnValueOnce(secondPromise)
 
-      render(
-        <Autocomplete
-          {...defaultProps}
-          loadItems={mockLoadItems}
-          minCharsToTrigger={2}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
       const input = screen.getByRole('combobox')
 
@@ -732,13 +648,7 @@ describe('Autocomplete Component', () => {
     it('should clear results when input is cleared', async () => {
       mockLoadItems.mockResolvedValue(mockStaticItems)
 
-      render(
-        <Autocomplete
-          {...defaultProps}
-          loadItems={mockLoadItems}
-          minCharsToTrigger={2}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
       const input = screen.getByRole('combobox')
       await user.type(input, 'ap')
@@ -757,9 +667,7 @@ describe('Autocomplete Component', () => {
 
   describe('Controlled Component', () => {
     it('should display the selected value when value prop is provided', () => {
-      render(
-        <Autocomplete {...defaultProps} items={mockStaticItems} value="1" />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} value="1" />)
 
       const input = screen.getByRole('combobox')
       expect(input).toHaveValue('Apple')
@@ -773,9 +681,7 @@ describe('Autocomplete Component', () => {
       const input = screen.getByRole('combobox')
       expect(input).toHaveValue('Apple')
 
-      rerender(
-        <Autocomplete {...defaultProps} items={mockStaticItems} value="2" />,
-      )
+      rerender(<Autocomplete {...defaultProps} items={mockStaticItems} value="2" />)
 
       expect(input).toHaveValue('Banana')
     })
@@ -878,9 +784,7 @@ describe('Autocomplete Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Super Mario Bros')).toBeInTheDocument()
-        expect(
-          screen.queryByText('The Legend of Zelda'),
-        ).not.toBeInTheDocument()
+        expect(screen.queryByText('The Legend of Zelda')).not.toBeInTheDocument()
       })
     })
 
@@ -900,9 +804,7 @@ describe('Autocomplete Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Super Mario Bros')).toBeInTheDocument()
-        expect(
-          screen.queryByText('The Legend of Zelda'),
-        ).not.toBeInTheDocument()
+        expect(screen.queryByText('The Legend of Zelda')).not.toBeInTheDocument()
       })
     })
   })
@@ -918,12 +820,7 @@ describe('Autocomplete Component', () => {
     })
 
     it('should handle undefined items', () => {
-      render(
-        <Autocomplete
-          {...defaultProps}
-          items={undefined as unknown as TestOption[]}
-        />,
-      )
+      render(<Autocomplete {...defaultProps} items={undefined as unknown as TestOption[]} />)
 
       const input = screen.getByRole('combobox')
       fireEvent.focus(input)
@@ -1001,9 +898,7 @@ describe('Autocomplete Component', () => {
     })
 
     it('should handle disabled state correctly', async () => {
-      render(
-        <Autocomplete {...defaultProps} items={mockStaticItems} disabled />,
-      )
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} disabled />)
 
       const input = screen.getByRole('combobox')
 
@@ -1059,10 +954,7 @@ describe('Autocomplete Component', () => {
 
         options.forEach((option, _index) => {
           expect(option).toHaveAttribute('role', 'option')
-          expect(option).toHaveAttribute(
-            'id',
-            expect.stringContaining('option'),
-          )
+          expect(option).toHaveAttribute('id', expect.stringContaining('option'))
         })
       })
     })
@@ -1094,10 +986,7 @@ describe('Autocomplete Component', () => {
 
       const firstOption = screen.getAllByRole('option')[0]
       expect(firstOption).toHaveAttribute('aria-selected', 'true')
-      expect(input).toHaveAttribute(
-        'aria-activedescendant',
-        firstOption.getAttribute('id'),
-      )
+      expect(input).toHaveAttribute('aria-activedescendant', firstOption.getAttribute('id'))
     })
   })
 })

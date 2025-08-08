@@ -82,12 +82,8 @@ export function CacheMetrics() {
               <Timer className="h-4 w-4" />
               Stale Hits
             </div>
-            <div className="text-2xl font-bold">
-              {cacheMetrics.staleHits.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Served while revalidating
-            </p>
+            <div className="text-2xl font-bold">{cacheMetrics.staleHits.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Served while revalidating</p>
           </div>
 
           <div className="space-y-2">
@@ -115,9 +111,7 @@ export function CacheMetrics() {
 
         {/* Cache Distribution Chart */}
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Cache Request Distribution
-          </p>
+          <p className="text-sm text-muted-foreground">Cache Request Distribution</p>
           <div className="rounded-lg border p-4">
             <BarChart
               data={[

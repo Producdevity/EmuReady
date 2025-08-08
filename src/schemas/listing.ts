@@ -119,15 +119,11 @@ export const RejectListingSchema = z.object({
 })
 
 export const BulkApproveListingsSchema = z.object({
-  listingIds: z
-    .array(z.string().uuid())
-    .min(1, 'At least one listing must be selected'),
+  listingIds: z.array(z.string().uuid()).min(1, 'At least one listing must be selected'),
 })
 
 export const BulkRejectListingsSchema = z.object({
-  listingIds: z
-    .array(z.string().uuid())
-    .min(1, 'At least one listing must be selected'),
+  listingIds: z.array(z.string().uuid()).min(1, 'At least one listing must be selected'),
   notes: z.string().optional(),
 })
 
@@ -144,12 +140,7 @@ export const UnverifyListingSchema = z.object({
 // Admin schemas for listing management
 export const GetAllListingsAdminSchema = z.object({
   page: z.number().int().positive().default(1),
-  limit: z
-    .number()
-    .int()
-    .positive()
-    .max(PAGINATION.MAX_LIMIT)
-    .default(PAGINATION.DEFAULT_LIMIT),
+  limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   sortField: z
     .enum([
       'game.title',

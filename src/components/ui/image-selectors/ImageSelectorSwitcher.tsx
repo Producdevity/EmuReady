@@ -25,9 +25,7 @@ const imageServiceMap: Record<ImageService, ImageService> = {
 }
 
 export function ImageSelectorSwitcher(props: Props) {
-  const [selectedService, setSelectedService] = useState<ImageService>(
-    imageServiceMap.tgdb,
-  )
+  const [selectedService, setSelectedService] = useState<ImageService>(imageServiceMap.tgdb)
 
   const slideVariants = {
     initial: (direction: number) => ({
@@ -60,24 +58,18 @@ export function ImageSelectorSwitcher(props: Props) {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-orange-500" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">
-                RAWG.io
-              </span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">RAWG.io</span>
             </div>
             <Toggle
               checked={selectedService === imageServiceMap.tgdb}
               onChange={(checked) =>
-                setSelectedService(
-                  checked ? imageServiceMap.tgdb : imageServiceMap.rawg,
-                )
+                setSelectedService(checked ? imageServiceMap.tgdb : imageServiceMap.rawg)
               }
               size="md"
             />
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-blue-500" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">
-                TheGamesDB
-              </span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">TheGamesDB</span>
               <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
                 Experimental
               </span>
@@ -100,10 +92,7 @@ export function ImageSelectorSwitcher(props: Props) {
 
       {/* Animated Image Selector */}
       <div className="relative overflow-hidden">
-        <AnimatePresence
-          mode="wait"
-          custom={selectedService === 'tgdb' ? 1 : -1}
-        >
+        <AnimatePresence mode="wait" custom={selectedService === 'tgdb' ? 1 : -1}>
           {selectedService === imageServiceMap.rawg ? (
             <motion.div
               key="rawg"

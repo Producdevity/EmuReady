@@ -39,13 +39,9 @@ export function VoteButtons(props: VoteButtonsProps) {
   const { user } = useUser()
   const isAuthenticated = !!user
 
-  const [optimisticVote, setOptimisticVote] = useState<boolean | null>(
-    props.currentVote,
-  )
+  const [optimisticVote, setOptimisticVote] = useState<boolean | null>(props.currentVote)
   const [optimisticUpVotes, setOptimisticUpVotes] = useState(props.upVoteCount)
-  const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(
-    props.totalVotes,
-  )
+  const [optimisticTotalVotes, setOptimisticTotalVotes] = useState(props.totalVotes)
   const [showHelpModal, setShowHelpModal] = useState(false)
 
   const labels = {
@@ -124,9 +120,7 @@ export function VoteButtons(props: VoteButtonsProps) {
   }
 
   const successRate =
-    optimisticTotalVotes > 0
-      ? Math.round((optimisticUpVotes / optimisticTotalVotes) * 100)
-      : 0
+    optimisticTotalVotes > 0 ? Math.round((optimisticUpVotes / optimisticTotalVotes) * 100) : 0
 
   const barColor = getBarColor(successRate)
   const barWidth = getBarWidth(successRate, optimisticTotalVotes)
@@ -136,9 +130,7 @@ export function VoteButtons(props: VoteButtonsProps) {
       <div className="flex flex-col items-center gap-2">
         {/* Header with title and help */}
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {labels.title}
-          </h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{labels.title}</h3>
           <button
             type="button"
             onClick={() => setShowHelpModal(true)}
@@ -159,11 +151,7 @@ export function VoteButtons(props: VoteButtonsProps) {
                 ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400'
                 : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-green-300 dark:hover:border-green-600'
             }`}
-            title={
-              isAuthenticated
-                ? 'Confirm - This matches my experience'
-                : 'Login to verify'
-            }
+            title={isAuthenticated ? 'Confirm - This matches my experience' : 'Login to verify'}
           >
             <CheckCircle className="w-6 h-6 mb-1" />
             <span className="text-xs font-medium">{labels.confirmButton}</span>
@@ -188,15 +176,11 @@ export function VoteButtons(props: VoteButtonsProps) {
                 : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-600'
             }`}
             title={
-              isAuthenticated
-                ? "Inaccurate - This doesn't match my experience"
-                : 'Login to verify'
+              isAuthenticated ? "Inaccurate - This doesn't match my experience" : 'Login to verify'
             }
           >
             <XCircle className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium">
-              {labels.inaccurateButton}
-            </span>
+            <span className="text-xs font-medium">{labels.inaccurateButton}</span>
           </button>
         </div>
 
@@ -213,10 +197,7 @@ export function VoteButtons(props: VoteButtonsProps) {
         {!isAuthenticated && (
           <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
             <SignInButton mode="modal">
-              <button
-                className="text-blue-500 hover:underline"
-                data-clerk-sign-in-trigger
-              >
+              <button className="text-blue-500 hover:underline" data-clerk-sign-in-trigger>
                 Sign in
               </button>
             </SignInButton>{' '}
@@ -225,10 +206,7 @@ export function VoteButtons(props: VoteButtonsProps) {
         )}
       </div>
 
-      <props.VotingHelpModal
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
+      <props.VotingHelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
     </>
   )
 }

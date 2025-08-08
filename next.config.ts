@@ -83,12 +83,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  serverExternalPackages: [
-    '@prisma/client',
-    'jsdom',
-    'markdown-it',
-    'dompurify',
-  ],
+  serverExternalPackages: ['@prisma/client', 'jsdom', 'markdown-it', 'dompurify'],
 
   eslint: {
     dirs: ['src', 'tests'], // Include tests directory in ESLint

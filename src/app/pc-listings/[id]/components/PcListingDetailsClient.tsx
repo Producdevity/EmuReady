@@ -13,10 +13,10 @@ import {
   Button,
   TranslatableMarkdown,
   ApprovalStatusBadge,
+  LocalizedDate,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
-import { formatDateTime, formatTimeAgo } from '@/utils/date'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { CustomFieldType, PcOs, Role } from '@orm'
 import EditPcListingButton from './EditPcListingButton'
@@ -49,10 +49,7 @@ function PcListingDetailsClient(props: Props) {
 
   // Get current user to check if they can see banned user indicators
   const currentUserQuery = api.users.me.useQuery()
-  const canViewBannedUsers = roleIncludesRole(
-    currentUserQuery.data?.role,
-    Role.MODERATOR,
-  )
+  const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
   const refreshData = () => {
     utils.pcListings.byId.invalidate({ id: pcListingId }).catch(console.error)
@@ -128,12 +125,7 @@ function PcListingDetailsClient(props: Props) {
       >
         {/* Back Navigation */}
         <div className="mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="mb-4"
-          >
+          <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
@@ -158,14 +150,10 @@ function PcListingDetailsClient(props: Props) {
               </div>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="default">
-                  System: {props.pcListing?.game.system?.name}
-                </Badge>
+                <Badge variant="default">System: {props.pcListing?.game.system?.name}</Badge>
                 <Badge
                   onClick={() =>
-                    router.push(
-                      `/emulators?emulatorId=${props.pcListing?.emulator?.id}`,
-                    )
+                    router.push(`/emulators?emulatorId=${props.pcListing?.emulator?.id}`)
                   }
                   variant="default"
                   className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -178,9 +166,7 @@ function PcListingDetailsClient(props: Props) {
                   label={props.pcListing.performance.label}
                   description={props.pcListing.performance?.description}
                 />
-                {canViewBannedUsers && (
-                  <ApprovalStatusBadge status={props.pcListing.status} />
-                )}
+                {canViewBannedUsers && <ApprovalStatusBadge status={props.pcListing.status} />}
               </div>
 
               {/* PC Hardware Specifications */}
@@ -192,12 +178,9 @@ function PcListingDetailsClient(props: Props) {
                   <div className="flex items-center gap-3">
                     <Cpu className="h-5 w-5 text-gray-500" />
                     <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        CPU:
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">CPU:</span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {props.pcListing.cpu.brand.name}{' '}
-                        {props.pcListing.cpu.modelName}
+                        {props.pcListing.cpu.brand.name} {props.pcListing.cpu.modelName}
                       </span>
                     </div>
                   </div>
@@ -205,9 +188,7 @@ function PcListingDetailsClient(props: Props) {
                   <div className="flex items-center gap-3">
                     <Monitor className="h-5 w-5 text-gray-500" />
                     <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        GPU:
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">GPU:</span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
                         {props.pcListing.gpu
                           ? `${props.pcListing.gpu.brand.name} ${props.pcListing.gpu.modelName}`
@@ -219,9 +200,7 @@ function PcListingDetailsClient(props: Props) {
                   <div className="flex items-center gap-3">
                     <HardDrive className="h-5 w-5 text-gray-500" />
                     <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        Memory:
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Memory:</span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
                         {props.pcListing.memorySize}GB RAM
                       </span>
@@ -233,9 +212,7 @@ function PcListingDetailsClient(props: Props) {
                       <div className="h-3 w-3 bg-gray-500 rounded" />
                     </div>
                     <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        OS:
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">OS:</span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
                         {osLabels[props.pcListing.os] || osLabels.UNKNOWN}{' '}
                       </span>
@@ -285,9 +262,7 @@ function PcListingDetailsClient(props: Props) {
                     <div className="space-y-3">
                       {props.pcListing.customFieldValues
                         .filter(
-                          (fieldValue) =>
-                            !isNullish(fieldValue.value) &&
-                            fieldValue.value !== '',
+                          (fieldValue) => !isNullish(fieldValue.value) && fieldValue.value !== '',
                         )
                         .map((fieldValue) => (
                           <div
@@ -352,24 +327,19 @@ function PcListingDetailsClient(props: Props) {
               {/* Posted Date */}
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Posted
-                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Posted</div>
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {formatTimeAgo(props.pcListing.createdAt)}
+                    <LocalizedDate date={props.pcListing.createdAt} format="timeAgo" />
                   </div>
                   <div className="text-xs text-gray-400 dark:text-gray-500">
-                    {formatDateTime(props.pcListing.createdAt)}
+                    <LocalizedDate date={props.pcListing.createdAt} format="dateTime" />
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="mt-4 space-y-2">
-                <EditPcListingButton
-                  pcListingId={props.pcListing.id}
-                  onSuccess={refreshData}
-                />
+                <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}
                   authorId={props.pcListing.authorId}
@@ -404,10 +374,7 @@ function PcListingDetailsClient(props: Props) {
               pcListingId={props.pcListing.id}
               currentVote={props.pcListing.userVote ?? null}
               upVoteCount={props.pcListing.upvotes ?? 0}
-              totalVotes={
-                (props.pcListing.upvotes ?? 0) +
-                (props.pcListing.downvotes ?? 0)
-              }
+              totalVotes={(props.pcListing.upvotes ?? 0) + (props.pcListing.downvotes ?? 0)}
               onVoteSuccess={refreshData}
               gameId={props.pcListing.game.id}
               systemId={props.pcListing.game.system?.id}

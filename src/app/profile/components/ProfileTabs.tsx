@@ -64,9 +64,7 @@ function ProfileTabs(props: Props) {
                   </motion.div>
                 )}
 
-                <span className="font-medium whitespace-nowrap">
-                  {tab.label}
-                </span>
+                <span className="font-medium whitespace-nowrap">{tab.label}</span>
 
                 {typeof tab.badge === 'number' && tab.badge > 0 && (
                   <motion.span

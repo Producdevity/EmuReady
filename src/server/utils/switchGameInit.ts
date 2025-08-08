@@ -14,9 +14,7 @@ export async function initializeSwitchGameService(): Promise<void> {
     const status = await switchGameRefreshService.getStatus()
 
     console.log('Switch game service initialized')
-    console.log(
-      `Auto-refresh: ${status.autoRefreshEnabled ? 'enabled' : 'disabled'}`,
-    )
+    console.log(`Auto-refresh: ${status.autoRefreshEnabled ? 'enabled' : 'disabled'}`)
     console.log(`Games cached: ${status.totalGames}`)
 
     if (status.nextRefresh) {

@@ -106,10 +106,8 @@ test.describe('Performance Tests', () => {
     const finalMemory = await getMemoryUsage()
 
     if (initialMemory && finalMemory) {
-      const memoryIncrease =
-        finalMemory.usedJSHeapSize - initialMemory.usedJSHeapSize
-      const percentIncrease =
-        (memoryIncrease / initialMemory.usedJSHeapSize) * 100
+      const memoryIncrease = finalMemory.usedJSHeapSize - initialMemory.usedJSHeapSize
+      const percentIncrease = (memoryIncrease / initialMemory.usedJSHeapSize) * 100
 
       console.log(
         `Memory increased by ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB (${percentIncrease.toFixed(1)}%)`,
@@ -191,15 +189,9 @@ test.describe('Performance Tests', () => {
     await page.waitForLoadState('networkidle')
 
     console.log('Resource sizes:')
-    console.log(
-      `- Scripts: ${(resourceSizes.scripts / 1024 / 1024).toFixed(2)}MB`,
-    )
-    console.log(
-      `- Styles: ${(resourceSizes.styles / 1024 / 1024).toFixed(2)}MB`,
-    )
-    console.log(
-      `- Images: ${(resourceSizes.images / 1024 / 1024).toFixed(2)}MB`,
-    )
+    console.log(`- Scripts: ${(resourceSizes.scripts / 1024 / 1024).toFixed(2)}MB`)
+    console.log(`- Styles: ${(resourceSizes.styles / 1024 / 1024).toFixed(2)}MB`)
+    console.log(`- Images: ${(resourceSizes.images / 1024 / 1024).toFixed(2)}MB`)
     console.log(`- Total: ${(resourceSizes.total / 1024 / 1024).toFixed(2)}MB`)
 
     // JavaScript bundle should be reasonable
@@ -269,15 +261,11 @@ test.describe('Performance Tests', () => {
 
     // Check if any API calls were cached
     const cachedCalls = apiCalls.filter((call: ApiCall) => call.fromCache)
-    console.log(
-      `${cachedCalls.length}/${apiCalls.length} API calls were cached`,
-    )
+    console.log(`${cachedCalls.length}/${apiCalls.length} API calls were cached`)
 
     // Caching might not be implemented yet
     if (cachedCalls.length === 0) {
-      console.log(
-        'API caching not implemented yet - this is a future optimization',
-      )
+      console.log('API caching not implemented yet - this is a future optimization')
     } else {
       console.log('API caching is working!')
     }
@@ -339,9 +327,7 @@ test.describe('Mobile Performance Tests', () => {
     expect(loadTime).toBeLessThan(5000)
 
     // Check for mobile optimizations
-    const viewportMeta = await page
-      .locator('meta[name="viewport"]')
-      .getAttribute('content')
+    const viewportMeta = await page.locator('meta[name="viewport"]').getAttribute('content')
     expect(viewportMeta).toContain('width=device-width')
   })
 
@@ -369,9 +355,7 @@ test.describe('Mobile Performance Tests', () => {
     await page.waitForLoadState('networkidle')
 
     // Get CLS value
-    const cumulativeLayoutShift = await page.evaluate(
-      () => (window as any).getCLS?.() || 0,
-    )
+    const cumulativeLayoutShift = await page.evaluate(() => (window as any).getCLS?.() || 0)
 
     console.log(`Cumulative Layout Shift: ${cumulativeLayoutShift.toFixed(3)}`)
 

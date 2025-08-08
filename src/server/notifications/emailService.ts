@@ -52,9 +52,7 @@ class EmailService {
     const subject = `[EmuReady] ${notification.title}`
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const actionUrl = notification.actionUrl
-      ? `${baseUrl}${notification.actionUrl}`
-      : null
+    const actionUrl = notification.actionUrl ? `${baseUrl}${notification.actionUrl}` : null
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -260,9 +258,7 @@ Having trouble? View this email in your browser: ${baseUrl}
     template: EmailTemplate,
   ): Promise<NotificationDeliveryResult> {
     // MailerSend implementation
-    const { MailerSend, EmailParams, Sender, Recipient } = await import(
-      'mailersend'
-    )
+    const { MailerSend, EmailParams, Sender, Recipient } = await import('mailersend')
 
     const mailerSend = new MailerSend({
       apiKey: this.config.apiKey,
@@ -302,10 +298,7 @@ Having trouble? View this email in your browser: ${baseUrl}
         deliveryChannel: 'EMAIL',
       }
 
-      const result = await this.sendNotificationEmail(
-        this.config.fromEmail,
-        testNotification,
-      )
+      const result = await this.sendNotificationEmail(this.config.fromEmail, testNotification)
 
       return result.success
     } catch (error) {
@@ -328,9 +321,7 @@ export function createEmailService(): EmailService | null {
   if (!emailEnabled || emailEnabled !== 'true') return null
 
   if (!provider || !apiKey || !fromEmail) {
-    console.warn(
-      '⚠️ Email service not configured. Email notifications will be disabled.',
-    )
+    console.warn('⚠️ Email service not configured. Email notifications will be disabled.')
     return null
   }
 

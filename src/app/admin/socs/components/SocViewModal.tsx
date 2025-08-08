@@ -28,10 +28,7 @@ function SocViewModal(props: Props) {
 
           <div className="grid grid-cols-2 gap-4">
             <InputPlaceholder label="Name" value={props.socData.name} />
-            <InputPlaceholder
-              label="Manufacturer"
-              value={props.socData.manufacturer}
-            />
+            <InputPlaceholder label="Manufacturer" value={props.socData.manufacturer} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -50,10 +47,7 @@ function SocViewModal(props: Props) {
               label="CPU Cores"
               value={props.socData.cpuCores?.toString() || 'Not specified'}
             />
-            <InputPlaceholder
-              label="GPU Model"
-              value={props.socData.gpuModel || 'Not specified'}
-            />
+            <InputPlaceholder label="GPU Model" value={props.socData.gpuModel || 'Not specified'} />
           </div>
 
           {props.socData._count && (

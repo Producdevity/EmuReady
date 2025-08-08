@@ -83,9 +83,7 @@ export const tgdbImageUrlsCache = new MemoryCache<{
   maxSize: 500,
 })
 
-export const tgdbGameImagesCache = new MemoryCache<
-  Record<string, GameImageOption[]>
->({
+export const tgdbGameImagesCache = new MemoryCache<Record<string, GameImageOption[]>>({
   ttl: 10 * 60 * 1000, // 10 minutes for game images
   maxSize: 100,
 })

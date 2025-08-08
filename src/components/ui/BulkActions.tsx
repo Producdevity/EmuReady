@@ -71,12 +71,7 @@ export function BulkActions(props: BulkActionsProps) {
           <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
             {props.selectedIds.length} of {props.totalCount} selected
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={props.onClearSelection}
-            disabled={isLoading}
-          >
+          <Button variant="outline" size="sm" onClick={props.onClearSelection} disabled={isLoading}>
             Clear Selection
           </Button>
           {props.selectedIds.length < props.totalCount && (
@@ -111,9 +106,7 @@ export function BulkActions(props: BulkActionsProps) {
                 <Input
                   placeholder="Rejection reason (optional)"
                   value={rejectionNotes}
-                  onChange={(e) =>
-                    setRejectionNotes((e.target as HTMLInputElement).value)
-                  }
+                  onChange={(e) => setRejectionNotes((e.target as HTMLInputElement).value)}
                   className="w-48"
                   disabled={isLoading}
                 />
@@ -126,9 +119,7 @@ export function BulkActions(props: BulkActionsProps) {
                 className="bg-red-600 hover:bg-red-700"
               >
                 <XCircle className="w-4 h-4 mr-1" />
-                {showRejectInput
-                  ? 'Confirm Reject'
-                  : props.actions.reject.label}
+                {showRejectInput ? 'Confirm Reject' : props.actions.reject.label}
               </Button>
               {showRejectInput && (
                 <Button

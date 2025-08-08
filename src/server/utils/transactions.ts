@@ -121,9 +121,7 @@ export async function withSavepoint<T>(
 export async function withOptimisticLock<T>(
   prisma: PrismaClient,
   model: {
-    findUnique: (args: {
-      where: { id: string }
-    }) => Promise<Record<string, unknown> | null>
+    findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>
     update: (args: {
       where: { id: string }
       data: Record<string, unknown>
@@ -131,10 +129,7 @@ export async function withOptimisticLock<T>(
   },
   id: string,
   versionField: string,
-  updateFn: (
-    current: Record<string, unknown>,
-    tx: Prisma.TransactionClient,
-  ) => Promise<T>,
+  updateFn: (current: Record<string, unknown>, tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
   return withRetryTransaction(prisma, async (tx) => {
     const current = await model.findUnique({
@@ -190,9 +185,7 @@ export async function batchOperations<T>(
       })
 
       if (options?.delayBetweenBatches && i + batchSize < operations.length) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, options.delayBetweenBatches),
-        )
+        await new Promise((resolve) => setTimeout(resolve, options.delayBetweenBatches))
       }
     }
   } else {

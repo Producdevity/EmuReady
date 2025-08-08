@@ -12,11 +12,7 @@ import {
   manageDevicesProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
-import {
-  calculateOffset,
-  createPaginationResult,
-  buildOrderBy,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult, buildOrderBy } from '@/server/utils/pagination'
 import type { Prisma } from '@orm'
 
 export const devicesRouter = createTRPCRouter({
@@ -117,136 +113,123 @@ export const devicesRouter = createTRPCRouter({
 
     return {
       devices,
-      pagination: createPaginationResult(
-        total,
-        { page, offset },
-        limit,
-        actualOffset,
-      ),
+      pagination: createPaginationResult(total, { page, offset }, limit, actualOffset),
     }
   }),
 
-  byId: publicProcedure
-    .input(GetDeviceByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const device = await ctx.prisma.device.findUnique({
-        where: { id: input.id },
-        include: {
-          brand: true,
-          soc: true,
-          _count: { select: { listings: true } },
-        },
+  byId: publicProcedure.input(GetDeviceByIdSchema).query(async ({ ctx, input }) => {
+    const device = await ctx.prisma.device.findUnique({
+      where: { id: input.id },
+      include: {
+        brand: true,
+        soc: true,
+        _count: { select: { listings: true } },
+      },
+    })
+
+    return device ?? ResourceError.device.notFound()
+  }),
+
+  create: manageDevicesProcedure.input(CreateDeviceSchema).mutation(async ({ ctx, input }) => {
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.brandId },
+    })
+
+    if (!brand) return ResourceError.deviceBrand.notFound()
+
+    // Validate SoC if provided
+    if (input.socId) {
+      const soc = await ctx.prisma.soC.findUnique({
+        where: { id: input.socId },
       })
 
-      return device ?? ResourceError.device.notFound()
-    }),
+      if (!soc) return AppError.notFound('SoC')
+    }
 
-  create: manageDevicesProcedure
-    .input(CreateDeviceSchema)
-    .mutation(async ({ ctx, input }) => {
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.brandId },
+    const existingDevice = await ctx.prisma.device.findFirst({
+      where: {
+        brandId: input.brandId,
+        modelName: { equals: input.modelName, mode: 'insensitive' },
+      },
+    })
+
+    if (existingDevice) {
+      return ResourceError.device.alreadyExists(input.modelName)
+    }
+
+    return ctx.prisma.device.create({
+      data: input,
+      include: {
+        brand: true,
+        soc: true,
+        _count: { select: { listings: true } },
+      },
+    })
+  }),
+
+  update: manageDevicesProcedure.input(UpdateDeviceSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input
+
+    const device = await ctx.prisma.device.findUnique({
+      where: { id },
+    })
+
+    if (!device) return ResourceError.device.notFound()
+
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.brandId },
+    })
+
+    if (!brand) return ResourceError.deviceBrand.notFound()
+
+    // Validate SoC if provided
+    if (input.socId) {
+      const soc = await ctx.prisma.soC.findUnique({
+        where: { id: input.socId },
       })
 
-      if (!brand) return ResourceError.deviceBrand.notFound()
+      if (!soc) return AppError.notFound('SoC')
+    }
 
-      // Validate SoC if provided
-      if (input.socId) {
-        const soc = await ctx.prisma.soC.findUnique({
-          where: { id: input.socId },
-        })
+    const existingDevice = await ctx.prisma.device.findFirst({
+      where: {
+        brandId: input.brandId,
+        modelName: { equals: input.modelName, mode: 'insensitive' },
+        id: { not: id },
+      },
+    })
 
-        if (!soc) return AppError.notFound('SoC')
-      }
+    if (existingDevice) {
+      return ResourceError.device.alreadyExists(input.modelName)
+    }
 
-      const existingDevice = await ctx.prisma.device.findFirst({
-        where: {
-          brandId: input.brandId,
-          modelName: { equals: input.modelName, mode: 'insensitive' },
-        },
-      })
+    return ctx.prisma.device.update({
+      where: { id },
+      data,
+      include: {
+        brand: true,
+        soc: true,
+        _count: { select: { listings: true } },
+      },
+    })
+  }),
 
-      if (existingDevice) {
-        return ResourceError.device.alreadyExists(input.modelName)
-      }
+  delete: manageDevicesProcedure.input(DeleteDeviceSchema).mutation(async ({ ctx, input }) => {
+    const existingDevice = await ctx.prisma.device.findUnique({
+      where: { id: input.id },
+      include: { _count: { select: { listings: true } } },
+    })
 
-      return ctx.prisma.device.create({
-        data: input,
-        include: {
-          brand: true,
-          soc: true,
-          _count: { select: { listings: true } },
-        },
-      })
-    }),
+    if (!existingDevice) return ResourceError.device.notFound()
 
-  update: manageDevicesProcedure
-    .input(UpdateDeviceSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
+    if (existingDevice._count.listings > 0) {
+      return AppError.conflict(
+        `Cannot delete device "${existingDevice.modelName}" because it has ${existingDevice._count.listings} active listing(s). Please remove all listings for this device first.`,
+      )
+    }
 
-      const device = await ctx.prisma.device.findUnique({
-        where: { id },
-      })
-
-      if (!device) return ResourceError.device.notFound()
-
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.brandId },
-      })
-
-      if (!brand) return ResourceError.deviceBrand.notFound()
-
-      // Validate SoC if provided
-      if (input.socId) {
-        const soc = await ctx.prisma.soC.findUnique({
-          where: { id: input.socId },
-        })
-
-        if (!soc) return AppError.notFound('SoC')
-      }
-
-      const existingDevice = await ctx.prisma.device.findFirst({
-        where: {
-          brandId: input.brandId,
-          modelName: { equals: input.modelName, mode: 'insensitive' },
-          id: { not: id },
-        },
-      })
-
-      if (existingDevice) {
-        return ResourceError.device.alreadyExists(input.modelName)
-      }
-
-      return ctx.prisma.device.update({
-        where: { id },
-        data,
-        include: {
-          brand: true,
-          soc: true,
-          _count: { select: { listings: true } },
-        },
-      })
-    }),
-
-  delete: manageDevicesProcedure
-    .input(DeleteDeviceSchema)
-    .mutation(async ({ ctx, input }) => {
-      const existingDevice = await ctx.prisma.device.findUnique({
-        where: { id: input.id },
-        include: { _count: { select: { listings: true } } },
-      })
-
-      if (!existingDevice) return ResourceError.device.notFound()
-
-      if (existingDevice._count.listings > 0) {
-        return AppError.conflict(
-          `Cannot delete device "${existingDevice.modelName}" because it has ${existingDevice._count.listings} active listing(s). Please remove all listings for this device first.`,
-        )
-      }
-
-      return ctx.prisma.device.delete({ where: { id: input.id } })
-    }),
+    return ctx.prisma.device.delete({ where: { id: input.id } })
+  }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([

@@ -20,7 +20,5 @@ export function isValidImageUrl(url: string): boolean {
 }
 
 export function getImageTypeDisplayName(type: string): string {
-  return (
-    TYPE_DISPLAY_NAMES[type] || type.charAt(0).toUpperCase() + type.slice(1)
-  )
+  return TYPE_DISPLAY_NAMES[type] || type.charAt(0).toUpperCase() + type.slice(1)
 }

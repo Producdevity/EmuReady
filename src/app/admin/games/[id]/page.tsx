@@ -50,23 +50,13 @@ function AdminGameEditPage() {
               Quick Actions
             </h3>
             <div className="space-y-3">
-              <Button
-                asChild
-                variant="outline"
-                className="w-full justify-start"
-              >
+              <Button asChild variant="outline" className="w-full justify-start">
                 <Link href={`/games/${gameQuery.data.id}`} target="_blank">
                   View Public Page
                 </Link>
               </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <Link href={`/listings/new?gameId=${gameQuery.data.id}`}>
-                  Add New Listing
-                </Link>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link href={`/listings/new?gameId=${gameQuery.data.id}`}>Add New Listing</Link>
               </Button>
             </div>
           </div>

@@ -40,27 +40,21 @@ export function useColumnVisibility(
     if (opts?.defaultVisibleColumns) {
       return opts.defaultVisibleColumns
     }
-    return columns
-      .filter((col) => col.defaultVisible !== false)
-      .map((col) => col.key)
+    return columns.filter((col) => col.defaultVisible !== false).map((col) => col.key)
   }, [columns, opts?.defaultVisibleColumns])
 
   // Only use localStorage when storageKey is explicitly provided
   const shouldUseLocalStorage = Boolean(opts?.storageKey)
   const storageKey = opts?.storageKey ?? 'unused-key'
 
-  const [storedColumns, setStoredColumns, isHydrated] = useLocalStorage<
-    string[]
-  >(
+  const [storedColumns, setStoredColumns, isHydrated] = useLocalStorage<string[]>(
     storageKey,
     getDefaultVisibleColumns(),
     shouldUseLocalStorage,
     ColumnVisibilitySchema,
   )
 
-  const [visibleColumns, setVisibleColumns] = useState(
-    () => new Set(storedColumns),
-  )
+  const [visibleColumns, setVisibleColumns] = useState(() => new Set(storedColumns))
 
   // Only sync from localStorage to state on mount or when localStorage value changes
   useEffect(() => {
@@ -75,10 +69,7 @@ export function useColumnVisibility(
         try {
           setStoredColumns(Array.from(newColumns))
         } catch (error) {
-          console.error(
-            'Failed to save column visibility to localStorage:',
-            error,
-          )
+          console.error('Failed to save column visibility to localStorage:', error)
         }
       }
     },
@@ -113,10 +104,7 @@ export function useColumnVisibility(
         try {
           setStoredColumns((prev) => Array.from(new Set([...prev, columnKey])))
         } catch (error) {
-          console.error(
-            'Failed to save column visibility to localStorage:',
-            error,
-          )
+          console.error('Failed to save column visibility to localStorage:', error)
         }
       }
     },
@@ -142,10 +130,7 @@ export function useColumnVisibility(
             return Array.from(next)
           })
         } catch (error) {
-          console.error(
-            'Failed to save column visibility to localStorage:',
-            error,
-          )
+          console.error('Failed to save column visibility to localStorage:', error)
         }
       }
     },
@@ -158,9 +143,7 @@ export function useColumnVisibility(
 
   const hideAll = useCallback(() => {
     // Only hide columns that are not marked as alwaysVisible
-    const alwaysVisibleColumns = columns
-      .filter((col) => col.alwaysVisible)
-      .map((col) => col.key)
+    const alwaysVisibleColumns = columns.filter((col) => col.alwaysVisible).map((col) => col.key)
     updateVisibleColumns(new Set(alwaysVisibleColumns))
   }, [columns, updateVisibleColumns])
 
@@ -173,18 +156,10 @@ export function useColumnVisibility(
       try {
         setStoredColumns(defaultColumns)
       } catch (error) {
-        console.error(
-          'Failed to save column visibility to localStorage:',
-          error,
-        )
+        console.error('Failed to save column visibility to localStorage:', error)
       }
     }
-  }, [
-    getDefaultVisibleColumns,
-    setStoredColumns,
-    isHydrated,
-    shouldUseLocalStorage,
-  ])
+  }, [getDefaultVisibleColumns, setStoredColumns, isHydrated, shouldUseLocalStorage])
 
   return {
     visibleColumns,

@@ -1,10 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ColumnVisibilityControl } from '@/components/ui'
-import {
-  type useColumnVisibility,
-  type ColumnDefinition,
-} from '@/hooks/useColumnVisibility'
+import { type useColumnVisibility, type ColumnDefinition } from '@/hooks/useColumnVisibility'
 
 vi.mock('@/hooks/useColumnVisibility')
 
@@ -20,69 +17,34 @@ const mockColumns: ColumnDefinition[] = [
 ]
 
 // Simple test component that mimics the listings table structure
-function TestListingsTable(props: {
-  columnVisibility: ReturnType<typeof useColumnVisibility>
-}) {
+function TestListingsTable(props: { columnVisibility: ReturnType<typeof useColumnVisibility> }) {
   return (
     <div>
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={props.columnVisibility}
-      />
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={props.columnVisibility} />
 
       <table>
         <thead>
           <tr>
             {props.columnVisibility.isColumnVisible('game') && <th>Game</th>}
-            {props.columnVisibility.isColumnVisible('system') && (
-              <th>System</th>
-            )}
-            {props.columnVisibility.isColumnVisible('device') && (
-              <th>Device</th>
-            )}
-            {props.columnVisibility.isColumnVisible('emulator') && (
-              <th>Emulator</th>
-            )}
-            {props.columnVisibility.isColumnVisible('performance') && (
-              <th>Performance</th>
-            )}
-            {props.columnVisibility.isColumnVisible('successRate') && (
-              <th>Success Rate</th>
-            )}
-            {props.columnVisibility.isColumnVisible('author') && (
-              <th>Author</th>
-            )}
-            {props.columnVisibility.isColumnVisible('actions') && (
-              <th>Actions</th>
-            )}
+            {props.columnVisibility.isColumnVisible('system') && <th>System</th>}
+            {props.columnVisibility.isColumnVisible('device') && <th>Device</th>}
+            {props.columnVisibility.isColumnVisible('emulator') && <th>Emulator</th>}
+            {props.columnVisibility.isColumnVisible('performance') && <th>Performance</th>}
+            {props.columnVisibility.isColumnVisible('successRate') && <th>Success Rate</th>}
+            {props.columnVisibility.isColumnVisible('author') && <th>Author</th>}
+            {props.columnVisibility.isColumnVisible('actions') && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
           <tr>
-            {props.columnVisibility.isColumnVisible('game') && (
-              <td>Test Game</td>
-            )}
-            {props.columnVisibility.isColumnVisible('system') && (
-              <td>Test System</td>
-            )}
-            {props.columnVisibility.isColumnVisible('device') && (
-              <td>Test Device</td>
-            )}
-            {props.columnVisibility.isColumnVisible('emulator') && (
-              <td>Test Emulator</td>
-            )}
-            {props.columnVisibility.isColumnVisible('performance') && (
-              <td>Perfect</td>
-            )}
-            {props.columnVisibility.isColumnVisible('successRate') && (
-              <td>95%</td>
-            )}
-            {props.columnVisibility.isColumnVisible('author') && (
-              <td>Test Author</td>
-            )}
-            {props.columnVisibility.isColumnVisible('actions') && (
-              <td>View | Delete</td>
-            )}
+            {props.columnVisibility.isColumnVisible('game') && <td>Test Game</td>}
+            {props.columnVisibility.isColumnVisible('system') && <td>Test System</td>}
+            {props.columnVisibility.isColumnVisible('device') && <td>Test Device</td>}
+            {props.columnVisibility.isColumnVisible('emulator') && <td>Test Emulator</td>}
+            {props.columnVisibility.isColumnVisible('performance') && <td>Perfect</td>}
+            {props.columnVisibility.isColumnVisible('successRate') && <td>95%</td>}
+            {props.columnVisibility.isColumnVisible('author') && <td>Test Author</td>}
+            {props.columnVisibility.isColumnVisible('actions') && <td>View | Delete</td>}
           </tr>
         </tbody>
       </table>
@@ -107,14 +69,7 @@ function makeMockColumnVisibility(
     isColumnVisible: vi.fn((key: string) => {
       if (key === 'actions') return true // alwaysVisible
       if (key === 'author') return false // defaultVisible: false
-      return [
-        'game',
-        'system',
-        'device',
-        'emulator',
-        'performance',
-        'successRate',
-      ].includes(key)
+      return ['game', 'system', 'device', 'emulator', 'performance', 'successRate'].includes(key)
     }),
     toggleColumn: vi.fn(),
     showColumn: vi.fn(),

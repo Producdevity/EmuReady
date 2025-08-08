@@ -41,24 +41,18 @@ function CustomFieldList(props: CustomFieldListProps) {
   const utils = api.useUtils()
   const confirm = useConfirmDialog()
   const [isReorderMode, setIsReorderMode] = useState(false)
-  const [orderedFields, setOrderedFields] = useState<CustomFieldDefinition[]>(
-    () => {
-      const fields = props.customFields ?? []
-      return [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
-    },
-  )
-  const [previousOrder, setPreviousOrder] = useState<CustomFieldDefinition[]>(
-    [],
-  )
+  const [orderedFields, setOrderedFields] = useState<CustomFieldDefinition[]>(() => {
+    const fields = props.customFields ?? []
+    return [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
+  })
+  const [previousOrder, setPreviousOrder] = useState<CustomFieldDefinition[]>([])
   const [isDirty, setIsDirty] = useState(false)
 
   useEffect(() => {
     // Keep local state in sync if initialCustomFields prop changes and not in reorder mode or dirty
     if (!isReorderMode && !isDirty) {
       const fields = props.customFields ?? []
-      const sortedInitialFields = [...fields].sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-      )
+      const sortedInitialFields = [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
       setOrderedFields(sortedInitialFields)
       // Ensure previousOrder is also in sync when not dirty and not in reorder mode
       setPreviousOrder(sortedInitialFields)
@@ -72,21 +66,20 @@ function CustomFieldList(props: CustomFieldListProps) {
     }),
   )
 
-  const updateOrderMutation =
-    api.customFieldDefinitions.updateOrder.useMutation({
-      onSuccess: () => {
-        utils.customFieldDefinitions.getByEmulator
-          .invalidate({ emulatorId: props.emulatorId })
-          .then(() => toast.success('Order updated successfully!'))
+  const updateOrderMutation = api.customFieldDefinitions.updateOrder.useMutation({
+    onSuccess: () => {
+      utils.customFieldDefinitions.getByEmulator
+        .invalidate({ emulatorId: props.emulatorId })
+        .then(() => toast.success('Order updated successfully!'))
 
-        setIsDirty(false) // Reset dirty state on successful save
-      },
-      onError: (error) => {
-        console.error('Error updating order:', error)
-        toast.error(`Error updating order: ${getErrorMessage(error)}`)
-        setOrderedFields(previousOrder)
-      },
-    })
+      setIsDirty(false) // Reset dirty state on successful save
+    },
+    onError: (error) => {
+      console.error('Error updating order:', error)
+      toast.error(`Error updating order: ${getErrorMessage(error)}`)
+      setOrderedFields(previousOrder)
+    },
+  })
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -125,9 +118,7 @@ function CustomFieldList(props: CustomFieldListProps) {
       // If exiting reorder mode with unsaved changes, revert them
       // and reset dirty state.
       const fields = props.customFields ?? []
-      const sortedInitialFields = [...fields].sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-      )
+      const sortedInitialFields = [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
       setOrderedFields(sortedInitialFields)
       setPreviousOrder(sortedInitialFields) // also reset previousOrder to initial
       setIsDirty(false)
@@ -163,21 +154,14 @@ function CustomFieldList(props: CustomFieldListProps) {
     deleteCustomField.mutate({ id: fieldId })
   }
 
-  const renderOptionsPreview = (
-    optionsAsJson: Maybe<Prisma.JsonValue>,
-  ): ReactNode => {
+  const renderOptionsPreview = (optionsAsJson: Maybe<Prisma.JsonValue>): ReactNode => {
     if (!Array.isArray(optionsAsJson)) {
       return <span className="text-gray-500 italic">N/A</span>
     }
 
     const validOptions: CustomFieldOptionUI[] = []
     for (const item of optionsAsJson) {
-      if (
-        typeof item === 'object' &&
-        item !== null &&
-        'value' in item &&
-        'label' in item
-      ) {
+      if (typeof item === 'object' && item !== null && 'value' in item && 'label' in item) {
         const val = (item as { value?: unknown }).value
         const lbl = (item as { label?: unknown }).label
         if (typeof val === 'string' && typeof lbl === 'string') {
@@ -209,11 +193,7 @@ function CustomFieldList(props: CustomFieldListProps) {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex justify-end mb-4 space-x-2">
         {isReorderMode && isDirty && (
           <>

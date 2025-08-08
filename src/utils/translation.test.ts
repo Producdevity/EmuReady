@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  detectLanguage,
-  shouldShowTranslation,
-  getUserLocale,
-} from './translation'
+import { detectLanguage, shouldShowTranslation, getUserLocale } from './translation'
 
 // Mock the getUserLocale function
 vi.mock('./translation', async () => {
@@ -32,8 +28,7 @@ describe('translation utilities', () => {
 
   describe('detectLanguage', () => {
     it('should detect English text correctly', () => {
-      const englishText =
-        'This is a test message in English that is long enough.'
+      const englishText = 'This is a test message in English that is long enough.'
       const result = detectLanguage(englishText)
 
       expect(result.isEnglish).toBe(true)
@@ -43,8 +38,7 @@ describe('translation utilities', () => {
     })
 
     it('should detect non-English text', () => {
-      const spanishText =
-        'Esto es un mensaje de prueba en español que es suficientemente largo.'
+      const spanishText = 'Esto es un mensaje de prueba en español que es suficientemente largo.'
       const result = detectLanguage(spanishText)
 
       expect(result.isEnglish).toBe(false)
@@ -83,23 +77,20 @@ describe('translation utilities', () => {
     })
 
     it('should not show translation for English text', () => {
-      const englishText =
-        'This is a test message in English that is long enough.'
+      const englishText = 'This is a test message in English that is long enough.'
       expect(shouldShowTranslation(englishText)).toBe(false)
     })
 
     it('should make a decision about showing translation based on text length and detection', () => {
       vi.mocked(getUserLocale).mockReturnValue('en')
-      const spanishText =
-        'Esto es un mensaje de prueba en español que es suficientemente largo.'
+      const spanishText = 'Esto es un mensaje de prueba en español que es suficientemente largo.'
       const result = shouldShowTranslation(spanishText)
       expect(typeof result).toBe('boolean')
     })
 
     it('should not show translation for non-English text when user locale is not English', () => {
       vi.mocked(getUserLocale).mockReturnValue('es')
-      const spanishText =
-        'Esto es un mensaje de prueba en español que es suficientemente largo.'
+      const spanishText = 'Esto es un mensaje de prueba en español que es suficientemente largo.'
       const result = shouldShowTranslation(spanishText)
       // Language detection might not be perfect, so we check the logic more carefully
       // If the detected language matches user locale, it should return false

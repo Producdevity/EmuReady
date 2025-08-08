@@ -1,11 +1,6 @@
 'use client'
 
-import {
-  BarChart as BarChartIcon,
-  Clock,
-  Database,
-  TrendingUp,
-} from 'lucide-react'
+import { BarChart as BarChartIcon, Clock, Database, TrendingUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Card, Button, LineChart, DonutChart } from '@/components/ui'
 import { exportMetrics, seoMetrics } from '@/lib/monitoring/seo-metrics'
@@ -15,9 +10,9 @@ import { ms } from '@/utils/time'
 export function SEOMetricsDashboard() {
   const [metrics, setMetrics] = useState(seoMetrics.getAggregatedMetrics())
   const [exportData, setExportData] = useState(exportMetrics())
-  const [timeSeriesData, setTimeSeriesData] = useState<
-    { x: number; y: number; label: string }[]
-  >([])
+  const [timeSeriesData, setTimeSeriesData] = useState<{ x: number; y: number; label: string }[]>(
+    [],
+  )
 
   useEffect(() => {
     const updateMetrics = () => {
@@ -67,15 +62,9 @@ export function SEOMetricsDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">SEO Metrics</h3>
-            <p className="text-sm text-muted-foreground">
-              Real-time performance monitoring
-            </p>
+            <p className="text-sm text-muted-foreground">Real-time performance monitoring</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => seoMetrics.reset()}
-          >
+          <Button variant="outline" size="sm" onClick={() => seoMetrics.reset()}>
             Reset Metrics
           </Button>
         </div>
@@ -88,9 +77,7 @@ export function SEOMetricsDashboard() {
               <Clock className="h-4 w-4" />
               <span>Average Response Time</span>
             </div>
-            <p className="text-2xl font-bold">
-              {formatMs(metrics.avgTotalTime)}
-            </p>
+            <p className="text-2xl font-bold">{formatMs(metrics.avgTotalTime)}</p>
             <div className="flex gap-4 text-xs text-muted-foreground">
               <span>Cache: {formatMs(metrics.avgCacheLookupTime)}</span>
               <span>DB: {formatMs(metrics.avgDatabaseQueryTime)}</span>
@@ -125,9 +112,7 @@ export function SEOMetricsDashboard() {
                 <div className="flex gap-4 text-xs text-muted-foreground">
                   <span>Stale: {metrics.staleServeRate.toFixed(1)}%</span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Sample: {metrics.sampleSize}
-                </div>
+                <div className="text-xs text-muted-foreground">Sample: {metrics.sampleSize}</div>
               </div>
             </div>
           </div>
@@ -192,27 +177,19 @@ export function SEOMetricsDashboard() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="font-medium">Average</div>
-                  <div className="text-lg font-bold">
-                    {formatMs(metrics.avgTotalTime)}
-                  </div>
+                  <div className="text-lg font-bold">{formatMs(metrics.avgTotalTime)}</div>
                 </div>
                 <div>
                   <div className="font-medium">Median</div>
-                  <div className="text-lg font-bold">
-                    {formatMs(metrics.medianResponseTime)}
-                  </div>
+                  <div className="text-lg font-bold">{formatMs(metrics.medianResponseTime)}</div>
                 </div>
                 <div>
                   <div className="font-medium">P95</div>
-                  <div className="text-lg font-bold">
-                    {formatMs(metrics.p95ResponseTime)}
-                  </div>
+                  <div className="text-lg font-bold">{formatMs(metrics.p95ResponseTime)}</div>
                 </div>
                 <div>
                   <div className="font-medium">Max</div>
-                  <div className="text-lg font-bold">
-                    {formatMs(metrics.maxResponseTime)}
-                  </div>
+                  <div className="text-lg font-bold">{formatMs(metrics.maxResponseTime)}</div>
                 </div>
               </div>
             </div>
@@ -259,16 +236,11 @@ function PerformanceIndicator({
       <div className="flex items-center gap-2">
         <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
           <div
-            className={cn(
-              'h-full transition-all',
-              isGood ? 'bg-green-500' : 'bg-amber-500',
-            )}
+            className={cn('h-full transition-all', isGood ? 'bg-green-500' : 'bg-amber-500')}
             style={{ width: `${Math.min(100, value)}%` }}
           />
         </div>
-        <span className="text-sm font-medium w-12 text-right">
-          {value.toFixed(0)}%
-        </span>
+        <span className="text-sm font-medium w-12 text-right">{value.toFixed(0)}%</span>
       </div>
     </div>
   )

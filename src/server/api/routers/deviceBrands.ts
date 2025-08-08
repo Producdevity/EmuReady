@@ -16,94 +16,84 @@ import { buildSearchFilter } from '@/server/utils/query-builders'
 import type { Prisma } from '@orm'
 
 export const deviceBrandsRouter = createTRPCRouter({
-  get: publicProcedure
-    .input(GetDeviceBrandsSchema)
-    .query(async ({ ctx, input }) => {
-      const { search, limit, sortField, sortDirection } = input ?? {}
+  get: publicProcedure.input(GetDeviceBrandsSchema).query(async ({ ctx, input }) => {
+    const { search, limit, sortField, sortDirection } = input ?? {}
 
-      const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
+    const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
 
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'name':
-            orderBy.push({ name: sortDirection })
-            break
-          case 'devicesCount':
-            orderBy.push({ devices: { _count: sortDirection } })
-            break
-        }
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'name':
+          orderBy.push({ name: sortDirection })
+          break
+        case 'devicesCount':
+          orderBy.push({ devices: { _count: sortDirection } })
+          break
       }
+    }
 
-      // Default ordering if no sort specified
-      if (!orderBy.length) orderBy.push({ name: 'asc' })
+    // Default ordering if no sort specified
+    if (!orderBy.length) orderBy.push({ name: 'asc' })
 
-      const searchConditions = buildSearchFilter(search, ['name'])
-      const where = searchConditions ? { OR: searchConditions } : undefined
+    const searchConditions = buildSearchFilter(search, ['name'])
+    const where = searchConditions ? { OR: searchConditions } : undefined
 
-      return ctx.prisma.deviceBrand.findMany({
-        where,
-        include: { _count: { select: { devices: true } } },
-        take: limit,
-        orderBy,
-      })
-    }),
+    return ctx.prisma.deviceBrand.findMany({
+      where,
+      include: { _count: { select: { devices: true } } },
+      take: limit,
+      orderBy,
+    })
+  }),
 
-  byId: publicProcedure
-    .input(GetDeviceBrandByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.id },
-      })
-      return brand || ResourceError.deviceBrand.notFound()
-    }),
+  byId: publicProcedure.input(GetDeviceBrandByIdSchema).query(async ({ ctx, input }) => {
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.id },
+    })
+    return brand || ResourceError.deviceBrand.notFound()
+  }),
 
-  create: manageDevicesProcedure
-    .input(CreateDeviceBrandSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if brand with the same name already exists
-      const existingBrand = await ctx.prisma.deviceBrand.findFirst({
-        where: { name: { equals: input.name, mode: 'insensitive' } },
-      })
+  create: manageDevicesProcedure.input(CreateDeviceBrandSchema).mutation(async ({ ctx, input }) => {
+    // Check if brand with the same name already exists
+    const existingBrand = await ctx.prisma.deviceBrand.findFirst({
+      where: { name: { equals: input.name, mode: 'insensitive' } },
+    })
 
-      return existingBrand
-        ? ResourceError.deviceBrand.alreadyExists(input.name)
-        : ctx.prisma.deviceBrand.create({ data: input })
-    }),
+    return existingBrand
+      ? ResourceError.deviceBrand.alreadyExists(input.name)
+      : ctx.prisma.deviceBrand.create({ data: input })
+  }),
 
-  update: manageDevicesProcedure
-    .input(UpdateDeviceBrandSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
+  update: manageDevicesProcedure.input(UpdateDeviceBrandSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input
 
-      const brand = await ctx.prisma.deviceBrand.findUnique({ where: { id } })
+    const brand = await ctx.prisma.deviceBrand.findUnique({ where: { id } })
 
-      if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) return ResourceError.deviceBrand.notFound()
 
-      // Check if another brand with the same name already exists
-      const existingBrand = await ctx.prisma.deviceBrand.findFirst({
-        where: {
-          name: { equals: input.name, mode: 'insensitive' },
-          id: { not: id },
-        },
-      })
+    // Check if another brand with the same name already exists
+    const existingBrand = await ctx.prisma.deviceBrand.findFirst({
+      where: {
+        name: { equals: input.name, mode: 'insensitive' },
+        id: { not: id },
+      },
+    })
 
-      return existingBrand
-        ? ResourceError.deviceBrand.alreadyExists(input.name)
-        : ctx.prisma.deviceBrand.update({ where: { id }, data })
-    }),
+    return existingBrand
+      ? ResourceError.deviceBrand.alreadyExists(input.name)
+      : ctx.prisma.deviceBrand.update({ where: { id }, data })
+  }),
 
-  delete: manageDevicesProcedure
-    .input(DeleteDeviceBrandSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if brand is used in any devices
-      const devicesCount = await ctx.prisma.device.count({
-        where: { brandId: input.id },
-      })
+  delete: manageDevicesProcedure.input(DeleteDeviceBrandSchema).mutation(async ({ ctx, input }) => {
+    // Check if brand is used in any devices
+    const devicesCount = await ctx.prisma.device.count({
+      where: { brandId: input.id },
+    })
 
-      return devicesCount > 0
-        ? ResourceError.deviceBrand.inUse(devicesCount)
-        : ctx.prisma.deviceBrand.delete({ where: { id: input.id } })
-    }),
+    return devicesCount > 0
+      ? ResourceError.deviceBrand.inUse(devicesCount)
+      : ctx.prisma.deviceBrand.delete({ where: { id: input.id } })
+  }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [withDevices, withoutDevices] = await Promise.all([

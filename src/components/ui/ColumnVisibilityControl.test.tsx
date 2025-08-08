@@ -1,9 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import {
-  type ColumnDefinition,
-  type UseColumnVisibilityReturn,
-} from '@/hooks/useColumnVisibility'
+import { type ColumnDefinition, type UseColumnVisibilityReturn } from '@/hooks/useColumnVisibility'
 import { ColumnVisibilityControl } from './ColumnVisibilityControl'
 
 describe('ColumnVisibilityControl', () => {
@@ -43,10 +40,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     expect(screen.getByText('Columns (3/4)')).toBeInTheDocument()
@@ -56,10 +50,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -74,10 +65,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -93,10 +81,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -109,10 +94,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -128,10 +110,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -147,10 +126,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -166,10 +142,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -185,10 +158,7 @@ describe('ColumnVisibilityControl', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')
@@ -205,10 +175,7 @@ describe('ColumnVisibilityControl', () => {
 
     render(
       <div>
-        <ColumnVisibilityControl
-          columns={mockColumns}
-          columnVisibility={mockColumnVisibility}
-        />
+        <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />
         <div data-testid="outside">Outside element</div>
       </div>,
     )
@@ -244,10 +211,7 @@ describe('ColumnVisibilityControl', () => {
     })
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     expect(screen.getByText('Columns (4/4)')).toBeInTheDocument()
@@ -273,19 +237,14 @@ describe('ColumnVisibilityControl', () => {
     const button = screen.getByText('Columns (2/2)')
     fireEvent.click(button)
 
-    expect(
-      screen.getByText('All columns are always visible'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('All columns are always visible')).toBeInTheDocument()
   })
 
   it('should rotate chevron icon when dropdown is open', () => {
     const mockColumnVisibility = createMockColumnVisibility()
 
     render(
-      <ColumnVisibilityControl
-        columns={mockColumns}
-        columnVisibility={mockColumnVisibility}
-      />,
+      <ColumnVisibilityControl columns={mockColumns} columnVisibility={mockColumnVisibility} />,
     )
 
     const button = screen.getByText('Columns (3/4)')

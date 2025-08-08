@@ -37,10 +37,7 @@ export const TranslatableMarkdown = dynamic(
 
 // Admin components
 export const CustomFieldList = dynamic(
-  () =>
-    import(
-      '@/app/admin/emulators/[emulatorId]/custom-fields/components/CustomFieldList'
-    ),
+  () => import('@/app/admin/emulators/[emulatorId]/custom-fields/components/CustomFieldList'),
   { loading: LoadingFallback },
 )
 

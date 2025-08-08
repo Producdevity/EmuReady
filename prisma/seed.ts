@@ -51,9 +51,7 @@ async function clearDb() {
     stopOnError: true,
   })
 
-  console.log(
-    `✅ Deleted ${result.successCount} tables, ${result.errorCount} errors`,
-  )
+  console.log(`✅ Deleted ${result.successCount} tables, ${result.errorCount} errors`)
 }
 
 async function main() {

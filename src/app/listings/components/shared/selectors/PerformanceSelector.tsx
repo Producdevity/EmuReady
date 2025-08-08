@@ -49,9 +49,7 @@ function PerformanceSelector<TFieldValues extends FieldValues = FieldValues>(
               {selectedPerformance?.description && (
                 <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <span className="font-medium">
-                      {selectedPerformance.label}:
-                    </span>{' '}
+                    <span className="font-medium">{selectedPerformance.label}:</span>{' '}
                     {selectedPerformance.description}
                   </p>
                 </div>
@@ -60,9 +58,7 @@ function PerformanceSelector<TFieldValues extends FieldValues = FieldValues>(
           )
         }}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>
   )
 }

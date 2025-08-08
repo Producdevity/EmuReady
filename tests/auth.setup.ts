@@ -27,10 +27,7 @@ async function authenticateUser(page: Page, email: string, password: string) {
         performance: false,
       }),
     )
-    localStorage.setItem(
-      `${PREFIX}cookie_consent_date`,
-      new Date().toISOString(),
-    )
+    localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
     localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
     localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
   })
@@ -42,9 +39,7 @@ async function authenticateUser(page: Page, email: string, password: string) {
   const cookieBanner = page
     .locator('.fixed.inset-0.z-\\[70\\]')
     .filter({ hasText: /Cookie Preferences/i })
-  const isBannerVisible = await cookieBanner
-    .isVisible({ timeout: 1000 })
-    .catch(() => false)
+  const isBannerVisible = await cookieBanner.isVisible({ timeout: 1000 }).catch(() => false)
 
   if (isBannerVisible) {
     console.log('Cookie banner detected, attempting to dismiss...')
@@ -64,9 +59,7 @@ async function authenticateUser(page: Page, email: string, password: string) {
     }
 
     // Wait for banner to disappear
-    await cookieBanner
-      .waitFor({ state: 'hidden', timeout: 5000 })
-      .catch(() => {})
+    await cookieBanner.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
   }
 
   // Check if already authenticated
@@ -101,9 +94,7 @@ async function authenticateUser(page: Page, email: string, password: string) {
 
   // Fill in email - Clerk uses "identifier" field
   const emailInput = page
-    .locator(
-      'input[name="identifier"], input[type="email"], input[name="email"]',
-    )
+    .locator('input[name="identifier"], input[type="email"], input[name="email"]')
     .first()
   await emailInput.waitFor({ state: 'visible' })
   await emailInput.fill(email)
@@ -117,22 +108,16 @@ async function authenticateUser(page: Page, email: string, password: string) {
 
   // Check if password field is visible or if we need to handle different flow
   const passwordField = page.locator('input[type="password"]')
-  const passwordVisible = await passwordField
-    .isVisible({ timeout: 5000 })
-    .catch(() => false)
+  const passwordVisible = await passwordField.isVisible({ timeout: 5000 }).catch(() => false)
 
   if (!passwordVisible) {
     // Might be a one-step login form, try filling both fields
     const emailFieldAgain = page
-      .locator(
-        'input[name="identifier"], input[type="email"], input[name="email"]',
-      )
+      .locator('input[name="identifier"], input[type="email"], input[name="email"]')
       .first()
     await emailFieldAgain.fill(email)
 
-    const passwordFieldAlt = page
-      .locator('input[name="password"], input[type="password"]')
-      .first()
+    const passwordFieldAlt = page.locator('input[name="password"], input[type="password"]').first()
     await passwordFieldAlt.fill(password)
 
     // Submit the form
@@ -206,9 +191,7 @@ setup('authenticate as user', async ({ page }) => {
   const password = process.env.TEST_USER_PASSWORD
 
   if (!email || !password) {
-    console.log(
-      '⚠️  Skipping user auth - TEST_USER_EMAIL or TEST_USER_PASSWORD not set',
-    )
+    console.log('⚠️  Skipping user auth - TEST_USER_EMAIL or TEST_USER_PASSWORD not set')
     return
   }
 
@@ -222,9 +205,7 @@ setup('authenticate as author', async ({ page }) => {
   const password = process.env.TEST_AUTHOR_PASSWORD
 
   if (!email || !password) {
-    console.log(
-      '⚠️  Skipping author auth - TEST_AUTHOR_EMAIL or TEST_AUTHOR_PASSWORD not set',
-    )
+    console.log('⚠️  Skipping author auth - TEST_AUTHOR_EMAIL or TEST_AUTHOR_PASSWORD not set')
     return
   }
 
@@ -270,9 +251,7 @@ setup('authenticate as admin', async ({ page }) => {
   const password = process.env.TEST_ADMIN_PASSWORD
 
   if (!email || !password) {
-    console.log(
-      '⚠️  Skipping admin auth - TEST_ADMIN_EMAIL or TEST_ADMIN_PASSWORD not set',
-    )
+    console.log('⚠️  Skipping admin auth - TEST_ADMIN_EMAIL or TEST_ADMIN_PASSWORD not set')
     return
   }
 

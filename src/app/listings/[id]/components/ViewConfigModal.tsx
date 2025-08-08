@@ -2,15 +2,24 @@
 
 import { X, Copy, Download, Check } from 'lucide-react'
 import { useState } from 'react'
-import { Prism } from 'react-syntax-highlighter'
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash'
+import ini from 'react-syntax-highlighter/dist/esm/languages/prism/ini'
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript'
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
+import xml from 'react-syntax-highlighter/dist/esm/languages/prism/xml-doc'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui'
 import toast from '@/lib/toast'
-import {
-  ConfigTypeUtils,
-  type EmulatorConfigType,
-} from '@/server/utils/emulator-config/constants'
+import { ConfigTypeUtils, type EmulatorConfigType } from '@/server/utils/emulator-config/constants'
 import { getConfigDisplayName } from '@/server/utils/emulator-config/emulator-detector'
+
+// Register only the languages we need
+SyntaxHighlighter.registerLanguage('json', json)
+SyntaxHighlighter.registerLanguage('javascript', javascript)
+SyntaxHighlighter.registerLanguage('xml', xml)
+SyntaxHighlighter.registerLanguage('bash', bash)
+SyntaxHighlighter.registerLanguage('ini', ini)
 
 interface Props {
   isOpen: boolean
@@ -70,10 +79,7 @@ function ViewConfigModal(props: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={props.onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={props.onClose} />
 
       {/* Modal */}
       <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
@@ -84,17 +90,11 @@ function ViewConfigModal(props: Props) {
               {getConfigDisplayName(props.configData.type)}
             </h2>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              <span className="font-medium">
-                {props.configData.listing.game}
-              </span>
+              <span className="font-medium">{props.configData.listing.game}</span>
               {' on '}
-              <span className="font-medium">
-                {props.configData.listing.emulator}
-              </span>
+              <span className="font-medium">{props.configData.listing.emulator}</span>
               {' ('}
-              <span className="font-medium">
-                {props.configData.listing.system}
-              </span>
+              <span className="font-medium">{props.configData.listing.system}</span>
               {')'}
             </div>
           </div>
@@ -130,12 +130,7 @@ function ViewConfigModal(props: Props) {
               Save File
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={props.onClose}
-              className="p-2"
-            >
+            <Button variant="ghost" size="sm" onClick={props.onClose} className="p-2">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -156,7 +151,7 @@ function ViewConfigModal(props: Props) {
 
           {/* Code Block with Syntax Highlighting */}
           <div className="relative">
-            <Prism
+            <SyntaxHighlighter
               language={getLanguage()}
               style={oneDark}
               customStyle={{
@@ -172,7 +167,7 @@ function ViewConfigModal(props: Props) {
               wrapLongLines={true}
             >
               {props.configData.content}
-            </Prism>
+            </SyntaxHighlighter>
           </div>
         </div>
       </div>

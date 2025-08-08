@@ -123,10 +123,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
         <p className="text-gray-600 dark:text-gray-400">
           Please{' '}
           <SignInButton mode="modal">
-            <button
-              type="button"
-              className="text-blue-600 hover:text-blue-700 cursor-pointer"
-            >
+            <button type="button" className="text-blue-600 hover:text-blue-700 cursor-pointer">
               sign in
             </button>
           </SignInButton>{' '}
@@ -182,18 +179,12 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
             <Button
               type="submit"
               size="sm"
-              disabled={
-                isLoading || !content.trim() || content.length > maxLength
-              }
+              disabled={isLoading || !content.trim() || content.length > maxLength}
               isLoading={isLoading}
               className="flex items-center gap-2"
             >
               <Send size={16} />
-              {props.editingComment
-                ? 'Update'
-                : isReply
-                  ? 'Reply'
-                  : 'Post Comment'}
+              {props.editingComment ? 'Update' : isReply ? 'Reply' : 'Post Comment'}
             </Button>
           </div>
         </div>
@@ -225,11 +216,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
           isLoading={isLoading}
           disabled={!content.trim() || isLoading}
         >
-          {props.editingComment
-            ? 'Save Changes'
-            : isReply
-              ? 'Reply'
-              : 'Post Comment'}
+          {props.editingComment ? 'Save Changes' : isReply ? 'Reply' : 'Post Comment'}
         </Button>
       </div>
     </form>

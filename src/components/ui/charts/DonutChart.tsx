@@ -55,10 +55,7 @@ export function DonutChart(props: Props) {
   if (total === 0) {
     return (
       <div
-        className={cn(
-          'flex items-center justify-center border rounded-lg',
-          props.className,
-        )}
+        className={cn('flex items-center justify-center border rounded-lg', props.className)}
         style={{ width: size, height: size }}
       >
         <span className="text-muted-foreground text-sm">No data</span>
@@ -104,14 +101,10 @@ export function DonutChart(props: Props) {
       {(props.centerText || props.centerSubtext) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           {props.centerText && (
-            <div className="text-2xl font-bold text-foreground">
-              {props.centerText}
-            </div>
+            <div className="text-2xl font-bold text-foreground">{props.centerText}</div>
           )}
           {props.centerSubtext && (
-            <div className="text-sm text-muted-foreground">
-              {props.centerSubtext}
-            </div>
+            <div className="text-sm text-muted-foreground">{props.centerSubtext}</div>
           )}
         </div>
       )}
@@ -126,9 +119,7 @@ export function DonutChart(props: Props) {
                 style={{ backgroundColor: segment.color }}
               />
               <span className="flex-1 truncate">{segment.label}</span>
-              <span className="text-muted-foreground">
-                {segment.percentage.toFixed(1)}%
-              </span>
+              <span className="text-muted-foreground">{segment.percentage.toFixed(1)}%</span>
             </div>
           ))}
         </div>

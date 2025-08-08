@@ -1,8 +1,5 @@
 import { SearchSuggestionsSchema } from '@/schemas/mobile'
-import {
-  createMobileTRPCRouter,
-  mobilePublicProcedure,
-} from '@/server/api/mobileContext'
+import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { ApprovalStatus } from '@orm'
 
 export const mobileGeneralRouter = createMobileTRPCRouter({
@@ -10,23 +7,17 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
    * Get app statistics
    */
   stats: mobilePublicProcedure.query(async ({ ctx }) => {
-    const [
-      totalListings,
-      totalPcListings,
-      totalGames,
-      totalDevices,
-      totalEmulators,
-      totalUsers,
-    ] = await Promise.all([
-      ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
-      ctx.prisma.pcListing.count({
-        where: { status: ApprovalStatus.APPROVED },
-      }),
-      ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
-      ctx.prisma.device.count(),
-      ctx.prisma.emulator.count(),
-      ctx.prisma.user.count(),
-    ])
+    const [totalListings, totalPcListings, totalGames, totalDevices, totalEmulators, totalUsers] =
+      await Promise.all([
+        ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
+        ctx.prisma.pcListing.count({
+          where: { status: ApprovalStatus.APPROVED },
+        }),
+        ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
+        ctx.prisma.device.count(),
+        ctx.prisma.emulator.count(),
+        ctx.prisma.user.count(),
+      ])
 
     return {
       totalListings,

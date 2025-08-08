@@ -176,10 +176,7 @@ function VoteReminderBanner(props: Props) {
         )}
       </AnimatePresence>
 
-      <VotingHelpModal
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
+      <VotingHelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
     </>
   )
 }

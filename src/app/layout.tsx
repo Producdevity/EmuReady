@@ -33,8 +33,7 @@ export const metadata: Metadata = defaultMetadata
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID as string
 const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
-const DISABLE_COOKIE_BANNER =
-  process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true'
+const DISABLE_COOKIE_BANNER = process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true'
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
@@ -42,16 +41,11 @@ export default function RootLayout(props: PropsWithChildren) {
       <html lang="en" suppressHydrationWarning>
         <head>
           {/* Service Worker Registration */}
-          {ENABLE_SW && (
-            <Script src="/sw-register.js" strategy="afterInteractive" />
-          )}
+          {ENABLE_SW && <Script src="/sw-register.js" strategy="afterInteractive" />}
 
           {/* Initialize dataLayer for Google Analytics */}
           {IS_PRODUCTION && GA_ID && (
-            <Script
-              id="google-analytics-dataLayer"
-              strategy="beforeInteractive"
-            >
+            <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
@@ -62,12 +56,7 @@ export default function RootLayout(props: PropsWithChildren) {
 
           {/* Google Analytics Configuration */}
         </head>
-        <body
-          className={cn(
-            inter.className,
-            'min-h-screen bg-background font-sans antialiased',
-          )}
-        >
+        <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
           <Providers>
             <Toaster richColors closeButton />
             {IS_PRODUCTION && !DISABLE_COOKIE_BANNER && <CookieConsent />}

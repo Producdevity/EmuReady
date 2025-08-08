@@ -47,53 +47,51 @@ export const userPreferencesRouter = createTRPCRouter({
     return user ?? ResourceError.user.notFound()
   }),
 
-  update: protectedProcedure
-    .input(UpdateUserPreferencesSchema)
-    .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-      })
+  update: protectedProcedure.input(UpdateUserPreferencesSchema).mutation(async ({ ctx, input }) => {
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+    })
 
-      if (!user) return ResourceError.user.notFound()
+    if (!user) return ResourceError.user.notFound()
 
-      // Sanitize bio if provided
-      const updateData: {
-        defaultToUserDevices?: boolean
-        defaultToUserSocs?: boolean
-        notifyOnNewListings?: boolean
-        showNsfw?: boolean
-        bio?: string
-      } = {}
+    // Sanitize bio if provided
+    const updateData: {
+      defaultToUserDevices?: boolean
+      defaultToUserSocs?: boolean
+      notifyOnNewListings?: boolean
+      showNsfw?: boolean
+      bio?: string
+    } = {}
 
-      if (input.defaultToUserDevices !== undefined) {
-        updateData.defaultToUserDevices = input.defaultToUserDevices
-      }
-      if (input.defaultToUserSocs !== undefined) {
-        updateData.defaultToUserSocs = input.defaultToUserSocs
-      }
-      if (input.notifyOnNewListings !== undefined) {
-        updateData.notifyOnNewListings = input.notifyOnNewListings
-      }
-      if (input.showNsfw !== undefined) {
-        updateData.showNsfw = input.showNsfw
-      }
-      if (input.bio !== undefined) {
-        updateData.bio = sanitizeBio(input.bio)
-      }
+    if (input.defaultToUserDevices !== undefined) {
+      updateData.defaultToUserDevices = input.defaultToUserDevices
+    }
+    if (input.defaultToUserSocs !== undefined) {
+      updateData.defaultToUserSocs = input.defaultToUserSocs
+    }
+    if (input.notifyOnNewListings !== undefined) {
+      updateData.notifyOnNewListings = input.notifyOnNewListings
+    }
+    if (input.showNsfw !== undefined) {
+      updateData.showNsfw = input.showNsfw
+    }
+    if (input.bio !== undefined) {
+      updateData.bio = sanitizeBio(input.bio)
+    }
 
-      return ctx.prisma.user.update({
-        where: { id: user.id },
-        data: updateData,
-        select: {
-          id: true,
-          bio: true,
-          defaultToUserDevices: true,
-          defaultToUserSocs: true,
-          notifyOnNewListings: true,
-          showNsfw: true,
-        },
-      })
-    }),
+    return ctx.prisma.user.update({
+      where: { id: user.id },
+      data: updateData,
+      select: {
+        id: true,
+        bio: true,
+        defaultToUserDevices: true,
+        defaultToUserSocs: true,
+        notifyOnNewListings: true,
+        showNsfw: true,
+      },
+    })
+  }),
 
   addDevice: protectedProcedure
     .input(AddDevicePreferenceSchema)
@@ -112,18 +110,16 @@ export const userPreferencesRouter = createTRPCRouter({
       if (!device) return ResourceError.device.notFound()
 
       // Check if preference already exists
-      const existingPreference =
-        await ctx.prisma.userDevicePreference.findUnique({
-          where: {
-            userId_deviceId: {
-              userId: user.id,
-              deviceId: input.deviceId,
-            },
+      const existingPreference = await ctx.prisma.userDevicePreference.findUnique({
+        where: {
+          userId_deviceId: {
+            userId: user.id,
+            deviceId: input.deviceId,
           },
-        })
+        },
+      })
 
-      if (existingPreference)
-        return ResourceError.userDevicePreference.alreadyExists()
+      if (existingPreference) return ResourceError.userDevicePreference.alreadyExists()
 
       return ctx.prisma.userDevicePreference.create({
         data: { userId: user.id, deviceId: input.deviceId },
@@ -175,9 +171,7 @@ export const userPreferencesRouter = createTRPCRouter({
         if (devices.length !== input.deviceIds.length) {
           const foundIds = new Set(devices.map((d) => d.id))
           const missingIds = input.deviceIds.filter((id) => !foundIds.has(id))
-          return AppError.badRequest(
-            `Device(s) not found: ${missingIds.join(', ')}`,
-          )
+          return AppError.badRequest(`Device(s) not found: ${missingIds.join(', ')}`)
         }
       }
 
@@ -221,9 +215,7 @@ export const userPreferencesRouter = createTRPCRouter({
         if (socs.length !== input.socIds.length) {
           const foundIds = new Set(socs.map((s) => s.id))
           const missingIds = input.socIds.filter((id) => !foundIds.has(id))
-          return AppError.badRequest(
-            `SOC(s) not found: ${missingIds.join(', ')}`,
-          )
+          return AppError.badRequest(`SOC(s) not found: ${missingIds.join(', ')}`)
         }
       }
 

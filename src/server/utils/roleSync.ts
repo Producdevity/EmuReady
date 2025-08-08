@@ -6,10 +6,7 @@ import type { Role } from '@orm'
  * Syncs a user's role from database to Clerk publicMetadata
  * Database is the source of truth for roles
  */
-export async function syncRoleToClerk(
-  userId: string,
-  role: Role,
-): Promise<void> {
+export async function syncRoleToClerk(userId: string, role: Role): Promise<void> {
   try {
     const clerk = await clerkClient()
 
@@ -38,10 +35,7 @@ export async function syncRoleToClerk(
 /**
  * Updates a user's role in the database and syncs to Clerk
  */
-export async function updateUserRole(
-  userId: string,
-  newRole: Role,
-): Promise<void> {
+export async function updateUserRole(userId: string, newRole: Role): Promise<void> {
   try {
     // Update role in database first (source of truth)
     await prisma.user.update({

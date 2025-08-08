@@ -6,11 +6,7 @@ import {
   UpdateSystemSchema,
   DeleteSystemSchema,
 } from '@/schemas/system'
-import {
-  createTRPCRouter,
-  publicProcedure,
-  permissionProcedure,
-} from '@/server/api/trpc'
+import { createTRPCRouter, publicProcedure, permissionProcedure } from '@/server/api/trpc'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { batchQueries } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
@@ -48,21 +44,19 @@ export const systemsRouter = createTRPCRouter({
     })
   }),
 
-  byId: publicProcedure
-    .input(GetSystemByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const system = await ctx.prisma.system.findUnique({
-        where: { id: input.id },
-        include: {
-          games: { orderBy: { title: 'asc' } },
-          _count: { select: { games: true } },
-        },
-      })
+  byId: publicProcedure.input(GetSystemByIdSchema).query(async ({ ctx, input }) => {
+    const system = await ctx.prisma.system.findUnique({
+      where: { id: input.id },
+      include: {
+        games: { orderBy: { title: 'asc' } },
+        _count: { select: { games: true } },
+      },
+    })
 
-      if (!system) return ResourceError.system.notFound()
+    if (!system) return ResourceError.system.notFound()
 
-      return system
-    }),
+    return system
+  }),
 
   create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(CreateSystemSchema)
@@ -126,31 +120,29 @@ export const systemsRouter = createTRPCRouter({
       })
     }),
 
-  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
-    async ({ ctx }) => {
-      const [total, withGames, withoutGames] = await batchQueries([
-        ctx.prisma.system.count(),
-        ctx.prisma.system.count({
-          where: {
-            games: {
-              some: {},
-            },
+  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+    const [total, withGames, withoutGames] = await batchQueries([
+      ctx.prisma.system.count(),
+      ctx.prisma.system.count({
+        where: {
+          games: {
+            some: {},
           },
-        }),
-        ctx.prisma.system.count({
-          where: {
-            games: {
-              none: {},
-            },
+        },
+      }),
+      ctx.prisma.system.count({
+        where: {
+          games: {
+            none: {},
           },
-        }),
-      ])
+        },
+      }),
+    ])
 
-      return {
-        total,
-        withGames,
-        withoutGames,
-      }
-    },
-  ),
+    return {
+      total,
+      withGames,
+      withoutGames,
+    }
+  }),
 })

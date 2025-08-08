@@ -40,9 +40,7 @@ test.describe('Accessibility Tests', () => {
     }
   })
 
-  test('should have proper ARIA labels for interactive elements', async ({
-    page,
-  }) => {
+  test('should have proper ARIA labels for interactive elements', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
@@ -68,8 +66,7 @@ test.describe('Accessibility Tests', () => {
 
     for (let i = 0; i < Math.min(linkCount, 5); i++) {
       const link = links.nth(i)
-      const linkText =
-        (await link.textContent()) || (await link.getAttribute('aria-label'))
+      const linkText = (await link.textContent()) || (await link.getAttribute('aria-label'))
 
       // Should not have generic link text
       expect(linkText?.toLowerCase()).not.toMatch(/^(click here|here|link)$/)
@@ -114,9 +111,7 @@ test.describe('Accessibility Tests', () => {
       await page.keyboard.press('Tab')
 
       const focusedElement = page.locator(':focus')
-      const tagName = await focusedElement.evaluate((el) =>
-        el.tagName.toLowerCase(),
-      )
+      const tagName = await focusedElement.evaluate((el) => el.tagName.toLowerCase())
       const text = await focusedElement.textContent().catch(() => '')
 
       tabSequence.push({ tagName, text })
@@ -166,10 +161,7 @@ test.describe('Accessibility Tests', () => {
       }
 
       // Basic check: text should not be same color as background
-      if (
-        styles.color !== 'rgba(0, 0, 0, 0)' &&
-        styles.color !== 'transparent'
-      ) {
+      if (styles.color !== 'rgba(0, 0, 0, 0)' && styles.color !== 'transparent') {
         expect(styles.color).not.toBe(styles.backgroundColor)
       }
 
@@ -238,8 +230,7 @@ test.describe('Accessibility Tests', () => {
 
       // Check input type
       const inputType = await input.getAttribute('type')
-      const isSearchInput =
-        inputType === 'search' || placeholder?.toLowerCase().includes('search')
+      const isSearchInput = inputType === 'search' || placeholder?.toLowerCase().includes('search')
 
       // Placeholder alone is not sufficient (except for search inputs which are commonly understood)
       if (!hasAccessibleName && placeholder) {
@@ -260,9 +251,7 @@ test.describe('Accessibility Tests', () => {
     await homePage.goto()
 
     // Check for ARIA live regions
-    const liveRegions = page.locator(
-      '[aria-live], [role="alert"], [role="status"]',
-    )
+    const liveRegions = page.locator('[aria-live], [role="alert"], [role="status"]')
     const hasLiveRegions = (await liveRegions.count()) > 0
 
     if (hasLiveRegions) {
@@ -291,9 +280,7 @@ test.describe('Accessibility Tests', () => {
     await homePage.goto()
 
     // Look for skip links (often hidden until focused)
-    const skipLinks = page
-      .locator('a')
-      .filter({ hasText: /skip to (content|main|navigation)/i })
+    const skipLinks = page.locator('a').filter({ hasText: /skip to (content|main|navigation)/i })
 
     if ((await skipLinks.count()) > 0) {
       const firstSkipLink = skipLinks.first()
@@ -330,9 +317,7 @@ test.describe('Accessibility Tests', () => {
 
     if (langCount > 1) {
       // More than just html element
-      console.log(
-        `Found ${langCount - 1} elements with specific language attributes`,
-      )
+      console.log(`Found ${langCount - 1} elements with specific language attributes`)
     }
   })
 
@@ -341,15 +326,11 @@ test.describe('Accessibility Tests', () => {
     await homePage.goto()
 
     // Look for modal triggers - this is a generic test that may not apply to all pages
-    const modalTriggers = page
-      .locator('button')
-      .filter({ hasText: /sign in|sign up/i }) // More specific triggers
+    const modalTriggers = page.locator('button').filter({ hasText: /sign in|sign up/i }) // More specific triggers
 
     const triggerCount = await modalTriggers.count()
     if (triggerCount === 0) {
-      console.log(
-        'No modal triggers found on page - skipping modal focus trap test',
-      )
+      console.log('No modal triggers found on page - skipping modal focus trap test')
       return // Skip test if no modals
     }
 
@@ -382,9 +363,7 @@ test.describe('Accessibility Tests', () => {
       const modalStillVisible = await modals.isVisible()
       expect(modalStillVisible).toBe(false)
     } else {
-      console.log(
-        'No modals found after clicking trigger - this may be expected',
-      )
+      console.log('No modals found after clicking trigger - this may be expected')
     }
   })
 
@@ -397,9 +376,7 @@ test.describe('Accessibility Tests', () => {
     const tableCount = await tables.count()
 
     if (tableCount === 0) {
-      console.log(
-        'No tables found on listings page - skipping table accessibility test',
-      )
+      console.log('No tables found on listings page - skipping table accessibility test')
       return
     }
 
@@ -423,9 +400,7 @@ test.describe('Accessibility Tests', () => {
     const ariaLabel = await table.getAttribute('aria-label')
 
     if (!hasCaption && !ariaLabel) {
-      console.warn(
-        'Table lacks caption or aria-label - consider adding for better accessibility',
-      )
+      console.warn('Table lacks caption or aria-label - consider adding for better accessibility')
     }
   })
 })
@@ -452,9 +427,7 @@ test.describe('Screen Reader Tests', () => {
         console.log(`✓ Found ${count} ${name} landmark(s)`)
       } else {
         missingLandmarks.push(name)
-        console.warn(
-          `✗ Missing ${name} landmark - this should be added for better accessibility`,
-        )
+        console.warn(`✗ Missing ${name} landmark - this should be added for better accessibility`)
       }
     }
 

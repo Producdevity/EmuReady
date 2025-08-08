@@ -19,27 +19,16 @@ interface BaseInputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 type Props = BaseInputProps &
-  (
-    | { as?: 'input' }
-    | { as: 'select'; children?: ReactNode }
-    | { as: 'textarea'; rows?: number }
-  )
+  ({ as?: 'input' } | { as: 'select'; children?: ReactNode } | { as: 'textarea'; rows?: number })
 
 export const Input = forwardRef<HTMLElement, Props>(
-  (
-    { leftIcon, rightIcon, className = '', as = 'input', children, ...props },
-    ref,
-  ) => {
+  ({ leftIcon, rightIcon, className = '', as = 'input', children, ...props }, ref) => {
     const commonInputStyling =
       'w-full outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent'
 
     // For select elements, we need a dropdown icon if no rightIcon is provided
     const selectRightIcon =
-      as === 'select' && !rightIcon ? (
-        <ChevronDown className="w-4 h-4" />
-      ) : (
-        rightIcon
-      )
+      as === 'select' && !rightIcon ? <ChevronDown className="w-4 h-4" /> : rightIcon
 
     return (
       <div className="relative">

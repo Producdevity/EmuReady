@@ -45,13 +45,7 @@ function CustomFieldSortableRow(props: Props) {
           {props.field.name}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          <Badge
-            variant={
-              props.field.type === CustomFieldType.SELECT
-                ? 'primary'
-                : 'default'
-            }
-          >
+          <Badge variant={props.field.type === CustomFieldType.SELECT ? 'primary' : 'default'}>
             {props.field.type}
           </Badge>
         </td>
@@ -75,10 +69,7 @@ function CustomFieldSortableRow(props: Props) {
         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
           {!props.isReorderMode && (
             <>
-              <EditButton
-                title="Edit Custom Field"
-                onClick={() => props.onEdit(props.field.id)}
-              />
+              <EditButton title="Edit Custom Field" onClick={() => props.onEdit(props.field.id)} />
               <DeleteButton
                 onClick={() => props.handleDelete(props.field.id)}
                 title="Delete Custom Field"

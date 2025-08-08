@@ -1,10 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 
 interface CustomFieldDefinitionWithOptions {
   id: string
@@ -34,8 +29,7 @@ function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
 ) {
   // Use the actual default value from the field definition, fallback to false if null/undefined
   const defaultValue =
-    props.fieldDef.defaultValue !== null &&
-    props.fieldDef.defaultValue !== undefined
+    props.fieldDef.defaultValue !== null && props.fieldDef.defaultValue !== undefined
       ? Boolean(props.fieldDef.defaultValue)
       : false
 
@@ -46,10 +40,7 @@ function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
         control={props.control}
         defaultValue={defaultValue as TFieldValues[FieldPath<TFieldValues>]}
         render={({ field }) => (
-          <label
-            htmlFor={props.fieldName}
-            className="flex items-center cursor-pointer"
-          >
+          <label htmlFor={props.fieldName} className="flex items-center cursor-pointer">
             <input
               type="checkbox"
               id={props.fieldName}
@@ -66,9 +57,7 @@ function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
           </label>
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1 ml-6">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1 ml-6">{props.errorMessage}</p>}
     </div>
   )
 }

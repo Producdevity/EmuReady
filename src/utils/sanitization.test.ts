@@ -17,14 +17,12 @@ describe('sanitizeText', () => {
   })
 
   it('should remove script tags with attributes', () => {
-    const maliciousText =
-      'Test <script type="text/javascript">alert("XSS")</script> end'
+    const maliciousText = 'Test <script type="text/javascript">alert("XSS")</script> end'
     expect(sanitizeText(maliciousText)).toBe('Test  end')
   })
 
   it('should remove nested script tags', () => {
-    const maliciousText =
-      '<script>var x = "<script>alert(1)</script>";</script>'
+    const maliciousText = '<script>var x = "<script>alert(1)</script>";</script>'
     expect(sanitizeText(maliciousText)).toBe('";')
   })
 
@@ -51,14 +49,12 @@ describe('sanitizeText', () => {
   })
 
   it('should remove event handlers', () => {
-    const eventHandlers =
-      '<p onclick="alert(1)" onmouseover="alert(2)" onload="alert(3)">Text</p>'
+    const eventHandlers = '<p onclick="alert(1)" onmouseover="alert(2)" onload="alert(3)">Text</p>'
     expect(sanitizeText(eventHandlers)).toBe('<p>Text</p>')
   })
 
   it('should handle mixed case script tags', () => {
-    const mixedCase =
-      'Text <SCRIPT>alert(1)</SCRIPT> <Script>alert(2)</Script> end'
+    const mixedCase = 'Text <SCRIPT>alert(1)</SCRIPT> <Script>alert(2)</Script> end'
     expect(sanitizeText(mixedCase)).toBe('Text   end')
   })
 
@@ -69,17 +65,13 @@ describe('sanitizeText', () => {
   })
 
   it('should preserve text content while removing dangerous attributes', () => {
-    const text =
-      '<p class="test" onclick="alert(1)" style="color: red;">Important content</p>'
+    const text = '<p class="test" onclick="alert(1)" style="color: red;">Important content</p>'
     // The function only removes event handlers, not all attributes
-    expect(sanitizeText(text)).toBe(
-      '<p class="test" style="color: red;">Important content</p>',
-    )
+    expect(sanitizeText(text)).toBe('<p class="test" style="color: red;">Important content</p>')
   })
 
   it('should handle self-closing tags', () => {
-    const selfClosing =
-      'Line 1<br/>Line 2<img src="javascript:alert(1)"/>Line 3'
+    const selfClosing = 'Line 1<br/>Line 2<img src="javascript:alert(1)"/>Line 3'
     expect(sanitizeText(selfClosing)).toBe('Line 1<br/>Line 2Line 3')
   })
 
@@ -90,19 +82,13 @@ describe('sanitizeText', () => {
   })
 
   it('should remove multiple javascript: and data: URLs', () => {
-    const multipleUrls =
-      'javascript:alert(1) some text data:text/html,test more javascript:void(0)'
-    expect(sanitizeText(multipleUrls)).toBe(
-      'alert(1) some text text/html,test more void(0)',
-    )
+    const multipleUrls = 'javascript:alert(1) some text data:text/html,test more javascript:void(0)'
+    expect(sanitizeText(multipleUrls)).toBe('alert(1) some text text/html,test more void(0)')
   })
 
   it('should handle case-insensitive javascript and data removal', () => {
-    const caseInsensitive =
-      'JAVASCRIPT:alert(1) DATA:text/html,test Javascript:void(0)'
-    expect(sanitizeText(caseInsensitive)).toBe(
-      'alert(1) text/html,test void(0)',
-    )
+    const caseInsensitive = 'JAVASCRIPT:alert(1) DATA:text/html,test Javascript:void(0)'
+    expect(sanitizeText(caseInsensitive)).toBe('alert(1) text/html,test void(0)')
   })
 })
 
@@ -117,19 +103,13 @@ describe('sanitizeBio', () => {
   })
 
   it('should remove all HTML tags', () => {
-    const htmlBio =
-      'I am a <b>software developer</b> who <em>loves</em> <p>coding</p>.'
-    expect(sanitizeBio(htmlBio)).toBe(
-      'I am a software developer who loves coding.',
-    )
+    const htmlBio = 'I am a <b>software developer</b> who <em>loves</em> <p>coding</p>.'
+    expect(sanitizeBio(htmlBio)).toBe('I am a software developer who loves coding.')
   })
 
   it('should remove script tags and content', () => {
-    const maliciousBio =
-      'Normal bio <script>alert("XSS")</script> continues here'
-    expect(sanitizeBio(maliciousBio)).toBe(
-      'Normal bio alert("XSS") continues here',
-    )
+    const maliciousBio = 'Normal bio <script>alert("XSS")</script> continues here'
+    expect(sanitizeBio(maliciousBio)).toBe('Normal bio alert("XSS") continues here')
   })
 
   it('should remove javascript: URLs', () => {
@@ -138,11 +118,8 @@ describe('sanitizeBio', () => {
   })
 
   it('should remove data: URLs', () => {
-    const dataBio =
-      'Check out data:text/html,<script>alert(1)</script> my portfolio'
-    expect(sanitizeBio(dataBio)).toBe(
-      'Check out text/html,alert(1) my portfolio',
-    )
+    const dataBio = 'Check out data:text/html,<script>alert(1)</script> my portfolio'
+    expect(sanitizeBio(dataBio)).toBe('Check out text/html,alert(1) my portfolio')
   })
 
   it('should handle complex HTML structures', () => {
@@ -152,8 +129,7 @@ describe('sanitizeBio', () => {
   })
 
   it('should preserve spaces between removed tags', () => {
-    const spacedBio =
-      'I work with <span>React</span> and <span>Node.js</span> daily.'
+    const spacedBio = 'I work with <span>React</span> and <span>Node.js</span> daily.'
     expect(sanitizeBio(spacedBio)).toBe('I work with React and Node.js daily.')
   })
 
@@ -163,8 +139,7 @@ describe('sanitizeBio', () => {
   })
 
   it('should handle nested HTML tags', () => {
-    const nestedBio =
-      '<div><p>I love <strong><em>web development</em></strong> very much</p></div>'
+    const nestedBio = '<div><p>I love <strong><em>web development</em></strong> very much</p></div>'
     expect(sanitizeBio(nestedBio)).toBe('I love web development very much')
   })
 
@@ -174,8 +149,7 @@ describe('sanitizeBio', () => {
   })
 
   it('should handle malformed HTML', () => {
-    const malformed =
-      'Bio with <div unclosed tag and <script>alert(1) incomplete'
+    const malformed = 'Bio with <div unclosed tag and <script>alert(1) incomplete'
     expect(sanitizeBio(malformed)).toBe('Bio with alert(1) incomplete')
   })
 

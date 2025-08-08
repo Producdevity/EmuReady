@@ -25,8 +25,7 @@ const DEFAULT_PREFERENCES: CookiePreferences = {
 
 export function useCookieConsent() {
   const router = useRouter()
-  const [preferences, setPreferences] =
-    useState<CookiePreferences>(DEFAULT_PREFERENCES)
+  const [preferences, setPreferences] = useState<CookiePreferences>(DEFAULT_PREFERENCES)
   const [hasConsented, setHasConsented] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [wasDismissed, setWasDismissed] = useState(false)
@@ -41,11 +40,7 @@ export function useCookieConsent() {
       const dismissed = localStorage.getItem('cookieDismissed')
 
       if (savedPreferences && consentGiven) {
-        const parsed = safeParseJSON(
-          savedPreferences,
-          CookiePreferencesSchema,
-          DEFAULT_PREFERENCES,
-        )
+        const parsed = safeParseJSON(savedPreferences, CookiePreferencesSchema, DEFAULT_PREFERENCES)
         setPreferences(parsed)
         setHasConsented(true)
       } else if (dismissed) {

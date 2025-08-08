@@ -33,25 +33,23 @@ export const mobileTrustRouter = createMobileTRPCRouter({
   /**
    * Get trust info for a specific user (public)
    */
-  userInfo: mobilePublicProcedure
-    .input(GetUserTrustInfoSchema)
-    .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: input.userId },
-        select: { trustScore: true, name: true },
-      })
+  userInfo: mobilePublicProcedure.input(GetUserTrustInfoSchema).query(async ({ ctx, input }) => {
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { trustScore: true, name: true },
+    })
 
-      if (!user) return ResourceError.user.notFound()
+    if (!user) return ResourceError.user.notFound()
 
-      // Determine trust level based on score
-      const trustLevel = TRUST_LEVELS.slice()
-        .reverse()
-        .find((level) => user.trustScore >= level.minScore)
+    // Determine trust level based on score
+    const trustLevel = TRUST_LEVELS.slice()
+      .reverse()
+      .find((level) => user.trustScore >= level.minScore)
 
-      return {
-        trustScore: user.trustScore,
-        trustLevel: trustLevel || TRUST_LEVELS[0],
-        userName: user.name,
-      }
-    }),
+    return {
+      trustScore: user.trustScore,
+      trustLevel: trustLevel || TRUST_LEVELS[0],
+      userName: user.name,
+    }
+  }),
 })

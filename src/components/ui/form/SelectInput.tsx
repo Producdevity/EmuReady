@@ -19,9 +19,7 @@ interface Props {
 export function SelectInput(props: Props) {
   return (
     <div>
-      {!props.hideLabel && (
-        <label className="block mb-1 font-medium">{props.label}</label>
-      )}
+      {!props.hideLabel && <label className="block mb-1 font-medium">{props.label}</label>}
       <Input
         leftIcon={props.leftIcon}
         name={props.label}
@@ -30,10 +28,7 @@ export function SelectInput(props: Props) {
         onChange={props.onChange}
         className={props.className}
       >
-        <option
-          value=""
-          className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-        >
+        <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
           Select {props.label}
         </option>
         {props.options?.map((option) => (

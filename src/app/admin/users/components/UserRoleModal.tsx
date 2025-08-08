@@ -32,9 +32,7 @@ function UserRoleModal(props: Props) {
   const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   const [role, setRole] = useState<Role>(
-    props.user.role === Role.SUPER_ADMIN && !isSuperAdmin
-      ? Role.ADMIN
-      : props.user.role,
+    props.user.role === Role.SUPER_ADMIN && !isSuperAdmin ? Role.ADMIN : props.user.role,
   )
   const [isLoading, setIsLoading] = useState(false)
 
@@ -74,8 +72,7 @@ function UserRoleModal(props: Props) {
 
         <div className="mb-4">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Update role for user:{' '}
-            <strong>{props.user.name ?? props.user.email}</strong>
+            Update role for user: <strong>{props.user.name ?? props.user.email}</strong>
           </p>
         </div>
 
@@ -123,8 +120,8 @@ function UserRoleModal(props: Props) {
 
             {role === Role.DEVELOPER && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                Note: Remember to verify this user for specific emulators after
-                assigning the Developer role.
+                Note: Remember to verify this user for specific emulators after assigning the
+                Developer role.
               </p>
             )}
 
@@ -136,12 +133,7 @@ function UserRoleModal(props: Props) {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={props.onClose}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="outline" onClick={props.onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button

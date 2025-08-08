@@ -94,9 +94,7 @@ export function useAdminTable<TSortField extends string>(
   )
 
   // Initialize additional parameters from URL
-  const [additionalParams, setAdditionalParams] = useState<
-    Record<string, string>
-  >(() => {
+  const [additionalParams, setAdditionalParams] = useState<Record<string, string>>(() => {
     const initialParams: Record<string, string> = {}
 
     // First, set from defaults if provided
@@ -128,8 +126,7 @@ export function useAdminTable<TSortField extends string>(
 
     const params = new URLSearchParams()
 
-    if (debouncedSearch && debouncedSearch.trim())
-      params.set('search', debouncedSearch.trim())
+    if (debouncedSearch && debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
     if (page && page > 1) params.set('page', page.toString())
     if (sortField) params.set('sortField', sortField)
     if (sortDirection) params.set('sortDirection', sortDirection)
@@ -143,30 +140,14 @@ export function useAdminTable<TSortField extends string>(
 
     const url = params.toString() ? `?${params.toString()}` : ''
     router.replace(url, { scroll: false })
-  }, [
-    enableUrlState,
-    debouncedSearch,
-    page,
-    sortField,
-    sortDirection,
-    additionalParams,
-    router,
-  ])
+  }, [enableUrlState, debouncedSearch, page, sortField, sortDirection, additionalParams, router])
 
   // Update URL when relevant state changes
   useEffect(() => {
     if (enableUrlState) {
       updateUrl()
     }
-  }, [
-    debouncedSearch,
-    page,
-    sortField,
-    sortDirection,
-    additionalParams,
-    enableUrlState,
-    updateUrl,
-  ])
+  }, [debouncedSearch, page, sortField, sortDirection, additionalParams, enableUrlState, updateUrl])
 
   const setSearch = (newSearch: string) => {
     setSearchState(newSearch)

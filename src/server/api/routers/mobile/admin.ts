@@ -23,10 +23,7 @@ import {
   mobileViewStatisticsProcedure,
 } from '@/server/api/mobileContext'
 import { listingStatsCache } from '@/server/utils/cache/instances'
-import {
-  calculateOffset,
-  createPaginationResult,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { ApprovalStatus, Prisma, ReportStatus, TrustAction } from '@orm'
@@ -143,12 +140,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         listings,
-        pagination: createPaginationResult(
-          totalListings,
-          { page },
-          limit,
-          skip,
-        ),
+        pagination: createPaginationResult(totalListings, { page }, limit, skip),
       }
     }),
 
@@ -179,10 +171,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         },
       })
 
-      if (
-        !listingToApprove ||
-        listingToApprove.status !== ApprovalStatus.PENDING
-      ) {
+      if (!listingToApprove || listingToApprove.status !== ApprovalStatus.PENDING) {
         return ResourceError.listing.notPending()
       }
 
@@ -199,9 +188,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           },
         })
 
-        AppError.badRequest(
-          `Cannot approve listing: Author is currently banned (${banReason})`,
-        )
+        AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`)
       }
 
       const updatedListing = await ctx.prisma.listing.update({
@@ -247,10 +234,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         include: { author: { select: { id: true } } },
       })
 
-      if (
-        !listingToReject ||
-        listingToReject.status !== ApprovalStatus.PENDING
-      ) {
+      if (!listingToReject || listingToReject.status !== ApprovalStatus.PENDING) {
         return ResourceError.listing.notPending()
       }
 
@@ -296,10 +280,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         status: ApprovalStatus.PENDING,
       }
 
-      const searchConditions = buildSearchFilter(search, [
-        'title',
-        'system.name',
-      ])
+      const searchConditions = buildSearchFilter(search, ['title', 'system.name'])
       if (searchConditions) {
         where.OR = searchConditions
       }

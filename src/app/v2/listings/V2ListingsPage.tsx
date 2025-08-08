@@ -45,18 +45,14 @@ function V2ListingsPage() {
     gcTime: 5 * 60 * 1000,
   })
 
-  const [userDeviceFilterDisabled, setUserDeviceFilterDisabled] =
-    useState(false)
+  const [userDeviceFilterDisabled, setUserDeviceFilterDisabled] = useState(false)
   const [userSocFilterDisabled, setUserSocFilterDisabled] = useState(false)
 
   // Get user's preferred device IDs if defaultToUserDevices is enabled
   const userDeviceIds = useMemo(
     () =>
-      userPreferencesQuery.data?.defaultToUserDevices &&
-      userPreferencesQuery.data.devicePreferences
-        ? userPreferencesQuery.data.devicePreferences.map(
-            (pref) => pref.deviceId,
-          )
+      userPreferencesQuery.data?.defaultToUserDevices && userPreferencesQuery.data.devicePreferences
+        ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
         : [],
     [userPreferencesQuery.data],
   )
@@ -64,8 +60,7 @@ function V2ListingsPage() {
   // Get user's preferred SoC IDs if defaultToUserSocs is enabled
   const userSocIds = useMemo(
     () =>
-      userPreferencesQuery.data?.defaultToUserSocs &&
-      userPreferencesQuery.data.socPreferences
+      userPreferencesQuery.data?.defaultToUserSocs && userPreferencesQuery.data.socPreferences
         ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
         : [],
     [userPreferencesQuery.data],
@@ -91,10 +86,7 @@ function V2ListingsPage() {
       page: currentPage,
       limit: 15, // Increased for better mobile experience
       ...filterNullAndEmpty({
-        systemIds:
-          listingsState.systemIds.length > 0
-            ? listingsState.systemIds
-            : undefined,
+        systemIds: listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
         deviceIds:
           listingsState.deviceIds.length > 0
             ? listingsState.deviceIds
@@ -107,14 +99,9 @@ function V2ListingsPage() {
             : shouldUseUserSocFilter
               ? userSocIds
               : undefined,
-        emulatorIds:
-          listingsState.emulatorIds.length > 0
-            ? listingsState.emulatorIds
-            : undefined,
+        emulatorIds: listingsState.emulatorIds.length > 0 ? listingsState.emulatorIds : undefined,
         performanceIds:
-          listingsState.performanceIds.length > 0
-            ? listingsState.performanceIds
-            : undefined,
+          listingsState.performanceIds.length > 0 ? listingsState.performanceIds : undefined,
         searchTerm: listingsState.search || undefined,
         myListingsOnly: myListingsOnly && userQuery.data?.id ? true : undefined,
         sortField: listingsState.sortField ?? undefined,
@@ -156,9 +143,7 @@ function V2ListingsPage() {
         return listingsQuery.data.listings
       } else {
         const existingIds = new Set(prev.map((item) => item.id))
-        const newListings = listingsQuery.data.listings.filter(
-          (item) => !existingIds.has(item.id),
-        )
+        const newListings = listingsQuery.data.listings.filter((item) => !existingIds.has(item.id))
         return [...prev, ...newListings]
       }
     })
@@ -393,9 +378,7 @@ function V2ListingsPage() {
             <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
               Error Loading Listings
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {listingsQuery.error.message}
-            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{listingsQuery.error.message}</p>
             <button
               onClick={() => listingsQuery.refetch()}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -474,9 +457,7 @@ function V2ListingsPage() {
             handleSystemChange={handleSystemChange}
             systemOptions={systemOptions}
             performanceIds={listingsState.performanceIds.map(String)}
-            handlePerformanceChange={(values) =>
-              handlePerformanceChange(values.map(Number))
-            }
+            handlePerformanceChange={(values) => handlePerformanceChange(values.map(Number))}
             performanceScales={performanceScalesQuery.data}
             deviceIds={listingsState.deviceIds}
             handleDeviceChange={handleDeviceChange}
@@ -523,9 +504,7 @@ function V2ListingsPage() {
                     ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-500/25'
                     : 'bg-white/90 hover:bg-white text-gray-700 border-gray-200 hover:border-gray-300 dark:bg-gray-800/90 dark:hover:bg-gray-800 dark:text-gray-300 dark:border-gray-600',
                 )}
-                title={
-                  myListingsOnly ? 'Show all listings' : 'Show my listings only'
-                }
+                title={myListingsOnly ? 'Show all listings' : 'Show my listings only'}
               >
                 <User className="w-5 h-5" />
               </Button>

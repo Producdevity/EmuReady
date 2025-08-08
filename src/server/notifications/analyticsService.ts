@@ -1,10 +1,6 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsCache } from '@/server/utils/cache'
-import {
-  DeliveryChannel,
-  NotificationDeliveryStatus,
-  type NotificationType,
-} from '@orm'
+import { DeliveryChannel, NotificationDeliveryStatus, type NotificationType } from '@orm'
 
 export interface NotificationMetrics {
   totalSent: number
@@ -46,10 +42,7 @@ export interface TimeSeriesData {
 }
 
 export class NotificationAnalyticsService {
-  private generateCacheKey(
-    method: string,
-    params: Record<string, unknown> = {},
-  ): string {
+  private generateCacheKey(method: string, params: Record<string, unknown> = {}): string {
     // Sort params for consistent cache keys
     const sortedParams = Object.entries(params)
       .filter(([, value]) => value !== undefined)
@@ -61,10 +54,7 @@ export class NotificationAnalyticsService {
   }
 
   // Get overall notification metrics
-  async getOverallMetrics(
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<NotificationMetrics> {
+  async getOverallMetrics(startDate?: Date, endDate?: Date): Promise<NotificationMetrics> {
     const cacheKey = this.generateCacheKey('getOverallMetrics', {
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
@@ -77,32 +67,31 @@ export class NotificationAnalyticsService {
 
     const whereClause = this.buildDateFilter(startDate, endDate)
 
-    const [totalSent, totalDelivered, totalFailed, totalRead] =
-      await Promise.all([
-        // Total attempted notifications (sent + failed)
-        prisma.notification.count({
-          where: whereClause,
-        }),
-        // Successfully delivered notifications
-        prisma.notification.count({
-          where: {
-            ...whereClause,
-            deliveryStatus: NotificationDeliveryStatus.SENT,
-          },
-        }),
-        prisma.notification.count({
-          where: {
-            ...whereClause,
-            deliveryStatus: NotificationDeliveryStatus.FAILED,
-          },
-        }),
-        prisma.notification.count({
-          where: {
-            ...whereClause,
-            isRead: true,
-          },
-        }),
-      ])
+    const [totalSent, totalDelivered, totalFailed, totalRead] = await Promise.all([
+      // Total attempted notifications (sent + failed)
+      prisma.notification.count({
+        where: whereClause,
+      }),
+      // Successfully delivered notifications
+      prisma.notification.count({
+        where: {
+          ...whereClause,
+          deliveryStatus: NotificationDeliveryStatus.SENT,
+        },
+      }),
+      prisma.notification.count({
+        where: {
+          ...whereClause,
+          deliveryStatus: NotificationDeliveryStatus.FAILED,
+        },
+      }),
+      prisma.notification.count({
+        where: {
+          ...whereClause,
+          isRead: true,
+        },
+      }),
+    ])
 
     // For now, click rate is estimated based on action URL presence and read status
     const totalWithActions = await prisma.notification.count({
@@ -128,10 +117,7 @@ export class NotificationAnalyticsService {
   }
 
   // Get metrics by delivery channel
-  async getChannelMetrics(
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<ChannelMetrics> {
+  async getChannelMetrics(startDate?: Date, endDate?: Date): Promise<ChannelMetrics> {
     const cacheKey = this.generateCacheKey('getChannelMetrics', {
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
@@ -161,9 +147,7 @@ export class NotificationAnalyticsService {
 
     // Calculate combined rates
     combined.deliveryRate =
-      combined.totalSent > 0
-        ? (combined.totalDelivered / combined.totalSent) * 100
-        : 0
+      combined.totalSent > 0 ? (combined.totalDelivered / combined.totalSent) * 100 : 0
 
     const totalRead = await prisma.notification.count({
       where: {
@@ -172,8 +156,7 @@ export class NotificationAnalyticsService {
       },
     })
 
-    combined.openRate =
-      combined.totalSent > 0 ? (totalRead / combined.totalSent) * 100 : 0
+    combined.openRate = combined.totalSent > 0 ? (totalRead / combined.totalSent) * 100 : 0
 
     const result: ChannelMetrics = {
       inApp: inAppMetrics,
@@ -213,32 +196,31 @@ export class NotificationAnalyticsService {
         type: typeGroup.type,
       }
 
-      const [totalSent, totalDelivered, totalFailed, totalRead] =
-        await Promise.all([
-          // Total attempted notifications (sent + failed)
-          prisma.notification.count({
-            where: typeWhereClause,
-          }),
-          // Successfully delivered notifications
-          prisma.notification.count({
-            where: {
-              ...typeWhereClause,
-              deliveryStatus: NotificationDeliveryStatus.SENT,
-            },
-          }),
-          prisma.notification.count({
-            where: {
-              ...typeWhereClause,
-              deliveryStatus: NotificationDeliveryStatus.FAILED,
-            },
-          }),
-          prisma.notification.count({
-            where: {
-              ...typeWhereClause,
-              isRead: true,
-            },
-          }),
-        ])
+      const [totalSent, totalDelivered, totalFailed, totalRead] = await Promise.all([
+        // Total attempted notifications (sent + failed)
+        prisma.notification.count({
+          where: typeWhereClause,
+        }),
+        // Successfully delivered notifications
+        prisma.notification.count({
+          where: {
+            ...typeWhereClause,
+            deliveryStatus: NotificationDeliveryStatus.SENT,
+          },
+        }),
+        prisma.notification.count({
+          where: {
+            ...typeWhereClause,
+            deliveryStatus: NotificationDeliveryStatus.FAILED,
+          },
+        }),
+        prisma.notification.count({
+          where: {
+            ...typeWhereClause,
+            isRead: true,
+          },
+        }),
+      ])
 
       const totalWithActions = await prisma.notification.count({
         where: {
@@ -305,34 +287,32 @@ export class NotificationAnalyticsService {
       const userId = userStat.userId
       const totalReceived = userStat._count.id
 
-      const [totalRead, totalWithActions, preferredChannelData] =
-        await Promise.all([
-          prisma.notification.count({
-            where: {
-              ...whereClause,
-              userId,
-              isRead: true,
-            },
-          }),
-          prisma.notification.count({
-            where: {
-              ...whereClause,
-              userId,
-              actionUrl: { not: null },
-              isRead: true,
-            },
-          }),
-          prisma.notification.groupBy({
-            by: ['deliveryChannel'],
-            where: { ...whereClause, userId },
-            _count: true,
-            orderBy: { _count: { deliveryChannel: 'desc' } },
-            take: 1,
-          }),
-        ])
+      const [totalRead, totalWithActions, preferredChannelData] = await Promise.all([
+        prisma.notification.count({
+          where: {
+            ...whereClause,
+            userId,
+            isRead: true,
+          },
+        }),
+        prisma.notification.count({
+          where: {
+            ...whereClause,
+            userId,
+            actionUrl: { not: null },
+            isRead: true,
+          },
+        }),
+        prisma.notification.groupBy({
+          by: ['deliveryChannel'],
+          where: { ...whereClause, userId },
+          _count: true,
+          orderBy: { _count: { deliveryChannel: 'desc' } },
+          take: 1,
+        }),
+      ])
 
-      const preferredChannel =
-        preferredChannelData[0]?.deliveryChannel || DeliveryChannel.IN_APP
+      const preferredChannel = preferredChannelData[0]?.deliveryChannel || DeliveryChannel.IN_APP
 
       userMetrics.push({
         userId,
@@ -413,9 +393,7 @@ export class NotificationAnalyticsService {
       }
     }
 
-    const result = Array.from(grouped.values()).sort((a, b) =>
-      a.date.localeCompare(b.date),
-    )
+    const result = Array.from(grouped.values()).sort((a, b) => a.date.localeCompare(b.date))
 
     notificationAnalyticsCache.set(cacheKey, result)
     return result
@@ -518,16 +496,12 @@ export class NotificationAnalyticsService {
     return notificationAnalyticsCache.getStats()
   }
 
-  private buildDateFilter(
-    startDate?: Date,
-    endDate?: Date,
-  ): Record<string, unknown> {
+  private buildDateFilter(startDate?: Date, endDate?: Date): Record<string, unknown> {
     const filter: Record<string, unknown> = {}
 
     if (startDate || endDate) {
       filter.createdAt = {}
-      if (startDate)
-        (filter.createdAt as Record<string, unknown>).gte = startDate
+      if (startDate) (filter.createdAt as Record<string, unknown>).gte = startDate
       if (endDate) (filter.createdAt as Record<string, unknown>).lte = endDate
     }
 
@@ -550,32 +524,31 @@ export class NotificationAnalyticsService {
       deliveryChannel: DeliveryChannel.BOTH,
     }
 
-    const [exactSent, exactDelivered, exactFailed, exactRead] =
-      await Promise.all([
-        // Total attempted notifications for exact channel
-        prisma.notification.count({
-          where: exactChannelClause,
-        }),
-        // Successfully delivered notifications for exact channel
-        prisma.notification.count({
-          where: {
-            ...exactChannelClause,
-            deliveryStatus: NotificationDeliveryStatus.SENT,
-          },
-        }),
-        prisma.notification.count({
-          where: {
-            ...exactChannelClause,
-            deliveryStatus: NotificationDeliveryStatus.FAILED,
-          },
-        }),
-        prisma.notification.count({
-          where: {
-            ...exactChannelClause,
-            isRead: true,
-          },
-        }),
-      ])
+    const [exactSent, exactDelivered, exactFailed, exactRead] = await Promise.all([
+      // Total attempted notifications for exact channel
+      prisma.notification.count({
+        where: exactChannelClause,
+      }),
+      // Successfully delivered notifications for exact channel
+      prisma.notification.count({
+        where: {
+          ...exactChannelClause,
+          deliveryStatus: NotificationDeliveryStatus.SENT,
+        },
+      }),
+      prisma.notification.count({
+        where: {
+          ...exactChannelClause,
+          deliveryStatus: NotificationDeliveryStatus.FAILED,
+        },
+      }),
+      prisma.notification.count({
+        where: {
+          ...exactChannelClause,
+          isRead: true,
+        },
+      }),
+    ])
 
     const [bothSent, bothDelivered, bothFailed, bothRead] = await Promise.all([
       // Total attempted notifications for BOTH channel
@@ -632,10 +605,7 @@ export class NotificationAnalyticsService {
     }
   }
 
-  private formatDate(
-    date: Date,
-    granularity: 'day' | 'week' | 'month',
-  ): string {
+  private formatDate(date: Date, granularity: 'day' | 'week' | 'month'): string {
     switch (granularity) {
       case 'day':
         return date.toISOString().split('T')[0]
@@ -650,9 +620,7 @@ export class NotificationAnalyticsService {
   }
 
   private getWeekNumber(date: Date): number {
-    const d = new Date(
-      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-    )
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
     const dayNum = d.getUTCDay() || 7
     d.setUTCDate(d.getUTCDate() + 4 - dayNum)
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))

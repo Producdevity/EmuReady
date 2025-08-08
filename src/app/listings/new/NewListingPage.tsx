@@ -4,13 +4,7 @@ import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useState,
-  type KeyboardEvent,
-} from 'react'
+import { Suspense, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { isString } from 'remeda'
 import { Button, LoadingSpinner } from '@/components/ui'
@@ -21,10 +15,7 @@ import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
-import {
-  parseCustomFieldOptions,
-  getCustomFieldDefaultValue,
-} from '@/utils/customFields'
+import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/customFields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import {
   CustomFieldRenderer,
@@ -49,8 +40,7 @@ function AddListingPage() {
   const searchParams = useSearchParams()
   const mounted = useMounted()
   const utils = api.useUtils()
-  const { executeForCreateListing, isCaptchaEnabled } =
-    useRecaptchaForCreateListing()
+  const { executeForCreateListing, isCaptchaEnabled } = useRecaptchaForCreateListing()
 
   const gameIdFromUrl = searchParams.get('gameId')
 
@@ -58,16 +48,12 @@ function AddListingPage() {
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
-  const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(
-    null,
-  )
-  const [availableEmulators, setAvailableEmulators] = useState<
-    EmulatorOption[]
-  >([])
+  const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(null)
+  const [availableEmulators, setAvailableEmulators] = useState<EmulatorOption[]>([])
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
-  const [parsedCustomFields, setParsedCustomFields] = useState<
-    CustomFieldDefinitionWithOptions[]
-  >([])
+  const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
+    [],
+  )
   const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
   const [schemaState, setSchemaState] = useState<
     typeof listingFormSchema | ReturnType<typeof createDynamicListingSchema>
@@ -90,11 +76,10 @@ function AddListingPage() {
 
   // Data fetching for Autocomplete options
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
-  const customFieldDefinitionsQuery =
-    api.customFieldDefinitions.getByEmulator.useQuery(
-      { emulatorId: selectedEmulatorId },
-      { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
-    )
+  const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
+    { emulatorId: selectedEmulatorId },
+    { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
+  )
 
   const currentUserQuery = api.users.me.useQuery()
 
@@ -145,9 +130,7 @@ function AddListingPage() {
         // Filter to only emulators that support the selected game's system
         const filteredEmulators = result.emulators
           .filter((emulator) =>
-            emulator.systems.some(
-              (system) => system.id === selectedGame.system.id,
-            ),
+            emulator.systems.some((system) => system.id === selectedGame.system.id),
           )
           .map((emulator) => ({
             id: emulator.id,
@@ -230,14 +213,7 @@ function AddListingPage() {
       setSelectedGame(null)
       form.setValue('emulatorId', '') // Clear emulator when game is cleared
     }
-  }, [
-    selectedGameId,
-    selectedGame,
-    gameSearchTerm,
-    loadGameItems,
-    form,
-    isInitialGameLoaded,
-  ])
+  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, form, isInitialGameLoaded])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {
@@ -259,12 +235,7 @@ function AddListingPage() {
         return {
           ...field,
           parsedOptions,
-          defaultValue: field.defaultValue as
-            | string
-            | number
-            | boolean
-            | null
-            | undefined,
+          defaultValue: field.defaultValue as string | number | boolean | null | undefined,
         }
       },
     )
@@ -290,10 +261,7 @@ function AddListingPage() {
       )
       if (existingValueObj) return existingValueObj
 
-      const defaultValue = getCustomFieldDefaultValue(
-        field,
-        field.parsedOptions,
-      )
+      const defaultValue = getCustomFieldDefaultValue(field, field.parsedOptions)
 
       return {
         customFieldDefinitionId: field.id,
@@ -371,24 +339,18 @@ function AddListingPage() {
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Who this?</h1>
-          <p className="text-gray-600 mb-6">
-            Please sign in to create a new listing.
-          </p>
+          <p className="text-gray-600 mb-6">Please sign in to create a new listing.</p>
 
           <div className="mt-4">
             <SignInButton mode="modal">
               <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">
-                  Login
-                </span>
+                <span className="block text-gray-900 dark:text-white font-medium">Login</span>
               </p>
             </SignInButton>
 
             <SignUpButton mode="modal">
               <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">
-                  Sign Up
-                </span>
+                <span className="block text-gray-900 dark:text-white font-medium">Sign Up</span>
               </p>
             </SignUpButton>
           </div>
@@ -443,9 +405,7 @@ function AddListingPage() {
               selectedDevice={selectedDevice}
               errorMessage={form.formState.errors.deviceId?.message}
               loadDeviceItems={loadDeviceItems}
-              onDeviceSelect={(device: DeviceOption | null) =>
-                setSelectedDevice(device)
-              }
+              onDeviceSelect={(device: DeviceOption | null) => setSelectedDevice(device)}
               deviceSearchTerm={deviceSearchTerm}
             />
           </div>
@@ -519,11 +479,9 @@ function AddListingPage() {
                 </h2>
                 {parsedCustomFields.map((fieldDef, index) => {
                   const errorMessage = isString(
-                    form.formState.errors.customFieldValues?.[index]?.value
-                      ?.message,
+                    form.formState.errors.customFieldValues?.[index]?.value?.message,
                   )
-                    ? form.formState.errors.customFieldValues?.[index]?.value
-                        ?.message
+                    ? form.formState.errors.customFieldValues?.[index]?.value?.message
                     : undefined
                   return (
                     <CustomFieldRenderer
@@ -547,14 +505,10 @@ function AddListingPage() {
               type="submit"
               variant="primary"
               isLoading={createListingMutation.isPending}
-              disabled={
-                form.formState.isSubmitting ?? createListingMutation.isPending
-              }
+              disabled={form.formState.isSubmitting ?? createListingMutation.isPending}
               size="lg"
             >
-              {createListingMutation.isPending
-                ? 'Creating...'
-                : 'Create Listing'}
+              {createListingMutation.isPending ? 'Creating...' : 'Create Listing'}
             </Button>
           </div>
         </form>

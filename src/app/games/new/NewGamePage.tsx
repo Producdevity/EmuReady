@@ -61,12 +61,7 @@ function AddGamePage() {
 
   // Redirect non-authors users to TGDB search page
   useEffect(() => {
-    if (
-      isLoaded &&
-      user &&
-      userQuery.data &&
-      !hasPermission(userQuery.data.role, Role.AUTHOR)
-    ) {
+    if (isLoaded && user && userQuery.data && !hasPermission(userQuery.data.role, Role.AUTHOR)) {
       router.replace('/games/new/search')
     }
   }, [isLoaded, user, userQuery.data, router])
@@ -101,10 +96,7 @@ function AddGamePage() {
       await utils.games.checkExistingByTgdbIds.invalidate()
 
       setSuccess('Game added successfully!')
-      const timeoutId = window.setTimeout(
-        () => router.push(`/games/${result.id}`),
-        1500,
-      )
+      const timeoutId = window.setTimeout(() => router.push(`/games/${result.id}`), 1500)
       return () => window.clearTimeout(timeoutId)
     } catch (err) {
       console.error(err)
@@ -120,39 +112,27 @@ function AddGamePage() {
 
       {/* Method Selection */}
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-          Choose Method:
-        </h2>
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Choose Method:</h2>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Edit className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-blue-800 dark:text-blue-200">
-                Manual Entry
-              </span>
-              <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                CURRENT
-              </span>
+              <span className="font-medium text-blue-800 dark:text-blue-200">Manual Entry</span>
+              <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">CURRENT</span>
             </div>
             <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-              Type the game title manually. Good for quick entry or games not in
-              TGDB.
+              Type the game title manually. Good for quick entry or games not in TGDB.
             </p>
           </div>
 
           <div className="flex-1 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Search className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span className="font-medium text-green-800 dark:text-green-200">
-                Search TGDB
-              </span>
-              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
-                RECOMMENDED
-              </span>
+              <span className="font-medium text-green-800 dark:text-green-200">Search TGDB</span>
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">RECOMMENDED</span>
             </div>
             <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-              Search TheGamesDB for accurate game names and images. Prevents
-              duplicates and typos.
+              Search TheGamesDB for accurate game names and images. Prevents duplicates and typos.
             </p>
             <Link href="/games/new/search">
               <Button
@@ -169,9 +149,9 @@ function AddGamePage() {
 
       <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
         <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong>Author Note:</strong> Manual entry is restricted to authors
-          and administrators to maintain data quality. Regular users are
-          automatically redirected to the TGDB search method.
+          <strong>Author Note:</strong> Manual entry is restricted to authors and administrators to
+          maintain data quality. Regular users are automatically redirected to the TGDB search
+          method.
         </p>
       </div>
 
@@ -221,10 +201,7 @@ function AddGamePage() {
             onChange={(e) => setIsErotic(e.target.checked)}
             className="h-4 w-4"
           />
-          <label
-            htmlFor="isErotic-new"
-            className="text-sm text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="isErotic-new" className="text-sm text-gray-700 dark:text-gray-300">
             Erotic 18+
           </label>
         </div>

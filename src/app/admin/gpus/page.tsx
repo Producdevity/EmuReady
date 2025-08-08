@@ -115,8 +115,7 @@ function AdminGpusPage() {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete GPU',
-      description:
-        'Are you sure you want to delete this GPU? This action cannot be undone.',
+      description: 'Are you sure you want to delete this GPU? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -138,18 +137,13 @@ function AdminGpusPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            GPUs
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">GPUs</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage all GPU models for PC compatibility listings
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <ColumnVisibilityControl
-            columns={GPUS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={GPUS_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add GPU</Button>
         </div>
       </div>
@@ -262,14 +256,8 @@ function AdminGpusPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <ViewButton
-                          onClick={() => openViewModal(gpu)}
-                          title="View GPU Details"
-                        />
-                        <EditButton
-                          onClick={() => openModal(gpu)}
-                          title="Edit GPU"
-                        />
+                        <ViewButton onClick={() => openViewModal(gpu)} title="View GPU Details" />
+                        <EditButton onClick={() => openModal(gpu)} title="Edit GPU" />
                         {isAdmin && (
                           <DeleteButton
                             onClick={() => handleDelete(gpu.id)}
@@ -306,11 +294,7 @@ function AdminGpusPage() {
         onSuccess={handleModalSuccess}
       />
 
-      <GpuViewModal
-        isOpen={viewModalOpen}
-        onClose={closeViewModal}
-        gpuData={gpuData}
-      />
+      <GpuViewModal isOpen={viewModalOpen} onClose={closeViewModal} gpuData={gpuData} />
     </div>
   )
 }

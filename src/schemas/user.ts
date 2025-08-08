@@ -20,12 +20,7 @@ export const GetAllUsersSchema = z
     sortField: UserSortField.optional(),
     sortDirection: SortDirection.optional(),
     page: z.number().int().min(1).default(1),
-    limit: z
-      .number()
-      .int()
-      .min(1)
-      .max(PAGINATION.MAX_LIMIT)
-      .default(PAGINATION.DEFAULT_LIMIT),
+    limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   })
   .optional()
 

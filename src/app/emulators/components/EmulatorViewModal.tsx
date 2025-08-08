@@ -22,12 +22,7 @@ function EmulatorViewModal(props: Props) {
   if (!props.emulatorData) return null
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="Emulator Details"
-      size="2xl"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Emulator Details" size="2xl">
       <div className="space-y-6">
         {/* Emulator Header */}
         <div>
@@ -47,12 +42,9 @@ function EmulatorViewModal(props: Props) {
                 <Monitor className="w-8 h-8 text-gray-400" />
               )}
               <div className="flex-1">
-                <h3 className="font-medium text-lg">
-                  {props.emulatorData.name}
-                </h3>
+                <h3 className="font-medium text-lg">{props.emulatorData.name}</h3>
                 {/* URLs */}
-                {(props.emulatorData.repositoryUrl ||
-                  props.emulatorData.officialUrl) && (
+                {(props.emulatorData.repositoryUrl || props.emulatorData.officialUrl) && (
                   <div className="flex gap-2 mt-2">
                     {props.emulatorData.repositoryUrl && (
                       <a
@@ -97,8 +89,7 @@ function EmulatorViewModal(props: Props) {
                     : `${props.emulatorData.systems?.length ?? 0} system${(props.emulatorData.systems?.length ?? 0) !== 1 ? 's' : ''}`}
                 </span>
               </div>
-              {props.emulatorData.systems &&
-              props.emulatorData.systems.length > 0 ? (
+              {props.emulatorData.systems && props.emulatorData.systems.length > 0 ? (
                 <div className="space-y-1">
                   {props.emulatorData.systems.map((system) => (
                     <div
@@ -110,9 +101,7 @@ function EmulatorViewModal(props: Props) {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-xs">
-                  No systems configured
-                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs">No systems configured</p>
               )}
             </div>
           </div>
@@ -126,21 +115,15 @@ function EmulatorViewModal(props: Props) {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">
                   <Users className="w-4 h-4 inline mr-1" />
-                  {props.emulatorData.verifiedDevelopers?.length ?? 0} verified
-                  developer
-                  {(props.emulatorData.verifiedDevelopers?.length ?? 0) !== 1
-                    ? 's'
-                    : ''}
+                  {props.emulatorData.verifiedDevelopers?.length ?? 0} verified developer
+                  {(props.emulatorData.verifiedDevelopers?.length ?? 0) !== 1 ? 's' : ''}
                 </span>
               </div>
               {props.emulatorData.verifiedDevelopers &&
               props.emulatorData.verifiedDevelopers.length > 0 ? (
                 <div className="space-y-2">
                   {props.emulatorData.verifiedDevelopers.map((verifiedDev) => (
-                    <div
-                      key={verifiedDev.id}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={verifiedDev.id} className="flex items-center gap-2">
                       {verifiedDev.user.profileImage ? (
                         <Image
                           src={verifiedDev.user.profileImage}
@@ -162,9 +145,7 @@ function EmulatorViewModal(props: Props) {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-xs">
-                  No verified developers
-                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs">No verified developers</p>
               )}
             </div>
           </div>

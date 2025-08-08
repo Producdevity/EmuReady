@@ -2,7 +2,7 @@
 
 import { Edit, Trash2, Eye, Copy } from 'lucide-react'
 import { useState } from 'react'
-import { Button, Card, useConfirmDialog } from '@/components/ui'
+import { Button, Card, useConfirmDialog, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { CustomFieldType } from '@orm'
@@ -32,9 +32,7 @@ interface Props {
 }
 
 function CustomFieldTemplateList(props: Props) {
-  const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(
-    new Set(),
-  )
+  const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set())
   const confirm = useConfirmDialog()
 
   const deleteTemplateMutation = api.customFieldTemplates.delete.useMutation({
@@ -48,17 +46,16 @@ function CustomFieldTemplateList(props: Props) {
     },
   })
 
-  const duplicateTemplateMutation =
-    api.customFieldTemplates.duplicate.useMutation({
-      onSuccess: () => {
-        toast.success('Template duplicated successfully')
-        props.onDeleteSuccess() // Refresh the list
-      },
-      onError: (error) => {
-        console.error('Failed to duplicate template:', error)
-        toast.error('Failed to duplicate template. Please try again.')
-      },
-    })
+  const duplicateTemplateMutation = api.customFieldTemplates.duplicate.useMutation({
+    onSuccess: () => {
+      toast.success('Template duplicated successfully')
+      props.onDeleteSuccess() // Refresh the list
+    },
+    onError: (error) => {
+      console.error('Failed to duplicate template:', error)
+      toast.error('Failed to duplicate template. Please try again.')
+    },
+  })
 
   async function handleDelete(templateId: string, templateName: string) {
     const confirmed = await confirm({
@@ -132,23 +129,15 @@ function CustomFieldTemplateList(props: Props) {
                   {template.fields.length} field
                   {template.fields.length !== 1 ? 's' : ''}
                   {' • '}
-                  Created {template.createdAt.toLocaleDateString()}
+                  Created <LocalizedDate date={template.createdAt} format="date" />
                 </p>
               </div>
               <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleExpanded(template.id)}
-                >
+                <Button variant="outline" size="sm" onClick={() => toggleExpanded(template.id)}>
                   <Eye className="h-4 w-4" />
                   {expandedTemplates.has(template.id) ? 'Hide' : 'Show'} Fields
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => props.onEdit(template.id)}
-                >
+                <Button variant="outline" size="sm" onClick={() => props.onEdit(template.id)}>
                   <Edit className="h-4 w-4" />
                   Edit
                 </Button>
@@ -188,19 +177,16 @@ function CustomFieldTemplateList(props: Props) {
                         className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                       >
                         <div className="flex-1">
-                          <div className="font-medium text-sm">
-                            {field.label}
-                          </div>
+                          <div className="font-medium text-sm">{field.label}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {field.name} • {getFieldTypeDisplayName(field.type)}
                             {field.isRequired && ' • Required'}
                           </div>
-                          {field.type === CustomFieldType.SELECT &&
-                            field.options && (
-                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                Options: {getOptionsDisplay(field.options)}
-                              </div>
-                            )}
+                          {field.type === CustomFieldType.SELECT && field.options && (
+                            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              Options: {getOptionsDisplay(field.options)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

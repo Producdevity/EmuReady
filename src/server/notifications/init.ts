@@ -9,7 +9,5 @@ export function initializeNotificationService(): void {
   const queueStatus = notificationBatchingService.getQueueStatus()
 
   console.log('Notification service initialized')
-  console.log(
-    `Batching service initialized - Queue: ${queueStatus.queueLength} items`,
-  )
+  console.log(`Batching service initialized - Queue: ${queueStatus.queueLength} items`)
 }

@@ -6,9 +6,7 @@ import { ListingFormPage } from './pages/ListingFormPage'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('Game Form Tests', () => {
-  test('should require authentication to access add game form', async ({
-    page,
-  }) => {
+  test('should require authentication to access add game form', async ({ page }) => {
     const gameForm = new GameFormPage(page)
 
     // Navigate to add game page
@@ -96,18 +94,14 @@ test.describe('Game Form Tests', () => {
             .catch(() => false)
 
           // At least some form fields should be present
-          expect(
-            titleVisible || systemVisible || submitVisible || hasInputs,
-          ).toBe(true)
+          expect(titleVisible || systemVisible || submitVisible || hasInputs).toBe(true)
           console.log('Game form fields verified')
         } else {
           console.log('No form inputs found - page may still be loading')
           expect(true).toBe(true)
         }
       } catch {
-        console.log(
-          'Listing form fields not all visible - may be loading or require auth',
-        )
+        console.log('Listing form fields not all visible - may be loading or require auth')
         // Not a failure - form might be protected client-side
         expect(true).toBe(true)
       }
@@ -199,9 +193,7 @@ test.describe('Game Form Tests', () => {
 })
 
 test.describe('Listing Form Tests', () => {
-  test('should require authentication to access add listing form', async ({
-    page,
-  }) => {
+  test('should require authentication to access add listing form', async ({ page }) => {
     const listingForm = new ListingFormPage(page)
     const authPage = new AuthPage(page)
 
@@ -215,9 +207,7 @@ test.describe('Listing Form Tests', () => {
       await authPage.verifyAuthRequired()
       console.log('Add listing form correctly requires authentication')
     } else if (hasForm) {
-      console.log(
-        'Add listing form is accessible - likely uses client-side auth protection',
-      )
+      console.log('Add listing form is accessible - likely uses client-side auth protection')
 
       // Try to submit form without auth - should fail
       try {
@@ -264,9 +254,7 @@ test.describe('Listing Form Tests', () => {
 
         console.log('Listing form fields verified')
       } catch {
-        console.log(
-          'Listing form fields not all visible - may be loading or require auth',
-        )
+        console.log('Listing form fields not all visible - may be loading or require auth')
         // Not a failure - form might be protected client-side
         expect(true).toBe(true)
       }
@@ -279,9 +267,7 @@ test.describe('Listing Form Tests', () => {
         expect(hasAuthRequirement).toBe(true)
       } else {
         // Page might be loading or have different protection
-        console.log(
-          'Listing form not accessible - likely requires authentication',
-        )
+        console.log('Listing form not accessible - likely requires authentication')
         // Pass the test - form is protected
         expect(true).toBe(true)
       }
@@ -316,9 +302,7 @@ test.describe('Listing Form Tests', () => {
     }
   })
 
-  test('should navigate to add listing form from listings page', async ({
-    page,
-  }) => {
+  test('should navigate to add listing form from listings page', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     const listingForm = new ListingFormPage(page)
     const authPage = new AuthPage(page)
@@ -363,9 +347,7 @@ test.describe('Listing Form Tests', () => {
     }
   })
 
-  test('should show custom fields when device is selected', async ({
-    page,
-  }) => {
+  test('should show custom fields when device is selected', async ({ page }) => {
     const listingForm = new ListingFormPage(page)
 
     await listingForm.goto()
@@ -385,19 +367,13 @@ test.describe('Listing Form Tests', () => {
         const customFieldCount = await listingForm.getCustomFieldCount()
 
         if (customFieldCount > 0) {
-          console.log(
-            `Found ${customFieldCount} custom fields after device selection`,
-          )
+          console.log(`Found ${customFieldCount} custom fields after device selection`)
           await listingForm.verifyCustomFieldsVisible()
         } else {
-          console.log(
-            'No custom fields found - may not be configured for this device',
-          )
+          console.log('No custom fields found - may not be configured for this device')
         }
       } catch {
-        console.log(
-          'Could not test custom fields - form may require more setup',
-        )
+        console.log('Could not test custom fields - form may require more setup')
       }
     } else {
       console.log('Listing form not accessible - auth required')

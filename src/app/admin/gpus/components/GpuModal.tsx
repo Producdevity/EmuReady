@@ -56,9 +56,7 @@ function GpuModal(props: Props) {
         } satisfies RouterInput['gpus']['update'])
         setSuccess('GPU updated!')
       } else {
-        await createGpu.mutateAsync(
-          gpuData satisfies RouterInput['gpus']['create'],
-        )
+        await createGpu.mutateAsync(gpuData satisfies RouterInput['gpus']['create'])
         setSuccess('GPU created!')
       }
 

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Bell, Filter, Trash2, Check, Settings, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Pagination } from '@/components/ui'
+import { Pagination, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -40,9 +40,7 @@ function NotificationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
-  const [selectedNotifications, setSelectedNotifications] = useState<
-    Set<string>
-  >(new Set())
+  const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set())
 
   const limit = 20
   const offset = (page - 1) * limit
@@ -52,10 +50,7 @@ function NotificationsPage() {
   const notificationsQuery = api.notifications.get.useQuery({
     limit,
     offset,
-    category:
-      selectedCategory === 'all'
-        ? undefined
-        : (selectedCategory as NotificationCategory),
+    category: selectedCategory === 'all' ? undefined : (selectedCategory as NotificationCategory),
   })
 
   // Fetch stats
@@ -171,9 +166,7 @@ function NotificationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Notifications
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Manage your notifications and preferences
             </p>
@@ -184,9 +177,7 @@ function NotificationsPage() {
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {stats.unread}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Unread
-                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Unread</div>
               </div>
             )}
             <button
@@ -296,24 +287,19 @@ function NotificationsPage() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-pulse" />
-                <p className="text-gray-600 dark:text-gray-400">
-                  Loading notifications...
-                </p>
+                <p className="text-gray-600 dark:text-gray-400">Loading notifications...</p>
               </div>
             </div>
           ) : notificationsQuery.error ? (
             <div className="p-8 text-center">
               <p className="text-red-600 dark:text-red-400">
-                Failed to load notifications:{' '}
-                {getErrorMessage(notificationsQuery.error)}
+                Failed to load notifications: {getErrorMessage(notificationsQuery.error)}
               </p>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="p-8 text-center">
               <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">
-                No notifications found
-              </p>
+              <p className="text-gray-600 dark:text-gray-400">No notifications found</p>
             </div>
           ) : (
             <>
@@ -323,8 +309,7 @@ function NotificationsPage() {
                   <input
                     type="checkbox"
                     checked={
-                      selectedNotifications.size ===
-                        filteredNotifications.length &&
+                      selectedNotifications.size === filteredNotifications.length &&
                       filteredNotifications.length > 0
                     }
                     onChange={handleSelectAll}
@@ -352,9 +337,7 @@ function NotificationsPage() {
                       <input
                         type="checkbox"
                         checked={selectedNotifications.has(notification.id)}
-                        onChange={() =>
-                          handleSelectNotification(notification.id)
-                        }
+                        onChange={() => handleSelectNotification(notification.id)}
                         className="mt-1 rounded border-gray-300 dark:border-gray-600"
                       />
                       <div
@@ -382,13 +365,7 @@ function NotificationsPage() {
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(
-                              notification.createdAt,
-                            ).toLocaleDateString()}{' '}
-                            at{' '}
-                            {new Date(
-                              notification.createdAt,
-                            ).toLocaleTimeString()}
+                            <LocalizedDate date={notification.createdAt} format="dateTime" />
                           </span>
                         </div>
                       </div>

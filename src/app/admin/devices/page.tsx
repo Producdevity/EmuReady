@@ -3,11 +3,7 @@
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import {
-  AdminTableContainer,
-  AdminSearchFilters,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { AdminTableContainer, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -107,8 +103,7 @@ function AdminDevicesPage() {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete Device',
-      description:
-        'Are you sure you want to delete this device? This action cannot be undone.',
+      description: 'Are you sure you want to delete this device? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -130,18 +125,13 @@ function AdminDevicesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Devices
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Devices</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage all gaming devices and hardware
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <ColumnVisibilityControl
-            columns={DEVICES_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={DEVICES_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add Device</Button>
         </div>
       </div>
@@ -269,10 +259,7 @@ function AdminDevicesPage() {
                           onClick={() => openViewModal(device)}
                           title="View Device Details"
                         />
-                        <EditButton
-                          onClick={() => openModal(device)}
-                          title="Edit Device"
-                        />
+                        <EditButton onClick={() => openModal(device)} title="Edit Device" />
                         {isAdmin && (
                           <DeleteButton
                             onClick={() => handleDelete(device.id)}
@@ -286,19 +273,18 @@ function AdminDevicesPage() {
                   )}
                 </tr>
               ))}
-              {!devicesQuery.isPending &&
-                devicesQuery.data?.devices.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={columnVisibility.visibleColumns.size}
-                      className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      {table.search || table.additionalParams.brandId
-                        ? 'No devices found matching your search.'
-                        : 'No devices found. Add your first device.'}
-                    </td>
-                  </tr>
-                )}
+              {!devicesQuery.isPending && devicesQuery.data?.devices.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columnVisibility.visibleColumns.size}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    {table.search || table.additionalParams.brandId
+                      ? 'No devices found matching your search.'
+                      : 'No devices found. Add your first device.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}
@@ -322,11 +308,7 @@ function AdminDevicesPage() {
         onSuccess={handleModalSuccess}
       />
 
-      <DeviceViewModal
-        isOpen={viewModalOpen}
-        onClose={closeViewModal}
-        deviceData={deviceData}
-      />
+      <DeviceViewModal isOpen={viewModalOpen} onClose={closeViewModal} deviceData={deviceData} />
     </div>
   )
 }

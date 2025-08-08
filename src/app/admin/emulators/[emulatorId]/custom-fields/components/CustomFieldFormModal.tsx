@@ -27,9 +27,7 @@ const customFieldFormSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   type: z.nativeEnum(CustomFieldType),
   options: z.array(customFieldOptionSchema).optional(),
-  defaultValue: z
-    .union([z.string(), z.boolean(), z.number(), z.null()])
-    .optional(),
+  defaultValue: z.union([z.string(), z.boolean(), z.number(), z.null()]).optional(),
   placeholder: z.string().optional(),
   // Range-specific fields
   rangeMin: z.coerce.number().optional(),
@@ -179,9 +177,7 @@ function CustomFieldFormModal(props: Props) {
     },
     onError: (error) => {
       console.error('Error creating custom field:', error)
-      toast.error(
-        `Failed to create custom field: ${getErrorMessage(error.message)}`,
-      )
+      toast.error(`Failed to create custom field: ${getErrorMessage(error.message)}`)
     },
   })
 
@@ -199,9 +195,7 @@ function CustomFieldFormModal(props: Props) {
     },
     onError: (error) => {
       console.error('Error updating custom field:', error)
-      toast.error(
-        `Failed to update custom field: ${getErrorMessage(error.message)}`,
-      )
+      toast.error(`Failed to update custom field: ${getErrorMessage(error.message)}`)
     },
   })
 
@@ -242,9 +236,7 @@ function CustomFieldFormModal(props: Props) {
         basePayload.rangeUnit = data.rangeUnit || ''
         basePayload.rangeDecimals = data.rangeDecimals || 0
       } else {
-        return toast.warning(
-          'Range minimum and maximum are required for RANGE type fields.',
-        )
+        return toast.warning('Range minimum and maximum are required for RANGE type fields.')
       }
     }
 
@@ -314,9 +306,7 @@ function CustomFieldFormModal(props: Props) {
               className="mt-1"
             />
             {formState.errors.label && (
-              <p className="text-red-500 text-xs mt-1">
-                {formState.errors.label.message}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{formState.errors.label.message}</p>
             )}
           </div>
 
@@ -338,9 +328,7 @@ function CustomFieldFormModal(props: Props) {
               }}
             />
             {formState.errors.name && (
-              <p className="text-red-500 text-xs mt-1">
-                {formState.errors.name.message}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{formState.errors.name.message}</p>
             )}
           </div>
 
@@ -362,16 +350,12 @@ function CustomFieldFormModal(props: Props) {
                     name: opt.label,
                   }))}
                   value={field.value}
-                  onChange={(ev) =>
-                    field.onChange(ev.target.value as CustomFieldType)
-                  }
+                  onChange={(ev) => field.onChange(ev.target.value as CustomFieldType)}
                 />
               )}
             />
             {formState.errors.type && (
-              <p className="text-red-500 text-xs mt-1">
-                {formState.errors.type.message}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{formState.errors.type.message}</p>
             )}
           </div>
 
@@ -391,9 +375,7 @@ function CustomFieldFormModal(props: Props) {
                 className="mt-1"
               />
               {formState.errors.placeholder && (
-                <p className="text-red-500 text-xs mt-1">
-                  {formState.errors.placeholder.message}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{formState.errors.placeholder.message}</p>
               )}
             </div>
           )}
@@ -421,9 +403,7 @@ function CustomFieldFormModal(props: Props) {
                     className="mt-1"
                   />
                   {formState.errors.rangeMin && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formState.errors.rangeMin.message}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{formState.errors.rangeMin.message}</p>
                   )}
                 </div>
                 <div>
@@ -442,9 +422,7 @@ function CustomFieldFormModal(props: Props) {
                     className="mt-1"
                   />
                   {formState.errors.rangeMax && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formState.errors.rangeMax.message}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{formState.errors.rangeMax.message}</p>
                   )}
                 </div>
               </div>
@@ -487,9 +465,7 @@ function CustomFieldFormModal(props: Props) {
                           { id: '2', name: '2 decimal places' },
                         ]}
                         value={String(field.value || 0)}
-                        onChange={(ev) =>
-                          field.onChange(Number(ev.target.value))
-                        }
+                        onChange={(ev) => field.onChange(Number(ev.target.value))}
                       />
                     )}
                   />
@@ -527,9 +503,7 @@ function CustomFieldFormModal(props: Props) {
                         { id: 'false', name: 'No' },
                       ]}
                       value={
-                        field.value === null || field.value === undefined
-                          ? ''
-                          : String(field.value)
+                        field.value === null || field.value === undefined ? '' : String(field.value)
                       }
                       onChange={(ev) => {
                         const value = ev.target.value
@@ -550,8 +524,7 @@ function CustomFieldFormModal(props: Props) {
                   placeholder="Default value within range"
                   className="mt-1"
                 />
-              ) : selectedFieldType === CustomFieldType.SELECT &&
-                fields.length > 0 ? (
+              ) : selectedFieldType === CustomFieldType.SELECT && fields.length > 0 ? (
                 <Controller
                   name="defaultValue"
                   control={control}
@@ -561,9 +534,7 @@ function CustomFieldFormModal(props: Props) {
                       options={[
                         { id: '', name: 'No default' },
                         ...fields
-                          .filter(
-                            (opt) => opt.value?.trim() && opt.label?.trim(),
-                          )
+                          .filter((opt) => opt.value?.trim() && opt.label?.trim())
                           .map((option) => ({
                             id: option.value,
                             name: option.label,
@@ -571,9 +542,7 @@ function CustomFieldFormModal(props: Props) {
                       ]}
                       value={field.value === null ? '' : String(field.value)}
                       onChange={(ev) =>
-                        field.onChange(
-                          ev.target.value === '' ? null : ev.target.value,
-                        )
+                        field.onChange(ev.target.value === '' ? null : ev.target.value)
                       }
                     />
                   )}
@@ -584,9 +553,7 @@ function CustomFieldFormModal(props: Props) {
                 </p>
               ) : null}
               {formState.errors.defaultValue && (
-                <p className="text-red-500 text-xs mt-1">
-                  {formState.errors.defaultValue.message}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{formState.errors.defaultValue.message}</p>
               )}
             </div>
           )}
@@ -605,17 +572,13 @@ function CustomFieldFormModal(props: Props) {
                     {...register(`options.${index}.value`)}
                     placeholder="Value (e.g., v1.0)"
                     className="flex-1"
-                    onChange={(e) =>
-                      handleOptionValueChange(index, e.target.value)
-                    }
+                    onChange={(e) => handleOptionValueChange(index, e.target.value)}
                   />
                   <Input
                     {...register(`options.${index}.label`)}
                     placeholder="Label (e.g., Version 1.0)"
                     className="flex-1"
-                    onChange={(e) =>
-                      handleOptionLabelChange(index, e.target.value)
-                    }
+                    onChange={(e) => handleOptionLabelChange(index, e.target.value)}
                   />
                   <Button
                     type="button"
@@ -629,16 +592,11 @@ function CustomFieldFormModal(props: Props) {
                 </div>
               ))}
               {formState.errors.options?.message && (
-                <p className="text-red-500 text-xs mt-1">
-                  {formState.errors.options.message}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{formState.errors.options.message}</p>
               )}
               {Array.isArray(formState.errors.options) &&
                 formState.errors.options.map((optError, index) => (
-                  <div
-                    key={fields[index]?.id ?? index}
-                    className="text-red-500 text-xs"
-                  >
+                  <div key={fields[index]?.id ?? index} className="text-red-500 text-xs">
                     {optError?.value && (
                       <p>{`Option ${index + 1} Value: ${optError.value.message}`}</p>
                     )}
@@ -680,9 +638,7 @@ function CustomFieldFormModal(props: Props) {
               Is Required?
             </label>
             {formState.errors.isRequired && (
-              <p className="text-red-500 text-xs mt-1">
-                {formState.errors.isRequired.message}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{formState.errors.isRequired.message}</p>
             )}
           </div>
 
@@ -693,16 +649,9 @@ function CustomFieldFormModal(props: Props) {
             >
               Display Order
             </label>
-            <Input
-              id="displayOrder"
-              type="number"
-              {...register('displayOrder')}
-              className="mt-1"
-            />
+            <Input id="displayOrder" type="number" {...register('displayOrder')} className="mt-1" />
             {formState.errors.displayOrder && (
-              <p className="text-red-500 text-xs mt-1">
-                {formState.errors.displayOrder.message}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{formState.errors.displayOrder.message}</p>
             )}
           </div>
 

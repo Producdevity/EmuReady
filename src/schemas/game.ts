@@ -94,15 +94,11 @@ export const ApproveGameSchema = z.object({
 })
 
 export const BulkApproveGamesSchema = z.object({
-  gameIds: z
-    .array(z.string().uuid())
-    .min(1, 'At least one game must be selected'),
+  gameIds: z.array(z.string().uuid()).min(1, 'At least one game must be selected'),
 })
 
 export const BulkRejectGamesSchema = z.object({
-  gameIds: z
-    .array(z.string().uuid())
-    .min(1, 'At least one game must be selected'),
+  gameIds: z.array(z.string().uuid()).min(1, 'At least one game must be selected'),
   notes: z.string().optional(),
 })
 

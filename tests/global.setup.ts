@@ -29,10 +29,7 @@ setup('global setup', async () => {
           performance: false,
         }),
       )
-      localStorage.setItem(
-        `${PREFIX}cookie_consent_date`,
-        new Date().toISOString(),
-      )
+      localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
       localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
       localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
     })

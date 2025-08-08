@@ -16,9 +16,7 @@ function TrustStatsOverview(props: Props) {
             <TrendingUp className="h-8 w-8 text-blue-600" />
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Total Actions
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Total Actions</h3>
             <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">
               {props.trustStatsData.totalActions}
             </p>
@@ -32,9 +30,7 @@ function TrustStatsOverview(props: Props) {
             <Users className="h-8 w-8 text-green-600" />
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Total Users
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Total Users</h3>
             <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">
               {props.trustStatsData.totalUsers}
             </p>
@@ -48,9 +44,7 @@ function TrustStatsOverview(props: Props) {
             <Shield className="h-8 w-8 text-purple-600" />
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Trusted+ Users
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Trusted+ Users</h3>
             <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">
               {props.trustStatsData.levelDistribution
                 ?.filter((level) => level.minScore >= 250)

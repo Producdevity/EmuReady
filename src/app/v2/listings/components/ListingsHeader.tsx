@@ -38,9 +38,7 @@ export function ListingsHeader(props: Props) {
               className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-full border border-blue-200 dark:border-blue-800"
             >
               <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                V2
-              </span>
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">V2</span>
             </motion.div>
           </motion.div>
 

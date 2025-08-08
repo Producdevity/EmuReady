@@ -9,10 +9,7 @@ function EditListingPage() {
   const params = useParams()
   const listingId = params.id as string
 
-  const listingQuery = api.listings.getForEdit.useQuery(
-    { id: listingId },
-    { enabled: !!listingId },
-  )
+  const listingQuery = api.listings.getForEdit.useQuery({ id: listingId }, { enabled: !!listingId })
 
   if (listingQuery.isPending) {
     return (
@@ -38,9 +35,7 @@ function EditListingPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
-            Listing not found
-          </p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">Listing not found</p>
         </div>
       </div>
     )
@@ -49,9 +44,7 @@ function EditListingPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Edit Listing
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Listing</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           Modify the performance listing for {listingQuery.data.game.title}
         </p>

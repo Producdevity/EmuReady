@@ -1,8 +1,5 @@
 import { GetCustomFieldDefinitionsByEmulatorSchema } from '@/schemas/customFieldDefinition'
-import {
-  createMobileTRPCRouter,
-  mobilePublicProcedure,
-} from '@/server/api/mobileContext'
+import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 
 export const mobileCustomFieldDefinitionsRouter = createMobileTRPCRouter({
   /**

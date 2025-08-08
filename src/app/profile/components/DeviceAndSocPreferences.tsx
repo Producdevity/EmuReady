@@ -55,9 +55,7 @@ function DeviceAndSocPreferences(props: Props) {
     },
     onError: (error) => {
       console.error('Error updating device preferences:', error)
-      toast.error(
-        `Failed to update device preferences: ${getErrorMessage(error)}`,
-      )
+      toast.error(`Failed to update device preferences: ${getErrorMessage(error)}`)
     },
   })
 
@@ -90,11 +88,7 @@ function DeviceAndSocPreferences(props: Props) {
   }
 
   function handleDevicePreferenceChange(
-    key:
-      | 'defaultToUserDevices'
-      | 'defaultToUserSocs'
-      | 'notifyOnNewListings'
-      | 'showNsfw',
+    key: 'defaultToUserDevices' | 'defaultToUserSocs' | 'notifyOnNewListings' | 'showNsfw',
     value: boolean,
   ) {
     updatePreferences.mutate({ [key]: value })
@@ -162,10 +156,7 @@ function DeviceAndSocPreferences(props: Props) {
       <div className="space-y-8">
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
-            >
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
               <div className="animate-pulse">
                 <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4" />
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2" />
@@ -191,8 +182,7 @@ function DeviceAndSocPreferences(props: Props) {
   const { data: preferences } = props.preferencesQuery
 
   // Map the data structure to what the selectors expect
-  const selectedDevices =
-    preferences.devicePreferences?.map((pref) => pref.device) || []
+  const selectedDevices = preferences.devicePreferences?.map((pref) => pref.device) || []
   const selectedSocs = preferences.socPreferences?.map((pref) => pref.soc) || []
 
   return (
@@ -209,71 +199,53 @@ function DeviceAndSocPreferences(props: Props) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Default to My Devices
-              </h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Default to My Devices</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Automatically filter listings to show only your preferred
-                devices
+                Automatically filter listings to show only your preferred devices
               </p>
             </div>
             <AnimatedToggle
               checked={preferences.defaultToUserDevices}
-              onChange={(value) =>
-                handleDevicePreferenceChange('defaultToUserDevices', value)
-              }
+              onChange={(value) => handleDevicePreferenceChange('defaultToUserDevices', value)}
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Default to My SOCs
-              </h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Default to My SOCs</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Automatically filter listings to show only your preferred SOCs
               </p>
             </div>
             <AnimatedToggle
               checked={preferences.defaultToUserSocs}
-              onChange={(value) =>
-                handleDevicePreferenceChange('defaultToUserSocs', value)
-              }
+              onChange={(value) => handleDevicePreferenceChange('defaultToUserSocs', value)}
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Notify on New Listings
-              </h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Notify on New Listings</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Get notified when new listings are posted for your preferred
-                devices/SOCs
+                Get notified when new listings are posted for your preferred devices/SOCs
               </p>
             </div>
             <AnimatedToggle
               checked={preferences.notifyOnNewListings}
-              onChange={(value) =>
-                handleDevicePreferenceChange('notifyOnNewListings', value)
-              }
+              onChange={(value) => handleDevicePreferenceChange('notifyOnNewListings', value)}
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Show Mature Content
-              </h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Show Mature Content</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Include erotic 18+ games in listings
               </p>
             </div>
             <AnimatedToggle
               checked={preferences.showNsfw}
-              onChange={(value) =>
-                handleDevicePreferenceChange('showNsfw', value)
-              }
+              onChange={(value) => handleDevicePreferenceChange('showNsfw', value)}
             />
           </div>
         </div>
@@ -289,35 +261,26 @@ function DeviceAndSocPreferences(props: Props) {
         </div>
 
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Select the devices you own or are interested in. This helps
-          personalize your experience and filter relevant content.
+          Select the devices you own or are interested in. This helps personalize your experience
+          and filter relevant content.
         </p>
 
-        <DeviceSelector
-          selectedDevices={selectedDevices}
-          onDevicesChange={handleDevicesChange}
-        />
+        <DeviceSelector selectedDevices={selectedDevices} onDevicesChange={handleDevicesChange} />
       </div>
 
       {/* SOC Preferences */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-3 mb-6">
           <Cpu className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            SOC Preferences
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">SOC Preferences</h2>
         </div>
 
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Select the System-on-Chip (SOC) architectures you&apos;re interested
-          in. This helps filter listings to show performance data most relevant
-          to you.
+          Select the System-on-Chip (SOC) architectures you&apos;re interested in. This helps filter
+          listings to show performance data most relevant to you.
         </p>
 
-        <SocSelector
-          selectedSocs={selectedSocs}
-          onSocsChange={handleSocsChange}
-        />
+        <SocSelector selectedSocs={selectedSocs} onSocsChange={handleSocsChange} />
       </div>
     </div>
   )

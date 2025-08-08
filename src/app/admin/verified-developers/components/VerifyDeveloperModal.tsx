@@ -37,8 +37,7 @@ function VerifyDeveloperModal(props: Props) {
     sortDirection: 'asc',
   })
 
-  const verifyDeveloperMutation =
-    api.verifiedDevelopers.verifyDeveloper.useMutation()
+  const verifyDeveloperMutation = api.verifiedDevelopers.verifyDeveloper.useMutation()
 
   // Reset form when modal opens
   useEffect(() => {
@@ -114,9 +113,7 @@ function VerifyDeveloperModal(props: Props) {
                 <div>
                   <div className="font-medium">{user.name || user.email}</div>
                   {user.name && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                   )}
                 </div>
                 <div className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">

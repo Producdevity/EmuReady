@@ -15,14 +15,13 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isNumber } from 'remeda'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
-import { Modal, Button, ApprovalStatusBadge, Code } from '@/components/ui'
+import { Modal, Button, ApprovalStatusBadge, Code, LocalizedDate } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import { type Maybe, type Nullable } from '@/types/utils'
 import { copyToClipboard } from '@/utils/copyToClipboard'
-import { formatDate, formatTimeAgo } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -53,9 +52,9 @@ function GameDetailsModal(props: Props) {
   )
   const [imageError, setImageError] = useState<Record<string, boolean>>({})
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
-  const [previewImageType, setPreviewImageType] = useState<
-    'boxart' | 'banner' | 'imageUrl'
-  >('boxart')
+  const [previewImageType, setPreviewImageType] = useState<'boxart' | 'banner' | 'imageUrl'>(
+    'boxart',
+  )
 
   // Get current user to check permissions
   const currentUserQuery = api.users.me.useQuery()
@@ -75,17 +74,11 @@ function GameDetailsModal(props: Props) {
   const getDisplayImage = () => {
     switch (activeImageTab) {
       case 'boxart':
-        return selectedGame.boxartUrl && !imageError.boxart
-          ? selectedGame.boxartUrl
-          : null
+        return selectedGame.boxartUrl && !imageError.boxart ? selectedGame.boxartUrl : null
       case 'banner':
-        return selectedGame.bannerUrl && !imageError.banner
-          ? selectedGame.bannerUrl
-          : null
+        return selectedGame.bannerUrl && !imageError.banner ? selectedGame.bannerUrl : null
       case 'main':
-        return selectedGame.imageUrl && !imageError.main
-          ? selectedGame.imageUrl
-          : null
+        return selectedGame.imageUrl && !imageError.main ? selectedGame.imageUrl : null
       default:
         return null
     }
@@ -104,10 +97,7 @@ function GameDetailsModal(props: Props) {
       selectedGame.imageUrl && !imageError.main,
     ].filter(Boolean).length === 1
 
-  const handleCopyToClipboard = (
-    text: Maybe<string | number>,
-    label: string,
-  ) => {
+  const handleCopyToClipboard = (text: Maybe<string | number>, label: string) => {
     if (!text) return
     const value = isNumber(text) ? text.toString() : text
     copyToClipboard(value, label)
@@ -128,12 +118,7 @@ function GameDetailsModal(props: Props) {
   const displayImage = getImageUrl(getDisplayImage(), selectedGame.title)
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="Game Details"
-      className="max-w-4xl"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Game Details" className="max-w-4xl">
       <div className="relative">
         {/* Header with Hero Image */}
         <div className="relative h-48 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-t-lg overflow-hidden">
@@ -235,9 +220,7 @@ function GameDetailsModal(props: Props) {
                   <button
                     type="button"
                     onClick={() =>
-                      handleImageClick(
-                        activeImageTab === 'main' ? 'imageUrl' : activeImageTab,
-                      )
+                      handleImageClick(activeImageTab === 'main' ? 'imageUrl' : activeImageTab)
                     }
                     className="w-full block"
                   >
@@ -332,10 +315,7 @@ function GameDetailsModal(props: Props) {
                       type="button"
                       onClick={() => {
                         if (!selectedGame.submitter?.id) return
-                        handleCopyToClipboard(
-                          selectedGame.submitter.id,
-                          'Submitter ID',
-                        )
+                        handleCopyToClipboard(selectedGame.submitter.id, 'Submitter ID')
                       }}
                       className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
                       title="Copy User ID"
@@ -354,10 +334,10 @@ function GameDetailsModal(props: Props) {
                     </span>
                   </div>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {formatDate(selectedGame.submittedAt!)}
+                    <LocalizedDate date={selectedGame.submittedAt!} format="date" />
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {formatTimeAgo(selectedGame.submittedAt!)}
+                    <LocalizedDate date={selectedGame.submittedAt!} format="timeAgo" />
                   </p>
                 </div>
               </div>
@@ -408,9 +388,7 @@ function GameDetailsModal(props: Props) {
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Game ID:
-                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Game ID:</span>
                       <div className="flex items-center gap-1 ml-4">
                         <Code
                           label={`${selectedGame.id.slice(0, 10)}...`}
@@ -431,9 +409,7 @@ function GameDetailsModal(props: Props) {
                     </div>
                     {selectedGame.tgdbGameId && (
                       <div className="flex items-center">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          TGDB ID:
-                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">TGDB ID:</span>
                         <div className="flex items-center gap-1 ml-4">
                           <Code
                             value={selectedGame.tgdbGameId}
@@ -442,10 +418,7 @@ function GameDetailsModal(props: Props) {
                           <button
                             type="button"
                             onClick={() =>
-                              handleCopyToClipboard(
-                                selectedGame.tgdbGameId,
-                                'TheGamesDB ID',
-                              )
+                              handleCopyToClipboard(selectedGame.tgdbGameId, 'TheGamesDB ID')
                             }
                             className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             title="Copy Game ID"
@@ -474,11 +447,7 @@ function GameDetailsModal(props: Props) {
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="outline"
-              onClick={props.onClose}
-              className="min-w-[100px]"
-            >
+            <Button variant="outline" onClick={props.onClose} className="min-w-[100px]">
               Close
             </Button>
             <Button

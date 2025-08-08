@@ -20,10 +20,7 @@ export async function ensureCookieBannerDismissed(page: Page) {
           performance: false,
         }),
       )
-      localStorage.setItem(
-        `${PREFIX}cookie_consent_date`,
-        new Date().toISOString(),
-      )
+      localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
     })
   } catch {
     // Ignore if localStorage is not available

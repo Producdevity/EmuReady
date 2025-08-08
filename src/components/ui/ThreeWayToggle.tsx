@@ -22,11 +22,7 @@ export interface ThreeWayToggleOption<T extends string> {
 }
 
 interface Props<T extends string> {
-  options: [
-    ThreeWayToggleOption<T>,
-    ThreeWayToggleOption<T>,
-    ThreeWayToggleOption<T>,
-  ]
+  options: [ThreeWayToggleOption<T>, ThreeWayToggleOption<T>, ThreeWayToggleOption<T>]
   value: T
   onChange: (value: T) => void
   className?: string

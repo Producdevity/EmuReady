@@ -39,7 +39,7 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.9.0'
+const CACHE_NAME = 'emuready_v0.9.1'
 
 /** URLs cached during the installation step. */
 const urlsToCache = [
@@ -60,9 +60,7 @@ self.addEventListener(
   'install',
   /** @param {SWExtendableEvent} event */ (event) => {
     self.skipWaiting()
-    event.waitUntil(
-      caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)),
-    )
+    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)))
   },
 )
 
@@ -98,10 +96,7 @@ self.addEventListener(
   /** @param {SWFetchEvent} event */ (event) => {
     // Only handle GET for http(s) and same‑origin assets.
     if (event.request.method !== 'GET') return
-    if (
-      !event.request.url.startsWith('http://') &&
-      !event.request.url.startsWith('https://')
-    )
+    if (!event.request.url.startsWith('http://') && !event.request.url.startsWith('https://'))
       return
 
     const url = new URL(event.request.url)
@@ -116,8 +111,7 @@ self.addEventListener(
 
         const fetchRequest = event.request.clone()
         return fetch(fetchRequest).then((netRes) => {
-          if (!netRes || netRes.status !== 200 || netRes.type !== 'basic')
-            return netRes
+          if (!netRes || netRes.status !== 200 || netRes.type !== 'basic') return netRes
 
           const resClone = netRes.clone()
           caches.open(CACHE_NAME).then((cache) => {
@@ -165,15 +159,12 @@ self.addEventListener(
   /** @param {SWNotificationClickEvent} event */ (event) => {
     event.notification.close()
     event.waitUntil(
-      clients
-        .matchAll({ type: 'window', includeUncontrolled: true })
-        .then((wins) => {
-          for (const winClient of wins) {
-            if (winClient.url === event.notification.data.url)
-              return winClient.focus()
-          }
-          return clients.openWindow(event.notification.data.url)
-        }),
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+        for (const winClient of wins) {
+          if (winClient.url === event.notification.data.url) return winClient.focus()
+        }
+        return clients.openWindow(event.notification.data.url)
+      }),
     )
   },
 )

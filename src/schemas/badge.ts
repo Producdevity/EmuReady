@@ -24,14 +24,8 @@ const TAILWIND_COLORS = [
 ] as const
 
 export const CreateBadgeSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name is required')
-    .max(50, 'Name must be 50 characters or less'),
-  description: z
-    .string()
-    .max(200, 'Description must be 200 characters or less')
-    .optional(),
+  name: z.string().min(1, 'Name is required').max(50, 'Name must be 50 characters or less'),
+  description: z.string().max(200, 'Description must be 200 characters or less').optional(),
   color: z
     .string()
     .regex(/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color')
@@ -46,10 +40,7 @@ export const UpdateBadgeSchema = z.object({
     .min(1, 'Name is required')
     .max(50, 'Name must be 50 characters or less')
     .optional(),
-  description: z
-    .string()
-    .max(200, 'Description must be 200 characters or less')
-    .optional(),
+  description: z.string().max(200, 'Description must be 200 characters or less').optional(),
   color: z
     .string()
     .regex(/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color')
@@ -98,17 +89,13 @@ export const RemoveBadgeByIdSchema = z.object({
 })
 
 export const BulkAssignBadgesSchema = z.object({
-  userIds: z
-    .array(z.string().uuid('Invalid user ID'))
-    .min(1, 'At least one user ID is required'),
+  userIds: z.array(z.string().uuid('Invalid user ID')).min(1, 'At least one user ID is required'),
   badgeId: z.string().uuid('Invalid badge ID'),
   notes: z.string().max(500, 'Notes must be 500 characters or less').optional(),
   color: z.enum(TAILWIND_COLORS).default('blue'),
 })
 
 export const BulkRemoveBadgesSchema = z.object({
-  userIds: z
-    .array(z.string().uuid('Invalid user ID'))
-    .min(1, 'At least one user ID is required'),
+  userIds: z.array(z.string().uuid('Invalid user ID')).min(1, 'At least one user ID is required'),
   badgeId: z.string().uuid('Invalid badge ID'),
 })

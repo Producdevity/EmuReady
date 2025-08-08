@@ -18,6 +18,7 @@ import {
   useConfirmDialog,
   Badge,
   Pagination,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -43,19 +44,13 @@ const BAN_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', defaultVisible: true },
 ]
 
-const getBanStatusBadgeVariant = (ban: {
-  isActive: boolean
-  expiresAt: Date | null
-}) => {
+const getBanStatusBadgeVariant = (ban: { isActive: boolean; expiresAt: Date | null }) => {
   if (!ban.isActive) return 'default'
   if (ban.expiresAt && new Date(ban.expiresAt) <= new Date()) return 'warning'
   return 'danger'
 }
 
-const getBanStatusText = (ban: {
-  isActive: boolean
-  expiresAt: Date | null
-}) => {
+const getBanStatusText = (ban: { isActive: boolean; expiresAt: Date | null }) => {
   if (!ban.isActive) return 'Lifted'
   if (ban.expiresAt && new Date(ban.expiresAt) <= new Date()) return 'Expired'
   if (ban.expiresAt) return 'Temporary'
@@ -86,8 +81,7 @@ function AdminUserBansPage() {
 
   const currentUserPermissions = currentUserQuery.data?.permissions
   const canCreateBans =
-    currentUserPermissions &&
-    currentUserPermissions.includes(PERMISSIONS.MANAGE_USER_BANS)
+    currentUserPermissions && currentUserPermissions.includes(PERMISSIONS.MANAGE_USER_BANS)
 
   const bansStatsQuery = api.userBans.getStats.useQuery()
   const bansQuery = api.userBans.getAll.useQuery({
@@ -194,24 +188,15 @@ function AdminUserBansPage() {
       headerActions={
         <div className="flex gap-2">
           {canCreateBans && (
-            <Button
-              onClick={() => setCreateBanModal({ isOpen: true })}
-              variant="default"
-            >
+            <Button onClick={() => setCreateBanModal({ isOpen: true })} variant="default">
               New Ban
             </Button>
           )}
-          <ColumnVisibilityControl
-            columns={BAN_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={BAN_COLUMNS} columnVisibility={columnVisibility} />
         </div>
       }
     >
-      <AdminStatsDisplay
-        stats={statsData}
-        isLoading={bansStatsQuery.isPending}
-      />
+      <AdminStatsDisplay stats={statsData} isLoading={bansStatsQuery.isPending} />
 
       <AdminSearchFilters<BanSortField>
         table={table}
@@ -346,14 +331,16 @@ function AdminUserBansPage() {
                     )}
                     {columnVisibility.isColumnVisible('bannedAt') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(ban.bannedAt).toLocaleDateString()}
+                        <LocalizedDate date={ban.bannedAt} format="date" />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('expiresAt') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {ban.expiresAt
-                          ? new Date(ban.expiresAt).toLocaleDateString()
-                          : 'Never'}
+                        {ban.expiresAt ? (
+                          <LocalizedDate date={ban.expiresAt} format="date" />
+                        ) : (
+                          'Never'
+                        )}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (

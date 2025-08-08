@@ -1,10 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Input } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -59,15 +54,12 @@ function CustomFieldTypeText<TFieldValues extends FieldValues = FieldValues>(
             value={field.value as string}
             onChange={(e) => field.onChange(e.target.value)}
             placeholder={
-              props.fieldDef.placeholder ||
-              `Enter ${props.fieldDef.label.toLowerCase()}`
+              props.fieldDef.placeholder || `Enter ${props.fieldDef.label.toLowerCase()}`
             }
           />
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>
   )
 }

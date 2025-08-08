@@ -151,10 +151,7 @@ export const SCALING_FILTER_MAPPING: Record<string, ScalingFilter> = {
   Other: 1,
 }
 
-export const OPTIMIZE_SPIRV_OUTPUT_MAPPING: Record<
-  string,
-  OptimizeSpirvOutput
-> = {
+export const OPTIMIZE_SPIRV_OUTPUT_MAPPING: Record<string, OptimizeSpirvOutput> = {
   Never: 0,
   'On Load': 1,
   Always: 2,
@@ -219,19 +216,16 @@ export const EdenDefaults = {
   getDefaultVsyncMode: (): VSyncMode => DEFAULT_VSYNC_MODE,
 
   // Compression/decoding defaults
-  getDefaultAstcRecompression: (): AstcRecompression =>
-    DEFAULT_ASTC_RECOMPRESSION,
+  getDefaultAstcRecompression: (): AstcRecompression => DEFAULT_ASTC_RECOMPRESSION,
   getDefaultNvdecEmulation: (): NvdecEmulation => DEFAULT_NVDEC_EMULATION,
 
   // Memory/performance defaults
   getDefaultVramUsageMode: (): VramUsageMode => DEFAULT_VRAM_USAGE_MODE,
   getDefaultDynamicState: (): DynamicState => DEFAULT_DYNAMIC_STATE,
-  getDefaultOptimizeSpirvOutput: (): OptimizeSpirvOutput =>
-    DEFAULT_OPTIMIZE_SPIRV_OUTPUT,
+  getDefaultOptimizeSpirvOutput: (): OptimizeSpirvOutput => DEFAULT_OPTIMIZE_SPIRV_OUTPUT,
 
   // Audio defaults
-  getDefaultAudioOutputEngine: (): AudioOutputEngine =>
-    DEFAULT_AUDIO_OUTPUT_ENGINE,
+  getDefaultAudioOutputEngine: (): AudioOutputEngine => DEFAULT_AUDIO_OUTPUT_ENGINE,
 
   // Validation functions
   isNoDriverValue: (value: string): boolean => NO_DRIVER_VALUES.includes(value),

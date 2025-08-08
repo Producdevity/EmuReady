@@ -3,11 +3,10 @@
 import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
 import { Edit, Shield, Calendar, UserIcon, Award } from 'lucide-react'
-import { TrustLevelBadge } from '@/components/ui'
+import { TrustLevelBadge, LocalizedDate } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import { getRoleColor } from '@/utils/badgeColors'
-import { formatMonthYear } from '@/utils/date'
 import { formatUserRole } from '@/utils/format'
 import ProfileUpload from './ProfileUpload'
 
@@ -34,9 +33,7 @@ function ProfileHeader(props: Props) {
           <div className="flex-shrink-0">
             {props.onImageUpload ? (
               <ProfileUpload
-                currentImage={
-                  props.currentImage ?? props.profileData?.profileImage
-                }
+                currentImage={props.currentImage ?? props.profileData?.profileImage}
                 onUploadSuccess={props.onImageUpload}
               />
             ) : (
@@ -55,15 +52,12 @@ function ProfileHeader(props: Props) {
                   transition={{ delay: 0.2 }}
                   className="text-3xl lg:text-4xl font-bold text-white mb-2"
                 >
-                  {props.profileData?.name ??
-                    props.clerkUser.fullName ??
-                    'Anonymous User'}
+                  {props.profileData?.name ?? props.clerkUser.fullName ?? 'Anonymous User'}
                 </motion.h1>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <span className="text-blue-100 font-medium">
-                    {props.clerkUser.primaryEmailAddress?.emailAddress ??
-                      props.profileData?.email}
+                    {props.clerkUser.primaryEmailAddress?.emailAddress ?? props.profileData?.email}
                   </span>
 
                   {props.profileData?.role && (
@@ -121,9 +115,14 @@ function ProfileHeader(props: Props) {
                   <span className="text-blue-100 font-medium">Joined</span>
                 </div>
                 <p className="text-white text-lg font-semibold">
-                  {props.profileData?.createdAt
-                    ? formatMonthYear(props.profileData.createdAt)
-                    : formatMonthYear(props.clerkUser.createdAt ?? new Date())}
+                  {props.profileData?.createdAt ? (
+                    <LocalizedDate date={props.profileData.createdAt} format="monthYear" />
+                  ) : (
+                    <LocalizedDate
+                      date={props.clerkUser.createdAt ?? new Date()}
+                      format="monthYear"
+                    />
+                  )}
                 </p>
               </motion.div>
 
@@ -135,14 +134,10 @@ function ProfileHeader(props: Props) {
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Shield className="w-5 h-5 text-blue-200" />
-                  <span className="text-blue-100 font-medium">
-                    Access Level
-                  </span>
+                  <span className="text-blue-100 font-medium">Access Level</span>
                 </div>
                 <p className="text-white text-lg font-semibold">
-                  {props.profileData?.role
-                    ? formatUserRole(props.profileData.role)
-                    : 'Standard'}
+                  {props.profileData?.role ? formatUserRole(props.profileData.role) : 'Standard'}
                 </p>
               </motion.div>
 
@@ -155,9 +150,7 @@ function ProfileHeader(props: Props) {
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Award className="w-5 h-5 text-blue-200" />
-                    <span className="text-blue-100 font-medium">
-                      Trust Level
-                    </span>
+                    <span className="text-blue-100 font-medium">Trust Level</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     <TrustLevelBadge

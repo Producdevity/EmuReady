@@ -63,9 +63,7 @@ function PcReportListingModal(props: Props) {
         description: description.trim() || undefined,
       } satisfies RouterInput['pcListings']['createReport'])
 
-      toast.success(
-        'Report submitted successfully. Thank you for helping keep our community safe!',
-      )
+      toast.success('Report submitted successfully. Thank you for helping keep our community safe!')
       props.onSuccess()
     } catch (err) {
       console.error(err)
@@ -79,17 +77,12 @@ function PcReportListingModal(props: Props) {
   }
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={handleClose}
-      title="Report PC Listing"
-    >
+    <Modal isOpen={props.isOpen} onClose={handleClose} title="Report PC Listing">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Help us maintain a safe and accurate community by reporting
-            inappropriate content. All reports are reviewed by our moderation
-            team.
+            Help us maintain a safe and accurate community by reporting inappropriate content. All
+            reports are reviewed by our moderation team.
           </p>
         </div>
 
@@ -121,9 +114,7 @@ function PcReportListingModal(props: Props) {
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
             Additional details{' '}
-            {reason === ReportReason.OTHER && (
-              <span className="text-red-500">*</span>
-            )}
+            {reason === ReportReason.OTHER && <span className="text-red-500">*</span>}
           </label>
           <textarea
             id="description"

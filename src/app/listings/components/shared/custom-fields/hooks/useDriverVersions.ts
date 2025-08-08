@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  type DriverRelease,
-  fetchDriverVersions,
-} from '../utils/fetchDriverVersions'
+import { type DriverRelease, fetchDriverVersions } from '../utils/fetchDriverVersions'
 
 export function useDriverVersions() {
   const cache = useRef<DriverRelease[] | null>(null)

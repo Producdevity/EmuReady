@@ -7,11 +7,7 @@ import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { useAdminTable } from '@/app/admin/hooks'
-import {
-  AdminPageLayout,
-  AdminTableContainer,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import { SystemIcon } from '@/components/icons'
 import {
   Button,
@@ -31,19 +27,15 @@ import {
   ViewButton,
   Badge,
   useConfirmDialog,
+  LocalizedDate,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import {
-  useLocalStorage,
-  useColumnVisibility,
-  type ColumnDefinition,
-} from '@/hooks'
+import { useLocalStorage, useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
-import { formatDate } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission } from '@/utils/permissions'
@@ -75,22 +67,19 @@ const GAME_APPROVALS_COLUMNS: ColumnDefinition[] = [
 function GameApprovalsPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [processingAction, setProcessingAction] =
-    useState<Nullable<ProcessingAction>>(null)
+  const [processingAction, setProcessingAction] = useState<Nullable<ProcessingAction>>(null)
   const [processingGameId, setProcessingGameId] = useState<string | null>(null)
-  const [confirmationModal, setConfirmationModal] =
-    useState<ConfirmationModalState>({
-      isOpen: false,
-      gameId: null,
-      action: null,
-      gameTitle: '',
-    })
+  const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>({
+    isOpen: false,
+    gameId: null,
+    action: null,
+    gameTitle: '',
+  })
   const confirm = useConfirmDialog()
 
   // Image preview state
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
-  const [selectedGameForImagePreview, setSelectedGameForImagePreview] =
-    useState<Game | null>(null)
+  const [selectedGameForImagePreview, setSelectedGameForImagePreview] = useState<Game | null>(null)
 
   // Bulk selection state
   const [selectedGameIds, setSelectedGameIds] = useState<string[]>([])
@@ -105,8 +94,10 @@ function GameApprovalsPage() {
     storageKey: storageKeys.columnVisibility.adminGameApprovals,
   })
 
-  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] =
-    useLocalStorage(storageKeys.showSystemIcons, false)
+  const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
+    storageKeys.showSystemIcons,
+    false,
+  )
 
   const pendingGamesQuery = api.games.getPendingGames.useQuery({
     limit: table.limit,
@@ -185,9 +176,7 @@ function GameApprovalsPage() {
 
   const handleSelectGame = (gameId: string, selected: boolean) => {
     setSelectedGameIds(
-      selected
-        ? (prev) => [...prev, gameId]
-        : (prev) => prev.filter((id) => id !== gameId),
+      selected ? (prev) => [...prev, gameId] : (prev) => prev.filter((id) => id !== gameId),
     )
   }
 
@@ -259,9 +248,7 @@ function GameApprovalsPage() {
   }
 
   const selectedGame = selectedGameId
-    ? (pendingGamesQuery.data?.games.find(
-        (game) => game.id === selectedGameId,
-      ) ?? null)
+    ? (pendingGamesQuery.data?.games.find((game) => game.id === selectedGameId) ?? null)
     : null
 
   const filteredGames = pendingGamesQuery.data?.games ?? []
@@ -441,17 +428,12 @@ function GameApprovalsPage() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredGames.map((game) => (
-                    <tr
-                      key={game.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
+                    <tr key={game.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedGameIds.includes(game.id)}
-                          onChange={(e) =>
-                            handleSelectGame(game.id, e.target.checked)
-                          }
+                          onChange={(e) => handleSelectGame(game.id, e.target.checked)}
                           className="rounded border-gray-300"
                         />
                       </td>
@@ -509,9 +491,7 @@ function GameApprovalsPage() {
                                       </Link>
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    {game.title}
-                                  </TooltipContent>
+                                  <TooltipContent side="top">{game.title}</TooltipContent>
                                 </Tooltip>
                               ) : (
                                 <Link
@@ -529,9 +509,7 @@ function GameApprovalsPage() {
                                     {game.id.length > 20 && '...'}
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="bottom">
-                                  ID: {game.id}
-                                </TooltipContent>
+                                <TooltipContent side="bottom">ID: {game.id}</TooltipContent>
                               </Tooltip>
                             </div>
                           </div>
@@ -539,9 +517,7 @@ function GameApprovalsPage() {
                       )}
                       {columnVisibility.isColumnVisible('system') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {isSystemIconsHydrated &&
-                          showSystemIcons &&
-                          game.system?.key ? (
+                          {isSystemIconsHydrated && showSystemIcons && game.system?.key ? (
                             <div className="flex items-center gap-2">
                               <SystemIcon
                                 name={game.system.name}
@@ -579,7 +555,7 @@ function GameApprovalsPage() {
                       )}
                       {columnVisibility.isColumnVisible('submittedAt') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {formatDate(game.submittedAt!)}
+                          <LocalizedDate date={game.submittedAt!} format="date" />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('status') && (
@@ -602,30 +578,22 @@ function GameApprovalsPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <ApproveButton
-                              onClick={() =>
-                                showConfirmation(game.id, 'approve')
-                              }
+                              onClick={() => showConfirmation(game.id, 'approve')}
                               disabled={
-                                processingAction === 'approve' &&
-                                processingGameId === game.id
+                                processingAction === 'approve' && processingGameId === game.id
                               }
                               isLoading={
-                                processingAction === 'approve' &&
-                                processingGameId === game.id
+                                processingAction === 'approve' && processingGameId === game.id
                               }
                               title="Approve Game"
                             />
                             <RejectButton
-                              onClick={() =>
-                                showConfirmation(game.id, 'reject')
-                              }
+                              onClick={() => showConfirmation(game.id, 'reject')}
                               disabled={
-                                processingAction === 'reject' &&
-                                processingGameId === game.id
+                                processingAction === 'reject' && processingGameId === game.id
                               }
                               isLoading={
-                                processingAction === 'reject' &&
-                                processingGameId === game.id
+                                processingAction === 'reject' && processingGameId === game.id
                               }
                               title="Reject Game"
                             />

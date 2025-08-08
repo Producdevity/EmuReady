@@ -1,8 +1,5 @@
 import { AppError, ResourceError } from '@/lib/errors'
-import {
-  CreateListingReportSchema,
-  GetUserReportStatsSchema,
-} from '@/schemas/listingReport'
+import { CreateListingReportSchema, GetUserReportStatsSchema } from '@/schemas/listingReport'
 import {
   createMobileTRPCRouter,
   mobileProtectedProcedure,

@@ -93,9 +93,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     if (debounceTime < 200) return
     loadItems('')
       .then(setSuggestions)
-      .catch((error) =>
-        console.error('Error fetching/filtering suggestions:', error),
-      )
+      .catch((error) => console.error('Error fetching/filtering suggestions:', error))
   }, [loadItems, hasInitialLoad, debounceTime])
 
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
@@ -110,9 +108,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     }
 
     if (staticItems && staticItems.length > 0) {
-      const staticSelectedItem = staticItems.find(
-        (item) => optionToValue(item) === value,
-      )
+      const staticSelectedItem = staticItems.find((item) => optionToValue(item) === value)
       if (staticSelectedItem) {
         setInputValue(optionToLabel(staticSelectedItem))
         return
@@ -121,22 +117,12 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
 
     if (!loadItems) return
 
-    const selectedItem = suggestions.find(
-      (item) => optionToValue(item) === value,
-    )
+    const selectedItem = suggestions.find((item) => optionToValue(item) === value)
     if (selectedItem) return setInputValue(optionToLabel(selectedItem))
 
     // If we reach here and no item was found, but value is not null,
     // it might mean the item hasn't been loaded yet, so keep current input
-  }, [
-    value,
-    staticItems,
-    optionToValue,
-    optionToLabel,
-    suggestions,
-    loadItems,
-    isUserTyping,
-  ])
+  }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems, isUserTyping])
 
   const performSearch = useCallback(
     async (query: string) => {
@@ -170,10 +156,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
               if (filterKeys.length > 0) {
                 return filterKeys.some((key) => {
                   const val = item[key]
-                  return (
-                    typeof val === 'string' &&
-                    val.toLowerCase().includes(lowerQuery)
-                  )
+                  return typeof val === 'string' && val.toLowerCase().includes(lowerQuery)
                 })
               } else {
                 // Default to filtering by label if no filterKeys provided
@@ -246,10 +229,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           suggestions.find((item) => optionToValue(item) === value)
 
         // Clear selection if the typed text doesn't match the selected item's label
-        if (
-          currentSelectedItem &&
-          optionToLabel(currentSelectedItem) !== newQuery
-        ) {
+        if (currentSelectedItem && optionToLabel(currentSelectedItem) !== newQuery) {
           // Delay the onChange call slightly to avoid race condition with useEffect
           setTimeout(() => onChange(null), 0)
         }
@@ -298,15 +278,11 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     switch (ev.key) {
       case 'ArrowDown':
         ev.preventDefault()
-        setHighlightedIndex((prev) =>
-          prev < suggestions.length - 1 ? prev + 1 : 0,
-        )
+        setHighlightedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0))
         break
       case 'ArrowUp':
         ev.preventDefault()
-        setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : suggestions.length - 1,
-        )
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1))
         break
       case 'Enter':
         if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
@@ -352,10 +328,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const handleInputBlur = (_e: FocusEvent<HTMLInputElement>) => {
     onBlur?.()
     setTimeout(() => {
-      if (
-        listRef.current &&
-        !listRef.current.contains(document.activeElement)
-      ) {
+      if (listRef.current && !listRef.current.contains(document.activeElement)) {
         setIsOpen(false)
       }
     }, 100)
@@ -364,9 +337,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   useEffect(() => {
     const currentList = listRef.current
     if (isOpen && highlightedIndex >= 0 && currentList) {
-      const optionElement = currentList.children[highlightedIndex] as
-        | HTMLLIElement
-        | undefined
+      const optionElement = currentList.children[highlightedIndex] as HTMLLIElement | undefined
       if (optionElement && typeof optionElement.scrollIntoView === 'function') {
         optionElement.scrollIntoView({
           behavior: 'smooth',
@@ -475,68 +446,62 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         )}
       </div>
 
-      {isOpen &&
-        (suggestions.length > 0 ||
-          showNoResults ||
-          showMinCharsMessage ||
-          isLoading) && (
-          <ul
-            ref={listRef}
-            id="autocomplete-list"
-            role="listbox"
-            className="absolute z-[70] mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
-          >
-            <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
-              {isLoading
-                ? 'Loading...'
-                : showNoResults
-                  ? 'No results found.'
-                  : showMinCharsMessage
-                    ? `Type at least ${minCharsToTrigger} characters to search`
-                    : null}
-            </li>
+      {isOpen && (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading) && (
+        <ul
+          ref={listRef}
+          id="autocomplete-list"
+          role="listbox"
+          className="absolute z-[70] mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
+        >
+          <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
+            {isLoading
+              ? 'Loading...'
+              : showNoResults
+                ? 'No results found.'
+                : showMinCharsMessage
+                  ? `Type at least ${minCharsToTrigger} characters to search`
+                  : null}
+          </li>
 
-            {!isLoading &&
-              !showNoResults &&
-              !showMinCharsMessage &&
-              suggestions.map((item, idx) => {
-                const itemValue = optionToValue(item)
-                const isHighlighted = idx === highlightedIndex
-                return (
-                  <li
-                    key={itemValue}
-                    id={`option-${itemValue}`}
-                    role="option"
-                    aria-selected={isHighlighted}
-                    className={cn(
-                      'flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl',
-                      isHighlighted
-                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
-                        : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
-                    )}
-                    onMouseDown={(ev) => {
-                      ev.preventDefault()
-                      handleOptionClick(item)
-                    }}
-                    onMouseEnter={() => setHighlightedIndex(idx)}
-                  >
-                    {customOptionRenderer ? (
-                      customOptionRenderer(item, isHighlighted)
-                    ) : (
-                      <>
-                        {optionToIcon && (
-                          <span className="mr-2 flex-shrink-0">
-                            {optionToIcon(item)}
-                          </span>
-                        )}
-                        <span className="flex-grow">{optionToLabel(item)}</span>
-                      </>
-                    )}
-                  </li>
-                )
-              })}
-          </ul>
-        )}
+          {!isLoading &&
+            !showNoResults &&
+            !showMinCharsMessage &&
+            suggestions.map((item, idx) => {
+              const itemValue = optionToValue(item)
+              const isHighlighted = idx === highlightedIndex
+              return (
+                <li
+                  key={itemValue}
+                  id={`option-${itemValue}`}
+                  role="option"
+                  aria-selected={isHighlighted}
+                  className={cn(
+                    'flex items-center px-4 py-2 cursor-pointer select-none transition-colors rounded-xl',
+                    isHighlighted
+                      ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
+                      : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
+                  )}
+                  onMouseDown={(ev) => {
+                    ev.preventDefault()
+                    handleOptionClick(item)
+                  }}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
+                >
+                  {customOptionRenderer ? (
+                    customOptionRenderer(item, isHighlighted)
+                  ) : (
+                    <>
+                      {optionToIcon && (
+                        <span className="mr-2 flex-shrink-0">{optionToIcon(item)}</span>
+                      )}
+                      <span className="flex-grow">{optionToLabel(item)}</span>
+                    </>
+                  )}
+                </li>
+              )
+            })}
+        </ul>
+      )}
     </div>
   )
 }

@@ -25,11 +25,7 @@ import {
   DeleteButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import {
-  useEmulatorLogos,
-  useColumnVisibility,
-  type ColumnDefinition,
-} from '@/hooks'
+import { useEmulatorLogos, useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
@@ -59,8 +55,7 @@ function AdminEmulatorsPage() {
 
   // Get current user to check permissions
   const userQuery = api.users.me.useQuery()
-  const canDeleteEmulators =
-    userQuery.data && hasPermission(userQuery.data.role, Role.MODERATOR)
+  const canDeleteEmulators = userQuery.data && hasPermission(userQuery.data.role, Role.MODERATOR)
 
   const emulatorsStatsQuery = api.emulators.getStats.useQuery()
   const emulatorsQuery = api.emulators.getForAdmin.useQuery({
@@ -105,8 +100,7 @@ function AdminEmulatorsPage() {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete Emulator',
-      description:
-        'Are you sure you want to delete this emulator? This action cannot be undone.',
+      description: 'Are you sure you want to delete this emulator? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -133,9 +127,7 @@ function AdminEmulatorsPage() {
             columns={EMULATORS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          {canDeleteEmulators && (
-            <Button onClick={() => openModal()}>Add Emulator</Button>
-          )}
+          {canDeleteEmulators && <Button onClick={() => openModal()}>Add Emulator</Button>}
         </>
       }
     >
@@ -217,10 +209,7 @@ function AdminEmulatorsPage() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {emulators.map((emulator) => (
-                    <tr
-                      key={emulator.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
+                    <tr key={emulator.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {columnVisibility.isColumnVisible('name') && (
                         <td className="px-6 py-4">
                           <Link
@@ -230,10 +219,7 @@ function AdminEmulatorsPage() {
                             <EmulatorIcon
                               name={emulator.name}
                               logo={emulator.logo}
-                              showLogo={
-                                emulatorLogos.isHydrated &&
-                                emulatorLogos.showEmulatorLogos
-                              }
+                              showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
                             />
                           </Link>
                         </td>
@@ -255,8 +241,7 @@ function AdminEmulatorsPage() {
                               href={`/admin/emulators/${emulator.id}/custom-fields`}
                               className={actionButtonClasses}
                             >
-                              <Settings className="mr-2 h-4 w-4" /> Custom
-                              Fields
+                              <Settings className="mr-2 h-4 w-4" /> Custom Fields
                             </Link>
                             <EditButton
                               href={`/admin/emulators/${emulator.id}`}

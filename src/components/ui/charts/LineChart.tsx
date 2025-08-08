@@ -53,11 +53,9 @@ export function LineChart(props: Props) {
     const yMinPadded = Math.max(0, yMin - yPadding)
     const yMaxPadded = yMax + yPadding
 
-    const xScale = (x: number) =>
-      ((x - xMin) / (xMax - xMin)) * chartWidth + padding
+    const xScale = (x: number) => ((x - xMin) / (xMax - xMin)) * chartWidth + padding
     const yScale = (y: number) =>
-      height -
-      (((y - yMinPadded) / (yMaxPadded - yMinPadded)) * chartHeight + padding)
+      height - (((y - yMinPadded) / (yMaxPadded - yMinPadded)) * chartHeight + padding)
 
     // Generate path data
     const pathData = props.data
@@ -70,12 +68,8 @@ export function LineChart(props: Props) {
 
     // Generate grid lines
     const gridLines = {
-      x: showGrid
-        ? [0, 0.25, 0.5, 0.75, 1].map((ratio) => padding + ratio * chartWidth)
-        : [],
-      y: showGrid
-        ? [0, 0.25, 0.5, 0.75, 1].map((ratio) => padding + ratio * chartHeight)
-        : [],
+      x: showGrid ? [0, 0.25, 0.5, 0.75, 1].map((ratio) => padding + ratio * chartWidth) : [],
+      y: showGrid ? [0, 0.25, 0.5, 0.75, 1].map((ratio) => padding + ratio * chartHeight) : [],
     }
 
     return { xScale, yScale, pathData, gridLines }
@@ -84,10 +78,7 @@ export function LineChart(props: Props) {
   if (props.data.length === 0) {
     return (
       <div
-        className={cn(
-          'flex items-center justify-center border rounded-lg',
-          props.className,
-        )}
+        className={cn('flex items-center justify-center border rounded-lg', props.className)}
         style={{ width, height }}
       >
         <span className="text-muted-foreground text-sm">No data available</span>

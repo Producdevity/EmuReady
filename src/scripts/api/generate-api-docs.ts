@@ -30,10 +30,7 @@ interface RouterInfo {
   }[]
 }
 
-function analyzeReturnStructure(
-  filePath: string,
-  procedureName: string,
-): string {
+function analyzeReturnStructure(filePath: string, procedureName: string): string {
   try {
     const content = readFileSync(filePath, 'utf-8')
 
@@ -42,9 +39,7 @@ function analyzeReturnStructure(
     if (startIndex === -1) return 'unknown'
 
     // Find the end of this procedure (next procedure or closing brace)
-    const nextProcedureMatch = content
-      .substring(startIndex + 1)
-      .search(/\w+:\s*\w+Procedure/)
+    const nextProcedureMatch = content.substring(startIndex + 1).search(/\w+:\s*\w+Procedure/)
     const endIndex =
       nextProcedureMatch === -1
         ? content.lastIndexOf('})') // End of router
@@ -53,14 +48,8 @@ function analyzeReturnStructure(
     const procedureBlock = content.substring(startIndex, endIndex)
 
     // Analyze the return patterns in this procedure block
-    if (
-      procedureBlock.includes('ctx.prisma') &&
-      procedureBlock.includes('findMany')
-    ) {
-      if (
-        procedureBlock.includes('_count') &&
-        procedureBlock.includes('include')
-      ) {
+    if (procedureBlock.includes('ctx.prisma') && procedureBlock.includes('findMany')) {
+      if (procedureBlock.includes('_count') && procedureBlock.includes('include')) {
         return 'array-with-relations-and-counts'
       } else if (procedureBlock.includes('include')) {
         return 'array-with-relations'
@@ -69,26 +58,15 @@ function analyzeReturnStructure(
       }
     }
 
-    if (
-      procedureBlock.includes('ctx.prisma') &&
-      procedureBlock.includes('findUnique')
-    ) {
-      return procedureBlock.includes('include')
-        ? 'object-with-relations'
-        : 'object-simple'
+    if (procedureBlock.includes('ctx.prisma') && procedureBlock.includes('findUnique')) {
+      return procedureBlock.includes('include') ? 'object-with-relations' : 'object-simple'
     }
 
-    if (
-      procedureBlock.includes('pagination') ||
-      procedureBlock.includes('total')
-    ) {
+    if (procedureBlock.includes('pagination') || procedureBlock.includes('total')) {
       return 'paginated-list'
     }
 
-    if (
-      procedureBlock.includes('create') ||
-      procedureBlock.includes('update')
-    ) {
+    if (procedureBlock.includes('create') || procedureBlock.includes('update')) {
       return 'mutation-result'
     }
 
@@ -150,10 +128,7 @@ function generateResponseExampleByStructure(
   }
 }
 
-function createArrayWithRelationsAndCounts(
-  routerName: string,
-  _procedureName: string,
-): unknown {
+function createArrayWithRelationsAndCounts(routerName: string, _procedureName: string): unknown {
   const baseItem = getBaseItemStructure(routerName)
   return [
     {
@@ -164,10 +139,7 @@ function createArrayWithRelationsAndCounts(
   ]
 }
 
-function createArrayWithRelations(
-  routerName: string,
-  _procedureName: string,
-): unknown {
+function createArrayWithRelations(routerName: string, _procedureName: string): unknown {
   const baseItem = getBaseItemStructure(routerName)
   return [
     {
@@ -177,17 +149,11 @@ function createArrayWithRelations(
   ]
 }
 
-function createSimpleArray(
-  routerName: string,
-  _procedureName: string,
-): unknown {
+function createSimpleArray(routerName: string, _procedureName: string): unknown {
   return [getBaseItemStructure(routerName)]
 }
 
-function createObjectWithRelations(
-  routerName: string,
-  _procedureName: string,
-): unknown {
+function createObjectWithRelations(routerName: string, _procedureName: string): unknown {
   const baseItem = getBaseItemStructure(routerName)
   return {
     ...baseItem,
@@ -195,17 +161,11 @@ function createObjectWithRelations(
   }
 }
 
-function createSimpleObject(
-  routerName: string,
-  _procedureName: string,
-): unknown {
+function createSimpleObject(routerName: string, _procedureName: string): unknown {
   return getBaseItemStructure(routerName)
 }
 
-function createPaginatedList(
-  routerName: string,
-  _procedureName: string,
-): unknown {
+function createPaginatedList(routerName: string, _procedureName: string): unknown {
   return {
     [getPluralName(routerName)]: [
       {
@@ -225,10 +185,7 @@ function createPaginatedList(
   }
 }
 
-function createMutationResult(
-  routerName: string,
-  procedureName: string,
-): unknown {
+function createMutationResult(routerName: string, procedureName: string): unknown {
   if (procedureName.startsWith('create')) {
     return {
       id: 'uuid-generated',
@@ -248,10 +205,7 @@ function createMutationResult(
   return { success: true }
 }
 
-function createGenericResponse(
-  routerName: string,
-  procedureName: string,
-): unknown {
+function createGenericResponse(routerName: string, procedureName: string): unknown {
   return {
     message: `Response from ${routerName}.${procedureName}`,
     data: getBaseItemStructure(routerName),
@@ -355,31 +309,21 @@ function getPluralName(routerName: string): string {
   return plurals[routerName] || `${routerName}s`
 }
 
-function generateExampleFromSchema(
-  jsonSchema: Record<string, unknown>,
-): Record<string, unknown> {
+function generateExampleFromSchema(jsonSchema: Record<string, unknown>): Record<string, unknown> {
   const example: Record<string, unknown> = {}
 
   // Handle direct properties
-  let properties = jsonSchema.properties as
-    | Record<string, Record<string, unknown>>
-    | undefined
+  let properties = jsonSchema.properties as Record<string, Record<string, unknown>> | undefined
   let required = jsonSchema.required as string[] | undefined
 
   // Handle $ref definitions
   if (!properties && jsonSchema.definitions && jsonSchema.$ref) {
     const refName = (jsonSchema.$ref as string).split('/').pop()
     if (refName) {
-      const definitions = jsonSchema.definitions as Record<
-        string,
-        Record<string, unknown>
-      >
+      const definitions = jsonSchema.definitions as Record<string, Record<string, unknown>>
       const definition = definitions[refName]
       if (definition) {
-        properties = definition.properties as Record<
-          string,
-          Record<string, unknown>
-        >
+        properties = definition.properties as Record<string, Record<string, unknown>>
         required = definition.required as string[] | undefined
       }
     }
@@ -431,8 +375,7 @@ function generateExampleFromSchema(
 function extractRouterInfo(filePath: string): RouterInfo | null {
   try {
     const content = readFileSync(filePath, 'utf-8')
-    const routerName =
-      filePath.split('/').pop()?.replace('.ts', '') || 'unknown'
+    const routerName = filePath.split('/').pop()?.replace('.ts', '') || 'unknown'
 
     const procedures: RouterInfo['procedures'] = []
 
@@ -446,9 +389,7 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
 
       // Extract JSDoc comment for this procedure
       const beforeProcedure = content.substring(0, match.index)
-      const lastCommentMatch = beforeProcedure.match(
-        /\/\*\*\s*\n\s*\*\s*(.+?)\s*\n\s*\*\//g,
-      )
+      const lastCommentMatch = beforeProcedure.match(/\/\*\*\s*\n\s*\*\s*(.+?)\s*\n\s*\*\//g)
       const description = lastCommentMatch
         ? lastCommentMatch[lastCommentMatch.length - 1]
             .replace(/\/\*\*\s*\n\s*\*\s*|\s*\n\s*\*\//g, '')
@@ -500,10 +441,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
           (mobileAuthSchemas as Record<string, unknown>)[schemaName]
 
         if (schema) {
-          const jsonSchema = zodToJsonSchema(
-            schema as never,
-            schemaName,
-          ) as Record<string, unknown>
+          const jsonSchema = zodToJsonSchema(schema as never, schemaName) as Record<string, unknown>
 
           // Add schema to components/schemas
           schemas[schemaName] = jsonSchema
@@ -524,8 +462,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
             // Queries use GET with input query parameter containing JSON string
             const schemaExample = generateExampleFromSchema(jsonSchema)
             const hasRequiredFields =
-              jsonSchema.required &&
-              (jsonSchema.required as string[]).length > 0
+              jsonSchema.required && (jsonSchema.required as string[]).length > 0
 
             parameters = [
               {
@@ -550,8 +487,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
       const endpoint: SwaggerEndpoint = {
         path,
         method,
-        summary:
-          procedure.description || `${procedure.name} - ${routerInfo.router}`,
+        summary: procedure.description || `${procedure.name} - ${routerInfo.router}`,
         description: procedure.description,
         tags: [routerInfo.router],
         parameters,
@@ -566,8 +502,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
                   properties: {
                     result: {
                       type: 'object',
-                      description:
-                        'tRPC result wrapper containing the actual response data',
+                      description: 'tRPC result wrapper containing the actual response data',
                       properties: {
                         data: {
                           type: 'object',
@@ -596,8 +531,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
             },
           },
           '400': {
-            description:
-              'Bad Request - Invalid input parameters or malformed JSON',
+            description: 'Bad Request - Invalid input parameters or malformed JSON',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/TRPCError' },
@@ -669,10 +603,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
   return { endpoints, schemas }
 }
 
-function generateOpenAPISpec(
-  endpoints: SwaggerEndpoint[],
-  schemas: Record<string, unknown>,
-) {
+function generateOpenAPISpec(endpoints: SwaggerEndpoint[], schemas: Record<string, unknown>) {
   // Group endpoints by path for OpenAPI spec
   const paths: Record<string, unknown> = {}
 
@@ -693,12 +624,10 @@ function generateOpenAPISpec(
   }
 
   // Get unique tags
-  const tags = Array.from(new Set(endpoints.flatMap((e) => e.tags))).map(
-    (tag) => ({
-      name: tag,
-      description: `${tag.charAt(0).toUpperCase() + tag.slice(1)} related endpoints`,
-    }),
-  )
+  const tags = Array.from(new Set(endpoints.flatMap((e) => e.tags))).map((tag) => ({
+    name: tag,
+    description: `${tag.charAt(0).toUpperCase() + tag.slice(1)} related endpoints`,
+  }))
 
   return {
     openapi: '3.0.0',
@@ -841,21 +770,18 @@ This API provides endpoints for:
                   properties: {
                     message: {
                       type: 'string',
-                      description:
-                        'Error message, often includes validation details',
+                      description: 'Error message, often includes validation details',
                     },
                     code: {
                       type: 'number',
-                      description:
-                        'tRPC error code (-32600 for BAD_REQUEST, etc.)',
+                      description: 'tRPC error code (-32600 for BAD_REQUEST, etc.)',
                     },
                     data: {
                       type: 'object',
                       properties: {
                         code: {
                           type: 'string',
-                          description:
-                            'Error type code (BAD_REQUEST, UNAUTHORIZED, etc.)',
+                          description: 'Error type code (BAD_REQUEST, UNAUTHORIZED, etc.)',
                         },
                         httpStatus: {
                           type: 'number',
@@ -863,13 +789,11 @@ This API provides endpoints for:
                         },
                         path: {
                           type: 'string',
-                          description:
-                            'tRPC procedure path (e.g., "games.getGames")',
+                          description: 'tRPC procedure path (e.g., "games.getGames")',
                         },
                         zodError: {
                           type: 'object',
-                          description:
-                            'Zod validation error details (if applicable)',
+                          description: 'Zod validation error details (if applicable)',
                           properties: {
                             formErrors: {
                               type: 'array',
@@ -923,27 +847,18 @@ interface EndpointInfo {
   security?: unknown[]
 }
 
-function generateMarkdownDocs(
-  openApiSpec: ReturnType<typeof generateOpenAPISpec>,
-): string {
+function generateMarkdownDocs(openApiSpec: ReturnType<typeof generateOpenAPISpec>): string {
   const { info, paths } = openApiSpec
-  const endpoints: EndpointInfo[] = Object.entries(paths).flatMap(
-    ([path, methods]) =>
-      Object.entries(methods as Record<string, unknown>).map(
-        ([method, operation]) => ({
-          path,
-          method: method.toUpperCase(),
-          ...(operation as Record<string, unknown>),
-        }),
-      ),
+  const endpoints: EndpointInfo[] = Object.entries(paths).flatMap(([path, methods]) =>
+    Object.entries(methods as Record<string, unknown>).map(([method, operation]) => ({
+      path,
+      method: method.toUpperCase(),
+      ...(operation as Record<string, unknown>),
+    })),
   ) as EndpointInfo[]
 
-  const publicEndpoints = endpoints.filter(
-    (e) => !e.security || e.security.length === 0,
-  )
-  const protectedEndpoints = endpoints.filter(
-    (e) => e.security && e.security.length > 0,
-  )
+  const publicEndpoints = endpoints.filter((e) => !e.security || e.security.length === 0)
+  const protectedEndpoints = endpoints.filter((e) => e.security && e.security.length > 0)
 
   return `# ${info.title}
 

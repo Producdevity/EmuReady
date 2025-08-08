@@ -38,9 +38,7 @@ export function MonitoringOverview() {
           <h3 className="text-sm font-medium">Cache Hit Rate</h3>
           <Gauge className="h-4 w-4 text-muted-foreground" />
         </div>
-        <div className="text-2xl font-bold">
-          {metrics.cacheHitRate.toFixed(1)}%
-        </div>
+        <div className="text-2xl font-bold">{metrics.cacheHitRate.toFixed(1)}%</div>
         <p className="text-xs text-muted-foreground">Real-time data</p>
       </Card>
 
@@ -58,9 +56,7 @@ export function MonitoringOverview() {
           <h3 className="text-sm font-medium">Cache Size</h3>
           <Database className="h-4 w-4 text-muted-foreground" />
         </div>
-        <div className="text-2xl font-bold">
-          {(metrics.bundleSize / 1024).toFixed(1)} KB
-        </div>
+        <div className="text-2xl font-bold">{(metrics.bundleSize / 1024).toFixed(1)} KB</div>
         <p className="text-xs text-muted-foreground">Total cache storage</p>
       </Card>
 

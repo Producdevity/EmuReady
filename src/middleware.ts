@@ -27,9 +27,7 @@ function checkRateLimit(identifier: string): boolean {
   // Skip rate limiting for localhost in test environment
   if (
     process.env.NODE_ENV === 'test' &&
-    (identifier === '::1' ||
-      identifier === '127.0.0.1' ||
-      identifier === 'localhost')
+    (identifier === '::1' || identifier === '127.0.0.1' || identifier === 'localhost')
   ) {
     return true
   }
@@ -120,9 +118,7 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
       clientId === 'unknown')
 
   if (!isTestLocalhost && !checkRateLimit(clientId)) {
-    console.warn(
-      `Rate limit exceeded for client: ${clientId}, path: ${pathname}`,
-    )
+    console.warn(`Rate limit exceeded for client: ${clientId}, path: ${pathname}`)
     return NextResponse.json(
       { error: 'Rate limit exceeded. Please try again later.' },
       {

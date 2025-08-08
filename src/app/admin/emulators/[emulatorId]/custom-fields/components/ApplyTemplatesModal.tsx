@@ -28,31 +28,28 @@ export default function ApplyTemplatesModal(props: Props) {
   const { data: templates, isLoading: isLoadingTemplates } =
     api.customFieldTemplates.getAll.useQuery()
 
-  const applyTemplatesMutation =
-    api.customFieldTemplates.applyToEmulator.useMutation({
-      onSuccess: (result) => {
-        setApplyResult({
-          success: true,
-          message: `Successfully applied ${result.createdFields} field${result.createdFields !== 1 ? 's' : ''} from ${result.templateNames.join(', ')}`,
-          details: result,
-        })
-        if (result.createdFields > 0) {
-          props.onSuccess()
-        }
-      },
-      onError: (error) => {
-        setApplyResult({
-          success: false,
-          message: error.message,
-        })
-      },
-    })
+  const applyTemplatesMutation = api.customFieldTemplates.applyToEmulator.useMutation({
+    onSuccess: (result) => {
+      setApplyResult({
+        success: true,
+        message: `Successfully applied ${result.createdFields} field${result.createdFields !== 1 ? 's' : ''} from ${result.templateNames.join(', ')}`,
+        details: result,
+      })
+      if (result.createdFields > 0) {
+        props.onSuccess()
+      }
+    },
+    onError: (error) => {
+      setApplyResult({
+        success: false,
+        message: error.message,
+      })
+    },
+  })
 
   function handleTemplateToggle(templateId: string) {
     setSelectedTemplateIds((prev) =>
-      prev.includes(templateId)
-        ? prev.filter((id) => id !== templateId)
-        : [...prev, templateId],
+      prev.includes(templateId) ? prev.filter((id) => id !== templateId) : [...prev, templateId],
     )
   }
 
@@ -112,8 +109,7 @@ export default function ApplyTemplatesModal(props: Props) {
             {applyResult.details && applyResult.details.skippedFields > 0 && (
               <p className="text-sm mt-2">
                 {applyResult.details.skippedFields} field
-                {applyResult.details.skippedFields !== 1 ? 's' : ''} skipped
-                (already exist)
+                {applyResult.details.skippedFields !== 1 ? 's' : ''} skipped (already exist)
               </p>
             )}
           </div>
@@ -123,9 +119,7 @@ export default function ApplyTemplatesModal(props: Props) {
           <div>Loading templates...</div>
         ) : !templates || templates.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400">
-              No custom field templates available.
-            </p>
+            <p className="text-gray-500 dark:text-gray-400">No custom field templates available.</p>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
               Create templates first in the Custom Field Templates section.
             </p>
@@ -133,12 +127,10 @@ export default function ApplyTemplatesModal(props: Props) {
         ) : (
           <>
             <div>
-              <h3 className="text-lg font-medium mb-4">
-                Select Templates to Apply
-              </h3>
+              <h3 className="text-lg font-medium mb-4">Select Templates to Apply</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Choose one or more templates to add their fields to this
-                emulator. Fields that already exist will be skipped.
+                Choose one or more templates to add their fields to this emulator. Fields that
+                already exist will be skipped.
               </p>
             </div>
 
@@ -182,9 +174,7 @@ export default function ApplyTemplatesModal(props: Props) {
                               <span className="ml-1 text-gray-500 dark:text-gray-400">
                                 ({getFieldTypeDisplayName(field.type)})
                               </span>
-                              {field.isRequired && (
-                                <span className="ml-1 text-red-500">*</span>
-                              )}
+                              {field.isRequired && <span className="ml-1 text-red-500">*</span>}
                             </span>
                           ))}
                         </div>
@@ -204,10 +194,7 @@ export default function ApplyTemplatesModal(props: Props) {
           {!applyResult?.success && (
             <Button
               onClick={handleApplyTemplates}
-              disabled={
-                selectedTemplateIds.length === 0 ||
-                applyTemplatesMutation.isPending
-              }
+              disabled={selectedTemplateIds.length === 0 || applyTemplatesMutation.isPending}
             >
               Apply Selected Templates
             </Button>

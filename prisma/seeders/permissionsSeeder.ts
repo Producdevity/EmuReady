@@ -366,10 +366,7 @@ export default async function permissionsSeeder(prisma: PrismaClient) {
       })
       console.info(`    ✓ ${permission.key}`)
     } catch (error) {
-      console.error(
-        `    ✗ Failed to create permission ${permission.key}:`,
-        error,
-      )
+      console.error(`    ✗ Failed to create permission ${permission.key}:`, error)
     }
   }
 
@@ -404,10 +401,7 @@ export default async function permissionsSeeder(prisma: PrismaClient) {
         })
         console.info(`      ✓ ${permissionKey}`)
       } catch (error) {
-        console.error(
-          `      ✗ Failed to assign ${permissionKey} to ${assignment.role}:`,
-          error,
-        )
+        console.error(`      ✗ Failed to assign ${permissionKey} to ${assignment.role}:`, error)
       }
     }
   }

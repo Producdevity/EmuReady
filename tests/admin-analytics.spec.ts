@@ -22,19 +22,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
     await expect(page).toHaveURL(/\/admin\/.*(analytics|stats)/)
   })
 
-  test('should display analytics dashboard with metric cards', async ({
-    page,
-  }) => {
+  test('should display analytics dashboard with metric cards', async ({ page }) => {
     // Analytics container must be present
-    const analyticsContainer = page.locator(
-      '[data-testid*="analytics"], .analytics-dashboard',
-    )
+    const analyticsContainer = page.locator('[data-testid*="analytics"], .analytics-dashboard')
     await expect(analyticsContainer).toBeVisible()
 
     // Must have metric cards
-    const metricCards = analyticsContainer.locator(
-      '.metric-card, [data-testid*="metric"]',
-    )
+    const metricCards = analyticsContainer.locator('.metric-card, [data-testid*="metric"]')
     const cardCount = await metricCards.count()
     expect(cardCount).toBeGreaterThan(0)
 
@@ -59,9 +53,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Look for user growth section
-      const userGrowth = page.locator(
-        '[data-testid*="user-growth"], .user-analytics',
-      )
+      const userGrowth = page.locator('[data-testid*="user-growth"], .user-analytics')
 
       if (await userGrowth.isVisible({ timeout: 3000 })) {
         // Key user metrics
@@ -73,9 +65,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         }
 
         for (const [label, pattern] of Object.entries(userMetrics)) {
-          const metric = userGrowth
-            .locator('.metric, .stat')
-            .filter({ hasText: pattern })
+          const metric = userGrowth.locator('.metric, .stat').filter({ hasText: pattern })
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()
             console.log(`${label}: ${value}`)
@@ -83,9 +73,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         }
 
         // Look for user growth chart
-        const growthChart = userGrowth.locator(
-          'canvas, svg, [data-testid*="chart"]',
-        )
+        const growthChart = userGrowth.locator('canvas, svg, [data-testid*="chart"]')
         if (await growthChart.isVisible({ timeout: 2000 })) {
           console.log('User growth chart displayed')
         }
@@ -98,9 +86,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Look for listing analytics
-      const listingAnalytics = page.locator(
-        '[data-testid*="listing-analytics"], .listing-stats',
-      )
+      const listingAnalytics = page.locator('[data-testid*="listing-analytics"], .listing-stats')
 
       if (await listingAnalytics.isVisible({ timeout: 3000 })) {
         // Listing metrics
@@ -115,17 +101,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
           const metricElement = listingAnalytics
             .locator('.metric, .stat-card')
             .filter({ hasText: metric })
-          if (
-            await metricElement.isVisible({ timeout: 1000 }).catch(() => false)
-          ) {
+          if (await metricElement.isVisible({ timeout: 1000 }).catch(() => false)) {
             console.log(`✓ ${metric} metric found`)
           }
         }
 
         // Top games/emulators table
-        const topTable = listingAnalytics.locator(
-          'table, [data-testid*="top-"]',
-        )
+        const topTable = listingAnalytics.locator('table, [data-testid*="top-"]')
         if (await topTable.isVisible({ timeout: 2000 })) {
           const rows = topTable.locator('tbody tr')
           const rowCount = await rows.count()
@@ -140,9 +122,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Engagement section
-      const engagement = page.locator(
-        '[data-testid*="engagement"], .engagement-analytics',
-      )
+      const engagement = page.locator('[data-testid*="engagement"], .engagement-analytics')
 
       if (await engagement.isVisible({ timeout: 3000 })) {
         // Engagement metrics
@@ -154,9 +134,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         }
 
         for (const [label, pattern] of Object.entries(engagementMetrics)) {
-          const metric = engagement
-            .locator('.metric')
-            .filter({ hasText: pattern })
+          const metric = engagement.locator('.metric').filter({ hasText: pattern })
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()
             console.log(`${label}: ${value}`)
@@ -177,30 +155,17 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Date range selector
-      const dateRange = page.locator(
-        '[data-testid*="date-range"], .date-range-picker',
-      )
+      const dateRange = page.locator('[data-testid*="date-range"], .date-range-picker')
 
       if (await dateRange.isVisible({ timeout: 3000 })) {
         await dateRange.click()
 
         // Common date ranges
-        const ranges = [
-          'Today',
-          'Yesterday',
-          'Last 7 Days',
-          'Last 30 Days',
-          'This Month',
-          'Custom',
-        ]
+        const ranges = ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Custom']
 
         for (const range of ranges) {
-          const rangeOption = page
-            .locator('button, a')
-            .filter({ hasText: range })
-          if (
-            await rangeOption.isVisible({ timeout: 1000 }).catch(() => false)
-          ) {
+          const rangeOption = page.locator('button, a').filter({ hasText: range })
+          if (await rangeOption.isVisible({ timeout: 1000 }).catch(() => false)) {
             console.log(`✓ Date range: ${range}`)
           }
         }
@@ -224,15 +189,11 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Performance metrics
-      const performance = page.locator(
-        '[data-testid*="performance"], .performance-analytics',
-      )
+      const performance = page.locator('[data-testid*="performance"], .performance-analytics')
 
       if (await performance.isVisible({ timeout: 3000 })) {
         // API response times
-        const apiMetrics = performance.locator(
-          '[data-testid*="api"], .api-performance',
-        )
+        const apiMetrics = performance.locator('[data-testid*="api"], .api-performance')
         if (await apiMetrics.isVisible()) {
           const avgResponse = apiMetrics
             .locator('.metric')
@@ -244,17 +205,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         }
 
         // Page load times
-        const pageMetrics = performance.locator(
-          '[data-testid*="page-load"], .page-performance',
-        )
+        const pageMetrics = performance.locator('[data-testid*="page-load"], .page-performance')
         if (await pageMetrics.isVisible()) {
           console.log('Page load analytics available')
         }
 
         // Error rates
-        const errorRate = performance
-          .locator('.metric')
-          .filter({ hasText: /error.*rate/i })
+        const errorRate = performance.locator('.metric').filter({ hasText: /error.*rate/i })
         if (await errorRate.isVisible({ timeout: 1000 }).catch(() => false)) {
           const rate = await errorRate.textContent()
           console.log(`Error rate: ${rate}`)
@@ -268,9 +225,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Geographic distribution
-      const geoAnalytics = page.locator(
-        '[data-testid*="geographic"], .geo-analytics',
-      )
+      const geoAnalytics = page.locator('[data-testid*="geographic"], .geo-analytics')
 
       if (await geoAnalytics.isVisible({ timeout: 3000 })) {
         // Map visualization
@@ -280,9 +235,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         }
 
         // Country/region breakdown
-        const regionTable = geoAnalytics.locator(
-          'table, [data-testid*="regions"]',
-        )
+        const regionTable = geoAnalytics.locator('table, [data-testid*="regions"]')
         if (await regionTable.isVisible()) {
           const regions = regionTable.locator('tbody tr')
           const regionCount = await regions.count()
@@ -308,9 +261,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Device breakdown
-      const deviceAnalytics = page.locator(
-        '[data-testid*="device"], .device-analytics',
-      )
+      const deviceAnalytics = page.locator('[data-testid*="device"], .device-analytics')
 
       if (await deviceAnalytics.isVisible({ timeout: 3000 })) {
         // Device type chart
@@ -326,18 +277,14 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
           const deviceMetric = deviceAnalytics
             .locator('.metric, .device-stat')
             .filter({ hasText: device })
-          if (
-            await deviceMetric.isVisible({ timeout: 1000 }).catch(() => false)
-          ) {
+          if (await deviceMetric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const usage = await deviceMetric.textContent()
             console.log(`${device}: ${usage}`)
           }
         }
 
         // Browser breakdown
-        const browserStats = deviceAnalytics.locator(
-          '[data-testid*="browser"], .browser-stats',
-        )
+        const browserStats = deviceAnalytics.locator('[data-testid*="browser"], .browser-stats')
         if (await browserStats.isVisible()) {
           console.log('Browser usage statistics available')
         }
@@ -350,17 +297,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Export button
-      const exportButton = page
-        .locator('button')
-        .filter({ hasText: /export|download/i })
+      const exportButton = page.locator('button').filter({ hasText: /export|download/i })
 
       if (await exportButton.isVisible({ timeout: 3000 })) {
         await exportButton.click()
 
         // Export options
-        const exportDialog = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /export/i })
+        const exportDialog = page.locator('[role="dialog"]').filter({ hasText: /export/i })
         const exportMenu = page.locator('[role="menu"]')
 
         if (
@@ -371,20 +314,14 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
           const formats = ['PDF Report', 'CSV Data', 'Excel', 'Raw Data']
 
           for (const format of formats) {
-            const formatOption = page
-              .locator('button, a')
-              .filter({ hasText: format })
-            if (
-              await formatOption.isVisible({ timeout: 1000 }).catch(() => false)
-            ) {
+            const formatOption = page.locator('button, a').filter({ hasText: format })
+            if (await formatOption.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Export format: ${format}`)
             }
           }
 
           // Report customization
-          const customizeOptions = page.locator(
-            '[data-testid*="customize"], .export-options',
-          )
+          const customizeOptions = page.locator('[data-testid*="customize"], .export-options')
           if (await customizeOptions.isVisible()) {
             console.log('Report customization available')
           }
@@ -401,24 +338,18 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Real-time section
-      const realTime = page.locator(
-        '[data-testid*="realtime"], .realtime-analytics',
-      )
+      const realTime = page.locator('[data-testid*="realtime"], .realtime-analytics')
 
       if (await realTime.isVisible({ timeout: 3000 })) {
         // Active users now
-        const activeNow = realTime
-          .locator('.metric')
-          .filter({ hasText: /active.*now|online/i })
+        const activeNow = realTime.locator('.metric').filter({ hasText: /active.*now|online/i })
         if (await activeNow.isVisible()) {
           const count = await activeNow.textContent()
           console.log(`Active users now: ${count}`)
         }
 
         // Live activity feed
-        const activityFeed = realTime.locator(
-          '[data-testid*="activity"], .activity-feed',
-        )
+        const activityFeed = realTime.locator('[data-testid*="activity"], .activity-feed')
         if (await activityFeed.isVisible()) {
           const activities = activityFeed.locator('.activity-item, li')
           const activityCount = await activities.count()
@@ -426,9 +357,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         }
 
         // Auto-refresh indicator
-        const refreshIndicator = realTime.locator(
-          '[data-testid*="refresh"], .auto-refresh',
-        )
+        const refreshIndicator = realTime.locator('[data-testid*="refresh"], .auto-refresh')
         if (await refreshIndicator.isVisible()) {
           console.log('Real-time data auto-refresh enabled')
         }
@@ -441,39 +370,26 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
 
     if (page.url().includes('analytics') || page.url().includes('stats')) {
       // Conversion funnel
-      const conversions = page.locator(
-        '[data-testid*="conversion"], .conversion-analytics',
-      )
+      const conversions = page.locator('[data-testid*="conversion"], .conversion-analytics')
 
       if (await conversions.isVisible({ timeout: 3000 })) {
         // Funnel stages
-        const funnelStages = [
-          'Visitors',
-          'Registered Users',
-          'Active Users',
-          'Contributors',
-        ]
+        const funnelStages = ['Visitors', 'Registered Users', 'Active Users', 'Contributors']
 
         for (const stage of funnelStages) {
           const stageElement = conversions
             .locator('.funnel-stage, .stage')
             .filter({ hasText: stage })
-          if (
-            await stageElement.isVisible({ timeout: 1000 }).catch(() => false)
-          ) {
+          if (await stageElement.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await stageElement.textContent()
             console.log(`${stage}: ${value}`)
           }
         }
 
         // Conversion rates
-        const conversionRates = conversions.locator(
-          '.conversion-rate, [data-testid*="rate"]',
-        )
+        const conversionRates = conversions.locator('.conversion-rate, [data-testid*="rate"]')
         if ((await conversionRates.count()) > 0) {
-          console.log(
-            `${await conversionRates.count()} conversion rates tracked`,
-          )
+          console.log(`${await conversionRates.count()} conversion rates tracked`)
         }
       }
     }
@@ -492,15 +408,11 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         await customizeButton.click()
 
         // Customization panel
-        const customPanel = page.locator(
-          '[data-testid*="customize"], .dashboard-customize',
-        )
+        const customPanel = page.locator('[data-testid*="customize"], .dashboard-customize')
 
         if (await customPanel.isVisible({ timeout: 2000 })) {
           // Widget library
-          const widgetLibrary = customPanel.locator(
-            '[data-testid*="widgets"], .widget-library',
-          )
+          const widgetLibrary = customPanel.locator('[data-testid*="widgets"], .widget-library')
           if (await widgetLibrary.isVisible()) {
             const widgets = widgetLibrary.locator('.widget-option')
             const widgetCount = await widgets.count()
@@ -508,17 +420,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
           }
 
           // Layout options
-          const layoutOptions = customPanel.locator(
-            '[data-testid*="layout"], .layout-options',
-          )
+          const layoutOptions = customPanel.locator('[data-testid*="layout"], .layout-options')
           if (await layoutOptions.isVisible()) {
             console.log('Dashboard layout customization available')
           }
 
           // Save/Cancel
-          const cancelButton = customPanel
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = customPanel.locator('button').filter({ hasText: /cancel/i })
           await cancelButton.click()
         }
       }

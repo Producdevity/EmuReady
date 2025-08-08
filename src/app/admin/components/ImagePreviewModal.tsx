@@ -26,9 +26,7 @@ interface Props {
 }
 
 function ImagePreviewModal(props: Props) {
-  const [activeTab, setActiveTab] = useState<ImageType>(
-    props.initialImageType ?? 'boxart',
-  )
+  const [activeTab, setActiveTab] = useState<ImageType>(props.initialImageType ?? 'boxart')
   const [failedImages, setFailedImages] = useState<Set<ImageType>>(new Set())
 
   if (!props.game) return null
@@ -119,11 +117,7 @@ function ImagePreviewModal(props: Props) {
                       context: 'admin_image_preview',
                       entityId: props.game?.id,
                     })
-                    window.open(
-                      currentImageUrl,
-                      '_blank',
-                      'noopener,noreferrer',
-                    )
+                    window.open(currentImageUrl, '_blank', 'noopener,noreferrer')
                   }}
                   className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
                   title="View full size"

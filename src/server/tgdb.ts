@@ -43,33 +43,24 @@ async function makeRequest<T>(
   params: Record<string, string | number> = {},
 ): Promise<T> {
   try {
-    const response: AxiosResponse<T> = await axios.get(
-      `${TGDB_BASE_URL}${endpoint}`,
-      {
-        params: {
-          apikey: getApiKey(),
-          ...params,
-        },
-        headers: {
-          'User-Agent': 'EmuReady/1.0',
-        },
+    const response: AxiosResponse<T> = await axios.get(`${TGDB_BASE_URL}${endpoint}`, {
+      params: {
+        apikey: getApiKey(),
+        ...params,
       },
-    )
+      headers: {
+        'User-Agent': 'EmuReady/1.0',
+      },
+    })
 
     return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status
       const statusText = error.response?.statusText ?? 'Unknown error'
-      const payload = error.response?.data
-        ? JSON.stringify(error.response.data)
-        : ''
+      const payload = error.response?.data ? JSON.stringify(error.response.data) : ''
 
-      throw new TGDBError(
-        `TGDB API error: ${status} ${statusText} – ${payload}`,
-        status,
-        endpoint,
-      )
+      throw new TGDBError(`TGDB API error: ${status} ${statusText} – ${payload}`, status, endpoint)
     }
 
     throw new TGDBError(
@@ -91,12 +82,7 @@ export async function searchGames(
   }
 
   // Create cache key for this search
-  const cacheKey = createCacheKey(
-    'tgdb:searchGames',
-    query.trim(),
-    tgdbPlatformId ?? 'none',
-    page,
-  )
+  const cacheKey = createCacheKey('tgdb:searchGames', query.trim(), tgdbPlatformId ?? 'none', page)
 
   // Check cache first
   const cached = tgdbGamesCache.get(cacheKey)
@@ -113,10 +99,7 @@ export async function searchGames(
     params['filter[platform]'] = tgdbPlatformId.toString()
   }
 
-  const response = await makeRequest<TGDBGamesByNameResponse>(
-    '/v1.1/Games/ByGameName',
-    params,
-  )
+  const response = await makeRequest<TGDBGamesByNameResponse>('/v1.1/Games/ByGameName', params)
 
   // Score and sort the results if we have games
   if (response.data.games.length > 0) {
@@ -128,9 +111,7 @@ export async function searchGames(
 
     // Sort by score (descending), then by original index (ascending) for ties
     scoredResults.sort((a, b) =>
-      b.score !== a.score
-        ? b.score - a.score
-        : a.originalIndex - b.originalIndex,
+      b.score !== a.score ? b.score - a.score : a.originalIndex - b.originalIndex,
     )
 
     response.data.games = scoredResults.map((item) => item.game)
@@ -161,9 +142,7 @@ export function getBoxartUrlFromGame(
   return isValidImageUrl(imageUrl) ? imageUrl : undefined
 }
 
-export async function getGameImages(
-  gameIds: number[],
-): Promise<TGDBGamesImagesResponse> {
+export async function getGameImages(gameIds: number[]): Promise<TGDBGamesImagesResponse> {
   if (gameIds.length === 0) {
     throw new TGDBError('At least one game ID is required')
   }
@@ -176,13 +155,10 @@ export async function getGameImages(
   const cached = tgdbImagesCache.get(cacheKey)
   if (cached) return cached
 
-  const response = await makeRequest<TGDBGamesImagesResponse>(
-    '/v1/Games/Images',
-    {
-      games_id: gameIds.join(','),
-      'filter[type]': 'boxart,fanart,banner,screenshot,clearlogo,titlescreen',
-    },
-  )
+  const response = await makeRequest<TGDBGamesImagesResponse>('/v1/Games/Images', {
+    games_id: gameIds.join(','),
+    'filter[type]': 'boxart,fanart,banner,screenshot,clearlogo,titlescreen',
+  })
 
   // Cache the response
   tgdbImagesCache.set(cacheKey, response)
@@ -249,10 +225,7 @@ export async function getGameImageUrls(
 
     return result
   } catch (error) {
-    console.error(
-      `❌ Error fetching game image URLs from TGDB for game ${gameId}:`,
-      error,
-    )
+    console.error(`❌ Error fetching game image URLs from TGDB for game ${gameId}:`, error)
     return {}
   }
 }
@@ -262,11 +235,7 @@ export async function searchGameImages(
   tgdbPlatformId?: number,
 ): Promise<Map<number, GameImageOption[]>> {
   // Create cache key for this search
-  const cacheKey = createCacheKey(
-    'tgdb:searchGameImages',
-    query.trim(),
-    tgdbPlatformId ?? 'none',
-  )
+  const cacheKey = createCacheKey('tgdb:searchGameImages', query.trim(), tgdbPlatformId ?? 'none')
 
   // Check cache first - need to handle Map serialization
   const cached = tgdbGameImagesCache.get(cacheKey)
@@ -352,12 +321,8 @@ function createBoxartImages(
       source: 'tgdb' as const,
       gameId: game.id,
       gameName: game.game_title,
-      width: boxart.resolution
-        ? parseInt(boxart.resolution.split('x')[0])
-        : undefined,
-      height: boxart.resolution
-        ? parseInt(boxart.resolution.split('x')[1])
-        : undefined,
+      width: boxart.resolution ? parseInt(boxart.resolution.split('x')[0]) : undefined,
+      height: boxart.resolution ? parseInt(boxart.resolution.split('x')[1]) : undefined,
     }))
 }
 
@@ -388,12 +353,8 @@ function createOtherImages(
           source: 'tgdb' as const,
           gameId: game.id,
           gameName: game.game_title,
-          width: image.resolution
-            ? parseInt(image.resolution.split('x')[0])
-            : undefined,
-          height: image.resolution
-            ? parseInt(image.resolution.split('x')[1])
-            : undefined,
+          width: image.resolution ? parseInt(image.resolution.split('x')[0]) : undefined,
+          height: image.resolution ? parseInt(image.resolution.split('x')[1]) : undefined,
         }))
     : []
 }

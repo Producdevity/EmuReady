@@ -13,10 +13,7 @@ describe('Button', () => {
 
   it('applies different variants correctly', () => {
     const { rerender } = render(<Button variant="secondary">Secondary</Button>)
-    expect(screen.getByRole('button')).toHaveClass(
-      'bg-secondary',
-      'text-secondary-foreground',
-    )
+    expect(screen.getByRole('button')).toHaveClass('bg-secondary', 'text-secondary-foreground')
 
     rerender(<Button variant="outline">Outline</Button>)
     expect(screen.getByRole('button')).toHaveClass('border', 'bg-transparent')
