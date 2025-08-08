@@ -15,14 +15,12 @@ function Main(props: PropsWithChildren) {
     error: Error,
     info: ErrorInfo,
   ) => {
-    // Log to analytics for tracking
     analytics.performance.errorOccurred({
       errorType: error?.name || 'UNKNOWN',
       errorMessage: error?.message || 'No message provided',
       page: pathname || 'unknown',
     })
 
-    // Capture error in Sentry with context
     Sentry.withScope((scope) => {
       scope.setContext('errorBoundary', {
         pathname,
@@ -37,7 +35,6 @@ function Main(props: PropsWithChildren) {
   }
 
   const handleReset: ErrorBoundaryProps['onReset'] = (details) => {
-    // Log to analytics
     analytics.performance.errorOccurred({
       errorType: 'error-boundary-reset',
       errorMessage: 'ErrorBoundary reset',
@@ -45,7 +42,6 @@ function Main(props: PropsWithChildren) {
       reason: details.reason,
     })
 
-    // Log reset event to Sentry
     Sentry.captureMessage('Error boundary was reset', {
       level: 'info',
       tags: { 'error.boundary.reset': true, pathname },
@@ -53,7 +49,6 @@ function Main(props: PropsWithChildren) {
     })
 
     console.error('ErrorBoundary reset', details)
-    // Reset by reloading the page
     window.location.reload()
   }
 

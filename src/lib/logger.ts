@@ -44,7 +44,6 @@ export const log = {
   ) => {
     console.error(`[ERROR] ${message}`, error, extra)
 
-    // Capture exception in Sentry with context
     if (error instanceof Error) {
       Sentry.withScope((scope) => {
         if (extra) {
@@ -58,7 +57,6 @@ export const log = {
         })
       })
     } else {
-      // For non-Error objects, capture as message
       logger.error(message, {
         ...extra,
         error: error ? String(error) : undefined,
@@ -76,7 +74,6 @@ export const log = {
   ) => {
     console.error(`[FATAL] ${message}`, error, extra)
 
-    // Capture with fatal level in Sentry
     if (error instanceof Error) {
       Sentry.withScope((scope) => {
         if (extra) {

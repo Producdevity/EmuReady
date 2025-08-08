@@ -10,7 +10,6 @@ interface Props {
 
 export function ErrorFallback(props: Props) {
   useEffect(() => {
-    // Report error view to Sentry when the fallback is shown
     if (props.error) {
       Sentry.captureMessage('Error fallback UI displayed', {
         level: 'warning',
@@ -24,7 +23,6 @@ export function ErrorFallback(props: Props) {
   }, [props.error])
 
   const handleRetry = () => {
-    // Track retry attempt in Sentry
     Sentry.captureMessage('User attempted error recovery', {
       level: 'info',
       tags: { 'ui.error.retry': true },
