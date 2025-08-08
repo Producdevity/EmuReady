@@ -150,9 +150,7 @@ describe('Emulator Detector', () => {
           emulatorName: 'UnknownEmulator',
           customFieldValues: [],
         })
-      }).toThrow(
-        'Config generation not supported for emulator: UnknownEmulator',
-      )
+      }).toThrow('Config generation not supported for emulator: UnknownEmulator')
     })
   })
 

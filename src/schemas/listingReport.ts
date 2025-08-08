@@ -5,12 +5,7 @@ import { ReportReason, ReportStatus } from '@orm'
 export const ReportReasonSchema = z.nativeEnum(ReportReason)
 export const ReportStatusSchema = z.nativeEnum(ReportStatus)
 
-export const ListingReportSortField = z.enum([
-  'createdAt',
-  'updatedAt',
-  'status',
-  'reason',
-])
+export const ListingReportSortField = z.enum(['createdAt', 'updatedAt', 'status', 'reason'])
 
 export const CreateListingReportSchema = z.object({
   listingId: z.string().uuid(),

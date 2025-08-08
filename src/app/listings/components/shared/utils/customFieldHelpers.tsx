@@ -1,13 +1,6 @@
-import {
-  Controller,
-  type Control,
-  type FieldValues,
-  type FieldPath,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldValues, type FieldPath } from 'react-hook-form'
 import { type CustomFieldType } from '@orm'
-import CustomFieldRenderer, {
-  type CustomFieldDefinitionWithOptions,
-} from '../CustomFieldRenderer'
+import CustomFieldRenderer, { type CustomFieldDefinitionWithOptions } from '../CustomFieldRenderer'
 
 interface CustomFieldDefinition {
   id: string
@@ -30,12 +23,7 @@ export function transformFieldDefinition(
 ): CustomFieldDefinitionWithOptions {
   return {
     ...fieldDef,
-    defaultValue: fieldDef.defaultValue as
-      | string
-      | number
-      | boolean
-      | null
-      | undefined,
+    defaultValue: fieldDef.defaultValue as string | number | boolean | null | undefined,
     parsedOptions: fieldDef.options
       ? Array.isArray(fieldDef.options)
         ? (fieldDef.options as { value: string; label: string }[])
@@ -52,9 +40,7 @@ export function getFieldErrorMessage(fieldError: unknown): string | undefined {
       : undefined
 }
 
-interface RenderCustomFieldProps<
-  TFieldValues extends FieldValues = FieldValues,
-> {
+interface RenderCustomFieldProps<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinition
   index: number
   control: Control<TFieldValues>
@@ -62,17 +48,14 @@ interface RenderCustomFieldProps<
   fieldNamePrefix?: string
 }
 
-export function renderCustomField<
-  TFieldValues extends FieldValues = FieldValues,
->({
+export function renderCustomField<TFieldValues extends FieldValues = FieldValues>({
   fieldDef,
   index,
   control,
   formErrors,
   fieldNamePrefix = 'customFieldValues',
 }: RenderCustomFieldProps<TFieldValues>) {
-  const fieldName =
-    `${fieldNamePrefix}.${index}.value` as FieldPath<TFieldValues>
+  const fieldName = `${fieldNamePrefix}.${index}.value` as FieldPath<TFieldValues>
   const customFieldErrors = formErrors[fieldNamePrefix] as
     | Record<number, { value?: unknown }>
     | undefined
@@ -83,9 +66,7 @@ export function renderCustomField<
   return (
     <div key={fieldDef.id}>
       <Controller
-        name={
-          `${fieldNamePrefix}.${index}.customFieldDefinitionId` as FieldPath<TFieldValues>
-        }
+        name={`${fieldNamePrefix}.${index}.customFieldDefinitionId` as FieldPath<TFieldValues>}
         control={control}
         defaultValue={fieldDef.id as TFieldValues[FieldPath<TFieldValues>]}
         render={() => <input type="hidden" />}

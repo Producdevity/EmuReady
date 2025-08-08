@@ -39,17 +39,14 @@ const SUPPORTED_LANGUAGES: Record<string, { code: string; name: string }> = {
 }
 
 // Set of supported ISO 639-1 language codes for quick lookup
-const SUPPORTED_LANGUAGE_CODES = new Set(
-  Object.values(SUPPORTED_LANGUAGES).map(({ code }) => code),
-)
+const SUPPORTED_LANGUAGE_CODES = new Set(Object.values(SUPPORTED_LANGUAGES).map(({ code }) => code))
 
 /**
  * Get the user's locale.
  * @return {string} The user's locale.
  */
 export function getUserLocale(): string {
-  const locale =
-    typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en'
+  const locale = typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en'
   return SUPPORTED_LANGUAGE_CODES.has(locale) ? locale : 'en'
 }
 
@@ -179,9 +176,7 @@ export function shouldShowTranslation(text: string): boolean {
   // Only show translation for high-confidence non-English detection
   // AND when the detected language is different from user's locale
   return (
-    !detection.isEnglish &&
-    detection.confidence > 0.8 &&
-    detection.detectedLanguage !== userLocale
+    !detection.isEnglish && detection.confidence > 0.8 && detection.detectedLanguage !== userLocale
   )
 }
 

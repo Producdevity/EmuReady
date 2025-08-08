@@ -17,9 +17,7 @@ describe('getSafePlaceholderImageUrl', () => {
     expect(resultNull).toContain('/api/proxy-image?url=https://placehold.co/')
     expect(resultNull).toContain(encodeURIComponent(''))
 
-    expect(resultUndefined).toContain(
-      '/api/proxy-image?url=https://placehold.co/',
-    )
+    expect(resultUndefined).toContain('/api/proxy-image?url=https://placehold.co/')
     expect(resultUndefined).toContain(encodeURIComponent(''))
   })
 

@@ -24,8 +24,7 @@ export const PRISMA_ERROR_CODES = {
   INVALID_VALUE: 'P2007',
 } as const
 
-export type PrismaErrorCode =
-  (typeof PRISMA_ERROR_CODES)[keyof typeof PRISMA_ERROR_CODES]
+export type PrismaErrorCode = (typeof PRISMA_ERROR_CODES)[keyof typeof PRISMA_ERROR_CODES]
 
 /**
  * Helper function to check if an error is a specific Prisma error

@@ -7,10 +7,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
 
     // If not found, try alternative paths
     if (!page.url().includes('approval')) {
-      const alternativePaths = [
-        '/admin/games/approvals',
-        '/admin/pending-listings',
-      ]
+      const alternativePaths = ['/admin/games/approvals', '/admin/pending-listings']
       for (const path of alternativePaths) {
         await page.goto(path)
         if (
@@ -29,9 +26,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     page,
   }) => {
     // Check for pending listings or empty state
-    const pendingListings = page.locator(
-      '[data-testid*="pending-listing"], .pending-listing',
-    )
+    const pendingListings = page.locator('[data-testid*="pending-listing"], .pending-listing')
     const listingCount = await pendingListings.count()
 
     if (listingCount > 0) {
@@ -39,35 +34,23 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
       const firstListing = pendingListings.first()
 
       // Must show game info
-      const gameTitle = firstListing.locator(
-        '[data-testid*="game-title"], .game-title',
-      )
+      const gameTitle = firstListing.locator('[data-testid*="game-title"], .game-title')
       await expect(gameTitle).toBeVisible()
 
       // Must show device/emulator info
-      const deviceInfo = firstListing.locator(
-        '[data-testid*="device"], .device-info',
-      )
+      const deviceInfo = firstListing.locator('[data-testid*="device"], .device-info')
       await expect(deviceInfo).toBeVisible()
 
       // Must show performance rating
-      const performance = firstListing.locator(
-        '[data-testid*="performance"], .performance-badge',
-      )
+      const performance = firstListing.locator('[data-testid*="performance"], .performance-badge')
       await expect(performance).toBeVisible()
     } else {
       // Should show empty state or just be empty
       // Try to find empty state message
-      const emptyState = page.locator(
-        '[data-testid="empty-state"], .empty-state',
-      )
+      const emptyState = page.locator('[data-testid="empty-state"], .empty-state')
       const emptyText = page.getByText(/no.*pending/i)
-      const hasEmptyState = await emptyState
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-      const hasEmptyText = await emptyText
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
+      const hasEmptyState = await emptyState.isVisible({ timeout: 2000 }).catch(() => false)
+      const hasEmptyText = await emptyText.isVisible({ timeout: 2000 }).catch(() => false)
 
       // If neither empty state indicator is found, check that the listings container exists but is empty
       if (!hasEmptyState && !hasEmptyText) {
@@ -89,9 +72,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     await page.goto('/admin/listings/approvals')
 
     if (page.url().includes('approval')) {
-      const viewButtons = page
-        .locator('button')
-        .filter({ hasText: /view|review|details/i })
+      const viewButtons = page.locator('button').filter({ hasText: /view|review|details/i })
 
       if ((await viewButtons.count()) > 0) {
         await viewButtons.first().click()
@@ -118,9 +99,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
           }
 
           // Custom fields
-          const customFields = detailModal.locator(
-            '[data-testid*="custom-field"]',
-          )
+          const customFields = detailModal.locator('[data-testid*="custom-field"]')
           if ((await customFields.count()) > 0) {
             console.log(`${await customFields.count()} custom fields present`)
           }
@@ -133,44 +112,32 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     await page.goto('/admin/listings/approvals')
 
     if (page.url().includes('approval')) {
-      const reviewButtons = page
-        .locator('button')
-        .filter({ hasText: /review/i })
+      const reviewButtons = page.locator('button').filter({ hasText: /review/i })
 
       if ((await reviewButtons.count()) > 0) {
         await reviewButtons.first().click()
 
         // Look for validation indicators
-        const validationStatus = page.locator(
-          '[data-testid*="validation"], .validation-status',
-        )
+        const validationStatus = page.locator('[data-testid*="validation"], .validation-status')
 
         if (await validationStatus.isVisible({ timeout: 3000 })) {
           // Check validation items
-          const validationItems = validationStatus.locator(
-            '.validation-item, li',
-          )
+          const validationItems = validationStatus.locator('.validation-item, li')
 
           for (let i = 0; i < (await validationItems.count()); i++) {
             const item = validationItems.nth(i)
             const text = await item.textContent()
             const status =
-              (await item.getAttribute('data-status')) ||
-              (await item.getAttribute('class')) ||
-              ''
+              (await item.getAttribute('data-status')) || (await item.getAttribute('class')) || ''
 
             const isPassing =
-              status.includes('pass') ||
-              status.includes('success') ||
-              status.includes('green')
+              status.includes('pass') || status.includes('success') || status.includes('green')
             console.log(`Validation: ${text} - ${isPassing ? '✓' : '✗'}`)
           }
         }
 
         // Duplicate check
-        const duplicateWarning = page.locator(
-          '[data-testid*="duplicate"], .duplicate-warning',
-        )
+        const duplicateWarning = page.locator('[data-testid*="duplicate"], .duplicate-warning')
         if (await duplicateWarning.isVisible({ timeout: 2000 })) {
           console.log('⚠️ Duplicate listing warning shown')
         }
@@ -189,10 +156,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         .first()
 
       if (await quickApprove.isVisible({ timeout: 3000 })) {
-        const itemText = await page
-          .locator('.pending-listing')
-          .first()
-          .textContent()
+        const itemText = await page.locator('.pending-listing').first().textContent()
 
         await quickApprove.click()
 
@@ -200,9 +164,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         await page.waitForTimeout(1500)
 
         // Item should be removed
-        const sameItem = page
-          .locator('.pending-listing')
-          .filter({ hasText: itemText || '' })
+        const sameItem = page.locator('.pending-listing').filter({ hasText: itemText || '' })
         const removed = (await sameItem.count()) === 0
 
         if (removed) {
@@ -210,9 +172,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         }
 
         // Success notification
-        const success = page
-          .locator('[role="alert"]')
-          .filter({ hasText: /approved/i })
+        const success = page.locator('[role="alert"]').filter({ hasText: /approved/i })
         if (await success.isVisible({ timeout: 2000 })) {
           console.log('Approval confirmation shown')
         }
@@ -224,33 +184,24 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     await page.goto('/admin/listings/approvals')
 
     if (page.url().includes('approval')) {
-      const rejectButtons = page
-        .locator('button')
-        .filter({ hasText: /reject/i })
+      const rejectButtons = page.locator('button').filter({ hasText: /reject/i })
 
       if ((await rejectButtons.count()) > 0) {
         await rejectButtons.first().click()
 
         // Rejection dialog
-        const rejectDialog = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /reject/i })
+        const rejectDialog = page.locator('[role="dialog"]').filter({ hasText: /reject/i })
 
         if (await rejectDialog.isVisible({ timeout: 3000 })) {
           // Rejection reasons
-          const reasonOptions = rejectDialog.locator(
-            'input[type="radio"], input[type="checkbox"]',
-          )
+          const reasonOptions = rejectDialog.locator('input[type="radio"], input[type="checkbox"]')
 
           if ((await reasonOptions.count()) > 0) {
             await reasonOptions.first().check()
 
             const reasons = []
             for (let i = 0; i < (await reasonOptions.count()); i++) {
-              const label = await reasonOptions
-                .nth(i)
-                .locator('..')
-                .textContent()
+              const label = await reasonOptions.nth(i).locator('..').textContent()
               reasons.push(label)
             }
             console.log('Rejection reasons:', reasons.join(', '))
@@ -259,9 +210,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
           // Feedback textarea
           const feedbackField = rejectDialog.locator('textarea')
           if (await feedbackField.isVisible()) {
-            await feedbackField.fill(
-              'Please provide more detailed performance notes',
-            )
+            await feedbackField.fill('Please provide more detailed performance notes')
           }
 
           // Email notification option
@@ -274,9 +223,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
           }
 
           // Cancel
-          const cancelButton = rejectDialog
-            .locator('button')
-            .filter({ hasText: /cancel/i })
+          const cancelButton = rejectDialog.locator('button').filter({ hasText: /cancel/i })
           await cancelButton.click()
         }
       }
@@ -297,26 +244,18 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         await selectAll.check()
 
         // Batch actions should appear
-        const batchActions = page.locator(
-          '[data-testid*="batch-actions"], .batch-actions',
-        )
+        const batchActions = page.locator('[data-testid*="batch-actions"], .batch-actions')
 
         if (await batchActions.isVisible({ timeout: 2000 })) {
           const approveAll = batchActions
             .locator('button')
             .filter({ hasText: /approve.*selected/i })
-          const rejectAll = batchActions
-            .locator('button')
-            .filter({ hasText: /reject.*selected/i })
+          const rejectAll = batchActions.locator('button').filter({ hasText: /reject.*selected/i })
 
-          expect(
-            (await approveAll.isVisible()) || (await rejectAll.isVisible()),
-          ).toBe(true)
+          expect((await approveAll.isVisible()) || (await rejectAll.isVisible())).toBe(true)
 
           // Check count
-          const selectedCount = page.locator(
-            '[data-testid*="selected-count"], .selected-count',
-          )
+          const selectedCount = page.locator('[data-testid*="selected-count"], .selected-count')
           if (await selectedCount.isVisible()) {
             const count = await selectedCount.textContent()
             console.log(`${count} items selected`)
@@ -346,9 +285,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
 
         if (await historyTable.isVisible({ timeout: 3000 })) {
           // Check for action column
-          const actionColumn = historyTable
-            .locator('th')
-            .filter({ hasText: /action|status/i })
+          const actionColumn = historyTable.locator('th').filter({ hasText: /action|status/i })
           await expect(actionColumn).toBeVisible()
 
           // Check for moderator column
@@ -358,9 +295,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
           await expect(moderatorColumn).toBeVisible()
 
           // Check for timestamp
-          const dateColumn = historyTable
-            .locator('th')
-            .filter({ hasText: /date|time/i })
+          const dateColumn = historyTable.locator('th').filter({ hasText: /date|time/i })
           await expect(dateColumn).toBeVisible()
         }
       }
@@ -380,9 +315,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         await guidelinesButton.click()
 
         // Should show guidelines
-        const guidelinesModal = page
-          .locator('[role="dialog"]')
-          .filter({ hasText: /guidelines/i })
+        const guidelinesModal = page.locator('[role="dialog"]').filter({ hasText: /guidelines/i })
 
         if (await guidelinesModal.isVisible({ timeout: 2000 })) {
           // Check for key sections
@@ -394,22 +327,14 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
           ]
 
           for (const section of sections) {
-            const sectionHeader = guidelinesModal
-              .locator('h3, h4')
-              .filter({ hasText: section })
-            if (
-              await sectionHeader
-                .isVisible({ timeout: 1000 })
-                .catch(() => false)
-            ) {
+            const sectionHeader = guidelinesModal.locator('h3, h4').filter({ hasText: section })
+            if (await sectionHeader.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Guidelines include: ${section}`)
             }
           }
 
           // Close
-          const closeButton = guidelinesModal
-            .locator('button')
-            .filter({ hasText: /close/i })
+          const closeButton = guidelinesModal.locator('button').filter({ hasText: /close/i })
           await closeButton.click()
         }
       }
@@ -421,9 +346,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
 
     if (page.url().includes('approval')) {
       // Metrics section
-      const metricsSection = page.locator(
-        '[data-testid*="approval-metrics"], .approval-stats',
-      )
+      const metricsSection = page.locator('[data-testid*="approval-metrics"], .approval-stats')
 
       if (await metricsSection.isVisible({ timeout: 3000 })) {
         const metrics = {
@@ -434,9 +357,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         }
 
         for (const [label, pattern] of Object.entries(metrics)) {
-          const metric = metricsSection
-            .locator('.metric, .stat')
-            .filter({ hasText: pattern })
+          const metric = metricsSection.locator('.metric, .stat').filter({ hasText: pattern })
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()
             console.log(`${label}: ${value}`)
@@ -446,9 +367,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     }
   })
 
-  test('should handle reported user submissions specially', async ({
-    page,
-  }) => {
+  test('should handle reported user submissions specially', async ({ page }) => {
     await page.goto('/admin/listings/approvals')
 
     if (page.url().includes('approval')) {

@@ -89,9 +89,7 @@ export function createCountQuery<T>(
   model: { count: (args: { where: T }) => Promise<number>; _name?: string },
   where: T,
 ): Promise<number> {
-  const end = QueryPerformanceMonitor.startQuery(
-    `count:${model._name || 'unknown'}`,
-  )
+  const end = QueryPerformanceMonitor.startQuery(`count:${model._name || 'unknown'}`)
 
   const query = model.count({ where })
 
@@ -127,14 +125,8 @@ export function suggestIndexes(
   // Single field indexes for equality checks
   fields.forEach((field) => {
     const condition = whereConditions[field]
-    if (
-      typeof condition !== 'object' ||
-      condition === null ||
-      (condition && 'in' in condition)
-    ) {
-      suggestions.push(
-        `CREATE INDEX idx_${model}_${field} ON ${model}(${field});`,
-      )
+    if (typeof condition !== 'object' || condition === null || (condition && 'in' in condition)) {
+      suggestions.push(`CREATE INDEX idx_${model}_${field} ON ${model}(${field});`)
     }
   })
 
@@ -150,9 +142,7 @@ export function suggestIndexes(
     const sortFields = Object.keys(orderBy)
     sortFields.forEach((field) => {
       if (!fields.includes(field)) {
-        suggestions.push(
-          `CREATE INDEX idx_${model}_${field} ON ${model}(${field});`,
-        )
+        suggestions.push(`CREATE INDEX idx_${model}_${field} ON ${model}(${field});`)
       }
     })
   }
@@ -205,12 +195,7 @@ export function optimizeIncludes(
   const optimized: Record<string, unknown> = {}
 
   Object.entries(baseInclude).forEach(([key, value]) => {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'include' in value &&
-      value.include
-    ) {
+    if (typeof value === 'object' && value !== null && 'include' in value && value.include) {
       optimized[key] = {
         ...value,
         include: optimizeIncludes(
@@ -264,9 +249,7 @@ export function analyzeQueryComplexity(
     score += depth * 10
 
     if (depth > 3) {
-      warnings.push(
-        `Deep nesting detected (${depth} levels). Consider splitting queries.`,
-      )
+      warnings.push(`Deep nesting detected (${depth} levels). Consider splitting queries.`)
     }
 
     // Count total relations
@@ -286,9 +269,7 @@ export function analyzeQueryComplexity(
     score += orConditions * 15
 
     if (orConditions > 5) {
-      warnings.push(
-        `Many OR conditions (${orConditions}). Consider using indexed fields.`,
-      )
+      warnings.push(`Many OR conditions (${orConditions}). Consider using indexed fields.`)
     }
   }
 
@@ -299,23 +280,12 @@ export function analyzeQueryComplexity(
   }
 }
 
-function getIncludeDepth(
-  include: Record<string, unknown>,
-  currentDepth = 1,
-): number {
+function getIncludeDepth(include: Record<string, unknown>, currentDepth = 1): number {
   let maxDepth = currentDepth
 
   Object.values(include).forEach((value) => {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'include' in value &&
-      value.include
-    ) {
-      const depth = getIncludeDepth(
-        value.include as Record<string, unknown>,
-        currentDepth + 1,
-      )
+    if (typeof value === 'object' && value !== null && 'include' in value && value.include) {
+      const depth = getIncludeDepth(value.include as Record<string, unknown>, currentDepth + 1)
       maxDepth = Math.max(maxDepth, depth)
     }
   })
@@ -327,12 +297,7 @@ function countRelations(include: Record<string, unknown>): number {
   let count = Object.keys(include).length
 
   Object.values(include).forEach((value) => {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'include' in value &&
-      value.include
-    ) {
+    if (typeof value === 'object' && value !== null && 'include' in value && value.include) {
       count += countRelations(value.include as Record<string, unknown>)
     }
   })
@@ -397,23 +362,14 @@ export function getOptimizedDatabaseUrl(baseUrl?: string): string {
   const urlObj = new URL(url)
 
   // Add optimized parameters to the URL
-  urlObj.searchParams.set(
-    'connection_limit',
-    settings.connection_limit.toString(),
-  )
+  urlObj.searchParams.set('connection_limit', settings.connection_limit.toString())
   urlObj.searchParams.set('pool_timeout', settings.pool_timeout.toString())
-  urlObj.searchParams.set(
-    'connect_timeout',
-    (settings.timeout / 1000).toString(),
-  )
+  urlObj.searchParams.set('connect_timeout', (settings.timeout / 1000).toString())
   urlObj.searchParams.set(
     'idle_in_transaction_session_timeout',
     settings.idle_in_transaction_session_timeout.toString(),
   )
-  urlObj.searchParams.set(
-    'statement_timeout',
-    settings.statement_timeout.toString(),
-  )
+  urlObj.searchParams.set('statement_timeout', settings.statement_timeout.toString())
 
   return urlObj.toString()
 }

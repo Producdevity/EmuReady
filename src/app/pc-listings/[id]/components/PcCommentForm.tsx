@@ -1,9 +1,6 @@
 'use client'
 
-import {
-  GenericCommentForm,
-  type CommentFormConfig,
-} from '@/components/comments'
+import { GenericCommentForm, type CommentFormConfig } from '@/components/comments'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 

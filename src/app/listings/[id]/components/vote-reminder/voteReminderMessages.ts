@@ -292,8 +292,7 @@ const voteReminderMessages: VoteReminderMessage[] = [
     dismiss: { label: 'I am not here to help others, hide.' },
   },
   {
-    label:
-      'Well done. Here come the test results: ‘You are a horrible person.’',
+    label: 'Well done. Here come the test results: ‘You are a horrible person.’',
     text: 'What are your test results? Did the listing match your experience?',
     upVote: { Icon: ThumbsUp, label: 'That’s what it says' },
     downVote: { Icon: ThumbsDown, label: 'We weren’t even testing for that.' },

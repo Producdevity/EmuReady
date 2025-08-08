@@ -365,13 +365,11 @@ export function GameEditForm(props: Props) {
                         onChange={(ev) => setIsErotic(ev.target.checked)}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                       />
-                      <span className="text-sm font-medium">
-                        Mark as 18+ Content (Erotic)
-                      </span>
+                      <span className="text-sm font-medium">Mark as 18+ Content (Erotic)</span>
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
-                      This game contains adult content and will be filtered
-                      based on user preferences
+                      This game contains adult content and will be filtered based on user
+                      preferences
                     </p>
                   </div>
                 )}
@@ -386,25 +384,13 @@ export function GameEditForm(props: Props) {
                   </p>
                 </div>
 
-                {error && (
-                  <div className="text-red-600 dark:text-red-400 text-sm">
-                    {error}
-                  </div>
-                )}
+                {error && <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>}
 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    isLoading={isLoading}
-                  >
+                  <Button type="submit" disabled={isLoading} isLoading={isLoading}>
                     Save Changes
                   </Button>
                 </div>
@@ -419,9 +405,7 @@ export function GameEditForm(props: Props) {
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg flex flex-col max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <h2 className="text-xl font-bold">
-                Select {imageTypeToLabel[activeImageTab]}
-              </h2>
+              <h2 className="text-xl font-bold">Select {imageTypeToLabel[activeImageTab]}</h2>
               <Button
                 variant="ghost"
                 size="sm"

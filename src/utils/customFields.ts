@@ -18,12 +18,7 @@ export function parseCustomFieldOptions(field: {
   }
 
   return field.options.reduce((acc: CustomFieldOptionUI[], opt: unknown) => {
-    if (
-      typeof opt === 'object' &&
-      opt !== null &&
-      'value' in opt &&
-      'label' in opt
-    ) {
+    if (typeof opt === 'object' && opt !== null && 'value' in opt && 'label' in opt) {
       const knownOpt = opt as { value: unknown; label: unknown }
       acc.push({
         value: String(knownOpt.value),

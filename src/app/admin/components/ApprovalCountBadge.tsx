@@ -25,10 +25,7 @@ interface Props {
 export default function ApprovalCountBadge(props: Props) {
   const userQuery = api.users.me.useQuery()
 
-  const canViewStats = hasPermission(
-    userQuery.data?.permissions,
-    PERMISSIONS.VIEW_STATISTICS,
-  )
+  const canViewStats = hasPermission(userQuery.data?.permissions, PERMISSIONS.VIEW_STATISTICS)
 
   const gameStatsQuery = api.games.getStats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/games/approvals',
@@ -60,9 +57,7 @@ export default function ApprovalCountBadge(props: Props) {
     '/admin/pc-listing-approvals': pcListingStatsQuery,
   } as const
 
-  const count = isValidHref(props.href)
-    ? statsMap[props.href]?.data?.pending
-    : undefined
+  const count = isValidHref(props.href) ? statsMap[props.href]?.data?.pending : undefined
 
   if (typeof count !== 'number' || count <= 0) return null
 
@@ -76,10 +71,7 @@ export default function ApprovalCountBadge(props: Props) {
         variant="danger"
         size="sm"
         pill
-        className={cn(
-          'transition-all duration-300 ease-in-out',
-          props.className,
-        )}
+        className={cn('transition-all duration-300 ease-in-out', props.className)}
       >
         {count}
       </Badge>

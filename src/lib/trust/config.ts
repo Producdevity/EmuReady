@@ -79,13 +79,9 @@ export function getTrustLevel(score: number): TrustLevel {
 
 export function getNextTrustLevel(currentScore: number): TrustLevel | null {
   const currentLevel = getTrustLevel(currentScore)
-  const currentIndex = TRUST_LEVELS.findIndex(
-    (level) => level.name === currentLevel.name,
-  )
+  const currentIndex = TRUST_LEVELS.findIndex((level) => level.name === currentLevel.name)
 
-  return currentIndex < TRUST_LEVELS.length - 1
-    ? TRUST_LEVELS[currentIndex + 1]
-    : null // Already at max level
+  return currentIndex < TRUST_LEVELS.length - 1 ? TRUST_LEVELS[currentIndex + 1] : null // Already at max level
 }
 
 export function getProgressToNextLevel(currentScore: number): number {
@@ -101,12 +97,8 @@ export function getProgressToNextLevel(currentScore: number): number {
 
 export function hasTrustLevel(score: number, requiredLevel: string): boolean {
   const userLevel = getTrustLevel(score)
-  const requiredLevelIndex = TRUST_LEVELS.findIndex(
-    (level) => level.name === requiredLevel,
-  )
-  const userLevelIndex = TRUST_LEVELS.findIndex(
-    (level) => level.name === userLevel.name,
-  )
+  const requiredLevelIndex = TRUST_LEVELS.findIndex((level) => level.name === requiredLevel)
+  const userLevelIndex = TRUST_LEVELS.findIndex((level) => level.name === userLevel.name)
 
   return userLevelIndex >= requiredLevelIndex
 }

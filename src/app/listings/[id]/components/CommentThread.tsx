@@ -75,9 +75,7 @@ function CommentThread(props: Props) {
   })
 
   const refreshData = () => {
-    utils.listings.getSortedComments
-      .invalidate({ listingId: props.listingId })
-      .catch(console.error)
+    utils.listings.getSortedComments.invalidate({ listingId: props.listingId }).catch(console.error)
   }
 
   const threadConfig: CommentThreadConfig = {
@@ -154,10 +152,7 @@ function CommentThread(props: Props) {
     await mutation
   }
 
-  const handleEditComment = async (data: {
-    commentId: string
-    content: string
-  }) => {
+  const handleEditComment = async (data: { commentId: string; content: string }) => {
     await editComment.mutateAsync({
       commentId: data.commentId,
       content: data.content,

@@ -17,9 +17,7 @@ export function BetaWarningPopup() {
     // Don't show on admin pages
     if (window.location.pathname.startsWith('/admin')) return
 
-    const hasBeenDismissed = localStorage.getItem(
-      storageKeys.popups.betaWarningDismissed,
-    )
+    const hasBeenDismissed = localStorage.getItem(storageKeys.popups.betaWarningDismissed)
 
     if (hasBeenDismissed) return
 
@@ -39,12 +37,7 @@ export function BetaWarningPopup() {
   if (process.env.NODE_ENV !== 'production' || !isOpen) return null
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleDismiss}
-      hideCloseButton={true}
-      className="max-w-lg"
-    >
+    <Modal isOpen={isOpen} onClose={handleDismiss} hideCloseButton={true} className="max-w-lg">
       <div className="p-6">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
@@ -58,8 +51,8 @@ export function BetaWarningPopup() {
 
             <div className="text-gray-600 dark:text-gray-300 space-y-3 mb-6">
               <p>
-                Thanks for checking out EmuReady! We&apos;re excited to have you
-                here, but please note that
+                Thanks for checking out EmuReady! We&apos;re excited to have you here, but please
+                note that
                 <strong className="text-gray-800 dark:text-gray-200">
                   {' '}
                   we&apos;re still in beta testing
@@ -97,8 +90,7 @@ export function BetaWarningPopup() {
                 </a>
                 .
                 <span className="mt-2">
-                  Feel free to explore, create an account, and get familiar with
-                  the platform.
+                  Feel free to explore, create an account, and get familiar with the platform.
                 </span>
               </p>
             </div>

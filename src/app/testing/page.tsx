@@ -37,9 +37,7 @@ export default function TestingPage() {
   const [testerName, setTesterName] = useState('')
   const [selectedRole, setSelectedRole] = useState('user')
   const [testResults, setTestResults] = useState<TestResults>({})
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(),
-  )
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [copiedPassword, setCopiedPassword] = useState(false)
   const [isSigningIn, setIsSigningIn] = useState(false)
@@ -53,11 +51,7 @@ export default function TestingPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname
-      const allowedHosts = [
-        'localhost',
-        'staging.emuready.com',
-        'dev.emuready.com',
-      ]
+      const allowedHosts = ['localhost', 'staging.emuready.com', 'dev.emuready.com']
       setIsAllowed(allowedHosts.some((host) => hostname.includes(host)))
     }
   }, [])
@@ -279,11 +273,7 @@ export default function TestingPage() {
   }
 
   const clearAll = () => {
-    if (
-      confirm(
-        'Are you sure you want to clear all test results? This cannot be undone.',
-      )
-    ) {
+    if (confirm('Are you sure you want to clear all test results? This cannot be undone.')) {
       setTestResults({})
       setTesterName('')
       localStorage.removeItem('emuready-test-results')
@@ -307,8 +297,7 @@ export default function TestingPage() {
           <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            This testing page is only available on staging and development
-            environments.
+            This testing page is only available on staging and development environments.
           </p>
         </Card>
       </div>
@@ -335,8 +324,7 @@ export default function TestingPage() {
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-600" />
                 <span className="text-sm font-medium">
-                  Currently signed in as:{' '}
-                  <strong>{user.emailAddresses[0]?.emailAddress}</strong>
+                  Currently signed in as: <strong>{user.emailAddresses[0]?.emailAddress}</strong>
                 </span>
               </div>
               <Button size="sm" variant="outline" onClick={() => signOut()}>
@@ -350,9 +338,7 @@ export default function TestingPage() {
         <Card className="p-6 mb-6">
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Tester Name
-              </label>
+              <label className="block text-sm font-medium mb-2">Tester Name</label>
               <Input
                 value={testerName}
                 onChange={(e) => setTesterName(e.target.value)}
@@ -360,15 +346,11 @@ export default function TestingPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Testing Date
-              </label>
+              <label className="block text-sm font-medium mb-2">Testing Date</label>
               <Input value={new Date().toLocaleDateString()} disabled />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Overall Progress
-              </label>
+              <label className="block text-sm font-medium mb-2">Overall Progress</label>
               <div className="text-2xl font-bold">{progress.percentage}%</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 {progress.checked} of {progress.total} tests
@@ -446,9 +428,7 @@ export default function TestingPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() =>
-                      copyToClipboard(currentAccount.email, 'email')
-                    }
+                    onClick={() => copyToClipboard(currentAccount.email, 'email')}
                   >
                     {copiedEmail ? (
                       <CheckCheck className="w-4 h-4" />
@@ -469,9 +449,7 @@ export default function TestingPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() =>
-                      copyToClipboard(currentAccount.password, 'password')
-                    }
+                    onClick={() => copyToClipboard(currentAccount.password, 'password')}
                   >
                     {copiedPassword ? (
                       <CheckCheck className="w-4 h-4" />
@@ -487,12 +465,7 @@ export default function TestingPage() {
               <div className="flex items-center gap-4">
                 <Button
                   variant="primary"
-                  onClick={() =>
-                    handleQuickSignIn(
-                      currentAccount.email,
-                      currentAccount.password,
-                    )
-                  }
+                  onClick={() => handleQuickSignIn(currentAccount.email, currentAccount.password)}
                   disabled={isSigningIn}
                   className="flex-1"
                 >
@@ -509,11 +482,7 @@ export default function TestingPage() {
                   )}
                 </Button>
                 {isSignedIn && (
-                  <Button
-                    variant="outline"
-                    onClick={() => signOut()}
-                    className="flex-1"
-                  >
+                  <Button variant="outline" onClick={() => signOut()} className="flex-1">
                     Sign Out Current Session
                   </Button>
                 )}
@@ -537,10 +506,9 @@ export default function TestingPage() {
             <p className="text-sm flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
               <span>
-                <strong>Quick Sign In:</strong> Click the &quot;Quick Sign
-                In&quot; button above to instantly switch to this test account.
-                The page will stay open so you can continue testing. Sign out
-                when done to test another role.
+                <strong>Quick Sign In:</strong> Click the &quot;Quick Sign In&quot; button above to
+                instantly switch to this test account. The page will stay open so you can continue
+                testing. Sign out when done to test another role.
               </span>
             </p>
           </Card>
@@ -561,14 +529,10 @@ export default function TestingPage() {
               <Card key={category.id} className="overflow-hidden">
                 <div
                   className="p-4 cursor-pointer flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  onClick={() =>
-                    toggleCategory(`${selectedRole}-${category.id}`)
-                  }
+                  onClick={() => toggleCategory(`${selectedRole}-${category.id}`)}
                 >
                   <h3 className="font-semibold flex items-center gap-2">
-                    {expandedCategories.has(
-                      `${selectedRole}-${category.id}`,
-                    ) ? (
+                    {expandedCategories.has(`${selectedRole}-${category.id}`) ? (
                       <ChevronDown className="w-5 h-5" />
                     ) : (
                       <ChevronRight className="w-5 h-5" />
@@ -578,9 +542,7 @@ export default function TestingPage() {
                   <span className="text-sm text-gray-500">
                     {
                       category.scenarios.filter(
-                        (s) =>
-                          testResults[selectedRole]?.[category.id]?.[s.id]
-                            ?.checked,
+                        (s) => testResults[selectedRole]?.[category.id]?.[s.id]?.checked,
                       ).length
                     }{' '}
                     / {category.scenarios.length}
@@ -590,9 +552,9 @@ export default function TestingPage() {
                 {expandedCategories.has(`${selectedRole}-${category.id}`) && (
                   <div className="p-4 space-y-3">
                     {category.scenarios.map((scenario) => {
-                      const result = testResults[selectedRole]?.[category.id]?.[
-                        scenario.id
-                      ] || { checked: false }
+                      const result = testResults[selectedRole]?.[category.id]?.[scenario.id] || {
+                        checked: false,
+                      }
                       const hasNotes = !!result.notes
 
                       return (
@@ -603,15 +565,10 @@ export default function TestingPage() {
                           <div className="flex items-start gap-3">
                             <button
                               onClick={() =>
-                                updateTestResult(
-                                  selectedRole,
-                                  category.id,
-                                  scenario.id,
-                                  {
-                                    ...result,
-                                    checked: !result.checked,
-                                  },
-                                )
+                                updateTestResult(selectedRole, category.id, scenario.id, {
+                                  ...result,
+                                  checked: !result.checked,
+                                })
                               }
                               className="mt-0.5"
                             >
@@ -633,15 +590,10 @@ export default function TestingPage() {
                                     as="textarea"
                                     value={result.notes || ''}
                                     onChange={(e) =>
-                                      updateTestResult(
-                                        selectedRole,
-                                        category.id,
-                                        scenario.id,
-                                        {
-                                          ...result,
-                                          notes: e.target.value,
-                                        },
-                                      )
+                                      updateTestResult(selectedRole, category.id, scenario.id, {
+                                        ...result,
+                                        notes: e.target.value,
+                                      })
                                     }
                                     placeholder="Add notes if this test failed or needs clarification..."
                                     className="text-sm"
@@ -650,9 +602,7 @@ export default function TestingPage() {
                                 </div>
                               )}
                             </div>
-                            {hasNotes && (
-                              <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
-                            )}
+                            {hasNotes && <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />}
                           </div>
                         </div>
                       )
@@ -694,9 +644,7 @@ export default function TestingPage() {
                   Profile
                 </Button>
               </a>
-              {['moderator', 'admin', 'superadmin', 'developer'].includes(
-                selectedRole,
-              ) && (
+              {['moderator', 'admin', 'superadmin', 'developer'].includes(selectedRole) && (
                 <a href="/admin" target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="sm">
                     Admin Dashboard

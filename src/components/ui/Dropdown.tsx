@@ -21,16 +21,11 @@ export function Dropdown(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const selectedOption = props.options.find(
-    (option) => option.value === props.value,
-  )
+  const selectedOption = props.options.find((option) => option.value === props.value)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
@@ -57,9 +52,7 @@ export function Dropdown(props: Props) {
         <span
           className={`block truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-900 dark:text-white'}`}
         >
-          {selectedOption
-            ? selectedOption.label
-            : (props.placeholder ?? 'Select an option')}
+          {selectedOption ? selectedOption.label : (props.placeholder ?? 'Select an option')}
         </span>
         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg

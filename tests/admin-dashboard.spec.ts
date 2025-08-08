@@ -9,14 +9,10 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
     await expect(page).toHaveURL(/\/admin/)
 
     // Verify admin dashboard loaded
-    await expect(
-      page.locator('h1, h2').filter({ hasText: /admin|dashboard/i }),
-    ).toBeVisible()
+    await expect(page.locator('h1, h2').filter({ hasText: /admin|dashboard/i })).toBeVisible()
   })
 
-  test('should display admin navigation menu with all required items', async ({
-    page,
-  }) => {
+  test('should display admin navigation menu with all required items', async ({ page }) => {
     // Admin navigation should be visible
     const adminNav = page
       .locator('[data-testid="admin-nav"], .admin-navigation, nav')
@@ -35,16 +31,12 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
     ]
 
     for (const item of requiredMenuItems) {
-      const menuLink = adminNav
-        .locator('a, button')
-        .filter({ hasText: new RegExp(item, 'i') })
+      const menuLink = adminNav.locator('a, button').filter({ hasText: new RegExp(item, 'i') })
       await expect(menuLink).toBeVisible({ timeout: 5000 })
     }
   })
 
-  test('should display dashboard statistics with valid data', async ({
-    page,
-  }) => {
+  test('should display dashboard statistics with valid data', async ({ page }) => {
     // Check if stat cards exist, if not check for other dashboard content
     const statCards = page
       .locator('[data-testid*="stat"], .stat-card, .dashboard-stat, .card')
@@ -71,15 +63,11 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
 
   test('should show recent activity feed with entries', async ({ page }) => {
     // Activity feed must be present
-    const activityFeed = page.locator(
-      '[data-testid*="activity"], .activity-feed, .recent-activity',
-    )
+    const activityFeed = page.locator('[data-testid*="activity"], .activity-feed, .recent-activity')
     await expect(activityFeed).toBeVisible()
 
     // Must have activity items
-    const activityItems = activityFeed.locator(
-      '[data-testid*="activity-item"], .activity-item, li',
-    )
+    const activityItems = activityFeed.locator('[data-testid*="activity-item"], .activity-item, li')
     const itemCount = await activityItems.count()
     expect(itemCount).toBeGreaterThan(0)
 
@@ -87,9 +75,7 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
     const firstItem = activityItems.first()
 
     // Must have timestamp
-    const timeElement = firstItem.locator(
-      'time, [data-testid*="time"], .timestamp',
-    )
+    const timeElement = firstItem.locator('time, [data-testid*="time"], .timestamp')
     await expect(timeElement).toBeVisible()
 
     // Must have description text
@@ -98,9 +84,7 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
 
   test('should have functional quick actions', async ({ page }) => {
     // Quick actions section must exist
-    const quickActionsSection = page.locator(
-      '[data-testid*="quick-action"], .quick-actions',
-    )
+    const quickActionsSection = page.locator('[data-testid*="quick-action"], .quick-actions')
 
     // Verify the quick actions section exists
     const hasQuickActions = (await quickActionsSection.count()) > 0
@@ -122,9 +106,7 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
 
     let foundActions = 0
     for (const action of expectedActions) {
-      const actionButton = page
-        .locator('button, a')
-        .filter({ hasText: new RegExp(action, 'i') })
+      const actionButton = page.locator('button, a').filter({ hasText: new RegExp(action, 'i') })
       if (await actionButton.isVisible({ timeout: 1000 }).catch(() => false)) {
         foundActions++
       }
@@ -149,9 +131,7 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
       await expect(systemStatus).toBeVisible()
 
       // Should have indicators
-      const indicators = systemStatus.locator(
-        '[data-testid*="indicator"], .indicator',
-      )
+      const indicators = systemStatus.locator('[data-testid*="indicator"], .indicator')
       expect(await indicators.count()).toBeGreaterThan(0)
     }
   })
@@ -189,9 +169,7 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
 
     // Sidebar must be visible on desktop
-    const sidebar = page.locator(
-      '[data-testid="admin-sidebar"], .admin-sidebar, aside',
-    )
+    const sidebar = page.locator('[data-testid="admin-sidebar"], .admin-sidebar, aside')
     await expect(sidebar).toBeVisible()
 
     // Test mobile view
@@ -209,18 +187,14 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
     await page.waitForTimeout(300)
 
     // Navigation should be accessible
-    const mobileNav = page
-      .locator('nav')
-      .filter({ hasText: /dashboard|users/i })
+    const mobileNav = page.locator('nav').filter({ hasText: /dashboard|users/i })
     await expect(mobileNav).toBeVisible()
   })
 
   test('should have working admin search functionality', async ({ page }) => {
     // Admin search must be present
     const adminSearch = page
-      .locator(
-        '[data-testid="admin-search"], .admin-search, [placeholder*="search"]',
-      )
+      .locator('[data-testid="admin-search"], .admin-search, [placeholder*="search"]')
       .locator('input')
     await expect(adminSearch).toBeVisible()
 
@@ -235,17 +209,14 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
     const hasSearchResults = await page
       .locator('[data-testid*="search-results"], .search-results')
       .isVisible({ timeout: 2000 })
-    const navigatedToSearch =
-      page.url().includes('search') || page.url().includes('q=')
+    const navigatedToSearch = page.url().includes('search') || page.url().includes('q=')
 
     expect(hasSearchResults || navigatedToSearch).toBe(true)
   })
 
   test('should have logout functionality', async ({ page }) => {
     // Logout button must be available
-    const logoutButton = page
-      .locator('button, a')
-      .filter({ hasText: /log out|sign out|logout/i })
+    const logoutButton = page.locator('button, a').filter({ hasText: /log out|sign out|logout/i })
     await expect(logoutButton).toBeVisible()
 
     // Click logout
@@ -281,9 +252,7 @@ test.describe('Admin Dashboard Data Visualizations - Requires Admin Role', () =>
       const chartContainer = chart.locator('..')
 
       // Should have a title
-      const chartTitle = chartContainer.locator(
-        'h3, h4, .chart-title, [class*="title"]',
-      )
+      const chartTitle = chartContainer.locator('h3, h4, .chart-title, [class*="title"]')
       if (await chartTitle.isVisible({ timeout: 1000 }).catch(() => false)) {
         await expect(chartTitle).not.toBeEmpty()
       }
@@ -292,9 +261,7 @@ test.describe('Admin Dashboard Data Visualizations - Requires Admin Role', () =>
 
   test('should support data refresh functionality', async ({ page }) => {
     // Look for refresh capability
-    const refreshButton = page
-      .locator('button')
-      .filter({ hasText: /refresh|update|reload/i })
+    const refreshButton = page.locator('button').filter({ hasText: /refresh|update|reload/i })
 
     if (await refreshButton.isVisible({ timeout: 2000 })) {
       // Click refresh

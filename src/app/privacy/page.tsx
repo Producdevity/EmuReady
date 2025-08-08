@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | EmuReady',
-  description:
-    'Learn how EmuReady collects, uses, and protects your personal information.',
+  description: 'Learn how EmuReady collects, uses, and protects your personal information.',
   robots: 'index, follow',
 }
 
@@ -14,9 +13,7 @@ function PrivacyPolicyPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="prose prose-lg dark:prose-invert max-w-none">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-          Privacy Policy
-        </h1>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Privacy Policy</h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
           <strong>Last updated:</strong> August 1, 2025
@@ -28,12 +25,10 @@ function PrivacyPolicyPage() {
               1. Introduction
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              Welcome to EmuReady (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or
-              &ldquo;us&rdquo;). This Privacy Policy explains how we collect,
-              use, disclose, and safeguard your information when you visit our
-              website and use our services. EmuReady is a community-driven
-              platform for sharing emulation compatibility reports and gaming
-              experiences.
+              Welcome to EmuReady (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;). This
+              Privacy Policy explains how we collect, use, disclose, and safeguard your information
+              when you visit our website and use our services. EmuReady is a community-driven
+              platform for sharing emulation compatibility reports and gaming experiences.
             </p>
           </section>
 
@@ -47,12 +42,12 @@ function PrivacyPolicyPage() {
             </h3>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Account Information:</strong> Username, email address,
-                and profile information when you create an account
+                <strong>Account Information:</strong> Username, email address, and profile
+                information when you create an account
               </li>
               <li>
-                <strong>Content:</strong> Emulation reports, comments, ratings,
-                and other content you submit
+                <strong>Content:</strong> Emulation reports, comments, ratings, and other content
+                you submit
               </li>
             </ul>
 
@@ -61,20 +56,18 @@ function PrivacyPolicyPage() {
             </h3>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Usage Data:</strong> How you interact with our website
-                and services
+                <strong>Usage Data:</strong> How you interact with our website and services
               </li>
               <li>
-                <strong>Device Information:</strong> IP address, browser type,
-                device type, and operating system
+                <strong>Device Information:</strong> IP address, browser type, device type, and
+                operating system
               </li>
               <li>
-                <strong>Cookies:</strong> Small data files stored on your device
-                to enhance your experience
+                <strong>Cookies:</strong> Small data files stored on your device to enhance your
+                experience
               </li>
               <li>
-                <strong>Analytics:</strong> Anonymous usage statistics to
-                improve our services
+                <strong>Analytics:</strong> Anonymous usage statistics to improve our services
               </li>
             </ul>
 
@@ -83,20 +76,16 @@ function PrivacyPolicyPage() {
             </h3>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Device Identifiers:</strong> For analytics and crash
-                reporting
+                <strong>Device Identifiers:</strong> For analytics and crash reporting
               </li>
               <li>
-                <strong>App Information:</strong> App version, build number, and
-                performance data
+                <strong>App Information:</strong> App version, build number, and performance data
               </li>
               <li>
-                <strong>Operating System:</strong> Version and device
-                model/manufacturer
+                <strong>Operating System:</strong> Version and device model/manufacturer
               </li>
               <li>
-                <strong>Crash Logs:</strong> Technical data to help us fix app
-                issues
+                <strong>Crash Logs:</strong> Technical data to help us fix app issues
               </li>
             </ul>
 
@@ -108,16 +97,14 @@ function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Storage:</strong> To save app preferences and cache data
-                for offline access
+                <strong>Storage:</strong> To save app preferences and cache data for offline access
               </li>
               <li>
-                <strong>Network:</strong> To communicate with our servers and
-                sync your data
+                <strong>Network:</strong> To communicate with our servers and sync your data
               </li>
               <li>
-                <strong>Push Notifications:</strong> To send you updates about
-                your reports and community activity (opt-in)
+                <strong>Push Notifications:</strong> To send you updates about your reports and
+                community activity (opt-in)
               </li>
             </ul>
           </section>
@@ -135,8 +122,8 @@ function PrivacyPolicyPage() {
               <li>Enable community features like comments and ratings</li>
               <li>Send important service updates and notifications (opt-in)</li>
               <li>
-                Send push notifications about new reports, updates, and
-                community activity (mobile app, opt-in)
+                Send push notifications about new reports, updates, and community activity (mobile
+                app, opt-in)
               </li>
               <li>Improve our platform through analytics and user feedback</li>
               <li>Ensure compliance with our Terms of Service</li>
@@ -149,26 +136,25 @@ function PrivacyPolicyPage() {
               4. Information Sharing
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-              We do not sell, rent, or trade your personal information. We may
-              share information in these limited circumstances:
+              We do not sell, rent, or trade your personal information. We may share information in
+              these limited circumstances:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Public Content:</strong> User-generated content like
-                reviews and comments are publicly visible
+                <strong>Public Content:</strong> User-generated content like reviews and comments
+                are publicly visible
               </li>
               <li>
-                <strong>Service Providers:</strong> Third-party services that
-                help us operate our platform (authentication, analytics,
-                hosting)
+                <strong>Service Providers:</strong> Third-party services that help us operate our
+                platform (authentication, analytics, hosting)
               </li>
               <li>
-                <strong>Legal Requirements:</strong> When required by law or to
-                protect our rights and safety
+                <strong>Legal Requirements:</strong> When required by law or to protect our rights
+                and safety
               </li>
               <li>
-                <strong>Business Transfers:</strong> In connection with mergers,
-                acquisitions, or asset transfers
+                <strong>Business Transfers:</strong> In connection with mergers, acquisitions, or
+                asset transfers
               </li>
             </ul>
           </section>
@@ -182,8 +168,7 @@ function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Clerk:</strong> User authentication and account
-                management
+                <strong>Clerk:</strong> User authentication and account management
               </li>
               <li>
                 <strong>Vercel:</strong> Website hosting and analytics
@@ -192,17 +177,14 @@ function PrivacyPolicyPage() {
                 <strong>Supabase:</strong> Database and storage services
               </li>
               <li>
-                <strong>Google Analytics:</strong> Anonymous usage analytics (if
-                enabled)
+                <strong>Google Analytics:</strong> Anonymous usage analytics (if enabled)
               </li>
               <li>
-                <strong>TheGamesDB & RAWG:</strong> Game information and
-                metadata
+                <strong>TheGamesDB & RAWG:</strong> Game information and metadata
               </li>
             </ul>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-              These services have their own privacy policies, and we encourage
-              you to review them.
+              These services have their own privacy policies, and we encourage you to review them.
             </p>
           </section>
 
@@ -211,10 +193,9 @@ function PrivacyPolicyPage() {
               6. Data Security
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              We implement appropriate security measures to protect your
-              information, including: encryption in transit and at rest, secure
-              authentication systems, regular security audits, and limited
-              access controls. However, no internet-based service is 100%
+              We implement appropriate security measures to protect your information, including:
+              encryption in transit and at rest, secure authentication systems, regular security
+              audits, and limited access controls. However, no internet-based service is 100%
               secure, and we cannot guarantee absolute security.
             </p>
           </section>
@@ -227,34 +208,27 @@ function PrivacyPolicyPage() {
               You have the following rights regarding your information:
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-              <strong>Note:</strong> Account creation is required to submit
-              emulation reports and participate in community features. You can
-              browse public content without an account.
+              <strong>Note:</strong> Account creation is required to submit emulation reports and
+              participate in community features. You can browse public content without an account.
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
               <li>
-                <strong>Access:</strong> Request access to your personal
-                information
+                <strong>Access:</strong> Request access to your personal information
               </li>
               <li>
-                <strong>Correction:</strong> Update or correct inaccurate
-                information
+                <strong>Correction:</strong> Update or correct inaccurate information
               </li>
               <li>
-                <strong>Deletion:</strong> Request deletion of your account and
-                associated data
+                <strong>Deletion:</strong> Request deletion of your account and associated data
               </li>
               <li>
-                <strong>Portability:</strong> Export your data in a common
-                format
+                <strong>Portability:</strong> Export your data in a common format
               </li>
               <li>
-                <strong>Opt-out:</strong> Unsubscribe from promotional
-                communications
+                <strong>Opt-out:</strong> Unsubscribe from promotional communications
               </li>
               <li>
-                <strong>Cookie Control:</strong> Manage cookie preferences in
-                your browser
+                <strong>Cookie Control:</strong> Manage cookie preferences in your browser
               </li>
             </ul>
           </section>
@@ -264,10 +238,9 @@ function PrivacyPolicyPage() {
               8. Children&apos;s Privacy
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              EmuReady is not intended for children under 13 years of age. We do
-              not knowingly collect personal information from children under 13.
-              If you believe we have collected information from a child under
-              13, please contact us immediately.
+              EmuReady is not intended for children under 13 years of age. We do not knowingly
+              collect personal information from children under 13. If you believe we have collected
+              information from a child under 13, please contact us immediately.
             </p>
           </section>
 
@@ -276,10 +249,9 @@ function PrivacyPolicyPage() {
               9. International Users
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              EmuReady is hosted in the United States. If you are accessing our
-              services from outside the United States, please be aware that your
-              information may be transferred to, stored, and processed in the
-              United States where our servers are located.
+              EmuReady is hosted in the United States. If you are accessing our services from
+              outside the United States, please be aware that your information may be transferred
+              to, stored, and processed in the United States where our servers are located.
             </p>
           </section>
 
@@ -288,10 +260,9 @@ function PrivacyPolicyPage() {
               10. Changes to This Policy
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              We may update this Privacy Policy from time to time. We will
-              notify you of any material changes by posting the new policy on
-              this page and updating the &ldquo;Last updated&rdquo; date.
-              Continued use of our services after changes become effective
+              We may update this Privacy Policy from time to time. We will notify you of any
+              material changes by posting the new policy on this page and updating the &ldquo;Last
+              updated&rdquo; date. Continued use of our services after changes become effective
               constitutes acceptance of the revised policy.
             </p>
           </section>
@@ -301,12 +272,11 @@ function PrivacyPolicyPage() {
               11. Data Retention
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              We retain your personal information for as long as necessary to
-              provide our services and comply with legal obligations. Account
-              data is retained while your account is active. You can request
-              deletion of your account and associated data at any time through
-              your account settings or by contacting us. Some information may be
-              retained in anonymized form for analytics purposes.
+              We retain your personal information for as long as necessary to provide our services
+              and comply with legal obligations. Account data is retained while your account is
+              active. You can request deletion of your account and associated data at any time
+              through your account settings or by contacting us. Some information may be retained in
+              anonymized form for analytics purposes.
             </p>
           </section>
 
@@ -315,10 +285,9 @@ function PrivacyPolicyPage() {
               12. Platform Compliance
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              This app complies with the Google Play Store and Apple App Store
-              privacy requirements and guidelines. We are committed to
-              maintaining transparency about our data practices and ensuring
-              compliance with all applicable platform policies.
+              This app complies with the Google Play Store and Apple App Store privacy requirements
+              and guidelines. We are committed to maintaining transparency about our data practices
+              and ensuring compliance with all applicable platform policies.
             </p>
           </section>
 
@@ -327,8 +296,8 @@ function PrivacyPolicyPage() {
               13. Contact Us
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              If you have questions about this Privacy Policy or our data
-              practices, please contact us:
+              If you have questions about this Privacy Policy or our data practices, please contact
+              us:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300 mt-4">
               <li>

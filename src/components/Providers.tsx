@@ -29,9 +29,7 @@ function Providers(props: PropsWithChildren) {
   return (
     <TRPCProvider>
       <ThemeProvider>
-        <ConfirmDialogProvider>
-          {recaptchaWrapper(props.children)}
-        </ConfirmDialogProvider>
+        <ConfirmDialogProvider>{recaptchaWrapper(props.children)}</ConfirmDialogProvider>
       </ThemeProvider>
     </TRPCProvider>
   )

@@ -108,10 +108,7 @@ function PerformanceScaleModal(props: Props) {
         </div>
 
         <div>
-          <label
-            htmlFor="rank"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="rank" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             Rank
           </label>
           <Input
@@ -125,8 +122,7 @@ function PerformanceScaleModal(props: Props) {
             placeholder="Higher numbers = better performance"
           />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Higher rank numbers indicate better performance (e.g., Perfect = 5,
-            Unplayable = 1)
+            Higher rank numbers indicate better performance (e.g., Perfect = 5, Unplayable = 1)
           </p>
         </div>
 
@@ -141,9 +137,9 @@ function PerformanceScaleModal(props: Props) {
             as="textarea"
             id="description"
             value={description}
-            onChange={(
-              e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-            ) => setDescription(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+              setDescription(e.target.value)
+            }
             className="w-full"
             rows={3}
             placeholder="Describe what this performance level means (optional)"
@@ -168,14 +164,8 @@ function PerformanceScaleModal(props: Props) {
           </Button>
           <Button
             type="submit"
-            isLoading={
-              createPerformanceScale.isPending ||
-              updatePerformanceScale.isPending
-            }
-            disabled={
-              createPerformanceScale.isPending ||
-              updatePerformanceScale.isPending
-            }
+            isLoading={createPerformanceScale.isPending || updatePerformanceScale.isPending}
+            disabled={createPerformanceScale.isPending || updatePerformanceScale.isPending}
           >
             {props.editId ? 'Save' : 'Create'}
           </Button>

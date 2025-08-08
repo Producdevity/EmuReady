@@ -23,8 +23,7 @@ export default function AccountDeletePage() {
               Account Deletion
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Sign in to manage your account settings and request account
-              deletion.
+              Sign in to manage your account settings and request account deletion.
             </p>
           </div>
 
@@ -70,9 +69,7 @@ export default function AccountDeletePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <LoadingSpinner size="lg" />
-      <p className="mt-4 text-gray-600 dark:text-gray-400">
-        Opening account settings...
-      </p>
+      <p className="mt-4 text-gray-600 dark:text-gray-400">Opening account settings...</p>
     </div>
   )
 }

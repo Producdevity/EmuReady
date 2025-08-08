@@ -29,9 +29,7 @@ function ApprovalModal(props: Props) {
         <p className="text-sm text-gray-700 dark:text-gray-300">
           You are about to{' '}
           <strong>
-            {props.approvalDecision === ApprovalStatus.APPROVED
-              ? 'approve'
-              : 'reject'}
+            {props.approvalDecision === ApprovalStatus.APPROVED ? 'approve' : 'reject'}
           </strong>{' '}
           this listing. This action will move it to the processed listings page.
         </p>
@@ -49,25 +47,16 @@ function ApprovalModal(props: Props) {
                   ⚠️ Reported User Warning
                 </h4>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  The author of this listing (
-                  {props.selectedListingForApproval.author?.name}) has{' '}
+                  The author of this listing ({props.selectedListingForApproval.author?.name}) has{' '}
                   <strong>
-                    {
-                      props.selectedListingForApproval.authorReportStats
-                        .totalReports
-                    }{' '}
-                    active reports
+                    {props.selectedListingForApproval.authorReportStats.totalReports} active reports
                   </strong>{' '}
-                  against{' '}
-                  {
-                    props.selectedListingForApproval.authorReportStats
-                      .reportedListingsCount
-                  }{' '}
+                  against {props.selectedListingForApproval.authorReportStats.reportedListingsCount}{' '}
                   of their listings.
                 </p>
                 <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                  Please review this listing carefully before approval. Consider
-                  checking the reports page for more details.
+                  Please review this listing carefully before approval. Consider checking the
+                  reports page for more details.
                 </p>
               </div>
             </div>
@@ -96,30 +85,17 @@ function ApprovalModal(props: Props) {
           <Button
             variant="outline"
             onClick={props.closeApprovalModal}
-            disabled={
-              props.approveMutation.isPending || props.rejectMutation.isPending
-            }
+            disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
           >
             Cancel
           </Button>
           <Button
-            variant={
-              props.approvalDecision === ApprovalStatus.APPROVED
-                ? 'primary'
-                : 'danger'
-            }
+            variant={props.approvalDecision === ApprovalStatus.APPROVED ? 'primary' : 'danger'}
             onClick={props.handleApprovalSubmit}
-            isLoading={
-              props.approveMutation.isPending || props.rejectMutation.isPending
-            }
-            disabled={
-              props.approveMutation.isPending || props.rejectMutation.isPending
-            }
+            isLoading={props.approveMutation.isPending || props.rejectMutation.isPending}
+            disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
           >
-            Confirm{' '}
-            {props.approvalDecision === ApprovalStatus.APPROVED
-              ? 'Approval'
-              : 'Rejection'}
+            Confirm {props.approvalDecision === ApprovalStatus.APPROVED ? 'Approval' : 'Rejection'}
           </Button>
         </div>
       </div>

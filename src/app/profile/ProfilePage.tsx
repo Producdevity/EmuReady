@@ -49,9 +49,7 @@ const tabs = [
 function ProfilePage() {
   const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get('tab') || 'profile',
-  )
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile')
 
   const userQuery = api.users.getProfile.useQuery(undefined, {
     enabled: !!user,
@@ -61,10 +59,9 @@ function ProfilePage() {
     enabled: !!user,
   })
 
-  const notificationPreferencesQuery =
-    api.notifications.getPreferences.useQuery(undefined, {
-      enabled: !!user,
-    })
+  const notificationPreferencesQuery = api.notifications.getPreferences.useQuery(undefined, {
+    enabled: !!user,
+  })
 
   if (!isLoaded) return <PageSkeletonLoading />
 
@@ -74,9 +71,7 @@ function ProfilePage() {
 
   // Filter tabs based on user permissions
   const visibleTabs = tabs.filter((tab) =>
-    tab.id === 'settings'
-      ? hasPermission(userQuery.data?.role, Role.MODERATOR)
-      : true,
+    tab.id === 'settings' ? hasPermission(userQuery.data?.role, Role.MODERATOR) : true,
   )
 
   return (
@@ -85,17 +80,11 @@ function ProfilePage() {
         <ProfileHeader clerkUser={user} profileData={userQuery.data} />
 
         <div className="mt-8">
-          <ProfileTabs
-            tabs={visibleTabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+          <ProfileTabs tabs={visibleTabs} activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
 
         <div className="mt-8">
-          {activeTab === 'profile' && (
-            <ProfileInformation userQuery={userQuery} />
-          )}
+          {activeTab === 'profile' && <ProfileInformation userQuery={userQuery} />}
 
           {activeTab === 'devices' && (
             <DeviceAndSocPreferences preferencesQuery={preferencesQuery} />
@@ -104,23 +93,20 @@ function ProfilePage() {
           {activeTab === 'pc-presets' && <PcPresets />}
 
           {activeTab === 'notifications' && (
-            <NotificationPreferences
-              notificationPreferencesQuery={notificationPreferencesQuery}
-            />
+            <NotificationPreferences notificationPreferencesQuery={notificationPreferencesQuery} />
           )}
 
-          {activeTab === 'settings' &&
-            hasPermission(userQuery.data?.role, Role.MODERATOR) && (
-              <SettingsSection
-                title="Admin Settings"
-                description="Administrative tools and configuration options"
-                icon={<Settings className="w-6 h-6" />}
-              >
-                <div className="text-gray-600 dark:text-gray-400">
-                  Admin settings panel coming soon...
-                </div>
-              </SettingsSection>
-            )}
+          {activeTab === 'settings' && hasPermission(userQuery.data?.role, Role.MODERATOR) && (
+            <SettingsSection
+              title="Admin Settings"
+              description="Administrative tools and configuration options"
+              icon={<Settings className="w-6 h-6" />}
+            >
+              <div className="text-gray-600 dark:text-gray-400">
+                Admin settings panel coming soon...
+              </div>
+            </SettingsSection>
+          )}
         </div>
       </div>
     </div>

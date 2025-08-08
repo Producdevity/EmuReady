@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const { userId } = await auth()
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized access' },
-        { status: 401 },
-      )
+      return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 })
     }
 
     // Get form data
@@ -23,10 +20,7 @@ export async function POST(request: NextRequest) {
     const result = await handleFileUpload(formData, userId, 'profiles')
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: result.status },
-      )
+      return NextResponse.json({ error: result.error }, { status: result.status })
     }
 
     // Return success response
@@ -41,10 +35,7 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Error uploading profile image:', error)
-    const errorMessage = getErrorMessage(
-      error,
-      'An error occurred during upload',
-    )
+    const errorMessage = getErrorMessage(error, 'An error occurred during upload')
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

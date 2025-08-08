@@ -28,16 +28,10 @@ import {
   invalidateSitemap,
   revalidateByTag,
 } from '@/server/cache/invalidation'
-import {
-  notificationEventEmitter,
-  NOTIFICATION_EVENTS,
-} from '@/server/notifications/eventEmitter'
+import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
-import {
-  calculateOffset,
-  createPaginationResult,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 
@@ -46,451 +40,407 @@ const LISTING_STATS_CACHE_KEY = 'listing-stats'
 const mode = Prisma.QueryMode.insensitive
 
 export const adminRouter = createTRPCRouter({
-  getPending: developerProcedure
-    .input(GetPendingListingsSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        page = 1,
-        limit = 20,
-        sortField,
-        sortDirection,
-      } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+  getPending: developerProcedure.input(GetPendingListingsSchema).query(async ({ ctx, input }) => {
+    const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
+    const skip = calculateOffset({ page }, limit)
 
-      // Build where clause for search
-      let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
+    // Build where clause for search
+    let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
 
-      // For developers, only show listings for their verified emulators
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        // Get user's verified emulators
-        const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
-          where: { userId: ctx.session.user.id },
-          select: { emulatorId: true },
-        })
+    // For developers, only show listings for their verified emulators
+    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      // Get user's verified emulators
+      const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
+        where: { userId: ctx.session.user.id },
+        select: { emulatorId: true },
+      })
 
-        const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
 
-        if (emulatorIds.length === 0) {
-          // Developer has no verified emulators, return empty result
-          return {
-            listings: [],
-            pagination: createPaginationResult(0, { page }, limit, 0),
-          }
-        }
-
-        where.emulatorId = { in: emulatorIds }
-      }
-
-      if (search && search.trim() !== '') {
-        where = {
-          ...where,
-          OR: [
-            { game: { title: { contains: search, mode } } },
-            { game: { system: { name: { contains: search, mode } } } },
-            { device: { modelName: { contains: search, mode } } },
-            { device: { brand: { name: { contains: search, mode } } } },
-            { emulator: { name: { contains: search, mode } } },
-            { author: { name: { contains: search, mode } } },
-          ],
+      if (emulatorIds.length === 0) {
+        // Developer has no verified emulators, return empty result
+        return {
+          listings: [],
+          pagination: createPaginationResult(0, { page }, limit, 0),
         }
       }
 
-      // Build orderBy clause
-      let orderBy: Prisma.ListingOrderByWithRelationInput = {
-        createdAt: 'desc', // Default sorting
+      where.emulatorId = { in: emulatorIds }
+    }
+
+    if (search && search.trim() !== '') {
+      where = {
+        ...where,
+        OR: [
+          { game: { title: { contains: search, mode } } },
+          { game: { system: { name: { contains: search, mode } } } },
+          { device: { modelName: { contains: search, mode } } },
+          { device: { brand: { name: { contains: search, mode } } } },
+          { emulator: { name: { contains: search, mode } } },
+          { author: { name: { contains: search, mode } } },
+        ],
       }
+    }
 
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'game.title':
-            orderBy = { game: { title: sortDirection } }
-            break
-          case 'game.system.name':
-            orderBy = { game: { system: { name: sortDirection } } }
-            break
-          case 'device':
-            orderBy = { device: { modelName: sortDirection } }
-            break
-          case 'emulator.name':
-            orderBy = { emulator: { name: sortDirection } }
-            break
-          case 'author.name':
-            orderBy = { author: { name: sortDirection } }
-            break
-          case 'createdAt':
-            orderBy = { createdAt: sortDirection }
-            break
-        }
+    // Build orderBy clause
+    let orderBy: Prisma.ListingOrderByWithRelationInput = {
+      createdAt: 'desc', // Default sorting
+    }
+
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'game.title':
+          orderBy = { game: { title: sortDirection } }
+          break
+        case 'game.system.name':
+          orderBy = { game: { system: { name: sortDirection } } }
+          break
+        case 'device':
+          orderBy = { device: { modelName: sortDirection } }
+          break
+        case 'emulator.name':
+          orderBy = { emulator: { name: sortDirection } }
+          break
+        case 'author.name':
+          orderBy = { author: { name: sortDirection } }
+          break
+        case 'createdAt':
+          orderBy = { createdAt: sortDirection }
+          break
       }
+    }
 
-      const listings = await ctx.prisma.listing.findMany({
-        where,
-        include: {
-          game: { include: { system: true } },
-          device: { include: { brand: true } },
-          emulator: true,
-          author: { select: { id: true, name: true, email: true } },
-          performance: true,
-        },
-        orderBy,
-        skip,
-        take: limit,
-      })
+    const listings = await ctx.prisma.listing.findMany({
+      where,
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true } },
+        emulator: true,
+        author: { select: { id: true, name: true, email: true } },
+        performance: true,
+      },
+      orderBy,
+      skip,
+      take: limit,
+    })
 
-      // Get report statistics for each unique author
-      const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
-      const authorReportStats = await Promise.all(
-        uniqueAuthorIds.map(async (authorId) => {
-          const [reportedListingsCount, totalReports] = await Promise.all([
-            ctx.prisma.listingReport.count({
-              where: {
-                listing: {
-                  authorId,
-                },
-              },
-            }),
-            ctx.prisma.listingReport.count({
-              where: {
-                listing: { authorId },
-                status: {
-                  in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW],
-                },
-              },
-            }),
-          ])
-
-          return {
-            authorId,
-            reportedListingsCount,
-            totalReports,
-            hasReports: totalReports > 0,
-          }
-        }),
-      )
-
-      // Create a map for quick lookup
-      const reportStatsMap = new Map(
-        authorReportStats.map((stat) => [stat.authorId, stat]),
-      )
-
-      // Add report statistics to each listing
-      const listingsWithReports = listings.map((listing) => ({
-        ...listing,
-        authorReportStats: reportStatsMap.get(listing.authorId) || {
-          authorId: listing.authorId,
-          reportedListingsCount: 0,
-          totalReports: 0,
-          hasReports: false,
-        },
-      }))
-
-      const totalListings = await ctx.prisma.listing.count({ where })
-
-      return {
-        listings: listingsWithReports,
-        pagination: createPaginationResult(
-          totalListings,
-          { page },
-          limit,
-          skip,
-        ),
-      }
-    }),
-
-  approve: protectedProcedure
-    .input(ApproveListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if user has permission to approve listings
-      // Either through APPROVE_LISTINGS permission or being a verified developer
-      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
-
-      if (!isModerator && !isDeveloper) {
-        return AppError.forbidden(
-          'You need to be at least a Developer to approve listings',
-        )
-      }
-      const { listingId } = input
-      const adminUserId = ctx.session.user.id
-
-      // Verify admin user exists
-      const adminUserExists = await ctx.prisma.user.findUnique({
-        where: { id: adminUserId },
-        select: { id: true },
-      })
-      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
-
-      const listingToApprove = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: {
-          author: {
-            select: {
-              id: true,
-              userBans: {
-                where: {
-                  isActive: true,
-                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                },
-                select: { reason: true },
-              },
-            },
-          },
-        },
-      })
-
-      if (
-        !listingToApprove ||
-        listingToApprove.status !== ApprovalStatus.PENDING
-      ) {
-        return ResourceError.listing.notPending()
-      }
-
-      // For developers, verify they can approve this emulator's listings
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
-          {
+    // Get report statistics for each unique author
+    const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
+    const authorReportStats = await Promise.all(
+      uniqueAuthorIds.map(async (authorId) => {
+        const [reportedListingsCount, totalReports] = await Promise.all([
+          ctx.prisma.listingReport.count({
             where: {
-              userId_emulatorId: {
-                userId: adminUserId,
-                emulatorId: listingToApprove.emulatorId,
+              listing: {
+                authorId,
               },
             },
-          },
-        )
-
-        if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only approve listings for emulators you are verified for',
-          )
-        }
-      }
-
-      // Auto-reject if user is banned
-      if (listingToApprove.author.userBans.length > 0) {
-        const banReason = listingToApprove.author.userBans[0].reason
-        await ctx.prisma.listing.update({
-          where: { id: listingId },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            processedByUserId: adminUserId,
-            processedAt: new Date(),
-            processedNotes: `Automatically rejected: User is currently banned (${banReason})`,
-          },
-        })
-
-        AppError.badRequest(
-          `Cannot approve listing: Author is currently banned (${banReason})`,
-        )
-      }
-
-      const updatedListing = await ctx.prisma.listing.update({
-        where: { id: listingId },
-        data: {
-          status: ApprovalStatus.APPROVED,
-          processedByUserId: adminUserId,
-          processedAt: new Date(),
-          processedNotes: null,
-        },
-      })
-
-      // Invalidate SEO cache
-      await invalidateListing(listingId)
-      await invalidateListPages()
-      await invalidateSitemap()
-      await revalidateByTag('listings')
-      await revalidateByTag(`listing-${listingId}`)
-      await revalidateByTag(`game-${listingToApprove.gameId}`)
-      await revalidateByTag(`device-${listingToApprove.deviceId}`)
-      await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
-
-      // Apply trust action for listing approval to the author
-      if (listingToApprove.authorId) {
-        await applyTrustAction({
-          userId: listingToApprove.authorId,
-          action: TrustAction.LISTING_APPROVED,
-          context: {
-            listingId,
-            adminUserId,
-            reason: 'listing_approved',
-          },
-        })
-      }
-
-      // Emit notification event
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
-        entityType: 'listing',
-        entityId: listingId,
-        triggeredBy: adminUserId,
-        payload: {
-          listingId,
-          approvedBy: adminUserId,
-          approvedAt: updatedListing.processedAt,
-        },
-      })
-
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      return updatedListing
-    }),
-
-  reject: protectedProcedure
-    .input(RejectListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if user has permission to reject listings
-      // Either through APPROVE_LISTINGS permission or being a verified developer
-      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
-
-      if (!isModerator && !isDeveloper) {
-        return AppError.forbidden(
-          'You need to be at least a Developer to reject listings',
-        )
-      }
-      const { listingId, notes } = input
-      const adminUserId = ctx.session.user.id
-
-      // Verify admin user exists
-      const adminUserExists = await ctx.prisma.user.findUnique({
-        where: { id: adminUserId },
-        select: { id: true },
-      })
-      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
-
-      const listingToReject = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: { author: { select: { id: true } } },
-      })
-
-      if (
-        !listingToReject ||
-        listingToReject.status !== ApprovalStatus.PENDING
-      ) {
-        return ResourceError.listing.notPending()
-      }
-
-      // For developers, verify they can reject this emulator's listings
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
-          {
+          }),
+          ctx.prisma.listingReport.count({
             where: {
-              userId_emulatorId: {
-                userId: adminUserId,
-                emulatorId: listingToReject.emulatorId,
+              listing: { authorId },
+              status: {
+                in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW],
               },
             },
-          },
-        )
+          }),
+        ])
 
-        if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only reject listings for emulators you are verified for',
-          )
+        return {
+          authorId,
+          reportedListingsCount,
+          totalReports,
+          hasReports: totalReports > 0,
         }
-      }
+      }),
+    )
 
-      const updatedListing = await ctx.prisma.listing.update({
+    // Create a map for quick lookup
+    const reportStatsMap = new Map(authorReportStats.map((stat) => [stat.authorId, stat]))
+
+    // Add report statistics to each listing
+    const listingsWithReports = listings.map((listing) => ({
+      ...listing,
+      authorReportStats: reportStatsMap.get(listing.authorId) || {
+        authorId: listing.authorId,
+        reportedListingsCount: 0,
+        totalReports: 0,
+        hasReports: false,
+      },
+    }))
+
+    const totalListings = await ctx.prisma.listing.count({ where })
+
+    return {
+      listings: listingsWithReports,
+      pagination: createPaginationResult(totalListings, { page }, limit, skip),
+    }
+  }),
+
+  approve: protectedProcedure.input(ApproveListingSchema).mutation(async ({ ctx, input }) => {
+    // Check if user has permission to approve listings
+    // Either through APPROVE_LISTINGS permission or being a verified developer
+    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+    if (!isModerator && !isDeveloper) {
+      return AppError.forbidden('You need to be at least a Developer to approve listings')
+    }
+    const { listingId } = input
+    const adminUserId = ctx.session.user.id
+
+    // Verify admin user exists
+    const adminUserExists = await ctx.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { id: true },
+    })
+    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
+    const listingToApprove = await ctx.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            userBans: {
+              where: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+              select: { reason: true },
+            },
+          },
+        },
+      },
+    })
+
+    if (!listingToApprove || listingToApprove.status !== ApprovalStatus.PENDING) {
+      return ResourceError.listing.notPending()
+    }
+
+    // For developers, verify they can approve this emulator's listings
+    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: adminUserId,
+            emulatorId: listingToApprove.emulatorId,
+          },
+        },
+      })
+
+      if (!verifiedDeveloper) {
+        return AppError.forbidden(
+          'You can only approve listings for emulators you are verified for',
+        )
+      }
+    }
+
+    // Auto-reject if user is banned
+    if (listingToApprove.author.userBans.length > 0) {
+      const banReason = listingToApprove.author.userBans[0].reason
+      await ctx.prisma.listing.update({
         where: { id: listingId },
         data: {
           status: ApprovalStatus.REJECTED,
           processedByUserId: adminUserId,
           processedAt: new Date(),
-          processedNotes: notes,
+          processedNotes: `Automatically rejected: User is currently banned (${banReason})`,
         },
       })
 
-      // Apply trust action for listing rejection to the author
-      if (listingToReject.authorId) {
-        await applyTrustAction({
-          userId: listingToReject.authorId,
-          action: TrustAction.LISTING_REJECTED,
-          context: {
-            listingId,
-            adminUserId,
-            reason: notes || 'listing_rejected',
-          },
-        })
-      }
+      AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`)
+    }
 
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
-        entityType: 'listing',
-        entityId: listingId,
-        triggeredBy: adminUserId,
-        payload: {
+    const updatedListing = await ctx.prisma.listing.update({
+      where: { id: listingId },
+      data: {
+        status: ApprovalStatus.APPROVED,
+        processedByUserId: adminUserId,
+        processedAt: new Date(),
+        processedNotes: null,
+      },
+    })
+
+    // Invalidate SEO cache
+    await invalidateListing(listingId)
+    await invalidateListPages()
+    await invalidateSitemap()
+    await revalidateByTag('listings')
+    await revalidateByTag(`listing-${listingId}`)
+    await revalidateByTag(`game-${listingToApprove.gameId}`)
+    await revalidateByTag(`device-${listingToApprove.deviceId}`)
+    await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
+
+    // Apply trust action for listing approval to the author
+    if (listingToApprove.authorId) {
+      await applyTrustAction({
+        userId: listingToApprove.authorId,
+        action: TrustAction.LISTING_APPROVED,
+        context: {
           listingId,
-          rejectedBy: adminUserId,
-          rejectedAt: updatedListing.processedAt,
-          rejectionReason: notes,
+          adminUserId,
+          reason: 'listing_approved',
+        },
+      })
+    }
+
+    // Emit notification event
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
+      entityType: 'listing',
+      entityId: listingId,
+      triggeredBy: adminUserId,
+      payload: {
+        listingId,
+        approvedBy: adminUserId,
+        approvedAt: updatedListing.processedAt,
+      },
+    })
+
+    // Invalidate listing stats cache
+    listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+    return updatedListing
+  }),
+
+  reject: protectedProcedure.input(RejectListingSchema).mutation(async ({ ctx, input }) => {
+    // Check if user has permission to reject listings
+    // Either through APPROVE_LISTINGS permission or being a verified developer
+    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+
+    if (!isModerator && !isDeveloper) {
+      return AppError.forbidden('You need to be at least a Developer to reject listings')
+    }
+    const { listingId, notes } = input
+    const adminUserId = ctx.session.user.id
+
+    // Verify admin user exists
+    const adminUserExists = await ctx.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { id: true },
+    })
+    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
+    const listingToReject = await ctx.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: { author: { select: { id: true } } },
+    })
+
+    if (!listingToReject || listingToReject.status !== ApprovalStatus.PENDING) {
+      return ResourceError.listing.notPending()
+    }
+
+    // For developers, verify they can reject this emulator's listings
+    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: adminUserId,
+            emulatorId: listingToReject.emulatorId,
+          },
         },
       })
 
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      return updatedListing
-    }),
-
-  getProcessed: superAdminProcedure
-    .input(GetProcessedSchema)
-    .query(async ({ ctx, input }) => {
-      const { page, limit, filterStatus, search } = input
-      const skip = calculateOffset({ page }, limit)
-
-      const baseWhere: Prisma.ListingWhereInput = {
-        NOT: { status: ApprovalStatus.PENDING },
-        ...(filterStatus && { status: filterStatus }),
+      if (!verifiedDeveloper) {
+        return AppError.forbidden('You can only reject listings for emulators you are verified for')
       }
+    }
 
-      const searchWhere: Prisma.ListingWhereInput = search
-        ? {
-            OR: [
-              { game: { title: { contains: search, mode } } },
-              { author: { name: { contains: search, mode } } },
-              { processedNotes: { contains: search, mode } },
-              { notes: { contains: search, mode } },
-            ],
-          }
-        : {}
+    const updatedListing = await ctx.prisma.listing.update({
+      where: { id: listingId },
+      data: {
+        status: ApprovalStatus.REJECTED,
+        processedByUserId: adminUserId,
+        processedAt: new Date(),
+        processedNotes: notes,
+      },
+    })
 
-      const whereClause: Prisma.ListingWhereInput = {
-        ...baseWhere,
-        ...searchWhere,
-      }
-
-      const listings = await ctx.prisma.listing.findMany({
-        where: whereClause,
-        include: {
-          game: { include: { system: true } },
-          device: { include: { brand: true } },
-          emulator: true,
-          author: { select: { id: true, name: true, email: true } },
-          performance: true,
-          processedByUser: { select: { id: true, name: true, email: true } }, // Admin who processed
+    // Apply trust action for listing rejection to the author
+    if (listingToReject.authorId) {
+      await applyTrustAction({
+        userId: listingToReject.authorId,
+        action: TrustAction.LISTING_REJECTED,
+        context: {
+          listingId,
+          adminUserId,
+          reason: notes || 'listing_rejected',
         },
-        orderBy: {
-          processedAt: 'desc', // Show most recently processed first
-        },
-        skip,
-        take: limit,
       })
+    }
 
-      const totalListings = await ctx.prisma.listing.count({
-        where: whereClause,
-      })
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
+      entityType: 'listing',
+      entityId: listingId,
+      triggeredBy: adminUserId,
+      payload: {
+        listingId,
+        rejectedBy: adminUserId,
+        rejectedAt: updatedListing.processedAt,
+        rejectionReason: notes,
+      },
+    })
 
-      return {
-        listings,
-        pagination: createPaginationResult(
-          totalListings,
-          { page },
-          limit,
-          skip,
-        ),
-      }
-    }),
+    // Invalidate listing stats cache
+    listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+    return updatedListing
+  }),
+
+  getProcessed: superAdminProcedure.input(GetProcessedSchema).query(async ({ ctx, input }) => {
+    const { page, limit, filterStatus, search } = input
+    const skip = calculateOffset({ page }, limit)
+
+    const baseWhere: Prisma.ListingWhereInput = {
+      NOT: { status: ApprovalStatus.PENDING },
+      ...(filterStatus && { status: filterStatus }),
+    }
+
+    const searchWhere: Prisma.ListingWhereInput = search
+      ? {
+          OR: [
+            { game: { title: { contains: search, mode } } },
+            { author: { name: { contains: search, mode } } },
+            { processedNotes: { contains: search, mode } },
+            { notes: { contains: search, mode } },
+          ],
+        }
+      : {}
+
+    const whereClause: Prisma.ListingWhereInput = {
+      ...baseWhere,
+      ...searchWhere,
+    }
+
+    const listings = await ctx.prisma.listing.findMany({
+      where: whereClause,
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true } },
+        emulator: true,
+        author: { select: { id: true, name: true, email: true } },
+        performance: true,
+        processedByUser: { select: { id: true, name: true, email: true } }, // Admin who processed
+      },
+      orderBy: {
+        processedAt: 'desc', // Show most recently processed first
+      },
+      skip,
+      take: limit,
+    })
+
+    const totalListings = await ctx.prisma.listing.count({
+      where: whereClause,
+    })
+
+    return {
+      listings,
+      pagination: createPaginationResult(totalListings, { page }, limit, skip),
+    }
+  }),
 
   overrideStatus: superAdminProcedure
     .input(OverrideApprovalStatusSchema)
@@ -535,23 +485,21 @@ export const adminRouter = createTRPCRouter({
       return updatedListing
     }),
 
-  delete: deleteAnyListingProcedure
-    .input(DeleteListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.id },
-        select: { id: true, game: { select: { title: true } } },
-      })
+  delete: deleteAnyListingProcedure.input(DeleteListingSchema).mutation(async ({ ctx, input }) => {
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: input.id },
+      select: { id: true, game: { select: { title: true } } },
+    })
 
-      if (!listing) return ResourceError.listing.notFound()
+    if (!listing) return ResourceError.listing.notFound()
 
-      await ctx.prisma.listing.delete({ where: { id: input.id } })
+    await ctx.prisma.listing.delete({ where: { id: input.id } })
 
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+    // Invalidate listing stats cache
+    listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
-      return { success: true, message: 'Listing deleted successfully' }
-    }),
+    return { success: true, message: 'Listing deleted successfully' }
+  }),
 
   bulkApprove: protectedProcedure
     .input(BulkApproveListingsSchema)
@@ -562,9 +510,7 @@ export const adminRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden(
-          'You need to be at least a Developer to approve listings',
-        )
+        return AppError.forbidden('You need to be at least a Developer to approve listings')
       }
       const { listingIds } = input
       const adminUserId = ctx.session.user.id
@@ -591,10 +537,7 @@ export const adminRouter = createTRPCRouter({
                 userBans: {
                   where: {
                     isActive: true,
-                    OR: [
-                      { expiresAt: null },
-                      { expiresAt: { gt: new Date() } },
-                    ],
+                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                   },
                   select: { reason: true },
                 },
@@ -610,9 +553,7 @@ export const adminRouter = createTRPCRouter({
             select: { emulatorId: true },
           })
 
-          const verifiedEmulatorIds = userVerifiedEmulators.map(
-            (ve) => ve.emulatorId,
-          )
+          const verifiedEmulatorIds = userVerifiedEmulators.map((ve) => ve.emulatorId)
           const unauthorizedListings = listingsToApprove.filter(
             (listing) => !verifiedEmulatorIds.includes(listing.emulatorId),
           )
@@ -636,12 +577,8 @@ export const adminRouter = createTRPCRouter({
         }
 
         // Separate listings by banned/non-banned authors
-        const bannedUserListings = listingsToApprove.filter(
-          (l) => l.author.userBans.length > 0,
-        )
-        const validListings = listingsToApprove.filter(
-          (l) => l.author.userBans.length === 0,
-        )
+        const bannedUserListings = listingsToApprove.filter((l) => l.author.userBans.length > 0)
+        const validListings = listingsToApprove.filter((l) => l.author.userBans.length === 0)
 
         // Auto-reject listings from banned users
         if (bannedUserListings.length > 0) {
@@ -703,18 +640,10 @@ export const adminRouter = createTRPCRouter({
         // Invalidate SEO cache for all approved listings
         await Promise.all([
           ...validListings.map((listing) => invalidateListing(listing.id)),
-          ...validListings.map((listing) =>
-            revalidateByTag(`listing-${listing.id}`),
-          ),
-          ...validListings.map((listing) =>
-            revalidateByTag(`game-${listing.gameId}`),
-          ),
-          ...validListings.map((listing) =>
-            revalidateByTag(`device-${listing.deviceId}`),
-          ),
-          ...validListings.map((listing) =>
-            revalidateByTag(`emulator-${listing.emulatorId}`),
-          ),
+          ...validListings.map((listing) => revalidateByTag(`listing-${listing.id}`)),
+          ...validListings.map((listing) => revalidateByTag(`game-${listing.gameId}`)),
+          ...validListings.map((listing) => revalidateByTag(`device-${listing.deviceId}`)),
+          ...validListings.map((listing) => revalidateByTag(`emulator-${listing.emulatorId}`)),
         ])
         await invalidateListPages()
         await invalidateSitemap()
@@ -751,8 +680,7 @@ export const adminRouter = createTRPCRouter({
       // Invalidate listing stats cache
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
-      const { validListings, bannedUserListings, notFoundOrNotPendingIds } =
-        transactionResult
+      const { validListings, bannedUserListings, notFoundOrNotPendingIds } = transactionResult
 
       let message = `Successfully approved ${validListings.length} listing(s).`
 
@@ -783,9 +711,7 @@ export const adminRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden(
-          'You need to be at least a Developer to reject listings',
-        )
+        return AppError.forbidden('You need to be at least a Developer to reject listings')
       }
       const { listingIds, notes } = input
       const adminUserId = ctx.session.user.id
@@ -812,9 +738,7 @@ export const adminRouter = createTRPCRouter({
             select: { emulatorId: true },
           })
 
-          const verifiedEmulatorIds = userVerifiedEmulators.map(
-            (ve) => ve.emulatorId,
-          )
+          const verifiedEmulatorIds = userVerifiedEmulators.map((ve) => ve.emulatorId)
           const unauthorizedListings = listingsToReject.filter(
             (listing) => !verifiedEmulatorIds.includes(listing.emulatorId),
           )
@@ -938,140 +862,132 @@ export const adminRouter = createTRPCRouter({
   }),
 
   // Super admin procedures for listing management
-  getAll: superAdminProcedure
-    .input(GetAllListingsAdminSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        page,
-        limit,
-        sortField,
-        sortDirection,
-        search,
-        statusFilter,
-        systemFilter,
-        emulatorFilter,
-      } = input
-      const skip = calculateOffset({ page }, limit)
+  getAll: superAdminProcedure.input(GetAllListingsAdminSchema).query(async ({ ctx, input }) => {
+    const {
+      page,
+      limit,
+      sortField,
+      sortDirection,
+      search,
+      statusFilter,
+      systemFilter,
+      emulatorFilter,
+    } = input
+    const skip = calculateOffset({ page }, limit)
 
-      const baseWhere: Prisma.ListingWhereInput = {
-        ...(statusFilter && { status: statusFilter }),
-        ...(systemFilter && { game: { systemId: systemFilter } }),
-        ...(emulatorFilter && { emulatorId: emulatorFilter }),
-      }
+    const baseWhere: Prisma.ListingWhereInput = {
+      ...(statusFilter && { status: statusFilter }),
+      ...(systemFilter && { game: { systemId: systemFilter } }),
+      ...(emulatorFilter && { emulatorId: emulatorFilter }),
+    }
 
-      const searchWhere: Prisma.ListingWhereInput = search
-        ? {
-            OR: [
-              { game: { title: { contains: search, mode } } },
-              { author: { name: { contains: search, mode } } },
-              { notes: { contains: search, mode } },
-            ],
-          }
-        : {}
-
-      const whereClause: Prisma.ListingWhereInput = {
-        ...baseWhere,
-        ...searchWhere,
-      }
-
-      // Handle sorting
-      let orderBy: Prisma.ListingOrderByWithRelationInput = {
-        createdAt: 'desc',
-      }
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'game.title':
-            orderBy = { game: { title: sortDirection } }
-            break
-          case 'game.system.name':
-            orderBy = { game: { system: { name: sortDirection } } }
-            break
-          case 'device':
-            orderBy = { device: { modelName: sortDirection } }
-            break
-          case 'emulator.name':
-            orderBy = { emulator: { name: sortDirection } }
-            break
-          case 'performance.rank':
-            orderBy = { performance: { rank: sortDirection } }
-            break
-          case 'author.name':
-            orderBy = { author: { name: sortDirection } }
-            break
-          case 'status':
-            orderBy = { status: sortDirection }
-            break
-          case 'createdAt':
-            orderBy = { createdAt: sortDirection }
-            break
+    const searchWhere: Prisma.ListingWhereInput = search
+      ? {
+          OR: [
+            { game: { title: { contains: search, mode } } },
+            { author: { name: { contains: search, mode } } },
+            { notes: { contains: search, mode } },
+          ],
         }
+      : {}
+
+    const whereClause: Prisma.ListingWhereInput = {
+      ...baseWhere,
+      ...searchWhere,
+    }
+
+    // Handle sorting
+    let orderBy: Prisma.ListingOrderByWithRelationInput = {
+      createdAt: 'desc',
+    }
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'game.title':
+          orderBy = { game: { title: sortDirection } }
+          break
+        case 'game.system.name':
+          orderBy = { game: { system: { name: sortDirection } } }
+          break
+        case 'device':
+          orderBy = { device: { modelName: sortDirection } }
+          break
+        case 'emulator.name':
+          orderBy = { emulator: { name: sortDirection } }
+          break
+        case 'performance.rank':
+          orderBy = { performance: { rank: sortDirection } }
+          break
+        case 'author.name':
+          orderBy = { author: { name: sortDirection } }
+          break
+        case 'status':
+          orderBy = { status: sortDirection }
+          break
+        case 'createdAt':
+          orderBy = { createdAt: sortDirection }
+          break
       }
+    }
 
-      const listings = await ctx.prisma.listing.findMany({
-        where: whereClause,
-        include: {
-          game: { include: { system: true } },
-          device: { include: { brand: true, soc: true } },
-          emulator: true,
-          author: { select: { id: true, name: true, email: true } },
-          performance: true,
-        },
-        orderBy,
-        skip,
-        take: limit,
-      })
+    const listings = await ctx.prisma.listing.findMany({
+      where: whereClause,
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true, soc: true } },
+        emulator: true,
+        author: { select: { id: true, name: true, email: true } },
+        performance: true,
+      },
+      orderBy,
+      skip,
+      take: limit,
+    })
 
-      const totalListings = await ctx.prisma.listing.count({
-        where: whereClause,
-      })
+    const totalListings = await ctx.prisma.listing.count({
+      where: whereClause,
+    })
 
-      return {
-        listings,
-        pagination: {
-          total: totalListings,
-          totalPages: Math.ceil(totalListings / limit),
-          currentPage: page,
-          limit,
-        },
-      }
-    }),
+    return {
+      listings,
+      pagination: {
+        total: totalListings,
+        totalPages: Math.ceil(totalListings / limit),
+        currentPage: page,
+        limit,
+      },
+    }
+  }),
 
-  getForEdit: protectedProcedure
-    .input(GetListingForEditSchema)
-    .query(async ({ ctx, input }) => {
-      // Allow moderators and above to edit listings
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        return AppError.forbidden(
-          'You need to be at least a Moderator to edit listings',
-        )
-      }
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.id },
-        include: {
-          game: { include: { system: true } },
-          device: { include: { brand: true, soc: true } },
-          emulator: {
-            include: {
-              customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
-            },
+  getForEdit: protectedProcedure.input(GetListingForEditSchema).query(async ({ ctx, input }) => {
+    // Allow moderators and above to edit listings
+    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      return AppError.forbidden('You need to be at least a Moderator to edit listings')
+    }
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: input.id },
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true, soc: true } },
+        emulator: {
+          include: {
+            customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
           },
-          author: { select: { id: true, name: true, email: true } },
-          performance: true,
-          customFieldValues: { include: { customFieldDefinition: true } },
         },
-      })
+        author: { select: { id: true, name: true, email: true } },
+        performance: true,
+        customFieldValues: { include: { customFieldDefinition: true } },
+      },
+    })
 
-      return listing || ResourceError.listing.notFound()
-    }),
+    return listing || ResourceError.listing.notFound()
+  }),
 
   updateListing: protectedProcedure
     .input(UpdateListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
       // Allow moderators and above to update listings
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        return AppError.forbidden(
-          'You need to be at least a Moderator to update listings',
-        )
+        return AppError.forbidden('You need to be at least a Moderator to update listings')
       }
       const { id, customFieldValues, ...updateData } = input
       const adminUserId = ctx.session.user.id
@@ -1120,96 +1036,90 @@ export const adminRouter = createTRPCRouter({
       })
     }),
 
-  getListingConfig: protectedProcedure
-    .input(GetListingByIdSchema)
-    .query(async ({ ctx, input }) => {
-      // Check if user has admin permissions or is a verified developer for this emulator
-      const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+  getListingConfig: protectedProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
+    // Check if user has admin permissions or is a verified developer for this emulator
+    const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
+    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
-      if (!isAdmin && !isDeveloper) {
-        return AppError.forbidden('Admin or Developer access required')
-      }
+    if (!isAdmin && !isDeveloper) {
+      return AppError.forbidden('Admin or Developer access required')
+    }
 
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.id },
-        include: {
-          game: {
-            select: {
-              id: true,
-              title: true,
-              system: { select: { id: true, name: true, key: true } },
-            },
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: input.id },
+      include: {
+        game: {
+          select: {
+            id: true,
+            title: true,
+            system: { select: { id: true, name: true, key: true } },
           },
-          emulator: { select: { id: true, name: true } },
-          customFieldValues: {
-            include: {
-              customFieldDefinition: {
-                select: {
-                  id: true,
-                  name: true,
-                  label: true,
-                  type: true,
-                  options: true,
-                },
+        },
+        emulator: { select: { id: true, name: true } },
+        customFieldValues: {
+          include: {
+            customFieldDefinition: {
+              select: {
+                id: true,
+                name: true,
+                label: true,
+                type: true,
+                options: true,
               },
             },
           },
         },
+      },
+    })
+
+    if (!listing) {
+      return ResourceError.listing.notFound()
+    }
+
+    // For developers, verify they can access this emulator's config
+    if (isDeveloper && !isAdmin) {
+      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        where: {
+          userId_emulatorId: {
+            userId: ctx.session.user.id,
+            emulatorId: listing.emulatorId,
+          },
+        },
       })
 
-      if (!listing) {
-        return ResourceError.listing.notFound()
+      if (!verifiedDeveloper) {
+        return AppError.forbidden('You can only view configs for emulators you are verified for')
       }
+    }
 
-      // For developers, verify they can access this emulator's config
-      if (isDeveloper && !isAdmin) {
-        const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique(
-          {
-            where: {
-              userId_emulatorId: {
-                userId: ctx.session.user.id,
-                emulatorId: listing.emulatorId,
-              },
-            },
-          },
-        )
+    try {
+      // Generate config using the emulator detector
+      const configResult = generateEmulatorConfig({
+        listingId: listing.id,
+        gameId: listing.game.id,
+        emulatorName: listing.emulator.name,
+        customFieldValues: listing.customFieldValues.map((cfv) => ({
+          customFieldDefinition: cfv.customFieldDefinition,
+          value: cfv.value,
+        })),
+      })
 
-        if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only view configs for emulators you are verified for',
-          )
-        }
+      return {
+        type: configResult.type,
+        filename: configResult.filename,
+        content: configResult.serialized,
+        listing: {
+          id: listing.id,
+          game: listing.game.title,
+          system: listing.game.system.name,
+          emulator: listing.emulator.name,
+        },
       }
-
-      try {
-        // Generate config using the emulator detector
-        const configResult = generateEmulatorConfig({
-          listingId: listing.id,
-          gameId: listing.game.id,
-          emulatorName: listing.emulator.name,
-          customFieldValues: listing.customFieldValues.map((cfv) => ({
-            customFieldDefinition: cfv.customFieldDefinition,
-            value: cfv.value,
-          })),
-        })
-
-        return {
-          type: configResult.type,
-          filename: configResult.filename,
-          content: configResult.serialized,
-          listing: {
-            id: listing.id,
-            game: listing.game.title,
-            system: listing.game.system.name,
-            emulator: listing.emulator.name,
-          },
-        }
-      } catch (error) {
-        console.error('Error generating config:', error)
-        throw AppError.internalError(
-          `Failed to generate config: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        )
-      }
-    }),
+    } catch (error) {
+      console.error('Error generating config:', error)
+      throw AppError.internalError(
+        `Failed to generate config: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
+    }
+  }),
 })

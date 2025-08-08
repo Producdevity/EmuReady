@@ -141,10 +141,7 @@ export class NotificationRateLimitService {
     }
 
     // Check user preference overrides
-    const preferenceOverride = await this.checkUserPreferences(
-      userId,
-      notificationType,
-    )
+    const preferenceOverride = await this.checkUserPreferences(userId, notificationType)
     return preferenceOverride.allowed ? typeStatus : preferenceOverride
   }
 
@@ -214,11 +211,7 @@ export class NotificationRateLimitService {
   }
 
   // Record a limit hit
-  private recordLimit(
-    ruleType: NotificationType | 'GLOBAL',
-    userId: string,
-    now: Date,
-  ): void {
+  private recordLimit(ruleType: NotificationType | 'GLOBAL', userId: string, now: Date): void {
     const rule = this.rules.find((r) => r.type === ruleType)
     if (!rule) return
 
@@ -347,9 +340,7 @@ export class NotificationRateLimitService {
     }>
   } {
     const now = new Date()
-    const activeLimits = Array.from(this.limits.values()).filter(
-      (entry) => now < entry.resetTime,
-    )
+    const activeLimits = Array.from(this.limits.values()).filter((entry) => now < entry.resetTime)
 
     // Count hits by type
     const typeHits = new Map<string, number>()

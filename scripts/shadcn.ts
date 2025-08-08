@@ -23,13 +23,9 @@ function addComponent(componentName: string): void {
 
     if (fs.existsSync(oldPath)) {
       fs.renameSync(oldPath, newPath)
-      console.log(
-        `📄 Renamed ${componentName}.tsx to ${pascalCase(componentName)}.tsx`,
-      )
+      console.log(`📄 Renamed ${componentName}.tsx to ${pascalCase(componentName)}.tsx`)
     } else {
-      console.warn(
-        `⚠️ Warning: ${componentName}.tsx not found in components/ui directory`,
-      )
+      console.warn(`⚠️ Warning: ${componentName}.tsx not found in components/ui directory`)
     }
   } catch (error) {
     console.error('❌ Error adding component:', error)

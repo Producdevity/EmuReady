@@ -18,15 +18,12 @@ const getAdminNavIcon = (href: string, className: string) => {
   if (href.includes('/brands')) return <Package className={className} />
   if (href.includes('/devices')) return <Smartphone className={className} />
   if (href.includes('/emulators')) return <Play className={className} />
-  if (href.includes('/verified-developers'))
-    return <Shield className={className} />
+  if (href.includes('/verified-developers')) return <Shield className={className} />
   if (href.includes('/performance')) return <Gauge className={className} />
   if (href.includes('/approvals')) return <CheckSquare className={className} />
   if (href.includes('/users')) return <Users className={className} />
-  if (href.includes('/processed-listings'))
-    return <FileText className={className} />
-  if (href.includes('/custom-field-templates'))
-    return <Layout className={className} />
+  if (href.includes('/processed-listings')) return <FileText className={className} />
+  if (href.includes('/custom-field-templates')) return <Layout className={className} />
   return <Monitor className={className} />
 }
 

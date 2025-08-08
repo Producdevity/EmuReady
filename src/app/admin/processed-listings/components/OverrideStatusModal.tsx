@@ -3,8 +3,7 @@ import { type RouterOutput } from '@/types/trpc'
 import { getApprovalStatusColor } from '@/utils/badgeColors'
 import { ApprovalStatus } from '@orm'
 
-type ProcessedListing =
-  RouterOutput['listings']['getProcessed']['listings'][number]
+type ProcessedListing = RouterOutput['listings']['getProcessed']['listings'][number]
 
 interface Props {
   isOpen: boolean
@@ -62,17 +61,11 @@ function OverrideStatusModal(props: Props) {
           />
         </div>
         <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700 mt-6">
-          <Button
-            variant="outline"
-            onClick={props.onClose}
-            disabled={props.isLoading}
-          >
+          <Button variant="outline" onClick={props.onClose} disabled={props.isLoading}>
             Cancel
           </Button>
           <Button
-            variant={
-              props.newStatus === ApprovalStatus.REJECTED ? 'danger' : 'primary'
-            }
+            variant={props.newStatus === ApprovalStatus.REJECTED ? 'danger' : 'primary'}
             onClick={props.onSubmit}
             isLoading={props.isLoading}
             disabled={props.isLoading}

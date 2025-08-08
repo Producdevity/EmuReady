@@ -16,12 +16,7 @@ function DeviceViewModal(props: Props) {
   if (!props.deviceData) return null
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="Device Details"
-      size="md"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Device Details" size="md">
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
           <div>

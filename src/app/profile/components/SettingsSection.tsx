@@ -30,15 +30,11 @@ function SettingsSection(props: Props) {
         <div className="flex items-start gap-5 mb-8">
           {props.icon && (
             <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-xl flex items-center justify-center shadow-md">
-              <div className="text-blue-600 dark:text-blue-400">
-                {props.icon}
-              </div>
+              <div className="text-blue-600 dark:text-blue-400">{props.icon}</div>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              {props.title}
-            </h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{props.title}</h3>
             {props.description && (
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 {props.description}

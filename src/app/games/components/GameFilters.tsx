@@ -2,12 +2,7 @@
 
 import { Joystick, Search, Filter, Eye, EyeOff, List } from 'lucide-react'
 import { type ChangeEvent } from 'react'
-import {
-  Input,
-  Autocomplete,
-  ThreeWayToggle,
-  type ThreeWayToggleOption,
-} from '@/components/ui'
+import { Input, Autocomplete, ThreeWayToggle, type ThreeWayToggleOption } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -56,8 +51,7 @@ function GameFilters(props: Props) {
 
   // Convert between old checkbox and new filter value
   const currentFilter: ListingFilterValue =
-    props.listingFilter ||
-    (props.hideGamesWithNoListings ? 'withListings' : 'all')
+    props.listingFilter || (props.hideGamesWithNoListings ? 'withListings' : 'all')
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -102,9 +96,7 @@ function GameFilters(props: Props) {
           <input
             type="checkbox"
             checked={props.hideGamesWithNoListings}
-            onChange={(e) =>
-              props.onHideGamesWithNoListingsChange(e.target.checked)
-            }
+            onChange={(e) => props.onHideGamesWithNoListingsChange(e.target.checked)}
             className="rounded border-gray-300 dark:border-gray-600"
           />
           <span>Hide games with no listings</span>

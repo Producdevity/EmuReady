@@ -1,10 +1,7 @@
 import { type Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { PageWithMetadata } from '@/components/seo/PageWithMetadata'
-import {
-  generatePageMetadata,
-  generateStructuredData,
-} from '@/lib/seo/metadata'
+import { generatePageMetadata, generateStructuredData } from '@/lib/seo/metadata'
 import { getListingForSEO } from '@/server/db/seo-queries'
 import ListingDetailsPage from './ListingDetailsPage'
 

@@ -60,9 +60,7 @@ export abstract class BasePage {
 
   // Common actions
   async navigateToHome() {
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
       // On mobile, use direct navigation to avoid overlay issues
@@ -97,9 +95,7 @@ export abstract class BasePage {
   }
 
   async navigateToHandheld() {
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
       // On mobile, use mobile menu or direct navigation
@@ -110,9 +106,7 @@ export abstract class BasePage {
       if (mobileMenuVisible) {
         await this.mobileMenuButton.click()
         await this.page.waitForTimeout(600)
-        const mobileHandheldLink = this.page
-          .getByRole('link', { name: /handheld/i })
-          .last()
+        const mobileHandheldLink = this.page.getByRole('link', { name: /handheld/i }).last()
         await mobileHandheldLink.click()
       } else {
         await this.page.goto('/listings')
@@ -144,9 +138,7 @@ export abstract class BasePage {
   }
 
   async navigateToPC() {
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
       // On mobile, use mobile menu or direct navigation
@@ -157,9 +149,7 @@ export abstract class BasePage {
       if (mobileMenuVisible) {
         await this.mobileMenuButton.click()
         await this.page.waitForTimeout(600)
-        const mobilePCLink = this.page
-          .getByRole('link', { name: /^pc$/i })
-          .last()
+        const mobilePCLink = this.page.getByRole('link', { name: /^pc$/i }).last()
         await mobilePCLink.click()
       } else {
         await this.page.goto('/pc-listings')
@@ -191,9 +181,7 @@ export abstract class BasePage {
   }
 
   async navigateToGames() {
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
       // On mobile, we need to open the mobile menu first
@@ -207,9 +195,7 @@ export abstract class BasePage {
         await this.page.waitForTimeout(600) // Wait for menu animation
 
         // Find games link in mobile menu
-        const mobileGamesLink = this.page
-          .getByRole('link', { name: /^games$/i })
-          .last()
+        const mobileGamesLink = this.page.getByRole('link', { name: /^games$/i }).last()
         await mobileGamesLink.click()
       } else {
         // Fallback to direct navigation if menu not available
@@ -248,9 +234,7 @@ export abstract class BasePage {
   }
 
   async clickLogo() {
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
       // On mobile, use direct navigation for reliability
@@ -276,10 +260,8 @@ export abstract class BasePage {
 
   async openMobileMenu() {
     // Check if menu is already open
-    const menuClass =
-      (await this.mobileMenuButton.locator('..').getAttribute('class')) || ''
-    const isOpen =
-      menuClass.includes('opacity-100') || menuClass.includes('max-h-screen')
+    const menuClass = (await this.mobileMenuButton.locator('..').getAttribute('class')) || ''
+    const isOpen = menuClass.includes('opacity-100') || menuClass.includes('max-h-screen')
 
     if (!isOpen) {
       await this.mobileMenuButton.click()
@@ -317,9 +299,7 @@ export abstract class BasePage {
 
   async waitForOverlaysToDisappear() {
     const browserName = this.page.context().browser()?.browserType().name()
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     // Mobile needs extra time for animations
     if (isMobile) {
@@ -412,9 +392,7 @@ export abstract class BasePage {
       }
 
       // Check for sign in button in main content (not navigation)
-      const mainSignIn = this.page
-        .locator('main')
-        .getByRole('button', { name: /sign in/i })
+      const mainSignIn = this.page.locator('main').getByRole('button', { name: /sign in/i })
       return await mainSignIn.isVisible({ timeout: 1000 })
     } catch {
       return false

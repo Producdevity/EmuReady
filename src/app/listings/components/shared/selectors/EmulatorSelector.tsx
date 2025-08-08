@@ -104,9 +104,8 @@ function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
                     <AlertCircle className="w-4 h-4 mr-2" />
                     <span>
                       No emulators found that support{' '}
-                      <strong>{props.selectedGame.system.name}</strong>. Try a
-                      different search term, or request to add your emulator by
-                      opening a GitHub issue.
+                      <strong>{props.selectedGame.system.name}</strong>. Try a different search
+                      term, or request to add your emulator by opening a GitHub issue.
                       <a
                         href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
                         target="_blank"
@@ -124,9 +123,7 @@ function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
           </>
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </>
   )
 }

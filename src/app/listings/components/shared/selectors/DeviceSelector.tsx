@@ -117,9 +117,7 @@ function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
         isLoading={isLastUsedDeviceLoading}
       />
 
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
       {props.selectedDevice && (
         <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
           <div className="flex items-center text-sm text-green-700 dark:text-green-300">
@@ -127,13 +125,11 @@ function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
             <span>
               Selected:{' '}
               <strong>
-                {props.selectedDevice.brand.name}{' '}
-                {props.selectedDevice.modelName}
+                {props.selectedDevice.brand.name} {props.selectedDevice.modelName}
               </strong>{' '}
               with{' '}
               <strong>
-                {props.selectedDevice.soc.manufacturer}{' '}
-                {props.selectedDevice.soc.name}
+                {props.selectedDevice.soc.manufacturer} {props.selectedDevice.soc.name}
               </strong>{' '}
               SoC
             </span>

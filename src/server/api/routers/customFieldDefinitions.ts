@@ -7,11 +7,7 @@ import {
   DeleteCustomFieldDefinitionSchema,
   UpdateCustomFieldDefinitionOrderSchema,
 } from '@/schemas/customFieldDefinition'
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  permissionProcedure,
-} from '@/server/api/trpc'
+import { createTRPCRouter, protectedProcedure, permissionProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
@@ -22,9 +18,7 @@ type CustomFieldOptionArray = {
   label: string
 }[]
 
-const manageCustomFieldsProcedure = permissionProcedure(
-  PERMISSIONS.MANAGE_CUSTOM_FIELDS,
-)
+const manageCustomFieldsProcedure = permissionProcedure(PERMISSIONS.MANAGE_CUSTOM_FIELDS)
 
 export const customFieldDefinitionRouter = createTRPCRouter({
   create: manageCustomFieldsProcedure
@@ -58,9 +52,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
 
       if (input.type === CustomFieldType.RANGE) {
         if (input.rangeMin === undefined || input.rangeMax === undefined) {
-          AppError.badRequest(
-            'Range minimum and maximum are required for RANGE type fields',
-          )
+          AppError.badRequest('Range minimum and maximum are required for RANGE type fields')
         }
         if (input.rangeMin >= input.rangeMax) {
           AppError.badRequest('Range minimum must be less than maximum')
@@ -84,9 +76,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           label: input.label,
           type: input.type,
           options:
-            input.type === CustomFieldType.SELECT && input.options
-              ? input.options
-              : Prisma.DbNull,
+            input.type === CustomFieldType.SELECT && input.options ? input.options : Prisma.DbNull,
           defaultValue: input.defaultValue ?? Prisma.DbNull,
           placeholder: input.placeholder ?? null,
           rangeMin: input.rangeMin ?? null,
@@ -157,8 +147,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       }
 
       const newType = input.type ?? fieldToUpdate.type
-      let optionsToSave: Prisma.JsonValue | typeof Prisma.DbNull =
-        fieldToUpdate.options
+      let optionsToSave: Prisma.JsonValue | typeof Prisma.DbNull = fieldToUpdate.options
 
       if (newType === CustomFieldType.SELECT) {
         if (input.hasOwnProperty('options')) {
@@ -170,19 +159,14 @@ export const customFieldDefinitionRouter = createTRPCRouter({
             optionsToSave = Prisma.DbNull
           }
         } else {
-          const currentOptions =
-            fieldToUpdate.options as CustomFieldOptionArray | null
+          const currentOptions = fieldToUpdate.options as CustomFieldOptionArray | null
           if (!Array.isArray(currentOptions) || currentOptions.length === 0) {
             ValidationError.invalidOptions('SELECT')
           }
           optionsToSave = currentOptions
         }
       } else {
-        if (
-          input.hasOwnProperty('options') &&
-          input.options &&
-          input.options.length > 0
-        ) {
+        if (input.hasOwnProperty('options') && input.options && input.options.length > 0) {
           ValidationError.optionsNotAllowed(newType)
         }
         optionsToSave = Prisma.DbNull

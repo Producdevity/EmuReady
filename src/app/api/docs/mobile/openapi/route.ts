@@ -17,8 +17,7 @@ export async function GET() {
     console.error('Error serving OpenAPI spec:', error)
     return NextResponse.json(
       {
-        error:
-          'OpenAPI specification not found. Run `npm run docs:generate` to generate it.',
+        error: 'OpenAPI specification not found. Run `npm run docs:generate` to generate it.',
       },
       { status: 404 },
     )

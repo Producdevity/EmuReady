@@ -108,19 +108,11 @@ export const UpdateProfileSchema = z.object({
 export const GetListingsSchema = z
   .object({
     page: z.number().min(1).default(1).describe('Page number for pagination'),
-    limit: z
-      .number()
-      .min(1)
-      .max(50)
-      .default(20)
-      .describe('Number of results per page (1-50)'),
+    limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
     gameId: z.string().uuid().optional().describe('Filter by game ID'),
     systemId: z.string().uuid().optional().describe('Filter by system ID'),
     deviceId: z.string().uuid().optional().describe('Filter by device ID'),
-    emulatorIds: z
-      .array(z.string().uuid())
-      .optional()
-      .describe('Filter by emulator IDs'),
+    emulatorIds: z.array(z.string().uuid()).optional().describe('Filter by emulator IDs'),
     search: z.string().optional().describe('Search listings by game name'),
   })
   .optional()
@@ -143,12 +135,7 @@ export const GetDevicesSchema = z
   .object({
     search: z.string().optional().describe('Search devices by name'),
     brandId: z.string().uuid().optional().describe('Filter by brand ID'),
-    limit: z
-      .number()
-      .min(1)
-      .max(1000)
-      .default(50)
-      .describe('Number of results to return (1-1000)'),
+    limit: z.number().min(1).max(1000).default(50).describe('Number of results to return (1-1000)'),
   })
   .optional()
   .describe('Get devices with optional filters')
@@ -166,16 +153,8 @@ export const GetEmulatorByIdSchema = z.object({
 export const GetNotificationsSchema = z
   .object({
     page: z.number().min(1).default(1).describe('Page number for pagination'),
-    limit: z
-      .number()
-      .min(1)
-      .max(50)
-      .default(20)
-      .describe('Number of results per page (1-50)'),
-    unreadOnly: z
-      .boolean()
-      .default(false)
-      .describe('Show only unread notifications'),
+    limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
+    unreadOnly: z.boolean().default(false).describe('Show only unread notifications'),
   })
   .optional()
   .describe('Get notifications with optional filters and pagination')
@@ -377,9 +356,7 @@ export const MobileAdminRejectGameSchema = z.object({
 
 export const MobileAdminGetReportsSchema = z
   .object({
-    status: z
-      .enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'])
-      .optional(),
+    status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']).optional(),
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(100).default(20),
   })

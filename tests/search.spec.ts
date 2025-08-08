@@ -34,8 +34,7 @@ test.describe('Search Functionality Tests', () => {
         .catch(() => false)
 
       // Either show empty state message or have no game cards
-      const isEmptyHandled =
-        noResults || hasEmptyState || gameCards.length === 0
+      const isEmptyHandled = noResults || hasEmptyState || gameCards.length === 0
       expect(isEmptyHandled).toBe(true)
     }
   })
@@ -64,9 +63,7 @@ test.describe('Search Functionality Tests', () => {
     // Results should be different after clearing search
     // (unless there are no listings at all)
     if (clearedCount > 0) {
-      console.log(
-        `Search filtered from ${clearedCount} to ${initialCount} listings`,
-      )
+      console.log(`Search filtered from ${clearedCount} to ${initialCount} listings`)
     }
   })
 
@@ -134,9 +131,7 @@ test.describe('Search Functionality Tests', () => {
     await expect(gamesPage.searchInput).toBeVisible()
   })
 
-  test('should provide search suggestions or autocomplete if available', async ({
-    page,
-  }) => {
+  test('should provide search suggestions or autocomplete if available', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
@@ -146,9 +141,7 @@ test.describe('Search Functionality Tests', () => {
 
     // Check if autocomplete dropdown appears
     const hasAutocomplete = await page
-      .locator(
-        '[role="listbox"], [data-testid="search-suggestions"], .search-suggestions',
-      )
+      .locator('[role="listbox"], [data-testid="search-suggestions"], .search-suggestions')
       .isVisible({ timeout: 2000 })
       .catch(() => false)
 
@@ -234,18 +227,14 @@ test.describe('Cross-Page Search Tests', () => {
     await listingsPage.searchListings('Mario')
     const listingResults = await listingsPage.getListingCount()
 
-    console.log(
-      `Found ${gameResults} games and ${listingResults} listings for "Mario"`,
-    )
+    console.log(`Found ${gameResults} games and ${listingResults} listings for "Mario"`)
 
     // Both searches should complete successfully
     expect(gameResults).toBeGreaterThanOrEqual(0)
     expect(listingResults).toBeGreaterThanOrEqual(0)
   })
 
-  test('should handle search with no results across pages', async ({
-    page,
-  }) => {
+  test('should handle search with no results across pages', async ({ page }) => {
     const searchQuery = 'nonexistentgame12345xyz'
 
     // Test on games page

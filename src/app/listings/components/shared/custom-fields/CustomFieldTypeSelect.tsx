@@ -1,10 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form'
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { SelectInput } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -51,8 +46,7 @@ function CustomFieldTypeSelect<TFieldValues extends FieldValues = FieldValues>(
         name={props.fieldName}
         control={props.control}
         defaultValue={
-          (props.fieldDef.parsedOptions?.[0]?.value ??
-            '') as TFieldValues[FieldPath<TFieldValues>]
+          (props.fieldDef.parsedOptions?.[0]?.value ?? '') as TFieldValues[FieldPath<TFieldValues>]
         }
         rules={props.rules}
         render={({ field }) => (
@@ -74,9 +68,7 @@ function CustomFieldTypeSelect<TFieldValues extends FieldValues = FieldValues>(
           />
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>
   )
 }

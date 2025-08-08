@@ -41,8 +41,7 @@ function EmulatorsPage() {
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<EmulatorSortField>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [selectedEmulator, setSelectedEmulator] =
-    useState<EmulatorUnion | null>(null)
+  const [selectedEmulator, setSelectedEmulator] = useState<EmulatorUnion | null>(null)
 
   const columnVisibility = useColumnVisibility(EMULATORS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.emulators,
@@ -311,11 +310,7 @@ function EmulatorsPage() {
       )}
 
       {/* Emulator Modal */}
-      <EmulatorViewModal
-        isOpen={modalOpen}
-        onClose={closeModal}
-        emulatorData={selectedEmulator}
-      />
+      <EmulatorViewModal isOpen={modalOpen} onClose={closeModal} emulatorData={selectedEmulator} />
     </div>
   )
 }

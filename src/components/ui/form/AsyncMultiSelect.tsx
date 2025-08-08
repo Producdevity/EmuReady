@@ -118,10 +118,7 @@ export function AsyncMultiSelect({
         </PopoverTrigger>
         <PopoverContent className="w-full min-w-[200px] p-0" align="start">
           <div className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
-            <div
-              className="flex items-center border-b px-3"
-              cmdk-input-wrapper=""
-            >
+            <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <CommandPrimitive.Input
                 placeholder={`Search ${label.toLowerCase()}...`}
@@ -178,9 +175,7 @@ export function AsyncMultiSelect({
                         <div
                           className={cn(
                             'mr-2 h-4 w-4',
-                            value.includes(option.id)
-                              ? 'opacity-100'
-                              : 'opacity-0',
+                            value.includes(option.id) ? 'opacity-100' : 'opacity-0',
                           )}
                         >
                           {value.includes(option.id) && (

@@ -6,10 +6,7 @@ export class NavigationHelpers {
   /**
    * Navigate to a page with better error handling
    */
-  async navigateTo(
-    path: string,
-    options: { timeout?: number; waitForLoad?: boolean } = {},
-  ) {
+  async navigateTo(path: string, options: { timeout?: number; waitForLoad?: boolean } = {}) {
     const { timeout = 10000, waitForLoad = true } = options
 
     try {
@@ -26,10 +23,7 @@ export class NavigationHelpers {
   /**
    * Click navigation link with better error handling
    */
-  async clickNavLink(
-    linkText: string,
-    options: { mobile?: boolean; timeout?: number } = {},
-  ) {
+  async clickNavLink(linkText: string, options: { mobile?: boolean; timeout?: number } = {}) {
     const { mobile = false, timeout = 10000 } = options
 
     // Wait for navigation to be ready
@@ -116,18 +110,10 @@ export class NavigationHelpers {
       await this.page.waitForTimeout(300)
 
       // Approach 3: Try clicking on overlay/backdrop
-      const overlaySelectors = [
-        '.menu-overlay',
-        '.mobile-overlay',
-        '.backdrop',
-        '[data-overlay]',
-      ]
+      const overlaySelectors = ['.menu-overlay', '.mobile-overlay', '.backdrop', '[data-overlay]']
       for (const selector of overlaySelectors) {
         const overlay = this.page.locator(selector)
-        if (
-          (await overlay.count()) > 0 &&
-          (await overlay.first().isVisible({ timeout: 300 }))
-        ) {
+        if ((await overlay.count()) > 0 && (await overlay.first().isVisible({ timeout: 300 }))) {
           await overlay.first().click()
           await this.page.waitForTimeout(300)
           return
@@ -135,9 +121,7 @@ export class NavigationHelpers {
       }
 
       // Approach 4: Try clicking outside the navigation area (on body)
-      await this.page
-        .locator('body')
-        .click({ position: { x: 50, y: 200 }, force: true })
+      await this.page.locator('body').click({ position: { x: 50, y: 200 }, force: true })
       await this.page.waitForTimeout(300)
     } catch (error) {
       console.log('Error closing mobile menu:', error)
@@ -182,9 +166,7 @@ export class NavigationHelpers {
           .locator('a[href="/"], a[href="/games"], a[href="/listings"]')
           .all()
         const visibleCount = await Promise.all(
-          navigationLinks.map((link) =>
-            link.isVisible({ timeout: 500 }).catch(() => false),
-          ),
+          navigationLinks.map((link) => link.isVisible({ timeout: 500 }).catch(() => false)),
         ).then((results) => results.filter(Boolean).length)
 
         if (visibleCount > 3) {
@@ -224,22 +206,12 @@ export class NavigationHelpers {
 
       // Approach 4: Check for body/html classes that indicate menu state
       try {
-        const bodyClasses =
-          (await this.page.locator('body').getAttribute('class')) ?? ''
-        const htmlClasses =
-          (await this.page.locator('html').getAttribute('class')) ?? ''
+        const bodyClasses = (await this.page.locator('body').getAttribute('class')) ?? ''
+        const htmlClasses = (await this.page.locator('html').getAttribute('class')) ?? ''
 
-        const openIndicators = [
-          'menu-open',
-          'mobile-menu-open',
-          'nav-open',
-          'navigation-open',
-        ]
+        const openIndicators = ['menu-open', 'mobile-menu-open', 'nav-open', 'navigation-open']
         for (const indicator of openIndicators) {
-          if (
-            bodyClasses.includes(indicator) ||
-            htmlClasses.includes(indicator)
-          ) {
+          if (bodyClasses.includes(indicator) || htmlClasses.includes(indicator)) {
             console.log(`Mobile menu detected: ${indicator} class found`)
             return true
           }
@@ -249,12 +221,7 @@ export class NavigationHelpers {
       }
 
       // Approach 5: Check for overlay/backdrop elements
-      const overlaySelectors = [
-        '.menu-overlay',
-        '.mobile-overlay',
-        '.backdrop',
-        '[data-overlay]',
-      ]
+      const overlaySelectors = ['.menu-overlay', '.mobile-overlay', '.backdrop', '[data-overlay]']
 
       for (const selector of overlaySelectors) {
         try {
@@ -262,9 +229,7 @@ export class NavigationHelpers {
           if ((await overlay.count()) > 0) {
             const isVisible = await overlay.first().isVisible({ timeout: 500 })
             if (isVisible) {
-              console.log(
-                `Mobile menu detected: ${selector} overlay is visible`,
-              )
+              console.log(`Mobile menu detected: ${selector} overlay is visible`)
               return true
             }
           }
@@ -292,25 +257,18 @@ export class NavigationHelpers {
 
       // Approach 7: Check for specific Tailwind mobile classes
       try {
-        const mobileVisibleElements = this.page.locator(
-          '.block.md\\:hidden, .flex.md\\:hidden',
-        )
+        const mobileVisibleElements = this.page.locator('.block.md\\:hidden, .flex.md\\:hidden')
         const elementCount = await mobileVisibleElements.count()
 
         if (elementCount > 0) {
           for (let i = 0; i < Math.min(elementCount, 3); i++) {
             const element = mobileVisibleElements.nth(i)
-            const isVisible = await element
-              .isVisible({ timeout: 300 })
-              .catch(() => false)
+            const isVisible = await element.isVisible({ timeout: 300 }).catch(() => false)
             if (isVisible) {
               // Check if this element contains navigation
-              const hasNavigation =
-                (await element.locator('a[href], button').count()) > 0
+              const hasNavigation = (await element.locator('a[href], button').count()) > 0
               if (hasNavigation) {
-                console.log(
-                  'Mobile menu detected: mobile-visible navigation found',
-                )
+                console.log('Mobile menu detected: mobile-visible navigation found')
                 return true
               }
             }

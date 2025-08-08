@@ -21,10 +21,7 @@ describe('Permission System', () => {
     PERMISSIONS.VIEW_STATISTICS,
   ]
 
-  const createMockContext = (
-    permissions?: string[] | null,
-    role?: Role,
-  ): TRPCContext => ({
+  const createMockContext = (permissions?: string[] | null, role?: Role): TRPCContext => ({
     session:
       permissions !== undefined
         ? {
@@ -45,15 +42,9 @@ describe('Permission System', () => {
   describe('hasPermission', () => {
     describe('happy paths', () => {
       it('should return true when user has the required permission', () => {
-        expect(hasPermission(mockPermissions, PERMISSIONS.CREATE_LISTING)).toBe(
-          true,
-        )
-        expect(
-          hasPermission(mockPermissions, PERMISSIONS.EDIT_OWN_COMMENT),
-        ).toBe(true)
-        expect(
-          hasPermission(mockPermissions, PERMISSIONS.VIEW_STATISTICS),
-        ).toBe(true)
+        expect(hasPermission(mockPermissions, PERMISSIONS.CREATE_LISTING)).toBe(true)
+        expect(hasPermission(mockPermissions, PERMISSIONS.EDIT_OWN_COMMENT)).toBe(true)
+        expect(hasPermission(mockPermissions, PERMISSIONS.VIEW_STATISTICS)).toBe(true)
       })
 
       it('should handle string array permissions correctly', () => {
@@ -64,12 +55,8 @@ describe('Permission System', () => {
 
     describe('edge cases', () => {
       it('should return false when user lacks the required permission', () => {
-        expect(hasPermission(mockPermissions, PERMISSIONS.MANAGE_USERS)).toBe(
-          false,
-        )
-        expect(hasPermission(mockPermissions, PERMISSIONS.APPROVE_GAMES)).toBe(
-          false,
-        )
+        expect(hasPermission(mockPermissions, PERMISSIONS.MANAGE_USERS)).toBe(false)
+        expect(hasPermission(mockPermissions, PERMISSIONS.APPROVE_GAMES)).toBe(false)
       })
 
       it('should return false for null permissions', () => {
@@ -95,10 +82,7 @@ describe('Permission System', () => {
     describe('happy paths', () => {
       it('should return true when user has at least one required permission', () => {
         expect(
-          hasAnyPermission(mockPermissions, [
-            PERMISSIONS.CREATE_LISTING,
-            PERMISSIONS.MANAGE_USERS,
-          ]),
+          hasAnyPermission(mockPermissions, [PERMISSIONS.CREATE_LISTING, PERMISSIONS.MANAGE_USERS]),
         ).toBe(true)
       })
 
@@ -125,10 +109,7 @@ describe('Permission System', () => {
     describe('edge cases', () => {
       it('should return false when user has none of the required permissions', () => {
         expect(
-          hasAnyPermission(mockPermissions, [
-            PERMISSIONS.MANAGE_USERS,
-            PERMISSIONS.APPROVE_GAMES,
-          ]),
+          hasAnyPermission(mockPermissions, [PERMISSIONS.MANAGE_USERS, PERMISSIONS.APPROVE_GAMES]),
         ).toBe(false)
       })
 
@@ -137,9 +118,7 @@ describe('Permission System', () => {
       })
 
       it('should return false for undefined permissions', () => {
-        expect(hasAnyPermission(undefined, [PERMISSIONS.CREATE_LISTING])).toBe(
-          false,
-        )
+        expect(hasAnyPermission(undefined, [PERMISSIONS.CREATE_LISTING])).toBe(false)
       })
 
       it('should return false for empty permissions array', () => {
@@ -164,9 +143,7 @@ describe('Permission System', () => {
       })
 
       it('should return true when checking single permission that exists', () => {
-        expect(
-          hasAllPermissions(mockPermissions, [PERMISSIONS.CREATE_LISTING]),
-        ).toBe(true)
+        expect(hasAllPermissions(mockPermissions, [PERMISSIONS.CREATE_LISTING])).toBe(true)
       })
 
       it('should return true when checking empty required permissions', () => {
@@ -186,23 +163,16 @@ describe('Permission System', () => {
 
       it('should return false when user lacks all required permissions', () => {
         expect(
-          hasAllPermissions(mockPermissions, [
-            PERMISSIONS.MANAGE_USERS,
-            PERMISSIONS.APPROVE_GAMES,
-          ]),
+          hasAllPermissions(mockPermissions, [PERMISSIONS.MANAGE_USERS, PERMISSIONS.APPROVE_GAMES]),
         ).toBe(false)
       })
 
       it('should return false for null permissions', () => {
-        expect(hasAllPermissions(null, [PERMISSIONS.CREATE_LISTING])).toBe(
-          false,
-        )
+        expect(hasAllPermissions(null, [PERMISSIONS.CREATE_LISTING])).toBe(false)
       })
 
       it('should return false for undefined permissions', () => {
-        expect(hasAllPermissions(undefined, [PERMISSIONS.CREATE_LISTING])).toBe(
-          false,
-        )
+        expect(hasAllPermissions(undefined, [PERMISSIONS.CREATE_LISTING])).toBe(false)
       })
 
       it('should return false for empty permissions array', () => {
@@ -215,30 +185,22 @@ describe('Permission System', () => {
     describe('hasPermissionInContext', () => {
       it('should return true when user has permission in context', () => {
         const ctx = createMockContext(mockPermissions)
-        expect(hasPermissionInContext(ctx, PERMISSIONS.CREATE_LISTING)).toBe(
-          true,
-        )
+        expect(hasPermissionInContext(ctx, PERMISSIONS.CREATE_LISTING)).toBe(true)
       })
 
       it('should return false when user lacks permission in context', () => {
         const ctx = createMockContext(mockPermissions)
-        expect(hasPermissionInContext(ctx, PERMISSIONS.MANAGE_USERS)).toBe(
-          false,
-        )
+        expect(hasPermissionInContext(ctx, PERMISSIONS.MANAGE_USERS)).toBe(false)
       })
 
       it('should return false when session is null', () => {
         const ctx = createMockContext()
-        expect(hasPermissionInContext(ctx, PERMISSIONS.CREATE_LISTING)).toBe(
-          false,
-        )
+        expect(hasPermissionInContext(ctx, PERMISSIONS.CREATE_LISTING)).toBe(false)
       })
 
       it('should return false when permissions are null in session', () => {
         const ctx = createMockContext(null)
-        expect(hasPermissionInContext(ctx, PERMISSIONS.CREATE_LISTING)).toBe(
-          false,
-        )
+        expect(hasPermissionInContext(ctx, PERMISSIONS.CREATE_LISTING)).toBe(false)
       })
     })
 
@@ -246,28 +208,20 @@ describe('Permission System', () => {
       it('should return true when user has any permission in context', () => {
         const ctx = createMockContext(mockPermissions)
         expect(
-          hasAnyPermissionInContext(ctx, [
-            PERMISSIONS.CREATE_LISTING,
-            PERMISSIONS.MANAGE_USERS,
-          ]),
+          hasAnyPermissionInContext(ctx, [PERMISSIONS.CREATE_LISTING, PERMISSIONS.MANAGE_USERS]),
         ).toBe(true)
       })
 
       it('should return false when user has none of the permissions', () => {
         const ctx = createMockContext(mockPermissions)
         expect(
-          hasAnyPermissionInContext(ctx, [
-            PERMISSIONS.MANAGE_USERS,
-            PERMISSIONS.APPROVE_GAMES,
-          ]),
+          hasAnyPermissionInContext(ctx, [PERMISSIONS.MANAGE_USERS, PERMISSIONS.APPROVE_GAMES]),
         ).toBe(false)
       })
 
       it('should handle null session gracefully', () => {
         const ctx = createMockContext()
-        expect(
-          hasAnyPermissionInContext(ctx, [PERMISSIONS.CREATE_LISTING]),
-        ).toBe(false)
+        expect(hasAnyPermissionInContext(ctx, [PERMISSIONS.CREATE_LISTING])).toBe(false)
       })
     })
 
@@ -285,10 +239,7 @@ describe('Permission System', () => {
       it('should return false when user lacks any permission', () => {
         const ctx = createMockContext(mockPermissions)
         expect(
-          hasAllPermissionsInContext(ctx, [
-            PERMISSIONS.CREATE_LISTING,
-            PERMISSIONS.MANAGE_USERS,
-          ]),
+          hasAllPermissionsInContext(ctx, [PERMISSIONS.CREATE_LISTING, PERMISSIONS.MANAGE_USERS]),
         ).toBe(false)
       })
 
@@ -301,18 +252,14 @@ describe('Permission System', () => {
         expect(hasAllPermissionsInContext(emptyPermissionsCtx, [])).toBe(false)
 
         // But if user has some permissions and we check for empty required permissions, it returns true
-        const somePermissionsCtx = createMockContext([
-          PERMISSIONS.CREATE_LISTING,
-        ])
+        const somePermissionsCtx = createMockContext([PERMISSIONS.CREATE_LISTING])
         expect(hasAllPermissionsInContext(somePermissionsCtx, [])).toBe(true)
 
         // Additional edge case: null permissions in context
         const nullPermissionsCtx = createMockContext(null)
-        expect(
-          hasAllPermissionsInContext(nullPermissionsCtx, [
-            PERMISSIONS.CREATE_LISTING,
-          ]),
-        ).toBe(false)
+        expect(hasAllPermissionsInContext(nullPermissionsCtx, [PERMISSIONS.CREATE_LISTING])).toBe(
+          false,
+        )
       })
     })
   })
@@ -429,12 +376,8 @@ describe('Permission System', () => {
       const ctx = createMockContext(moderatorPermissions, Role.MODERATOR)
 
       // Moderator can approve and edit listings
-      expect(hasPermissionInContext(ctx, PERMISSIONS.APPROVE_LISTINGS)).toBe(
-        true,
-      )
-      expect(hasPermissionInContext(ctx, PERMISSIONS.EDIT_ANY_LISTING)).toBe(
-        true,
-      )
+      expect(hasPermissionInContext(ctx, PERMISSIONS.APPROVE_LISTINGS)).toBe(true)
+      expect(hasPermissionInContext(ctx, PERMISSIONS.EDIT_ANY_LISTING)).toBe(true)
 
       // But cannot manage users
       expect(hasPermissionInContext(ctx, PERMISSIONS.MANAGE_USERS)).toBe(false)
@@ -459,36 +402,24 @@ describe('Permission System', () => {
 
     it('should handle permission inheritance correctly', () => {
       const adminCtx = createMockContext(
-        [
-          PERMISSIONS.MANAGE_USERS,
-          PERMISSIONS.MANAGE_PERMISSIONS,
-          PERMISSIONS.ACCESS_ADMIN_PANEL,
-        ],
+        [PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_PERMISSIONS, PERMISSIONS.ACCESS_ADMIN_PANEL],
         Role.ADMIN,
       )
 
       // Admin role includes moderator role
-      expect(
-        roleIncludesRole(adminCtx.session?.user?.role, Role.MODERATOR),
-      ).toBe(true)
+      expect(roleIncludesRole(adminCtx.session?.user?.role, Role.MODERATOR)).toBe(true)
 
       // Admin has specific admin permissions
-      expect(hasPermissionInContext(adminCtx, PERMISSIONS.MANAGE_USERS)).toBe(
-        true,
-      )
+      expect(hasPermissionInContext(adminCtx, PERMISSIONS.MANAGE_USERS)).toBe(true)
 
       // But doesn't automatically have all permissions (permission-based, not role-based)
-      expect(hasPermissionInContext(adminCtx, PERMISSIONS.CREATE_LISTING)).toBe(
-        false,
-      )
+      expect(hasPermissionInContext(adminCtx, PERMISSIONS.CREATE_LISTING)).toBe(false)
     })
 
     it('should handle permission checks for unauthenticated users', () => {
       const unauthCtx = createMockContext()
 
-      expect(
-        hasPermissionInContext(unauthCtx, PERMISSIONS.CREATE_LISTING),
-      ).toBe(false)
+      expect(hasPermissionInContext(unauthCtx, PERMISSIONS.CREATE_LISTING)).toBe(false)
       expect(
         hasAnyPermissionInContext(unauthCtx, [
           PERMISSIONS.CREATE_LISTING,
@@ -501,10 +432,7 @@ describe('Permission System', () => {
 
   describe('Performance considerations', () => {
     it('should handle large permission arrays efficiently', () => {
-      const largePermissionSet = Array.from(
-        { length: 1000 },
-        (_, i) => `permission_${i}`,
-      )
+      const largePermissionSet = Array.from({ length: 1000 }, (_, i) => `permission_${i}`)
 
       const startTime = performance.now()
       const result = hasPermission(largePermissionSet, 'permission_500')
@@ -518,9 +446,7 @@ describe('Permission System', () => {
       const permissions = ['first', 'second', 'third']
 
       // This would use the actual implementation, but demonstrates the concept
-      expect(hasAnyPermission(permissions, ['first', 'second', 'third'])).toBe(
-        true,
-      )
+      expect(hasAnyPermission(permissions, ['first', 'second', 'third'])).toBe(true)
       // Should stop after finding 'first'
     })
   })

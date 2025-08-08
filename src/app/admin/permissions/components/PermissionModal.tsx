@@ -20,18 +20,9 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { PermissionCategory } from '@orm'
 
 const permissionSchema = z.object({
-  key: z
-    .string()
-    .min(1, 'Key is required')
-    .max(100, 'Key must be 100 characters or less'),
-  label: z
-    .string()
-    .min(1, 'Label is required')
-    .max(100, 'Label must be 100 characters or less'),
-  description: z
-    .string()
-    .max(255, 'Description must be 255 characters or less')
-    .optional(),
+  key: z.string().min(1, 'Key is required').max(100, 'Key must be 100 characters or less'),
+  label: z.string().min(1, 'Label is required').max(100, 'Label must be 100 characters or less'),
+  description: z.string().max(255, 'Description must be 255 characters or less').optional(),
   category: z.nativeEnum(PermissionCategory),
 })
 
@@ -136,9 +127,7 @@ export default function PermissionModal(props: Props) {
     <Dialog open={props.isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Permission' : 'Create New Permission'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Permission' : 'Create New Permission'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -157,9 +146,7 @@ export default function PermissionModal(props: Props) {
                 disabled={isEditing} // Keys shouldn't be editable after creation
               />
               {form.formState.errors.key && (
-                <p className="text-red-500 text-sm mt-1">
-                  {form.formState.errors.key.message}
-                </p>
+                <p className="text-red-500 text-sm mt-1">{form.formState.errors.key.message}</p>
               )}
             </div>
 
@@ -170,15 +157,9 @@ export default function PermissionModal(props: Props) {
               >
                 Label
               </label>
-              <Input
-                id="label"
-                {...form.register('label')}
-                placeholder="e.g., Manage Users"
-              />
+              <Input id="label" {...form.register('label')} placeholder="e.g., Manage Users" />
               {form.formState.errors.label && (
-                <p className="text-red-500 text-sm mt-1">
-                  {form.formState.errors.label.message}
-                </p>
+                <p className="text-red-500 text-sm mt-1">{form.formState.errors.label.message}</p>
               )}
             </div>
 
@@ -215,15 +196,9 @@ export default function PermissionModal(props: Props) {
                 {...form.register('category')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               >
-                <option value={PermissionCategory.CONTENT}>
-                  Content Management
-                </option>
-                <option value={PermissionCategory.MODERATION}>
-                  Moderation
-                </option>
-                <option value={PermissionCategory.USER_MANAGEMENT}>
-                  User Management
-                </option>
+                <option value={PermissionCategory.CONTENT}>Content Management</option>
+                <option value={PermissionCategory.MODERATION}>Moderation</option>
+                <option value={PermissionCategory.USER_MANAGEMENT}>User Management</option>
                 <option value={PermissionCategory.SYSTEM}>System</option>
               </select>
               {form.formState.errors.category && (
@@ -235,12 +210,7 @@ export default function PermissionModal(props: Props) {
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>

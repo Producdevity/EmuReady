@@ -11,10 +11,7 @@ function Main(props: PropsWithChildren) {
   const pathname = usePathname()
   const isHomePage = pathname === '/'
 
-  const handleError: ErrorBoundaryProps['onError'] = (
-    error: Error,
-    info: ErrorInfo,
-  ) => {
+  const handleError: ErrorBoundaryProps['onError'] = (error: Error, info: ErrorInfo) => {
     analytics.performance.errorOccurred({
       errorType: error?.name || 'UNKNOWN',
       errorMessage: error?.message || 'No message provided',
@@ -54,11 +51,7 @@ function Main(props: PropsWithChildren) {
 
   return (
     <main className={`flex-1 flex flex-col ${isHomePage ? '' : 'pt-20'}`}>
-      <ErrorBoundary
-        FallbackComponent={ErrorFallback}
-        onReset={handleReset}
-        onError={handleError}
-      >
+      <ErrorBoundary FallbackComponent={ErrorFallback} onReset={handleReset} onError={handleError}>
         {props.children}
       </ErrorBoundary>
     </main>

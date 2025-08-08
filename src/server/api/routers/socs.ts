@@ -17,14 +17,7 @@ import { Prisma } from '@orm'
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
-    const {
-      search,
-      limit = 20,
-      offset = 0,
-      page,
-      sortField,
-      sortDirection,
-    } = input ?? {}
+    const { search, limit = 20, offset = 0, page, sortField, sortDirection } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
@@ -46,10 +39,7 @@ export const socsRouter = createTRPCRouter({
             { manufacturer: { startsWith: search, mode } },
             // Only allow contains search for longer terms (3+ characters)
             ...(search.length >= 3
-              ? [
-                  { name: { contains: search, mode } },
-                  { manufacturer: { contains: search, mode } },
-                ]
+              ? [{ name: { contains: search, mode } }, { manufacturer: { contains: search, mode } }]
               : []),
             // Combined manufacturer + name search for multi-word terms only
             ...(search.includes(' ')
@@ -113,79 +103,71 @@ export const socsRouter = createTRPCRouter({
     }
   }),
 
-  byId: publicProcedure
-    .input(GetSoCByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const soc = await ctx.prisma.soC.findUnique({
-        where: { id: input.id },
-        include: { _count: { select: { devices: true } } },
+  byId: publicProcedure.input(GetSoCByIdSchema).query(async ({ ctx, input }) => {
+    const soc = await ctx.prisma.soC.findUnique({
+      where: { id: input.id },
+      include: { _count: { select: { devices: true } } },
+    })
+
+    return soc ?? ResourceError.soc.notFound()
+  }),
+
+  create: manageDevicesProcedure.input(CreateSoCSchema).mutation(async ({ ctx, input }) => {
+    const existingSoC = await ctx.prisma.soC.findUnique({
+      where: { name: input.name },
+    })
+
+    if (existingSoC) {
+      return AppError.alreadyExists('SoC', `name "${input.name}"`)
+    }
+
+    return ctx.prisma.soC.create({
+      data: input,
+      include: { _count: { select: { devices: true } } },
+    })
+  }),
+
+  update: manageDevicesProcedure.input(UpdateSoCSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...updateData } = input
+
+    const existingSoC = await ctx.prisma.soC.findUnique({ where: { id } })
+
+    if (!existingSoC) return ResourceError.soc.notFound()
+
+    // Check if name is being updated to a name that already exists
+    if (updateData.name !== existingSoC.name) {
+      const socWithSameName = await ctx.prisma.soC.findUnique({
+        where: { name: updateData.name },
       })
 
-      return soc ?? ResourceError.soc.notFound()
-    }),
-
-  create: manageDevicesProcedure
-    .input(CreateSoCSchema)
-    .mutation(async ({ ctx, input }) => {
-      const existingSoC = await ctx.prisma.soC.findUnique({
-        where: { name: input.name },
-      })
-
-      if (existingSoC) {
-        return AppError.alreadyExists('SoC', `name "${input.name}"`)
+      if (socWithSameName) {
+        return AppError.alreadyExists('SoC', `name "${updateData.name}"`)
       }
+    }
 
-      return ctx.prisma.soC.create({
-        data: input,
-        include: { _count: { select: { devices: true } } },
-      })
-    }),
+    return ctx.prisma.soC.update({
+      where: { id },
+      data: updateData,
+      include: { _count: { select: { devices: true } } },
+    })
+  }),
 
-  update: manageDevicesProcedure
-    .input(UpdateSoCSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input
+  delete: manageDevicesProcedure.input(DeleteSoCSchema).mutation(async ({ ctx, input }) => {
+    const existingSoC = await ctx.prisma.soC.findUnique({
+      where: { id: input.id },
+      include: { _count: { select: { devices: true } } },
+    })
 
-      const existingSoC = await ctx.prisma.soC.findUnique({ where: { id } })
+    if (!existingSoC) return ResourceError.soc.notFound()
 
-      if (!existingSoC) return ResourceError.soc.notFound()
+    if (existingSoC._count.devices > 0) {
+      AppError.conflict(
+        `Cannot delete SoC "${existingSoC.name}" because it is used by ${existingSoC._count.devices} device(s). Please remove the SoC from all devices first.`,
+      )
+    }
 
-      // Check if name is being updated to a name that already exists
-      if (updateData.name !== existingSoC.name) {
-        const socWithSameName = await ctx.prisma.soC.findUnique({
-          where: { name: updateData.name },
-        })
-
-        if (socWithSameName) {
-          return AppError.alreadyExists('SoC', `name "${updateData.name}"`)
-        }
-      }
-
-      return ctx.prisma.soC.update({
-        where: { id },
-        data: updateData,
-        include: { _count: { select: { devices: true } } },
-      })
-    }),
-
-  delete: manageDevicesProcedure
-    .input(DeleteSoCSchema)
-    .mutation(async ({ ctx, input }) => {
-      const existingSoC = await ctx.prisma.soC.findUnique({
-        where: { id: input.id },
-        include: { _count: { select: { devices: true } } },
-      })
-
-      if (!existingSoC) return ResourceError.soc.notFound()
-
-      if (existingSoC._count.devices > 0) {
-        AppError.conflict(
-          `Cannot delete SoC "${existingSoC.name}" because it is used by ${existingSoC._count.devices} device(s). Please remove the SoC from all devices first.`,
-        )
-      }
-
-      return ctx.prisma.soC.delete({ where: { id: input.id } })
-    }),
+    return ctx.prisma.soC.delete({ where: { id: input.id } })
+  }),
 
   getManufacturers: publicProcedure.query(async ({ ctx }) => {
     const manufacturers = await ctx.prisma.soC.findMany({

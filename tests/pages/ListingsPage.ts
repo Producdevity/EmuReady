@@ -40,9 +40,7 @@ export class ListingsPage extends BasePage {
   }
 
   get noListingsMessage() {
-    return this.page.getByText(
-      /no listings found|no results|empty|nothing found/i,
-    )
+    return this.page.getByText(/no listings found|no results|empty|nothing found/i)
   }
 
   get loadingIndicator() {
@@ -137,9 +135,7 @@ export class ListingsPage extends BasePage {
   }
 
   async verifyFiltersHeadingVisible() {
-    const isMobile = this.page.viewportSize()?.width
-      ? this.page.viewportSize()!.width < 768
-      : false
+    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (!isMobile) {
       // Filters heading is only visible on desktop
@@ -172,11 +168,7 @@ export class ListingsPage extends BasePage {
 
   async verifyFiltersVisible() {
     // Not all filters may be present, so check each individually
-    const filters = [
-      this.deviceFilter,
-      this.emulatorFilter,
-      this.performanceFilter,
-    ]
+    const filters = [this.deviceFilter, this.emulatorFilter, this.performanceFilter]
     let visibleFilterCount = 0
 
     for (const filter of filters) {
@@ -198,9 +190,7 @@ export class ListingsPage extends BasePage {
     try {
       const url = this.page.url()
       return (
-        url.includes('/listings') &&
-        !url.includes('/listings/new') &&
-        !url.includes('/listings/')
+        url.includes('/listings') && !url.includes('/listings/new') && !url.includes('/listings/')
       )
     } catch {
       return false

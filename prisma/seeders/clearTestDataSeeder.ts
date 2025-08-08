@@ -150,14 +150,11 @@ async function clearTestDataSeeder(prisma: PrismaClient) {
     }
 
     // Delete custom field values for these listings
-    const deletedCustomFieldValues =
-      await prisma.listingCustomFieldValue.deleteMany({
-        where: { listingId: { in: listingIds } },
-      })
+    const deletedCustomFieldValues = await prisma.listingCustomFieldValue.deleteMany({
+      where: { listingId: { in: listingIds } },
+    })
 
-    console.info(
-      `🔧 Deleted ${deletedCustomFieldValues.count} custom field values`,
-    )
+    console.info(`🔧 Deleted ${deletedCustomFieldValues.count} custom field values`)
 
     // Finally, delete the listings themselves
     const deletedListings = await prisma.listing.deleteMany({
@@ -171,9 +168,7 @@ async function clearTestDataSeeder(prisma: PrismaClient) {
     console.info(`   📝 ${deletedListings.count} listings deleted`)
     console.info(`   👍 ${deletedVotes.count} votes deleted`)
     console.info(`   💬 ${seededComments.length} comments deleted`)
-    console.info(
-      `   🔧 ${deletedCustomFieldValues.count} custom field values deleted`,
-    )
+    console.info(`   🔧 ${deletedCustomFieldValues.count} custom field values deleted`)
   } catch (error) {
     console.error('❌ Error during test data cleanup:', error)
     throw error

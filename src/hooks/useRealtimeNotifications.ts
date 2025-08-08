@@ -97,14 +97,9 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
               break
 
             case 'notification':
-              const validationResult = RealtimeNotificationSchema.safeParse(
-                message.data,
-              )
+              const validationResult = RealtimeNotificationSchema.safeParse(message.data)
               if (!validationResult.success) {
-                console.warn(
-                  'Invalid notification data:',
-                  validationResult.error,
-                )
+                console.warn('Invalid notification data:', validationResult.error)
                 break
               }
               const notification = validationResult.data
@@ -144,10 +139,7 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
         // Attempt to reconnect
         if (reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++
-          const delay = Math.min(
-            1000 * Math.pow(2, reconnectAttempts.current),
-            30000,
-          ) // Exponential backoff, max 30s
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000) // Exponential backoff, max 30s
 
           console.log(
             `Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts.current})`,
@@ -168,9 +160,7 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === notificationId ? { ...notif, read: true } : notif,
-      ),
+      prev.map((notif) => (notif.id === notificationId ? { ...notif, read: true } : notif)),
     )
   }, [])
 

@@ -10,8 +10,7 @@ const updateEmulatorSchema = z.object({
   logo: z
     .string()
     .refine((val) => val === '' || isValidImageFilename(val), {
-      message:
-        'Logo must be a valid image filename (jpg, jpeg, png, gif, webp)',
+      message: 'Logo must be a valid image filename (jpg, jpeg, png, gif, webp)',
     })
     .optional()
     .or(z.literal('')),
@@ -20,16 +19,8 @@ const updateEmulatorSchema = z.object({
     .max(5000, 'Description must be less than 5000 characters')
     .optional()
     .or(z.literal('')),
-  repositoryUrl: z
-    .string()
-    .url('Repository URL must be a valid URL')
-    .optional()
-    .or(z.literal('')),
-  officialUrl: z
-    .string()
-    .url('Official URL must be a valid URL')
-    .optional()
-    .or(z.literal('')),
+  repositoryUrl: z.string().url('Repository URL must be a valid URL').optional().or(z.literal('')),
+  officialUrl: z.string().url('Official URL must be a valid URL').optional().or(z.literal('')),
 })
 
 export default updateEmulatorSchema

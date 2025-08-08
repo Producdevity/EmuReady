@@ -17,74 +17,69 @@ import {
   createTRPCRouter,
   managePermissionsProcedure,
 } from '@/server/api/trpc'
-import {
-  calculateOffset,
-  createPaginationResult,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { PermissionActionType, Role } from '@orm'
 
 export const permissionsRouter = createTRPCRouter({
   /**
    * Get all permissions with filtering and pagination
    */
-  getAll: accessAdminPanelProcedure
-    .input(GetAllPermissionsSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        category,
-        sortField = 'label',
-        sortDirection = 'asc',
-        page = 1,
-        limit = 50,
-        includeSystemOnly,
-      } = input || {}
+  getAll: accessAdminPanelProcedure.input(GetAllPermissionsSchema).query(async ({ ctx, input }) => {
+    const {
+      search,
+      category,
+      sortField = 'label',
+      sortDirection = 'asc',
+      page = 1,
+      limit = 50,
+      includeSystemOnly,
+    } = input || {}
 
-      const offset = calculateOffset({ page }, limit)
+    const offset = calculateOffset({ page }, limit)
 
-      // Build where clause
-      const where: Record<string, unknown> = {}
+    // Build where clause
+    const where: Record<string, unknown> = {}
 
-      if (search) {
-        where.OR = [
-          { label: { contains: search, mode: 'insensitive' } },
-          { key: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-        ]
-      }
+    if (search) {
+      where.OR = [
+        { label: { contains: search, mode: 'insensitive' } },
+        { key: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ]
+    }
 
-      if (category) {
-        where.category = category
-      }
+    if (category) {
+      where.category = category
+    }
 
-      if (includeSystemOnly !== undefined) {
-        where.isSystem = includeSystemOnly
-      }
+    if (includeSystemOnly !== undefined) {
+      where.isSystem = includeSystemOnly
+    }
 
-      // Execute queries
-      const [permissions, total] = await Promise.all([
-        ctx.prisma.permission.findMany({
-          where,
-          orderBy: { [sortField]: sortDirection },
-          skip: offset,
-          take: limit,
-          include: {
-            rolePermissions: { select: { role: true } },
-            _count: { select: { rolePermissions: true } },
-          },
-        }),
-        ctx.prisma.permission.count({ where }),
-      ])
+    // Execute queries
+    const [permissions, total] = await Promise.all([
+      ctx.prisma.permission.findMany({
+        where,
+        orderBy: { [sortField]: sortDirection },
+        skip: offset,
+        take: limit,
+        include: {
+          rolePermissions: { select: { role: true } },
+          _count: { select: { rolePermissions: true } },
+        },
+      }),
+      ctx.prisma.permission.count({ where }),
+    ])
 
-      return {
-        permissions: permissions.map((permission) => ({
-          ...permission,
-          assignedRoles: permission.rolePermissions.map((rp) => rp.role),
-          roleCount: permission._count.rolePermissions,
-        })),
-        pagination: createPaginationResult(total, { page }, limit, offset),
-      }
-    }),
+    return {
+      permissions: permissions.map((permission) => ({
+        ...permission,
+        assignedRoles: permission.rolePermissions.map((rp) => rp.role),
+        roleCount: permission._count.rolePermissions,
+      })),
+      pagination: createPaginationResult(total, { page }, limit, offset),
+    }
+  }),
 
   /**
    * Get permission by ID
@@ -366,9 +361,7 @@ export const permissionsRouter = createTRPCRouter({
         include: { permission: true },
       })
 
-      const currentPermissionIds = currentPermissions.map(
-        (rp) => rp.permission.id,
-      )
+      const currentPermissionIds = currentPermissions.map((rp) => rp.permission.id)
 
       // Use transaction for bulk update
       await ctx.prisma.$transaction(async (tx) => {
@@ -396,12 +389,8 @@ export const permissionsRouter = createTRPCRouter({
               bulkUpdate: true,
               oldPermissions: currentPermissionIds,
               newPermissions: permissionIds,
-              addedPermissions: permissionIds.filter(
-                (id) => !currentPermissionIds.includes(id),
-              ),
-              removedPermissions: currentPermissionIds.filter(
-                (id) => !permissionIds.includes(id),
-              ),
+              addedPermissions: permissionIds.filter((id) => !currentPermissionIds.includes(id)),
+              removedPermissions: currentPermissionIds.filter((id) => !permissionIds.includes(id)),
             },
           },
         })
@@ -453,9 +442,7 @@ export const permissionsRouter = createTRPCRouter({
       return {
         permissions: matrix,
         roles,
-        categories: Array.from(
-          new Set(permissions.map((p) => p.category)),
-        ).filter(Boolean),
+        categories: Array.from(new Set(permissions.map((p) => p.category))).filter(Boolean),
       }
     }),
 

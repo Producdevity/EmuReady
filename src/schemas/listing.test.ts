@@ -37,18 +37,15 @@ describe('Listing Schemas', () => {
       const invalidIds = ['invalid-uuid', '', '123']
 
       invalidIds.forEach((invalidId) => {
-        expect(
-          CreateListingSchema.safeParse({ ...validData, gameId: invalidId })
-            .success,
-        ).toBe(false)
-        expect(
-          CreateListingSchema.safeParse({ ...validData, deviceId: invalidId })
-            .success,
-        ).toBe(false)
-        expect(
-          CreateListingSchema.safeParse({ ...validData, emulatorId: invalidId })
-            .success,
-        ).toBe(false)
+        expect(CreateListingSchema.safeParse({ ...validData, gameId: invalidId }).success).toBe(
+          false,
+        )
+        expect(CreateListingSchema.safeParse({ ...validData, deviceId: invalidId }).success).toBe(
+          false,
+        )
+        expect(CreateListingSchema.safeParse({ ...validData, emulatorId: invalidId }).success).toBe(
+          false,
+        )
       })
     })
 
@@ -76,18 +73,14 @@ describe('Listing Schemas', () => {
       // Test invalid UUID
       const invalidUuidResult = CreateListingSchema.safeParse({
         ...validData,
-        customFieldValues: [
-          { customFieldDefinitionId: 'invalid-uuid', value: 'test' },
-        ],
+        customFieldValues: [{ customFieldDefinitionId: 'invalid-uuid', value: 'test' }],
       })
       expect(invalidUuidResult.success).toBe(false)
 
       // Test missing value - this passes because value can be any type including undefined
       const missingValueResult = CreateListingSchema.safeParse({
         ...validData,
-        customFieldValues: [
-          { customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174003' },
-        ],
+        customFieldValues: [{ customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174003' }],
       })
       expect(missingValueResult.success).toBe(true)
     })

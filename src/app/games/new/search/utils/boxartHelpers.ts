@@ -30,7 +30,5 @@ export function formatPlatformName(platforms: string[]): string {
   if (platforms.length === 0) return 'Unknown Platform'
 
   // If multiple platforms, show the first one + count
-  return platforms.length > 1
-    ? `${platforms[0]} (+${platforms.length - 1} more)`
-    : platforms[0]
+  return platforms.length > 1 ? `${platforms[0]} (+${platforms.length - 1} more)` : platforms[0]
 }

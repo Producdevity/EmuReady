@@ -8,11 +8,7 @@ import { isTrackingAllowed } from './isTrackingAllowed'
 export function sendAnalyticsEvent(params: AnalyticsEventData) {
   // Check if tracking is allowed (handles client/server-side logic)
   if (!isTrackingAllowed(params.category)) {
-    console.warn(
-      'Analytics event blocked by cookie consent:',
-      params.category,
-      params.action,
-    )
+    console.warn('Analytics event blocked by cookie consent:', params.category, params.action)
     return
   }
 

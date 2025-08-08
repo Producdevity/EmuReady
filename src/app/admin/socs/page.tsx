@@ -131,10 +131,7 @@ function AdminSoCsPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <ColumnVisibilityControl
-            columns={SOCS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={SOCS_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add SoC</Button>
         </div>
       </div>
@@ -160,10 +157,7 @@ function AdminSoCsPage() {
         isLoading={socsStatsQuery.isPending}
       />
 
-      <AdminSearchFilters<SocSortField>
-        table={table}
-        searchPlaceholder="Search SoCs..."
-      />
+      <AdminSearchFilters<SocSortField> table={table} searchPlaceholder="Search SoCs..." />
 
       <AdminTableContainer>
         {socsQuery.isPending ? (
@@ -232,14 +226,8 @@ function AdminSoCsPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <ViewButton
-                          onClick={() => openViewModal(soc)}
-                          title="View SoC Details"
-                        />
-                        <EditButton
-                          onClick={() => openModal(soc)}
-                          title="Edit SoC"
-                        />
+                        <ViewButton onClick={() => openViewModal(soc)} title="View SoC Details" />
+                        <EditButton onClick={() => openModal(soc)} title="Edit SoC" />
                         {isAdmin && (
                           <DeleteButton
                             onClick={() => handleDelete(soc.id, soc.name)}
@@ -266,11 +254,7 @@ function AdminSoCsPage() {
         onSuccess={handleModalSuccess}
       />
 
-      <SocViewModal
-        isOpen={viewModalOpen}
-        onClose={closeViewModal}
-        socData={socData}
-      />
+      <SocViewModal isOpen={viewModalOpen} onClose={closeViewModal} socData={socData} />
     </div>
   )
 }

@@ -5,10 +5,7 @@ import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 
-export async function GET(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { userId } = await auth()
   const params = await props.params
 
@@ -65,10 +62,7 @@ export async function GET(
     const isDeveloper = roleIncludesRole(user.role, Role.DEVELOPER)
 
     if (!isAdmin && !isDeveloper) {
-      return NextResponse.json(
-        { error: 'Admin or Developer access required' },
-        { status: 403 },
-      )
+      return NextResponse.json({ error: 'Admin or Developer access required' }, { status: 403 })
     }
 
     // For developers, verify they can access this emulator's config
@@ -85,8 +79,7 @@ export async function GET(
       if (!verifiedDeveloper) {
         return NextResponse.json(
           {
-            error:
-              'You can only view configs for emulators you are verified for',
+            error: 'You can only view configs for emulators you are verified for',
           },
           { status: 403 },
         )
@@ -122,9 +115,6 @@ export async function GET(
   } catch (error) {
     console.error('Error generating config:', error)
     // Don't expose internal error details to client
-    return NextResponse.json(
-      { error: 'Failed to generate config' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Failed to generate config' }, { status: 500 })
   }
 }

@@ -15,9 +15,7 @@ test.describe('Error Handling Tests', () => {
 
     // Should have navigation to go back home
     const homeLink = page.getByRole('link', { name: /home|go back|return/i })
-    const hasHomeLink = await homeLink
-      .isVisible({ timeout: 3000 })
-      .catch(() => false)
+    const hasHomeLink = await homeLink.isVisible({ timeout: 3000 }).catch(() => false)
 
     if (hasHomeLink) {
       await homeLink.click()
@@ -100,9 +98,7 @@ test.describe('Error Handling Tests', () => {
 
     // If no loading state, that's OK - the app might handle it differently
     if (!foundLoading) {
-      console.log(
-        'No explicit loading state shown, app handles slow requests gracefully',
-      )
+      console.log('No explicit loading state shown, app handles slow requests gracefully')
     }
 
     // Clear route handler
@@ -228,9 +224,7 @@ test.describe('Error Handling Tests', () => {
     ]
 
     for (const techError of technicalErrors) {
-      const isVisible = await techError
-        .isVisible({ timeout: 1000 })
-        .catch(() => false)
+      const isVisible = await techError.isVisible({ timeout: 1000 }).catch(() => false)
       expect(isVisible).toBe(false)
     }
 
@@ -274,9 +268,7 @@ test.describe('Error Handling Tests', () => {
 
     // Page should be in a valid state
     const currentUrl = page.url()
-    expect(currentUrl).toMatch(
-      /^https?:\/\/[^\/]+\/(games|listings|pc-listings|)(\?.*)?$/,
-    )
+    expect(currentUrl).toMatch(/^https?:\/\/[^\/]+\/(games|listings|pc-listings|)(\?.*)?$/)
 
     // Page should be responsive
     const logo = page.getByRole('link', { name: /emuready/i }).first()
@@ -333,9 +325,7 @@ test.describe('Browser Compatibility Error Tests', () => {
     await homePage.verifyHeroSectionVisible()
   })
 
-  test('should maintain functionality after JavaScript errors', async ({
-    page,
-  }) => {
+  test('should maintain functionality after JavaScript errors', async ({ page }) => {
     let jsErrorOccurred = false
 
     // Listen for JavaScript errors

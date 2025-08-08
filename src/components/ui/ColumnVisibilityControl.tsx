@@ -7,10 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeClosed, ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui'
-import {
-  type ColumnDefinition,
-  type UseColumnVisibilityReturn,
-} from '@/hooks/useColumnVisibility'
+import { type ColumnDefinition, type UseColumnVisibilityReturn } from '@/hooks/useColumnVisibility'
 
 interface Props {
   columns: ColumnDefinition[]
@@ -25,10 +22,7 @@ export function ColumnVisibilityControl(props: Props) {
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
@@ -59,9 +53,7 @@ export function ColumnVisibilityControl(props: Props) {
       >
         <Eye className="h-4 w-4" />
         Columns ({displayCount})
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-        />
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </Button>
 
       {isOpen && (
@@ -103,9 +95,7 @@ export function ColumnVisibilityControl(props: Props) {
 
           <div className="max-h-64 overflow-y-auto">
             {props.columns.map((column) => {
-              const isVisible = props.columnVisibility.isColumnVisible(
-                column.key,
-              )
+              const isVisible = props.columnVisibility.isColumnVisible(column.key)
               const isToggleable = !column.alwaysVisible
 
               return (
@@ -168,24 +158,18 @@ export function ColumnVisibilityControl(props: Props) {
                         )}
                       </AnimatePresence>
                     </motion.div>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {column.label}
-                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{column.label}</span>
                   </div>
 
                   {column.alwaysVisible && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Always visible
-                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Always visible</span>
                   )}
 
                   {isToggleable && (
                     <input
                       type="checkbox"
                       checked={isVisible}
-                      onChange={() =>
-                        props.columnVisibility.toggleColumn(column.key)
-                      }
+                      onChange={() => props.columnVisibility.toggleColumn(column.key)}
                       onClick={(ev) => ev.stopPropagation()}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />

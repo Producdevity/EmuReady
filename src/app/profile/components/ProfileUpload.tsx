@@ -16,8 +16,7 @@ function ProfileUpload(props: Props) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const displayImage =
-    previewUrl ?? props.currentImage ?? '/placeholder/profile.svg'
+  const displayImage = previewUrl ?? props.currentImage ?? '/placeholder/profile.svg'
 
   const handleFileChange = (ev: ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0]
@@ -107,9 +106,7 @@ function ProfileUpload(props: Props) {
             : 'Upload Profile Picture'}
       </button>
 
-      {error && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }

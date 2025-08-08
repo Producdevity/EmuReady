@@ -56,9 +56,7 @@ async function AdminDashboardPage() {
   if (!hasPermission(user.role, Role.DEVELOPER)) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Access Denied
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
         <p className="text-gray-600 dark:text-gray-400">
           You don&apos;t have permission to access the admin dashboard.
         </p>
@@ -72,9 +70,7 @@ async function AdminDashboardPage() {
   const isDeveloper = user.role === Role.DEVELOPER
 
   // Get developer's verified emulators for navigation items
-  const developerNavItems = isDeveloper
-    ? await getDeveloperNavItemsForUser(user.id)
-    : []
+  const developerNavItems = isDeveloper ? await getDeveloperNavItemsForUser(user.id) : []
 
   return (
     <div className="space-y-8">
@@ -102,9 +98,7 @@ async function AdminDashboardPage() {
               <h3 className="font-semibold text-xl mb-2 text-green-800 dark:text-green-300">
                 {item.label}
               </h3>
-              <p className="text-sm text-green-700 dark:text-green-400">
-                {item.description}
-              </p>
+              <p className="text-sm text-green-700 dark:text-green-400">{item.description}</p>
               <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
@@ -122,9 +116,7 @@ async function AdminDashboardPage() {
               )}
             >
               <h3 className="font-semibold text-xl mb-2">{item.label}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {item.description}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
               <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
@@ -142,9 +134,7 @@ async function AdminDashboardPage() {
               )}
             >
               <h3 className="font-semibold text-xl mb-2">{item.label}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {item.description}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
               <ApprovalCountBadge href={item.href} />
             </Link>
           ))}
@@ -165,9 +155,7 @@ async function AdminDashboardPage() {
               <h3 className="font-semibold text-xl mb-2 text-purple-800 dark:text-purple-300">
                 {item.label}
               </h3>
-              <p className="text-sm text-purple-700 dark:text-purple-400">
-                {item.description}
-              </p>
+              <p className="text-sm text-purple-700 dark:text-purple-400">{item.description}</p>
               <ApprovalCountBadge href={item.href} />
             </Link>
           ))}

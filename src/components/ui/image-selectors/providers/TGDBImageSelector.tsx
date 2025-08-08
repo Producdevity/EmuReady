@@ -2,14 +2,7 @@
 
 import { Search, Eye, Camera, LinkIcon } from 'lucide-react'
 import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
-import {
-  Button,
-  LoadingSpinner,
-  OptimizedImage,
-  Modal,
-  Input,
-  Toggle,
-} from '@/components/ui'
+import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Toggle } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { getImageDisplayName, getImageTypeDisplayName } from '@/lib/tgdb-utils'
@@ -42,9 +35,7 @@ interface Props {
 
 export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
-  const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(
-    null,
-  )
+  const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(null)
   const [allImages, setAllImages] = useState<GameImageOption[]>([])
   const [previewImage, setPreviewImage] = useState<GameImageOption | null>(null)
   const [includeAllTypes, setIncludeAllTypes] = useState(false)
@@ -84,9 +75,7 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
       // Deduplicate images based on URL to prevent showing the same image twice
       const uniqueImages = images.reduce(
         (acc, image) => {
-          const existingImage = acc.find(
-            (existing) => existing.url === image.url,
-          )
+          const existingImage = acc.find((existing) => existing.url === image.url)
           if (!existingImage) {
             acc.push(image)
           }
@@ -126,10 +115,7 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     }
   }
 
-  const handlePreviewImage = (
-    ev: MouseEvent<HTMLButtonElement>,
-    image: GameImageOption,
-  ) => {
+  const handlePreviewImage = (ev: MouseEvent<HTMLButtonElement>, image: GameImageOption) => {
     ev.stopPropagation() // Prevent selecting the image when clicking preview
     ev.preventDefault()
     setPreviewImage(image)
@@ -192,14 +178,8 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
           Game Cover Image (TheGamesDB)
         </label>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Use custom URL
-          </span>
-          <Toggle
-            checked={useCustomUrl}
-            onChange={handleToggleCustomUrl}
-            size="sm"
-          />
+          <span className="text-sm text-gray-600 dark:text-gray-400">Use custom URL</span>
+          <Toggle checked={useCustomUrl} onChange={handleToggleCustomUrl} size="sm" />
         </div>
       </div>
 
@@ -226,9 +206,7 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
           </div>
           {selectedImage && selectedImage.source === 'custom' && (
             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Preview:
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Preview:</p>
               <div className="w-full max-w-xs mx-auto aspect-square relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                 <OptimizedImage
                   src={getImageUrl(selectedImage.url, selectedImage.gameName)}
@@ -273,11 +251,7 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
 
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Toggle
-                checked={includeAllTypes}
-                onChange={handleToggleAllTypes}
-                size="sm"
-              />
+              <Toggle checked={includeAllTypes} onChange={handleToggleAllTypes} size="sm" />
               <span className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-300">
                 <Camera className="h-4 w-4" />
                 Include all image types
@@ -350,10 +324,7 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                           >
                             {getImageTypeDisplayName(image.type)}
                           </span>
-                          <span
-                            className="text-xs truncate"
-                            title={image.gameName}
-                          >
+                          <span className="text-xs truncate" title={image.gameName}>
                             {image.gameName}
                           </span>
                         </div>
@@ -371,8 +342,8 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
             searchQuery.data && (
               <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                  No {!includeAllTypes ? 'boxart images' : 'images'} found for
-                  &ldquo;{searchTerm}&rdquo;.
+                  No {!includeAllTypes ? 'boxart images' : 'images'} found for &ldquo;{searchTerm}
+                  &rdquo;.
                 </p>
                 {!includeAllTypes && (
                   <div className="mt-2">
@@ -389,8 +360,7 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                 )}
                 {includeAllTypes && (
                   <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Try a different search term or toggle to &ldquo;Use custom
-                    URL&rdquo; above.
+                    Try a different search term or toggle to &ldquo;Use custom URL&rdquo; above.
                   </p>
                 )}
               </div>

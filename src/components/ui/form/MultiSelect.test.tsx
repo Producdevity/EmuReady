@@ -28,22 +28,13 @@ describe('MultiSelect', () => {
 
   it('opens dropdown when clicked', async () => {
     const onChange = vi.fn()
-    render(
-      <MultiSelect
-        label="Test Select"
-        value={[]}
-        onChange={onChange}
-        options={mockOptions}
-      />,
-    )
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
     const button = screen.getByRole('button')
     fireEvent.click(button)
 
     await waitFor(() => {
-      expect(
-        screen.getByPlaceholderText('Search test select...'),
-      ).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Search test select...')).toBeInTheDocument()
     })
   })
 
@@ -79,14 +70,7 @@ describe('MultiSelect', () => {
 
   it('toggles option selection when checkbox is clicked', async () => {
     const onChange = vi.fn()
-    render(
-      <MultiSelect
-        label="Test Select"
-        value={[]}
-        onChange={onChange}
-        options={mockOptions}
-      />,
-    )
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
     // Open dropdown
     fireEvent.click(screen.getByRole('button'))
@@ -124,14 +108,7 @@ describe('MultiSelect', () => {
 
   it('filters options based on search query', async () => {
     const onChange = vi.fn()
-    render(
-      <MultiSelect
-        label="Test Select"
-        value={[]}
-        onChange={onChange}
-        options={mockOptions}
-      />,
-    )
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
     // Open dropdown
     fireEvent.click(screen.getByRole('button'))
@@ -147,14 +124,7 @@ describe('MultiSelect', () => {
 
   it('shows "No options found" when search has no results', async () => {
     const onChange = vi.fn()
-    render(
-      <MultiSelect
-        label="Test Select"
-        value={[]}
-        onChange={onChange}
-        options={mockOptions}
-      />,
-    )
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
     // Open dropdown
     fireEvent.click(screen.getByRole('button'))
@@ -213,12 +183,7 @@ describe('MultiSelect', () => {
     const onChange = vi.fn()
     render(
       <div>
-        <MultiSelect
-          label="Test Select"
-          value={[]}
-          onChange={onChange}
-          options={mockOptions}
-        />
+        <MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />
         <div data-testid="outside">Outside element</div>
       </div>,
     )
@@ -227,18 +192,14 @@ describe('MultiSelect', () => {
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
-      expect(
-        screen.getByPlaceholderText('Search test select...'),
-      ).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Search test select...')).toBeInTheDocument()
     })
 
     // Click outside
     fireEvent.mouseDown(screen.getByTestId('outside'))
 
     await waitFor(() => {
-      expect(
-        screen.queryByPlaceholderText('Search test select...'),
-      ).not.toBeInTheDocument()
+      expect(screen.queryByPlaceholderText('Search test select...')).not.toBeInTheDocument()
     })
   })
 
@@ -277,14 +238,7 @@ describe('MultiSelect', () => {
 
   it('clears search query when clear search button is clicked', async () => {
     const onChange = vi.fn()
-    render(
-      <MultiSelect
-        label="Test Select"
-        value={[]}
-        onChange={onChange}
-        options={mockOptions}
-      />,
-    )
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
     // Open dropdown
     fireEvent.click(screen.getByRole('button'))

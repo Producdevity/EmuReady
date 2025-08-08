@@ -32,22 +32,12 @@ import {
   invalidateSitemap,
   revalidateByTag,
 } from '@/server/cache/invalidation'
-import {
-  notificationEventEmitter,
-  NOTIFICATION_EVENTS,
-} from '@/server/notifications/eventEmitter'
+import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { gameStatsCache } from '@/server/utils/cache'
-import {
-  calculateOffset,
-  createPaginationResult,
-  buildOrderBy,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult, buildOrderBy } from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import {
-  createCountQuery,
-  analyzeQueryComplexity,
-} from '@/server/utils/query-performance'
+import { createCountQuery, analyzeQueryComplexity } from '@/server/utils/query-performance'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
@@ -121,10 +111,7 @@ async function performGameUpdate(
     })
   } catch (error) {
     if (isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)) {
-      ResourceError.game.alreadyExists(
-        data.title ?? existingGame.title,
-        existingGame.system.name,
-      )
+      ResourceError.game.alreadyExists(data.title ?? existingGame.title, existingGame.system.name)
     }
     throw error
   }
@@ -211,14 +198,10 @@ export const gamesRouter = createTRPCRouter({
     )
 
     // For empty search with offset 0, we can optimize by returning fewer results initially
-    const effectiveLimit =
-      !search && offset === 0 && !page ? Math.min(limit, 50) : limit
+    const effectiveLimit = !search && offset === 0 && !page ? Math.min(limit, 50) : limit
 
     // Calculate actual offset
-    const actualOffset = calculateOffset(
-      { limit: effectiveLimit, offset, page },
-      effectiveLimit,
-    )
+    const actualOffset = calculateOffset({ limit: effectiveLimit, offset, page }, effectiveLimit)
 
     // Execute count and findMany in parallel
     const [total, games] = await Promise.all([
@@ -285,186 +268,178 @@ export const gamesRouter = createTRPCRouter({
     return stats
   }),
 
-  byId: publicProcedure
-    .input(GetGameByIdSchema)
-    .query(async ({ ctx, input }) => {
-      // Shadow ban logic: Hide listings from banned users for non-moderators
-      const userRole = ctx.session?.user?.role
-      const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
+  byId: publicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
+    // Shadow ban logic: Hide listings from banned users for non-moderators
+    const userRole = ctx.session?.user?.role
+    const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
-      // Build the listings where clause with shadow ban filtering and approval status
-      const listingsWhere: Prisma.ListingWhereInput = {}
+    // Build the listings where clause with shadow ban filtering and approval status
+    const listingsWhere: Prisma.ListingWhereInput = {}
 
-      // Build the PC listings where clause with shadow ban filtering and approval status
-      const pcListingsWhere: Prisma.PcListingWhereInput = {}
+    // Build the PC listings where clause with shadow ban filtering and approval status
+    const pcListingsWhere: Prisma.PcListingWhereInput = {}
 
-      // CRITICAL: Filter by approval status - REJECTED listings should NEVER be visible to regular users
-      if (canSeeBannedUsers) {
-        // Moderators can see all statuses including rejected
-        // No additional filtering needed for approval status
-      } else {
-        // Regular users can ONLY see approved listings
-        listingsWhere.status = ApprovalStatus.APPROVED
-        pcListingsWhere.status = ApprovalStatus.APPROVED
-      }
+    // CRITICAL: Filter by approval status - REJECTED listings should NEVER be visible to regular users
+    if (canSeeBannedUsers) {
+      // Moderators can see all statuses including rejected
+      // No additional filtering needed for approval status
+    } else {
+      // Regular users can ONLY see approved listings
+      listingsWhere.status = ApprovalStatus.APPROVED
+      pcListingsWhere.status = ApprovalStatus.APPROVED
+    }
 
-      if (!canSeeBannedUsers) {
-        // For regular users, exclude listings from banned users
-        listingsWhere.author = {
-          userBans: {
-            none: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
+    if (!canSeeBannedUsers) {
+      // For regular users, exclude listings from banned users
+      listingsWhere.author = {
+        userBans: {
+          none: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
-        }
-        pcListingsWhere.author = {
-          userBans: {
-            none: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
-          },
-        }
-      }
-
-      // Define include configuration for reusability and complexity analysis
-      const includeConfig = {
-        submitter: { select: { id: true, name: true } },
-        system: { include: { emulators: true } },
-        listings: {
-          where: listingsWhere,
-          select: {
-            id: true,
-            status: true,
-            notes: true,
-            createdAt: true,
-            deviceId: true,
-            gameId: true,
-            emulatorId: true,
-            performanceId: true,
-            authorId: true,
-            processedAt: true,
-            processedNotes: true,
-            processedByUserId: true,
-            device: {
-              select: {
-                id: true,
-                modelName: true,
-                brand: { select: { id: true, name: true } },
-              },
-            },
-            emulator: {
-              select: {
-                id: true,
-                name: true,
-                logo: true,
-                description: true,
-                repositoryUrl: true,
-                officialUrl: true,
-              },
-            },
-            performance: {
-              select: {
-                id: true,
-                label: true,
-                rank: true,
-                description: true,
-              },
-            },
-            author: {
-              select: {
-                id: true,
-                name: true,
-                ...(canSeeBannedUsers && { email: true }),
-                ...(canSeeBannedUsers && {
-                  userBans: {
-                    where: {
-                      isActive: true,
-                      OR: [
-                        { expiresAt: null },
-                        { expiresAt: { gt: new Date() } },
-                      ],
-                    },
-                    select: { id: true },
-                  },
-                }),
-              },
-            },
-            _count: { select: { votes: true, comments: true } },
-          },
-          orderBy: { createdAt: 'desc' as const },
-        },
-        pcListings: {
-          where: pcListingsWhere,
-          select: {
-            id: true,
-            status: true,
-            notes: true,
-            createdAt: true,
-            gameId: true,
-            authorId: true,
-            processedAt: true,
-            processedNotes: true,
-            processedByUserId: true,
-            performance: {
-              select: {
-                id: true,
-                label: true,
-                rank: true,
-                description: true,
-              },
-            },
-            author: {
-              select: {
-                id: true,
-                name: true,
-                ...(canSeeBannedUsers && { email: true }),
-                ...(canSeeBannedUsers && {
-                  userBans: {
-                    where: {
-                      isActive: true,
-                      OR: [
-                        { expiresAt: null },
-                        { expiresAt: { gt: new Date() } },
-                      ],
-                    },
-                    select: { id: true },
-                  },
-                }),
-              },
-            },
-            _count: { select: { votes: true, comments: true } },
-          },
-          orderBy: { createdAt: 'desc' as const },
         },
       }
-
-      // Analyze query complexity for performance monitoring
-      const complexity = analyzeQueryComplexity(includeConfig)
-      if (complexity.complexity === 'high') {
-        console.warn(
-          `[Games Router] High complexity query detected for game ${input.id}:`,
-          complexity.warnings,
-        )
+      pcListingsWhere.author = {
+        userBans: {
+          none: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+        },
       }
+    }
 
-      const game = await ctx.prisma.game.findUnique({
-        where: { id: input.id },
-        include: includeConfig,
-      })
-      if (!game) return ResourceError.game.notFound()
+    // Define include configuration for reusability and complexity analysis
+    const includeConfig = {
+      submitter: { select: { id: true, name: true } },
+      system: { include: { emulators: true } },
+      listings: {
+        where: listingsWhere,
+        select: {
+          id: true,
+          status: true,
+          notes: true,
+          createdAt: true,
+          deviceId: true,
+          gameId: true,
+          emulatorId: true,
+          performanceId: true,
+          authorId: true,
+          processedAt: true,
+          processedNotes: true,
+          processedByUserId: true,
+          device: {
+            select: {
+              id: true,
+              modelName: true,
+              brand: { select: { id: true, name: true } },
+            },
+          },
+          emulator: {
+            select: {
+              id: true,
+              name: true,
+              logo: true,
+              description: true,
+              repositoryUrl: true,
+              officialUrl: true,
+            },
+          },
+          performance: {
+            select: {
+              id: true,
+              label: true,
+              rank: true,
+              description: true,
+            },
+          },
+          author: {
+            select: {
+              id: true,
+              name: true,
+              ...(canSeeBannedUsers && { email: true }),
+              ...(canSeeBannedUsers && {
+                userBans: {
+                  where: {
+                    isActive: true,
+                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+                  },
+                  select: { id: true },
+                },
+              }),
+            },
+          },
+          _count: { select: { votes: true, comments: true } },
+        },
+        orderBy: { createdAt: 'desc' as const },
+      },
+      pcListings: {
+        where: pcListingsWhere,
+        select: {
+          id: true,
+          status: true,
+          notes: true,
+          createdAt: true,
+          gameId: true,
+          authorId: true,
+          processedAt: true,
+          processedNotes: true,
+          processedByUserId: true,
+          performance: {
+            select: {
+              id: true,
+              label: true,
+              rank: true,
+              description: true,
+            },
+          },
+          author: {
+            select: {
+              id: true,
+              name: true,
+              ...(canSeeBannedUsers && { email: true }),
+              ...(canSeeBannedUsers && {
+                userBans: {
+                  where: {
+                    isActive: true,
+                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+                  },
+                  select: { id: true },
+                },
+              }),
+            },
+          },
+          _count: { select: { votes: true, comments: true } },
+        },
+        orderBy: { createdAt: 'desc' as const },
+      },
+    }
 
-      // Admins and moderators can always see all games
-      const isAdmin = roleIncludesRole(ctx.session?.user?.role, Role.ADMIN)
+    // Analyze query complexity for performance monitoring
+    const complexity = analyzeQueryComplexity(includeConfig)
+    if (complexity.complexity === 'high') {
+      console.warn(
+        `[Games Router] High complexity query detected for game ${input.id}:`,
+        complexity.warnings,
+      )
+    }
 
-      // For regular users, check NSFW preference
-      if (!isAdmin && !ctx.session?.user?.showNsfw && game.isErotic) {
-        return ResourceError.game.notFound()
-      }
+    const game = await ctx.prisma.game.findUnique({
+      where: { id: input.id },
+      include: includeConfig,
+    })
+    if (!game) return ResourceError.game.notFound()
 
-      return game
-    }),
+    // Admins and moderators can always see all games
+    const isAdmin = roleIncludesRole(ctx.session?.user?.role, Role.ADMIN)
+
+    // For regular users, check NSFW preference
+    if (!isAdmin && !ctx.session?.user?.showNsfw && game.isErotic) {
+      return ResourceError.game.notFound()
+    }
+
+    return game
+  }),
 
   checkExistingByTgdbIds: publicProcedure
     .input(CheckExistingByTgdbIdsSchema)
@@ -497,118 +472,104 @@ export const gamesRouter = createTRPCRouter({
       )
     }),
 
-  create: protectedProcedure
-    .input(CreateGameSchema)
-    .mutation(async ({ ctx, input }) => {
-      const system = await ctx.prisma.system.findUnique({
-        where: { id: input.systemId },
-      })
+  create: protectedProcedure.input(CreateGameSchema).mutation(async ({ ctx, input }) => {
+    const system = await ctx.prisma.system.findUnique({
+      where: { id: input.systemId },
+    })
 
-      if (!system) return ResourceError.system.notFound()
+    if (!system) return ResourceError.system.notFound()
 
-      // Check if game with same title already exists for this system
-      const existingGame = await ctx.prisma.game.findFirst({
-        where: { title: input.title, systemId: input.systemId },
-      })
+    // Check if game with same title already exists for this system
+    const existingGame = await ctx.prisma.game.findFirst({
+      where: { title: input.title, systemId: input.systemId },
+    })
 
-      if (existingGame) {
-        // Use AppError.conflict with cause for duplicate game error
-        const error = AppError.conflict(
-          `A game titled "${input.title}" already exists for the system "${system.name}"`,
-        )
-        // Add cause information for frontend duplicate handling
-        ;(error as Error & { cause?: Record<string, unknown> }).cause = {
-          existingGameId: existingGame.id,
-          existingGameTitle: existingGame.title,
-          systemName: system.name,
-        }
-        throw error
-      }
-
-      const isAuthor = hasPermission(ctx.session.user.role, Role.AUTHOR)
-
-      try {
-        const result = await ctx.prisma.game.create({
-          data: {
-            ...input,
-            status: isAuthor ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
-            submittedBy: ctx.session.user.id,
-            submittedAt: new Date(),
-            ...(isAuthor && {
-              approvedBy: ctx.session.user.id,
-              approvedAt: new Date(),
-            }),
-          },
-          include: {
-            system: true,
-            submitter: { select: { id: true, name: true } },
-          },
-        })
-
-        // Invalidate cache when new game is created
-        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-
-        // Queue SEO cache invalidation (non-blocking)
-        if (result.status === ApprovalStatus.APPROVED) {
-          Promise.all([
-            invalidateListPages(),
-            invalidateSitemap(),
-            revalidateByTag('games'),
-            revalidateByTag(`system-${input.systemId}`),
-          ]).catch((error) => {
-            console.error('[Games Router] Cache invalidation failed:', error)
-          })
-        }
-
-        return result
-      } catch (error) {
-        if (
-          isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
-        ) {
-          return ResourceError.game.alreadyExists(input.title, system.name)
-        }
-        throw error
-      }
-    }),
-
-  update: editGamesProcedure
-    .input(UpdateGameSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
-
-      // Check if game exists
-      const existingGame = await ctx.prisma.game.findUnique({
-        where: { id },
-        include: { system: true },
-      })
-
-      if (!existingGame) ResourceError.game.notFound()
-
-      await validateGameConflicts(ctx.prisma, id, data, existingGame!)
-
-      const result = await performGameUpdate(
-        ctx.prisma,
-        id,
-        data,
-        existingGame!,
+    if (existingGame) {
+      // Use AppError.conflict with cause for duplicate game error
+      const error = AppError.conflict(
+        `A game titled "${input.title}" already exists for the system "${system.name}"`,
       )
+      // Add cause information for frontend duplicate handling
+      ;(error as Error & { cause?: Record<string, unknown> }).cause = {
+        existingGameId: existingGame.id,
+        existingGameTitle: existingGame.title,
+        systemName: system.name,
+      }
+      throw error
+    }
+
+    const isAuthor = hasPermission(ctx.session.user.role, Role.AUTHOR)
+
+    try {
+      const result = await ctx.prisma.game.create({
+        data: {
+          ...input,
+          status: isAuthor ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
+          submittedBy: ctx.session.user.id,
+          submittedAt: new Date(),
+          ...(isAuthor && {
+            approvedBy: ctx.session.user.id,
+            approvedAt: new Date(),
+          }),
+        },
+        include: {
+          system: true,
+          submitter: { select: { id: true, name: true } },
+        },
+      })
+
+      // Invalidate cache when new game is created
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
       // Queue SEO cache invalidation (non-blocking)
-      Promise.all([
-        invalidateGame(id),
-        invalidateListPages(),
-        revalidateByTag('games'),
-        revalidateByTag(`game-${id}`),
-        revalidateByTag(`system-${result.systemId}`),
-      ]).catch((error) => {
-        console.error(
-          '[Games Router] Cache invalidation failed after update:',
-          error,
-        )
-      })
+      if (result.status === ApprovalStatus.APPROVED) {
+        Promise.all([
+          invalidateListPages(),
+          invalidateSitemap(),
+          revalidateByTag('games'),
+          revalidateByTag(`system-${input.systemId}`),
+        ]).catch((error) => {
+          console.error('[Games Router] Cache invalidation failed:', error)
+        })
+      }
 
       return result
-    }),
+    } catch (error) {
+      if (isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)) {
+        return ResourceError.game.alreadyExists(input.title, system.name)
+      }
+      throw error
+    }
+  }),
+
+  update: editGamesProcedure.input(UpdateGameSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input
+
+    // Check if game exists
+    const existingGame = await ctx.prisma.game.findUnique({
+      where: { id },
+      include: { system: true },
+    })
+
+    if (!existingGame) ResourceError.game.notFound()
+
+    await validateGameConflicts(ctx.prisma, id, data, existingGame!)
+
+    const result = await performGameUpdate(ctx.prisma, id, data, existingGame!)
+
+    // Queue SEO cache invalidation (non-blocking)
+    Promise.all([
+      invalidateGame(id),
+      invalidateListPages(),
+      revalidateByTag('games'),
+      revalidateByTag(`game-${id}`),
+      revalidateByTag(`system-${result.systemId}`),
+    ]).catch((error) => {
+      console.error('[Games Router] Cache invalidation failed after update:', error)
+    })
+
+    return result
+  }),
 
   updateOwnPendingGame: protectedProcedure
     .input(UpdateGameSchema)
@@ -634,12 +595,7 @@ export const gamesRouter = createTRPCRouter({
 
       await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
-      const result = await performGameUpdate(
-        ctx.prisma,
-        id,
-        data,
-        existingGame!,
-      )
+      const result = await performGameUpdate(ctx.prisma, id, data, existingGame!)
 
       // Queue SEO cache invalidation (non-blocking)
       Promise.all([
@@ -649,50 +605,40 @@ export const gamesRouter = createTRPCRouter({
         revalidateByTag(`game-${id}`),
         revalidateByTag(`system-${result.systemId}`),
       ]).catch((error) => {
-        console.error(
-          '[Games Router] Cache invalidation failed after update:',
-          error,
-        )
+        console.error('[Games Router] Cache invalidation failed after update:', error)
       })
 
       return result
     }),
 
-  delete: deleteGamesProcedure
-    .input(DeleteGameSchema)
-    .mutation(async ({ ctx, input }) => {
-      const game = await ctx.prisma.game.findUnique({
+  delete: deleteGamesProcedure.input(DeleteGameSchema).mutation(async ({ ctx, input }) => {
+    const game = await ctx.prisma.game.findUnique({
+      where: { id: input.id },
+      include: { listings: true },
+    })
+
+    if (!game) return ResourceError.game.notFound()
+
+    if (game.listings.length > 0) {
+      ResourceError.game.inUse(game.listings.length)
+    }
+
+    try {
+      const result = await ctx.prisma.game.delete({
         where: { id: input.id },
-        include: { listings: true },
       })
 
-      if (!game) return ResourceError.game.notFound()
+      // Invalidate cache when game is deleted
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
-      if (game.listings.length > 0) {
-        ResourceError.game.inUse(game.listings.length)
+      return result
+    } catch (error) {
+      if (isPrismaError(error, PRISMA_ERROR_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION)) {
+        ResourceError.game.inUse(0)
       }
-
-      try {
-        const result = await ctx.prisma.game.delete({
-          where: { id: input.id },
-        })
-
-        // Invalidate cache when game is deleted
-        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-
-        return result
-      } catch (error) {
-        if (
-          isPrismaError(
-            error,
-            PRISMA_ERROR_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION,
-          )
-        ) {
-          ResourceError.game.inUse(0)
-        }
-        throw error
-      }
-    }),
+      throw error
+    }
+  }),
 
   // endpoints for an approval system
   getPendingGames: approveGamesProcedure
@@ -709,11 +655,7 @@ export const gamesRouter = createTRPCRouter({
 
       const where: Prisma.GameWhereInput = { status: ApprovalStatus.PENDING }
 
-      const searchConditions = buildSearchFilter(search, [
-        'title',
-        'system.name',
-        'submitter.name',
-      ])
+      const searchConditions = buildSearchFilter(search, ['title', 'system.name', 'submitter.name'])
       if (searchConditions) where.OR = searchConditions
 
       const sortConfig = {
@@ -766,60 +708,53 @@ export const gamesRouter = createTRPCRouter({
         }),
       ])
 
-      const pagination = createPaginationResult(
-        total,
-        { limit, offset, page },
-        limit,
-        actualOffset,
-      )
+      const pagination = createPaginationResult(total, { limit, offset, page }, limit, actualOffset)
 
       return { games, pagination }
     }),
 
-  approveGame: approveGamesProcedure
-    .input(ApproveGameSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, status } = input
+  approveGame: approveGamesProcedure.input(ApproveGameSchema).mutation(async ({ ctx, input }) => {
+    const { id, status } = input
 
-      const game = await ctx.prisma.game.findUnique({ where: { id } })
+    const game = await ctx.prisma.game.findUnique({ where: { id } })
 
-      if (!game) return ResourceError.game.notFound()
+    if (!game) return ResourceError.game.notFound()
 
-      if (game.status !== ApprovalStatus.PENDING) {
-        return ResourceError.game.alreadyProcessed()
-      }
+    if (game.status !== ApprovalStatus.PENDING) {
+      return ResourceError.game.alreadyProcessed()
+    }
 
-      const result = await ctx.prisma.$transaction(
-        async (tx) =>
-          await tx.game.update({
-            where: { id },
-            data: {
-              status: status as ApprovalStatus,
-              approvedBy: ctx.session.user.id,
-              approvedAt: new Date(),
-            },
-            include: {
-              system: true,
-              submitter: { select: { id: true, name: true, email: true } },
-              approver: { select: { id: true, name: true, email: true } },
-            },
-          }),
-      )
+    const result = await ctx.prisma.$transaction(
+      async (tx) =>
+        await tx.game.update({
+          where: { id },
+          data: {
+            status: status as ApprovalStatus,
+            approvedBy: ctx.session.user.id,
+            approvedAt: new Date(),
+          },
+          include: {
+            system: true,
+            submitter: { select: { id: true, name: true, email: true } },
+            approver: { select: { id: true, name: true, email: true } },
+          },
+        }),
+    )
 
-      // Invalidate cache when game status changes
-      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+    // Invalidate cache when game status changes
+    gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
-      // Invalidate SEO cache
-      await invalidateGameRelatedContent(id)
-      if (status === ApprovalStatus.APPROVED) {
-        await invalidateSitemap()
-        await revalidateByTag('games')
-        await revalidateByTag(`game-${id}`)
-        await revalidateByTag(`system-${game.systemId}`)
-      }
+    // Invalidate SEO cache
+    await invalidateGameRelatedContent(id)
+    if (status === ApprovalStatus.APPROVED) {
+      await invalidateSitemap()
+      await revalidateByTag('games')
+      await revalidateByTag(`game-${id}`)
+      await revalidateByTag(`system-${game.systemId}`)
+    }
 
-      return result
-    }),
+    return result
+  }),
 
   bulkApproveGames: approveGamesProcedure
     .input(BulkApproveGamesSchema)
@@ -917,24 +852,22 @@ export const gamesRouter = createTRPCRouter({
     }),
 
   // Nintendo Switch Title ID lookup endpoints
-  findSwitchTitleId: publicProcedure
-    .input(FindSwitchTitleIdSchema)
-    .query(async ({ input }) => {
-      const { gameName, maxResults } = input
+  findSwitchTitleId: publicProcedure.input(FindSwitchTitleIdSchema).query(async ({ input }) => {
+    const { gameName, maxResults } = input
 
-      try {
-        const results = await findTitleIdForGameName(gameName, maxResults)
-        return {
-          success: true,
-          results,
-          query: gameName,
-          totalResults: results.length,
-        }
-      } catch (error) {
-        console.error('Error finding Switch title ID:', error)
-        return AppError.internalError('Failed to search for Switch title ID')
+    try {
+      const results = await findTitleIdForGameName(gameName, maxResults)
+      return {
+        success: true,
+        results,
+        query: gameName,
+        totalResults: results.length,
       }
-    }),
+    } catch (error) {
+      console.error('Error finding Switch title ID:', error)
+      return AppError.internalError('Failed to search for Switch title ID')
+    }
+  }),
 
   getBestSwitchTitleId: publicProcedure
     .input(GetBestSwitchTitleIdSchema)
@@ -955,20 +888,18 @@ export const gamesRouter = createTRPCRouter({
       }
     }),
 
-  getSwitchGamesStats: publicProcedure
-    .input(GetSwitchGamesStatsSchema)
-    .query(async () => {
-      try {
-        const stats = await getSwitchGamesStats()
-        return {
-          success: true,
-          ...stats,
-        }
-      } catch (error) {
-        console.error('Error getting Switch games stats:', error)
-        return AppError.internalError('Failed to get Switch games statistics')
+  getSwitchGamesStats: publicProcedure.input(GetSwitchGamesStatsSchema).query(async () => {
+    try {
+      const stats = await getSwitchGamesStats()
+      return {
+        success: true,
+        ...stats,
       }
-    }),
+    } catch (error) {
+      console.error('Error getting Switch games stats:', error)
+      return AppError.internalError('Failed to get Switch games statistics')
+    }
+  }),
 
   // SUPER_ADMIN only: Override game status regardless of current state
   overrideStatus: superAdminProcedure

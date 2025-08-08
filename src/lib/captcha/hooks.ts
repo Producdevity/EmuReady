@@ -44,8 +44,7 @@ export function useRecaptcha(): UseRecaptchaResult {
 
 // Convenience hooks for specific actions
 export function useRecaptchaForCreateListing() {
-  const { executeRecaptcha, isRecaptchaLoaded, isCaptchaEnabled } =
-    useRecaptcha()
+  const { executeRecaptcha, isRecaptchaLoaded, isCaptchaEnabled } = useRecaptcha()
 
   const executeForCreateListing = useCallback(async () => {
     return executeRecaptcha(RECAPTCHA_CONFIG.actions.CREATE_LISTING)
@@ -59,8 +58,7 @@ export function useRecaptchaForCreateListing() {
 }
 
 export function useRecaptchaForVote() {
-  const { executeRecaptcha, isRecaptchaLoaded, isCaptchaEnabled } =
-    useRecaptcha()
+  const { executeRecaptcha, isRecaptchaLoaded, isCaptchaEnabled } = useRecaptcha()
 
   const executeForVote = useCallback(async () => {
     return executeRecaptcha(RECAPTCHA_CONFIG.actions.VOTE)
@@ -74,8 +72,7 @@ export function useRecaptchaForVote() {
 }
 
 export function useRecaptchaForComment() {
-  const { executeRecaptcha, isRecaptchaLoaded, isCaptchaEnabled } =
-    useRecaptcha()
+  const { executeRecaptcha, isRecaptchaLoaded, isCaptchaEnabled } = useRecaptcha()
 
   const executeForComment = useCallback(async () => {
     return executeRecaptcha(RECAPTCHA_CONFIG.actions.COMMENT)

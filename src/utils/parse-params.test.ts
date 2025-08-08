@@ -11,11 +11,7 @@ describe('parseArrayParam', () => {
   })
 
   it('should parse valid JSON array', () => {
-    expect(parseArrayParam('["apple", "banana", "cherry"]')).toEqual([
-      'apple',
-      'banana',
-      'cherry',
-    ])
+    expect(parseArrayParam('["apple", "banana", "cherry"]')).toEqual(['apple', 'banana', 'cherry'])
   })
 
   it('should parse single string as array with one element', () => {
@@ -31,11 +27,7 @@ describe('parseArrayParam', () => {
   })
 
   it('should handle JSON array with mixed types as strings', () => {
-    expect(parseArrayParam('["string", 123, true]')).toEqual([
-      'string',
-      123,
-      true,
-    ])
+    expect(parseArrayParam('["string", 123, true]')).toEqual(['string', 123, true])
   })
 
   it('should handle special characters in single string', () => {
@@ -56,9 +48,11 @@ describe('parseArrayParam', () => {
 
   it('should handle complex URL-encoded arrays', () => {
     // URL-encoded ["system-1","system-2","system-3"]
-    expect(
-      parseArrayParam('%5B%22system-1%22,%22system-2%22,%22system-3%22%5D'),
-    ).toEqual(['system-1', 'system-2', 'system-3'])
+    expect(parseArrayParam('%5B%22system-1%22,%22system-2%22,%22system-3%22%5D')).toEqual([
+      'system-1',
+      'system-2',
+      'system-3',
+    ])
   })
 
   it('should fallback gracefully for URL-encoded non-JSON', () => {
@@ -109,9 +103,7 @@ describe('parseNumberArrayParam', () => {
   })
 
   it('should handle mixed types in JSON array, converting valid ones', () => {
-    expect(parseNumberArrayParam('[1, "2", true, "invalid", 5]')).toEqual([
-      1, 2, 1, 5,
-    ])
+    expect(parseNumberArrayParam('[1, "2", true, "invalid", 5]')).toEqual([1, 2, 1, 5])
   })
 
   it('should filter out zero values', () => {

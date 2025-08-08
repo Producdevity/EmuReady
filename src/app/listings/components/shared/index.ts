@@ -24,12 +24,7 @@ export {
 } from './utils/customFieldHelpers'
 
 // Types
-export type {
-  GameOption,
-  EmulatorOption,
-  DeviceOption,
-  PerformanceScale,
-} from './types'
+export type { GameOption, EmulatorOption, DeviceOption, PerformanceScale } from './types'
 
 export type {
   CustomFieldDefinitionWithOptions,

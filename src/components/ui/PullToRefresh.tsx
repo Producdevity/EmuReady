@@ -1,11 +1,6 @@
 'use client'
 
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  useAnimation,
-} from 'framer-motion'
+import { motion, useMotionValue, useTransform, useAnimation } from 'framer-motion'
 import { ArrowDown } from 'lucide-react'
 import { useState, useRef, useEffect, type PropsWithChildren } from 'react'
 import { cn } from '@/lib/utils'
@@ -40,11 +35,7 @@ export function PullToRefresh({
   const controls = useAnimation()
 
   // Transform the pull indicator's opacity and scale based on pull distance
-  const indicatorOpacity = useTransform(
-    y,
-    [0, pullDistance * 0.4, pullDistance],
-    [0, 0.8, 1],
-  )
+  const indicatorOpacity = useTransform(y, [0, pullDistance * 0.4, pullDistance], [0, 0.8, 1])
 
   const indicatorScale = useTransform(y, [0, pullDistance], [0.8, 1])
 
@@ -121,15 +112,7 @@ export function PullToRefresh({
       container.removeEventListener('touchmove', handleTouchMove)
       container.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [
-    isPulling,
-    canRefresh,
-    pullDistance,
-    onRefresh,
-    enableHaptics,
-    controls,
-    y,
-  ])
+  }, [isPulling, canRefresh, pullDistance, onRefresh, enableHaptics, controls, y])
 
   return (
     <div

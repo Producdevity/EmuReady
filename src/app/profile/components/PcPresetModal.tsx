@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect, type FormEvent } from 'react'
-import {
-  Button,
-  Input,
-  Modal,
-  Autocomplete,
-  SelectInput,
-} from '@/components/ui'
+import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -128,10 +122,7 @@ function PcPresetModal(props: Props) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label
-            htmlFor="name"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="name" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             Preset Name
           </label>
           <Input
@@ -146,10 +137,7 @@ function PcPresetModal(props: Props) {
         </div>
 
         <div>
-          <label
-            htmlFor="cpu"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="cpu" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             CPU
           </label>
           <Autocomplete
@@ -165,10 +153,7 @@ function PcPresetModal(props: Props) {
         </div>
 
         <div>
-          <label
-            htmlFor="gpu"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="gpu" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             GPU
           </label>
           <Autocomplete
@@ -204,10 +189,7 @@ function PcPresetModal(props: Props) {
         </div>
 
         <div>
-          <label
-            htmlFor="os"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="os" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             Operating System
           </label>
           <SelectInput

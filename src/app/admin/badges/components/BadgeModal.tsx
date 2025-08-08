@@ -22,14 +22,8 @@ import getErrorMessage from '@/utils/getErrorMessage'
 type Badge = RouterOutput['badges']['getAll']['badges'][number]
 
 const badgeSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name is required')
-    .max(50, 'Name must be 50 characters or less'),
-  description: z
-    .string()
-    .max(200, 'Description must be 200 characters or less')
-    .optional(),
+  name: z.string().min(1, 'Name is required').max(50, 'Name must be 50 characters or less'),
+  description: z.string().max(200, 'Description must be 200 characters or less').optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color'),
   icon: z.string().max(50, 'Icon must be 50 characters or less').optional(),
   isActive: z.boolean(),
@@ -44,12 +38,7 @@ interface BadgeModalProps {
   onSuccess: () => void
 }
 
-export default function BadgeModal({
-  isOpen,
-  onClose,
-  badge,
-  onSuccess,
-}: BadgeModalProps) {
+export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: BadgeModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditing = Boolean(badge)
 
@@ -138,9 +127,7 @@ export default function BadgeModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Badge' : 'Create New Badge'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Badge' : 'Create New Badge'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -152,11 +139,7 @@ export default function BadgeModal({
               >
                 Name
               </label>
-              <Input
-                id="name"
-                {...form.register('name')}
-                placeholder="Enter badge name"
-              />
+              <Input id="name" {...form.register('name')} placeholder="Enter badge name" />
             </div>
 
             <div>
@@ -183,17 +166,8 @@ export default function BadgeModal({
                 Color
               </label>
               <div className="flex items-center gap-3">
-                <Input
-                  id="color"
-                  type="color"
-                  {...form.register('color')}
-                  className="w-20 h-10"
-                />
-                <Input
-                  {...form.register('color')}
-                  placeholder="#3B82F6"
-                  className="flex-1"
-                />
+                <Input id="color" type="color" {...form.register('color')} className="w-20 h-10" />
+                <Input {...form.register('color')} placeholder="#3B82F6" className="flex-1" />
               </div>
             </div>
 
@@ -214,9 +188,7 @@ export default function BadgeModal({
             <div className="flex items-center gap-3">
               <Toggle
                 checked={form.watch('isActive')}
-                onChange={(checked: boolean) =>
-                  form.setValue('isActive', checked)
-                }
+                onChange={(checked: boolean) => form.setValue('isActive', checked)}
               />
               <label
                 htmlFor="isActive"
@@ -228,19 +200,10 @@ export default function BadgeModal({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              isLoading={isSubmitting}
-            >
+            <Button type="submit" disabled={isSubmitting} isLoading={isSubmitting}>
               {isEditing ? 'Update Badge' : 'Create Badge'}
             </Button>
           </DialogFooter>

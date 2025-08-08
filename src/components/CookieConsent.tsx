@@ -1,15 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  X,
-  Settings,
-  Shield,
-  BarChart3,
-  Target,
-  Cookie,
-  Check,
-} from 'lucide-react'
+import { X, Settings, Shield, BarChart3, Target, Cookie, Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
@@ -34,24 +26,21 @@ const COOKIE_CATEGORIES = {
   necessary: {
     icon: Shield,
     title: 'Necessary Cookies',
-    description:
-      'Essential for the website to function properly. These cannot be disabled.',
+    description: 'Essential for the website to function properly. These cannot be disabled.',
     required: true,
     color: 'emerald',
   },
   analytics: {
     icon: BarChart3,
     title: 'Analytics Cookies',
-    description:
-      'Help us understand how you use our site to improve user experience.',
+    description: 'Help us understand how you use our site to improve user experience.',
     required: false,
     color: 'blue',
   },
   performance: {
     icon: Target,
     title: 'Performance Cookies',
-    description:
-      'Monitor site performance and loading times to optimize functionality.',
+    description: 'Monitor site performance and loading times to optimize functionality.',
     required: false,
     color: 'purple',
   },
@@ -81,19 +70,15 @@ const colorClasses = {
 function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
-  const [savedPreferences, setSavedPreferences] =
-    useLocalStorage<CookiePreferences | null>(
-      storageKeys.cookies.preferences,
-      null,
-    )
+  const [savedPreferences, setSavedPreferences] = useLocalStorage<CookiePreferences | null>(
+    storageKeys.cookies.preferences,
+    null,
+  )
   const [hasConsented, setHasConsented] = useLocalStorage<boolean>(
     storageKeys.cookies.consent,
     false,
   )
-  const [, setConsentDate] = useLocalStorage<string | null>(
-    storageKeys.cookies.consentDate,
-    null,
-  )
+  const [, setConsentDate] = useLocalStorage<string | null>(storageKeys.cookies.consentDate, null)
   const [, setAnalyticsEnabled] = useLocalStorage<boolean>(
     storageKeys.cookies.analyticsEnabled,
     false,
@@ -238,10 +223,9 @@ function CookieConsent() {
                 >
                   <div className="space-y-5">
                     <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-                      We use cookies to improve your experience and analyze site
-                      traffic. Choose which types of cookies you&apos;d like to
-                      allow to help us provide you with the best possible
-                      experience.
+                      We use cookies to improve your experience and analyze site traffic. Choose
+                      which types of cookies you&apos;d like to allow to help us provide you with
+                      the best possible experience.
                     </p>
 
                     <div className="flex flex-wrap gap-2.5 justify-end">
@@ -286,94 +270,79 @@ function CookieConsent() {
                 >
                   <div className="space-y-5">
                     <div className="grid gap-3">
-                      {Object.entries(COOKIE_CATEGORIES).map(
-                        ([key, category], index) => {
-                          const Icon = category.icon
-                          const isEnabled = preferences[key as CookieCategory]
-                          const colors = colorClasses[category.color]
+                      {Object.entries(COOKIE_CATEGORIES).map(([key, category], index) => {
+                        const Icon = category.icon
+                        const isEnabled = preferences[key as CookieCategory]
+                        const colors = colorClasses[category.color]
 
-                          return (
-                            <motion.div
-                              key={key}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              className={cn(
-                                'group flex items-start gap-3 p-3 rounded-lg border transition-all duration-200',
-                                colors.bg,
-                                isEnabled
-                                  ? cn(colors.border, 'shadow-sm')
-                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
-                              )}
-                            >
-                              <div className="flex-shrink-0 mt-0.5">
-                                <div
-                                  className={cn('p-1.5 rounded-md', colors.bg)}
+                        return (
+                          <motion.div
+                            key={key}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className={cn(
+                              'group flex items-start gap-3 p-3 rounded-lg border transition-all duration-200',
+                              colors.bg,
+                              isEnabled
+                                ? cn(colors.border, 'shadow-sm')
+                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+                            )}
+                          >
+                            <div className="flex-shrink-0 mt-0.5">
+                              <div className={cn('p-1.5 rounded-md', colors.bg)}>
+                                <Icon className={cn('w-4 h-4', colors.icon)} />
+                              </div>
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {category.title}
+                                </h4>
+
+                                <button
+                                  onClick={() => handleCategoryToggle(key as CookieCategory)}
+                                  disabled={category.required}
+                                  className={cn(
+                                    'relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95',
+                                    isEnabled ? colors.toggle : 'bg-gray-300 dark:bg-gray-600',
+                                    category.required && 'opacity-60 cursor-not-allowed',
+                                  )}
                                 >
-                                  <Icon
-                                    className={cn('w-4 h-4', colors.icon)}
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {category.title}
-                                  </h4>
-
-                                  <button
-                                    onClick={() =>
-                                      handleCategoryToggle(
-                                        key as CookieCategory,
-                                      )
-                                    }
-                                    disabled={category.required}
-                                    className={cn(
-                                      'relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95',
-                                      isEnabled
-                                        ? colors.toggle
-                                        : 'bg-gray-300 dark:bg-gray-600',
-                                      category.required &&
-                                        'opacity-60 cursor-not-allowed',
-                                    )}
-                                  >
-                                    <motion.span
-                                      layout
-                                      transition={{
-                                        type: 'spring',
-                                        stiffness: 500,
-                                        damping: 30,
-                                      }}
-                                      className={cn(
-                                        'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
-                                        isEnabled
-                                          ? 'translate-x-5'
-                                          : 'translate-x-1',
-                                      )}
-                                    />
-                                  </button>
-                                </div>
-
-                                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-1">
-                                  {category.description}
-                                </p>
-
-                                {category.required && (
                                   <motion.span
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400"
-                                  >
-                                    <Shield className="w-3 h-3" />
-                                    Always Active
-                                  </motion.span>
-                                )}
+                                    layout
+                                    transition={{
+                                      type: 'spring',
+                                      stiffness: 500,
+                                      damping: 30,
+                                    }}
+                                    className={cn(
+                                      'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
+                                      isEnabled ? 'translate-x-5' : 'translate-x-1',
+                                    )}
+                                  />
+                                </button>
                               </div>
-                            </motion.div>
-                          )
-                        },
-                      )}
+
+                              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-1">
+                                {category.description}
+                              </p>
+
+                              {category.required && (
+                                <motion.span
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400"
+                                >
+                                  <Shield className="w-3 h-3" />
+                                  Always Active
+                                </motion.span>
+                              )}
+                            </div>
+                          </motion.div>
+                        )
+                      })}
                     </div>
 
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">

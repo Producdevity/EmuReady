@@ -28,8 +28,7 @@ const allTypes = [
   NotificationType.USER_MENTION,
 ]
 
-type NotificationPreferencesData =
-  RouterOutput['notifications']['getPreferences']
+type NotificationPreferencesData = RouterOutput['notifications']['getPreferences']
 
 interface Props {
   notificationPreferencesQuery: {
@@ -42,45 +41,32 @@ interface Props {
 function NotificationPreferences(props: Props) {
   const utils = api.useUtils()
 
-  const updateNotificationPreference =
-    api.notifications.updatePreference.useMutation({
-      onSuccess: () => {
-        utils.notifications.getPreferences.invalidate().catch(console.error)
-        toast.success('Notification preference updated!')
-      },
-      onError: (error) => {
-        console.error('Error updating notification preference:', error)
-        toast.error(`Failed to update preference: ${getErrorMessage(error)}`)
-      },
-    })
+  const updateNotificationPreference = api.notifications.updatePreference.useMutation({
+    onSuccess: () => {
+      utils.notifications.getPreferences.invalidate().catch(console.error)
+      toast.success('Notification preference updated!')
+    },
+    onError: (error) => {
+      console.error('Error updating notification preference:', error)
+      toast.error(`Failed to update preference: ${getErrorMessage(error)}`)
+    },
+  })
 
   // Helper function to get preference value
-  function getPreferenceValue(
-    type: string,
-    field: 'inAppEnabled' | 'emailEnabled',
-  ): boolean {
+  function getPreferenceValue(type: string, field: 'inAppEnabled' | 'emailEnabled'): boolean {
     if (type === 'general') {
       return allTypes.every(
         (notifType) =>
-          props.notificationPreferencesQuery.data?.find(
-            (p) => p.type === notifType,
-          )?.[field] ?? true,
+          props.notificationPreferencesQuery.data?.find((p) => p.type === notifType)?.[field] ??
+          true,
       )
     }
 
-    return (
-      props.notificationPreferencesQuery.data?.find((p) => p.type === type)?.[
-        field
-      ] ?? true
-    )
+    return props.notificationPreferencesQuery.data?.find((p) => p.type === type)?.[field] ?? true
   }
 
   // Helper function to update preference
-  function updatePreference(
-    type: string,
-    field: 'inAppEnabled' | 'emailEnabled',
-    value: boolean,
-  ) {
+  function updatePreference(type: string, field: 'inAppEnabled' | 'emailEnabled', value: boolean) {
     if (type !== 'general') {
       return updateNotificationPreference.mutate({
         type: type as NotificationType,
@@ -247,9 +233,7 @@ function NotificationPreferences(props: Props) {
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {category.title}
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {category.description}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{category.description}</p>
             </div>
 
             <div className="space-y-4">
@@ -272,42 +256,24 @@ function NotificationPreferences(props: Props) {
                       <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
                           <AnimatedToggle
-                            checked={getPreferenceValue(
-                              item.key,
-                              'inAppEnabled',
-                            )}
+                            checked={getPreferenceValue(item.key, 'inAppEnabled')}
                             onChange={(checked) =>
-                              updatePreference(
-                                item.key,
-                                'inAppEnabled',
-                                checked,
-                              )
+                              updatePreference(item.key, 'inAppEnabled', checked)
                             }
                             size="sm"
                           />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
-                            In-App
-                          </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">In-App</span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <AnimatedToggle
-                            checked={getPreferenceValue(
-                              item.key,
-                              'emailEnabled',
-                            )}
+                            checked={getPreferenceValue(item.key, 'emailEnabled')}
                             onChange={(checked) =>
-                              updatePreference(
-                                item.key,
-                                'emailEnabled',
-                                checked,
-                              )
+                              updatePreference(item.key, 'emailEnabled', checked)
                             }
                             size="sm"
                           />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
-                            Email
-                          </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Email</span>
                         </div>
                       </div>
                     </div>

@@ -24,9 +24,7 @@ interface ClerkWebhookEvent {
 
 async function handleUserCreated(data: ClerkWebhookEvent['data']) {
   const primaryEmail = data.primary_email_address_id
-    ? data.email_addresses.find(
-        (email) => email.id === data.primary_email_address_id,
-      )
+    ? data.email_addresses.find((email) => email.id === data.primary_email_address_id)
     : data.email_addresses[0]
 
   if (!primaryEmail) {
@@ -78,9 +76,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
 
 async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
   const primaryEmail = data.primary_email_address_id
-    ? data.email_addresses.find(
-        (email) => email.id === data.primary_email_address_id,
-      )
+    ? data.email_addresses.find((email) => email.id === data.primary_email_address_id)
     : data.email_addresses[0]
 
   if (!primaryEmail) {
@@ -145,10 +141,7 @@ export async function POST(request: NextRequest) {
 
   if (!WEBHOOK_SECRET) {
     console.error('❌ Missing CLERK_WEBHOOK_SECRET environment variable')
-    return NextResponse.json(
-      { error: 'Missing webhook secret' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Missing webhook secret' }, { status: 500 })
   }
 
   let evt: ClerkWebhookEvent

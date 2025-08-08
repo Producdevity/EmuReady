@@ -8,27 +8,19 @@ export class AuthPage extends BasePage {
 
   // Clerk authentication elements
   get clerkSignInModal() {
-    return this.page.locator(
-      '.cl-modal, .cl-modalContent, .cl-component, .cl-signIn-root',
-    )
+    return this.page.locator('.cl-modal, .cl-modalContent, .cl-component, .cl-signIn-root')
   }
 
   get clerkSignUpModal() {
-    return this.page.locator(
-      '.cl-modal, .cl-modalContent, .cl-component, .cl-signUp-root',
-    )
+    return this.page.locator('.cl-modal, .cl-modalContent, .cl-component, .cl-signUp-root')
   }
 
   get emailInput() {
-    return this.page
-      .getByLabel(/email/i)
-      .or(this.page.getByPlaceholder(/email/i))
+    return this.page.getByLabel(/email/i).or(this.page.getByPlaceholder(/email/i))
   }
 
   get passwordInput() {
-    return this.page
-      .getByLabel(/password/i)
-      .or(this.page.getByPlaceholder(/password/i))
+    return this.page.getByLabel(/password/i).or(this.page.getByPlaceholder(/password/i))
   }
 
   get continueButton() {
@@ -53,9 +45,7 @@ export class AuthPage extends BasePage {
 
   // Protected route elements
   get authRequiredMessage() {
-    return this.page.getByText(
-      /you need to be logged in|please sign in|sign in required/i,
-    )
+    return this.page.getByText(/you need to be logged in|please sign in|sign in required/i)
   }
 
   get protectedContent() {
@@ -133,16 +123,12 @@ export class AuthPage extends BasePage {
     await this.page.waitForLoadState('networkidle', { timeout: 10000 })
 
     // Try multiple selectors for sign in button
-    const signInVisible = await this.signInButton
-      .isVisible({ timeout: 5000 })
-      .catch(() => false)
+    const signInVisible = await this.signInButton.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (!signInVisible) {
       // Try alternative selectors for webkit
       const altSignIn = this.page.getByText(/sign in/i).first()
-      const altVisible = await altSignIn
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
+      const altVisible = await altSignIn.isVisible({ timeout: 2000 }).catch(() => false)
 
       if (!altVisible) {
         throw new Error('Sign in button not found with any selector')
@@ -154,9 +140,7 @@ export class AuthPage extends BasePage {
     // User button should not be visible when not authenticated
     const userButtonVisible = await this.userButton.isVisible({ timeout: 1000 })
     if (userButtonVisible) {
-      throw new Error(
-        'User button is visible when user should not be authenticated',
-      )
+      throw new Error('User button is visible when user should not be authenticated')
     }
   }
 
@@ -173,10 +157,7 @@ export class AuthPage extends BasePage {
       } catch {
         // Check if we got redirected
         const currentUrl = this.page.url()
-        if (
-          !currentUrl.includes('/games/new') &&
-          !currentUrl.includes('/listings/new')
-        ) {
+        if (!currentUrl.includes('/games/new') && !currentUrl.includes('/listings/new')) {
           console.log('Page redirected - likely requires authentication')
           return
         }
@@ -201,15 +182,8 @@ export class AuthPage extends BasePage {
 
       // Check if page shows authentication related content
       const pageText = await this.page.textContent('body')
-      const authKeywords = [
-        'sign in',
-        'log in',
-        'authentication required',
-        'please sign in',
-      ]
-      return authKeywords.some((keyword) =>
-        pageText?.toLowerCase().includes(keyword),
-      )
+      const authKeywords = ['sign in', 'log in', 'authentication required', 'please sign in']
+      return authKeywords.some((keyword) => pageText?.toLowerCase().includes(keyword))
     } catch {
       return false
     }
@@ -221,9 +195,7 @@ export class AuthPage extends BasePage {
       timeout: 2000,
     })
     if (hasAuthMessage) {
-      throw new Error(
-        'Authentication required message visible when user should be authenticated',
-      )
+      throw new Error('Authentication required message visible when user should be authenticated')
     }
   }
 }

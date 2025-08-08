@@ -3,11 +3,7 @@
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import {
-  AdminTableContainer,
-  AdminSearchFilters,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { AdminTableContainer, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -81,8 +77,7 @@ function AdminBrandsPage() {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete Brand',
-      description:
-        'Are you sure you want to delete this brand? This action cannot be undone.',
+      description: 'Are you sure you want to delete this brand? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -103,18 +98,13 @@ function AdminBrandsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Device Brands
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Brands</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage all device brands in the system
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <ColumnVisibilityControl
-            columns={BRANDS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={BRANDS_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add Brand</Button>
         </div>
       </div>
@@ -198,10 +188,7 @@ function AdminBrandsPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <EditButton
-                          onClick={() => openModal(brand)}
-                          title="Edit Brand"
-                        />
+                        <EditButton onClick={() => openModal(brand)} title="Edit Brand" />
                         {isAdmin && (
                           <DeleteButton
                             onClick={() => handleDelete(brand.id)}

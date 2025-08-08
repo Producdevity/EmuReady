@@ -38,20 +38,17 @@ export async function verifyRecaptcha(
   }
 
   try {
-    const response = await fetch(
-      'https://www.google.com/recaptcha/api/siteverify',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          secret: RECAPTCHA_CONFIG.secretKey,
-          response: token,
-          ...(userIP && { remoteip: userIP }),
-        }),
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-    )
+      body: new URLSearchParams({
+        secret: RECAPTCHA_CONFIG.secretKey,
+        response: token,
+        ...(userIP && { remoteip: userIP }),
+      }),
+    })
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

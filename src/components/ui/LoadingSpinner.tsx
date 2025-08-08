@@ -21,13 +21,7 @@ export function LoadingSpinner(props: Props) {
         viewBox="0 0 24 24"
       >
         <defs>
-          <linearGradient
-            id="spinnerGradient"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="0%"
-          >
+          <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#3b82f6" /> {/* blue-500 */}
             <stop offset="50%" stopColor="#6366f1" /> {/* indigo-500 */}
             <stop offset="100%" stopColor="#a855f7" /> {/* purple-500 */}
@@ -59,9 +53,7 @@ export function LoadingSpinner(props: Props) {
         />
       </svg>
 
-      {props.text && (
-        <p className="mt-3 text-gray-500 dark:text-gray-400">{props.text}</p>
-      )}
+      {props.text && <p className="mt-3 text-gray-500 dark:text-gray-400">{props.text}</p>}
     </div>
   )
 }

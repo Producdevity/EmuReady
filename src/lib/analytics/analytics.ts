@@ -24,11 +24,7 @@ import { sendAnalyticsEvent, filterUndefinedValues } from './utils'
 
 const analytics = {
   error: {
-    imageLoadError: (params: {
-      imageUrl: string
-      error?: Error
-      id?: string
-    }) => {
+    imageLoadError: (params: { imageUrl: string; error?: Error; id?: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ERROR,
         action: ERROR_ACTIONS.IMAGE_LOAD_ERROR,
@@ -379,10 +375,7 @@ const analytics = {
       })
     },
 
-    voteReminderClicked: (params: {
-      listingId: string
-      timeOnPage: number
-    }) => {
+    voteReminderClicked: (params: { listingId: string; timeOnPage: number }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_CLICKED,
@@ -410,10 +403,7 @@ const analytics = {
       })
     },
 
-    voteReminderDismissed: (params: {
-      listingId: string
-      timeOnPage: number
-    }) => {
+    voteReminderDismissed: (params: { listingId: string; timeOnPage: number }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_DISMISSED,
@@ -606,11 +596,7 @@ const analytics = {
       })
     },
 
-    menuItemClicked: (params: {
-      menuItem: string
-      section: string
-      page: string
-    }) => {
+    menuItemClicked: (params: { menuItem: string; section: string; page: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.NAVIGATION,
         action: NAVIGATION_ACTIONS.MENU_ITEM_CLICKED,
@@ -621,11 +607,7 @@ const analytics = {
 
   // Performance events
   performance: {
-    slowQuery: (params: {
-      queryName: string
-      duration: number
-      threshold: number
-    }) => {
+    slowQuery: (params: { queryName: string; duration: number; threshold: number }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.PERFORMANCE,
         action: PERFORMANCE_ACTIONS.SLOW_QUERY,
@@ -768,10 +750,7 @@ const analytics = {
     }) => {
       const { userId, action, ...metadata } = params
 
-      const actionMap: Record<
-        typeof action,
-        ValueOf<typeof USER_JOURNEY_ACTIONS>
-      > = {
+      const actionMap: Record<typeof action, ValueOf<typeof USER_JOURNEY_ACTIONS>> = {
         first_listing: USER_JOURNEY_ACTIONS.FIRST_LISTING_CREATED,
         first_vote: USER_JOURNEY_ACTIONS.FIRST_VOTE_CAST,
         first_comment: USER_JOURNEY_ACTIONS.FIRST_COMMENT_POSTED,
@@ -809,11 +788,7 @@ const analytics = {
     },
 
     // TODO
-    externalLinkClicked: (params: {
-      url: string
-      context: string
-      entityId?: string
-    }) => {
+    externalLinkClicked: (params: { url: string; context: string; entityId?: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,
         action: CONTENT_DISCOVERY_ACTIONS.EXTERNAL_LINK_CLICKED,
@@ -925,11 +900,7 @@ const analytics = {
       })
     },
 
-    pageView: (params: {
-      pathname: string
-      loadTime: number
-      userId?: string
-    }) => {
+    pageView: (params: { pathname: string; loadTime: number; userId?: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.SESSION,
         action: SESSION_ACTIONS.PAGE_VIEW,
@@ -988,11 +959,7 @@ const analytics = {
   conversion: {
     goalCompleted: (params: {
       userId?: string
-      goalType:
-        | 'listing_created'
-        | 'first_vote'
-        | 'first_comment'
-        | 'profile_completed'
+      goalType: 'listing_created' | 'first_vote' | 'first_comment' | 'profile_completed'
       goalValue?: number
       conversionPath?: string[]
     }) => {

@@ -25,9 +25,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   gameSearchTerm: string
 }
 
-function GameSelector<TFieldValues extends FieldValues = FieldValues>(
-  props: Props<TFieldValues>,
-) {
+function GameSelector<TFieldValues extends FieldValues = FieldValues>(props: Props<TFieldValues>) {
   return (
     <>
       <Controller
@@ -60,9 +58,7 @@ function GameSelector<TFieldValues extends FieldValues = FieldValues>(
           />
         )}
       />
-      {props.errorMessage && (
-        <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>
-      )}
+      {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
       {props.selectedGame && (
         <div
           className={cn(
@@ -85,9 +81,7 @@ function GameSelector<TFieldValues extends FieldValues = FieldValues>(
               Selected: <strong>{props.selectedGame.title}</strong> for{' '}
               <strong>{props.selectedGame.system.name}</strong>
               {props.selectedGame.status === ApprovalStatus.PENDING && (
-                <span className="ml-2 text-xs font-medium">
-                  (Pending Approval)
-                </span>
+                <span className="ml-2 text-xs font-medium">(Pending Approval)</span>
               )}
             </span>
           </div>

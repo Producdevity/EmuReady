@@ -8,78 +8,71 @@ import {
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const listingVerificationsRouter = createTRPCRouter({
-  verifyListing: protectedProcedure
-    .input(VerifyListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { listingId, notes } = input
-      const userId = ctx.session.user.id
+  verifyListing: protectedProcedure.input(VerifyListingSchema).mutation(async ({ ctx, input }) => {
+    const { listingId, notes } = input
+    const userId = ctx.session.user.id
 
-      // Get the listing to check the emulator
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: {
-          emulator: { select: { id: true, name: true } },
-          game: { select: { title: true } },
-          author: { select: { name: true } },
+    // Get the listing to check the emulator
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: {
+        emulator: { select: { id: true, name: true } },
+        game: { select: { title: true } },
+        author: { select: { name: true } },
+      },
+    })
+
+    if (!listing) {
+      throw AppError.notFound('Listing not found')
+    }
+
+    // Check if user is a verified developer for this emulator
+    const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+      where: {
+        userId_emulatorId: {
+          userId,
+          emulatorId: listing.emulatorId,
         },
-      })
+      },
+    })
 
-      if (!listing) {
-        throw AppError.notFound('Listing not found')
-      }
+    if (!verifiedDeveloper) {
+      throw AppError.forbidden(`You are not a verified developer for ${listing.emulator.name}`)
+    }
 
-      // Check if user is a verified developer for this emulator
-      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId,
-            emulatorId: listing.emulatorId,
-          },
+    // Check if already verified by this developer
+    const existingVerification = await ctx.prisma.listingDeveloperVerification.findUnique({
+      where: {
+        listingId_verifiedBy: {
+          listingId,
+          verifiedBy: userId,
         },
-      })
+      },
+    })
 
-      if (!verifiedDeveloper) {
-        throw AppError.forbidden(
-          `You are not a verified developer for ${listing.emulator.name}`,
-        )
-      }
+    if (existingVerification) {
+      throw AppError.conflict('You have already verified this listing')
+    }
 
-      // Check if already verified by this developer
-      const existingVerification =
-        await ctx.prisma.listingDeveloperVerification.findUnique({
-          where: {
-            listingId_verifiedBy: {
-              listingId,
-              verifiedBy: userId,
-            },
-          },
-        })
-
-      if (existingVerification) {
-        throw AppError.conflict('You have already verified this listing')
-      }
-
-      const verification = await ctx.prisma.listingDeveloperVerification.create(
-        {
-          data: {
-            listingId,
-            verifiedBy: userId,
-            notes,
-          },
-          include: {
-            developer: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-              },
-            },
+    const verification = await ctx.prisma.listingDeveloperVerification.create({
+      data: {
+        listingId,
+        verifiedBy: userId,
+        notes,
+      },
+      include: {
+        developer: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
           },
         },
-      )
+      },
+    })
 
-      return verification
-    }),
+    return verification
+  }),
 
   removeVerification: protectedProcedure
     .input(RemoveVerificationSchema)
@@ -87,10 +80,9 @@ export const listingVerificationsRouter = createTRPCRouter({
       const userId = ctx.session.user.id
 
       // Find the verification and ensure it belongs to the current user
-      const verification =
-        await ctx.prisma.listingDeveloperVerification.findUnique({
-          where: { id: input.verificationId },
-        })
+      const verification = await ctx.prisma.listingDeveloperVerification.findUnique({
+        where: { id: input.verificationId },
+      })
 
       if (!verification) {
         throw AppError.notFound('Verification not found')
@@ -110,20 +102,19 @@ export const listingVerificationsRouter = createTRPCRouter({
   getListingVerifications: protectedProcedure
     .input(GetListingVerificationsSchema)
     .query(async ({ ctx, input }) => {
-      const verifications =
-        await ctx.prisma.listingDeveloperVerification.findMany({
-          where: { listingId: input.listingId },
-          include: {
-            developer: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-              },
+      const verifications = await ctx.prisma.listingDeveloperVerification.findMany({
+        where: { listingId: input.listingId },
+        include: {
+          developer: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
             },
           },
-          orderBy: { verifiedAt: 'desc' },
-        })
+        },
+        orderBy: { verifiedAt: 'desc' },
+      })
 
       return verifications
     }),

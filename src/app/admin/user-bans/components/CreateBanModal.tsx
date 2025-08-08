@@ -22,9 +22,7 @@ type UserSearchResult = RouterOutput['users']['searchUsers'][number]
 
 function CreateBanModal(props: Props) {
   const { user: clerkUser } = useUser()
-  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(
-    null,
-  )
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null)
   const [userSearch, setUserSearch] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [reason, setReason] = useState('')
@@ -55,9 +53,7 @@ function CreateBanModal(props: Props) {
   ]
 
   // Check if current user can ban other users (must have manage_user_bans permission)
-  const canBanUsers = currentUserQuery.data?.permissions?.includes(
-    PERMISSIONS.MANAGE_USER_BANS,
-  )
+  const canBanUsers = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USER_BANS)
 
   // Function to check if current user can ban a specific user
   const canBanUser = (userRole: string): boolean => {
@@ -125,9 +121,7 @@ function CreateBanModal(props: Props) {
 
     // Double-check permission to ban this user
     if (!canBanUser(selectedUser.role)) {
-      toast.error(
-        `You cannot ban users with ${selectedUser.role} role or higher`,
-      )
+      toast.error(`You cannot ban users with ${selectedUser.role} role or higher`)
       return
     }
 
@@ -163,10 +157,7 @@ function CreateBanModal(props: Props) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowUserDropdown(false)
       }
     }
@@ -190,12 +181,7 @@ function CreateBanModal(props: Props) {
   // Show permission error if user doesn't have the right role
   if (props.isOpen && currentUserQuery.isSuccess && !canBanUsers) {
     return (
-      <Modal
-        isOpen={props.isOpen}
-        onClose={props.onClose}
-        title="Access Denied"
-        size="sm"
-      >
+      <Modal isOpen={props.isOpen} onClose={props.onClose} title="Access Denied" size="sm">
         <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
           <ShieldOff className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -213,12 +199,7 @@ function CreateBanModal(props: Props) {
   }
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={handleClose}
-      title="Create User Ban"
-      size="lg"
-    >
+    <Modal isOpen={props.isOpen} onClose={handleClose} title="Create User Ban" size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Warning */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
@@ -229,9 +210,9 @@ function CreateBanModal(props: Props) {
                 Warning: User Ban Action
               </h4>
               <p className="text-sm text-amber-700 dark:text-amber-300">
-                Banning a user will prevent them from accessing the platform and
-                hide their content from other users (shadow ban). This action
-                should be used carefully and with proper justification.
+                Banning a user will prevent them from accessing the platform and hide their content
+                from other users (shadow ban). This action should be used carefully and with proper
+                justification.
               </p>
             </div>
           </div>
@@ -259,8 +240,7 @@ function CreateBanModal(props: Props) {
                   // Clear selection if user starts typing again
                   if (
                     selectedUser &&
-                    ev.target.value !==
-                      (selectedUser.name || selectedUser.email)
+                    ev.target.value !== (selectedUser.name || selectedUser.email)
                   ) {
                     setSelectedUser(null)
                   }
@@ -347,23 +327,19 @@ function CreateBanModal(props: Props) {
                 {selectedUser.role !== Role.USER && (
                   <div className="mt-2 p-2 bg-amber-100 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded">
                     <p className="text-xs text-amber-800 dark:text-amber-200">
-                      <strong>Warning:</strong> This user has{' '}
-                      {selectedUser.role} privileges. Banning them will remove
-                      their ability to perform administrative actions.
+                      <strong>Warning:</strong> This user has {selectedUser.role} privileges.
+                      Banning them will remove their ability to perform administrative actions.
                     </p>
                   </div>
                 )}
               </div>
             )}
 
-            {showUserDropdown &&
-              userSearch.length >= 2 &&
-              users.length === 0 &&
-              !isLoading && (
-                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
-                  No users found matching &quot;{userSearch}&quot;
-                </div>
-              )}
+            {showUserDropdown && userSearch.length >= 2 && users.length === 0 && !isLoading && (
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
+                No users found matching &quot;{userSearch}&quot;
+              </div>
+            )}
           </div>
           {userSearch.length > 0 && userSearch.length < 2 && (
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -405,9 +381,7 @@ function CreateBanModal(props: Props) {
                 onChange={() => setIsPermanent(true)}
                 className="mr-2 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Permanent Ban
-              </span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Permanent Ban</span>
             </label>
             <label className="flex items-center">
               <input
@@ -417,9 +391,7 @@ function CreateBanModal(props: Props) {
                 onChange={() => setIsPermanent(false)}
                 className="mr-2 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Temporary Ban
-              </span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Temporary Ban</span>
             </label>
           </div>
 
@@ -484,9 +456,7 @@ function CreateBanModal(props: Props) {
           <Button
             type="submit"
             variant="danger"
-            disabled={
-              !selectedUser || !reason.trim() || createBanMutation.isPending
-            }
+            disabled={!selectedUser || !reason.trim() || createBanMutation.isPending}
             isLoading={createBanMutation.isPending}
           >
             {isPermanent ? 'Ban User Permanently' : 'Ban User Temporarily'}

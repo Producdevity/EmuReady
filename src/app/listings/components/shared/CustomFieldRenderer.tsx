@@ -53,17 +53,13 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
 ) {
   function getValidationRules(): ValidationRules {
     return {
-      required: props.fieldDef.isRequired
-        ? `${props.fieldDef.label} is required`
-        : false,
+      required: props.fieldDef.isRequired ? `${props.fieldDef.label} is required` : false,
       validate: props.fieldDef.isRequired
         ? (value: unknown) => {
             // Boolean fields are always valid
             if (props.fieldDef.type === CustomFieldType.BOOLEAN) return true
 
-            return !value ||
-              (isString(value) && value.trim() === '') ||
-              isEmpty(value)
+            return !value || (isString(value) && value.trim() === '') || isEmpty(value)
               ? `${props.fieldDef.label} is required`
               : true
           }

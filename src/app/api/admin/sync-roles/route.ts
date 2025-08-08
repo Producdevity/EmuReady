@@ -21,10 +21,7 @@ export async function POST(_request: NextRequest) {
     })
 
     if (!user || user.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
-        { status: 403 },
-      )
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
     }
 
     // Sync all roles

@@ -7,8 +7,7 @@ export type ImageExtension = (typeof IMAGE_EXTENSIONS)[number]
 
 // Regex patterns for validation
 export const IMAGE_EXTENSION_REGEX = /\.(jpg|jpeg|png|gif|webp)$/i
-export const IMAGE_FILENAME_REGEX =
-  /^[a-zA-Z0-9._-]+\.(png|jpg|jpeg|gif|webp)$/i
+export const IMAGE_FILENAME_REGEX = /^[a-zA-Z0-9._-]+\.(png|jpg|jpeg|gif|webp)$/i
 
 /**
  * Validates if a URL is a valid image URL
@@ -19,10 +18,7 @@ export function isValidImageUrl(url: string, requireHttps = false): boolean {
     const urlObj = new URL(url)
     const allowedProtocols = requireHttps ? ['https:'] : ['http:', 'https:']
 
-    return (
-      allowedProtocols.includes(urlObj.protocol) &&
-      IMAGE_EXTENSION_REGEX.test(urlObj.pathname)
-    )
+    return allowedProtocols.includes(urlObj.protocol) && IMAGE_EXTENSION_REGEX.test(urlObj.pathname)
   } catch {
     return false
   }
@@ -39,9 +35,7 @@ export function isValidImageFilename(filename: string): boolean {
 /**
  * Gets the file extension from a URL or filename
  */
-export function getImageExtension(
-  urlOrFilename: string,
-): ImageExtension | null {
+export function getImageExtension(urlOrFilename: string): ImageExtension | null {
   const match = urlOrFilename.match(IMAGE_EXTENSION_REGEX)
   return match ? (match[1].toLowerCase() as ImageExtension) : null
 }
@@ -49,19 +43,14 @@ export function getImageExtension(
 /**
  * Checks if a file extension is valid for images
  */
-export function isValidImageExtension(
-  extension: string,
-): extension is ImageExtension {
+export function isValidImageExtension(extension: string): extension is ImageExtension {
   return IMAGE_EXTENSIONS.includes(extension.toLowerCase() as ImageExtension)
 }
 
 /**
  * Creates user-friendly error messages for image validation failures
  */
-export function getImageValidationError(
-  url: string,
-  requireHttps = false,
-): string {
+export function getImageValidationError(url: string, requireHttps = false): string {
   if (!url.trim()) {
     return 'Image URL is required'
   }

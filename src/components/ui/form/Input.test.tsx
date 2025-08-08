@@ -7,8 +7,7 @@ import { Input } from './Input'
 describe('Input', () => {
   it('renders input element by default', () => {
     render(<Input placeholder="Test placeholder" />)
-    const inputElement: HTMLInputElement =
-      screen.getByPlaceholderText('Test placeholder')
+    const inputElement: HTMLInputElement = screen.getByPlaceholderText('Test placeholder')
     expect(inputElement).toBeInTheDocument()
     expect(inputElement.type).toBe('text')
   })

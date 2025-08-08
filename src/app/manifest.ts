@@ -4,8 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'EmuReady - Emulator Compatibility Database',
     short_name: 'EmuReady',
-    description:
-      'Find the perfect emulator settings for your games and devices',
+    description: 'Find the perfect emulator settings for your games and devices',
     start_url: '/',
     display: 'standalone',
     background_color: '#101827',

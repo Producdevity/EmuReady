@@ -8,10 +8,7 @@ import getErrorMessage from './getErrorMessage'
  * @param rawValue
  * @param label
  */
-export function copyToClipboard(
-  rawValue: Nullable<string | number>,
-  label?: string,
-) {
+export function copyToClipboard(rawValue: Nullable<string | number>, label?: string) {
   const value = isNumber(rawValue) ? String(rawValue) : rawValue
 
   if (!value) return toast.error(`No value ${`for  ${label} `}to copy`)

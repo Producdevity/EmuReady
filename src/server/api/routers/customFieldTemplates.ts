@@ -51,9 +51,7 @@ function createFieldData(field: TemplateField, index: number) {
     label: field.label,
     type: field.type,
     options:
-      field.type === CustomFieldType.SELECT
-        ? (field.options ?? Prisma.DbNull)
-        : Prisma.DbNull,
+      field.type === CustomFieldType.SELECT ? (field.options ?? Prisma.DbNull) : Prisma.DbNull,
     defaultValue: field.defaultValue ?? Prisma.DbNull,
     isRequired: field.isRequired ?? false,
     displayOrder: field.displayOrder ?? index,
@@ -61,19 +59,13 @@ function createFieldData(field: TemplateField, index: number) {
 }
 
 async function requireSuperAdminPermission(ctx: TRPCContext) {
-  if (
-    !ctx.session?.user?.role ||
-    !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)
-  ) {
+  if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
     AppError.insufficientPermissions(Role.SUPER_ADMIN)
   }
 }
 
 async function requireAdminPermission(ctx: TRPCContext) {
-  if (
-    !ctx.session?.user?.role ||
-    !hasPermission(ctx.session.user.role, Role.ADMIN)
-  ) {
+  if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.ADMIN)) {
     AppError.insufficientPermissions(Role.ADMIN)
   }
 }

@@ -11,11 +11,7 @@ type Options = {
  * @param opts - Options to control proxy usage.
  * @returns A valid image URL or a placeholder if the URL is invalid.
  */
-function getImageUrl(
-  url: Nullable<string>,
-  title?: string | null,
-  opts?: Options,
-): string {
+function getImageUrl(url: Nullable<string>, title?: string | null, opts?: Options): string {
   const useProxy = opts?.useProxy ?? true
   if (!url) return getSafePlaceholderImageUrl(title)
 

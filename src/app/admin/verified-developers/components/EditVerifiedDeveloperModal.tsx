@@ -111,8 +111,7 @@ function EditVerifiedDeveloperModal(props: Props) {
           </label>
           <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div className="text-sm font-medium text-gray-900 dark:text-white">
-              {props.verifiedDeveloper.user.name ||
-                props.verifiedDeveloper.user.email}
+              {props.verifiedDeveloper.user.name || props.verifiedDeveloper.user.email}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {props.verifiedDeveloper.user.email}

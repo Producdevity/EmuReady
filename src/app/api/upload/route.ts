@@ -16,10 +16,7 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth()
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized access' },
-        { status: 401 },
-      )
+      return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 })
     }
 
     // Check user role for upload permissions
@@ -29,10 +26,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user || !hasPermission(user.role, Role.USER)) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 },
-      )
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const formData = await request.formData()
@@ -43,10 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isImage(file)) {
-      return NextResponse.json(
-        { error: 'Uploaded file is not an image' },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: 'Uploaded file is not an image' }, { status: 400 })
     }
 
     // Create unique filename
@@ -69,10 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, imageUrl })
   } catch (error) {
     console.error('Error uploading file:', error)
-    const errorMessage = getErrorMessage(
-      error,
-      'An error occurred during upload',
-    )
+    const errorMessage = getErrorMessage(error, 'An error occurred during upload')
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

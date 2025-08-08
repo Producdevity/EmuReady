@@ -24,9 +24,7 @@ interface Props {
 }
 
 function ImagePreviewModal(props: Props) {
-  const [activeTab, setActiveTab] = useState<ImageTabType>(
-    props.initialImageType || 'boxart',
-  )
+  const [activeTab, setActiveTab] = useState<ImageTabType>(props.initialImageType || 'boxart')
   const [imageError, setImageError] = useState<Record<string, boolean>>({})
 
   if (!props.game) return null
@@ -34,17 +32,11 @@ function ImagePreviewModal(props: Props) {
   const getImageUrlByType = (type: ImageTabType): string | null => {
     switch (type) {
       case 'boxart':
-        return props.game?.boxartUrl && !imageError.boxart
-          ? props.game.boxartUrl
-          : null
+        return props.game?.boxartUrl && !imageError.boxart ? props.game.boxartUrl : null
       case 'banner':
-        return props.game?.bannerUrl && !imageError.banner
-          ? props.game.bannerUrl
-          : null
+        return props.game?.bannerUrl && !imageError.banner ? props.game.bannerUrl : null
       case 'imageUrl':
-        return props.game?.imageUrl && !imageError.imageUrl
-          ? props.game.imageUrl
-          : null
+        return props.game?.imageUrl && !imageError.imageUrl ? props.game.imageUrl : null
       default:
         return null
     }
@@ -57,9 +49,7 @@ function ImagePreviewModal(props: Props) {
   const availableImageTypes: ImageTabType[] = [
     ...(props.game.boxartUrl && !imageError.boxart ? ['boxart' as const] : []),
     ...(props.game.bannerUrl && !imageError.banner ? ['banner' as const] : []),
-    ...(props.game.imageUrl && !imageError.imageUrl
-      ? ['imageUrl' as const]
-      : []),
+    ...(props.game.imageUrl && !imageError.imageUrl ? ['imageUrl' as const] : []),
   ]
 
   const currentImageUrl = getImageUrlByType(activeTab)
@@ -119,11 +109,7 @@ function ImagePreviewModal(props: Props) {
                       context: 'admin_game_approval_image_preview',
                       entityId: props.game?.id,
                     })
-                    window.open(
-                      currentImageUrl,
-                      '_blank',
-                      'noopener,noreferrer',
-                    )
+                    window.open(currentImageUrl, '_blank', 'noopener,noreferrer')
                   }}
                   className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors duration-200"
                   title="View full size"
@@ -135,8 +121,7 @@ function ImagePreviewModal(props: Props) {
           ) : (
             <div className="flex items-center justify-center h-96 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <p className="text-gray-500 dark:text-gray-400">
-                No {(tabLabelMap[activeTab] ?? activeTab).toLowerCase()}{' '}
-                available
+                No {(tabLabelMap[activeTab] ?? activeTab).toLowerCase()} available
               </p>
             </div>
           )}

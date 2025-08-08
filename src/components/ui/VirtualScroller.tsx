@@ -36,18 +36,13 @@ export function VirtualScroller<T>({
   // Calculate item heights
   const getItemHeight = useCallback(
     (item: T, index: number) => {
-      return typeof itemHeight === 'function'
-        ? itemHeight(item, index)
-        : itemHeight
+      return typeof itemHeight === 'function' ? itemHeight(item, index) : itemHeight
     },
     [itemHeight],
   )
 
   // Calculate total content height
-  const totalHeight = items.reduce(
-    (total, item, index) => total + getItemHeight(item, index),
-    0,
-  )
+  const totalHeight = items.reduce((total, item, index) => total + getItemHeight(item, index), 0)
 
   // Determine which items to render
   const getVisibleItems = useCallback(() => {
@@ -128,8 +123,7 @@ export function VirtualScroller<T>({
     }, scrollingDelay)
 
     // Check if we're near the end to trigger onEndReached
-    const isNearEnd =
-      scrollHeight - scrollTop - clientHeight < endReachedThreshold
+    const isNearEnd = scrollHeight - scrollTop - clientHeight < endReachedThreshold
     if (isNearEnd && onEndReached && !lastEndReachedRef.current) {
       lastEndReachedRef.current = true
       onEndReached()

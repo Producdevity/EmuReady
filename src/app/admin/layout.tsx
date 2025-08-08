@@ -31,16 +31,14 @@ function AdminLayout(props: PropsWithChildren) {
   })
 
   // For developers, fetch their verified emulators
-  const verifiedEmulatorsQuery =
-    api.verifiedDevelopers.getMyVerifiedEmulators.useQuery(undefined, {
-      enabled: !!userQuery.data && userQuery.data.role === Role.DEVELOPER,
-    })
+  const verifiedEmulatorsQuery = api.verifiedDevelopers.getMyVerifiedEmulators.useQuery(undefined, {
+    enabled: !!userQuery.data && userQuery.data.role === Role.DEVELOPER,
+  })
 
   // Get pending games count for admin navigation
   const gameStatsQuery = api.games.getStats.useQuery(undefined, {
     enabled:
-      !!userQuery.data &&
-      hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+      !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
     refetchOnMount: true,
@@ -50,8 +48,7 @@ function AdminLayout(props: PropsWithChildren) {
   // Get pending listings count for admin navigation
   const listingStatsQuery = api.listings.getStats.useQuery(undefined, {
     enabled:
-      !!userQuery.data &&
-      hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+      !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
     refetchOnMount: true,
@@ -61,8 +58,7 @@ function AdminLayout(props: PropsWithChildren) {
   // Get pending PC listings count for admin navigation
   const pcListingStatsQuery = api.pcListings.stats.useQuery(undefined, {
     enabled:
-      !!userQuery.data &&
-      hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+      !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
     refetchOnMount: true,
@@ -88,14 +84,7 @@ function AdminLayout(props: PropsWithChildren) {
     if (userQuery.data && !hasAdminPanelAccess) {
       router.replace('/')
     }
-  }, [
-    isLoaded,
-    user,
-    userQuery.data,
-    hasAdminPanelAccess,
-    router,
-    userQuery.isPending,
-  ])
+  }, [isLoaded, user, userQuery.data, hasAdminPanelAccess, router, userQuery.isPending])
 
   if (!isLoaded || userQuery.isPending) return <LoadingSpinner size="lg" />
 
@@ -112,10 +101,7 @@ function AdminLayout(props: PropsWithChildren) {
     if (item.href === '/admin/approvals' && listingStatsQuery.data) {
       return { ...item, count: listingStatsQuery.data.pending }
     }
-    if (
-      item.href === '/admin/pc-listing-approvals' &&
-      pcListingStatsQuery.data
-    ) {
+    if (item.href === '/admin/pc-listing-approvals' && pcListingStatsQuery.data) {
       return { ...item, count: pcListingStatsQuery.data.pending }
     }
     return item
@@ -138,10 +124,7 @@ function AdminLayout(props: PropsWithChildren) {
       if (item.href === '/admin/approvals' && listingStatsQuery.data) {
         return { ...item, count: listingStatsQuery.data.pending }
       }
-      if (
-        item.href === '/admin/pc-listing-approvals' &&
-        pcListingStatsQuery.data
-      ) {
+      if (item.href === '/admin/pc-listing-approvals' && pcListingStatsQuery.data) {
         return { ...item, count: pcListingStatsQuery.data.pending }
       }
       return item
@@ -165,10 +148,7 @@ function AdminLayout(props: PropsWithChildren) {
             {/* Sidebar Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               {!isCollapsed && (
-                <Link
-                  href="/admin"
-                  className="font-bold text-gray-900 dark:text-white text-xl"
-                >
+                <Link href="/admin" className="font-bold text-gray-900 dark:text-white text-xl">
                   Admin
                 </Link>
               )}

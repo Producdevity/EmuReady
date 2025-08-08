@@ -124,34 +124,30 @@ export const cacheRouter = createTRPCRouter({
   /**
    * Get specific cache entry
    */
-  get: superAdminProcedure
-    .input(GetCacheEntrySchema)
-    .query(async ({ input }) => {
-      const value = cache.get(input.key)
-      return {
-        key: input.key,
-        value,
-        exists: value !== undefined,
-        timestamp: new Date().toISOString(),
-      }
-    }),
+  get: superAdminProcedure.input(GetCacheEntrySchema).query(async ({ input }) => {
+    const value = cache.get(input.key)
+    return {
+      key: input.key,
+      value,
+      exists: value !== undefined,
+      timestamp: new Date().toISOString(),
+    }
+  }),
 
   /**
    * Delete specific cache entry
    */
-  delete: superAdminProcedure
-    .input(DeleteCacheEntrySchema)
-    .mutation(async ({ input }) => {
-      const existed = cache.has(input.key)
-      cache.delete(input.key)
+  delete: superAdminProcedure.input(DeleteCacheEntrySchema).mutation(async ({ input }) => {
+    const existed = cache.has(input.key)
+    cache.delete(input.key)
 
-      return {
-        success: true,
-        existed,
-        message: existed ? 'Cache entry deleted' : 'Entry did not exist',
-        timestamp: new Date().toISOString(),
-      }
-    }),
+    return {
+      success: true,
+      existed,
+      message: existed ? 'Cache entry deleted' : 'Entry did not exist',
+      timestamp: new Date().toISOString(),
+    }
+  }),
 
   /**
    * Analyze query patterns and suggest database indexes
@@ -207,11 +203,7 @@ export const cacheRouter = createTRPCRouter({
         pattern.model === 'user' ? { listings: true } : undefined,
         pattern.where,
       ),
-      indexSuggestions: suggestIndexes(
-        pattern.model,
-        pattern.where,
-        pattern.orderBy,
-      ),
+      indexSuggestions: suggestIndexes(pattern.model, pattern.where, pattern.orderBy),
     }))
 
     // Get actual query performance metrics

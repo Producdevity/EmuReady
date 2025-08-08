@@ -1,9 +1,6 @@
 'use client'
 
-import {
-  GenericCommentForm,
-  type CommentFormConfig,
-} from '@/components/comments'
+import { GenericCommentForm, type CommentFormConfig } from '@/components/comments'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForComment } from '@/lib/captcha/hooks'

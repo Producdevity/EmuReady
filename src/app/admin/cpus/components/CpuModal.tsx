@@ -56,9 +56,7 @@ function CpuModal(props: Props) {
         } satisfies RouterInput['cpus']['update'])
         setSuccess('CPU updated!')
       } else {
-        await createCpu.mutateAsync(
-          cpuData satisfies RouterInput['cpus']['create'],
-        )
+        await createCpu.mutateAsync(cpuData satisfies RouterInput['cpus']['create'])
         setSuccess('CPU created!')
       }
 

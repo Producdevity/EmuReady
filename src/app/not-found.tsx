@@ -22,9 +22,7 @@ export default function NotFound() {
       <div className="max-w-lg w-full text-center">
         <h1 className="text-9xl font-extrabold text-indigo-600 mb-8">404</h1>
 
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          Page Not Found
-        </h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Page Not Found</h2>
 
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
           How did you even end up here? Better get moving.
@@ -54,33 +52,25 @@ export default function NotFound() {
             href="/listings"
             className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
           >
-            <span className="block text-gray-900 dark:text-white font-medium">
-              Listings
-            </span>
+            <span className="block text-gray-900 dark:text-white font-medium">Listings</span>
           </Link>
 
           <Link
             href="/games"
             className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
           >
-            <span className="block text-gray-900 dark:text-white font-medium">
-              Games
-            </span>
+            <span className="block text-gray-900 dark:text-white font-medium">Games</span>
           </Link>
 
           <SignInButton mode="modal">
             <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-              <span className="block text-gray-900 dark:text-white font-medium">
-                Login
-              </span>
+              <span className="block text-gray-900 dark:text-white font-medium">Login</span>
             </p>
           </SignInButton>
 
           <SignUpButton mode="modal">
             <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-              <span className="block text-gray-900 dark:text-white font-medium">
-                Sign Up
-              </span>
+              <span className="block text-gray-900 dark:text-white font-medium">Sign Up</span>
             </p>
           </SignUpButton>
         </div>

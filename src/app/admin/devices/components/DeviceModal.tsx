@@ -61,9 +61,7 @@ function DeviceModal(props: Props) {
         } satisfies RouterInput['devices']['update'])
         setSuccess('Device updated!')
       } else {
-        await createDevice.mutateAsync(
-          deviceData satisfies RouterInput['devices']['create'],
-        )
+        await createDevice.mutateAsync(deviceData satisfies RouterInput['devices']['create'])
         setSuccess('Device created!')
       }
 
@@ -125,10 +123,7 @@ function DeviceModal(props: Props) {
         </div>
 
         <div>
-          <label
-            htmlFor="soc"
-            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="soc" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
             SoC (Optional)
           </label>
           <Autocomplete

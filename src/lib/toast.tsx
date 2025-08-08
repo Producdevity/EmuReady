@@ -23,10 +23,7 @@ const iconMap: Record<ToastType, ReactNode> = {
 
 type ToastTitle = (() => ReactNode) | ReactNode
 
-const toastMap: Record<
-  ToastType,
-  (message: ToastTitle, options?: ExternalToast) => void
-> = {
+const toastMap: Record<ToastType, (message: ToastTitle, options?: ExternalToast) => void> = {
   success: sonnerToast.success,
   error: sonnerToast.error,
   warning: sonnerToast.warning,

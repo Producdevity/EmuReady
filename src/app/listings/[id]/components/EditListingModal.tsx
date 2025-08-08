@@ -6,10 +6,7 @@ import Link from 'next/link'
 import { useState, useEffect, type FormEvent } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'sonner'
-import {
-  FormValidationSummary,
-  renderCustomField,
-} from '@/app/listings/components/shared'
+import { FormValidationSummary, renderCustomField } from '@/app/listings/components/shared'
 import { Button, Modal, SelectInput, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
@@ -55,20 +52,17 @@ function EditListingModal(props: Props) {
     },
   })
 
-  const { control, handleSubmit, formState, reset } =
-    useForm<UpdateListingFormData>({
-      resolver: zodResolver(UpdateListingUserSchema),
-    })
+  const { control, handleSubmit, formState, reset } = useForm<UpdateListingFormData>({
+    resolver: zodResolver(UpdateListingUserSchema),
+  })
 
   // Reset form when modal opens or listing data changes
   useEffect(() => {
     if (listingQuery.data && props.isOpen) {
-      const defaultCustomFieldValues = listingQuery.data.customFieldValues.map(
-        (cfv) => ({
-          customFieldDefinitionId: cfv.customFieldDefinition.id,
-          value: cfv.value,
-        }),
-      )
+      const defaultCustomFieldValues = listingQuery.data.customFieldValues.map((cfv) => ({
+        customFieldDefinitionId: cfv.customFieldDefinition.id,
+        value: cfv.value,
+      }))
 
       reset({
         id: listingQuery.data.id,
@@ -123,9 +117,8 @@ function EditListingModal(props: Props) {
                   Edit Time Expired
                 </h3>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-                  You can only edit listings within 60 minutes of approval.
-                  Since this time has passed, you&apos;ll need to create a new
-                  listing if you want to make changes.
+                  You can only edit listings within 60 minutes of approval. Since this time has
+                  passed, you&apos;ll need to create a new listing if you want to make changes.
                 </p>
                 <Link href="/listings/new">
                   <Button variant="outline" size="sm" className="gap-2">
@@ -156,20 +149,15 @@ function EditListingModal(props: Props) {
               <form onSubmit={handleFormSubmit} className="space-y-6">
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Enhanced Editing:</strong> You can now edit
-                    performance rating, custom fields, and notes.
+                    <strong>Enhanced Editing:</strong> You can now edit performance rating, custom
+                    fields, and notes.
                     {props.isPending && (
-                      <span>
-                        {' '}
-                        You can edit anytime while your listing is pending
-                        approval.
-                      </span>
+                      <span> You can edit anytime while your listing is pending approval.</span>
                     )}
                     {props.isApproved && (
                       <span>
                         {' '}
-                        After approval, you have {props.remainingMinutes}{' '}
-                        minutes to make edits.
+                        After approval, you have {props.remainingMinutes} minutes to make edits.
                       </span>
                     )}
                   </p>
@@ -185,17 +173,14 @@ function EditListingModal(props: Props) {
                       <strong>Game:</strong> {listingQuery.data.game.title}
                     </p>
                     <p>
-                      <strong>System:</strong>{' '}
-                      {listingQuery.data.game.system.name}
+                      <strong>System:</strong> {listingQuery.data.game.system.name}
                     </p>
                     <p>
-                      <strong>Device:</strong>{' '}
-                      {listingQuery.data.device.brand.name}{' '}
+                      <strong>Device:</strong> {listingQuery.data.device.brand.name}{' '}
                       {listingQuery.data.device.modelName}
                     </p>
                     <p>
-                      <strong>Emulator:</strong>{' '}
-                      {listingQuery.data.emulator.name}
+                      <strong>Emulator:</strong> {listingQuery.data.emulator.name}
                     </p>
                   </div>
                 </div>
@@ -219,9 +204,7 @@ function EditListingModal(props: Props) {
                           })) ?? []
                         }
                         value={field.value?.toString() ?? ''}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value, 10))
-                        }
+                        onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
                       />
                     )}
                   />
@@ -234,21 +217,19 @@ function EditListingModal(props: Props) {
 
                 {/* Custom Fields */}
                 {listingQuery.data.emulator.customFieldDefinitions &&
-                  listingQuery.data.emulator.customFieldDefinitions.length >
-                    0 && (
+                  listingQuery.data.emulator.customFieldDefinitions.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         Emulator Settings
                       </h3>
                       <div className="space-y-4">
-                        {listingQuery.data.emulator.customFieldDefinitions.map(
-                          (fieldDef, index) =>
-                            renderCustomField({
-                              fieldDef,
-                              index,
-                              control,
-                              formErrors: formState.errors,
-                            }),
+                        {listingQuery.data.emulator.customFieldDefinitions.map((fieldDef, index) =>
+                          renderCustomField({
+                            fieldDef,
+                            index,
+                            control,
+                            formErrors: formState.errors,
+                          }),
                         )}
                       </div>
                     </div>
@@ -286,11 +267,7 @@ function EditListingModal(props: Props) {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    isLoading={isSubmitting}
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
                     Update Listing
                   </Button>
                 </div>

@@ -40,14 +40,8 @@ describe('imageValidation', () => {
       })
 
       it('should handle complex paths', () => {
-        expect(
-          isValidImageUrl(
-            'https://cdn.example.com/users/123/images/profile.jpg',
-          ),
-        ).toBe(true)
-        expect(
-          isValidImageUrl('https://example.com/path/to/image.png?v=123'),
-        ).toBe(true)
+        expect(isValidImageUrl('https://cdn.example.com/users/123/images/profile.jpg')).toBe(true)
+        expect(isValidImageUrl('https://example.com/path/to/image.png?v=123')).toBe(true)
       })
     })
 
@@ -72,15 +66,11 @@ describe('imageValidation', () => {
 
     describe('HTTPS requirement', () => {
       it('should reject HTTP when HTTPS is required', () => {
-        expect(isValidImageUrl('http://example.com/image.jpg', true)).toBe(
-          false,
-        )
+        expect(isValidImageUrl('http://example.com/image.jpg', true)).toBe(false)
       })
 
       it('should accept HTTPS when HTTPS is required', () => {
-        expect(isValidImageUrl('https://example.com/image.jpg', true)).toBe(
-          true,
-        )
+        expect(isValidImageUrl('https://example.com/image.jpg', true)).toBe(true)
       })
     })
   })
@@ -158,15 +148,13 @@ describe('imageValidation', () => {
     })
 
     it('should return error for invalid URLs', () => {
-      expect(getImageValidationError('not-a-url')).toBe(
-        'Please enter a valid URL',
-      )
+      expect(getImageValidationError('not-a-url')).toBe('Please enter a valid URL')
     })
 
     it('should return error for non-HTTPS when required', () => {
-      expect(
-        getImageValidationError('http://example.com/image.jpg', true),
-      ).toBe('Image URL must use HTTPS protocol')
+      expect(getImageValidationError('http://example.com/image.jpg', true)).toBe(
+        'Image URL must use HTTPS protocol',
+      )
     })
 
     it('should return error for invalid protocols', () => {

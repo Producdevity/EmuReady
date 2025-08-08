@@ -50,19 +50,14 @@ export function useLocalStorage<T>(
       }
     } catch (error) {
       // Don't throw, just log and continue with current value
-      console.error(
-        `Error reading localStorage key "${key}":`,
-        (error as Error).message,
-      )
+      console.error(`Error reading localStorage key "${key}":`, (error as Error).message)
 
       // Only show user-facing error for JSON parsing issues with existing data
       try {
         const item = window.localStorage.getItem(key)
         if (item !== null && typeof item === 'string') {
           // We have data but can't parse it
-          toast.warning(
-            'Failed to load your preferences. Please refresh the page to try again.',
-          )
+          toast.warning('Failed to load your preferences. Please refresh the page to try again.')
         }
       } catch {
         // If even getting the item fails, just ignore
@@ -74,15 +69,13 @@ export function useLocalStorage<T>(
     (value: T | ((val: T) => T)) => {
       if (!enabled) {
         // When disabled, only update local state, no localStorage
-        const valueToStore =
-          value instanceof Function ? value(storedValueRef.current) : value
+        const valueToStore = value instanceof Function ? value(storedValueRef.current) : value
         setStoredValue(valueToStore)
         return
       }
 
       try {
-        const valueToStore =
-          value instanceof Function ? value(storedValueRef.current) : value
+        const valueToStore = value instanceof Function ? value(storedValueRef.current) : value
         setStoredValue(valueToStore)
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(key, JSON.stringify(valueToStore))

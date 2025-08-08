@@ -52,11 +52,7 @@ export function Toggle(props: Props) {
         <div
           className={`${sizeClasses[size].toggle} rounded-full peer 
           transition-colors duration-300 ease-in-out
-          ${
-            props.checked
-              ? 'bg-blue-600 dark:bg-blue-500'
-              : 'bg-gray-200 dark:bg-gray-700'
-          }`}
+          ${props.checked ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'}`}
         />
         <div
           className={cn(

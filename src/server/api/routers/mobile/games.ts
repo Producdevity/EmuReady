@@ -8,10 +8,7 @@ import {
   GetBestSwitchTitleIdMobileSchema,
   GetSwitchGamesStatsMobileSchema,
 } from '@/schemas/mobile'
-import {
-  createMobileTRPCRouter,
-  mobilePublicProcedure,
-} from '@/server/api/mobileContext'
+import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
@@ -74,11 +71,7 @@ async function getGamesQuery(
           },
         },
       },
-      orderBy: [
-        { listings: { _count: 'desc' } },
-        { createdAt: 'desc' },
-        { title: 'asc' },
-      ],
+      orderBy: [{ listings: { _count: 'desc' } }, { createdAt: 'desc' }, { title: 'asc' }],
       skip,
       take: limit,
     }),
@@ -138,69 +131,61 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   /**
    * Search games
    */
-  searchGames: mobilePublicProcedure
-    .input(SearchGamesSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.game.findMany({
-        where: {
-          status: ApprovalStatus.APPROVED,
-          title: { contains: input.query, mode: 'insensitive' },
-        },
-        select: {
-          id: true,
-          title: true,
-          systemId: true,
-          imageUrl: true,
-          boxartUrl: true,
-          bannerUrl: true,
-          tgdbGameId: true,
-          isErotic: true,
-          status: true,
-          createdAt: true,
-          system: { select: { id: true, name: true, key: true } },
-          _count: {
-            select: {
-              listings: { where: { status: ApprovalStatus.APPROVED } },
-            },
+  searchGames: mobilePublicProcedure.input(SearchGamesSchema).query(async ({ ctx, input }) => {
+    return await ctx.prisma.game.findMany({
+      where: {
+        status: ApprovalStatus.APPROVED,
+        title: { contains: input.query, mode: 'insensitive' },
+      },
+      select: {
+        id: true,
+        title: true,
+        systemId: true,
+        imageUrl: true,
+        boxartUrl: true,
+        bannerUrl: true,
+        tgdbGameId: true,
+        isErotic: true,
+        status: true,
+        createdAt: true,
+        system: { select: { id: true, name: true, key: true } },
+        _count: {
+          select: {
+            listings: { where: { status: ApprovalStatus.APPROVED } },
           },
         },
-        orderBy: [
-          { listings: { _count: 'desc' } },
-          { createdAt: 'desc' },
-          { title: 'asc' },
-        ],
-        take: 20,
-      })
-    }),
+      },
+      orderBy: [{ listings: { _count: 'desc' } }, { createdAt: 'desc' }, { title: 'asc' }],
+      take: 20,
+    })
+  }),
 
   /**
    * Get game by ID
    */
-  getGameById: mobilePublicProcedure
-    .input(GetGameByIdSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.game.findUnique({
-        where: { id: input.id },
-        select: {
-          id: true,
-          title: true,
-          systemId: true,
-          imageUrl: true,
-          boxartUrl: true,
-          bannerUrl: true,
-          tgdbGameId: true,
-          isErotic: true,
-          status: true,
-          createdAt: true,
-          system: { select: { id: true, name: true, key: true } },
-          _count: {
-            select: {
-              listings: { where: { status: ApprovalStatus.APPROVED } },
-            },
+  getGameById: mobilePublicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
+    return await ctx.prisma.game.findUnique({
+      where: { id: input.id },
+      select: {
+        id: true,
+        title: true,
+        systemId: true,
+        imageUrl: true,
+        boxartUrl: true,
+        bannerUrl: true,
+        tgdbGameId: true,
+        isErotic: true,
+        status: true,
+        createdAt: true,
+        system: { select: { id: true, name: true, key: true } },
+        _count: {
+          select: {
+            listings: { where: { status: ApprovalStatus.APPROVED } },
           },
         },
-      })
-    }),
+      },
+    })
+  }),
 
   /**
    * Find Nintendo Switch title IDs by game name (fuzzy search)

@@ -24,12 +24,8 @@ describe('sanitizeString', () => {
   })
 
   it('should remove dangerous characters', () => {
-    expect(sanitizeString('<script>alert("xss")</script>')).toBe(
-      'scriptalert"xss"script',
-    )
-    expect(sanitizeString('function() { return null; }')).toBe(
-      'function  return null; ',
-    )
+    expect(sanitizeString('<script>alert("xss")</script>')).toBe('scriptalert"xss"script')
+    expect(sanitizeString('function() { return null; }')).toBe('function  return null; ')
     expect(sanitizeString('user[0]')).toBe('user0')
   })
 

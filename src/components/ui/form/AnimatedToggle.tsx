@@ -60,9 +60,7 @@ export function AnimatedToggle(props: Props) {
         className={cn(
           'relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900',
           sizeConfig.container,
-          props.checked
-            ? 'bg-blue-600 dark:bg-blue-500'
-            : 'bg-gray-200 dark:bg-gray-700',
+          props.checked ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700',
           props.disabled && 'opacity-50 cursor-not-allowed',
         )}
       >

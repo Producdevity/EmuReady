@@ -1,11 +1,4 @@
-import {
-  CaseSensitive,
-  CheckSquare,
-  FileText,
-  LinkIcon,
-  ListChecks,
-  Sliders,
-} from 'lucide-react'
+import { CaseSensitive, CheckSquare, FileText, LinkIcon, ListChecks, Sliders } from 'lucide-react'
 import { CustomFieldType } from '@orm'
 import type { ReactNode } from 'react'
 

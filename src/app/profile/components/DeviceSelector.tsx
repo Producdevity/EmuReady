@@ -45,8 +45,7 @@ function createSearchableDevice(device: Device): SearchableDevice {
   // Create abbreviation (first letter of brand + model words)
   const brandWords = device.brand.name.toLowerCase().split(' ')
   const modelWords = device.modelName.toLowerCase().split(' ')
-  const abbreviation =
-    (brandWords[0]?.[0] || '') + modelWords.map((word) => word[0]).join('')
+  const abbreviation = (brandWords[0]?.[0] || '') + modelWords.map((word) => word[0]).join('')
 
   const searchableText = [
     device.brand.name,
@@ -127,9 +126,7 @@ function DeviceSelector(props: Props) {
     return Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
       .reduce<Record<string, Device[]>>((acc, [brandName, devices]) => {
-        acc[brandName] = devices.sort((a, b) =>
-          a.modelName.localeCompare(b.modelName),
-        )
+        acc[brandName] = devices.sort((a, b) => a.modelName.localeCompare(b.modelName))
         return acc
       }, {})
   }, [filteredDevices])
@@ -157,9 +154,7 @@ function DeviceSelector(props: Props) {
     }
 
     if (isDeviceSelected(device)) {
-      const newSelection = props.selectedDevices.filter(
-        (selected) => selected.id !== device.id,
-      )
+      const newSelection = props.selectedDevices.filter((selected) => selected.id !== device.id)
       props.onDevicesChange(newSelection)
     } else {
       const newSelection = [...props.selectedDevices, normalizedDevice]
@@ -168,9 +163,7 @@ function DeviceSelector(props: Props) {
   }
 
   function handleRemoveDevice(device: Device) {
-    props.onDevicesChange(
-      props.selectedDevices.filter((selected) => selected.id !== device.id),
-    )
+    props.onDevicesChange(props.selectedDevices.filter((selected) => selected.id !== device.id))
   }
 
   function handleClearAll() {
@@ -238,9 +231,7 @@ function DeviceSelector(props: Props) {
     )
   }
 
-  const selectedDeviceIds = new Set(
-    props.selectedDevices.map((device) => device.id),
-  )
+  const selectedDeviceIds = new Set(props.selectedDevices.map((device) => device.id))
 
   return (
     <div className={cn('space-y-6', props.className)}>
@@ -312,12 +303,8 @@ function DeviceSelector(props: Props) {
         ) : (
           Object.entries(devicesByBrand).map(([brandName, devices]) => {
             const isExpanded = expandedBrands.has(brandName)
-            const allSelected = devices.every((device) =>
-              selectedDeviceIds.has(device.id),
-            )
-            const someSelected = devices.some((device) =>
-              selectedDeviceIds.has(device.id),
-            )
+            const allSelected = devices.every((device) => selectedDeviceIds.has(device.id))
+            const someSelected = devices.some((device) => selectedDeviceIds.has(device.id))
 
             return (
               <motion.div
@@ -398,9 +385,7 @@ function DeviceSelector(props: Props) {
                                     : 'border-gray-300 dark:border-gray-600',
                                 )}
                               >
-                                {isSelected && (
-                                  <Check className="w-3 h-3 text-white" />
-                                )}
+                                {isSelected && <Check className="w-3 h-3 text-white" />}
                               </div>
 
                               <Smartphone className="w-4 h-4 text-gray-600 dark:text-gray-400" />

@@ -79,9 +79,7 @@ function SocModal(props: Props) {
         await utils.socs.get.invalidate().catch(console.error)
         setSuccess('SoC updated!')
       } else {
-        await createSoC.mutateAsync(
-          socData satisfies RouterInput['socs']['create'],
-        )
+        await createSoC.mutateAsync(socData satisfies RouterInput['socs']['create'])
         await utils.socs.get.invalidate().catch(console.error)
         setSuccess('SoC created!')
       }

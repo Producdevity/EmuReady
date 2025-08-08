@@ -91,17 +91,16 @@ function EmulatorEditForm(props: Props) {
     },
   })
 
-  const { register, handleSubmit, formState, setValue, watch } =
-    useForm<UpdateEmulatorFormData>({
-      resolver: zodResolver(updateEmulatorSchema),
-      defaultValues: {
-        name: props.emulator.name,
-        logo: props.emulator.logo ?? '',
-        description: props.emulator.description ?? '',
-        repositoryUrl: props.emulator.repositoryUrl ?? '',
-        officialUrl: props.emulator.officialUrl ?? '',
-      },
-    })
+  const { register, handleSubmit, formState, setValue, watch } = useForm<UpdateEmulatorFormData>({
+    resolver: zodResolver(updateEmulatorSchema),
+    defaultValues: {
+      name: props.emulator.name,
+      logo: props.emulator.logo ?? '',
+      description: props.emulator.description ?? '',
+      repositoryUrl: props.emulator.repositoryUrl ?? '',
+      officialUrl: props.emulator.officialUrl ?? '',
+    },
+  })
 
   const watchedLogo = watch('logo')
 

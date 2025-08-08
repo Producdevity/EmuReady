@@ -5,11 +5,7 @@ export function inferRatingAndNsfw(game: { rating?: string | null }): {
   let isErotic = false
   if (rating) {
     const upper = rating.toUpperCase()
-    if (
-      upper.includes('AO') ||
-      upper.includes('ADULT') ||
-      upper.includes('18')
-    ) {
+    if (upper.includes('AO') || upper.includes('ADULT') || upper.includes('18')) {
       isErotic = true
     }
   }

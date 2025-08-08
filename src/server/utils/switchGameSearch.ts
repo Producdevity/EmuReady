@@ -48,8 +48,7 @@ const FUSE_OPTIONS = {
   findAllMatches: true, // Find all matching patterns
 }
 
-const SWITCH_GAMES_URL =
-  'https://producdevity.github.io/switch-games-json/switchbrew_id_names.json'
+const SWITCH_GAMES_URL = 'https://producdevity.github.io/switch-games-json/switchbrew_id_names.json'
 
 /**
  * Fetches Switch games data from external source
@@ -60,9 +59,7 @@ async function fetchSwitchGamesData(): Promise<SwitchGameEntry[]> {
   })
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch Switch games data: ${response.status} ${response.statusText}`,
-    )
+    throw new Error(`Failed to fetch Switch games data: ${response.status} ${response.statusText}`)
   }
 
   const data = (await response.json()) as SwitchGameEntry[]
@@ -155,10 +152,7 @@ export async function findTitleIdForGameName(
         let bonusScore = 0
         if (nameMatch === searchTerm || normalizedMatch === searchTerm) {
           bonusScore = 40
-        } else if (
-          nameMatch.includes(searchTerm) ||
-          normalizedMatch.includes(searchTerm)
-        ) {
+        } else if (nameMatch.includes(searchTerm) || normalizedMatch.includes(searchTerm)) {
           bonusScore = 20
         }
 
@@ -180,8 +174,7 @@ export async function findTitleIdForGameName(
         // Avoid demo/kiosk versions unless specifically searched for
         let demoBonus = 0
         const isDemo = nameMatch.includes('demo') || nameMatch.includes('kiosk')
-        const searchesForDemo =
-          searchTerm.includes('demo') || searchTerm.includes('kiosk')
+        const searchesForDemo = searchTerm.includes('demo') || searchTerm.includes('kiosk')
 
         if (isDemo && !searchesForDemo) {
           demoBonus = -15 // Penalize demos if not specifically searched
@@ -226,15 +219,11 @@ export async function findTitleIdForGameName(
  * @param gameName - The name of the game to search for
  * @returns The best matching title ID or null if no good match found
  */
-export async function getBestTitleIdMatch(
-  gameName: string,
-): Promise<string | null> {
+export async function getBestTitleIdMatch(gameName: string): Promise<string | null> {
   const results = await findTitleIdForGameName(gameName, 1)
 
   // Return the best match if score is good enough (>= 50% for more flexibility)
-  return results.length > 0 && results[0].score >= 50
-    ? results[0].titleId
-    : null
+  return results.length > 0 && results[0].score >= 50 ? results[0].titleId : null
 }
 
 /**

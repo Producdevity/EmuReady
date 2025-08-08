@@ -86,17 +86,16 @@ export default function GenericVerifyButton(props: Props) {
     },
   })
 
-  const removeVerificationMutation =
-    api.pcListings.removeVerification.useMutation({
-      onSuccess: () => {
-        toast.success('PC listing verification removed')
-        setIsUnverifyDialogOpen(false)
-        props.onSuccess?.()
-      },
-      onError: (error) => {
-        toast.error(error.message || 'Failed to remove verification')
-      },
-    })
+  const removeVerificationMutation = api.pcListings.removeVerification.useMutation({
+    onSuccess: () => {
+      toast.success('PC listing verification removed')
+      setIsUnverifyDialogOpen(false)
+      props.onSuccess?.()
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to remove verification')
+    },
+  })
 
   const handleVerify = () => {
     if (isPcListing) {
@@ -159,16 +158,13 @@ export default function GenericVerifyButton(props: Props) {
           </TooltipTrigger>
           <TooltipContent>Remove verification</TooltipContent>
         </Tooltip>
-        <AlertDialog
-          open={isUnverifyDialogOpen}
-          onOpenChange={setIsUnverifyDialogOpen}
-        >
+        <AlertDialog open={isUnverifyDialogOpen} onOpenChange={setIsUnverifyDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Remove Verification</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to remove your verification from this{' '}
-                {listingType}? This action cannot be undone.
+                Are you sure you want to remove your verification from this {listingType}? This
+                action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -204,25 +200,17 @@ export default function GenericVerifyButton(props: Props) {
         </TooltipTrigger>
         <TooltipContent>Verify this {listingType}</TooltipContent>
       </Tooltip>
-      <AlertDialog
-        open={isVerifyDialogOpen}
-        onOpenChange={setIsVerifyDialogOpen}
-      >
+      <AlertDialog open={isVerifyDialogOpen} onOpenChange={setIsVerifyDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Verify {isPcListing ? 'PC Listing' : 'Listing'}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Verify {isPcListing ? 'PC Listing' : 'Listing'}</AlertDialogTitle>
             <AlertDialogDescription>
-              As a verified developer for this emulator, you can verify that
-              this {listingType} is accurate and helpful to the community.
+              As a verified developer for this emulator, you can verify that this {listingType} is
+              accurate and helpful to the community.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <label
-              htmlFor="verification-notes"
-              className="block text-sm font-medium mb-2"
-            >
+            <label htmlFor="verification-notes" className="block text-sm font-medium mb-2">
               Notes (optional)
             </label>
             <Input
@@ -230,15 +218,13 @@ export default function GenericVerifyButton(props: Props) {
               as="textarea"
               placeholder="Add any notes about this verification..."
               value={notes}
-              onChange={(
-                ev: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-              ) => setNotes(ev.target.value)}
+              onChange={(ev: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setNotes(ev.target.value)
+              }
               maxLength={500}
               rows={3}
             />
-            <div className="text-xs text-gray-500 mt-1">
-              {notes.length}/500 characters
-            </div>
+            <div className="text-xs text-gray-500 mt-1">{notes.length}/500 characters</div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

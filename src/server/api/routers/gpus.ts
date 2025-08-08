@@ -16,15 +16,7 @@ import type { Prisma } from '@orm'
 
 export const gpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
-    const {
-      search,
-      brandId,
-      limit = 20,
-      offset = 0,
-      page,
-      sortField,
-      sortDirection,
-    } = input ?? {}
+    const { search, brandId, limit = 20, offset = 0, page, sortField, sortDirection } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
     const actualOffset = page ? (page - 1) * limit : offset
@@ -118,106 +110,98 @@ export const gpusRouter = createTRPCRouter({
     }
   }),
 
-  byId: publicProcedure
-    .input(GetGpuByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const gpu = await ctx.prisma.gpu.findUnique({
-        where: { id: input.id },
-        include: {
-          brand: true,
-          _count: { select: { pcListings: true } },
-        },
-      })
+  byId: publicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {
+    const gpu = await ctx.prisma.gpu.findUnique({
+      where: { id: input.id },
+      include: {
+        brand: true,
+        _count: { select: { pcListings: true } },
+      },
+    })
 
-      return gpu ?? ResourceError.gpu.notFound()
-    }),
+    return gpu ?? ResourceError.gpu.notFound()
+  }),
 
-  create: manageDevicesProcedure
-    .input(CreateGpuSchema)
-    .mutation(async ({ ctx, input }) => {
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.brandId },
-      })
+  create: manageDevicesProcedure.input(CreateGpuSchema).mutation(async ({ ctx, input }) => {
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.brandId },
+    })
 
-      if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) return ResourceError.deviceBrand.notFound()
 
-      const existingGpu = await ctx.prisma.gpu.findFirst({
-        where: {
-          brandId: input.brandId,
-          modelName: { equals: input.modelName, mode: 'insensitive' },
-        },
-      })
+    const existingGpu = await ctx.prisma.gpu.findFirst({
+      where: {
+        brandId: input.brandId,
+        modelName: { equals: input.modelName, mode: 'insensitive' },
+      },
+    })
 
-      if (existingGpu) {
-        return ResourceError.gpu.alreadyExists(input.modelName)
-      }
+    if (existingGpu) {
+      return ResourceError.gpu.alreadyExists(input.modelName)
+    }
 
-      return ctx.prisma.gpu.create({
-        data: input,
-        include: {
-          brand: true,
-          _count: { select: { pcListings: true } },
-        },
-      })
-    }),
+    return ctx.prisma.gpu.create({
+      data: input,
+      include: {
+        brand: true,
+        _count: { select: { pcListings: true } },
+      },
+    })
+  }),
 
-  update: manageDevicesProcedure
-    .input(UpdateGpuSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
+  update: manageDevicesProcedure.input(UpdateGpuSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input
 
-      const gpu = await ctx.prisma.gpu.findUnique({
-        where: { id },
-      })
+    const gpu = await ctx.prisma.gpu.findUnique({
+      where: { id },
+    })
 
-      if (!gpu) return ResourceError.gpu.notFound()
+    if (!gpu) return ResourceError.gpu.notFound()
 
-      const brand = await ctx.prisma.deviceBrand.findUnique({
-        where: { id: input.brandId },
-      })
+    const brand = await ctx.prisma.deviceBrand.findUnique({
+      where: { id: input.brandId },
+    })
 
-      if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) return ResourceError.deviceBrand.notFound()
 
-      const existingGpu = await ctx.prisma.gpu.findFirst({
-        where: {
-          brandId: input.brandId,
-          modelName: { equals: input.modelName, mode: 'insensitive' },
-          id: { not: id },
-        },
-      })
+    const existingGpu = await ctx.prisma.gpu.findFirst({
+      where: {
+        brandId: input.brandId,
+        modelName: { equals: input.modelName, mode: 'insensitive' },
+        id: { not: id },
+      },
+    })
 
-      if (existingGpu) {
-        return ResourceError.gpu.alreadyExists(input.modelName)
-      }
+    if (existingGpu) {
+      return ResourceError.gpu.alreadyExists(input.modelName)
+    }
 
-      return ctx.prisma.gpu.update({
-        where: { id },
-        data,
-        include: {
-          brand: true,
-          _count: { select: { pcListings: true } },
-        },
-      })
-    }),
+    return ctx.prisma.gpu.update({
+      where: { id },
+      data,
+      include: {
+        brand: true,
+        _count: { select: { pcListings: true } },
+      },
+    })
+  }),
 
-  delete: manageDevicesProcedure
-    .input(DeleteGpuSchema)
-    .mutation(async ({ ctx, input }) => {
-      const existingGpu = await ctx.prisma.gpu.findUnique({
-        where: { id: input.id },
-        include: { _count: { select: { pcListings: true } } },
-      })
+  delete: manageDevicesProcedure.input(DeleteGpuSchema).mutation(async ({ ctx, input }) => {
+    const existingGpu = await ctx.prisma.gpu.findUnique({
+      where: { id: input.id },
+      include: { _count: { select: { pcListings: true } } },
+    })
 
-      if (!existingGpu) return ResourceError.gpu.notFound()
+    if (!existingGpu) return ResourceError.gpu.notFound()
 
-      if (existingGpu._count.pcListings > 0) {
-        return AppError.conflict(
-          `Cannot delete GPU "${existingGpu.modelName}" because it has ${existingGpu._count.pcListings} active PC listing(s). Please remove all PC listings for this GPU first.`,
-        )
-      }
+    if (existingGpu._count.pcListings > 0) {
+      return AppError.conflict(
+        `Cannot delete GPU "${existingGpu.modelName}" because it has ${existingGpu._count.pcListings} active PC listing(s). Please remove all PC listings for this GPU first.`,
+      )
+    }
 
-      return ctx.prisma.gpu.delete({ where: { id: input.id } })
-    }),
+    return ctx.prisma.gpu.delete({ where: { id: input.id } })
+  }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, withListings, withoutListings] = await Promise.all([

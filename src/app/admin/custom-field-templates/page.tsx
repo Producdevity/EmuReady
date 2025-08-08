@@ -15,9 +15,7 @@ import CustomFieldTemplateList from './components/CustomFieldTemplateList'
 function CustomFieldTemplatesPage() {
   const [searchQuery, _setSearchQuery] = useState('')
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
-  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
-    null,
-  )
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
 
   const customFieldTemplatesQuery = api.customFieldTemplates.getAll.useQuery()
 
@@ -47,10 +45,7 @@ function CustomFieldTemplatesPage() {
           <p className="text-red-600 dark:text-red-400 text-lg">
             Error loading templates: {customFieldTemplatesQuery.error.message}
           </p>
-          <Button
-            onClick={() => customFieldTemplatesQuery.refetch()}
-            className="mt-4"
-          >
+          <Button onClick={() => customFieldTemplatesQuery.refetch()} className="mt-4">
             Try Again
           </Button>
         </div>
@@ -60,9 +55,7 @@ function CustomFieldTemplatesPage() {
 
   const templates = customFieldTemplatesQuery.data ?? []
   const totalTemplates = templates.length
-  const templatesWithFields = templates.filter(
-    (t) => t.fields.length > 0,
-  ).length
+  const templatesWithFields = templates.filter((t) => t.fields.length > 0).length
   const templatesWithoutFields = totalTemplates - templatesWithFields
 
   return (
@@ -99,9 +92,7 @@ function CustomFieldTemplatesPage() {
       {templates.length > 0 ? (
         <CustomFieldTemplateList
           templates={templates.filter((template) =>
-            template.name
-              .toLowerCase()
-              .includes(searchQuery.trim().toLowerCase()),
+            template.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
           )}
           onEdit={handleOpenEditModal}
           onDeleteSuccess={customFieldTemplatesQuery.refetch}

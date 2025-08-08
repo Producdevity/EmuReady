@@ -17,9 +17,7 @@ describe('cn utility function', () => {
   it('should handle conditional classes', () => {
     const conditional = true
     const hidden = false
-    expect(cn('base', conditional && 'conditional', hidden && 'hidden')).toBe(
-      'base conditional',
-    )
+    expect(cn('base', conditional && 'conditional', hidden && 'hidden')).toBe('base conditional')
   })
 
   it('should merge Tailwind classes and resolve conflicts', () => {
@@ -53,15 +51,11 @@ describe('cn utility function', () => {
       undefined,
       'final-class',
     )
-    expect(result).toBe(
-      'base-class conditional-true array-class1 array-class2 final-class',
-    )
+    expect(result).toBe('base-class conditional-true array-class1 array-class2 final-class')
   })
 
   it('should handle Tailwind responsive classes', () => {
-    expect(cn('w-full', 'md:w-1/2', 'lg:w-1/3')).toBe(
-      'w-full md:w-1/2 lg:w-1/3',
-    )
+    expect(cn('w-full', 'md:w-1/2', 'lg:w-1/3')).toBe('w-full md:w-1/2 lg:w-1/3')
   })
 
   it('should handle Tailwind state variants', () => {
@@ -107,12 +101,7 @@ describe('cn utility function', () => {
     }
 
     expect(
-      cn(
-        'base-button',
-        buttonVariants.primary,
-        buttonVariants.size.md,
-        'hover:opacity-90',
-      ),
+      cn('base-button', buttonVariants.primary, buttonVariants.size.md, 'hover:opacity-90'),
     ).toBe('base-button bg-blue-500 text-white px-4 py-2 hover:opacity-90')
   })
 })

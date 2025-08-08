@@ -1,7 +1,6 @@
 import { type ENGAGEMENT_ACTIONS } from './actions'
 
-export type EngagementAction =
-  (typeof ENGAGEMENT_ACTIONS)[keyof typeof ENGAGEMENT_ACTIONS]
+export type EngagementAction = (typeof ENGAGEMENT_ACTIONS)[keyof typeof ENGAGEMENT_ACTIONS]
 
 // Analytics event data interface
 export interface AnalyticsEventData {
@@ -27,10 +26,5 @@ export interface AnalyticsEventData {
   feature?: string
   entityType?: string
   duration?: number
-  [key: string]:
-    | string
-    | number
-    | boolean
-    | Record<string, string | number | boolean>
-    | undefined
+  [key: string]: string | number | boolean | Record<string, string | number | boolean> | undefined
 }

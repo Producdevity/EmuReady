@@ -14,43 +14,28 @@ import { hasPermission } from '@/utils/permissions'
 import { DeliveryChannel, NotificationCategory, Role } from '@orm'
 
 export const notificationsRouter = createTRPCRouter({
-  get: protectedProcedure
-    .input(GetNotificationsSchema)
-    .query(async ({ ctx, input }) => {
-      return notificationService.getUserNotifications(
-        ctx.session.user.id,
-        input,
-      )
-    }),
+  get: protectedProcedure.input(GetNotificationsSchema).query(async ({ ctx, input }) => {
+    return notificationService.getUserNotifications(ctx.session.user.id, input)
+  }),
 
   getUnreadCount: protectedProcedure.query(async ({ ctx }) =>
     notificationService.getUnreadCount(ctx.session.user.id),
   ),
 
-  markAsRead: protectedProcedure
-    .input(MarkAsReadSchema)
-    .mutation(async ({ ctx, input }) => {
-      await notificationService.markAsRead(
-        input.notificationId,
-        ctx.session.user.id,
-      )
-      return { success: true }
-    }),
+  markAsRead: protectedProcedure.input(MarkAsReadSchema).mutation(async ({ ctx, input }) => {
+    await notificationService.markAsRead(input.notificationId, ctx.session.user.id)
+    return { success: true }
+  }),
 
   markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
     await notificationService.markAllAsRead(ctx.session.user.id)
     return { success: true }
   }),
 
-  delete: protectedProcedure
-    .input(DeleteNotificationSchema)
-    .mutation(async ({ ctx, input }) => {
-      await notificationService.deleteNotification(
-        input.notificationId,
-        ctx.session.user.id,
-      )
-      return { success: true }
-    }),
+  delete: protectedProcedure.input(DeleteNotificationSchema).mutation(async ({ ctx, input }) => {
+    await notificationService.deleteNotification(input.notificationId, ctx.session.user.id)
+    return { success: true }
+  }),
 
   getPreferences: protectedProcedure.query(
     async ({ ctx }) =>
@@ -63,14 +48,10 @@ export const notificationsRouter = createTRPCRouter({
   updatePreference: protectedProcedure
     .input(UpdateNotificationPreferenceSchema)
     .mutation(async ({ ctx, input }) => {
-      await notificationService.updateNotificationPreference(
-        ctx.session.user.id,
-        input.type,
-        {
-          inAppEnabled: input.inAppEnabled,
-          emailEnabled: input.emailEnabled,
-        },
-      )
+      await notificationService.updateNotificationPreference(ctx.session.user.id, input.type, {
+        inAppEnabled: input.inAppEnabled,
+        emailEnabled: input.emailEnabled,
+      })
 
       return { success: true }
     }),
@@ -78,15 +59,14 @@ export const notificationsRouter = createTRPCRouter({
   getListingPreferences: protectedProcedure
     .input(GetListingPreferencesSchema)
     .query(async ({ ctx, input }) => {
-      const preference =
-        await ctx.prisma.listingNotificationPreference.findUnique({
-          where: {
-            userId_listingId: {
-              userId: ctx.session.user.id,
-              listingId: input.listingId,
-            },
+      const preference = await ctx.prisma.listingNotificationPreference.findUnique({
+        where: {
+          userId_listingId: {
+            userId: ctx.session.user.id,
+            listingId: input.listingId,
           },
-        })
+        },
+      })
 
       return preference || { isEnabled: true } // Default to enabled if no preference exists
     }),

@@ -1,17 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  vi,
-  type MockInstance,
-} from 'vitest'
-import {
-  useColumnVisibility,
-  type ColumnDefinition,
-} from './useColumnVisibility'
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest'
+import { useColumnVisibility, type ColumnDefinition } from './useColumnVisibility'
 
 const localStorageMock = {
   getItem: vi.fn(),
@@ -73,9 +62,7 @@ describe('useColumnVisibility', () => {
     })
 
     it('should load from localStorage when storageKey is provided', () => {
-      localStorageMock.getItem.mockReturnValue(
-        JSON.stringify(['name', 'role', 'actions']),
-      )
+      localStorageMock.getItem.mockReturnValue(JSON.stringify(['name', 'role', 'actions']))
 
       const { result } = renderHook(() =>
         useColumnVisibility(mockColumns, {

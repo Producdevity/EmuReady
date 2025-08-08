@@ -5,10 +5,7 @@ import { HomePage } from './pages/HomePage'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('Modern Authentication Flow Tests', () => {
-  test('should show authentication buttons when not logged in', async ({
-    page,
-    browserName,
-  }) => {
+  test('should show authentication buttons when not logged in', async ({ page, browserName }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
@@ -39,16 +36,12 @@ test.describe('Modern Authentication Flow Tests', () => {
     }
   })
 
-  test('should open sign in modal when sign in button is clicked', async ({
-    page,
-  }) => {
+  test('should open sign in modal when sign in button is clicked', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
     const authPage = new AuthPage(page)
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
 
     try {
       if (isMobile) {
@@ -66,9 +59,7 @@ test.describe('Modern Authentication Flow Tests', () => {
     } catch {
       // If Clerk modal doesn't appear, it might be because Clerk isn't fully configured
       // in the test environment. This is expected for some setups.
-      console.log(
-        'Sign in modal did not appear - this may be expected in test environment',
-      )
+      console.log('Sign in modal did not appear - this may be expected in test environment')
 
       // For mobile, just verify we're not authenticated
       if (isMobile) {
@@ -81,16 +72,12 @@ test.describe('Modern Authentication Flow Tests', () => {
     }
   })
 
-  test('should open sign up modal when sign up button is clicked', async ({
-    page,
-  }) => {
+  test('should open sign up modal when sign up button is clicked', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
     const authPage = new AuthPage(page)
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
 
     try {
       if (isMobile) {
@@ -108,9 +95,7 @@ test.describe('Modern Authentication Flow Tests', () => {
     } catch {
       // If Clerk modal doesn't appear, it might be because Clerk isn't fully configured
       // in the test environment. This is expected for some setups.
-      console.log(
-        'Sign up modal did not appear - this may be expected in test environment',
-      )
+      console.log('Sign up modal did not appear - this may be expected in test environment')
 
       // For mobile, just verify we're not authenticated
       if (isMobile) {
@@ -123,9 +108,7 @@ test.describe('Modern Authentication Flow Tests', () => {
     }
   })
 
-  test('should show authentication state correctly across pages', async ({
-    page,
-  }) => {
+  test('should show authentication state correctly across pages', async ({ page }) => {
     const homePage = new HomePage(page)
     const gamesPage = new GamesPage(page)
     const listingsPage = new ListingsPage(page)
@@ -165,9 +148,7 @@ test.describe('Modern Authentication Flow Tests', () => {
       await expect(authPage.signInButton).toBeVisible()
       await expect(authPage.signUpButton).toBeVisible()
     } catch {
-      console.log(
-        'Mobile menu interaction failed - may be expected in some mobile layouts',
-      )
+      console.log('Mobile menu interaction failed - may be expected in some mobile layouts')
 
       // At minimum, auth buttons should be accessible on mobile
       await expect(authPage.signInButton).toBeVisible()
@@ -190,9 +171,7 @@ test.describe('Protected Routes Tests', () => {
       // If no explicit auth requirement, check if form is accessible
       const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
       if (hasForm) {
-        console.log(
-          'Add game form is accessible - may use client-side auth protection',
-        )
+        console.log('Add game form is accessible - may use client-side auth protection')
       } else {
         // Page doesn't load properly, which suggests auth protection
         console.log('Add game page does not load without authentication')
@@ -200,9 +179,7 @@ test.describe('Protected Routes Tests', () => {
     }
   })
 
-  test('should require authentication for add listing page', async ({
-    page,
-  }) => {
+  test('should require authentication for add listing page', async ({ page }) => {
     const authPage = new AuthPage(page)
 
     // Try to access add listing page directly
@@ -215,9 +192,7 @@ test.describe('Protected Routes Tests', () => {
       // If no explicit auth requirement, check if form is accessible
       const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
       if (hasForm) {
-        console.log(
-          'Add listing form is accessible - may use client-side auth protection',
-        )
+        console.log('Add listing form is accessible - may use client-side auth protection')
       } else {
         // Page doesn't load properly, which suggests auth protection
         console.log('Add listing page does not load without authentication')
@@ -238,18 +213,14 @@ test.describe('Protected Routes Tests', () => {
       // Check if profile content is accessible
       const hasProfileContent = await page.locator('main').textContent()
       if (hasProfileContent && hasProfileContent.length > 100) {
-        console.log(
-          'Profile page is accessible - may use client-side auth protection',
-        )
+        console.log('Profile page is accessible - may use client-side auth protection')
       } else {
         console.log('Profile page does not load without authentication')
       }
     }
   })
 
-  test('should handle browser navigation with authentication', async ({
-    page,
-  }) => {
+  test('should handle browser navigation with authentication', async ({ page }) => {
     const homePage = new HomePage(page)
     const gamesPage = new GamesPage(page)
     const authPage = new AuthPage(page)
@@ -287,9 +258,7 @@ test.describe('Authentication Error Handling', () => {
     await homePage.goto()
 
     const authPage = new AuthPage(page)
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
 
     // Try to open sign in modal with short timeout
     try {
@@ -323,16 +292,12 @@ test.describe('Authentication Error Handling', () => {
     }
   })
 
-  test('should handle network errors during authentication', async ({
-    page,
-  }) => {
+  test('should handle network errors during authentication', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
     const authPage = new AuthPage(page)
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
       // On mobile, might need to open menu first
@@ -357,21 +322,15 @@ test.describe('Authentication Error Handling', () => {
     // Page should remain functional regardless of Clerk setup
     await expect(page.getByText(/emuready/i).first()).toBeVisible()
 
-    console.log(
-      'Authentication interaction completed - page remains functional',
-    )
+    console.log('Authentication interaction completed - page remains functional')
   })
 
-  test('should provide clear feedback for authentication failures', async ({
-    page,
-  }) => {
+  test('should provide clear feedback for authentication failures', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
     const authPage = new AuthPage(page)
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
 
     try {
       if (isMobile) {
@@ -406,9 +365,7 @@ test.describe('Authentication Error Handling', () => {
         }
       }
     } catch {
-      console.log(
-        'Authentication modal interaction not available in test environment',
-      )
+      console.log('Authentication modal interaction not available in test environment')
     }
 
     // Verify page remains functional after any authentication attempts

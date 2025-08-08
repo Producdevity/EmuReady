@@ -21,9 +21,7 @@ interface Props {
 }
 
 function SearchForm(props: Props) {
-  const [selectedSystemId, setSelectedSystemId] = useState(
-    props.initialSystemId ?? '',
-  )
+  const [selectedSystemId, setSelectedSystemId] = useState(props.initialSystemId ?? '')
   const [searchQuery, setSearchQuery] = useState(props.initialQuery ?? '')
 
   // Sync local state with prop changes
@@ -73,9 +71,7 @@ function SearchForm(props: Props) {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Search className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-          <h2 className="text-lg font-medium text-slate-900 dark:text-white">
-            Search Settings
-          </h2>
+          <h2 className="text-lg font-medium text-slate-900 dark:text-white">Search Settings</h2>
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Select a system and enter a game title to search TheGamesDB
@@ -106,8 +102,8 @@ function SearchForm(props: Props) {
                 <div className="text-sm text-amber-800 dark:text-amber-200">
                   <p className="font-medium">Platform not mapped</p>
                   <p>
-                    This system isn&apos;t mapped to TheGamesDB. Search results
-                    may include games from all platforms.
+                    This system isn&apos;t mapped to TheGamesDB. Search results may include games
+                    from all platforms.
                   </p>
                 </div>
               </div>

@@ -4,16 +4,9 @@
  * Maps emulator names from the database to appropriate configuration generators
  */
 
-import {
-  EMULATOR_CONFIG_TYPES,
-  ConfigTypeUtils,
-  type EmulatorConfigType,
-} from './constants'
+import { EMULATOR_CONFIG_TYPES, ConfigTypeUtils, type EmulatorConfigType } from './constants'
 import { convertToEdenConfig, serializeEdenConfig } from './eden-converter'
-import {
-  convertToGameNativeConfig,
-  serializeGameNativeConfig,
-} from './gamenative-converter'
+import { convertToGameNativeConfig, serializeGameNativeConfig } from './gamenative-converter'
 import type { Prisma } from '@orm'
 
 export interface EmulatorConfigResult {
@@ -78,9 +71,7 @@ const EMULATOR_CONFIG_MAPPING: Record<string, EmulatorConfigType> = {
  * Detect which config generator to use based on emulator name
  * Throws error if emulator is not supported
  */
-export function detectEmulatorConfigType(
-  emulatorName: string,
-): EmulatorConfigType {
+export function detectEmulatorConfigType(emulatorName: string): EmulatorConfigType {
   const configType = EMULATOR_CONFIG_MAPPING[emulatorName]
   if (configType) return configType
 
@@ -126,9 +117,7 @@ export function generateEmulatorConfig(input: {
       })
 
       const serialized = serializeEdenConfig(config)
-      const extension = ConfigTypeUtils.getFileExtension(
-        EMULATOR_CONFIG_TYPES.EDEN,
-      )
+      const extension = ConfigTypeUtils.getFileExtension(EMULATOR_CONFIG_TYPES.EDEN)
       const filename = `${input.emulatorName.toLowerCase()}-${input.listingId}${extension}`
 
       return {
@@ -147,9 +136,7 @@ export function generateEmulatorConfig(input: {
       })
 
       const serialized = serializeGameNativeConfig(config)
-      const extension = ConfigTypeUtils.getFileExtension(
-        EMULATOR_CONFIG_TYPES.GAMENATIVE,
-      )
+      const extension = ConfigTypeUtils.getFileExtension(EMULATOR_CONFIG_TYPES.GAMENATIVE)
       const filename = `${input.emulatorName.toLowerCase()}-${input.listingId}${extension}`
 
       return {
@@ -162,9 +149,7 @@ export function generateEmulatorConfig(input: {
 
     default: {
       // This should never happen since detectEmulatorConfigType throws for unsupported emulators
-      throw new Error(
-        `Unexpected config type for emulator: ${input.emulatorName}`,
-      )
+      throw new Error(`Unexpected config type for emulator: ${input.emulatorName}`)
     }
   }
 }

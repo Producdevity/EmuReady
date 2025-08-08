@@ -35,9 +35,7 @@ export function SuccessRateBar(props: Props) {
       </div>
       {!props.hideVoteCount && !compact && (
         <span className="text-xs text-gray-600 dark:text-gray-400">
-          {roundedRate}%{' '}
-          {voteCount > 0 &&
-            `(${voteCount} ${voteCount === 1 ? 'vote' : 'votes'})`}
+          {roundedRate}% {voteCount > 0 && `(${voteCount} ${voteCount === 1 ? 'vote' : 'votes'})`}
         </span>
       )}
     </div>

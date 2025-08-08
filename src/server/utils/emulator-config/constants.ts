@@ -12,8 +12,7 @@ export const EMULATOR_CONFIG_TYPES = {
 } as const
 
 // Union type for emulator config types
-export type EmulatorConfigType =
-  (typeof EMULATOR_CONFIG_TYPES)[keyof typeof EMULATOR_CONFIG_TYPES]
+export type EmulatorConfigType = (typeof EMULATOR_CONFIG_TYPES)[keyof typeof EMULATOR_CONFIG_TYPES]
 
 // File extensions for each config type
 export const CONFIG_FILE_EXTENSIONS: Record<EmulatorConfigType, string> = {
@@ -42,9 +41,7 @@ export const CONFIG_TYPE_DISPLAY_NAMES: Record<EmulatorConfigType, string> = {
 // Utility functions for config type operations
 export const ConfigTypeUtils = {
   isValidConfigType(type: string): type is EmulatorConfigType {
-    return Object.values(EMULATOR_CONFIG_TYPES).includes(
-      type as EmulatorConfigType,
-    )
+    return Object.values(EMULATOR_CONFIG_TYPES).includes(type as EmulatorConfigType)
   },
 
   getFileExtension(type: EmulatorConfigType): string {

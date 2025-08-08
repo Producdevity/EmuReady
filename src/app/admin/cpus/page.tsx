@@ -115,8 +115,7 @@ function AdminCpusPage() {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Delete CPU',
-      description:
-        'Are you sure you want to delete this CPU? This action cannot be undone.',
+      description: 'Are you sure you want to delete this CPU? This action cannot be undone.',
     })
 
     if (!confirmed) return
@@ -138,18 +137,13 @@ function AdminCpusPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            CPUs
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CPUs</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage all CPU models for PC compatibility listings
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <ColumnVisibilityControl
-            columns={CPUS_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={CPUS_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add CPU</Button>
         </div>
       </div>
@@ -262,14 +256,8 @@ function AdminCpusPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <ViewButton
-                          onClick={() => openViewModal(cpu)}
-                          title="View CPU Details"
-                        />
-                        <EditButton
-                          onClick={() => openModal(cpu)}
-                          title="Edit CPU"
-                        />
+                        <ViewButton onClick={() => openViewModal(cpu)} title="View CPU Details" />
+                        <EditButton onClick={() => openModal(cpu)} title="Edit CPU" />
                         {isAdmin && (
                           <DeleteButton
                             onClick={() => handleDelete(cpu.id)}
@@ -318,11 +306,7 @@ function AdminCpusPage() {
         onSuccess={handleModalSuccess}
       />
 
-      <CpuViewModal
-        isOpen={viewModalOpen}
-        onClose={closeViewModal}
-        cpuData={cpuData}
-      />
+      <CpuViewModal isOpen={viewModalOpen} onClose={closeViewModal} cpuData={cpuData} />
     </div>
   )
 }

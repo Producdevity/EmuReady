@@ -21,9 +21,7 @@ interface Props {
 
 function SocSelector(props: Props) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [expandedManufacturers, setExpandedManufacturers] = useState<
-    Set<string>
-  >(new Set())
+  const [expandedManufacturers, setExpandedManufacturers] = useState<Set<string>>(new Set())
   // Fetch all SoCs from the backend
   const socsQuery = api.socs.get.useQuery({ limit: 1000 })
 
@@ -83,9 +81,7 @@ function SocSelector(props: Props) {
 
   const toggleSoc = (soc: Soc) => {
     if (selectedSocIds.has(soc.id)) {
-      const newSelection = props.selectedSocs.filter(
-        (selected) => selected.id !== soc.id,
-      )
+      const newSelection = props.selectedSocs.filter((selected) => selected.id !== soc.id)
       props.onSocsChange(newSelection)
     } else {
       const newSelection = [...props.selectedSocs, soc]
@@ -105,9 +101,7 @@ function SocSelector(props: Props) {
 
   const selectAllFromManufacturer = (manufacturer: string) => {
     const manufacturerSocs = socsByManufacturer[manufacturer] || []
-    const allSelected = manufacturerSocs.every((soc) =>
-      selectedSocIds.has(soc.id),
-    )
+    const allSelected = manufacturerSocs.every((soc) => selectedSocIds.has(soc.id))
 
     if (allSelected) {
       // Deselect all from this manufacturer
@@ -117,9 +111,7 @@ function SocSelector(props: Props) {
       props.onSocsChange(remaining)
     } else {
       // Select all from this manufacturer
-      const toAdd = manufacturerSocs.filter(
-        (soc) => !selectedSocIds.has(soc.id),
-      )
+      const toAdd = manufacturerSocs.filter((soc) => !selectedSocIds.has(soc.id))
       props.onSocsChange([...props.selectedSocs, ...toAdd])
     }
   }
@@ -253,9 +245,7 @@ function SocSelector(props: Props) {
                                   : 'border-gray-300 dark:border-gray-600',
                               )}
                             >
-                              {isSelected && (
-                                <Check className="w-3 h-3 text-white" />
-                              )}
+                              {isSelected && <Check className="w-3 h-3 text-white" />}
                             </div>
 
                             <div className="flex-1 min-w-0">

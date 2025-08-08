@@ -52,9 +52,7 @@ export function MarkdownEditor(props: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const resizeStartRef = useRef<{ startY: number; startHeight: number } | null>(
-    null,
-  )
+  const resizeStartRef = useRef<{ startY: number; startHeight: number } | null>(null)
 
   const { value, onChange } = props
 
@@ -139,11 +137,7 @@ export function MarkdownEditor(props: Props) {
       const textToInsert = selectedText || placeholder
 
       const newText =
-        value?.substring(0, start) +
-        before +
-        textToInsert +
-        after +
-        value?.substring(end)
+        value?.substring(0, start) + before + textToInsert + after + value?.substring(end)
 
       onChange(newText || '')
 
@@ -162,8 +156,7 @@ export function MarkdownEditor(props: Props) {
   const handleItalic = () => insertText('*', '*', 'italic text')
   const handleStrikethrough = () => insertText('~~', '~~', 'strikethrough text')
   const handleCode = () => insertText('`', '`', 'code')
-  const handleLink = () =>
-    insertText('[', '](https://example.com)', 'link text')
+  const handleLink = () => insertText('[', '](https://example.com)', 'link text')
   const handleBulletList = () => insertText('- ', '', 'list item')
   const handleNumberedList = () => insertText('1. ', '', 'list item')
   const handleQuote = () => insertText('> ', '', 'quoted text')
@@ -213,8 +206,7 @@ export function MarkdownEditor(props: Props) {
           'border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden',
           'bg-white dark:bg-gray-800',
           'focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500',
-          props.error &&
-            'border-red-500 focus-within:ring-red-500 focus-within:border-red-500',
+          props.error && 'border-red-500 focus-within:ring-red-500 focus-within:border-red-500',
           props.disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
@@ -222,11 +214,7 @@ export function MarkdownEditor(props: Props) {
         <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div className="flex items-center gap-1">
             <ToolbarButton onClick={handleBold} icon={Bold} title="Bold" />
-            <ToolbarButton
-              onClick={handleItalic}
-              icon={Italic}
-              title="Italic"
-            />
+            <ToolbarButton onClick={handleItalic} icon={Italic} title="Italic" />
             <ToolbarButton
               onClick={handleStrikethrough}
               icon={Strikethrough}
@@ -234,22 +222,10 @@ export function MarkdownEditor(props: Props) {
             />
             <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
             <ToolbarButton onClick={handleLink} icon={Link} title="Link" />
-            <ToolbarButton
-              onClick={handleCode}
-              icon={Code}
-              title="Inline Code"
-            />
+            <ToolbarButton onClick={handleCode} icon={Code} title="Inline Code" />
             <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-            <ToolbarButton
-              onClick={handleBulletList}
-              icon={List}
-              title="Bullet List"
-            />
-            <ToolbarButton
-              onClick={handleNumberedList}
-              icon={ListOrdered}
-              title="Numbered List"
-            />
+            <ToolbarButton onClick={handleBulletList} icon={List} title="Bullet List" />
+            <ToolbarButton onClick={handleNumberedList} icon={ListOrdered} title="Numbered List" />
             <ToolbarButton onClick={handleQuote} icon={Quote} title="Quote" />
           </div>
 
@@ -266,11 +242,7 @@ export function MarkdownEditor(props: Props) {
               title={isExpanded ? 'Collapse editor' : 'Expand editor'}
               disabled={props.disabled}
             >
-              {isExpanded ? (
-                <Minimize2 className="w-3 h-3" />
-              ) : (
-                <Maximize2 className="w-3 h-3" />
-              )}
+              {isExpanded ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
             </button>
 
             <button
@@ -283,11 +255,7 @@ export function MarkdownEditor(props: Props) {
               )}
               disabled={props.disabled}
             >
-              {showPreview ? (
-                <EyeOff className="w-3 h-3" />
-              ) : (
-                <Eye className="w-3 h-3" />
-              )}
+              {showPreview ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
               {showPreview ? 'Edit' : 'Preview'}
             </button>
 
@@ -307,22 +275,13 @@ export function MarkdownEditor(props: Props) {
         </div>
 
         {/* Content Area */}
-        <div
-          ref={containerRef}
-          className="relative"
-          style={{ height: `${height}px` }}
-        >
+        <div ref={containerRef} className="relative" style={{ height: `${height}px` }}>
           {showPreview ? (
-            <div
-              className="p-3 h-full overflow-y-auto"
-              style={{ height: `${height}px` }}
-            >
+            <div className="p-3 h-full overflow-y-auto" style={{ height: `${height}px` }}>
               {props.value?.trim() ? (
                 <MarkdownRenderer content={props.value} />
               ) : (
-                <div className="text-gray-500 dark:text-gray-400 italic">
-                  Nothing to preview
-                </div>
+                <div className="text-gray-500 dark:text-gray-400 italic">Nothing to preview</div>
               )}
             </div>
           ) : (

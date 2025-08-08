@@ -115,9 +115,7 @@ function ProfileInformation(props: Props) {
           {isEditing ? (
             <Input
               value={formData.name}
-              onChange={(ev) =>
-                setFormData({ ...formData, name: ev.target.value })
-              }
+              onChange={(ev) => setFormData({ ...formData, name: ev.target.value })}
               placeholder="Enter your name"
               className="w-full"
             />
@@ -137,9 +135,7 @@ function ProfileInformation(props: Props) {
               as="textarea"
               rows={3}
               value={formData.bio}
-              onChange={(ev) =>
-                setFormData({ ...formData, bio: ev.target.value })
-              }
+              onChange={(ev) => setFormData({ ...formData, bio: ev.target.value })}
               placeholder="Tell us about yourself"
               className="w-full"
             />
@@ -161,11 +157,7 @@ function ProfileInformation(props: Props) {
               <Save className="w-4 h-4" />
               Save Changes
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleFormReset}
-              disabled={updateProfile.isPending}
-            >
+            <Button variant="outline" onClick={handleFormReset} disabled={updateProfile.isPending}>
               Reset
             </Button>
           </div>

@@ -34,18 +34,14 @@ function GameCard(props: Props) {
           {props.game.title}
         </h2>
         <div className="flex items-center justify-between mb-2">
-          <Badge variant="default">
-            {props.game.system?.name ?? 'Unknown System'}
-          </Badge>
-          {props.game.status &&
-            props.game.status !== ApprovalStatus.APPROVED && (
-              <ApprovalStatusBadge status={props.game.status} />
-            )}
+          <Badge variant="default">{props.game.system?.name ?? 'Unknown System'}</Badge>
+          {props.game.status && props.game.status !== ApprovalStatus.APPROVED && (
+            <ApprovalStatusBadge status={props.game.status} />
+          )}
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
           {(() => {
-            const totalListings =
-              props.game._count.listings + props.game._count.pcListings
+            const totalListings = props.game._count.listings + props.game._count.pcListings
             return `${totalListings} ${totalListings === 1 ? 'listing' : 'listings'}`
           })()}
         </div>

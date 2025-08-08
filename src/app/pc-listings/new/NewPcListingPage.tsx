@@ -4,13 +4,7 @@ import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useState,
-  type KeyboardEvent,
-} from 'react'
+import { Suspense, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { isString } from 'remeda'
 import {
@@ -21,13 +15,7 @@ import {
   type EmulatorOption,
   type GameOption,
 } from '@/app/listings/components/shared'
-import {
-  Autocomplete,
-  Button,
-  Input,
-  LoadingSpinner,
-  SelectInput,
-} from '@/components/ui'
+import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -35,10 +23,7 @@ import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
-import {
-  parseCustomFieldOptions,
-  getCustomFieldDefaultValue,
-} from '@/utils/customFields'
+import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/customFields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PcOs } from '@orm'
 import createDynamicPcListingSchema, {
@@ -63,21 +48,17 @@ function AddPcListingPage() {
   const currentUserQuery = api.users.me.useQuery()
 
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
-  const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(
-    null,
-  )
+  const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(null)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
-  const [availableEmulators, setAvailableEmulators] = useState<
-    EmulatorOption[]
-  >([])
+  const [availableEmulators, setAvailableEmulators] = useState<EmulatorOption[]>([])
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
-  const [parsedCustomFields, setParsedCustomFields] = useState<
-    CustomFieldDefinitionWithOptions[]
-  >([])
-  const [schemaState, setSchemaState] = useState<
-    ReturnType<typeof createDynamicPcListingSchema>
-  >(createDynamicPcListingSchema([]))
+  const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
+    [],
+  )
+  const [schemaState, setSchemaState] = useState<ReturnType<typeof createDynamicPcListingSchema>>(
+    createDynamicPcListingSchema([]),
+  )
 
   const utils = api.useUtils()
   const createPcListing = api.pcListings.create.useMutation()
@@ -153,9 +134,7 @@ function AddPcListingPage() {
         // Filter to only emulators that support the selected game's system
         const filteredEmulators = result.emulators
           .filter((emulator) =>
-            emulator.systems.some(
-              (system) => system.id === selectedGame.system.id,
-            ),
+            emulator.systems.some((system) => system.id === selectedGame.system.id),
           )
           .map((emulator) => ({
             id: emulator.id,
@@ -192,11 +171,10 @@ function AddPcListingPage() {
   })
 
   const selectedEmulatorId = form.watch('emulatorId')
-  const customFieldDefinitionsQuery =
-    api.customFieldDefinitions.getByEmulator.useQuery(
-      { emulatorId: selectedEmulatorId },
-      { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
-    )
+  const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
+    { emulatorId: selectedEmulatorId },
+    { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
+  )
 
   // Update custom field definitions when emulator changes
   useEffect(() => {
@@ -208,12 +186,7 @@ function AddPcListingPage() {
         return {
           ...field,
           parsedOptions,
-          defaultValue: field.defaultValue as
-            | string
-            | number
-            | boolean
-            | null
-            | undefined,
+          defaultValue: field.defaultValue as string | number | boolean | null | undefined,
         }
       },
     )
@@ -239,10 +212,7 @@ function AddPcListingPage() {
       )
       if (existingValueObj) return existingValueObj
 
-      const defaultValue = getCustomFieldDefaultValue(
-        field,
-        field.parsedOptions,
-      )
+      const defaultValue = getCustomFieldDefaultValue(field, field.parsedOptions)
 
       return {
         customFieldDefinitionId: field.id,
@@ -269,8 +239,7 @@ function AddPcListingPage() {
         return toast.error('Yu must be signed in to create a listing.')
       }
       try {
-        const recaptchaToken =
-          (await recaptchaHook.executeForCreateListing?.()) ?? undefined
+        const recaptchaToken = (await recaptchaHook.executeForCreateListing?.()) ?? undefined
 
         const result = await createPcListing.mutateAsync({
           ...data,
@@ -294,9 +263,7 @@ function AddPcListingPage() {
           await utils.games.byId.invalidate({ id: data.gameId })
         }
 
-        toast.success(
-          'PC listing created! It will be reviewed before going live.',
-        )
+        toast.success('PC listing created! It will be reviewed before going live.')
         router.push(`/pc-listings/${result.id}`)
       } catch (error) {
         const message = getErrorMessage(error)
@@ -332,10 +299,8 @@ function AddPcListingPage() {
     form.setValue('osVersion', '')
   }
 
-  const formatCpuLabel = (cpu: CpuOption) =>
-    `${cpu.brand.name} ${cpu.modelName}`
-  const formatGpuLabel = (gpu: GpuOption) =>
-    `${gpu.brand.name} ${gpu.modelName}`
+  const formatCpuLabel = (cpu: CpuOption) => `${cpu.brand.name} ${cpu.modelName}`
+  const formatGpuLabel = (gpu: GpuOption) => `${gpu.brand.name} ${gpu.modelName}`
 
   // Prevent form submission on Enter key press
   const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
@@ -354,24 +319,18 @@ function AddPcListingPage() {
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Who this?</h1>
-          <p className="text-gray-600 mb-6">
-            Please sign in to create a new listing.
-          </p>
+          <p className="text-gray-600 mb-6">Please sign in to create a new listing.</p>
 
           <div className="mt-4">
             <SignInButton mode="modal">
               <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">
-                  Login
-                </span>
+                <span className="block text-gray-900 dark:text-white font-medium">Login</span>
               </p>
             </SignInButton>
 
             <SignUpButton mode="modal">
               <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">
-                  Sign Up
-                </span>
+                <span className="block text-gray-900 dark:text-white font-medium">Sign Up</span>
               </p>
             </SignUpButton>
           </div>
@@ -417,42 +376,29 @@ function AddPcListingPage() {
                     <h4 className="font-medium text-gray-900 dark:text-white">
                       {selectedPreset.name}
                     </h4>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearPreset}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={handleClearPreset}>
                       Change Preset
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          CPU:
-                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">CPU:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {selectedPreset.cpu.brand.name}{' '}
-                          {selectedPreset.cpu.modelName}
+                          {selectedPreset.cpu.brand.name} {selectedPreset.cpu.modelName}
                         </span>
                       </div>
                       {selectedPreset.gpu && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">
-                            GPU:
-                          </span>
+                          <span className="text-gray-600 dark:text-gray-400">GPU:</span>
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {selectedPreset.gpu.brand.name}{' '}
-                            {selectedPreset.gpu.modelName}
+                            {selectedPreset.gpu.brand.name} {selectedPreset.gpu.modelName}
                           </span>
                         </div>
                       )}
                       {!selectedPreset.gpu && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">
-                            GPU:
-                          </span>
+                          <span className="text-gray-600 dark:text-gray-400">GPU:</span>
                           <span className="font-medium text-gray-900 dark:text-white">
                             Integrated Graphics
                           </span>
@@ -461,23 +407,15 @@ function AddPcListingPage() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          Memory:
-                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">Memory:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
                           {selectedPreset.memorySize}GB RAM
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          OS:
-                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">OS:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {
-                            OS_OPTIONS.find(
-                              (opt) => opt.value === selectedPreset.os,
-                            )?.label
-                          }{' '}
+                          {OS_OPTIONS.find((opt) => opt.value === selectedPreset.os)?.label}{' '}
                           {selectedPreset.osVersion}
                         </span>
                       </div>
@@ -509,10 +447,7 @@ function AddPcListingPage() {
                           </div>
                           <div>
                             {preset.memorySize}GB •{' '}
-                            {
-                              OS_OPTIONS.find((opt) => opt.value === preset.os)
-                                ?.label
-                            }
+                            {OS_OPTIONS.find((opt) => opt.value === preset.os)?.label}
                           </div>
                         </div>
                       </div>
@@ -580,9 +515,7 @@ function AddPcListingPage() {
                   )}
                 />
                 {form.formState.errors.cpuId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {form.formState.errors.cpuId.message}
-                  </p>
+                  <p className="mt-1 text-sm text-red-600">{form.formState.errors.cpuId.message}</p>
                 )}
               </div>
 
@@ -608,9 +541,7 @@ function AddPcListingPage() {
                   )}
                 />
                 {form.formState.errors.gpuId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {form.formState.errors.gpuId.message}
-                  </p>
+                  <p className="mt-1 text-sm text-red-600">{form.formState.errors.gpuId.message}</p>
                 )}
               </div>
 
@@ -662,9 +593,7 @@ function AddPcListingPage() {
                   )}
                 />
                 {form.formState.errors.os && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {form.formState.errors.os.message}
-                  </p>
+                  <p className="mt-1 text-sm text-red-600">{form.formState.errors.os.message}</p>
                 )}
               </div>
 
@@ -702,8 +631,7 @@ function AddPcListingPage() {
                   &rdquo;
                 </span>
                 <br />
-                You can now select your game, emulator, and performance rating
-                below.
+                You can now select your game, emulator, and performance rating below.
               </p>
             </div>
           )}
@@ -797,11 +725,9 @@ function AddPcListingPage() {
                 </h2>
                 {parsedCustomFields.map((fieldDef, index) => {
                   const errorMessage = isString(
-                    form.formState.errors.customFieldValues?.[index]?.value
-                      ?.message,
+                    form.formState.errors.customFieldValues?.[index]?.value?.message,
                   )
-                    ? form.formState.errors.customFieldValues?.[index]?.value
-                        ?.message
+                    ? form.formState.errors.customFieldValues?.[index]?.value?.message
                     : undefined
                   return (
                     <CustomFieldRenderer
@@ -825,9 +751,7 @@ function AddPcListingPage() {
               type="submit"
               variant="primary"
               isLoading={createPcListing.isPending}
-              disabled={
-                form.formState.isSubmitting ?? createPcListing.isPending
-              }
+              disabled={form.formState.isSubmitting ?? createPcListing.isPending}
               size="lg"
             >
               Create PC Listing

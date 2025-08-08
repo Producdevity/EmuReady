@@ -16,9 +16,8 @@ function MobileApiDocsPage() {
           EmuReady Mobile API Documentation
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-          Complete API documentation for EmuReady mobile applications with 90
-          endpoints covering listings, games, devices, user management, and
-          more.
+          Complete API documentation for EmuReady mobile applications with 90 endpoints covering
+          listings, games, devices, user management, and more.
         </p>
       </div>
 
@@ -28,8 +27,7 @@ function MobileApiDocsPage() {
             📚 Documentation
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Auto-generated API reference with 90 endpoints, authentication, and
-            usage patterns.
+            Auto-generated API reference with 90 endpoints, authentication, and usage patterns.
           </p>
           <Link
             href="/docs/MOBILE_API.md"
@@ -45,8 +43,7 @@ function MobileApiDocsPage() {
             🔧 Interactive Testing
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Swagger UI for testing API endpoints with live requests and
-            responses.
+            Swagger UI for testing API endpoints with live requests and responses.
           </p>
           <Link
             href="/docs/api/swagger"
@@ -58,9 +55,7 @@ function MobileApiDocsPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-        <h2 className="text-xl text-gray-900 dark:text-white font-semibold mb-4">
-          Quick Start
-        </h2>
+        <h2 className="text-xl text-gray-900 dark:text-white font-semibold mb-4">Quick Start</h2>
 
         <div className="space-y-4">
           <div>
@@ -71,18 +66,14 @@ function MobileApiDocsPage() {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">
-              Authentication
-            </h3>
+            <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Authentication</h3>
             <code className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300  px-3 py-1 rounded text-sm">
               Authorization: Bearer &lt;clerk-jwt-token&gt;
             </code>
           </div>
 
           <div>
-            <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">
-              Example Request
-            </h3>
+            <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Example Request</h3>
             <pre className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded text-sm overflow-x-auto">
               {`curl -X POST /api/mobile/trpc/getListings \\
   -H "Content-Type: application/json" \\
@@ -104,9 +95,7 @@ function MobileApiDocsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <h3 className="font-semibold text-green-600 mb-2">
-              📄 OpenAPI Spec
-            </h3>
+            <h3 className="font-semibold text-green-600 mb-2">📄 OpenAPI Spec</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
               Machine-readable API specification - automatically generated
             </p>
@@ -142,9 +131,7 @@ function MobileApiDocsPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Key Features
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Key Features</h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
           Note that some features may be in development, or require an API Key:
         </p>

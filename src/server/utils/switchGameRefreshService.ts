@@ -36,16 +36,10 @@ export class SwitchGameRefreshService {
 
     this.initializeService()
       .then(() => {
-        console.log(
-          'Switch game refresh service initialized with config:',
-          this.config,
-        )
+        console.log('Switch game refresh service initialized with config:', this.config)
       })
       .catch((error) => {
-        console.error(
-          'Failed to initialize Switch game refresh service:',
-          error,
-        )
+        console.error('Failed to initialize Switch game refresh service:', error)
       })
   }
 
@@ -148,9 +142,7 @@ export class SwitchGameRefreshService {
 
     if (this.config.autoRefreshEnabled) {
       this.startRefreshTimer() // Restart with new interval
-      console.log(
-        `Switch game refresh interval updated to ${intervalMs / 1000 / 60} minutes`,
-      )
+      console.log(`Switch game refresh interval updated to ${intervalMs / 1000 / 60} minutes`)
     }
   }
 

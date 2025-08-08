@@ -4,9 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('Modern Navigation Tests', () => {
-  test('should navigate between main pages using page objects', async ({
-    page,
-  }) => {
+  test('should navigate between main pages using page objects', async ({ page }) => {
     // Start at home page
     const homePage = new HomePage(page)
     await homePage.goto()
@@ -73,9 +71,7 @@ test.describe('Modern Navigation Tests', () => {
     await expect(listingsPage.pageHeading).toBeVisible()
 
     // On mobile, filters might be hidden
-    const isMobile = page.viewportSize()?.width
-      ? page.viewportSize()!.width < 768
-      : false
+    const isMobile = page.viewportSize()?.width ? page.viewportSize()!.width < 768 : false
     if (!isMobile) {
       await expect(listingsPage.filtersHeading).toBeVisible()
     }
@@ -99,9 +95,7 @@ test.describe('Modern Navigation Tests', () => {
     await homePage.verifyHeroSectionVisible()
   })
 
-  test('should show authentication buttons when not logged in', async ({
-    page,
-  }) => {
+  test('should show authentication buttons when not logged in', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
@@ -187,9 +181,7 @@ test.describe('Modern Page Content Tests', () => {
     }
   })
 
-  test('should support keyboard navigation through main menu', async ({
-    page,
-  }) => {
+  test('should support keyboard navigation through main menu', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
@@ -213,9 +205,7 @@ test.describe('Modern Page Content Tests', () => {
     }
   })
 
-  test('should handle browser back and forward navigation', async ({
-    page,
-  }) => {
+  test('should handle browser back and forward navigation', async ({ page }) => {
     const homePage = new HomePage(page)
     const gamesPage = new GamesPage(page)
     const listingsPage = new ListingsPage(page)
@@ -259,10 +249,7 @@ test.describe('Modern Page Content Tests', () => {
 
     // Wait for animation and verify menu is visible
     await page.waitForTimeout(600) // Wait for 500ms animation
-    const mobileMenuDiv = page
-      .locator('.md\\:hidden')
-      .filter({ hasText: 'Handheld' })
-      .last()
+    const mobileMenuDiv = page.locator('.md\\:hidden').filter({ hasText: 'Handheld' }).last()
     await expect(mobileMenuDiv).toHaveClass(/opacity-100/)
 
     // Close menu by clicking the button again (toggle)

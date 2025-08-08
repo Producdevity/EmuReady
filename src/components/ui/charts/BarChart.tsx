@@ -121,10 +121,7 @@ export function BarChart(props: Props) {
   if (props.data.length === 0) {
     return (
       <div
-        className={cn(
-          'flex items-center justify-center border rounded-lg',
-          props.className,
-        )}
+        className={cn('flex items-center justify-center border rounded-lg', props.className)}
         style={{ width, height }}
       >
         <span className="text-muted-foreground text-sm">No data available</span>

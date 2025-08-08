@@ -133,8 +133,7 @@ function CustomFieldTemplateFormModal(props: Props) {
     }
 
     if (templateDescription.length > 500) {
-      newErrors.templateDescription =
-        'Description must be 500 characters or less'
+      newErrors.templateDescription = 'Description must be 500 characters or less'
     }
 
     if (fields.length === 0) {
@@ -148,8 +147,7 @@ function CustomFieldTemplateFormModal(props: Props) {
       if (!field.name.trim()) {
         newErrors[`field-${index}-name`] = 'Field name is required'
       } else if (field.name.length > 50) {
-        newErrors[`field-${index}-name`] =
-          'Field name must be 50 characters or less'
+        newErrors[`field-${index}-name`] = 'Field name must be 50 characters or less'
       } else if (!/^[a-z0-9_]+$/.test(field.name)) {
         newErrors[`field-${index}-name`] =
           'Field name must be lowercase alphanumeric with underscores only'
@@ -162,8 +160,7 @@ function CustomFieldTemplateFormModal(props: Props) {
       if (!field.label.trim()) {
         newErrors[`field-${index}-label`] = 'Field label is required'
       } else if (field.label.length > 100) {
-        newErrors[`field-${index}-label`] =
-          'Field label must be 100 characters or less'
+        newErrors[`field-${index}-label`] = 'Field label must be 100 characters or less'
       }
 
       // Validate placeholder for text fields
@@ -174,8 +171,7 @@ function CustomFieldTemplateFormModal(props: Props) {
         field.placeholder &&
         field.placeholder.length > 200
       ) {
-        newErrors[`field-${index}-placeholder`] =
-          'Placeholder must be 200 characters or less'
+        newErrors[`field-${index}-placeholder`] = 'Placeholder must be 200 characters or less'
       }
 
       // Validate range fields
@@ -184,44 +180,37 @@ function CustomFieldTemplateFormModal(props: Props) {
         const max = field.rangeMax ?? 100
 
         if (min >= max) {
-          newErrors[`field-${index}-rangeMin`] =
-            'Minimum value must be less than maximum value'
-          newErrors[`field-${index}-rangeMax`] =
-            'Maximum value must be greater than minimum value'
+          newErrors[`field-${index}-rangeMin`] = 'Minimum value must be less than maximum value'
+          newErrors[`field-${index}-rangeMax`] = 'Maximum value must be greater than minimum value'
         }
 
         if (field.rangeUnit && field.rangeUnit.length > 10) {
-          newErrors[`field-${index}-rangeUnit`] =
-            'Unit must be 10 characters or less'
+          newErrors[`field-${index}-rangeUnit`] = 'Unit must be 10 characters or less'
         }
 
         if (
           field.rangeDecimals !== undefined &&
           (field.rangeDecimals < 0 || field.rangeDecimals > 5)
         ) {
-          newErrors[`field-${index}-rangeDecimals`] =
-            'Decimal places must be between 0 and 5'
+          newErrors[`field-${index}-rangeDecimals`] = 'Decimal places must be between 0 and 5'
         }
       }
 
       if (field.type === CustomFieldType.SELECT) {
         if (field.options.length === 0) {
-          newErrors[`field-${index}-options`] =
-            'Dropdown fields must have at least one option'
+          newErrors[`field-${index}-options`] = 'Dropdown fields must have at least one option'
         } else if (field.options.length > 50) {
           newErrors[`field-${index}-options`] = 'Maximum 50 options allowed'
         } else {
           field.options.forEach((option, optionIndex) => {
             if (!option.value.trim()) {
-              newErrors[`field-${index}-option-${optionIndex}-value`] =
-                'Option value is required'
+              newErrors[`field-${index}-option-${optionIndex}-value`] = 'Option value is required'
             } else if (option.value.length > 50) {
               newErrors[`field-${index}-option-${optionIndex}-value`] =
                 'Option value must be 50 characters or less'
             }
             if (!option.label.trim()) {
-              newErrors[`field-${index}-option-${optionIndex}-label`] =
-                'Option label is required'
+              newErrors[`field-${index}-option-${optionIndex}-label`] = 'Option label is required'
             } else if (option.label.length > 100) {
               newErrors[`field-${index}-option-${optionIndex}-label`] =
                 'Option label must be 100 characters or less'
@@ -252,9 +241,7 @@ function CustomFieldTemplateFormModal(props: Props) {
         type: field.type,
         options:
           field.type === CustomFieldType.SELECT
-            ? field.options.filter(
-                (opt) => opt.value.trim() && opt.label.trim(),
-              )
+            ? field.options.filter((opt) => opt.value.trim() && opt.label.trim())
             : undefined,
         defaultValue:
           field.defaultValue === null
@@ -263,27 +250,17 @@ function CustomFieldTemplateFormModal(props: Props) {
               ? String(field.defaultValue)
               : field.defaultValue,
         placeholder: (
-          [
-            CustomFieldType.TEXT,
-            CustomFieldType.TEXTAREA,
-            CustomFieldType.URL,
-          ] as CustomFieldType[]
+          [CustomFieldType.TEXT, CustomFieldType.TEXTAREA, CustomFieldType.URL] as CustomFieldType[]
         ).includes(field.type)
           ? field.placeholder || undefined
           : undefined,
         isRequired: field.isRequired,
         displayOrder: index,
         // Range-specific fields
-        rangeMin:
-          field.type === CustomFieldType.RANGE ? field.rangeMin : undefined,
-        rangeMax:
-          field.type === CustomFieldType.RANGE ? field.rangeMax : undefined,
-        rangeUnit:
-          field.type === CustomFieldType.RANGE ? field.rangeUnit : undefined,
-        rangeDecimals:
-          field.type === CustomFieldType.RANGE
-            ? field.rangeDecimals
-            : undefined,
+        rangeMin: field.type === CustomFieldType.RANGE ? field.rangeMin : undefined,
+        rangeMax: field.type === CustomFieldType.RANGE ? field.rangeMax : undefined,
+        rangeUnit: field.type === CustomFieldType.RANGE ? field.rangeUnit : undefined,
+        rangeDecimals: field.type === CustomFieldType.RANGE ? field.rangeDecimals : undefined,
       })),
     }
 
@@ -429,10 +406,7 @@ function CustomFieldTemplateFormModal(props: Props) {
           )}
 
           <div>
-            <label
-              htmlFor="templateName"
-              className="block text-sm font-medium mb-2"
-            >
+            <label htmlFor="templateName" className="block text-sm font-medium mb-2">
               Template Name <span className="text-red-500">*</span>
             </label>
             <Input
@@ -442,30 +416,19 @@ function CustomFieldTemplateFormModal(props: Props) {
               onChange={(ev) => setTemplateName(ev.target.value)}
               placeholder="e.g., X86 Emulator Fields"
               maxLength={100}
-              className={
-                errors.templateName ? 'border-red-300 dark:border-red-600' : ''
-              }
+              className={errors.templateName ? 'border-red-300 dark:border-red-600' : ''}
               aria-invalid={!!errors.templateName}
-              aria-describedby={
-                errors.templateName ? 'templateName-error' : undefined
-              }
+              aria-describedby={errors.templateName ? 'templateName-error' : undefined}
             />
             {errors.templateName && (
-              <p
-                id="templateName-error"
-                className="text-red-500 text-xs mt-1"
-                role="alert"
-              >
+              <p id="templateName-error" className="text-red-500 text-xs mt-1" role="alert">
                 {errors.templateName}
               </p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="templateDescription"
-              className="block text-sm font-medium mb-2"
-            >
+            <label htmlFor="templateDescription" className="block text-sm font-medium mb-2">
               Description (Optional)
             </label>
             <Input
@@ -476,24 +439,14 @@ function CustomFieldTemplateFormModal(props: Props) {
               placeholder="Describe what this template is for..."
               rows={3}
               maxLength={500}
-              className={
-                errors.templateDescription
-                  ? 'border-red-300 dark:border-red-600'
-                  : ''
-              }
+              className={errors.templateDescription ? 'border-red-300 dark:border-red-600' : ''}
               aria-invalid={!!errors.templateDescription}
               aria-describedby={
-                errors.templateDescription
-                  ? 'templateDescription-error'
-                  : undefined
+                errors.templateDescription ? 'templateDescription-error' : undefined
               }
             />
             {errors.templateDescription && (
-              <p
-                id="templateDescription-error"
-                className="text-red-500 text-xs mt-1"
-                role="alert"
-              >
+              <p id="templateDescription-error" className="text-red-500 text-xs mt-1" role="alert">
                 {errors.templateDescription}
               </p>
             )}
@@ -523,16 +476,11 @@ function CustomFieldTemplateFormModal(props: Props) {
 
             <div className="space-y-6">
               {fields.map((field, fieldIndex) => (
-                <div
-                  key={fieldIndex}
-                  className="border p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
-                >
+                <div key={fieldIndex} className="border p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center">
                       <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="font-medium">
-                        Field {fieldIndex + 1}
-                      </span>
+                      <span className="font-medium">Field {fieldIndex + 1}</span>
                     </div>
                     <Button
                       type="button"
@@ -552,9 +500,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.name}
-                        onChange={(ev) =>
-                          updateField(fieldIndex, { name: ev.target.value })
-                        }
+                        onChange={(ev) => updateField(fieldIndex, { name: ev.target.value })}
                         placeholder="e.g., driver_version"
                         maxLength={50}
                         className={
@@ -602,9 +548,7 @@ function CustomFieldTemplateFormModal(props: Props) {
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Field Type
-                      </label>
+                      <label className="block text-sm font-medium mb-2">Field Type</label>
                       <Input
                         as="select"
                         value={field.type}
@@ -683,17 +627,14 @@ function CustomFieldTemplateFormModal(props: Props) {
                         <Input
                           as="select"
                           value={
-                            field.defaultValue === null ||
-                            field.defaultValue === undefined
+                            field.defaultValue === null || field.defaultValue === undefined
                               ? ''
                               : String(field.defaultValue)
                           }
                           onChange={(ev) =>
                             updateField(fieldIndex, {
                               defaultValue:
-                                ev.target.value === ''
-                                  ? null
-                                  : ev.target.value === 'true',
+                                ev.target.value === '' ? null : ev.target.value === 'true',
                             })
                           }
                         >
@@ -701,27 +642,19 @@ function CustomFieldTemplateFormModal(props: Props) {
                           <option value="true">Yes</option>
                           <option value="false">No</option>
                         </Input>
-                      ) : field.type === CustomFieldType.SELECT &&
-                        field.options.length > 0 ? (
+                      ) : field.type === CustomFieldType.SELECT && field.options.length > 0 ? (
                         <Input
                           as="select"
-                          value={
-                            field.defaultValue === null
-                              ? ''
-                              : String(field.defaultValue)
-                          }
+                          value={field.defaultValue === null ? '' : String(field.defaultValue)}
                           onChange={(ev) =>
                             updateField(fieldIndex, {
-                              defaultValue:
-                                ev.target.value === '' ? null : ev.target.value,
+                              defaultValue: ev.target.value === '' ? null : ev.target.value,
                             })
                           }
                         >
                           <option value="">No default</option>
                           {field.options
-                            .filter(
-                              (opt) => opt.value.trim() && opt.label.trim(),
-                            )
+                            .filter((opt) => opt.value.trim() && opt.label.trim())
                             .map((option, optIndex) => (
                               <option key={optIndex} value={option.value}>
                                 {option.label}
@@ -745,8 +678,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Minimum Value{' '}
-                            <span className="text-red-500">*</span>
+                            Minimum Value <span className="text-red-500">*</span>
                           </label>
                           <Input
                             type="number"
@@ -772,8 +704,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Maximum Value{' '}
-                            <span className="text-red-500">*</span>
+                            Maximum Value <span className="text-red-500">*</span>
                           </label>
                           <Input
                             type="number"
@@ -862,8 +793,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                             {field.rangeUnit}
                           </span>
                           <span>
-                            Range: {field.rangeMin ?? 0} -{' '}
-                            {field.rangeMax ?? 100}
+                            Range: {field.rangeMin ?? 0} - {field.rangeMax ?? 100}
                             {field.rangeUnit}
                           </span>
                           <span>
@@ -874,9 +804,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                         <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
                           Step:{' '}
                           {field.rangeDecimals && field.rangeDecimals > 0
-                            ? Math.pow(10, -field.rangeDecimals).toFixed(
-                                field.rangeDecimals,
-                              )
+                            ? Math.pow(10, -field.rangeDecimals).toFixed(field.rangeDecimals)
                             : '1'}
                         </div>
                       </div>
@@ -927,22 +855,14 @@ function CustomFieldTemplateFormModal(props: Props) {
                                 placeholder="Value"
                                 maxLength={50}
                                 className={
-                                  errors[
-                                    `field-${fieldIndex}-option-${optionIndex}-value`
-                                  ]
+                                  errors[`field-${fieldIndex}-option-${optionIndex}-value`]
                                     ? 'border-red-300 dark:border-red-600'
                                     : ''
                                 }
                               />
-                              {errors[
-                                `field-${fieldIndex}-option-${optionIndex}-value`
-                              ] && (
+                              {errors[`field-${fieldIndex}-option-${optionIndex}-value`] && (
                                 <p className="text-red-500 text-xs mt-1">
-                                  {
-                                    errors[
-                                      `field-${fieldIndex}-option-${optionIndex}-value`
-                                    ]
-                                  }
+                                  {errors[`field-${fieldIndex}-option-${optionIndex}-value`]}
                                 </p>
                               )}
                             </div>
@@ -963,22 +883,14 @@ function CustomFieldTemplateFormModal(props: Props) {
                                 placeholder="Label"
                                 maxLength={100}
                                 className={
-                                  errors[
-                                    `field-${fieldIndex}-option-${optionIndex}-label`
-                                  ]
+                                  errors[`field-${fieldIndex}-option-${optionIndex}-label`]
                                     ? 'border-red-300 dark:border-red-600'
                                     : ''
                                 }
                               />
-                              {errors[
-                                `field-${fieldIndex}-option-${optionIndex}-label`
-                              ] && (
+                              {errors[`field-${fieldIndex}-option-${optionIndex}-label`] && (
                                 <p className="text-red-500 text-xs mt-1">
-                                  {
-                                    errors[
-                                      `field-${fieldIndex}-option-${optionIndex}-label`
-                                    ]
-                                  }
+                                  {errors[`field-${fieldIndex}-option-${optionIndex}-label`]}
                                 </p>
                               )}
                             </div>
@@ -986,9 +898,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                               type="button"
                               variant="destructive"
                               size="sm"
-                              onClick={() =>
-                                removeOptionFromField(fieldIndex, optionIndex)
-                              }
+                              onClick={() => removeOptionFromField(fieldIndex, optionIndex)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -1003,18 +913,10 @@ function CustomFieldTemplateFormModal(props: Props) {
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={props.onClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={props.onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || customFieldTemplateQuery.isPending}
-            >
+            <Button type="submit" disabled={isSubmitting || customFieldTemplateQuery.isPending}>
               {isSubmitting
                 ? 'Saving...'
                 : props.templateIdToEdit

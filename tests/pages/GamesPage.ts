@@ -14,9 +14,7 @@ export class GamesPage extends BasePage {
 
   // Games page doesn't have filters heading, it has individual game headings
   get gameHeadings() {
-    return this.page
-      .locator('h2')
-      .filter({ hasNotText: /emuready|about|community/i })
+    return this.page.locator('h2').filter({ hasNotText: /emuready|about|community/i })
   }
 
   get searchInput() {
@@ -125,11 +123,7 @@ export class GamesPage extends BasePage {
   async isOnGamesPage(): Promise<boolean> {
     try {
       const url = this.page.url()
-      return (
-        url.includes('/games') &&
-        !url.includes('/games/new') &&
-        !url.includes('/games/')
-      )
+      return url.includes('/games') && !url.includes('/games/new') && !url.includes('/games/')
     } catch {
       return false
     }

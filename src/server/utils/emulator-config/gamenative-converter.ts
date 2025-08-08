@@ -91,10 +91,7 @@ const FIELD_MAPPINGS: Record<
   dx_wrapper: {
     key: 'dxwrapper',
     transform: (value): DxWrapper => {
-      return (
-        DX_WRAPPER_MAPPING[String(value)] ??
-        GameNativeDefaults.getDefaultDxWrapper()
-      )
+      return DX_WRAPPER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultDxWrapper()
     },
   },
 
@@ -109,10 +106,7 @@ const FIELD_MAPPINGS: Record<
   audio_driver: {
     key: 'audioDriver',
     transform: (value): AudioDriver => {
-      return (
-        AUDIO_DRIVER_MAPPING[String(value)] ??
-        GameNativeDefaults.getDefaultAudioDriver()
-      )
+      return AUDIO_DRIVER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultAudioDriver()
     },
   },
 
@@ -128,8 +122,7 @@ const FIELD_MAPPINGS: Record<
     key: 'startupSelection',
     transform: (value): StartupSelection => {
       return (
-        STARTUP_SELECTION_MAPPING[String(value)] ??
-        GameNativeDefaults.getDefaultStartupSelection()
+        STARTUP_SELECTION_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultStartupSelection()
       )
     },
   },
@@ -164,10 +157,7 @@ const FIELD_MAPPINGS: Record<
   box64_preset: {
     key: 'box64Preset',
     transform: (value): Box86_64Preset => {
-      return (
-        BOX64_PRESET_MAPPING[String(value)] ??
-        GameNativeDefaults.getDefaultBoxPreset()
-      )
+      return BOX64_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset()
     },
   },
 
@@ -175,10 +165,7 @@ const FIELD_MAPPINGS: Record<
   box86_preset: {
     key: 'box86Preset',
     transform: (value): Box86_64Preset => {
-      return (
-        BOX86_PRESET_MAPPING[String(value)] ??
-        GameNativeDefaults.getDefaultBoxPreset()
-      )
+      return BOX86_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset()
     },
   },
 
@@ -196,9 +183,7 @@ const FIELD_MAPPINGS: Record<
   video_memory_size: {
     key: 'videoMemorySize',
     transform: (value) => {
-      const sizeStr = String(
-        value || GameNativeDefaults.getDefaultVideoMemorySize(),
-      )
+      const sizeStr = String(value || GameNativeDefaults.getDefaultVideoMemorySize())
       // Validate against known sizes using centralized validation
       return GameNativeDefaults.isValidVideoMemorySize(sizeStr)
         ? sizeStr
@@ -210,15 +195,13 @@ const FIELD_MAPPINGS: Record<
   // CPU Core Affinity
   cpu_list: {
     key: 'cpuList',
-    transform: (value) =>
-      String(value || GameNativeDefaults.getDefaultCpuList()),
+    transform: (value) => String(value || GameNativeDefaults.getDefaultCpuList()),
     defaultIfEmpty: GameNativeDefaults.getDefaultCpuList(),
   },
 
   cpu_list_wow64: {
     key: 'cpuListWoW64',
-    transform: (value) =>
-      String(value || GameNativeDefaults.getDefaultCpuList()),
+    transform: (value) => String(value || GameNativeDefaults.getDefaultCpuList()),
     defaultIfEmpty: GameNativeDefaults.getDefaultCpuList(),
   },
 
@@ -309,9 +292,7 @@ const FIELD_MAPPINGS: Record<
   mouse_warp_override: {
     key: 'mouseWarpOverride',
     transform: (value) => {
-      const mode = String(
-        value || GameNativeDefaults.getDefaultMouseWarpOverride(),
-      ).toLowerCase()
+      const mode = String(value || GameNativeDefaults.getDefaultMouseWarpOverride()).toLowerCase()
       return GameNativeDefaults.isValidMouseWarpOverride(mode)
         ? mode
         : GameNativeDefaults.getDefaultMouseWarpOverride()
@@ -321,8 +302,7 @@ const FIELD_MAPPINGS: Record<
 
   shader_backend: {
     key: 'shaderBackend',
-    transform: (value) =>
-      String(value || GameNativeDefaults.getDefaultShaderBackend()),
+    transform: (value) => String(value || GameNativeDefaults.getDefaultShaderBackend()),
     defaultIfEmpty: GameNativeDefaults.getDefaultShaderBackend(),
   },
 
@@ -330,9 +310,7 @@ const FIELD_MAPPINGS: Record<
     key: 'useGLSL',
     transform: (value) => {
       const val = String(value || GameNativeDefaults.getDefaultUseGlsl())
-      return GameNativeDefaults.isValidUseGlsl(val)
-        ? val
-        : GameNativeDefaults.getDefaultUseGlsl()
+      return GameNativeDefaults.isValidUseGlsl(val) ? val : GameNativeDefaults.getDefaultUseGlsl()
     },
     defaultIfEmpty: GameNativeDefaults.getDefaultUseGlsl(),
   },
@@ -356,9 +334,7 @@ function getDefaultConfig(): GameNativeConfig {
 /**
  * Convert listing data to GameNative configuration
  */
-export function convertToGameNativeConfig(
-  input: GameNativeConfigInput,
-): GameNativeConfig {
+export function convertToGameNativeConfig(input: GameNativeConfigInput): GameNativeConfig {
   const config = getDefaultConfig()
 
   // Process each custom field value
@@ -370,23 +346,16 @@ export function convertToGameNativeConfig(
       const value = fieldValue.value
 
       // Skip if empty and no defaultIfEmpty is specified
-      if (
-        (value === '' || value === null || value === undefined) &&
-        !mapping.defaultIfEmpty
-      ) {
+      if ((value === '' || value === null || value === undefined) && !mapping.defaultIfEmpty) {
         continue
       }
 
       // Use defaultIfEmpty if value is empty
       const actualValue =
-        value === '' || value === null || value === undefined
-          ? mapping.defaultIfEmpty
-          : value
+        value === '' || value === null || value === undefined ? mapping.defaultIfEmpty : value
 
       // Transform and assign value
-      const transformedValue = mapping.transform
-        ? mapping.transform(actualValue)
-        : actualValue
+      const transformedValue = mapping.transform ? mapping.transform(actualValue) : actualValue
 
       // Skip Windows Components fields - they're handled specially below
       if (mapping.key === 'wincomponents') {
@@ -422,8 +391,7 @@ export function convertToGameNativeConfig(
   // Override with user values if present
   for (const fieldValue of input.customFieldValues) {
     const fieldName = fieldValue.customFieldDefinition.name
-    const componentName =
-      winComponentFields[fieldName as keyof typeof winComponentFields]
+    const componentName = winComponentFields[fieldName as keyof typeof winComponentFields]
 
     if (componentName) {
       winComponentsMap.set(componentName, Boolean(fieldValue.value))

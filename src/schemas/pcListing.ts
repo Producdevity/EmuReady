@@ -100,15 +100,11 @@ export const RejectPcListingSchema = z.object({
 })
 
 export const BulkApprovePcListingsSchema = z.object({
-  pcListingIds: z
-    .array(z.string().uuid())
-    .min(1, 'At least one PC listing must be selected'),
+  pcListingIds: z.array(z.string().uuid()).min(1, 'At least one PC listing must be selected'),
 })
 
 export const BulkRejectPcListingsSchema = z.object({
-  pcListingIds: z
-    .array(z.string().uuid())
-    .min(1, 'At least one PC listing must be selected'),
+  pcListingIds: z.array(z.string().uuid()).min(1, 'At least one PC listing must be selected'),
   notes: z.string().optional(),
 })
 
@@ -125,12 +121,7 @@ export const UnverifyPcListingAdminSchema = z.object({
 // Admin schemas for PC listing management
 export const GetAllPcListingsAdminSchema = z.object({
   page: z.number().int().positive().default(1),
-  limit: z
-    .number()
-    .int()
-    .positive()
-    .max(PAGINATION.MAX_LIMIT)
-    .default(PAGINATION.DEFAULT_LIMIT),
+  limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   sortField: z
     .enum([
       'game.title',
@@ -240,11 +231,7 @@ export const GetPcListingUserVoteSchema = z.object({
 export const GetPcListingCommentsSchema = z.object({
   pcListingId: z.string().uuid(),
   sortBy: z.enum(['newest', 'oldest', 'score']).default('newest'),
-  limit: z
-    .number()
-    .min(1)
-    .max(PAGINATION.MAX_LIMIT)
-    .default(PAGINATION.LARGE_BATCH_SIZE),
+  limit: z.number().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.LARGE_BATCH_SIZE),
   offset: z.number().min(0).default(0),
 })
 
@@ -289,9 +276,7 @@ export const UpdatePcListingReportSchema = z.object({
 })
 
 export const GetPcListingReportsSchema = z.object({
-  status: z
-    .enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'])
-    .optional(),
+  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']).optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
 })
@@ -324,13 +309,7 @@ export type CreatePcListingInput = z.infer<typeof CreatePcListingSchema>
 export type GetPcListingsInput = z.infer<typeof GetPcListingsSchema>
 export type UpdatePcListingInput = z.infer<typeof UpdatePcListingUserSchema>
 export type VotePcListingInput = z.infer<typeof VotePcListingSchema>
-export type CreatePcListingCommentInput = z.infer<
-  typeof CreatePcListingCommentSchema
->
-export type UpdatePcListingCommentInput = z.infer<
-  typeof UpdatePcListingCommentSchema
->
-export type CreatePcListingReportInput = z.infer<
-  typeof CreatePcListingReportSchema
->
+export type CreatePcListingCommentInput = z.infer<typeof CreatePcListingCommentSchema>
+export type UpdatePcListingCommentInput = z.infer<typeof UpdatePcListingCommentSchema>
+export type CreatePcListingReportInput = z.infer<typeof CreatePcListingReportSchema>
 export type VerifyPcListingInput = z.infer<typeof VerifyPcListingSchema>

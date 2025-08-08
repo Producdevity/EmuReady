@@ -70,8 +70,7 @@ export async function getFromCache<T>(
   options: CacheOptions = {},
 ): Promise<T | null> {
   const ttl = options.ttl ?? DEFAULT_TTL
-  const staleWhileRevalidate =
-    options.staleWhileRevalidate ?? DEFAULT_STALE_WHILE_REVALIDATE
+  const staleWhileRevalidate = options.staleWhileRevalidate ?? DEFAULT_STALE_WHILE_REVALIDATE
 
   try {
     const cached = cache.get(key)
@@ -140,12 +139,7 @@ export async function getFromCache<T>(
 /**
  * Set item in cache
  */
-function setCacheItem<T>(
-  key: string,
-  data: T,
-  ttl: number,
-  staleWhileRevalidate: number,
-): void {
+function setCacheItem<T>(key: string, data: T, ttl: number, staleWhileRevalidate: number): void {
   cache.set(key, {
     data,
     timestamp: Date.now(),
@@ -186,10 +180,7 @@ async function revalidateInBackground<T>(
           setCacheItem(key, data, ttl, staleWhileRevalidate)
         }
       } catch (error) {
-        console.error(
-          `[SEO Cache] Background revalidation failed for ${key}:`,
-          error,
-        )
+        console.error(`[SEO Cache] Background revalidation failed for ${key}:`, error)
       } finally {
         inFlightRequests.delete(key)
       }
@@ -207,9 +198,7 @@ export function invalidateCache(pattern: string | RegExp): number {
   let invalidated = 0
 
   for (const key of cache.keys()) {
-    if (
-      typeof pattern === 'string' ? key.includes(pattern) : pattern.test(key)
-    ) {
+    if (typeof pattern === 'string' ? key.includes(pattern) : pattern.test(key)) {
       cache.delete(key)
       invalidated++
     }
@@ -240,8 +229,6 @@ export async function warmCache<T>(
   const batchSize = 10
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize)
-    await Promise.all(
-      batch.map(({ key, fetchFn }) => getFromCache(key, fetchFn, options)),
-    )
+    await Promise.all(batch.map(({ key, fetchFn }) => getFromCache(key, fetchFn, options)))
   }
 }

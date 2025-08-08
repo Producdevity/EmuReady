@@ -5888,6 +5888,187 @@
         "security": []
       }
     },
+    "/api/mobile/trpc/listings.getListings": {
+      "get": {
+        "summary": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
+        "description": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching GetListingsSchema schema. See components/schemas/GetListingsSchema for structure.",
+            "example": "{\"json\":{}}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from listings.getListings"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "listingss": [
+                            {
+                              "id": "uuid-listing",
+                              "gameId": "uuid-game",
+                              "deviceId": "uuid-device",
+                              "emulatorId": "uuid-emulator",
+                              "performanceId": 1,
+                              "notes": "Runs perfectly at 60fps",
+                              "status": "APPROVED",
+                              "game": {
+                                "id": "uuid-game",
+                                "title": "Super Mario Bros"
+                              },
+                              "device": {
+                                "id": "uuid-device",
+                                "modelName": "Steam Deck",
+                                "brand": {
+                                  "name": "Valve"
+                                }
+                              },
+                              "emulator": {
+                                "id": "uuid-emulator",
+                                "name": "RetroArch"
+                              },
+                              "performance": {
+                                "id": 1,
+                                "label": "Perfect",
+                                "rank": 1
+                              },
+                              "author": {
+                                "id": "uuid-user",
+                                "name": "GameTester"
+                              },
+                              "_count": {
+                                "votes": 12,
+                                "comments": 3
+                              }
+                            }
+                          ],
+                          "pagination": {
+                            "total": 156,
+                            "pages": 8,
+                            "currentPage": 1,
+                            "limit": 20,
+                            "hasNextPage": true,
+                            "hasPreviousPage": false
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "listings.getListings",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/api/mobile/trpc/listings.featured": {
       "get": {
         "summary": "Get featured listings",

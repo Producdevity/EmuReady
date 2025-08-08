@@ -22,8 +22,7 @@ export function TRPCProvider(props: PropsWithChildren) {
             refetchOnWindowFocus: false, // Don't refetch on window focus
             refetchOnReconnect: true, // Refetch when reconnecting
             retry: 3, // Retry failed queries 3 times
-            retryDelay: (attemptIndex) =>
-              Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
           },
           mutations: {
             retry: 1, // Retry failed mutations once
@@ -48,9 +47,7 @@ export function TRPCProvider(props: PropsWithChildren) {
 
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {props.children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{props.children}</QueryClientProvider>
     </api.Provider>
   )
 }

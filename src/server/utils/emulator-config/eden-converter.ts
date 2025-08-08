@@ -77,20 +77,14 @@ const FIELD_MAPPINGS: Record<
     section: 'Cpu',
     key: 'cpu_backend',
     transform: (value): CpuBackend => {
-      return (
-        CPU_BACKEND_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultCpuBackend()
-      )
+      return CPU_BACKEND_MAPPING[String(value)] ?? EdenDefaults.getDefaultCpuBackend()
     },
   },
   cpu_accuracy: {
     section: 'Cpu',
     key: 'cpu_accuracy',
     transform: (value): CpuAccuracy => {
-      return (
-        CPU_ACCURACY_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultCpuAccuracy()
-      )
+      return CPU_ACCURACY_MAPPING[String(value)] ?? EdenDefaults.getDefaultCpuAccuracy()
     },
   },
   fast_cpu_time: {
@@ -111,10 +105,7 @@ const FIELD_MAPPINGS: Record<
     section: 'Renderer',
     key: 'backend',
     transform: (value): GpuBackend => {
-      return (
-        GPU_BACKEND_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultGpuBackend()
-      )
+      return GPU_BACKEND_MAPPING[String(value)] ?? EdenDefaults.getDefaultGpuBackend()
     },
   },
   disk_shader_cache: {
@@ -136,59 +127,42 @@ const FIELD_MAPPINGS: Record<
     section: 'Renderer',
     key: 'anti_aliasing',
     transform: (value): AntiAliasing => {
-      return (
-        ANTI_ALIASING_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultAntiAliasing()
-      )
+      return ANTI_ALIASING_MAPPING[String(value)] ?? EdenDefaults.getDefaultAntiAliasing()
     },
   },
   anisotropic_filtering: {
     section: 'Renderer',
     key: 'max_anisotropy',
     transform: (value): MaxAnisotropy => {
-      return (
-        MAX_ANISOTROPY_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultMaxAnisotropy()
-      )
+      return MAX_ANISOTROPY_MAPPING[String(value)] ?? EdenDefaults.getDefaultMaxAnisotropy()
     },
   },
   vsync_mode: {
     section: 'Renderer',
     key: 'use_vsync',
     transform: (value): VSyncMode => {
-      return (
-        VSYNC_MODE_MAPPING[String(value)] ?? EdenDefaults.getDefaultVsyncMode()
-      )
+      return VSYNC_MODE_MAPPING[String(value)] ?? EdenDefaults.getDefaultVsyncMode()
     },
   },
   astc_recompression_method: {
     section: 'Renderer',
     key: 'astc_recompression',
     transform: (value): AstcRecompression => {
-      return (
-        ASTC_RECOMPRESSION_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultAstcRecompression()
-      )
+      return ASTC_RECOMPRESSION_MAPPING[String(value)] ?? EdenDefaults.getDefaultAstcRecompression()
     },
   },
   nvdec_emulation: {
     section: 'Renderer',
     key: 'nvdec_emulation',
     transform: (value): NvdecEmulation => {
-      return (
-        NVDEC_EMULATION_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultNvdecEmulation()
-      )
+      return NVDEC_EMULATION_MAPPING[String(value)] ?? EdenDefaults.getDefaultNvdecEmulation()
     },
   },
   vram_usage_mode: {
     section: 'Renderer',
     key: 'vram_usage_mode',
     transform: (value): VramUsageMode => {
-      return (
-        VRAM_USAGE_MODE_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultVramUsageMode()
-      )
+      return VRAM_USAGE_MODE_MAPPING[String(value)] ?? EdenDefaults.getDefaultVramUsageMode()
     },
   },
   use_fast_gpu_time: {
@@ -201,10 +175,7 @@ const FIELD_MAPPINGS: Record<
     key: 'dyna_state',
     transform: (value): DynamicState => {
       // Only use mapping - raw numbers should fall back to default
-      return (
-        DYNAMIC_STATE_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultDynamicState()
-      )
+      return DYNAMIC_STATE_MAPPING[String(value)] ?? EdenDefaults.getDefaultDynamicState()
     },
   },
   provoking_vertex: {
@@ -221,10 +192,7 @@ const FIELD_MAPPINGS: Record<
     section: 'Renderer',
     key: 'gpu_accuracy',
     transform: (value): GpuAccuracy => {
-      return (
-        GPU_ACCURACY_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultGpuAccuracy()
-      )
+      return GPU_ACCURACY_MAPPING[String(value)] ?? EdenDefaults.getDefaultGpuAccuracy()
     },
   },
   rosolution: {
@@ -263,10 +231,7 @@ const FIELD_MAPPINGS: Record<
     section: 'Renderer',
     key: 'scaling_filter',
     transform: (value): ScalingFilter => {
-      return (
-        SCALING_FILTER_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultScalingFilter()
-      )
+      return SCALING_FILTER_MAPPING[String(value)] ?? EdenDefaults.getDefaultScalingFilter()
     },
   },
   optimize_spirv_output: {
@@ -274,8 +239,7 @@ const FIELD_MAPPINGS: Record<
     key: 'optimize_spirv_output',
     transform: (value): OptimizeSpirvOutput => {
       return (
-        OPTIMIZE_SPIRV_OUTPUT_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultOptimizeSpirvOutput()
+        OPTIMIZE_SPIRV_OUTPUT_MAPPING[String(value)] ?? EdenDefaults.getDefaultOptimizeSpirvOutput()
       )
     },
   },
@@ -286,8 +250,7 @@ const FIELD_MAPPINGS: Record<
     key: 'output_engine',
     transform: (value): AudioOutputEngine => {
       return (
-        AUDIO_OUTPUT_ENGINE_MAPPING[String(value)] ??
-        EdenDefaults.getDefaultAudioOutputEngine()
+        AUDIO_OUTPUT_ENGINE_MAPPING[String(value)] ?? EdenDefaults.getDefaultAudioOutputEngine()
       )
     },
   },
@@ -331,10 +294,7 @@ const FIELD_MAPPINGS: Record<
       }
 
       // Format 3: Already a full path (check if it looks like a valid path)
-      if (
-        driverString.startsWith('/') &&
-        driverString.includes('gpu_drivers')
-      ) {
+      if (driverString.startsWith('/') && driverString.includes('gpu_drivers')) {
         return driverString // Already formatted correctly
       }
 
@@ -412,8 +372,7 @@ export function convertToEdenConfig(input: EdenConfigInput): EdenConfig {
       config.Cpu.use_fast_cpu_time.use_global = false
     }
     if (config.Cpu.fast_cpu_time) {
-      config.Cpu.fast_cpu_time.default =
-        false as unknown as typeof config.Cpu.fast_cpu_time.default
+      config.Cpu.fast_cpu_time.default = false as unknown as typeof config.Cpu.fast_cpu_time.default
       config.Cpu.fast_cpu_time.value = numValue
       config.Cpu.fast_cpu_time.use_global = false
     }
@@ -466,16 +425,11 @@ export function serializeEdenConfig(config: EdenConfig): string {
     for (const [key, setting] of Object.entries(section)) {
       if (setting === null || setting === undefined) continue
 
-      const configValue = setting as
-        | BooleanConfigValue
-        | IntConfigValue
-        | StringConfigValue
+      const configValue = setting as BooleanConfigValue | IntConfigValue | StringConfigValue
 
       // Always write use_global first if it exists
       if (configValue.use_global !== undefined) {
-        lines.push(
-          `${key}\\use_global=${configValue.use_global ? 'true' : 'false'}`,
-        )
+        lines.push(`${key}\\use_global=${configValue.use_global ? 'true' : 'false'}`)
       }
 
       // Then write default if it exists

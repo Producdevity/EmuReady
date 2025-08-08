@@ -134,8 +134,7 @@ export function ListingFilters(props: Props) {
     // Track analytics - use existing methods
     if (props.systemIds.length > 0) analytics.filter.system(props.systemIds)
     if (props.deviceIds.length > 0) analytics.filter.device(props.deviceIds)
-    if (props.emulatorIds.length > 0)
-      analytics.filter.emulator(props.emulatorIds)
+    if (props.emulatorIds.length > 0) analytics.filter.emulator(props.emulatorIds)
     if (props.socIds.length > 0) analytics.filter.soc(props.socIds)
     if (props.performanceIds.length > 0)
       analytics.filter.performance(props.performanceIds.map(Number))
@@ -264,21 +263,9 @@ export function ListingFilters(props: Props) {
                   return (
                     <motion.div
                       key={section.id}
-                      initial={
-                        section.isAdvanced
-                          ? { opacity: 0, height: 0 }
-                          : undefined
-                      }
-                      animate={
-                        section.isAdvanced
-                          ? { opacity: 1, height: 'auto' }
-                          : undefined
-                      }
-                      exit={
-                        section.isAdvanced
-                          ? { opacity: 0, height: 0 }
-                          : undefined
-                      }
+                      initial={section.isAdvanced ? { opacity: 0, height: 0 } : undefined}
+                      animate={section.isAdvanced ? { opacity: 1, height: 'auto' } : undefined}
+                      exit={section.isAdvanced ? { opacity: 0, height: 0 } : undefined}
                       className="space-y-3"
                     >
                       <button
@@ -290,30 +277,26 @@ export function ListingFilters(props: Props) {
                           <span className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {section.title}
                           </span>
-                          {section.id === 'systems' &&
-                            props.systemIds.length > 0 && (
-                              <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
-                                {props.systemIds.length}
-                              </Badge>
-                            )}
-                          {section.id === 'performance' &&
-                            props.performanceIds.length > 0 && (
-                              <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
-                                {props.performanceIds.length}
-                              </Badge>
-                            )}
-                          {section.id === 'devices' &&
-                            props.deviceIds.length > 0 && (
-                              <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
-                                {props.deviceIds.length}
-                              </Badge>
-                            )}
-                          {section.id === 'emulators' &&
-                            props.emulatorIds.length > 0 && (
-                              <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
-                                {props.emulatorIds.length}
-                              </Badge>
-                            )}
+                          {section.id === 'systems' && props.systemIds.length > 0 && (
+                            <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
+                              {props.systemIds.length}
+                            </Badge>
+                          )}
+                          {section.id === 'performance' && props.performanceIds.length > 0 && (
+                            <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
+                              {props.performanceIds.length}
+                            </Badge>
+                          )}
+                          {section.id === 'devices' && props.deviceIds.length > 0 && (
+                            <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
+                              {props.deviceIds.length}
+                            </Badge>
+                          )}
+                          {section.id === 'emulators' && props.emulatorIds.length > 0 && (
+                            <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
+                              {props.emulatorIds.length}
+                            </Badge>
+                          )}
                           {section.id === 'socs' && props.socIds.length > 0 && (
                             <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
                               {props.socIds.length}
@@ -336,18 +319,17 @@ export function ListingFilters(props: Props) {
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            {section.id === 'systems' &&
-                              props.systemOptions && (
-                                <MultiSelect
-                                  label="Systems"
-                                  value={props.systemIds}
-                                  onChange={props.handleSystemChange}
-                                  placeholder="Select game systems..."
-                                  options={props.systemOptions}
-                                  maxDisplayed={3}
-                                  className="mobile-optimized"
-                                />
-                              )}
+                            {section.id === 'systems' && props.systemOptions && (
+                              <MultiSelect
+                                label="Systems"
+                                value={props.systemIds}
+                                onChange={props.handleSystemChange}
+                                placeholder="Select game systems..."
+                                options={props.systemOptions}
+                                maxDisplayed={3}
+                                className="mobile-optimized"
+                              />
+                            )}
 
                             {section.id === 'performance' && (
                               <MultiSelect
@@ -355,42 +337,38 @@ export function ListingFilters(props: Props) {
                                 value={props.performanceIds}
                                 onChange={props.handlePerformanceChange}
                                 placeholder="Select performance levels..."
-                                options={(props.performanceScales || []).map(
-                                  (scale) => ({
-                                    id: scale.id.toString(),
-                                    name: `${scale.label}${scale.description ? ` - ${scale.description}` : ''}`,
-                                  }),
-                                )}
+                                options={(props.performanceScales || []).map((scale) => ({
+                                  id: scale.id.toString(),
+                                  name: `${scale.label}${scale.description ? ` - ${scale.description}` : ''}`,
+                                }))}
                                 maxDisplayed={3}
                                 className="mobile-optimized"
                               />
                             )}
 
-                            {section.id === 'devices' &&
-                              props.deviceOptions && (
-                                <MultiSelect
-                                  label="Devices"
-                                  value={props.deviceIds}
-                                  onChange={props.handleDeviceChange}
-                                  placeholder="Select devices..."
-                                  options={props.deviceOptions}
-                                  maxDisplayed={3}
-                                  className="mobile-optimized"
-                                />
-                              )}
+                            {section.id === 'devices' && props.deviceOptions && (
+                              <MultiSelect
+                                label="Devices"
+                                value={props.deviceIds}
+                                onChange={props.handleDeviceChange}
+                                placeholder="Select devices..."
+                                options={props.deviceOptions}
+                                maxDisplayed={3}
+                                className="mobile-optimized"
+                              />
+                            )}
 
-                            {section.id === 'emulators' &&
-                              props.emulatorOptions && (
-                                <MultiSelect
-                                  label="Emulators"
-                                  value={props.emulatorIds}
-                                  onChange={props.handleEmulatorChange}
-                                  placeholder="Select emulators..."
-                                  options={props.emulatorOptions}
-                                  maxDisplayed={3}
-                                  className="mobile-optimized"
-                                />
-                              )}
+                            {section.id === 'emulators' && props.emulatorOptions && (
+                              <MultiSelect
+                                label="Emulators"
+                                value={props.emulatorIds}
+                                onChange={props.handleEmulatorChange}
+                                placeholder="Select emulators..."
+                                options={props.emulatorOptions}
+                                maxDisplayed={3}
+                                className="mobile-optimized"
+                              />
+                            )}
 
                             {section.id === 'socs' && props.socOptions && (
                               <MultiSelect

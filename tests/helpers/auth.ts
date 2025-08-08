@@ -26,13 +26,9 @@ export class AuthHelpers {
           const signUpButtons = buttons.filter((btn) =>
             btn.textContent?.toLowerCase().includes('sign up'),
           )
-          const userButton = document.querySelector(
-            '[data-testid="user-button"]',
-          )
+          const userButton = document.querySelector('[data-testid="user-button"]')
 
-          return (
-            signInButtons.length > 0 || signUpButtons.length > 0 || userButton
-          )
+          return signInButtons.length > 0 || signUpButtons.length > 0 || userButton
         },
         { timeout },
       )
@@ -40,9 +36,7 @@ export class AuthHelpers {
       // Check if it's a browser crash
       if (
         error instanceof Error &&
-        error.message.includes(
-          'Target page, context or browser has been closed',
-        )
+        error.message.includes('Target page, context or browser has been closed')
       ) {
         throw new Error('Browser crashed during auth component wait')
       }
@@ -62,9 +56,7 @@ export class AuthHelpers {
       } catch (basicError: unknown) {
         if (
           basicError instanceof Error &&
-          basicError.message.includes(
-            'Target page, context or browser has been closed',
-          )
+          basicError.message.includes('Target page, context or browser has been closed')
         ) {
           throw new Error('Browser crashed during basic auth check')
         }
@@ -208,10 +200,7 @@ export class AuthHelpers {
   /**
    * Wait for Clerk modal to appear
    */
-  async waitForClerkModal(
-    type: 'sign-in' | 'sign-up' = 'sign-in',
-    timeout = 10000,
-  ) {
+  async waitForClerkModal(type: 'sign-in' | 'sign-up' = 'sign-in', timeout = 10000) {
     const modalSelectors = [
       '.cl-modal',
       '.cl-modalContent',
@@ -269,9 +258,7 @@ export class AuthHelpers {
 
     for (const selector of clerkSignInButtons) {
       try {
-        const isVisible = await this.page
-          .locator(selector)
-          .isVisible({ timeout: 1000 })
+        const isVisible = await this.page.locator(selector).isVisible({ timeout: 1000 })
         if (isVisible) return true
       } catch {
         // Continue to next selector
@@ -280,9 +267,7 @@ export class AuthHelpers {
 
     // Check for main content area sign in button (indicates auth requirement)
     try {
-      const mainSignInButton = this.page
-        .locator('main')
-        .getByRole('button', { name: /sign in/i })
+      const mainSignInButton = this.page.locator('main').getByRole('button', { name: /sign in/i })
       const isVisible = await mainSignInButton.isVisible({ timeout: 2000 })
       if (isVisible) return true
     } catch {
@@ -292,9 +277,7 @@ export class AuthHelpers {
     // Check if the page shows a form (which indicates the page is accessible without auth)
     // If there's a form on the page, it means no authentication is required
     try {
-      const hasForm = await this.page
-        .locator('form')
-        .isVisible({ timeout: 1000 })
+      const hasForm = await this.page.locator('form').isVisible({ timeout: 1000 })
       if (hasForm) {
         // Page has a form, so it's accessible without auth
         return false
@@ -317,9 +300,7 @@ export class AuthHelpers {
 
     // Final check for any sign-in button on the page
     try {
-      return await this.page
-        .getByRole('button', { name: /sign in/i })
-        .isVisible({ timeout: 1000 })
+      return await this.page.getByRole('button', { name: /sign in/i }).isVisible({ timeout: 1000 })
     } catch {
       return false
     }

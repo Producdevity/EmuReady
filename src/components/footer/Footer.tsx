@@ -37,8 +37,8 @@ function Footer() {
                   EmuReady
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed max-w-md">
-                  Know before you load. The ultimate community-driven platform
-                  for emulation compatibility reports.
+                  Know before you load. The ultimate community-driven platform for emulation
+                  compatibility reports.
                 </p>
               </div>
 

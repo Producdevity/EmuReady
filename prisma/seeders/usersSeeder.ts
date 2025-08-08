@@ -100,9 +100,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
 
   console.info('🌱 Seeding users...')
   console.info('📝 Creating users in both Clerk and database for development.')
-  console.info(
-    `🔑 Default password for all seed users: ${DEFAULT_SEED_PASSWORD}`,
-  )
+  console.info(`🔑 Default password for all seed users: ${DEFAULT_SEED_PASSWORD}`)
 
   const clerk = await clerkClient()
 
@@ -143,9 +141,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
         },
       })
 
-      console.info(
-        `✅ Created user: ${userData.email} (clerkId: ${clerkUser.id})`,
-      )
+      console.info(`✅ Created user: ${userData.email} (clerkId: ${clerkUser.id})`)
     } catch (error: unknown) {
       const clerkError = error as {
         errors?: Array<{ code: string }>
@@ -184,10 +180,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
             console.info(`✅ Synced existing user: ${userData.email}`)
           }
         } catch (syncError) {
-          console.error(
-            `❌ Failed to sync existing user ${userData.email}:`,
-            syncError,
-          )
+          console.error(`❌ Failed to sync existing user ${userData.email}:`, syncError)
         }
       } else {
         console.error(`❌ Failed to create user ${userData.email}:`, error)
@@ -196,15 +189,9 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
   }
 
   console.info('✅ Users seeding completed')
-  console.info(
-    '📝 You can now log in with any of these accounts using the default password.',
-  )
-  console.warn(
-    '⚠️  Note: Make sure your webhooks are configured for production environments.',
-  )
-  console.info(
-    '   See DEVELOPMENT_SETUP.md for webhook configuration instructions.',
-  )
+  console.info('📝 You can now log in with any of these accounts using the default password.')
+  console.warn('⚠️  Note: Make sure your webhooks are configured for production environments.')
+  console.info('   See DEVELOPMENT_SETUP.md for webhook configuration instructions.')
 }
 
 export default usersSeeder

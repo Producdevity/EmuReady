@@ -74,9 +74,7 @@ export async function validateCustomFields(
     // Use Promise.all for parallel validation when we need async operations
     await Promise.all(
       customFieldValues.map(async (cfv) => {
-        const fieldDef = customFieldDefinitions.find(
-          (d) => d.id === cfv.customFieldDefinitionId,
-        )
+        const fieldDef = customFieldDefinitions.find((d) => d.id === cfv.customFieldDefinitionId)
 
         if (!fieldDef || fieldDef.emulatorId !== emulatorId) {
           return ResourceError.customField.invalidForEmulator(
@@ -98,11 +96,7 @@ export async function validateCustomFields(
 const TextFieldSchema = z.string().min(1, 'Field cannot be empty')
 const OptionalTextFieldSchema = z.string().optional()
 const UrlFieldSchema = z.string().url('Must be a valid URL')
-const OptionalUrlFieldSchema = z
-  .string()
-  .url('Must be a valid URL')
-  .optional()
-  .or(z.literal(''))
+const OptionalUrlFieldSchema = z.string().url('Must be a valid URL').optional().or(z.literal(''))
 const SelectFieldSchema = z.string().min(1, 'Must select a value')
 const RangeFieldSchema = z.number()
 const BooleanFieldSchema = z.boolean()
@@ -114,10 +108,7 @@ const SelectOptionSchema = z.object({
 })
 const SelectOptionsArraySchema = z.array(SelectOptionSchema)
 
-function validateFieldValue(
-  fieldDef: CustomFieldDefinition,
-  value: unknown,
-): void {
+function validateFieldValue(fieldDef: CustomFieldDefinition, value: unknown): void {
   switch (fieldDef.type) {
     case CustomFieldType.TEXT:
     case CustomFieldType.TEXTAREA:
@@ -154,16 +145,11 @@ function validateFieldValue(
       // Validate that the selected value is one of the valid options
       if (value && value !== '' && fieldDef.options) {
         // Validate the options array structure
-        const validatedOptions = validateData(
-          SelectOptionsArraySchema,
-          fieldDef.options,
-        )
+        const validatedOptions = validateData(SelectOptionsArraySchema, fieldDef.options)
         const validValues = validatedOptions.map((opt) => opt.value)
 
         if (validValues.length > 0) {
-          const SelectOptionsSchema = z.enum(
-            validValues as [string, ...string[]],
-          )
+          const SelectOptionsSchema = z.enum(validValues as [string, ...string[]])
           validateData(SelectOptionsSchema, value, {
             customMessage: `Invalid value for custom field '${fieldDef.label}'. Must be one of: ${validValues.join(', ')}`,
           })
@@ -173,9 +159,7 @@ function validateFieldValue(
 
     case CustomFieldType.RANGE:
       if (fieldDef.isRequired && (value === null || value === undefined)) {
-        return AppError.badRequest(
-          `Required custom field '${fieldDef.label}' must have a value`,
-        )
+        return AppError.badRequest(`Required custom field '${fieldDef.label}' must have a value`)
       }
 
       // Validate that the value is a number

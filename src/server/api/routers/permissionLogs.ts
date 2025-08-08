@@ -7,10 +7,7 @@ import {
   ExportPermissionLogsSchema,
 } from '@/schemas/permission'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
-import {
-  calculateOffset,
-  createPaginationResult,
-} from '@/server/utils/pagination'
+import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
 
@@ -80,87 +77,85 @@ export const permissionLogsRouter = createTRPCRouter({
   /**
    * Get permission log statistics
    */
-  getStats: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS).query(
-    async ({ ctx }) => {
-      const now = new Date()
-      const last24Hours = new Date(now.getTime() - ms.days(1))
-      const last7Days = new Date(now.getTime() - ms.days(7))
-      const last30Days = new Date(now.getTime() - ms.days(30))
+  getStats: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS).query(async ({ ctx }) => {
+    const now = new Date()
+    const last24Hours = new Date(now.getTime() - ms.days(1))
+    const last7Days = new Date(now.getTime() - ms.days(7))
+    const last30Days = new Date(now.getTime() - ms.days(30))
 
-      const [
+    const [
+      totalLogs,
+      logsLast24h,
+      logsLast7d,
+      logsLast30d,
+      actionBreakdown,
+      roleBreakdown,
+      recentActivity,
+    ] = await Promise.all([
+      // Total logs
+      ctx.prisma.permissionActionLog.count(),
+
+      // Logs in last 24 hours
+      ctx.prisma.permissionActionLog.count({
+        where: { createdAt: { gte: last24Hours } },
+      }),
+
+      // Logs in last 7 days
+      ctx.prisma.permissionActionLog.count({
+        where: { createdAt: { gte: last7Days } },
+      }),
+
+      // Logs in last 30 days
+      ctx.prisma.permissionActionLog.count({
+        where: { createdAt: { gte: last30Days } },
+      }),
+
+      // Action breakdown
+      ctx.prisma.permissionActionLog.groupBy({
+        by: ['action'],
+        _count: { id: true },
+        where: { createdAt: { gte: last30Days } },
+      }),
+
+      // Role breakdown (for role-related actions)
+      ctx.prisma.permissionActionLog.groupBy({
+        by: ['targetRole'],
+        _count: { id: true },
+        where: { targetRole: { not: null }, createdAt: { gte: last30Days } },
+      }),
+
+      // Recent activity (last 10 logs)
+      ctx.prisma.permissionActionLog.findMany({
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          permission: { select: { key: true, label: true } },
+        },
+      }),
+    ])
+
+    return {
+      summary: {
         totalLogs,
         logsLast24h,
         logsLast7d,
         logsLast30d,
-        actionBreakdown,
-        roleBreakdown,
-        recentActivity,
-      ] = await Promise.all([
-        // Total logs
-        ctx.prisma.permissionActionLog.count(),
-
-        // Logs in last 24 hours
-        ctx.prisma.permissionActionLog.count({
-          where: { createdAt: { gte: last24Hours } },
-        }),
-
-        // Logs in last 7 days
-        ctx.prisma.permissionActionLog.count({
-          where: { createdAt: { gte: last7Days } },
-        }),
-
-        // Logs in last 30 days
-        ctx.prisma.permissionActionLog.count({
-          where: { createdAt: { gte: last30Days } },
-        }),
-
-        // Action breakdown
-        ctx.prisma.permissionActionLog.groupBy({
-          by: ['action'],
-          _count: { id: true },
-          where: { createdAt: { gte: last30Days } },
-        }),
-
-        // Role breakdown (for role-related actions)
-        ctx.prisma.permissionActionLog.groupBy({
-          by: ['targetRole'],
-          _count: { id: true },
-          where: { targetRole: { not: null }, createdAt: { gte: last30Days } },
-        }),
-
-        // Recent activity (last 10 logs)
-        ctx.prisma.permissionActionLog.findMany({
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            user: { select: { id: true, name: true, email: true } },
-            permission: { select: { key: true, label: true } },
-          },
-        }),
-      ])
-
-      return {
-        summary: {
-          totalLogs,
-          logsLast24h,
-          logsLast7d,
-          logsLast30d,
-          changeRate24h: logsLast24h,
-          changeRate7d: logsLast7d - logsLast24h,
-          changeRate30d: logsLast30d - logsLast7d,
-        },
-        actionBreakdown: actionBreakdown.map((item) => ({
-          action: item.action,
-          count: item._count.id,
-        })),
-        roleBreakdown: roleBreakdown.map((item) => ({
-          role: item.targetRole,
-          count: item._count.id,
-        })),
-        recentActivity,
-      }
-    },
-  ),
+        changeRate24h: logsLast24h,
+        changeRate7d: logsLast7d - logsLast24h,
+        changeRate30d: logsLast30d - logsLast7d,
+      },
+      actionBreakdown: actionBreakdown.map((item) => ({
+        action: item.action,
+        count: item._count.id,
+      })),
+      roleBreakdown: roleBreakdown.map((item) => ({
+        role: item.targetRole,
+        count: item._count.id,
+      })),
+      recentActivity,
+    }
+  }),
 
   /**
    * Get log details by ID

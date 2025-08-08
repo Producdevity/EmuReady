@@ -161,9 +161,7 @@ export function SearchBar(props: Props) {
                   transition={{ delay: index * 0.03 }}
                 >
                   <Search className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {term}
-                  </span>
+                  <span className="text-gray-700 dark:text-gray-300">{term}</span>
                 </motion.button>
               ))}
             </div>

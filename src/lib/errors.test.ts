@@ -13,9 +13,7 @@ describe('Error Handling System', () => {
       })
 
       it('should throw unauthorized error with custom message', () => {
-        expect(() => AppError.unauthorized('Custom message')).toThrow(
-          'Custom message',
-        )
+        expect(() => AppError.unauthorized('Custom message')).toThrow('Custom message')
       })
 
       it('should throw forbidden error with default message', () => {
@@ -37,15 +35,13 @@ describe('Error Handling System', () => {
       })
 
       it('should throw not found error with default message', () => {
-        expect(() => AppError.notFound()).toThrow(
-          'The requested resource was not found',
-        )
+        expect(() => AppError.notFound()).toThrow('The requested resource was not found')
       })
 
       it('should throw already exists error with resource and identifier', () => {
-        expect(() =>
-          AppError.alreadyExists('User', 'email "test@example.com"'),
-        ).toThrow('User with email "test@example.com" already exists')
+        expect(() => AppError.alreadyExists('User', 'email "test@example.com"')).toThrow(
+          'User with email "test@example.com" already exists',
+        )
       })
 
       it('should throw conflict error with custom message', () => {
@@ -57,21 +53,15 @@ describe('Error Handling System', () => {
 
     describe('Validation Errors', () => {
       it('should throw bad request error with default message', () => {
-        expect(() => AppError.badRequest()).toThrow(
-          'The provided input is invalid',
-        )
+        expect(() => AppError.badRequest()).toThrow('The provided input is invalid')
       })
 
       it('should throw invalid input error with field name', () => {
-        expect(() => AppError.invalidInput('email')).toThrow(
-          'Invalid input for field: email',
-        )
+        expect(() => AppError.invalidInput('email')).toThrow('Invalid input for field: email')
       })
 
       it('should throw missing required field error', () => {
-        expect(() => AppError.missingRequiredField('name')).toThrow(
-          'Required field missing: name',
-        )
+        expect(() => AppError.missingRequiredField('name')).toThrow('Required field missing: name')
       })
     })
 
@@ -97,9 +87,7 @@ describe('Error Handling System', () => {
 
     describe('System Errors', () => {
       it('should throw internal error with default message', () => {
-        expect(() => AppError.internalError()).toThrow(
-          'An internal server error occurred',
-        )
+        expect(() => AppError.internalError()).toThrow('An internal server error occurred')
       })
 
       it('should throw database error with operation', () => {
@@ -111,9 +99,9 @@ describe('Error Handling System', () => {
 
     describe('Custom Errors', () => {
       it('should throw custom error with specified code and message', () => {
-        expect(() =>
-          AppError.custom('BAD_REQUEST', 'Custom error message'),
-        ).toThrow('Custom error message')
+        expect(() => AppError.custom('BAD_REQUEST', 'Custom error message')).toThrow(
+          'Custom error message',
+        )
       })
     })
   })
@@ -147,9 +135,7 @@ describe('Error Handling System', () => {
   describe('ResourceError', () => {
     describe('deviceBrand', () => {
       it('should throw device brand not found error', () => {
-        expect(() => ResourceError.deviceBrand.notFound()).toThrow(
-          'Device brand not found',
-        )
+        expect(() => ResourceError.deviceBrand.notFound()).toThrow('Device brand not found')
       })
 
       it('should throw device brand already exists error', () => {
@@ -167,9 +153,7 @@ describe('Error Handling System', () => {
 
     describe('device', () => {
       it('should throw device not found error', () => {
-        expect(() => ResourceError.device.notFound()).toThrow(
-          'Device not found',
-        )
+        expect(() => ResourceError.device.notFound()).toThrow('Device not found')
       })
 
       it('should throw device already exists error', () => {
@@ -187,15 +171,13 @@ describe('Error Handling System', () => {
 
     describe('system', () => {
       it('should throw system not found error', () => {
-        expect(() => ResourceError.system.notFound()).toThrow(
-          'System not found',
-        )
+        expect(() => ResourceError.system.notFound()).toThrow('System not found')
       })
 
       it('should throw system already exists error', () => {
-        expect(() =>
-          ResourceError.system.alreadyExists('Nintendo Switch'),
-        ).toThrow('System with name "Nintendo Switch" already exists')
+        expect(() => ResourceError.system.alreadyExists('Nintendo Switch')).toThrow(
+          'System with name "Nintendo Switch" already exists',
+        )
       })
 
       it('should throw system has games error', () => {
@@ -207,9 +189,7 @@ describe('Error Handling System', () => {
 
     describe('listing', () => {
       it('should throw listing not found error', () => {
-        expect(() => ResourceError.listing.notFound()).toThrow(
-          'Listing not found',
-        )
+        expect(() => ResourceError.listing.notFound()).toThrow('Listing not found')
       })
 
       it('should throw listing already exists error', () => {
@@ -227,28 +207,19 @@ describe('Error Handling System', () => {
 
     describe('customField', () => {
       it('should throw custom field not found error', () => {
-        expect(() => ResourceError.customField.notFound()).toThrow(
-          'Custom field not found',
-        )
+        expect(() => ResourceError.customField.notFound()).toThrow('Custom field not found')
       })
 
       it('should throw custom field already exists error', () => {
-        expect(() =>
-          ResourceError.customField.alreadyExists('driver_version'),
-        ).toThrow(
+        expect(() => ResourceError.customField.alreadyExists('driver_version')).toThrow(
           'A custom field with name "driver_version" already exists for this emulator',
         )
       })
 
       it('should throw invalid custom field for emulator error', () => {
         expect(() =>
-          ResourceError.customField.invalidForEmulator(
-            'field-123',
-            'emulator-456',
-          ),
-        ).toThrow(
-          'Invalid custom field definition ID: field-123 for emulator emulator-456',
-        )
+          ResourceError.customField.invalidForEmulator('field-123', 'emulator-456'),
+        ).toThrow('Invalid custom field definition ID: field-123 for emulator emulator-456')
       })
     })
 
@@ -264,9 +235,7 @@ describe('Error Handling System', () => {
       })
 
       it('should throw invalid password error', () => {
-        expect(() => ResourceError.user.invalidPassword()).toThrow(
-          'Current password is incorrect',
-        )
+        expect(() => ResourceError.user.invalidPassword()).toThrow('Current password is incorrect')
       })
 
       it('should throw cannot delete self error', () => {
@@ -290,21 +259,15 @@ describe('Error Handling System', () => {
 
     describe('comment', () => {
       it('should throw comment not found error', () => {
-        expect(() => ResourceError.comment.notFound()).toThrow(
-          'Comment not found',
-        )
+        expect(() => ResourceError.comment.notFound()).toThrow('Comment not found')
       })
 
       it('should throw parent comment not found error', () => {
-        expect(() => ResourceError.comment.parentNotFound()).toThrow(
-          'Parent comment not found',
-        )
+        expect(() => ResourceError.comment.parentNotFound()).toThrow('Parent comment not found')
       })
 
       it('should throw comment already deleted error', () => {
-        expect(() => ResourceError.comment.alreadyDeleted()).toThrow(
-          'Comment is already deleted',
-        )
+        expect(() => ResourceError.comment.alreadyDeleted()).toThrow('Comment is already deleted')
       })
 
       it('should throw cannot edit deleted comment error', () => {

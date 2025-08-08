@@ -23,9 +23,7 @@ const STATUSES = [
 ] as const
 
 function ReportStatusModal(props: Props) {
-  const [status, setStatus] = useState<ReportStatusType>(
-    ReportStatus.UNDER_REVIEW,
-  )
+  const [status, setStatus] = useState<ReportStatusType>(ReportStatus.UNDER_REVIEW)
   const [reviewNotes, setReviewNotes] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -89,9 +87,7 @@ function ReportStatusModal(props: Props) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Report Summary */}
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-            Report Summary
-          </h4>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-2">Report Summary</h4>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             <strong>Listing:</strong> {props.report.listing.game.title}
           </p>
@@ -99,8 +95,7 @@ function ReportStatusModal(props: Props) {
             <strong>Reason:</strong> {props.report.reason.replace(/_/g, ' ')}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <strong>Reported by:</strong>{' '}
-            {props.report.reportedBy.name || 'Unknown'}
+            <strong>Reported by:</strong> {props.report.reportedBy.name || 'Unknown'}
           </p>
           {props.report.description && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
@@ -144,16 +139,15 @@ function ReportStatusModal(props: Props) {
             as="textarea"
             id="reviewNotes"
             value={reviewNotes}
-            onChange={(
-              e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-            ) => setReviewNotes(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+              setReviewNotes(e.target.value)
+            }
             rows={4}
             className="w-full"
             placeholder="Add notes about your review decision..."
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            These notes will be visible to other admins and help track review
-            decisions.
+            These notes will be visible to other admins and help track review decisions.
           </p>
         </div>
 
@@ -161,9 +155,8 @@ function ReportStatusModal(props: Props) {
         {status === ReportStatus.RESOLVED && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3">
             <p className="text-sm text-green-800 dark:text-green-200">
-              <strong>Resolved:</strong> Use this when the report is valid and
-              appropriate action has been taken (e.g., listing was removed, user
-              was warned, etc.).
+              <strong>Resolved:</strong> Use this when the report is valid and appropriate action
+              has been taken (e.g., listing was removed, user was warned, etc.).
             </p>
           </div>
         )}
@@ -171,9 +164,8 @@ function ReportStatusModal(props: Props) {
         {status === ReportStatus.DISMISSED && (
           <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-3">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              <strong>Dismissed:</strong> Use this when the report is invalid or
-              doesn&rsquo;t require action (e.g., false report,
-              misunderstanding, etc.).
+              <strong>Dismissed:</strong> Use this when the report is invalid or doesn&rsquo;t
+              require action (e.g., false report, misunderstanding, etc.).
             </p>
           </div>
         )}

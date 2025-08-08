@@ -73,16 +73,13 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden(
-          `You are not a verified developer for ${listing.emulator.name}`,
-        )
+        return AppError.forbidden(`You are not a verified developer for ${listing.emulator.name}`)
       }
 
       // Check if already verified by this developer
-      const existingVerification =
-        await ctx.prisma.listingDeveloperVerification.findUnique({
-          where: { listingId_verifiedBy: { listingId, verifiedBy: userId } },
-        })
+      const existingVerification = await ctx.prisma.listingDeveloperVerification.findUnique({
+        where: { listingId_verifiedBy: { listingId, verifiedBy: userId } },
+      })
 
       if (existingVerification) {
         return AppError.conflict('You have already verified this listing')
@@ -105,10 +102,9 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       const userId = ctx.session.user.id
 
       // Find the verification and ensure it belongs to the current user
-      const verification =
-        await ctx.prisma.listingDeveloperVerification.findUnique({
-          where: { id: input.verificationId },
-        })
+      const verification = await ctx.prisma.listingDeveloperVerification.findUnique({
+        where: { id: input.verificationId },
+      })
 
       if (!verification) return AppError.notFound('Verification not found')
 

@@ -13,19 +13,14 @@ export const test = base.extend({
 
     // Add request interceptor to log slow API calls
     page.on('requestfailed', (request) => {
-      console.error(
-        `Request failed: ${request.url()} - ${request.failure()?.errorText}`,
-      )
+      console.error(`Request failed: ${request.url()} - ${request.failure()?.errorText}`)
     })
 
     // Log slow responses in dev mode
     if (process.env.DEBUG) {
       page.on('response', async (response) => {
         const timing = response.request().timing()
-        if (
-          timing.responseEnd &&
-          timing.responseEnd - timing.responseStart > 5000
-        ) {
+        if (timing.responseEnd && timing.responseEnd - timing.responseStart > 5000) {
           console.warn(
             `Slow response: ${response.url()} took ${Math.round(timing.responseEnd - timing.responseStart)}ms`,
           )
@@ -36,10 +31,7 @@ export const test = base.extend({
     await applyPage(page)
   },
 
-  context: async (
-    { context },
-    applyContext: (ctx: BrowserContext) => Promise<void>,
-  ) => {
+  context: async ({ context }, applyContext: (ctx: BrowserContext) => Promise<void>) => {
     await applyContext(context)
   },
 })

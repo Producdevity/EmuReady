@@ -89,9 +89,7 @@ describe('ApprovalCountBadge', () => {
       trpc: {},
     } as any)
 
-    const { container } = render(
-      <ApprovalCountBadge href="/admin/games/approvals" />,
-    )
+    const { container } = render(<ApprovalCountBadge href="/admin/games/approvals" />)
 
     expect(container).toBeEmptyDOMElement()
   })

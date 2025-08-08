@@ -184,8 +184,7 @@ export const GameNativeDefaults = {
   getDefaultVideoMemorySize: (): string => DEFAULT_VIDEO_MEMORY_SIZE,
   getDefaultCpuList: (): string => DEFAULT_CPU_LIST,
   getDefaultVideoPciDeviceId: (): number => DEFAULT_VIDEO_PCI_DEVICE_ID,
-  getDefaultOffscreenRenderingMode: (): string =>
-    DEFAULT_OFFSCREEN_RENDERING_MODE,
+  getDefaultOffscreenRenderingMode: (): string => DEFAULT_OFFSCREEN_RENDERING_MODE,
   getDefaultMouseWarpOverride: (): string => DEFAULT_MOUSE_WARP_OVERRIDE,
   getDefaultShaderBackend: (): string => DEFAULT_SHADER_BACKEND,
   getDefaultUseGlsl: (): string => DEFAULT_USE_GLSL,
@@ -194,18 +193,14 @@ export const GameNativeDefaults = {
   getDefaultWindowsComponents: () => ({ ...DEFAULT_WINDOWS_COMPONENTS }),
 
   // Validation functions
-  isValidVideoMemorySize: (size: string): boolean =>
-    VALID_VIDEO_MEMORY_SIZES.includes(size),
+  isValidVideoMemorySize: (size: string): boolean => VALID_VIDEO_MEMORY_SIZES.includes(size),
   isValidOffscreenRenderingMode: (mode: string): boolean =>
     VALID_OFFSCREEN_RENDERING_MODES.includes(mode.toLowerCase()),
   isValidMouseWarpOverride: (mode: string): boolean =>
     VALID_MOUSE_WARP_OVERRIDE_MODES.includes(mode.toLowerCase()),
-  isValidUseGlsl: (value: string): boolean =>
-    VALID_USE_GLSL_VALUES.includes(value.toLowerCase()),
-  isValidBox64Version: (version: string): boolean =>
-    version === '0.3.6' || version === '0.3.4',
-  isValidBox86Version: (version: string): boolean =>
-    version === '0.3.2' || version === '0.3.7',
+  isValidUseGlsl: (value: string): boolean => VALID_USE_GLSL_VALUES.includes(value.toLowerCase()),
+  isValidBox64Version: (version: string): boolean => version === '0.3.6' || version === '0.3.4',
+  isValidBox86Version: (version: string): boolean => version === '0.3.2' || version === '0.3.7',
 
   // Graphics driver detection with smart fallback for legacy TEXT values
   detectGraphicsDriver: (value: string): GraphicsDriver => {
@@ -229,10 +224,7 @@ export const GameNativeDefaults = {
     }
 
     // Try substring matching for legacy TEXT entries (handles messy user input)
-    if (
-      normalizedValue.includes('turnip') ||
-      normalizedValue.includes('adreno')
-    ) {
+    if (normalizedValue.includes('turnip') || normalizedValue.includes('adreno')) {
       return 'turnip'
     }
     if (normalizedValue.includes('virgl')) return 'virgl'

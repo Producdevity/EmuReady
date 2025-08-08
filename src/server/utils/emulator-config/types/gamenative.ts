@@ -258,14 +258,13 @@ export interface ContainerConfig {
 /**
  * Helper type for graphics driver version based on selected driver
  */
-export type GraphicsDriverVersionFor<T extends GraphicsDriver> =
-  T extends 'turnip'
-    ? GraphicsDriverVersions['turnip']
-    : T extends 'virgl'
-      ? GraphicsDriverVersions['virgl']
-      : T extends 'vortek'
-        ? GraphicsDriverVersions['vortek']
-        : string
+export type GraphicsDriverVersionFor<T extends GraphicsDriver> = T extends 'turnip'
+  ? GraphicsDriverVersions['turnip']
+  : T extends 'virgl'
+    ? GraphicsDriverVersions['virgl']
+    : T extends 'vortek'
+      ? GraphicsDriverVersions['vortek']
+      : string
 
 /**
  * Default configuration values (from GameNative)

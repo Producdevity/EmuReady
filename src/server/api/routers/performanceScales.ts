@@ -6,85 +6,72 @@ import {
   UpdatePerformanceScaleSchema,
   DeletePerformanceScaleSchema,
 } from '@/schemas/performanceScale'
-import {
-  createTRPCRouter,
-  publicProcedure,
-  permissionProcedure,
-} from '@/server/api/trpc'
+import { createTRPCRouter, publicProcedure, permissionProcedure } from '@/server/api/trpc'
 import { PERMISSIONS } from '@/utils/permission-system'
 
 export const performanceScalesRouter = createTRPCRouter({
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(
-    async ({ ctx }) => {
-      const [total, usedInListings] = await Promise.all([
-        ctx.prisma.performanceScale.count(),
-        ctx.prisma.performanceScale.count({
-          where: { listings: { some: {} } },
-        }),
-      ])
+  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+    const [total, usedInListings] = await Promise.all([
+      ctx.prisma.performanceScale.count(),
+      ctx.prisma.performanceScale.count({
+        where: { listings: { some: {} } },
+      }),
+    ])
 
-      return {
-        total,
-        usedInListings,
-        unused: total - usedInListings,
+    return {
+      total,
+      usedInListings,
+      unused: total - usedInListings,
+    }
+  }),
+
+  get: publicProcedure.input(GetPerformanceScalesSchema).query(async ({ ctx, input }) => {
+    const { search, sortField, sortDirection } = input ?? {}
+
+    let orderBy: { label?: 'asc' | 'desc'; rank?: 'asc' | 'desc' } = {
+      rank: 'desc',
+    }
+
+    if (sortField && sortDirection) {
+      switch (sortField) {
+        case 'label':
+          orderBy = { label: sortDirection }
+          break
+        case 'rank':
+          orderBy = { rank: sortDirection }
+          break
       }
-    },
-  ),
+    }
 
-  get: publicProcedure
-    .input(GetPerformanceScalesSchema)
-    .query(async ({ ctx, input }) => {
-      const { search, sortField, sortDirection } = input ?? {}
+    return ctx.prisma.performanceScale.findMany({
+      where: search
+        ? {
+            OR: [
+              { label: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
+      orderBy,
+    })
+  }),
 
-      let orderBy: { label?: 'asc' | 'desc'; rank?: 'asc' | 'desc' } = {
-        rank: 'desc',
-      }
+  byId: publicProcedure.input(GetPerformanceScaleByIdSchema).query(async ({ ctx, input }) => {
+    const scale = await ctx.prisma.performanceScale.findUnique({
+      where: { id: input.id },
+    })
 
-      if (sortField && sortDirection) {
-        switch (sortField) {
-          case 'label':
-            orderBy = { label: sortDirection }
-            break
-          case 'rank':
-            orderBy = { rank: sortDirection }
-            break
-        }
-      }
+    if (!scale) ResourceError.performanceScale.notFound()
 
-      return ctx.prisma.performanceScale.findMany({
-        where: search
-          ? {
-              OR: [
-                { label: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : undefined,
-        orderBy,
-      })
-    }),
-
-  byId: publicProcedure
-    .input(GetPerformanceScaleByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const scale = await ctx.prisma.performanceScale.findUnique({
-        where: { id: input.id },
-      })
-
-      if (!scale) ResourceError.performanceScale.notFound()
-
-      return scale
-    }),
+    return scale
+  }),
 
   create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(CreatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const existingScale = await ctx.prisma.performanceScale.findFirst({
         where: {
-          OR: [
-            { label: { equals: input.label, mode: 'insensitive' } },
-            { rank: input.rank },
-          ],
+          OR: [{ label: { equals: input.label, mode: 'insensitive' } }, { rank: input.rank }],
         },
       })
 
@@ -113,10 +100,7 @@ export const performanceScalesRouter = createTRPCRouter({
 
       const existingScale = await ctx.prisma.performanceScale.findFirst({
         where: {
-          OR: [
-            { label: { equals: input.label, mode: 'insensitive' } },
-            { rank: input.rank },
-          ],
+          OR: [{ label: { equals: input.label, mode: 'insensitive' } }, { rank: input.rank }],
           id: { not: id },
         },
       })

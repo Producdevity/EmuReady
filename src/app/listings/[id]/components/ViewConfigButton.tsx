@@ -34,10 +34,7 @@ function ViewConfigButton(props: Props) {
   // Get current user to check permissions
   const currentUserQuery = api.users.me.useQuery()
   const isAdmin = roleIncludesRole(currentUserQuery.data?.role, Role.ADMIN)
-  const isDeveloper = roleIncludesRole(
-    currentUserQuery.data?.role,
-    Role.DEVELOPER,
-  )
+  const isDeveloper = roleIncludesRole(currentUserQuery.data?.role, Role.DEVELOPER)
 
   // Check if user is a verified developer for this emulator
   const verifiedDeveloperQuery = api.users.isVerifiedDeveloper.useQuery(
@@ -69,9 +66,7 @@ function ViewConfigButton(props: Props) {
         setIsModalOpen(true)
       }
       if (result.error) {
-        toast.error(
-          `Failed to generate config: ${getErrorMessage(result.error)}`,
-        )
+        toast.error(`Failed to generate config: ${getErrorMessage(result.error)}`)
       }
     } catch (error) {
       toast.error(`Failed to generate config: ${getErrorMessage(error)}`)

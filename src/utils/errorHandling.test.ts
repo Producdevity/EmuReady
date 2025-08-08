@@ -34,9 +34,7 @@ describe('Error Handling Utilities', () => {
   describe('showCrudSuccess', () => {
     it('should show success message for create operation', () => {
       showCrudSuccess({ entity: 'emulator', operation: 'create' })
-      expect(toast.success).toHaveBeenCalledWith(
-        'Emulator created successfully',
-      )
+      expect(toast.success).toHaveBeenCalledWith('Emulator created successfully')
     })
 
     it('should show success message for update operation', () => {
@@ -46,9 +44,7 @@ describe('Error Handling Utilities', () => {
 
     it('should show success message for delete operation', () => {
       showCrudSuccess({ entity: 'deviceBrand', operation: 'delete' })
-      expect(toast.success).toHaveBeenCalledWith(
-        'Device Brand deleted successfully',
-      )
+      expect(toast.success).toHaveBeenCalledWith('Device Brand deleted successfully')
     })
 
     it('should show success message for fetch operation', () => {
@@ -83,18 +79,14 @@ describe('Error Handling Utilities', () => {
       const userFriendlyError = new Error('User with this email already exists')
       showCrudError(userFriendlyError, { entity: 'user', operation: 'create' })
 
-      expect(toast.error).toHaveBeenCalledWith(
-        'User with this email already exists',
-      )
+      expect(toast.error).toHaveBeenCalledWith('User with this email already exists')
     })
 
     it('should show generic message for technical errors', () => {
       const technicalError = new Error('Database connection failed')
       showCrudError(technicalError, { entity: 'emulator', operation: 'update' })
 
-      expect(toast.error).toHaveBeenCalledWith(
-        'Failed to update emulator. Please try again.',
-      )
+      expect(toast.error).toHaveBeenCalledWith('Failed to update emulator. Please try again.')
     })
 
     it('should include additional context in generic messages', () => {
@@ -127,9 +119,7 @@ describe('Error Handling Utilities', () => {
       technicalErrors.forEach((errorMessage) => {
         const error = new Error(errorMessage)
         showCrudError(error, { entity: 'user', operation: 'create' })
-        expect(toast.error).toHaveBeenCalledWith(
-          'Failed to create user. Please try again.',
-        )
+        expect(toast.error).toHaveBeenCalledWith('Failed to create user. Please try again.')
       })
     })
 
@@ -163,10 +153,7 @@ describe('Error Handling Utilities', () => {
       handler(error)
 
       expect(toast.error).toHaveBeenCalled()
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error createing emulator:',
-        error,
-      )
+      expect(consoleSpy).toHaveBeenCalledWith('Error createing emulator:', error)
 
       consoleSpy.mockRestore()
     })
@@ -213,10 +200,7 @@ describe('Error Handling Utilities', () => {
 
       expect(result).toBeUndefined()
       expect(toast.error).toHaveBeenCalled()
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error deleteing emulator:',
-        error,
-      )
+      expect(consoleSpy).toHaveBeenCalledWith('Error deleteing emulator:', error)
 
       consoleSpy.mockRestore()
     })

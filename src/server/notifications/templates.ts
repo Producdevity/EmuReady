@@ -46,10 +46,7 @@ export interface TemplateContext {
 }
 
 class NotificationTemplateEngine {
-  private templates: Map<
-    NotificationType,
-    (context: TemplateContext) => NotificationTemplate
-  >
+  private templates: Map<NotificationType, (context: TemplateContext) => NotificationTemplate>
 
   constructor() {
     this.templates = new Map()
@@ -77,9 +74,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.LISTING_VOTE_UP, (context) => ({
       title: 'Your listing received an upvote',
       message: `${context.userName || 'Someone'} upvoted your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
       metadata: {
         listingId: context.listingId,
         voteId: context.voteId,
@@ -90,9 +85,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.LISTING_VOTE_DOWN, (context) => ({
       title: 'Your listing received a downvote',
       message: `${context.userName || 'Someone'} downvoted your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
       metadata: {
         listingId: context.listingId,
         voteId: context.voteId,
@@ -137,9 +130,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.NEW_DEVICE_LISTING, (context) => ({
       title: 'New listing for your preferred device',
       message: `A new listing was added${context.deviceName ? ` for ${context.deviceName}` : ''}${context.listingTitle ? `: "${context.listingTitle}"` : ''}`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
       metadata: {
         listingId: context.listingId,
         deviceId: context.deviceId,
@@ -150,9 +141,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.NEW_SOC_LISTING, (context) => ({
       title: 'New listing for your preferred SOC',
       message: `A new listing was added${context.socName ? ` for ${context.socName}` : ''}${context.listingTitle ? `: "${context.listingTitle}"` : ''}`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
       metadata: {
         listingId: context.listingId,
         socId: context.socId,
@@ -173,9 +162,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.EMULATOR_UPDATED, (context) => ({
       title: 'Emulator you follow was updated',
       message: `${context.emulatorName || 'An emulator'} has been updated with new features`,
-      actionUrl: context.emulatorId
-        ? `/admin/emulators/${context.emulatorId}`
-        : undefined,
+      actionUrl: context.emulatorId ? `/admin/emulators/${context.emulatorId}` : undefined,
       metadata: {
         emulatorId: context.emulatorId,
         emulatorName: context.emulatorName,
@@ -185,9 +172,7 @@ class NotificationTemplateEngine {
     // System notifications
     this.templates.set(NotificationType.MAINTENANCE_NOTICE, (context) => ({
       title: 'Scheduled maintenance notification',
-      message:
-        context.message ||
-        'Scheduled maintenance will occur soon. Please save your work.',
+      message: context.message || 'Scheduled maintenance will occur soon. Please save your work.',
       actionUrl: context.actionUrl,
       metadata: {
         maintenanceDate: context.maintenanceDate,
@@ -197,8 +182,7 @@ class NotificationTemplateEngine {
 
     this.templates.set(NotificationType.FEATURE_ANNOUNCEMENT, (context) => ({
       title: 'New feature available',
-      message:
-        context.message || 'A new feature is now available on the platform.',
+      message: context.message || 'A new feature is now available on the platform.',
       actionUrl: context.actionUrl,
       metadata: {
         featureName: context.featureName,
@@ -208,9 +192,7 @@ class NotificationTemplateEngine {
 
     this.templates.set(NotificationType.POLICY_UPDATE, (context) => ({
       title: 'Policy update notification',
-      message:
-        context.message ||
-        'Our policies have been updated. Please review the changes.',
+      message: context.message || 'Our policies have been updated. Please review the changes.',
       actionUrl: context.actionUrl || '/terms',
       metadata: {
         policyVersion: context.policyVersion,
@@ -222,9 +204,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.LISTING_APPROVED, (context) => ({
       title: 'Your listing has been approved',
       message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been approved${context.approvedBy ? ` by ${context.approvedBy}` : ''}`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
       metadata: {
         listingId: context.listingId,
         approvedBy: context.approvedBy,
@@ -235,9 +215,7 @@ class NotificationTemplateEngine {
     this.templates.set(NotificationType.LISTING_REJECTED, (context) => ({
       title: 'Your listing has been rejected',
       message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been rejected${context.rejectedBy ? ` by ${context.rejectedBy}` : ''}${context.rejectionReason ? `. Reason: ${context.rejectionReason}` : ''}`,
-      actionUrl: context.listingId
-        ? `/listings/${context.listingId}`
-        : undefined,
+      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
       metadata: {
         listingId: context.listingId,
         rejectedBy: context.rejectedBy,
@@ -281,10 +259,7 @@ class NotificationTemplateEngine {
     }))
   }
 
-  generateTemplate(
-    type: NotificationType,
-    context: TemplateContext,
-  ): NotificationTemplate {
+  generateTemplate(type: NotificationType, context: TemplateContext): NotificationTemplate {
     const templateFn = this.templates.get(type)
     if (!templateFn) {
       throw new Error(`No template found for notification type: ${type}`)

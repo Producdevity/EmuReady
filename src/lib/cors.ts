@@ -24,8 +24,7 @@ const PARTNER_ORIGINS = [
  * This is the single source of truth for allowed origins
  */
 export function getAllowedOrigins(): string[] {
-  const envOrigins =
-    process.env.NEXT_PUBLIC_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS
+  const envOrigins = process.env.NEXT_PUBLIC_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS
 
   let origins: string[]
 
@@ -34,11 +33,7 @@ export function getAllowedOrigins(): string[] {
     origins = envOrigins.split(',').map((origin) => origin.trim())
   } else if (process.env.NODE_ENV === 'development') {
     // Default to localhost for development
-    origins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-    ]
+    origins = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000']
   } else {
     // In production without env vars, use hardcoded production origins
     origins = [...PRODUCTION_ORIGINS]

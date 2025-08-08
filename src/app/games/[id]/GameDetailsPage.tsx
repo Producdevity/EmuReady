@@ -30,8 +30,7 @@ function GameDetailsPage() {
     gameQuery.data.submittedBy === userQuery.data.id &&
     gameQuery.data.status === ApprovalStatus.PENDING
 
-  const canEdit =
-    hasPermission(userQuery.data?.role, Role.ADMIN) || isOwnerOfPendingGame
+  const canEdit = hasPermission(userQuery.data?.role, Role.ADMIN) || isOwnerOfPendingGame
 
   if (gameQuery.isPending) return <LoadingSpinner text="Loading game data..." />
 
@@ -62,14 +61,11 @@ function GameDetailsPage() {
                     )}
                   </h1>
                   <div className="mt-2">
-                    <Badge variant="default">
-                      System: {gameQuery.data.system?.name}
-                    </Badge>
+                    <Badge variant="default">System: {gameQuery.data.system?.name}</Badge>
                   </div>
                   <div className="mt-2">
                     <Badge variant="default">
-                      Submitted by:{' '}
-                      {gameQuery.data.submitter?.name || 'Anonymous'}
+                      Submitted by: {gameQuery.data.submitter?.name || 'Anonymous'}
                     </Badge>
                   </div>
                 </div>

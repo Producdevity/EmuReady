@@ -27,18 +27,14 @@ function ConfirmationModal(props: Props) {
         {props.action === 'reject' && (
           <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
             <p className="text-sm text-red-800 dark:text-red-200">
-              Rejecting this game will prevent it from being visible to users
-              and cannot be undone easily.
+              Rejecting this game will prevent it from being visible to users and cannot be undone
+              easily.
             </p>
           </div>
         )}
 
         <div className="flex justify-end gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={props.onClose}
-            disabled={props.isProcessing}
-          >
+          <Button variant="outline" onClick={props.onClose} disabled={props.isProcessing}>
             Cancel
           </Button>
           <Button

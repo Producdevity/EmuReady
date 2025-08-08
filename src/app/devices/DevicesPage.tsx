@@ -52,10 +52,7 @@ function DevicesPage() {
     limit: PAGINATION.DEFAULT_LIMIT,
   })
 
-  const devices = useMemo(
-    () => devicesQuery.data?.devices ?? [],
-    [devicesQuery.data?.devices],
-  )
+  const devices = useMemo(() => devicesQuery.data?.devices ?? [], [devicesQuery.data?.devices])
   const pagination = devicesQuery.data?.pagination
 
   // Get deviceId from URL params
@@ -149,10 +146,7 @@ function DevicesPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <ColumnVisibilityControl
-            columns={DEVICES_COLUMNS}
-            columnVisibility={columnVisibility}
-          />
+          <ColumnVisibilityControl columns={DEVICES_COLUMNS} columnVisibility={columnVisibility} />
           <Button
             variant="outline"
             onClick={() => {
@@ -299,11 +293,7 @@ function DevicesPage() {
       )}
 
       {/* Device Modal */}
-      <DeviceViewModal
-        isOpen={modalOpen}
-        onClose={closeModal}
-        deviceData={selectedDevice}
-      />
+      <DeviceViewModal isOpen={modalOpen} onClose={closeModal} deviceData={selectedDevice} />
     </div>
   )
 }

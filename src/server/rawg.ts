@@ -30,38 +30,26 @@ function getApiKey(): string {
   return apiKey
 }
 
-async function makeRequest<T>(
-  endpoint: string,
-  params: Record<string, string> = {},
-): Promise<T> {
+async function makeRequest<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
   try {
-    const response: AxiosResponse<T> = await axios.get(
-      `${RAWG_BASE_URL}${endpoint}`,
-      {
-        params: {
-          key: getApiKey(),
-          ...params,
-        },
-        headers: {
-          'User-Agent': 'EmuReady/1.0',
-        },
+    const response: AxiosResponse<T> = await axios.get(`${RAWG_BASE_URL}${endpoint}`, {
+      params: {
+        key: getApiKey(),
+        ...params,
       },
-    )
+      headers: {
+        'User-Agent': 'EmuReady/1.0',
+      },
+    })
 
     return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status
       const statusText = error.response?.statusText ?? 'Unknown error'
-      const payload = error.response?.data
-        ? JSON.stringify(error.response.data)
-        : ''
+      const payload = error.response?.data ? JSON.stringify(error.response.data) : ''
 
-      throw new RawgError(
-        `RAWG API error: ${status} ${statusText} – ${payload}`,
-        status,
-        endpoint,
-      )
+      throw new RawgError(`RAWG API error: ${status} ${statusText} – ${payload}`, status, endpoint)
     }
 
     throw new RawgError(
@@ -106,9 +94,7 @@ export async function searchGames(
   // Calculate pagination for the sorted results
   const startIndex = (page - 1) * pageSize
   const endIndex = startIndex + pageSize
-  const paginatedResults = scoredResults
-    .slice(startIndex, endIndex)
-    .map((item) => item.game)
+  const paginatedResults = scoredResults.slice(startIndex, endIndex).map((item) => item.game)
 
   // Adjust the response metadata
   return {
@@ -134,20 +120,14 @@ export async function getGameScreenshots(
   })
 }
 
-export async function getGameImages(
-  gameId: number,
-  gameName: string,
-): Promise<GameImageOption[]> {
+export async function getGameImages(gameId: number, gameName: string): Promise<GameImageOption[]> {
   const images: GameImageOption[] = []
 
   try {
     // Get game details for background image
     const gameDetails = await getGameDetails(gameId)
 
-    if (
-      gameDetails.background_image &&
-      isValidImageUrl(gameDetails.background_image)
-    ) {
+    if (gameDetails.background_image && isValidImageUrl(gameDetails.background_image)) {
       images.push({
         id: `bg-${gameId}`,
         url: gameDetails.background_image,
@@ -184,9 +164,7 @@ export async function getGameImages(
   }
 }
 
-export async function searchGameImages(
-  query: string,
-): Promise<Map<number, GameImageOption[]>> {
+export async function searchGameImages(query: string): Promise<Map<number, GameImageOption[]>> {
   try {
     const searchResults = await searchGames(query, 1, 5) // Limit to 5 games for performance
     const imageMap = new Map<number, GameImageOption[]>()
@@ -210,8 +188,6 @@ export async function searchGameImages(
     if (error instanceof RawgError) {
       throw error
     }
-    throw new RawgError(
-      `Failed to search for game images: ${getErrorMessage(error)}`,
-    )
+    throw new RawgError(`Failed to search for game images: ${getErrorMessage(error)}`)
   }
 }

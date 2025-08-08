@@ -14,12 +14,8 @@ function scoreGameMatch(gameName: string, searchQuery: string): number {
   if (normalizedGameName.startsWith(normalizedQuery)) return 900
 
   // Split into words for more sophisticated matching
-  const queryWords = normalizedQuery
-    .split(/\s+/)
-    .filter((word) => word.length > 0)
-  const gameWords = normalizedGameName
-    .split(/\s+/)
-    .filter((word) => word.length > 0)
+  const queryWords = normalizedQuery.split(/\s+/).filter((word) => word.length > 0)
+  const gameWords = normalizedGameName.split(/\s+/).filter((word) => word.length > 0)
 
   // Check if all query words are present in the game name (in any order)
   const matchingWords = queryWords.filter((queryWord) =>

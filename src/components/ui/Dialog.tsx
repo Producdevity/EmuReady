@@ -5,27 +5,19 @@ import { XIcon } from 'lucide-react'
 import { type ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
 
-export function Dialog({
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Root>) {
+export function Dialog({ ...props }: ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-export function DialogTrigger({
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Trigger>) {
+export function DialogTrigger({ ...props }: ComponentProps<typeof DialogPrimitive.Trigger>) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
-export function DialogPortal({
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Portal>) {
+export function DialogPortal({ ...props }: ComponentProps<typeof DialogPrimitive.Portal>) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
-export function DialogClose({
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Close>) {
+export function DialogClose({ ...props }: ComponentProps<typeof DialogPrimitive.Close>) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
@@ -93,19 +85,13 @@ export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
-        className,
-      )}
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   )
 }
 
-export function DialogTitle({
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Title>) {
+export function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"

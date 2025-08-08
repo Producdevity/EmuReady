@@ -44,19 +44,13 @@ describe('query-builders', () => {
     })
 
     it('should return requested status for admins', () => {
-      expect(
-        buildApprovalStatusFilter(Role.ADMIN, null, ApprovalStatus.PENDING),
-      ).toEqual({
+      expect(buildApprovalStatusFilter(Role.ADMIN, null, ApprovalStatus.PENDING)).toEqual({
         status: ApprovalStatus.PENDING,
       })
     })
 
     it('should filter pending by user for non-admins', () => {
-      const filter = buildApprovalStatusFilter(
-        Role.USER,
-        'user123',
-        ApprovalStatus.PENDING,
-      )
+      const filter = buildApprovalStatusFilter(Role.USER, 'user123', ApprovalStatus.PENDING)
       expect(filter).toEqual({
         status: ApprovalStatus.PENDING,
         authorId: 'user123',

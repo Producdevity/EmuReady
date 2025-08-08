@@ -21,33 +21,18 @@ function DeviceViewModal(props: Props) {
       : 'Not specified'
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title="Device Details"
-      size="md"
-    >
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Device Details" size="md">
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4">
-          <InputPlaceholder
-            label="Device ID"
-            value={props.deviceData.id}
-            mono
-          />
+          <InputPlaceholder label="Device ID" value={props.deviceData.id} mono />
           <InputPlaceholder label="Brand" value={props.deviceData.brand.name} />
-          <InputPlaceholder
-            label="Model Name"
-            value={props.deviceData.modelName}
-          />
+          <InputPlaceholder label="Model Name" value={props.deviceData.modelName} />
           <InputPlaceholder label="System on Chip (SoC)" value={deviceSoc} />
 
           {props.deviceData._count && (
             <InputPlaceholder
               label="Total Listings"
-              value={formatCountLabel(
-                'listing',
-                props.deviceData._count.listings,
-              )}
+              value={formatCountLabel('listing', props.deviceData._count.listings)}
             />
           )}
         </div>

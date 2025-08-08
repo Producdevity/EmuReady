@@ -1,12 +1,7 @@
 import { z } from 'zod'
 import { SortDirection } from '@/schemas/soc'
 
-export const UserBanSortField = z.enum([
-  'bannedAt',
-  'expiresAt',
-  'isActive',
-  'reason',
-])
+export const UserBanSortField = z.enum(['bannedAt', 'expiresAt', 'isActive', 'reason'])
 
 export const CreateUserBanSchema = z.object({
   userId: z.string().uuid(),

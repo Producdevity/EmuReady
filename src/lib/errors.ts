@@ -78,9 +78,7 @@ export class AppError {
 
   // Resource errors
   static notFound(resource?: string): never {
-    const message = resource
-      ? `${resource} not found`
-      : ERROR_MESSAGES.NOT_FOUND
+    const message = resource ? `${resource} not found` : ERROR_MESSAGES.NOT_FOUND
 
     throw new TRPCError({ code: ERROR_CODES.NOT_FOUND, message })
   }
@@ -110,9 +108,7 @@ export class AppError {
   }
 
   static invalidInput(field?: string): never {
-    const message = field
-      ? `Invalid input for field: ${field}`
-      : ERROR_MESSAGES.INVALID_INPUT
+    const message = field ? `Invalid input for field: ${field}` : ERROR_MESSAGES.INVALID_INPUT
 
     throw new TRPCError({ code: ERROR_CODES.BAD_REQUEST, message })
   }
@@ -127,9 +123,7 @@ export class AppError {
   static captcha(message?: string) {
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
-      message: message
-        ? `CAPTCHA verification failed: ${message}`
-        : ERROR_MESSAGES.INVALID_CAPTCHA,
+      message: message ? `CAPTCHA verification failed: ${message}` : ERROR_MESSAGES.INVALID_CAPTCHA,
     })
   }
 
@@ -159,9 +153,7 @@ export class AppError {
   }
 
   static databaseError(operation?: string): never {
-    const message = operation
-      ? `Database error during ${operation}`
-      : ERROR_MESSAGES.DATABASE_ERROR
+    const message = operation ? `Database error during ${operation}` : ERROR_MESSAGES.DATABASE_ERROR
 
     throw new TRPCError({ code: ERROR_CODES.INTERNAL_SERVER_ERROR, message })
   }
@@ -175,9 +167,7 @@ export class AppError {
 // Utility functions for common validation patterns
 export class ValidationError {
   static requiresOptions(fieldType: string): never {
-    AppError.badRequest(
-      `Options are required for ${fieldType} type custom fields`,
-    )
+    AppError.badRequest(`Options are required for ${fieldType} type custom fields`)
   }
 
   static optionsNotAllowed(fieldType: string): never {
@@ -203,15 +193,13 @@ export class ValidationError {
 export class ResourceError {
   static deviceBrand = {
     notFound: () => AppError.notFound('Device brand'),
-    alreadyExists: (name: string) =>
-      AppError.alreadyExists('Brand', `"${name}"`),
+    alreadyExists: (name: string) => AppError.alreadyExists('Brand', `"${name}"`),
     inUse: (count: number) => AppError.resourceInUse('brand', count),
   }
 
   static permission = {
     notFound: () => AppError.notFound('Permission'),
-    alreadyExists: (name: string) =>
-      AppError.alreadyExists('Permission', `key "${name}"`),
+    alreadyExists: (name: string) => AppError.alreadyExists('Permission', `key "${name}"`),
   }
 
   static device = {
@@ -225,14 +213,12 @@ export class ResourceError {
 
   static soc = {
     notFound: () => AppError.notFound('SoC'),
-    alreadyExists: (name: string) =>
-      AppError.alreadyExists('SoC', `name "${name}"`),
+    alreadyExists: (name: string) => AppError.alreadyExists('SoC', `name "${name}"`),
   }
 
   static system = {
     notFound: () => AppError.notFound('System'),
-    alreadyExists: (name: string) =>
-      AppError.alreadyExists('System', `name "${name}"`),
+    alreadyExists: (name: string) => AppError.alreadyExists('System', `name "${name}"`),
     hasGames: (count: number) => AppError.resourceInUse('system', count),
   }
 
@@ -240,36 +226,27 @@ export class ResourceError {
     notFound: () => AppError.notFound('Game'),
     inUse: (count: number) => AppError.resourceInUse('game', count),
     alreadyExists: (title: string, systemName: string) =>
-      AppError.conflict(
-        `A game titled "${title}" already exists for the system "${systemName}"`,
-      ),
-    alreadyProcessed: () =>
-      AppError.badRequest('Game has already been processed'),
+      AppError.conflict(`A game titled "${title}" already exists for the system "${systemName}"`),
+    alreadyProcessed: () => AppError.badRequest('Game has already been processed'),
   }
 
   static emulator = {
     notFound: () => AppError.notFound('Emulator'),
-    alreadyExists: (name: string) =>
-      AppError.alreadyExists('Emulator', `name "${name}"`),
+    alreadyExists: (name: string) => AppError.alreadyExists('Emulator', `name "${name}"`),
     inUse: (count: number) => AppError.resourceInUse('emulator', count),
   }
 
   static listing = {
     notFound: () => AppError.notFound('Listing'),
     alreadyExists: () =>
-      AppError.conflict(
-        'A listing for this game, device, and emulator combination already exists',
-      ),
-    notPending: () =>
-      AppError.notFound('Pending listing not found or already processed'),
+      AppError.conflict('A listing for this game, device, and emulator combination already exists'),
+    notPending: () => AppError.notFound('Pending listing not found or already processed'),
   }
 
   static customField = {
     notFound: () => AppError.notFound('Custom field'),
     alreadyExists: (name: string) =>
-      AppError.conflict(
-        `A custom field with name "${name}" already exists for this emulator`,
-      ),
+      AppError.conflict(`A custom field with name "${name}" already exists for this emulator`),
     invalidForEmulator: (fieldId: string, emulatorId: string) =>
       AppError.badRequest(
         `Invalid custom field definition ID: ${fieldId} for emulator ${emulatorId}`,
@@ -279,76 +256,59 @@ export class ResourceError {
   static customFieldTemplate = {
     notFound: () => AppError.notFound('Custom field template'),
     alreadyExists: (name: string) =>
-      AppError.conflict(
-        `A custom field template with name "${name}" already exists`,
-      ),
+      AppError.conflict(`A custom field template with name "${name}" already exists`),
   }
 
   static performanceScale = {
     notFound: () => AppError.notFound('Performance scale'),
-    labelExists: (label: string) =>
-      AppError.alreadyExists('Performance scale', `label "${label}"`),
-    rankExists: (rank: number) =>
-      AppError.alreadyExists('Performance scale', `rank ${rank}`),
-    inUse: (count: number) =>
-      AppError.resourceInUse('performance scale', count),
+    labelExists: (label: string) => AppError.alreadyExists('Performance scale', `label "${label}"`),
+    rankExists: (rank: number) => AppError.alreadyExists('Performance scale', `rank ${rank}`),
+    inUse: (count: number) => AppError.resourceInUse('performance scale', count),
   }
 
   static user = {
     notFound: () => AppError.notFound('User'),
     emailExists: () => AppError.alreadyExists('User', 'this email'),
     usernameExists: () => AppError.alreadyExists('User', 'this username'),
-    invalidPassword: () =>
-      AppError.custom('UNAUTHORIZED', 'Current password is incorrect'),
-    cannotDeleteSelf: () =>
-      AppError.forbidden('You cannot delete your own account'),
-    cannotDemoteSelf: () =>
-      AppError.forbidden('You cannot demote yourself from the admin role'),
+    invalidPassword: () => AppError.custom('UNAUTHORIZED', 'Current password is incorrect'),
+    cannotDeleteSelf: () => AppError.forbidden('You cannot delete your own account'),
+    cannotDemoteSelf: () => AppError.forbidden('You cannot demote yourself from the admin role'),
     notInDatabase: (userId: string) =>
       AppError.internalError(`User with ID ${userId} not found in database`),
   }
 
   static comment = {
     noPermission: (action: string) =>
-      AppError.forbidden(
-        `You do not have permission to ${action} this comment`,
-      ),
+      AppError.forbidden(`You do not have permission to ${action} this comment`),
     notFound: () => AppError.notFound('Comment'),
     parentNotFound: () => AppError.notFound('Parent comment'),
     alreadyDeleted: () => AppError.badRequest('Comment is already deleted'),
-    cannotEditDeleted: () =>
-      AppError.badRequest('Cannot edit a deleted comment'),
+    cannotEditDeleted: () => AppError.badRequest('Cannot edit a deleted comment'),
   }
 
   static userDevicePreference = {
     notFound: () => AppError.notFound('User device preference'),
     alreadyExists: () => AppError.alreadyExists('Device preference'),
-    notInPreferences: () =>
-      AppError.notFound('Device not found in user preferences'),
+    notInPreferences: () => AppError.notFound('Device not found in user preferences'),
   }
 
   static userSocPreference = {
     notFound: () => AppError.notFound('User SOC preference'),
     alreadyExists: () => AppError.alreadyExists('SOC preference'),
-    notInPreferences: () =>
-      AppError.notFound('SOC not found in user preferences'),
+    notInPreferences: () => AppError.notFound('SOC not found in user preferences'),
   }
 
   static listingReport = {
     notFound: () => AppError.notFound('Listing report'),
-    alreadyExists: () =>
-      AppError.conflict('You have already reported this listing'),
-    cannotReportOwnListing: () =>
-      AppError.forbidden('You cannot report your own listing'),
+    alreadyExists: () => AppError.conflict('You have already reported this listing'),
+    cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
   }
 
   static userBan = {
     notFound: () => AppError.notFound('User ban'),
     alreadyBanned: () => AppError.conflict('User already has an active ban'),
     cannotBanHigherRole: () =>
-      AppError.forbidden(
-        'You cannot ban a user with equal or higher role than yours',
-      ),
+      AppError.forbidden('You cannot ban a user with equal or higher role than yours'),
     alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
   }
 
@@ -365,18 +325,14 @@ export class ResourceError {
   static cpu = {
     notFound: () => AppError.notFound('CPU'),
     alreadyExists: (modelName: string) =>
-      AppError.conflict(
-        `A CPU with model name "${modelName}" already exists for this brand`,
-      ),
+      AppError.conflict(`A CPU with model name "${modelName}" already exists for this brand`),
     inUse: (count: number) => AppError.resourceInUse('CPU', count),
   }
 
   static gpu = {
     notFound: () => AppError.notFound('GPU'),
     alreadyExists: (modelName: string) =>
-      AppError.conflict(
-        `A GPU with model name "${modelName}" already exists for this brand`,
-      ),
+      AppError.conflict(`A GPU with model name "${modelName}" already exists for this brand`),
     inUse: (count: number) => AppError.resourceInUse('GPU', count),
   }
 
@@ -386,16 +342,13 @@ export class ResourceError {
       AppError.conflict(
         'A PC listing for this game, CPU, GPU, and emulator combination already exists',
       ),
-    notPending: () =>
-      AppError.notFound('Pending PC listing not found or already processed'),
+    notPending: () => AppError.notFound('Pending PC listing not found or already processed'),
   }
 
   static pcPreset = {
     notFound: () => AppError.notFound('PC preset'),
     alreadyExists: (name: string) =>
-      AppError.conflict(
-        `A PC preset with name "${name}" already exists for this user`,
-      ),
+      AppError.conflict(`A PC preset with name "${name}" already exists for this user`),
   }
 
   static verification = {

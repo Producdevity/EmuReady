@@ -26,68 +26,57 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
       ? new Date(searchParams.get('startDate')!)
       : undefined
-    const endDate = searchParams.get('endDate')
-      ? new Date(searchParams.get('endDate')!)
-      : undefined
+    const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined
     const type = searchParams.get('type') || 'overview'
 
     switch (type) {
       case 'overview':
-        const overallMetrics =
-          await notificationAnalyticsService.getOverallMetrics(
-            startDate,
-            endDate,
-          )
-        return Response.json(overallMetrics)
-
-      case 'channels':
-        const channelMetrics =
-          await notificationAnalyticsService.getChannelMetrics(
-            startDate,
-            endDate,
-          )
-        return Response.json(channelMetrics)
-
-      case 'types':
-        const typeMetrics = await notificationAnalyticsService.getTypeMetrics(
+        const overallMetrics = await notificationAnalyticsService.getOverallMetrics(
           startDate,
           endDate,
         )
+        return Response.json(overallMetrics)
+
+      case 'channels':
+        const channelMetrics = await notificationAnalyticsService.getChannelMetrics(
+          startDate,
+          endDate,
+        )
+        return Response.json(channelMetrics)
+
+      case 'types':
+        const typeMetrics = await notificationAnalyticsService.getTypeMetrics(startDate, endDate)
         return Response.json(typeMetrics)
 
       case 'users':
         const limit = parseInt(searchParams.get('limit') || '100')
-        const userMetrics =
-          await notificationAnalyticsService.getUserEngagementMetrics(
-            limit,
-            startDate,
-            endDate,
-          )
+        const userMetrics = await notificationAnalyticsService.getUserEngagementMetrics(
+          limit,
+          startDate,
+          endDate,
+        )
         return Response.json(userMetrics)
 
       case 'timeseries':
-        const granularity =
-          (searchParams.get('granularity') as 'day' | 'week' | 'month') || 'day'
+        const granularity = (searchParams.get('granularity') as 'day' | 'week' | 'month') || 'day'
         const defaultStart = new Date()
         defaultStart.setDate(defaultStart.getDate() - 30) // Last 30 days
         const defaultEnd = new Date()
 
-        const timeSeriesData =
-          await notificationAnalyticsService.getTimeSeriesData(
-            startDate || defaultStart,
-            endDate || defaultEnd,
-            granularity,
-          )
+        const timeSeriesData = await notificationAnalyticsService.getTimeSeriesData(
+          startDate || defaultStart,
+          endDate || defaultEnd,
+          granularity,
+        )
         return Response.json(timeSeriesData)
 
       case 'top-performing':
         const topLimit = parseInt(searchParams.get('limit') || '10')
-        const topTypes =
-          await notificationAnalyticsService.getTopPerformingTypes(
-            topLimit,
-            startDate,
-            endDate,
-          )
+        const topTypes = await notificationAnalyticsService.getTopPerformingTypes(
+          topLimit,
+          startDate,
+          endDate,
+        )
         return Response.json(topTypes)
 
       default:

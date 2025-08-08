@@ -25,11 +25,7 @@ function PcListingDetailsPage() {
 
   if (pcListingQuery.error || !pcListingQuery.data) return notFound()
 
-  return (
-    <PcListingDetailsClient
-      pcListing={sanitizeForClient(pcListingQuery.data)}
-    />
-  )
+  return <PcListingDetailsClient pcListing={sanitizeForClient(pcListingQuery.data)} />
 }
 
 export default PcListingDetailsPage

@@ -116,9 +116,7 @@ export function QuickFilters(props: Props) {
 
   const quickFilters = useMemo(() => {
     const scales = performanceScales || []
-    const highPerformanceIds = scales
-      .filter((scale) => scale.rank >= 4)
-      .map((scale) => scale.id)
+    const highPerformanceIds = scales.filter((scale) => scale.rank >= 4).map((scale) => scale.id)
 
     const filters: QuickFilter[] = [
       {
@@ -182,8 +180,7 @@ export function QuickFilters(props: Props) {
   ])
 
   const currentSort = sortOptions.find(
-    (option) =>
-      option.field === sortField && option.direction === sortDirection,
+    (option) => option.field === sortField && option.direction === sortDirection,
   )
 
   const handlePerformanceToggle = (performanceId: number) => {
@@ -349,16 +346,13 @@ export function QuickFilters(props: Props) {
       >
         <div className="flex items-center gap-2">
           <SortAsc className="w-4 h-4 text-blue-500" />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Sort by
-          </span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by</span>
         </div>
 
         <div className="flex flex-wrap gap-2">
           {sortOptions.map((option, index) => {
             const isSelected =
-              currentSort?.field === option.field &&
-              currentSort?.direction === option.direction
+              currentSort?.field === option.field && currentSort?.direction === option.direction
 
             return (
               <motion.button
@@ -408,11 +402,10 @@ export function QuickFilters(props: Props) {
                 Filters Active
               </span>
               <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                {[
-                  performanceIds.length,
-                  currentSort ? 1 : 0,
-                  myListingsOnly ? 1 : 0,
-                ].reduce((sum, count) => sum + count, 0)}
+                {[performanceIds.length, currentSort ? 1 : 0, myListingsOnly ? 1 : 0].reduce(
+                  (sum, count) => sum + count,
+                  0,
+                )}
               </Badge>
             </div>
 

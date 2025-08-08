@@ -87,8 +87,7 @@ export const testScenarios: TestRole[] = [
           { id: 'select-soc', description: 'Select default SoC' },
           {
             id: 'device-filter',
-            description:
-              'Verify listings page shows results for selected device by default',
+            description: 'Verify listings page shows results for selected device by default',
           },
           {
             id: 'create-pc-preset',
@@ -282,8 +281,7 @@ export const testScenarios: TestRole[] = [
           { id: 'view-reports', description: 'View user reports' },
           {
             id: 'change-status',
-            description:
-              'Change report status (Under Review, Resolved, Dismissed)',
+            description: 'Change report status (Under Review, Resolved, Dismissed)',
           },
           {
             id: 'report-warnings',

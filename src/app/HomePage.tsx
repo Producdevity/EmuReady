@@ -13,11 +13,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import {
-  SuccessRateBar,
-  LoadingSpinner,
-  PerformanceBadge,
-} from '@/components/ui'
+import { SuccessRateBar, LoadingSpinner, PerformanceBadge } from '@/components/ui'
 import { api } from '@/lib/api'
 import getImageUrl from '@/utils/getImageUrl'
 
@@ -217,9 +213,7 @@ function Home() {
                   <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
                     {stats.emulators.toLocaleString()}
                   </div>
-                  <div className="text-gray-600 dark:text-gray-300 font-semibold">
-                    Emulators
-                  </div>
+                  <div className="text-gray-600 dark:text-gray-300 font-semibold">Emulators</div>
                   <div className="mt-2 w-12 h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full mx-auto group-hover:w-16 transition-all duration-300" />
                 </>
               )}
@@ -239,9 +233,7 @@ function Home() {
                   <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
                     {stats.devices.toLocaleString()}
                   </div>
-                  <div className="text-gray-600 dark:text-gray-300 font-semibold">
-                    Handhelds
-                  </div>
+                  <div className="text-gray-600 dark:text-gray-300 font-semibold">Handhelds</div>
                   <div className="mt-2 w-12 h-1 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full mx-auto group-hover:w-16 transition-all duration-300" />
                 </>
               )}
@@ -256,8 +248,7 @@ function Home() {
               Latest Compatibility Listings
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Discover what&apos;s working well across different devices and
-              emulators
+              Discover what&apos;s working well across different devices and emulators
             </p>
           </div>
 
@@ -274,10 +265,7 @@ function Home() {
                 >
                   <div className="relative overflow-hidden">
                     <Image
-                      src={getImageUrl(
-                        listing.game.imageUrl,
-                        listing.game.title,
-                      )}
+                      src={getImageUrl(listing.game.imageUrl, listing.game.title)}
                       alt={listing.game.title}
                       width={400}
                       height={200}
@@ -289,9 +277,7 @@ function Home() {
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-3 min-h-[3.5rem]">
                       <h3 className="font-semibold text-gray-900 dark:text-white break-words leading-tight min-h-[2.5rem] flex items-center">
-                        <Link href={`/listings/${listing.id}`}>
-                          {listing.game.title}
-                        </Link>
+                        <Link href={`/listings/${listing.id}`}>{listing.game.title}</Link>
                       </h3>
                       <PerformanceBadge
                         rank={listing.performance?.rank ?? 0}
@@ -332,8 +318,7 @@ function Home() {
                             href={`/listings?deviceId=${listing.device.id}`}
                             className="text-blue-600 dark:text-indigo-400 hover:underline"
                           >
-                            {listing.device.brand.name}{' '}
-                            {listing.device.modelName}
+                            {listing.device.brand.name} {listing.device.modelName}
                           </Link>
                         ) : (
                           'Unknown Device'
@@ -376,10 +361,7 @@ function Home() {
                         <ThumbsUp className="inline w-4 h-4 text-blue-400" />
                         {listing._count?.votes ?? 0} votes
                       </span>
-                      <span
-                        title="Comments"
-                        className="flex items-center gap-1"
-                      >
+                      <span title="Comments" className="flex items-center gap-1">
                         <MessageCircle className="inline w-4 h-4 text-indigo-400" />
                         {listing._count?.comments ?? 0} comments
                       </span>
@@ -408,8 +390,8 @@ function Home() {
                 the Community
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed">
-                Submit your own compatibility reports and help others find the
-                best gaming experience on their devices.
+                Submit your own compatibility reports and help others find the best gaming
+                experience on their devices.
               </p>
               {!user && (
                 <SignUpButton>

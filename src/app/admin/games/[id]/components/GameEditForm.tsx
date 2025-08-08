@@ -46,19 +46,18 @@ export function GameEditForm(props: Props) {
     },
   })
 
-  const { register, handleSubmit, formState, setValue, watch } =
-    useForm<UpdateGameInput>({
-      resolver: zodResolver(updateGameSchema),
-      defaultValues: {
-        title: props.game.title,
-        systemId: props.game.systemId,
-        imageUrl: props.game.imageUrl || '',
-        boxartUrl: props.game.boxartUrl || '',
-        bannerUrl: props.game.bannerUrl || '',
-        isErotic: props.game.isErotic ?? false,
-      },
-      mode: 'onChange', // Enable validation on change to track form state
-    })
+  const { register, handleSubmit, formState, setValue, watch } = useForm<UpdateGameInput>({
+    resolver: zodResolver(updateGameSchema),
+    defaultValues: {
+      title: props.game.title,
+      systemId: props.game.systemId,
+      imageUrl: props.game.imageUrl || '',
+      boxartUrl: props.game.boxartUrl || '',
+      bannerUrl: props.game.bannerUrl || '',
+      isErotic: props.game.isErotic ?? false,
+    },
+    mode: 'onChange', // Enable validation on change to track form state
+  })
 
   const onSubmit = (data: UpdateGameInput) => {
     console.log('Form data being sent:', { id: props.game.id, ...data })
@@ -76,11 +75,7 @@ export function GameEditForm(props: Props) {
         >
           Title
         </label>
-        <Input
-          id="title"
-          {...register('title')}
-          placeholder="Enter game title"
-        />
+        <Input id="title" {...register('title')} placeholder="Enter game title" />
         {formState.errors.title && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
             {formState.errors.title.message}
@@ -115,18 +110,13 @@ export function GameEditForm(props: Props) {
         <AdminImageSelectorSwitcher
           label="Game Image (optional)"
           gameTitle={watch('title')}
-          systemName={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))
-              ?.name
-          }
+          systemName={systemsQuery.data?.find((system) => system.id === watch('systemId'))?.name}
           tgdbPlatformId={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))
-              ?.tgdbPlatformId || undefined
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))?.tgdbPlatformId ||
+            undefined
           }
           selectedImageUrl={watch('imageUrl')}
-          onImageSelect={(url) =>
-            setValue('imageUrl', url, { shouldValidate: true })
-          }
+          onImageSelect={(url) => setValue('imageUrl', url, { shouldValidate: true })}
           onError={(error) => console.error('Image selection error:', error)}
           placeholder="https://example.com/game-image.jpg"
         />
@@ -141,18 +131,13 @@ export function GameEditForm(props: Props) {
         <AdminImageSelectorSwitcher
           label="Boxart Image (optional)"
           gameTitle={watch('title')}
-          systemName={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))
-              ?.name
-          }
+          systemName={systemsQuery.data?.find((system) => system.id === watch('systemId'))?.name}
           tgdbPlatformId={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))
-              ?.tgdbPlatformId || undefined
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))?.tgdbPlatformId ||
+            undefined
           }
           selectedImageUrl={watch('boxartUrl')}
-          onImageSelect={(url) =>
-            setValue('boxartUrl', url, { shouldValidate: true })
-          }
+          onImageSelect={(url) => setValue('boxartUrl', url, { shouldValidate: true })}
           onError={(error) => console.error('Boxart selection error:', error)}
           placeholder="https://example.com/boxart-image.jpg"
         />
@@ -167,18 +152,13 @@ export function GameEditForm(props: Props) {
         <AdminImageSelectorSwitcher
           label="Banner Image (optional)"
           gameTitle={watch('title')}
-          systemName={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))
-              ?.name
-          }
+          systemName={systemsQuery.data?.find((system) => system.id === watch('systemId'))?.name}
           tgdbPlatformId={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))
-              ?.tgdbPlatformId || undefined
+            systemsQuery.data?.find((system) => system.id === watch('systemId'))?.tgdbPlatformId ||
+            undefined
           }
           selectedImageUrl={watch('bannerUrl')}
-          onImageSelect={(url) =>
-            setValue('bannerUrl', url, { shouldValidate: true })
-          }
+          onImageSelect={(url) => setValue('bannerUrl', url, { shouldValidate: true })}
           onError={(error) => console.error('Banner selection error:', error)}
           placeholder="https://example.com/banner-image.jpg"
         />
@@ -190,16 +170,8 @@ export function GameEditForm(props: Props) {
       </div>
 
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="isErotic"
-          {...register('isErotic')}
-          className="h-4 w-4"
-        />
-        <label
-          htmlFor="isErotic"
-          className="text-sm text-gray-700 dark:text-gray-300"
-        >
+        <input type="checkbox" id="isErotic" {...register('isErotic')} className="h-4 w-4" />
+        <label htmlFor="isErotic" className="text-sm text-gray-700 dark:text-gray-300">
           Erotic 18+
         </label>
       </div>

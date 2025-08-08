@@ -29,8 +29,7 @@ function GameSearchContent() {
   const urlQuery = searchParams.get('q') ?? ''
   const urlSystemId = searchParams.get('system') ?? ''
 
-  const [searchResults, setSearchResults] =
-    useState<TGDBGamesByNameResponse | null>(null)
+  const [searchResults, setSearchResults] = useState<TGDBGamesByNameResponse | null>(null)
   const [selectedGame, setSelectedGame] = useState<TGDBGame | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSelecting, setIsSelecting] = useState(false)
@@ -134,8 +133,7 @@ function GameSearchContent() {
             )
           : []
 
-        const platformName =
-          platforms.length > 0 ? platforms[0].name : undefined
+        const platformName = platforms.length > 0 ? platforms[0].name : undefined
 
         // Find matching system
         const matchingSystem = systemsQuery.data.find(
@@ -153,9 +151,7 @@ function GameSearchContent() {
         }
 
         // Get both boxart and banner images for the selected game
-        let imageResponse:
-          | { boxartUrl?: string; bannerUrl?: string }
-          | undefined
+        let imageResponse: { boxartUrl?: string; bannerUrl?: string } | undefined
 
         try {
           imageResponse = await utils.tgdb.getGameImageUrls.fetch({
@@ -188,10 +184,9 @@ function GameSearchContent() {
         if (isAdmin) {
           toast.success('Game added successfully!')
         } else {
-          toast.success(
-            'Game submitted for approval! You can now create listings for this game.',
-            { duration: UI_CONSTANTS.TOAST_DURATION },
-          )
+          toast.success('Game submitted for approval! You can now create listings for this game.', {
+            duration: UI_CONSTANTS.TOAST_DURATION,
+          })
           router.push(`/games/${newGame.id}`)
         }
 
@@ -214,19 +209,14 @@ function GameSearchContent() {
             typeof error.cause === 'object'
           ) {
             const cause = error.cause as Record<string, unknown>
-            if (
-              cause.existingGameId &&
-              cause.existingGameTitle &&
-              cause.systemName
-            ) {
+            if (cause.existingGameId && cause.existingGameTitle && cause.systemName) {
               return toast.error(
                 `Game already exists: "${cause.existingGameTitle}" on ${cause.systemName}`,
                 {
                   duration: 10000,
                   action: {
                     label: 'View Game',
-                    onClick: () =>
-                      router.push(`/games/${cause.existingGameId}`),
+                    onClick: () => router.push(`/games/${cause.existingGameId}`),
                   },
                 },
               )
@@ -244,14 +234,7 @@ function GameSearchContent() {
         setIsSelecting(false)
       }
     },
-    [
-      userQuery.data,
-      searchResults,
-      createGame,
-      utils,
-      router,
-      systemsQuery.data,
-    ],
+    [userQuery.data, searchResults, createGame, utils, router, systemsQuery.data],
   )
 
   if (!isLoaded || userQuery.isPending) {

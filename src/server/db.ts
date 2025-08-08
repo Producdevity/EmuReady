@@ -21,10 +21,7 @@ if (process.env.NODE_ENV === 'production') {
   globalForPrisma.prisma ??= new PrismaClient({
     // Only log errors in development to improve performance
     // Set PRISMA_DEBUG=true to enable query logging for debugging
-    log:
-      process.env.PRISMA_DEBUG === 'true'
-        ? ['query', 'error', 'warn']
-        : ['error'],
+    log: process.env.PRISMA_DEBUG === 'true' ? ['query', 'error', 'warn'] : ['error'],
     datasources: { db: { url: getOptimizedDatabaseUrl() } },
   })
   prisma = globalForPrisma.prisma

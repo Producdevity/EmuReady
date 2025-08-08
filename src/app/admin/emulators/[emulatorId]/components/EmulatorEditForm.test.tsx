@@ -40,16 +40,10 @@ interface MotionProps {
 // Mock framer-motion to properly handle all motion props
 vi.mock('framer-motion', () => ({
   motion: {
-    form: ({ children, ...props }: MotionProps) => (
-      <form {...props}>{children}</form>
-    ),
+    form: ({ children, ...props }: MotionProps) => <form {...props}>{children}</form>,
     p: ({ children, ...props }: MotionProps) => <p {...props}>{children}</p>,
-    button: ({ children, ...props }: MotionProps) => (
-      <button {...props}>{children}</button>
-    ),
-    div: ({ children, ...props }: MotionProps) => (
-      <div {...props}>{children}</div>
-    ),
+    button: ({ children, ...props }: MotionProps) => <button {...props}>{children}</button>,
+    div: ({ children, ...props }: MotionProps) => <div {...props}>{children}</div>,
   },
   AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
@@ -150,9 +144,7 @@ describe('EmulatorEditForm', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Emulator name is required'),
-        ).toBeInTheDocument()
+        expect(screen.getByText('Emulator name is required')).toBeInTheDocument()
       },
       { timeout: 3000 },
     )

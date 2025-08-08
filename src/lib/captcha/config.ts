@@ -18,16 +18,12 @@ export const RECAPTCHA_CONFIG = {
 if (typeof window === 'undefined') {
   // Server-side validation
   if (!RECAPTCHA_CONFIG.secretKey && process.env.NODE_ENV !== 'test') {
-    console.warn(
-      'RECAPTCHA_SECRET_KEY is not set. CAPTCHA verification will be disabled.',
-    )
+    console.warn('RECAPTCHA_SECRET_KEY is not set. CAPTCHA verification will be disabled.')
   }
 } else {
   // Client-side validation
   if (!RECAPTCHA_CONFIG.siteKey && process.env.NODE_ENV !== 'test') {
-    console.warn(
-      'NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set. CAPTCHA will be disabled.',
-    )
+    console.warn('NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set. CAPTCHA will be disabled.')
   }
 }
 

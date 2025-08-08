@@ -111,8 +111,7 @@ function PcPresets() {
             No PC presets yet
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Save your PC hardware configurations to quickly create PC listings
-            later.
+            Save your PC hardware configurations to quickly create PC listings later.
           </p>
           <Button onClick={() => openModal()}>Create your first preset</Button>
         </Card>
@@ -146,17 +145,13 @@ function PcPresets() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    CPU
-                  </p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">CPU</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {preset.cpu.brand.name} {preset.cpu.modelName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    GPU
-                  </p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">GPU</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {preset.gpu
                       ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
@@ -165,17 +160,13 @@ function PcPresets() {
                 </div>
                 <div className="flex justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      RAM
-                    </p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">RAM</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {preset.memorySize} GB
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      OS
-                    </p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">OS</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {formatOs(preset.os)}
                     </p>
@@ -186,9 +177,7 @@ function PcPresets() {
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       OS Version
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {preset.osVersion}
-                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{preset.osVersion}</p>
                   </div>
                 )}
               </div>

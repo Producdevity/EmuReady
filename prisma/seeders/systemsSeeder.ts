@@ -52,9 +52,7 @@ async function systemsSeeder(prisma: PrismaClient) {
       where: { name: system.name },
       update: {
         ...(system.key ? { key: system.key } : {}),
-        ...(system.tgdbPlatformId !== undefined
-          ? { tgdbPlatformId: system.tgdbPlatformId }
-          : {}),
+        ...(system.tgdbPlatformId !== undefined ? { tgdbPlatformId: system.tgdbPlatformId } : {}),
       },
       create: system,
     })

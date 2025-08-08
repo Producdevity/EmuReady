@@ -28,11 +28,7 @@ function AdminNavbar(props: Props) {
             key={item.href}
             href={item.href}
             className={`flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 group relative ${
-              (
-                item.exact
-                  ? props.pathname === item.href
-                  : props.pathname.startsWith(item.href)
-              )
+              (item.exact ? props.pathname === item.href : props.pathname.startsWith(item.href))
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
@@ -41,10 +37,7 @@ function AdminNavbar(props: Props) {
               <AdminNavIcon href={item.href} />
             </div>
             <span
-              className={cn(
-                'truncate transition-all duration-300 ease-in-out',
-                collapsedClass,
-              )}
+              className={cn('truncate transition-all duration-300 ease-in-out', collapsedClass)}
             >
               {item.label}
             </span>
@@ -53,10 +46,7 @@ function AdminNavbar(props: Props) {
                 variant="danger"
                 size="sm"
                 pill
-                className={cn(
-                  'transition-all duration-300 ease-in-out',
-                  collapsedClass,
-                )}
+                className={cn('transition-all duration-300 ease-in-out', collapsedClass)}
               >
                 {item.count}
               </Badge>
@@ -96,11 +86,7 @@ function AdminNavbar(props: Props) {
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 group relative',
-                  (
-                    item.exact
-                      ? props.pathname === item.href
-                      : props.pathname.startsWith(item.href)
-                  )
+                  (item.exact ? props.pathname === item.href : props.pathname.startsWith(item.href))
                     ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
                 )}
@@ -111,9 +97,7 @@ function AdminNavbar(props: Props) {
                 <span
                   className={cn(
                     'truncate transition-all duration-300 ease-in-out',
-                    props.isCollapsed
-                      ? 'w-0 opacity-0 overflow-hidden'
-                      : 'w-auto opacity-100',
+                    props.isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
                   )}
                 >
                   {item.label}

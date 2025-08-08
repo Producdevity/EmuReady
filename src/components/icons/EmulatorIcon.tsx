@@ -32,12 +32,7 @@ export function EmulatorIcon(props: Props) {
 
   if (!props.showLogo || !props.logo) {
     return (
-      <span
-        className={cn(
-          fontSizeClasses[props.fontSize ?? 'md'],
-          props.textClassName,
-        )}
-      >
+      <span className={cn(fontSizeClasses[props.fontSize ?? 'md'], props.textClassName)}>
         {props.name}
       </span>
     )

@@ -35,9 +35,7 @@ type CreateMobileContextOptions = {
   session: Nullable<Session>
 }
 
-const createInnerMobileContext = (
-  opts: CreateMobileContextOptions & { headers?: Headers },
-) => {
+const createInnerMobileContext = (opts: CreateMobileContextOptions & { headers?: Headers }) => {
   return {
     session: opts.session,
     prisma,
@@ -49,9 +47,7 @@ const createInnerMobileContext = (
  * Creates tRPC context for mobile requests
  * Handles both web sessions (via cookies) and mobile JWT tokens (via Authorization header)
  */
-export const createMobileTRPCContext = async (
-  opts: CreateNextContextOptions,
-) => {
+export const createMobileTRPCContext = async (opts: CreateNextContextOptions) => {
   let session: Nullable<Session> = null
   let clerkUserId: string | null = null
 
@@ -119,12 +115,8 @@ export const createMobileTRPCContext = async (
       } else {
         // User isn't found in the database
         if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            `🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`,
-          )
-          console.warn(
-            '   Run the seeder (npx prisma db seed) or set up webhooks for auto-sync.',
-          )
+          console.warn(`🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`)
+          console.warn('   Run the seeder (npx prisma db seed) or set up webhooks for auto-sync.')
         } else {
           console.warn(
             `Mobile: User with clerkId ${clerkUserId} not found in database. Check webhook configuration.`,
@@ -148,9 +140,7 @@ export const createMobileTRPCContext = async (
 /**
  * Creates tRPC context for mobile fetch requests (used by the fetch adapter)
  */
-export const createMobileTRPCFetchContext = async (
-  opts: FetchCreateContextFnOptions,
-) => {
+export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOptions) => {
   let session: Nullable<Session> = null
   let clerkUserId: string | null = null
 
@@ -208,12 +198,8 @@ export const createMobileTRPCFetchContext = async (
       } else {
         // User not found in database
         if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            `🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`,
-          )
-          console.warn(
-            '   Run the seeder (npx prisma db seed) or set up webhooks for auto-sync.',
-          )
+          console.warn(`🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`)
+          console.warn('   Run the seeder (npx prisma db seed) or set up webhooks for auto-sync.')
         } else {
           console.warn(
             `Mobile: User with clerkId ${clerkUserId} not found in database. Check webhook configuration.`,
@@ -252,10 +238,7 @@ const mt = initTRPC.context<typeof createMobileTRPCFetchContext>().create({
       ...ctx.shape,
       data: {
         ...ctx.shape.data,
-        zodError:
-          ctx.error.cause instanceof ZodError
-            ? ctx.error.cause.flatten()
-            : null,
+        zodError: ctx.error.cause instanceof ZodError ? ctx.error.cause.flatten() : null,
       },
     }
   },
@@ -287,9 +270,7 @@ const mobilePerformanceMiddleware = mt.middleware(async ({ next, path }) => {
 /**
  * Public mobile procedure (no auth required)
  */
-export const mobilePublicProcedure = mt.procedure.use(
-  mobilePerformanceMiddleware,
-)
+export const mobilePublicProcedure = mt.procedure.use(mobilePerformanceMiddleware)
 
 /**
  * Protected mobile procedure (requires authentication)
@@ -314,10 +295,7 @@ export const mobileAdminProcedure = mt.procedure
       AppError.unauthorized()
     }
 
-    if (
-      ctx.session.user.role !== Role.ADMIN &&
-      ctx.session.user.role !== Role.SUPER_ADMIN
-    ) {
+    if (ctx.session.user.role !== Role.ADMIN && ctx.session.user.role !== Role.SUPER_ADMIN) {
       AppError.insufficientPermissions(Role.ADMIN)
     }
 
@@ -422,11 +400,7 @@ export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
   return mobileProtectedProcedure.use(async ({ ctx, next }) => {
     const userId = ctx.session.user.id
 
-    const hasAccess = await hasDeveloperAccessToEmulator(
-      userId,
-      emulatorId,
-      ctx.prisma,
-    )
+    const hasAccess = await hasDeveloperAccessToEmulator(userId, emulatorId, ctx.prisma)
 
     if (!hasAccess) {
       AppError.forbidden(`You don't have developer access to this emulator`)
@@ -450,9 +424,7 @@ export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
 export function mobilePermissionProcedure(requiredPermission: string) {
   return mobileProtectedProcedure.use(({ ctx, next }) => {
     if (!hasPermissionInContext(ctx, requiredPermission)) {
-      AppError.forbidden(
-        `You need the '${requiredPermission}' permission to perform this action`,
-      )
+      AppError.forbidden(`You need the '${requiredPermission}' permission to perform this action`)
     }
 
     return next({
@@ -475,9 +447,7 @@ export function mobileMultiPermissionProcedure(requiredPermissions: string[]) {
     )
 
     if (missingPermissions.length > 0) {
-      AppError.forbidden(
-        `You need the following permissions: ${missingPermissions.join(', ')}`,
-      )
+      AppError.forbidden(`You need the following permissions: ${missingPermissions.join(', ')}`)
     }
 
     return next({
@@ -514,42 +484,24 @@ export function mobileAnyPermissionProcedure(requiredPermissions: string[]) {
   })
 }
 
-export const mobileCreateListingProcedure = mobilePermissionProcedure(
-  PERMISSIONS.CREATE_LISTING,
-)
+export const mobileCreateListingProcedure = mobilePermissionProcedure(PERMISSIONS.CREATE_LISTING)
 export const mobileApproveListingsProcedure = mobilePermissionProcedure(
   PERMISSIONS.APPROVE_LISTINGS,
 )
-export const mobileManageUsersProcedure = mobilePermissionProcedure(
-  PERMISSIONS.MANAGE_USERS,
-)
+export const mobileManageUsersProcedure = mobilePermissionProcedure(PERMISSIONS.MANAGE_USERS)
 export const mobileManagePermissionsProcedure = mobilePermissionProcedure(
   PERMISSIONS.MANAGE_PERMISSIONS,
 )
 export const mobileAccessAdminPanelProcedure = mobilePermissionProcedure(
   PERMISSIONS.ACCESS_ADMIN_PANEL,
 )
-export const mobileViewStatisticsProcedure = mobilePermissionProcedure(
-  PERMISSIONS.VIEW_STATISTICS,
-)
+export const mobileViewStatisticsProcedure = mobilePermissionProcedure(PERMISSIONS.VIEW_STATISTICS)
 export const mobileManageEmulatorsProcedure = mobilePermissionProcedure(
   PERMISSIONS.MANAGE_EMULATORS,
 )
-export const mobileEditGamesProcedure = mobilePermissionProcedure(
-  PERMISSIONS.EDIT_GAMES,
-)
-export const mobileDeleteGamesProcedure = mobilePermissionProcedure(
-  PERMISSIONS.DELETE_GAMES,
-)
-export const mobileManageGamesProcedure = mobilePermissionProcedure(
-  PERMISSIONS.MANAGE_GAMES,
-)
-export const mobileApproveGamesProcedure = mobilePermissionProcedure(
-  PERMISSIONS.APPROVE_GAMES,
-)
-export const mobileManageDevicesProcedure = mobilePermissionProcedure(
-  PERMISSIONS.MANAGE_DEVICES,
-)
-export const mobileManageSystemsProcedure = mobilePermissionProcedure(
-  PERMISSIONS.MANAGE_SYSTEMS,
-)
+export const mobileEditGamesProcedure = mobilePermissionProcedure(PERMISSIONS.EDIT_GAMES)
+export const mobileDeleteGamesProcedure = mobilePermissionProcedure(PERMISSIONS.DELETE_GAMES)
+export const mobileManageGamesProcedure = mobilePermissionProcedure(PERMISSIONS.MANAGE_GAMES)
+export const mobileApproveGamesProcedure = mobilePermissionProcedure(PERMISSIONS.APPROVE_GAMES)
+export const mobileManageDevicesProcedure = mobilePermissionProcedure(PERMISSIONS.MANAGE_DEVICES)
+export const mobileManageSystemsProcedure = mobilePermissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)

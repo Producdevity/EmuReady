@@ -9,8 +9,7 @@ function getTRPCCorsHeaders(request: NextRequest) {
   const baseHeaders = getCORSHeaders(request)
   return {
     ...baseHeaders,
-    'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, x-trpc-source, x-client-type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-trpc-source, x-client-type',
     'Access-Control-Expose-Headers': 'x-trpc-source',
     'Access-Control-Max-Age': '86400', // 24 hours
   }
@@ -48,9 +47,7 @@ const handler = async (req: NextRequest) => {
       onError:
         process.env.NODE_ENV === 'development'
           ? ({ path, error }: { path?: string; error: Error }) => {
-              console.error(
-                `❌ Mobile tRPC failed on ${path ?? '<no-path>'}: ${error.message}`,
-              )
+              console.error(`❌ Mobile tRPC failed on ${path ?? '<no-path>'}: ${error.message}`)
             }
           : undefined,
       responseMeta() {

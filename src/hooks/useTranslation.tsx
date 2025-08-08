@@ -1,11 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  translateTextCached,
-  shouldShowTranslation,
-  getLanguageName,
-} from '@/utils/translation'
+import { translateTextCached, shouldShowTranslation, getLanguageName } from '@/utils/translation'
 import type { TranslationResult } from '@/utils/translation.types'
 
 /**

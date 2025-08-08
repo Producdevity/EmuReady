@@ -101,9 +101,7 @@ vi.mock('@/lib/api', () => ({
       emulators: {
         get: {
           fetch: vi.fn(() =>
-            Promise.resolve([
-              { id: 'emulator-with-fields', name: 'Test Emulator' },
-            ]),
+            Promise.resolve([{ id: 'emulator-with-fields', name: 'Test Emulator' }]),
           ),
         },
         byId: {
@@ -183,11 +181,7 @@ const queryClient = new QueryClient({
 })
 
 function TestWrapper(props: PropsWithChildren) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {props.children}
-    </QueryClientProvider>
-  )
+  return <QueryClientProvider client={queryClient}>{props.children}</QueryClientProvider>
 }
 
 // TODO: this takes minutes to run, convert this into a playwright test, skip for now
@@ -264,8 +258,7 @@ describe.skip('AddListingPage Integration Tests', () => {
     })
 
     // Fill the custom fields
-    const driverVersionInput =
-      screen.getByPlaceholderText(/enter driver version/i)
+    const driverVersionInput = screen.getByPlaceholderText(/enter driver version/i)
     await user.type(driverVersionInput, 'v1.0.0')
 
     const graphicsSelect = screen.getByDisplayValue('low') // Should default to first option
@@ -302,9 +295,7 @@ describe.skip('AddListingPage Integration Tests', () => {
     })
 
     // Try to submit the form without filling required fields
-    const form =
-      screen.getByRole('form') ||
-      screen.getByText('Create New Listing').closest('form')
+    const form = screen.getByRole('form') || screen.getByText('Create New Listing').closest('form')
 
     if (form) {
       // Trigger form validation by attempting to submit
@@ -313,9 +304,7 @@ describe.skip('AddListingPage Integration Tests', () => {
       // Wait for validation errors to appear
       await waitFor(() => {
         // Should show specific error messages, not just generic ones
-        const errorSummary = screen.queryByText(
-          'Please fix the following errors:',
-        )
+        const errorSummary = screen.queryByText('Please fix the following errors:')
         if (errorSummary) {
           expect(errorSummary).toBeInTheDocument()
         }
@@ -327,9 +316,7 @@ describe.skip('AddListingPage Integration Tests', () => {
     // Mock API to return emulator without custom fields
     const { api } = await import('@/lib/api')
     ;(
-      api.customFieldDefinitions.getByEmulator.useQuery as ReturnType<
-        typeof vi.fn
-      >
+      api.customFieldDefinitions.getByEmulator.useQuery as ReturnType<typeof vi.fn>
     ).mockReturnValue({
       data: [],
       isLoading: false,
@@ -349,9 +336,7 @@ describe.skip('AddListingPage Integration Tests', () => {
 
     // Should not show custom fields section
     await waitFor(() => {
-      expect(
-        screen.queryByText('Emulator-Specific Details'),
-      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Emulator-Specific Details')).not.toBeInTheDocument()
     })
   })
 })

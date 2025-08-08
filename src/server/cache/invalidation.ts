@@ -19,9 +19,7 @@ export async function invalidateGame(gameId: string) {
 
   const duration = performance.now() - startTime
   if (duration > 100) {
-    console.warn(
-      `[SEO] Slow cache invalidation for game ${gameId}: ${duration.toFixed(2)}ms`,
-    )
+    console.warn(`[SEO] Slow cache invalidation for game ${gameId}: ${duration.toFixed(2)}ms`)
   }
 }
 

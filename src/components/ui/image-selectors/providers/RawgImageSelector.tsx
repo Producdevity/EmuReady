@@ -2,14 +2,7 @@
 
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
 import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
-import {
-  Button,
-  LoadingSpinner,
-  OptimizedImage,
-  Modal,
-  Input,
-  Toggle,
-} from '@/components/ui'
+import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Toggle } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { getImageDisplayName } from '@/lib/rawg-utils'
@@ -27,9 +20,7 @@ interface Props {
 
 export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
-  const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(
-    null,
-  )
+  const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(null)
   const [allImages, setAllImages] = useState<GameImageOption[]>([])
   const [previewImage, setPreviewImage] = useState<GameImageOption | null>(null)
   const [includeScreenshots, setIncludeScreenshots] = useState(false)
@@ -77,9 +68,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
   // Process search results and select initial image
   useEffect(() => {
     if (searchQuery.data && !useCustomUrl) {
-      const images = Object.values(searchQuery.data).flatMap(
-        (gameImages) => gameImages,
-      )
+      const images = Object.values(searchQuery.data).flatMap((gameImages) => gameImages)
 
       setAllImages(images)
     }
@@ -174,18 +163,10 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
   return (
     <div className={props.className}>
       <div className="flex justify-between items-center mb-4">
-        <label className="font-medium text-gray-700 dark:text-gray-300">
-          Game Cover Image
-        </label>
+        <label className="font-medium text-gray-700 dark:text-gray-300">Game Cover Image</label>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Use custom URL
-          </span>
-          <Toggle
-            checked={useCustomUrl}
-            onChange={handleToggleCustomUrl}
-            size="sm"
-          />
+          <span className="text-sm text-gray-600 dark:text-gray-400">Use custom URL</span>
+          <Toggle checked={useCustomUrl} onChange={handleToggleCustomUrl} size="sm" />
         </div>
       </div>
 
@@ -212,9 +193,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
           </div>
           {selectedImage && selectedImage.source === 'custom' && (
             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Preview:
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Preview:</p>
               <div className="w-full max-w-xs mx-auto aspect-square relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                 <OptimizedImage
                   src={selectedImage.url}
@@ -259,11 +238,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
 
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Toggle
-                checked={includeScreenshots}
-                onChange={handleToggleScreenshots}
-                size="sm"
-              />
+              <Toggle checked={includeScreenshots} onChange={handleToggleScreenshots} size="sm" />
               <span className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-300">
                 <Camera className="h-4 w-4" />
                 Include screenshots
@@ -331,9 +306,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                       <div className="absolute bottom-0 left-0 right-0 bg-black/75 text-white p-2">
                         <div className="flex items-center gap-2">
                           {image.type === 'background' ? (
-                            <span className="text-xs bg-blue-600 px-2 py-1 rounded">
-                              Cover
-                            </span>
+                            <span className="text-xs bg-blue-600 px-2 py-1 rounded">Cover</span>
                           ) : (
                             <span className="text-xs bg-green-600 px-2 py-1 rounded">
                               Screenshot
@@ -360,8 +333,8 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
             searchQuery.data && (
               <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                  No {!includeScreenshots ? 'cover images' : 'images'} found for
-                  &ldquo;{searchTerm}&rdquo;.
+                  No {!includeScreenshots ? 'cover images' : 'images'} found for &ldquo;{searchTerm}
+                  &rdquo;.
                 </p>
                 {!includeScreenshots && (
                   <div className="mt-2">
@@ -378,8 +351,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                 )}
                 {includeScreenshots && (
                   <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Try a different search term or toggle to &ldquo;Use custom
-                    URL&rdquo; above.
+                    Try a different search term or toggle to &ldquo;Use custom URL&rdquo; above.
                   </p>
                 )}
               </div>

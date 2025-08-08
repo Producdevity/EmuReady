@@ -66,17 +66,12 @@ export function AdminStatsDisplay(props: Props) {
         : props.stats.map((stat) => (
             <Card key={stat.label}>
               <div
-                className={cn(
-                  'text-2xl font-bold',
-                  colorClasses[stat.color] || colorClasses.gray,
-                )}
+                className={cn('text-2xl font-bold', colorClasses[stat.color] || colorClasses.gray)}
                 title={stat.description}
               >
                 {stat.value?.toLocaleString() || '...'}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {stat.label}
-              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
             </Card>
           ))}
     </div>
