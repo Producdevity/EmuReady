@@ -203,9 +203,12 @@ export const gamesRouter = createTRPCRouter({
       status: (dir: 'asc' | 'desc') => ({ status: dir }),
     }
 
-    const orderBy = buildOrderBy(sortConfig, sortField, sortDirection, {
-      title: 'asc',
-    })
+    const orderBy = buildOrderBy<Prisma.GameOrderByWithRelationInput>(
+      sortConfig,
+      sortField,
+      sortDirection,
+      { title: 'asc' },
+    )
 
     // For empty search with offset 0, we can optimize by returning fewer results initially
     const effectiveLimit =
@@ -719,9 +722,12 @@ export const gamesRouter = createTRPCRouter({
         'system.name': (dir: 'asc' | 'desc') => ({ system: { name: dir } }),
       }
 
-      const orderBy = buildOrderBy(sortConfig, sortField, sortDirection, {
-        submittedAt: 'desc',
-      })
+      const orderBy = buildOrderBy<Prisma.GameOrderByWithRelationInput>(
+        sortConfig,
+        sortField,
+        sortDirection,
+        { submittedAt: 'desc' },
+      )
 
       const actualOffset = calculateOffset({ limit, offset, page }, limit)
 

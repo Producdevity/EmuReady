@@ -150,19 +150,19 @@ export function createPaginatedQueryWrapper<
   }
 }
 
-type SortDirection = 'asc' | 'desc'
-type SortConfig<T> = Record<string, (direction: SortDirection) => T | T[]>
+export type SortDirection = 'asc' | 'desc'
 
 /**
- * Build orderBy clause from sort field and direction with type safety
- * @param sortConfig - Configuration for sort field mappings
+ * Build orderBy clause from sort field and direction
+ * The generic type T represents the shape of orderBy objects
+ * @param sortConfig - Configuration mapping field names to sort functions
  * @param sortField - Field to sort by
  * @param sortDirection - Sort direction (asc/desc)
  * @param defaultOrderBy - Default orderBy if no sort specified
- * @returns Prisma orderBy clause
+ * @returns Array of orderBy clauses
  */
-export function buildOrderBy<T = unknown>(
-  sortConfig: SortConfig<T>,
+export function buildOrderBy<T>(
+  sortConfig: Record<string, (direction: SortDirection) => T | T[]>,
   sortField?: string,
   sortDirection?: SortDirection,
   defaultOrderBy?: T | T[],
@@ -170,9 +170,12 @@ export function buildOrderBy<T = unknown>(
   const orderBy: T[] = []
 
   // Apply primary sort if valid
-  if (sortField && sortDirection && sortConfig[sortField]) {
-    const sortResult = sortConfig[sortField](sortDirection)
-    orderBy.push(...toArray(sortResult))
+  if (sortField && sortDirection) {
+    const sortFn = sortConfig[sortField]
+    if (sortFn) {
+      const sortResult = sortFn(sortDirection)
+      orderBy.push(...toArray(sortResult))
+    }
   }
 
   // Apply default ordering when appropriate

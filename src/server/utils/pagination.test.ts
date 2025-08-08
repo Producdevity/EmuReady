@@ -157,15 +157,15 @@ describe('pagination utilities', () => {
     }
 
     it('should build orderBy from sort config', () => {
-      expect(buildOrderBy(sortConfig, 'title', 'asc')).toEqual([
+      expect(buildOrderBy<any>(sortConfig, 'title', 'asc')).toEqual([
         { title: 'asc' },
       ])
 
-      expect(buildOrderBy(sortConfig, 'user.name', 'desc')).toEqual([
+      expect(buildOrderBy<any>(sortConfig, 'user.name', 'desc')).toEqual([
         { user: { name: 'desc' } },
       ])
 
-      expect(buildOrderBy(sortConfig, 'device', 'asc')).toEqual([
+      expect(buildOrderBy<any>(sortConfig, 'device', 'asc')).toEqual([
         { brand: { name: 'asc' } },
         { modelName: 'asc' },
       ])
@@ -174,16 +174,15 @@ describe('pagination utilities', () => {
     it('should return default orderBy when no sort specified', () => {
       const defaultOrderBy = { createdAt: 'desc' }
       expect(
-        buildOrderBy(sortConfig, undefined, undefined, defaultOrderBy),
+        buildOrderBy<any>(sortConfig, undefined, undefined, defaultOrderBy),
       ).toEqual([{ createdAt: 'desc' }])
     })
 
     it('should add default as secondary sort when sorting by different field', () => {
       const defaultOrderBy = { createdAt: 'desc' }
-      expect(buildOrderBy(sortConfig, 'title', 'asc', defaultOrderBy)).toEqual([
-        { title: 'asc' },
-        { createdAt: 'desc' },
-      ])
+      expect(
+        buildOrderBy<any>(sortConfig, 'title', 'asc', defaultOrderBy),
+      ).toEqual([{ title: 'asc' }, { createdAt: 'desc' }])
     })
 
     it('should not duplicate createdAt when already sorting by it', () => {
@@ -194,7 +193,7 @@ describe('pagination utilities', () => {
       const defaultOrderBy = { createdAt: 'desc' }
 
       expect(
-        buildOrderBy(
+        buildOrderBy<any>(
           sortConfigWithCreatedAt,
           'createdAt',
           'asc',
