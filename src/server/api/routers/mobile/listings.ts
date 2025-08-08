@@ -166,6 +166,13 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .query(async ({ ctx, input }) => getListingsHelper(ctx, input)),
 
   /**
+   * @deprecated Use 'get' instead - kept for backwards compatibility with Eden
+   */
+  getListings: mobilePublicProcedure
+    .input(GetListingsSchema)
+    .query(async ({ ctx, input }) => getListingsHelper(ctx, input)),
+
+  /**
    * Get featured listings
    */
   featured: mobilePublicProcedure.query(async ({ ctx }) => {
