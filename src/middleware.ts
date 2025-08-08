@@ -1,5 +1,6 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { getAllowedOrigins } from '@/lib/cors'
 import { ms } from '@/utils/time'
 import type { NextRequest } from 'next/server'
 
@@ -10,18 +11,6 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 // Rate limiting configuration
 const RATE_LIMIT_REQUESTS = 100 // requests per window
 const RATE_LIMIT_WINDOW = ms.minutes(3)
-
-// Allowed origins for API access
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-  'https://emuready.com',
-  'https://www.emuready.com',
-  'https://dev.emuready.com',
-  'http://localhost:3000',
-  'http://localhost:3001', // dev server backup
-  'https://eden-emu.dev', // Eden website
-  'https://eden-emulator-github-io.vercel.app', // Eden staging website
-]
 
 function getClientIdentifier(req: NextRequest): string {
   // Use IP from forwarded headers or fallback
@@ -77,15 +66,18 @@ function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
 
+  // Get the centralized allowed origins
+  const allowedOrigins = getAllowedOrigins()
+
   // Helper function to check if a URL exactly matches an allowed origin
   const isExactOriginMatch = (url: string): boolean => {
     try {
       const urlObj = new URL(url)
       const baseUrl = `${urlObj.protocol}//${urlObj.host}`
-      return ALLOWED_ORIGINS.includes(baseUrl)
+      return allowedOrigins.includes(baseUrl)
     } catch {
       // Invalid URL, check for exact string match
-      return ALLOWED_ORIGINS.includes(url)
+      return allowedOrigins.includes(url)
     }
   }
 

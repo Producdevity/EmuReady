@@ -1,10 +1,9 @@
 import { auth } from '@clerk/nextjs/server'
 import { type NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/server/db'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role, PrismaClient } from '@orm'
-
-const prisma = new PrismaClient()
+import { Role } from '@orm'
 
 export async function GET(
   request: NextRequest,
@@ -122,14 +121,10 @@ export async function GET(
     return NextResponse.json(response)
   } catch (error) {
     console.error('Error generating config:', error)
+    // Don't expose internal error details to client
     return NextResponse.json(
-      {
-        error: 'Failed to generate config',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Failed to generate config' },
       { status: 500 },
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

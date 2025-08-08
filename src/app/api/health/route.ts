@@ -168,7 +168,7 @@ export async function GET(_request: NextRequest) {
     const unhealthyResponse = {
       status: 'unhealthy' as const,
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: 'Health check failed',
     }
 
     return NextResponse.json(unhealthyResponse, {
