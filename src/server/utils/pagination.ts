@@ -1,3 +1,5 @@
+import { toArray } from '@/utils/array'
+
 export interface PaginationInput {
   limit?: number
   offset?: number
@@ -148,6 +150,9 @@ export function createPaginatedQueryWrapper<
   }
 }
 
+type SortDirection = 'asc' | 'desc'
+type SortConfig<T> = Record<string, (direction: SortDirection) => T | T[]>
+
 /**
  * Build orderBy clause from sort field and direction with type safety
  * @param sortConfig - Configuration for sort field mappings
@@ -157,41 +162,42 @@ export function createPaginatedQueryWrapper<
  * @returns Prisma orderBy clause
  */
 export function buildOrderBy<T = unknown>(
-  sortConfig: Record<string, (direction: 'asc' | 'desc') => unknown>,
+  sortConfig: SortConfig<T>,
   sortField?: string,
-  sortDirection?: 'asc' | 'desc',
+  sortDirection?: SortDirection,
   defaultOrderBy?: T | T[],
 ): T[] {
   const orderBy: T[] = []
 
+  // Apply primary sort if valid
   if (sortField && sortDirection && sortConfig[sortField]) {
     const sortResult = sortConfig[sortField](sortDirection)
-    if (Array.isArray(sortResult)) {
-      orderBy.push(...(sortResult as T[]))
-    } else {
-      orderBy.push(sortResult as T)
-    }
+    orderBy.push(...toArray(sortResult))
   }
 
-  // Add default ordering if no sort specified or as secondary sort
-  if (defaultOrderBy) {
-    if (orderBy.length === 0) {
-      if (Array.isArray(defaultOrderBy)) {
-        orderBy.push(...defaultOrderBy)
-      } else {
-        orderBy.push(defaultOrderBy)
-      }
-    } else if (sortField !== 'createdAt') {
-      // Add createdAt as secondary sort for consistent ordering
-      if (Array.isArray(defaultOrderBy)) {
-        orderBy.push(...defaultOrderBy)
-      } else {
-        orderBy.push(defaultOrderBy)
-      }
-    }
+  // Apply default ordering when appropriate
+  if (shouldApplyDefaultSort(orderBy, sortField, defaultOrderBy)) {
+    orderBy.push(...toArray(defaultOrderBy))
   }
 
   return orderBy
+}
+
+/**
+ * Determine if default sort should be applied
+ */
+function shouldApplyDefaultSort<T>(
+  orderBy: T[],
+  sortField?: string,
+  defaultOrderBy?: T | T[],
+): defaultOrderBy is NonNullable<T | T[]> {
+  if (!defaultOrderBy) return false
+
+  // Apply default if no primary sort exists
+  if (orderBy.length === 0) return true
+
+  // Apply as secondary sort unless already sorting by createdAt
+  return sortField !== 'createdAt'
 }
 
 /**
