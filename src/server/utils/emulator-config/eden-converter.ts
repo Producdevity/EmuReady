@@ -69,7 +69,7 @@ const FIELD_MAPPINGS: Record<
   {
     section: EdenConfigSection
     key: string
-    transform?: (value: unknown) => string | number | boolean
+    transform?: (value: unknown) => string | number | boolean | undefined
   }
 > = {
   // CPU Section
@@ -267,46 +267,35 @@ const FIELD_MAPPINGS: Record<
     transform: (value) => Boolean(value),
   },
 
-  // GPU Driver Section
   dynamic_driver_version: {
     section: 'GpuDriver',
     key: 'driver_path',
     transform: (value) => {
       const driverString = String(value).trim()
 
-      // Check for special cases that mean no custom driver
       if (EdenDefaults.isNoDriverValue(driverString)) {
-        return '' // Empty string means use system default
+        return undefined
       }
 
-      // Try to extract driver filename from various formats
-      // Format 1: "[Author/Repo] filename.adpkg" (most common)
       const bracketMatch = driverString.match(/\]\s*(.+\.adpkg)/i)
       if (bracketMatch && bracketMatch[1]) {
         return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
       }
 
-      // Format 2: Just the filename with .adpkg extension
       if (driverString.toLowerCase().endsWith('.adpkg')) {
-        // Remove any path if present and just use filename
         const filename = driverString.split('/').pop() || driverString
         return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${filename}.zip`
       }
 
-      // Format 3: Already a full path (check if it looks like a valid path)
       if (driverString.startsWith('/') && driverString.includes('gpu_drivers')) {
-        return driverString // Already formatted correctly
+        return driverString
       }
 
-      // Format 4: Just a driver name without extension (legacy text field entries)
-      // Try to detect common driver names and add proper extension
       if (EdenDefaults.isCommonDriverName(driverString)) {
-        // Assume it's a driver file missing extension
         return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${driverString}.adpkg.zip`
       }
 
-      // If we can't determine the format, return empty (use system default)
-      return ''
+      return undefined
     },
   },
 }
@@ -334,7 +323,10 @@ export function convertToEdenConfig(input: EdenConfigInput): EdenConfig {
         ? mapping.transform(fieldValue.value)
         : String(fieldValue.value)
 
-      // Update the config
+      if (transformedValue === undefined) {
+        continue
+      }
+
       const section = config[mapping.section]
       if (section && section[mapping.key as keyof typeof section]) {
         const configValue = section[mapping.key as keyof typeof section] as
@@ -342,24 +334,17 @@ export function convertToEdenConfig(input: EdenConfigInput): EdenConfig {
           | IntConfigValue
           | StringConfigValue
 
-        // Store the original default value before overriding (for reference)
-        // const originalDefaultValue = configValue.value
-
         configValue.value = transformedValue
-
-        // Special handling for driver_path - if empty, keep useGlobal=true (system default)
         if (mapping.key === 'driver_path' && transformedValue === '') {
           configValue.use_global = true
         } else {
           configValue.use_global = false
-          // Set the default property to false when field is overridden (Eden uses false regardless of type)
           configValue.default = false as unknown as typeof configValue.default
         }
       }
     }
   }
 
-  // Special handling for fields that affect multiple values
   const fastCpuTime = input.customFieldValues.find(
     (v) => v.customFieldDefinition.name === 'fast_cpu_time',
   )
@@ -427,29 +412,26 @@ export function serializeEdenConfig(config: EdenConfig): string {
 
       const configValue = setting as BooleanConfigValue | IntConfigValue | StringConfigValue
 
-      // Always write use_global first if it exists
       if (configValue.use_global !== undefined) {
         lines.push(`${key}\\use_global=${configValue.use_global ? 'true' : 'false'}`)
       }
 
-      // Then write default if it exists
       if (configValue.default !== undefined) {
         const defaultValue = formatIniValue(configValue.default)
         lines.push(`${key}\\default=${defaultValue}`)
       }
 
-      // Finally write the actual value if it exists
-      if (configValue.value !== undefined) {
+      if (key === 'driver_path' && configValue.use_global === true && configValue.value === '') {
+      } else if (configValue.value !== undefined) {
         const value = formatIniValue(configValue.value)
         lines.push(`${key}=${value}`)
       }
     }
 
-    lines.push('') // First empty line between sections
-    lines.push('') // Second empty line for double newline separation
+    lines.push('')
+    lines.push('')
   }
 
-  // Remove trailing empty lines
   while (lines.length > 0 && lines[lines.length - 1] === '') {
     lines.pop()
   }

@@ -99,6 +99,7 @@ function AdminGamesPage() {
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     status: isNullish(statusFilter) ? undefined : statusFilter,
+    listingFilter: 'all',
   })
 
   const gameStatsQuery = api.games.getStats.useQuery()
