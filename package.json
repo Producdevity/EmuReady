@@ -43,7 +43,8 @@
     "e2e:debug": "playwright test --debug",
     "test:e2e:ci:full": "playwright test --reporter=github",
     "types": "tsc --noEmit",
-    "vercel:build": "prisma migrate deploy && next build"
+    "vercel:build": "prisma migrate deploy && next build",
+    "version:sync": "node scripts/sync-version.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.24.0",
