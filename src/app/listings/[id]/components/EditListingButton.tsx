@@ -26,23 +26,32 @@ function EditListingButton(props: Props) {
 
   if (!user?.id) return null
 
-  // If it's not our listing, don't show the button at all
-  if (canEditQuery.data?.isOwner === false) return null
-
-  // Show loading state
-  if (canEditQuery.isPending) {
+  // Show loading state while checking permissions
+  if (canEditQuery.isPending || canEditQuery.isLoading) {
     return (
       <Button variant="outline" size="sm" disabled title="Checking edit permissions...">
         <Clock className="w-4 h-4" />
+        <span className="ml-1 hidden sm:inline">Loading...</span>
       </Button>
     )
   }
 
-  const canEdit = canEditQuery.data?.canEdit ?? false
-  const remainingMinutes = canEditQuery.data?.remainingMinutes ?? 0
-  const timeExpired = canEditQuery.data?.timeExpired ?? false
-  const isPending = canEditQuery.data?.isPending ?? false
-  const isApproved = canEditQuery.data?.isApproved ?? false
+  // Handle error state
+  if (canEditQuery.isError) {
+    return null
+  }
+
+  // If data is not available for some reason, don't show the button
+  if (!canEditQuery.data) return null
+
+  // If it's not our listing, don't show the button at all
+  if (canEditQuery.data.isOwner === false) return null
+
+  const canEdit = canEditQuery.data.canEdit
+  const remainingMinutes = canEditQuery.data.remainingMinutes ?? 0
+  const timeExpired = canEditQuery.data.timeExpired ?? false
+  const isPending = canEditQuery.data.isPending ?? false
+  const isApproved = canEditQuery.data.isApproved ?? false
 
   const buttonTitle = canEdit
     ? isPending
