@@ -180,12 +180,38 @@ function UserDetailsPage() {
                       {userTrustLevel.name}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 justify-center lg:justify-start">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 justify-center lg:justify-start mb-3">
                     <Calendar className="w-4 h-4" />
                     <span className="text-sm">
                       Joined <LocalizedDate date={user.createdAt ?? new Date()} format="date" />
                     </span>
                   </div>
+                  {/* User Badges */}
+                  {user.userBadges && user.userBadges.length > 0 && (
+                    <div className="flex flex-wrap gap-2 justify-center lg:justify-start mt-3">
+                      {user.userBadges.map((userBadge) => (
+                        <div
+                          key={userBadge.id}
+                          className="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-gray-700 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow duration-200"
+                          title={userBadge.badge.description || userBadge.badge.name}
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-white font-bold"
+                            style={{
+                              backgroundColor: userBadge.color || userBadge.badge.color,
+                              fontSize: '10px',
+                            }}
+                          >
+                            {userBadge.badge.icon?.charAt(0) ||
+                              userBadge.badge.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {userBadge.badge.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

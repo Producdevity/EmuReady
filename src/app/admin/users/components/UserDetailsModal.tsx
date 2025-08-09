@@ -384,16 +384,17 @@ function UserDetailsModal(props: Props) {
                     {userQuery.data.listings.items.length > 0 ? (
                       <div className="space-y-1">
                         {userQuery.data.listings.items.slice(0, 3).map((listing) => (
-                          <div
+                          <Link
                             key={listing.id}
-                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
+                            href={`/listings/${listing.id}`}
+                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
                           >
                             <span className="truncate">
                               {listing.game.title} on {listing.device.brand.name}{' '}
                               {listing.device.modelName}
                             </span>
                             <span className="text-gray-500 ml-2">{listing.performance.label}</span>
-                          </div>
+                          </Link>
                         ))}
                         {userQuery.data.listings.items.length > 3 && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -601,6 +602,44 @@ function UserDetailsModal(props: Props) {
                 </div>
               </div>
             </div>
+
+            {/* User Badges */}
+            {userQuery.data.userBadges && userQuery.data.userBadges.length > 0 && (
+              <div className="p-4 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-900/10 dark:to-blue-900/10 rounded-lg border border-purple-200/30 dark:border-purple-800/30">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Award className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    Badges Earned
+                  </span>
+                  <span className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full">
+                    {userQuery.data.userBadges.length} total
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {userQuery.data.userBadges.map((userBadge) => (
+                    <div
+                      key={userBadge.id}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
+                      title={userBadge.badge.description || userBadge.badge.name}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold"
+                        style={{
+                          backgroundColor: userBadge.color || userBadge.badge.color,
+                          fontSize: '11px',
+                        }}
+                      >
+                        {userBadge.badge.icon?.charAt(0) ||
+                          userBadge.badge.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {userBadge.badge.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">

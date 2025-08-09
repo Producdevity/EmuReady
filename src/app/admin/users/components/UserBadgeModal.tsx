@@ -126,7 +126,7 @@ export default function UserBadgeModal(props: Props) {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: userBadge.badge.color }}
+                        style={{ backgroundColor: userBadge.color || userBadge.badge.color }}
                       >
                         {userBadge.badge.icon || userBadge.badge.name.charAt(0).toUpperCase()}
                       </div>

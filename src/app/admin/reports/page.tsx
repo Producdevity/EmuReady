@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
@@ -9,10 +10,11 @@ import {
   AdminTableContainer,
 } from '@/components/admin'
 import {
-  Button,
   ColumnVisibilityControl,
+  ApproveButton,
   DeleteButton,
   EditButton,
+  ViewButton,
   LoadingSpinner,
   SortableHeader,
   useConfirmDialog,
@@ -31,6 +33,7 @@ import { ReportReason, ReportStatus } from '@orm'
 import ReportDetailsModal from './components/ReportDetailsModal'
 import ReportStatusModal from './components/ReportStatusModal'
 import { type ReportModalState, type ReportStatusModalState } from './types'
+import UserDetailsModal from '../users/components/UserDetailsModal'
 
 type ReportSortField = 'createdAt' | 'updatedAt' | 'status' | 'reason'
 
@@ -114,6 +117,7 @@ function AdminReportsPage() {
   const [reportStatusModal, setReportStatusModal] = useState<ReportStatusModalState>({
     isOpen: false,
   })
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const reportsStatsQuery = api.listingReports.getStats.useQuery()
   const reportsQuery = api.listingReports.getAll.useQuery({
@@ -140,6 +144,17 @@ function AdminReportsPage() {
     },
   })
 
+  const updateStatus = api.listingReports.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success('Report status updated successfully!')
+      utils.listingReports.getAll.invalidate().catch(console.error)
+      utils.listingReports.getStats.invalidate().catch(console.error)
+    },
+    onError: (err) => {
+      toast.error(`Failed to update report status: ${getErrorMessage(err)}`)
+    },
+  })
+
   const handleViewDetails = (report: (typeof reports)[0]) => {
     setReportDetailsModal({ isOpen: true, report })
   }
@@ -159,6 +174,22 @@ function AdminReportsPage() {
     deleteReport.mutate({
       id: report.id,
     } satisfies RouterInput['listingReports']['delete'])
+  }
+
+  const handleMarkResolved = async (report: (typeof reports)[0]) => {
+    const confirmed = await confirm({
+      title: 'Mark as Resolved',
+      description: 'Are you sure you want to mark this report as resolved?',
+      confirmText: 'Mark Resolved',
+    })
+
+    if (!confirmed) return
+
+    updateStatus.mutate({
+      id: report.id,
+      status: ReportStatus.RESOLVED,
+      reviewNotes: 'Marked as resolved',
+    } satisfies RouterInput['listingReports']['updateStatus'])
   }
 
   const statsData = reportsStatsQuery.data
@@ -318,9 +349,12 @@ function AdminReportsPage() {
                     {columnVisibility.isColumnVisible('listing') && (
                       <td className="px-6 py-4 text-sm">
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <Link
+                            href={`/listings/${report.listing.id}`}
+                            className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                          >
                             {report.listing.game.title}
-                          </div>
+                          </Link>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
                             {report.listing.device.modelName} • {report.listing.emulator.name}
                           </div>
@@ -346,14 +380,17 @@ function AdminReportsPage() {
                     )}
                     {columnVisibility.isColumnVisible('reportedBy') && (
                       <td className="px-6 py-4 text-sm">
-                        <div>
+                        <button
+                          onClick={() => setSelectedUserId(report.reportedBy.id)}
+                          className="text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                        >
                           <div className="font-medium text-gray-900 dark:text-white">
                             {report.reportedBy.name || 'Unknown'}
                           </div>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
                             {report.reportedBy.email}
                           </div>
-                        </div>
+                        </button>
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('reviewedBy') && (
@@ -369,20 +406,23 @@ function AdminReportsPage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
+                          <ViewButton
                             onClick={() => handleViewDetails(report)}
-                          >
-                            View
-                          </Button>
+                            title="View Report Details"
+                          />
                           {report.status !== ReportStatus.RESOLVED &&
                             report.status !== ReportStatus.DISMISSED && (
-                              <EditButton
-                                onClick={() => handleUpdateStatus(report)}
-                                title="Update Status"
+                              <ApproveButton
+                                onClick={() => handleMarkResolved(report)}
+                                title="Mark as Resolved"
+                                isLoading={updateStatus.isPending}
+                                disabled={updateStatus.isPending}
                               />
                             )}
+                          <EditButton
+                            onClick={() => handleUpdateStatus(report)}
+                            title="Update Status"
+                          />
                           <DeleteButton
                             onClick={() => handleDelete(report)}
                             title="Delete Report"
@@ -425,6 +465,12 @@ function AdminReportsPage() {
           utils.listingReports.getAll.invalidate().catch(console.error)
           utils.listingReports.getStats.invalidate().catch(console.error)
         }}
+      />
+
+      <UserDetailsModal
+        userId={selectedUserId}
+        isOpen={!!selectedUserId}
+        onClose={() => setSelectedUserId(null)}
       />
     </AdminPageLayout>
   )

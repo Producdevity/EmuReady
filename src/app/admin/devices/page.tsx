@@ -3,7 +3,12 @@
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminTableContainer, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+  AdminPageLayout,
+} from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -120,22 +125,17 @@ function AdminDevicesPage() {
     }
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Devices</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all gaming devices and hardware
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="Devices"
+      description="Manage all gaming devices and hardware"
+      headerActions={
+        <>
           <ColumnVisibilityControl columns={DEVICES_COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => openModal()}>Add Device</Button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {devicesStatsQuery.data && (
         <AdminStatsDisplay
           stats={[
@@ -309,7 +309,7 @@ function AdminDevicesPage() {
       />
 
       <DeviceViewModal isOpen={viewModalOpen} onClose={closeViewModal} deviceData={deviceData} />
-    </div>
+    </AdminPageLayout>
   )
 }
 

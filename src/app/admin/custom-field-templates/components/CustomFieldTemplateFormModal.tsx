@@ -916,7 +916,12 @@ function CustomFieldTemplateFormModal(props: Props) {
             <Button type="button" variant="outline" onClick={props.onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || customFieldTemplateQuery.isPending}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting || (!!props.templateIdToEdit && customFieldTemplateQuery.isPending)
+              }
+            >
               {isSubmitting
                 ? 'Saving...'
                 : props.templateIdToEdit
