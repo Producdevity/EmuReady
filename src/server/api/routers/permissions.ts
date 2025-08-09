@@ -18,6 +18,7 @@ import {
   managePermissionsProcedure,
 } from '@/server/api/trpc'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { userSelect } from '@/server/utils/selects'
 import { PermissionActionType, Role } from '@orm'
 
 export const permissionsRouter = createTRPCRouter({
@@ -64,7 +65,7 @@ export const permissionsRouter = createTRPCRouter({
         skip: offset,
         take: limit,
         include: {
-          rolePermissions: { select: { role: true } },
+          rolePermissions: { select: userSelect(['role']) },
           _count: { select: { rolePermissions: true } },
         },
       }),
@@ -94,7 +95,7 @@ export const permissionsRouter = createTRPCRouter({
             select: {
               role: true,
               assignedAt: true,
-              assignedByUser: { select: { id: true, name: true, email: true } },
+              assignedByUser: { select: userSelect(['id', 'name', 'email']) },
             },
           },
         },
@@ -237,7 +238,7 @@ export const permissionsRouter = createTRPCRouter({
               isSystem: true,
             },
           },
-          assignedByUser: { select: { id: true, name: true, email: true } },
+          assignedByUser: { select: userSelect(['id', 'name', 'email']) },
         },
         orderBy: [
           { role: 'asc' },
@@ -416,7 +417,7 @@ export const permissionsRouter = createTRPCRouter({
       const permissions = await ctx.prisma.permission.findMany({
         where,
         orderBy: [{ category: 'asc' }, { label: 'asc' }],
-        include: { rolePermissions: { select: { role: true } } },
+        include: { rolePermissions: { select: userSelect(['role']) } },
       })
 
       // Get all roles

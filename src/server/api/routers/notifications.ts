@@ -10,6 +10,7 @@ import {
 } from '@/schemas/notification'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
+import { userSelect } from '@/server/utils/selects'
 import { hasPermission } from '@/utils/permissions'
 import { DeliveryChannel, NotificationCategory, Role } from '@orm'
 
@@ -94,7 +95,7 @@ export const notificationsRouter = createTRPCRouter({
 
       // Get all users
       const users = await ctx.prisma.user.findMany({
-        select: { id: true },
+        select: userSelect(['id']),
       })
 
       // Create notification for each user

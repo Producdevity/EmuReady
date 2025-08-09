@@ -15,6 +15,12 @@ import {
 } from '@/server/api/trpc'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
+import {
+  userSelect,
+  userIdNameSelect,
+  gameTitleSelect,
+  emulatorBasicSelect,
+} from '@/server/utils/selects'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
 
@@ -92,14 +98,14 @@ export const listingReportsRouter = createTRPCRouter({
           include: {
             listing: {
               include: {
-                game: { select: { id: true, title: true } },
-                author: { select: { id: true, name: true } },
+                game: { select: gameTitleSelect },
+                author: { select: userIdNameSelect },
                 device: true,
-                emulator: { select: { id: true, name: true } },
+                emulator: { select: emulatorBasicSelect },
               },
             },
-            reportedBy: { select: { id: true, name: true, email: true } },
-            reviewedBy: { select: { id: true, name: true } },
+            reportedBy: { select: userSelect(['id', 'name', 'email']) },
+            reviewedBy: { select: userIdNameSelect },
           },
         }),
         ctx.prisma.listingReport.count({ where }),
@@ -120,14 +126,14 @@ export const listingReportsRouter = createTRPCRouter({
           listing: {
             include: {
               game: true,
-              author: { select: { id: true, name: true, email: true } },
+              author: { select: userSelect(['id', 'name', 'email']) },
               device: true,
               emulator: true,
               performance: true,
             },
           },
-          reportedBy: { select: { id: true, name: true, email: true } },
-          reviewedBy: { select: { id: true, name: true } },
+          reportedBy: { select: userSelect(['id', 'name', 'email']) },
+          reviewedBy: { select: userIdNameSelect },
         },
       })
 
@@ -175,8 +181,8 @@ export const listingReportsRouter = createTRPCRouter({
       include: {
         listing: {
           include: {
-            game: { select: { title: true } },
-            author: { select: { name: true } },
+            game: { select: gameTitleSelect },
+            author: { select: userSelect(['name']) },
           },
         },
       },
@@ -225,12 +231,12 @@ export const listingReportsRouter = createTRPCRouter({
         include: {
           listing: {
             include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
+              game: { select: gameTitleSelect },
+              author: { select: userSelect(['name']) },
             },
           },
-          reportedBy: { select: { name: true } },
-          reviewedBy: { select: { name: true } },
+          reportedBy: { select: userSelect(['name']) },
+          reviewedBy: { select: userSelect(['name']) },
         },
       })
     }),

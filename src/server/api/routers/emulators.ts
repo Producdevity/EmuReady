@@ -19,6 +19,7 @@ import {
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { batchQueries } from '@/server/utils/query-performance'
+import { userSelect, emulatorBasicSelect, systemBasicSelect } from '@/server/utils/selects'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
@@ -73,10 +74,10 @@ export const emulatorsRouter = createTRPCRouter({
     const emulators = await ctx.prisma.emulator.findMany({
       where,
       include: {
-        systems: { select: { id: true, name: true, key: true } },
+        systems: { select: systemBasicSelect },
         verifiedDevelopers: {
           include: {
-            user: { select: { id: true, name: true, profileImage: true } },
+            user: { select: userSelect(['id', 'name', 'profileImage']) },
           },
         },
         _count: { select: { listings: true, systems: true } },
@@ -96,10 +97,10 @@ export const emulatorsRouter = createTRPCRouter({
     const emulator = await ctx.prisma.emulator.findUnique({
       where: { id: input.id },
       include: {
-        systems: { select: { id: true, name: true, key: true } },
+        systems: { select: systemBasicSelect },
         verifiedDevelopers: {
           include: {
-            user: { select: { id: true, name: true, profileImage: true } },
+            user: { select: userSelect(['id', 'name', 'profileImage']) },
           },
         },
         customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
@@ -162,10 +163,10 @@ export const emulatorsRouter = createTRPCRouter({
     const emulators = await ctx.prisma.emulator.findMany({
       where,
       include: {
-        systems: { select: { id: true, name: true, key: true } },
+        systems: { select: systemBasicSelect },
         verifiedDevelopers: {
           include: {
-            user: { select: { id: true, name: true, profileImage: true } },
+            user: { select: userSelect(['id', 'name', 'profileImage']) },
           },
         },
         _count: { select: { listings: true, systems: true } },
@@ -191,8 +192,8 @@ export const emulatorsRouter = createTRPCRouter({
           },
         },
         include: {
-          user: { select: { id: true, name: true, profileImage: true } },
-          emulator: { select: { id: true, name: true } },
+          user: { select: userSelect(['id', 'name', 'profileImage']) },
+          emulator: { select: emulatorBasicSelect },
         },
       }),
   ),
@@ -277,7 +278,7 @@ export const emulatorsRouter = createTRPCRouter({
 
       const systems = await ctx.prisma.system.findMany({
         where: { id: { in: input.systemIds } },
-        select: { id: true },
+        select: userSelect(['id']),
       })
 
       if (systems.length !== input.systemIds.length) {

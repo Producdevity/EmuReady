@@ -12,6 +12,7 @@ import {
 } from '@/schemas/listing'
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { userSelect, userIdNameSelect } from '@/server/utils/selects'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
 
 export const commentsRouter = createTRPCRouter({
@@ -49,14 +50,14 @@ export const commentsRouter = createTRPCRouter({
 
     const userExists = await ctx.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: userSelect(['id']),
     })
 
     if (!userExists) return ResourceError.user.notInDatabase(userId)
 
     const comment = await ctx.prisma.comment.create({
       data: { content, userId, listingId, parentId },
-      include: { user: { select: { id: true, name: true } } },
+      include: { user: { select: userIdNameSelect } },
     })
 
     notificationEventEmitter.emitNotificationEvent({
@@ -108,12 +109,7 @@ export const commentsRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            role: true,
-          },
+          select: userSelect(['id', 'name', 'profileImage', 'role']),
         },
         replies: {
           where: {
@@ -121,12 +117,7 @@ export const commentsRouter = createTRPCRouter({
           },
           include: {
             user: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-                role: true,
-              },
+              select: userSelect(['id', 'name', 'profileImage', 'role']),
             },
           },
           orderBy: { createdAt: 'asc' },
@@ -146,7 +137,7 @@ export const commentsRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, name: true, profileImage: true, role: true },
+          select: userSelect(['id', 'name', 'profileImage', 'role']),
         },
       },
     })
@@ -242,7 +233,7 @@ export const commentsRouter = createTRPCRouter({
   edit: protectedProcedure.input(EditCommentSchema).mutation(async ({ ctx, input }) => {
     const comment = await ctx.prisma.comment.findUnique({
       where: { id: input.commentId },
-      include: { user: { select: { id: true } } },
+      include: { user: { select: userSelect(['id']) } },
     })
     if (!comment) return ResourceError.comment.notFound()
 
@@ -261,7 +252,7 @@ export const commentsRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, name: true, profileImage: true, role: true },
+          select: userSelect(['id', 'name', 'profileImage', 'role']),
         },
       },
     })
@@ -285,7 +276,7 @@ export const commentsRouter = createTRPCRouter({
   delete: protectedProcedure.input(DeleteCommentSchema).mutation(async ({ ctx, input }) => {
     const comment = await ctx.prisma.comment.findUnique({
       where: { id: input.commentId },
-      include: { user: { select: { id: true } } },
+      include: { user: { select: userSelect(['id']) } },
     })
 
     if (!comment) return ResourceError.comment.notFound()

@@ -7,6 +7,7 @@ import {
   BulkUpdateSocPreferencesSchema,
 } from '@/schemas/userPreferences'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { brandBasicSelect } from '@/server/utils/selects'
 import { sanitizeBio } from '@/utils/sanitization'
 
 export const userPreferencesRouter = createTRPCRouter({
@@ -28,7 +29,7 @@ export const userPreferencesRouter = createTRPCRouter({
               select: {
                 id: true,
                 modelName: true,
-                brand: { select: { id: true, name: true } },
+                brand: { select: brandBasicSelect },
                 soc: { select: { id: true, name: true, manufacturer: true } },
               },
             },

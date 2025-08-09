@@ -1,6 +1,7 @@
 import { ResourceError } from '@/lib/errors'
 import { GetGpusSchema, GetGpuByIdSchema } from '@/schemas/gpu'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { brandBasicSelect } from '@/server/utils/selects'
 import type { Prisma } from '@orm'
 
 export const mobileGpusRouter = createMobileTRPCRouter({
@@ -76,7 +77,7 @@ export const mobileGpusRouter = createMobileTRPCRouter({
     const [gpus, total] = await Promise.all([
       ctx.prisma.gpu.findMany({
         where,
-        include: { brand: { select: { id: true, name: true } } },
+        include: { brand: { select: brandBasicSelect } },
         orderBy,
         skip: actualOffset,
         take: limit,
@@ -103,7 +104,7 @@ export const mobileGpusRouter = createMobileTRPCRouter({
   getById: mobilePublicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {
     const gpu = await ctx.prisma.gpu.findUnique({
       where: { id: input.id },
-      include: { brand: { select: { id: true, name: true } } },
+      include: { brand: { select: brandBasicSelect } },
     })
 
     return gpu || ResourceError.gpu.notFound()

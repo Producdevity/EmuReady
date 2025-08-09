@@ -39,6 +39,12 @@ import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery, analyzeQueryComplexity } from '@/server/utils/query-performance'
 import {
+  userSelect,
+  userIdNameSelect,
+  systemBasicSelect,
+  brandBasicSelect,
+} from '@/server/utils/selects'
+import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
   getSwitchGamesStats,
@@ -106,7 +112,7 @@ async function performGameUpdate(
       data,
       include: {
         system: true,
-        submitter: { select: { id: true, name: true, email: true } },
+        submitter: { select: userSelect(['id', 'name', 'email']) },
       },
     })
   } catch (error) {
@@ -223,9 +229,9 @@ export const gamesRouter = createTRPCRouter({
           approvedBy: true,
           approvedAt: true,
           createdAt: true,
-          system: { select: { id: true, name: true } },
+          system: { select: systemBasicSelect },
           submitter: hasPermission(ctx.session?.user?.role, Role.ADMIN)
-            ? { select: { id: true, name: true, email: true } }
+            ? { select: userSelect(['id', 'name', 'email']) }
             : false,
           _count: { select: { listings: true, pcListings: true } },
         },
@@ -311,7 +317,7 @@ export const gamesRouter = createTRPCRouter({
 
     // Define include configuration for reusability and complexity analysis
     const includeConfig = {
-      submitter: { select: { id: true, name: true } },
+      submitter: { select: userIdNameSelect },
       system: { include: { emulators: true } },
       listings: {
         where: listingsWhere,
@@ -332,7 +338,7 @@ export const gamesRouter = createTRPCRouter({
             select: {
               id: true,
               modelName: true,
-              brand: { select: { id: true, name: true } },
+              brand: { select: brandBasicSelect },
             },
           },
           emulator: {
@@ -364,7 +370,7 @@ export const gamesRouter = createTRPCRouter({
                     isActive: true,
                     OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                   },
-                  select: { id: true },
+                  select: userSelect(['id']),
                 },
               }),
             },
@@ -404,7 +410,7 @@ export const gamesRouter = createTRPCRouter({
                     isActive: true,
                     OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                   },
-                  select: { id: true },
+                  select: userSelect(['id']),
                 },
               }),
             },
@@ -450,7 +456,7 @@ export const gamesRouter = createTRPCRouter({
           id: true,
           tgdbGameId: true,
           title: true,
-          system: { select: { name: true } },
+          system: { select: userSelect(['name']) },
         },
       })
 
@@ -514,7 +520,7 @@ export const gamesRouter = createTRPCRouter({
         },
         include: {
           system: true,
-          submitter: { select: { id: true, name: true } },
+          submitter: { select: userIdNameSelect },
         },
       })
 
@@ -696,10 +702,10 @@ export const gamesRouter = createTRPCRouter({
               select: { id: true, name: true, key: true, tgdbPlatformId: true },
             },
             submitter: {
-              select: { id: true, name: true, email: true, profileImage: true },
+              select: userSelect(['id', 'name', 'email', 'profileImage']),
             },
             approver: {
-              select: { id: true, name: true, email: true, profileImage: true },
+              select: userSelect(['id', 'name', 'email', 'profileImage']),
             },
           },
           orderBy: orderBy as Prisma.GameOrderByWithRelationInput,
@@ -735,8 +741,8 @@ export const gamesRouter = createTRPCRouter({
           },
           include: {
             system: true,
-            submitter: { select: { id: true, name: true, email: true } },
-            approver: { select: { id: true, name: true, email: true } },
+            submitter: { select: userSelect(['id', 'name', 'email']) },
+            approver: { select: userSelect(['id', 'name', 'email']) },
           },
         }),
     )
@@ -923,8 +929,8 @@ export const gamesRouter = createTRPCRouter({
         },
         include: {
           system: true,
-          submitter: { select: { id: true, name: true, email: true } },
-          approver: { select: { id: true, name: true, email: true } },
+          submitter: { select: userSelect(['id', 'name', 'email']) },
+          approver: { select: userSelect(['id', 'name', 'email']) },
         },
       })
 
@@ -985,8 +991,8 @@ export const gamesRouter = createTRPCRouter({
         },
         include: {
           system: true,
-          submitter: { select: { id: true, name: true, email: true } },
-          approver: { select: { id: true, name: true, email: true } },
+          submitter: { select: userSelect(['id', 'name', 'email']) },
+          approver: { select: userSelect(['id', 'name', 'email']) },
         },
       })
 

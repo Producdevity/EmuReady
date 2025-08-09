@@ -11,6 +11,12 @@ import {
   mobileDeveloperProcedure,
   mobileProtectedProcedure,
 } from '@/server/api/mobileContext'
+import {
+  userSelect,
+  userIdNameSelect,
+  emulatorBasicSelect,
+  gameTitleSelect,
+} from '@/server/utils/selects'
 
 export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
@@ -19,7 +25,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
   getMyVerifiedEmulators: mobileDeveloperProcedure.query(async ({ ctx }) => {
     const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
       where: { userId: ctx.session.user.id },
-      include: { emulator: { select: { id: true, name: true, logo: true } } },
+      include: { emulator: { select: emulatorBasicSelect } },
       orderBy: { verifiedAt: 'desc' },
     })
 
@@ -57,9 +63,9 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
         include: {
-          emulator: { select: { id: true, name: true } },
-          game: { select: { title: true } },
-          author: { select: { name: true } },
+          emulator: { select: emulatorBasicSelect },
+          game: { select: gameTitleSelect },
+          author: { select: userIdNameSelect },
         },
       })
 
@@ -88,7 +94,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       return await ctx.prisma.listingDeveloperVerification.create({
         data: { listingId, verifiedBy: userId, notes },
         include: {
-          developer: { select: { id: true, name: true, profileImage: true } },
+          developer: { select: userSelect(['id', 'name', 'profileImage']) },
         },
       })
     }),
@@ -128,7 +134,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       return await ctx.prisma.listingDeveloperVerification.findMany({
         where: { listingId: input.listingId },
         include: {
-          developer: { select: { id: true, name: true, profileImage: true } },
+          developer: { select: userSelect(['id', 'name', 'profileImage']) },
         },
         orderBy: { verifiedAt: 'desc' },
       })
@@ -153,8 +159,8 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
             listing: {
               include: {
                 game: { select: { title: true } },
-                emulator: { select: { name: true } },
-                device: { include: { brand: { select: { name: true } } } },
+                emulator: { select: userSelect(['name']) },
+                device: { include: { brand: { select: userSelect(['name']) } } },
               },
             },
           },

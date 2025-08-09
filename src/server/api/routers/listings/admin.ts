@@ -32,6 +32,12 @@ import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifica
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import {
+  userSelect,
+  gameTitleSelect,
+  systemBasicSelect,
+  emulatorBasicSelect,
+} from '@/server/utils/selects'
 import { hasPermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 
@@ -116,7 +122,7 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: userSelect(['id', 'name', 'email']) },
         performance: true,
       },
       orderBy,
@@ -192,7 +198,7 @@ export const adminRouter = createTRPCRouter({
     // Verify admin user exists
     const adminUserExists = await ctx.prisma.user.findUnique({
       where: { id: adminUserId },
-      select: { id: true },
+      select: userSelect(['id']),
     })
     if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
@@ -319,13 +325,13 @@ export const adminRouter = createTRPCRouter({
     // Verify admin user exists
     const adminUserExists = await ctx.prisma.user.findUnique({
       where: { id: adminUserId },
-      select: { id: true },
+      select: userSelect(['id']),
     })
     if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
     const listingToReject = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
-      include: { author: { select: { id: true } } },
+      include: { author: { select: userSelect(['id']) } },
     })
 
     if (!listingToReject || listingToReject.status !== ApprovalStatus.PENDING) {
@@ -421,9 +427,9 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: userSelect(['id', 'name', 'email']) },
         performance: true,
-        processedByUser: { select: { id: true, name: true, email: true } }, // Admin who processed
+        processedByUser: { select: userSelect(['id', 'name', 'email']) }, // Admin who processed
       },
       orderBy: {
         processedAt: 'desc', // Show most recently processed first
@@ -488,7 +494,7 @@ export const adminRouter = createTRPCRouter({
   delete: deleteAnyListingProcedure.input(DeleteListingSchema).mutation(async ({ ctx, input }) => {
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.id },
-      select: { id: true, game: { select: { title: true } } },
+      select: { id: true, game: { select: gameTitleSelect } },
     })
 
     if (!listing) return ResourceError.listing.notFound()
@@ -518,7 +524,7 @@ export const adminRouter = createTRPCRouter({
       // Verify admin user exists
       const adminUserExists = await ctx.prisma.user.findUnique({
         where: { id: adminUserId },
-        select: { id: true },
+        select: userSelect(['id']),
       })
       if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
@@ -719,7 +725,7 @@ export const adminRouter = createTRPCRouter({
       // Verify admin user exists
       const adminUserExists = await ctx.prisma.user.findUnique({
         where: { id: adminUserId },
-        select: { id: true },
+        select: userSelect(['id']),
       })
       if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
@@ -728,7 +734,7 @@ export const adminRouter = createTRPCRouter({
         // Get all listings to reject and verify they are pending
         const listingsToReject = await tx.listing.findMany({
           where: { id: { in: listingIds }, status: ApprovalStatus.PENDING },
-          include: { author: { select: { id: true } } },
+          include: { author: { select: userSelect(['id']) } },
         })
 
         // For developers, verify they can reject these emulator listings
@@ -935,7 +941,7 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true, soc: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: userSelect(['id', 'name', 'email']) },
         performance: true,
       },
       orderBy,
@@ -973,7 +979,7 @@ export const adminRouter = createTRPCRouter({
             customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
           },
         },
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: userSelect(['id', 'name', 'email']) },
         performance: true,
         customFieldValues: { include: { customFieldDefinition: true } },
       },
@@ -1050,12 +1056,11 @@ export const adminRouter = createTRPCRouter({
       include: {
         game: {
           select: {
-            id: true,
-            title: true,
-            system: { select: { id: true, name: true, key: true } },
+            ...gameTitleSelect,
+            system: { select: systemBasicSelect },
           },
         },
-        emulator: { select: { id: true, name: true } },
+        emulator: { select: emulatorBasicSelect },
         customFieldValues: {
           include: {
             customFieldDefinition: {

@@ -1,5 +1,6 @@
 import { GetCustomFieldDefinitionsByEmulatorSchema } from '@/schemas/customFieldDefinition'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { emulatorBasicSelect } from '@/server/utils/selects'
 
 export const mobileCustomFieldDefinitionsRouter = createMobileTRPCRouter({
   /**
@@ -13,7 +14,7 @@ export const mobileCustomFieldDefinitionsRouter = createMobileTRPCRouter({
         orderBy: { displayOrder: 'asc' },
         include: {
           emulator: {
-            select: { id: true, name: true },
+            select: emulatorBasicSelect,
           },
         },
       })

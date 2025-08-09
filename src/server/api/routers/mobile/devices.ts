@@ -2,6 +2,7 @@ import { ResourceError } from '@/lib/errors'
 import { GetDeviceByIdSchema } from '@/schemas/device'
 import { GetDevicesSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { brandBasicSelect } from '@/server/utils/selects'
 import { ApprovalStatus } from '@orm'
 
 export const mobileDevicesRouter = createMobileTRPCRouter({
@@ -24,7 +25,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
     return await ctx.prisma.device.findMany({
       where: baseWhere,
       include: {
-        brand: { select: { id: true, name: true } },
+        brand: { select: brandBasicSelect },
         soc: { select: { id: true, name: true, manufacturer: true } },
         _count: {
           select: {
@@ -43,7 +44,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   brands: mobilePublicProcedure.query(
     async ({ ctx }) =>
       await ctx.prisma.deviceBrand.findMany({
-        select: { id: true, name: true },
+        select: brandBasicSelect,
         orderBy: { name: 'asc' },
       }),
   ),
@@ -66,7 +67,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
     const device = await ctx.prisma.device.findUnique({
       where: { id: input.id },
       include: {
-        brand: { select: { id: true, name: true } },
+        brand: { select: brandBasicSelect },
         soc: { select: { id: true, name: true, manufacturer: true } },
         _count: {
           select: {

@@ -8,6 +8,7 @@ import {
 } from '@/schemas/permission'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { userSelect } from '@/server/utils/selects'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
 
@@ -59,7 +60,7 @@ export const permissionLogsRouter = createTRPCRouter({
           skip: offset,
           take: limit,
           include: {
-            user: { select: { id: true, name: true, email: true, role: true } },
+            user: { select: userSelect(['id', 'name', 'email', 'role']) },
             permission: {
               select: { id: true, key: true, label: true, category: true },
             },
@@ -129,7 +130,7 @@ export const permissionLogsRouter = createTRPCRouter({
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: userSelect(['id', 'name', 'email']) },
           permission: { select: { key: true, label: true } },
         },
       }),
@@ -166,7 +167,7 @@ export const permissionLogsRouter = createTRPCRouter({
       const log = await ctx.prisma.permissionActionLog.findUnique({
         where: { id: input.id },
         include: {
-          user: { select: { id: true, name: true, email: true, role: true } },
+          user: { select: userSelect(['id', 'name', 'email', 'role']) },
           permission: {
             select: {
               id: true,
@@ -193,7 +194,7 @@ export const permissionLogsRouter = createTRPCRouter({
           where: { permissionId: input.permissionId },
           orderBy: { createdAt: 'desc' },
           take: input.limit,
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: { user: { select: userSelect(['id', 'name', 'email']) } },
         }),
     ),
 
@@ -241,7 +242,7 @@ export const permissionLogsRouter = createTRPCRouter({
         where,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, name: true, email: true, role: true } },
+          user: { select: userSelect(['id', 'name', 'email', 'role']) },
           permission: {
             select: { id: true, key: true, label: true, category: true },
           },

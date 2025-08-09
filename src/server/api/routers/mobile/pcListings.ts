@@ -13,6 +13,13 @@ import {
 } from '@/server/api/mobileContext'
 import { pcListingInclude, buildPcListingWhere } from '@/server/api/utils/pcListingHelpers'
 import { createPaginationResult } from '@/server/utils/pagination'
+import {
+  userIdNameSelect,
+  brandBasicSelect,
+  emulatorBasicSelect,
+  performanceBasicSelect,
+  systemBasicSelect,
+} from '@/server/utils/selects'
 import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus } from '@orm'
 
@@ -147,14 +154,14 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
-        cpu: { include: { brand: { select: { id: true, name: true } } } },
-        gpu: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        cpu: { include: { brand: { select: brandBasicSelect } } },
+        gpu: { include: { brand: { select: brandBasicSelect } } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { reports: true, developerVerifications: true } },
       },
     })
@@ -195,14 +202,14 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
-        cpu: { include: { brand: { select: { id: true, name: true } } } },
-        gpu: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        cpu: { include: { brand: { select: brandBasicSelect } } },
+        gpu: { include: { brand: { select: brandBasicSelect } } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { reports: true, developerVerifications: true } },
       },
     })
@@ -233,7 +240,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       take: limit,
       orderBy: { modelName: 'asc' },
       include: {
-        brand: { select: { id: true, name: true } },
+        brand: { select: brandBasicSelect },
       },
     })
 
@@ -265,7 +272,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       take: limit,
       orderBy: { modelName: 'asc' },
       include: {
-        brand: { select: { id: true, name: true } },
+        brand: { select: brandBasicSelect },
       },
     })
 

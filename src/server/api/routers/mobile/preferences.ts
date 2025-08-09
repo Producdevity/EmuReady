@@ -13,6 +13,7 @@ import {
   DeletePcPresetSchema,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
+import { brandBasicSelect } from '@/server/utils/selects'
 import { sanitizeBio } from '@/utils/sanitization'
 
 export const mobilePreferencesRouter = createMobileTRPCRouter({
@@ -27,7 +28,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
           include: {
             device: {
               include: {
-                brand: { select: { id: true, name: true } },
+                brand: { select: brandBasicSelect },
                 soc: { select: { id: true, name: true, manufacturer: true } },
               },
             },
@@ -317,8 +318,8 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
         take: input.limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          cpu: { include: { brand: { select: { id: true, name: true } } } },
-          gpu: { include: { brand: { select: { id: true, name: true } } } },
+          cpu: { include: { brand: { select: brandBasicSelect } } },
+          gpu: { include: { brand: { select: brandBasicSelect } } },
         },
       })
     }),
@@ -332,8 +333,8 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
             userId: ctx.session.user.id,
           },
           include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
+            cpu: { include: { brand: { select: brandBasicSelect } } },
+            gpu: { include: { brand: { select: brandBasicSelect } } },
           },
         })
       }),
@@ -359,8 +360,8 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
           where: { id },
           data: updateData,
           include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
+            cpu: { include: { brand: { select: brandBasicSelect } } },
+            gpu: { include: { brand: { select: brandBasicSelect } } },
           },
         })
       }),

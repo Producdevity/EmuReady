@@ -9,6 +9,7 @@ import {
   suggestIndexes,
   analyzeQueryComplexity,
 } from '@/server/utils/query-performance'
+import { gameTitleSelect } from '@/server/utils/selects'
 import { ApprovalStatus } from '@orm'
 
 export const cacheRouter = createTRPCRouter({
@@ -60,7 +61,7 @@ export const cacheRouter = createTRPCRouter({
       const popularGames = await ctx.prisma.game.findMany({
         take: 10,
         orderBy: { listings: { _count: 'desc' } },
-        select: { id: true, title: true },
+        select: gameTitleSelect,
       })
 
       // Warm game metadata
@@ -85,7 +86,7 @@ export const cacheRouter = createTRPCRouter({
         where: { status: ApprovalStatus.APPROVED },
         orderBy: { votes: { _count: 'desc' } },
         include: {
-          game: { select: { title: true } },
+          game: { select: gameTitleSelect },
           device: { include: { brand: true } },
           emulator: true,
         },

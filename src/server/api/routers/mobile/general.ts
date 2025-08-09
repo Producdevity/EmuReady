@@ -1,5 +1,6 @@
 import { SearchSuggestionsSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { userSelect, emulatorBasicSelect, performanceBasicSelect } from '@/server/utils/selects'
 import { ApprovalStatus } from '@orm'
 
 export const mobileGeneralRouter = createMobileTRPCRouter({
@@ -45,7 +46,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
    */
   performanceScales: mobilePublicProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.performanceScale.findMany({
-      select: { id: true, label: true, rank: true },
+      select: performanceBasicSelect,
       orderBy: { rank: 'asc' },
     })
   }),
@@ -70,7 +71,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
               mode: 'insensitive',
             },
           },
-          select: { id: true, title: true, system: { select: { name: true } } },
+          select: { id: true, title: true, system: { select: userSelect(['name']) } },
           take: perCategory,
         }),
         ctx.prisma.device.findMany({
@@ -95,7 +96,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
           select: {
             id: true,
             modelName: true,
-            brand: { select: { name: true } },
+            brand: { select: userSelect(['name']) },
           },
           take: perCategory,
         }),
@@ -106,7 +107,7 @@ export const mobileGeneralRouter = createMobileTRPCRouter({
               mode: 'insensitive',
             },
           },
-          select: { id: true, name: true },
+          select: emulatorBasicSelect,
           take: perCategory,
         }),
       ])

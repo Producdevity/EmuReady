@@ -11,6 +11,7 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import { userSelect } from '@/server/utils/selects'
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY!,
@@ -88,7 +89,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
 
       return await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, name: true, role: true },
+        select: userSelect(['id', 'email', 'name', 'role']),
       })
     }),
 

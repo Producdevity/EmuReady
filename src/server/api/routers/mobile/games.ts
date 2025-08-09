@@ -9,6 +9,7 @@ import {
   GetSwitchGamesStatsMobileSchema,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { systemBasicSelect } from '@/server/utils/selects'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
@@ -64,7 +65,7 @@ async function getGamesQuery(
         isErotic: true,
         status: true,
         createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
+        system: { select: systemBasicSelect },
         _count: {
           select: {
             listings: { where: { status: ApprovalStatus.APPROVED } },
@@ -118,7 +119,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
         isErotic: true,
         status: true,
         createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
+        system: { select: systemBasicSelect },
         _count: {
           select: { listings: { where: { status: ApprovalStatus.APPROVED } } },
         },
@@ -148,7 +149,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
         isErotic: true,
         status: true,
         createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
+        system: { select: systemBasicSelect },
         _count: {
           select: {
             listings: { where: { status: ApprovalStatus.APPROVED } },
@@ -177,7 +178,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
         isErotic: true,
         status: true,
         createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
+        system: { select: systemBasicSelect },
         _count: {
           select: {
             listings: { where: { status: ApprovalStatus.APPROVED } },

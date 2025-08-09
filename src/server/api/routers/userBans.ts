@@ -15,6 +15,7 @@ import {
   viewUserBansProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
+import { userSelect, userIdNameSelect } from '@/server/utils/selects'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { Role, type Prisma } from '@orm'
@@ -88,8 +89,8 @@ export const userBansRouter = createTRPCRouter({
               createdAt: true,
             },
           },
-          bannedBy: { select: { id: true, name: true } },
-          unbannedBy: { select: { id: true, name: true } },
+          bannedBy: { select: userIdNameSelect },
+          unbannedBy: { select: userIdNameSelect },
         },
       }),
       ctx.prisma.userBan.count({ where }),
@@ -116,8 +117,8 @@ export const userBansRouter = createTRPCRouter({
             createdAt: true,
           },
         },
-        bannedBy: { select: { id: true, name: true } },
-        unbannedBy: { select: { id: true, name: true } },
+        bannedBy: { select: userIdNameSelect },
+        unbannedBy: { select: userIdNameSelect },
       },
     })
 
@@ -169,8 +170,8 @@ export const userBansRouter = createTRPCRouter({
     return await ctx.prisma.userBan.create({
       data: { userId, bannedById, reason, notes, expiresAt },
       include: {
-        user: { select: { id: true, name: true, email: true } },
-        bannedBy: { select: { id: true, name: true } },
+        user: { select: userSelect(['id', 'name', 'email']) },
+        bannedBy: { select: userIdNameSelect },
       },
     })
   }),
@@ -190,9 +191,9 @@ export const userBansRouter = createTRPCRouter({
       where: { id },
       data,
       include: {
-        user: { select: { id: true, name: true, email: true } },
-        bannedBy: { select: { id: true, name: true } },
-        unbannedBy: { select: { id: true, name: true } },
+        user: { select: userSelect(['id', 'name', 'email']) },
+        bannedBy: { select: userIdNameSelect },
+        unbannedBy: { select: userIdNameSelect },
       },
     })
   }),
@@ -220,9 +221,9 @@ export const userBansRouter = createTRPCRouter({
         notes: notes ? `${ban.notes || ''}\n\nUnban notes: ${notes}` : ban.notes,
       },
       include: {
-        user: { select: { id: true, name: true, email: true } },
-        bannedBy: { select: { id: true, name: true } },
-        unbannedBy: { select: { id: true, name: true } },
+        user: { select: userSelect(['id', 'name', 'email']) },
+        bannedBy: { select: userIdNameSelect },
+        unbannedBy: { select: userIdNameSelect },
       },
     })
   }),
@@ -236,7 +237,7 @@ export const userBansRouter = createTRPCRouter({
           isActive: true,
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        include: { bannedBy: { select: { name: true } } },
+        include: { bannedBy: { select: userSelect(['name']) } },
       })
 
       return {

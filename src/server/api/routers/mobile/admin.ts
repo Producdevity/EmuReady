@@ -26,6 +26,13 @@ import { listingStatsCache } from '@/server/utils/cache/instances'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
+import {
+  userSelect,
+  userIdNameSelect,
+  systemBasicSelect,
+  gameTitleSelect,
+  emulatorBasicSelect,
+} from '@/server/utils/selects'
 import { ApprovalStatus, Prisma, ReportStatus, TrustAction } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
@@ -128,7 +135,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           game: { include: { system: true } },
           device: { include: { brand: true } },
           emulator: true,
-          author: { select: { id: true, name: true, email: true } },
+          author: { select: userSelect(['id', 'name', 'email']) },
           performance: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -231,7 +238,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       const listingToReject = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-        include: { author: { select: { id: true } } },
+        include: { author: { select: userSelect(['id']) } },
       })
 
       if (!listingToReject || listingToReject.status !== ApprovalStatus.PENDING) {
@@ -296,8 +303,8 @@ export const mobileAdminRouter = createMobileTRPCRouter({
             isErotic: true,
             status: true,
             submittedAt: true,
-            system: { select: { id: true, name: true } },
-            submitter: { select: { id: true, name: true, email: true } },
+            system: { select: systemBasicSelect },
+            submitter: { select: userSelect(['id', 'name', 'email']) },
           },
           orderBy: { submittedAt: 'desc' },
           skip,
@@ -337,7 +344,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         },
         include: {
           system: true,
-          submitter: { select: { id: true, name: true, email: true } },
+          submitter: { select: userSelect(['id', 'name', 'email']) },
         },
       })
     }),
@@ -369,7 +376,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         },
         include: {
           system: true,
-          submitter: { select: { id: true, name: true, email: true } },
+          submitter: { select: userSelect(['id', 'name', 'email']) },
         },
       })
     }),
@@ -394,14 +401,14 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           include: {
             listing: {
               include: {
-                game: { select: { title: true } },
-                device: { include: { brand: { select: { name: true } } } },
-                emulator: { select: { name: true } },
-                author: { select: { id: true, name: true } },
+                game: { select: gameTitleSelect },
+                device: { include: { brand: { select: userSelect(['name']) } } },
+                emulator: { select: emulatorBasicSelect },
+                author: { select: userIdNameSelect },
               },
             },
-            reportedBy: { select: { id: true, name: true } },
-            reviewedBy: { select: { id: true, name: true } },
+            reportedBy: { select: userIdNameSelect },
+            reviewedBy: { select: userIdNameSelect },
           },
           orderBy: { createdAt: 'desc' },
           skip,
@@ -439,9 +446,9 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           reviewedAt: new Date(),
         },
         include: {
-          listing: { select: { id: true } },
-          reportedBy: { select: { id: true, name: true } },
-          reviewedBy: { select: { id: true, name: true } },
+          listing: { select: userSelect(['id']) },
+          reportedBy: { select: userIdNameSelect },
+          reviewedBy: { select: userIdNameSelect },
         },
       })
     }),
@@ -464,8 +471,8 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         ctx.prisma.userBan.findMany({
           where,
           include: {
-            user: { select: { id: true, name: true, email: true } },
-            bannedBy: { select: { id: true, name: true } },
+            user: { select: userSelect(['id', 'name', 'email']) },
+            bannedBy: { select: userIdNameSelect },
           },
           orderBy: { createdAt: 'desc' },
           skip,
@@ -491,7 +498,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       // Check if user exists
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true },
+        select: userSelect(['id']),
       })
 
       if (!user) return ResourceError.user.notFound()
@@ -516,8 +523,8 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           isActive: true,
         },
         include: {
-          user: { select: { id: true, name: true, email: true } },
-          bannedBy: { select: { id: true, name: true } },
+          user: { select: userSelect(['id', 'name', 'email']) },
+          bannedBy: { select: userIdNameSelect },
         },
       })
     }),
@@ -543,8 +550,8 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           expiresAt: expiresAt ? new Date(expiresAt) : undefined,
         },
         include: {
-          user: { select: { id: true, name: true, email: true } },
-          bannedBy: { select: { id: true, name: true } },
+          user: { select: userSelect(['id', 'name', 'email']) },
+          bannedBy: { select: userIdNameSelect },
         },
       })
     }),

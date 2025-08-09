@@ -35,6 +35,13 @@ import {
   buildNsfwFilter,
   buildArrayFilter,
 } from '@/server/utils/query-builders'
+import {
+  userSelect,
+  userIdNameSelect,
+  systemBasicSelect,
+  performanceBasicSelect,
+  brandBasicSelect,
+} from '@/server/utils/selects'
 import { withSavepoint } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
@@ -254,7 +261,7 @@ export const coreRouter = createTRPCRouter({
                 },
               },
               developerVerifications: {
-                include: { developer: { select: { id: true, name: true } } },
+                include: { developer: { select: userIdNameSelect } },
               },
               _count: { select: { votes: true, comments: true } },
               votes: ctx.session
@@ -393,7 +400,7 @@ export const coreRouter = createTRPCRouter({
         developerVerifications: {
           include: {
             developer: {
-              select: { id: true, name: true },
+              select: userIdNameSelect,
             },
           },
         },
@@ -487,7 +494,7 @@ export const coreRouter = createTRPCRouter({
         developerVerifications: {
           include: {
             developer: {
-              select: { id: true, name: true },
+              select: userIdNameSelect,
             },
           },
         },
@@ -498,9 +505,9 @@ export const coreRouter = createTRPCRouter({
         comments: {
           where: { parentId: null },
           include: {
-            user: { select: { id: true, name: true } },
+            user: { select: userIdNameSelect },
             replies: {
-              include: { user: { select: { id: true, name: true } } },
+              include: { user: { select: userIdNameSelect } },
               orderBy: { createdAt: 'asc' },
             },
           },
@@ -521,7 +528,7 @@ export const coreRouter = createTRPCRouter({
           isActive: true,
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        select: { id: true },
+        select: userSelect(['id']),
       })
 
       if (authorBanStatus) {
@@ -594,7 +601,7 @@ export const coreRouter = createTRPCRouter({
 
     const userExists = await ctx.prisma.user.findUnique({
       where: { id: authorId },
-      select: { id: true },
+      select: userSelect(['id']),
     })
 
     if (!userExists) {
@@ -625,7 +632,7 @@ export const coreRouter = createTRPCRouter({
 
       const emulator = await tx.emulator.findUnique({
         where: { id: emulatorId },
-        include: { systems: { select: { id: true } } },
+        include: { systems: { select: userSelect(['id']) } },
       })
 
       if (!emulator) return ResourceError.emulator.notFound()
@@ -759,7 +766,7 @@ export const coreRouter = createTRPCRouter({
 
     const userExists = await ctx.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: userSelect(['id']),
     })
 
     if (!userExists) return ResourceError.user.notInDatabase(userId)
@@ -991,9 +998,9 @@ export const coreRouter = createTRPCRouter({
         device: { include: { brand: true } },
         emulator: true,
         performance: true,
-        author: { select: { id: true, name: true } },
+        author: { select: userIdNameSelect },
         developerVerifications: {
-          include: { developer: { select: { id: true, name: true } } },
+          include: { developer: { select: userIdNameSelect } },
         },
         _count: { select: { votes: true, comments: true } },
       },
@@ -1213,14 +1220,14 @@ export const coreRouter = createTRPCRouter({
             select: {
               id: true,
               title: true,
-              system: { select: { id: true, name: true } },
+              system: { select: systemBasicSelect },
             },
           },
           device: {
             select: {
               id: true,
               modelName: true,
-              brand: { select: { id: true, name: true } },
+              brand: { select: brandBasicSelect },
             },
           },
           emulator: {
@@ -1230,7 +1237,7 @@ export const coreRouter = createTRPCRouter({
               customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
             },
           },
-          performance: { select: { id: true, label: true, rank: true } },
+          performance: { select: performanceBasicSelect },
           customFieldValues: { include: { customFieldDefinition: true } },
         },
       })
@@ -1252,7 +1259,7 @@ export const coreRouter = createTRPCRouter({
       where: { id: input.listingId },
       include: {
         emulator: true,
-        author: { select: { id: true, name: true } },
+        author: { select: userIdNameSelect },
       },
     })
 
@@ -1297,7 +1304,7 @@ export const coreRouter = createTRPCRouter({
         verifiedBy: userId,
         notes: input.notes,
       },
-      include: { developer: { select: { id: true, name: true } } },
+      include: { developer: { select: userIdNameSelect } },
     })
 
     // Emit notification event for listing verification

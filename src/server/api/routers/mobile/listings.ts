@@ -30,6 +30,13 @@ import {
   serializeGameNativeConfig,
 } from '@/server/utils/emulator-config/gamenative-converter'
 import { buildSearchFilter, buildNsfwFilter, buildArrayFilter } from '@/server/utils/query-builders'
+import {
+  userIdNameSelect,
+  systemBasicSelect,
+  emulatorBasicSelect,
+  performanceBasicSelect,
+  brandBasicSelect,
+} from '@/server/utils/selects'
 import { ApprovalStatus, type PrismaClient } from '@orm'
 
 // Helper function to calculate listing stats
@@ -111,13 +118,13 @@ async function getListingsHelper(
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
         device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { votes: true, comments: true } },
       },
     }),
@@ -174,12 +181,12 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       take: 10,
       include: {
         game: {
-          include: { system: { select: { id: true, name: true, key: true } } },
+          include: { system: { select: systemBasicSelect } },
         },
         device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { votes: true, comments: true } },
       },
     })
@@ -204,9 +211,9 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       },
       include: {
         device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { votes: true, comments: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -226,13 +233,13 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
         device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { votes: true, comments: true } },
         customFieldValues: {
           include: {
@@ -264,14 +271,14 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
         device: {
-          include: { brand: { select: { id: true, name: true } } },
+          include: { brand: { select: brandBasicSelect } },
         },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
         _count: { select: { votes: true, comments: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -303,13 +310,13 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
-        device: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        device: { include: { brand: { select: brandBasicSelect } } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { votes: true, comments: true } },
       },
     })
@@ -350,13 +357,13 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       include: {
         game: {
           include: {
-            system: { select: { id: true, name: true, key: true } },
+            system: { select: systemBasicSelect },
           },
         },
-        device: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
+        device: { include: { brand: { select: brandBasicSelect } } },
+        emulator: { select: emulatorBasicSelect },
+        performance: { select: performanceBasicSelect },
+        author: { select: userIdNameSelect },
         _count: { select: { votes: true, comments: true } },
       },
     })
@@ -430,7 +437,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   comments: mobilePublicProcedure.input(GetListingCommentsSchema).query(async ({ ctx, input }) => {
     return await ctx.prisma.comment.findMany({
       where: { listingId: input.listingId },
-      include: { user: { select: { id: true, name: true } } },
+      include: { user: { select: userIdNameSelect } },
       orderBy: { createdAt: 'desc' },
     })
   }),
@@ -447,7 +454,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           listingId: input.listingId,
           userId: ctx.session.user.id,
         },
-        include: { user: { select: { id: true, name: true } } },
+        include: { user: { select: userIdNameSelect } },
       })
     }),
 
@@ -472,7 +479,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       return await ctx.prisma.comment.update({
         where: { id: input.commentId },
         data: { content: input.content },
-        include: { user: { select: { id: true, name: true } } },
+        include: { user: { select: userIdNameSelect } },
       })
     }),
 
@@ -512,19 +519,12 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               id: true,
               title: true,
               system: {
-                select: {
-                  id: true,
-                  name: true,
-                  key: true,
-                },
+                select: systemBasicSelect,
               },
             },
           },
           emulator: {
-            select: {
-              id: true,
-              name: true,
-            },
+            select: emulatorBasicSelect,
           },
           customFieldValues: {
             include: {

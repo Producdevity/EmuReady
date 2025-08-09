@@ -17,6 +17,7 @@ import {
   protectedProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import { userSelect, userIdNameSelect } from '@/server/utils/selects'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
@@ -56,7 +57,7 @@ export const badgesRouter = createTRPCRouter({
       ctx.prisma.badge.findMany({
         where,
         include: {
-          creator: { select: { id: true, name: true, email: true } },
+          creator: { select: userSelect(['id', 'name', 'email']) },
           _count: { select: { userBadges: true } },
         },
         orderBy,
@@ -82,11 +83,11 @@ export const badgesRouter = createTRPCRouter({
     const badge = await ctx.prisma.badge.findUnique({
       where: { id: input.id },
       include: {
-        creator: { select: { id: true, name: true, email: true } },
+        creator: { select: userSelect(['id', 'name', 'email']) },
         userBadges: {
           include: {
-            user: { select: { id: true, name: true, email: true } },
-            assignedByUser: { select: { id: true, name: true, email: true } },
+            user: { select: userSelect(['id', 'name', 'email']) },
+            assignedByUser: { select: userSelect(['id', 'name', 'email']) },
           },
           orderBy: { assignedAt: 'desc' },
         },
@@ -102,7 +103,7 @@ export const badgesRouter = createTRPCRouter({
     // Check if badge name already exists
     const existingBadge = await ctx.prisma.badge.findUnique({
       where: { name: input.name },
-      select: { id: true },
+      select: userSelect(['id']),
     })
 
     if (existingBadge) return ResourceError.badge.alreadyExists(input.name)
@@ -113,7 +114,7 @@ export const badgesRouter = createTRPCRouter({
         createdBy: ctx.session.user.id,
       },
       include: {
-        creator: { select: { id: true, name: true, email: true } },
+        creator: { select: userSelect(['id', 'name', 'email']) },
         _count: { select: { userBadges: true } },
       },
     })
@@ -126,7 +127,7 @@ export const badgesRouter = createTRPCRouter({
     // Check if badge exists
     const existingBadge = await ctx.prisma.badge.findUnique({
       where: { id },
-      select: { id: true, name: true },
+      select: userIdNameSelect,
     })
 
     if (!existingBadge) return ResourceError.badge.notFound()
@@ -135,7 +136,7 @@ export const badgesRouter = createTRPCRouter({
     if (updateData.name && updateData.name !== existingBadge.name) {
       const exists = await ctx.prisma.badge.findUnique({
         where: { name: updateData.name },
-        select: { id: true },
+        select: userSelect(['id']),
       })
 
       if (exists) return ResourceError.badge.alreadyExists(updateData.name)
@@ -145,7 +146,7 @@ export const badgesRouter = createTRPCRouter({
       where: { id },
       data: updateData,
       include: {
-        creator: { select: { id: true, name: true, email: true } },
+        creator: { select: userSelect(['id', 'name', 'email']) },
         _count: { select: { userBadges: true } },
       },
     })
@@ -195,7 +196,7 @@ export const badgesRouter = createTRPCRouter({
     // Check if user exists
     const user = await ctx.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true },
+      select: userIdNameSelect,
     })
 
     if (!user) return ResourceError.user.notInDatabase(userId)
@@ -213,7 +214,7 @@ export const badgesRouter = createTRPCRouter({
     // Check if user already has this badge
     const existingAssignment = await ctx.prisma.userBadge.findUnique({
       where: { userId_badgeId: { userId, badgeId } },
-      select: { id: true },
+      select: userSelect(['id']),
     })
 
     if (existingAssignment) return ResourceError.badge.alreadyAssigned()
@@ -228,8 +229,8 @@ export const badgesRouter = createTRPCRouter({
       },
       include: {
         badge: true,
-        user: { select: { id: true, name: true, email: true } },
-        assignedByUser: { select: { id: true, name: true, email: true } },
+        user: { select: userSelect(['id', 'name', 'email']) },
+        assignedByUser: { select: userSelect(['id', 'name', 'email']) },
       },
     })
   }),
@@ -273,7 +274,7 @@ export const badgesRouter = createTRPCRouter({
       where: { userId, badge: { isActive: true } },
       include: {
         badge: true,
-        assignedByUser: { select: { id: true, name: true, email: true } },
+        assignedByUser: { select: userSelect(['id', 'name', 'email']) },
       },
       orderBy: { assignedAt: 'desc' },
     })
@@ -296,7 +297,7 @@ export const badgesRouter = createTRPCRouter({
     // Check if users exist
     const users = await ctx.prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true },
+      select: userSelect(['id']),
     })
 
     if (users.length !== userIds.length) {

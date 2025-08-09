@@ -1,6 +1,7 @@
 import { GetEmulatorByIdSchema, GetEmulatorsSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { buildSearchFilter } from '@/server/utils/query-builders'
+import { systemBasicSelect } from '@/server/utils/selects'
 import { ApprovalStatus } from '@orm'
 
 export const mobileEmulatorsRouter = createMobileTRPCRouter({
@@ -22,7 +23,7 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
     return await ctx.prisma.emulator.findMany({
       where: whereClause,
       include: {
-        systems: { select: { id: true, name: true, key: true } },
+        systems: { select: systemBasicSelect },
         _count: {
           select: {
             listings: { where: { status: ApprovalStatus.APPROVED } },
@@ -41,7 +42,7 @@ export const mobileEmulatorsRouter = createMobileTRPCRouter({
     return await ctx.prisma.emulator.findUnique({
       where: { id: input.id },
       include: {
-        systems: { select: { id: true, name: true, key: true } },
+        systems: { select: systemBasicSelect },
         _count: { select: { listings: true } },
       },
     })

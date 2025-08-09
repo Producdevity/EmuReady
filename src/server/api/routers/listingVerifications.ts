@@ -5,6 +5,12 @@ import {
   GetListingVerificationsSchema,
   GetMyVerificationsSchema,
 } from '@/schemas/listingVerification'
+import {
+  userSelect,
+  userIdNameSelect,
+  emulatorBasicSelect,
+  gameTitleSelect,
+} from '@/server/utils/selects'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const listingVerificationsRouter = createTRPCRouter({
@@ -16,9 +22,9 @@ export const listingVerificationsRouter = createTRPCRouter({
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
       include: {
-        emulator: { select: { id: true, name: true } },
-        game: { select: { title: true } },
-        author: { select: { name: true } },
+        emulator: { select: emulatorBasicSelect },
+        game: { select: gameTitleSelect },
+        author: { select: userIdNameSelect },
       },
     })
 
@@ -62,11 +68,7 @@ export const listingVerificationsRouter = createTRPCRouter({
       },
       include: {
         developer: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-          },
+          select: userSelect(['id', 'name', 'profileImage']),
         },
       },
     })
@@ -106,11 +108,7 @@ export const listingVerificationsRouter = createTRPCRouter({
         where: { listingId: input.listingId },
         include: {
           developer: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
+            select: userSelect(['id', 'name', 'profileImage']),
           },
         },
         orderBy: { verifiedAt: 'desc' },
@@ -135,10 +133,10 @@ export const listingVerificationsRouter = createTRPCRouter({
             listing: {
               include: {
                 game: { select: { title: true } },
-                emulator: { select: { name: true } },
+                emulator: { select: userSelect(['name']) },
                 device: {
                   include: {
-                    brand: { select: { name: true } },
+                    brand: { select: userSelect(['name']) },
                   },
                 },
               },

@@ -11,6 +11,7 @@ import {
   manageEmulatorVerifiedDevelopersProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
+import { userSelect, userIdNameSelect, emulatorBasicSelect } from '@/server/utils/selects'
 import { hasPermission } from '@/utils/permissions'
 import { Role, Prisma } from '@orm'
 
@@ -52,16 +53,10 @@ export const verifiedDevelopersRouter = createTRPCRouter({
           where,
           include: {
             user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                profileImage: true,
-                role: true,
-              },
+              select: userSelect(['id', 'name', 'email', 'profileImage', 'role']),
             },
-            emulator: { select: { id: true, name: true, logo: true } },
-            verifier: { select: { id: true, name: true, email: true } },
+            emulator: { select: emulatorBasicSelect },
+            verifier: { select: userSelect(['id', 'name', 'email']) },
           },
           orderBy: { verifiedAt: 'desc' },
           skip,
@@ -89,7 +84,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
 
       const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, email: true, role: true },
+        select: userSelect(['id', 'name', 'email', 'role']),
       })
 
       if (!user) return ResourceError.user.notFound()
@@ -103,7 +98,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
 
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: emulatorId },
-        select: { id: true, name: true },
+        select: userIdNameSelect,
       })
 
       if (!emulator) return ResourceError.emulator.notFound()
@@ -122,15 +117,9 @@ export const verifiedDevelopersRouter = createTRPCRouter({
         data: { userId, emulatorId, verifiedBy: verifierId, notes },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profileImage: true,
-              role: true,
-            },
+            select: userSelect(['id', 'name', 'email', 'profileImage', 'role']),
           },
-          emulator: { select: { id: true, name: true, logo: true } },
+          emulator: { select: emulatorBasicSelect },
         },
       })
     }),
@@ -141,8 +130,8 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: { id: input.id },
         include: {
-          user: { select: { name: true, email: true } },
-          emulator: { select: { name: true } },
+          user: { select: userSelect(['name', 'email']) },
+          emulator: { select: userSelect(['name']) },
         },
       })
 
@@ -173,7 +162,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
   getMyVerifiedEmulators: protectedProcedure.query(async ({ ctx }) => {
     const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
       where: { userId: ctx.session.user.id },
-      include: { emulator: { select: { id: true, name: true, logo: true } } },
+      include: { emulator: { select: emulatorBasicSelect } },
       orderBy: { verifiedAt: 'desc' },
     })
 
@@ -188,7 +177,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: { id },
         include: {
-          user: { select: { id: true, name: true, email: true, role: true } },
+          user: { select: userSelect(['id', 'name', 'email', 'role']) },
         },
       })
 
@@ -203,7 +192,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
 
       const emulator = await ctx.prisma.emulator.findUnique({
         where: { id: emulatorId },
-        select: { id: true, name: true },
+        select: userIdNameSelect,
       })
 
       if (!emulator) return ResourceError.emulator.notFound()
@@ -228,16 +217,10 @@ export const verifiedDevelopersRouter = createTRPCRouter({
         data: { emulatorId, notes },
         include: {
           user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profileImage: true,
-              role: true,
-            },
+            select: userSelect(['id', 'name', 'email', 'profileImage', 'role']),
           },
-          emulator: { select: { id: true, name: true, logo: true } },
-          verifier: { select: { id: true, name: true, email: true } },
+          emulator: { select: emulatorBasicSelect },
+          verifier: { select: userSelect(['id', 'name', 'email']) },
         },
       })
 

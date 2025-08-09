@@ -1,6 +1,7 @@
 import { ResourceError } from '@/lib/errors'
 import { GetCpusSchema, GetCpuByIdSchema } from '@/schemas/cpu'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { brandBasicSelect } from '@/server/utils/selects'
 import { Prisma } from '@orm'
 
 export const mobileCpusRouter = createMobileTRPCRouter({
@@ -77,7 +78,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
     const [cpus, total] = await Promise.all([
       ctx.prisma.cpu.findMany({
         where,
-        include: { brand: { select: { id: true, name: true } } },
+        include: { brand: { select: brandBasicSelect } },
         orderBy,
         skip: actualOffset,
         take: limit,
@@ -104,7 +105,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
   getById: mobilePublicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {
     const cpu = await ctx.prisma.cpu.findUnique({
       where: { id: input.id },
-      include: { brand: { select: { id: true, name: true } } },
+      include: { brand: { select: brandBasicSelect } },
     })
 
     return cpu || ResourceError.cpu.notFound()

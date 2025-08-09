@@ -58,6 +58,12 @@ import { listingStatsCache } from '@/server/utils/cache'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { buildNsfwFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
+import {
+  userSelect,
+  userIdNameSelect,
+  gameTitleSelect,
+  emulatorBasicSelect,
+} from '@/server/utils/selects'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, Role, ReportStatus } from '@orm'
@@ -339,7 +345,7 @@ export const pcListingsRouter = createTRPCRouter({
       input.gpuId ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }) : null,
       ctx.prisma.emulator.findUnique({
         where: { id: input.emulatorId },
-        include: { systems: { select: { id: true } } },
+        include: { systems: { select: userSelect(['id']) } },
       }),
       ctx.prisma.performanceScale.findUnique({
         where: { id: input.performanceId },
@@ -1141,18 +1147,13 @@ export const pcListingsRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, name: true, profileImage: true, role: true },
+          select: userSelect(['id', 'name', 'profileImage', 'role']),
         },
         replies: {
           where: { deletedAt: null },
           include: {
             user: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-                role: true,
-              },
+              select: userSelect(['id', 'name', 'profileImage', 'role']),
             },
           },
           orderBy: { createdAt: 'asc' },
@@ -1226,7 +1227,7 @@ export const pcListingsRouter = createTRPCRouter({
         data: { content, userId, pcListingId, parentId },
         include: {
           user: {
-            select: { id: true, name: true, profileImage: true, role: true },
+            select: userSelect(['id', 'name', 'profileImage', 'role']),
           },
         },
       })
@@ -1262,7 +1263,7 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const comment = await ctx.prisma.pcListingComment.findUnique({
         where: { id: input.commentId },
-        include: { user: { select: { id: true } } },
+        include: { user: { select: userSelect(['id']) } },
       })
 
       if (!comment) return ResourceError.comment.notFound()
@@ -1283,7 +1284,7 @@ export const pcListingsRouter = createTRPCRouter({
         },
         include: {
           user: {
-            select: { id: true, name: true, profileImage: true, role: true },
+            select: userSelect(['id', 'name', 'profileImage', 'role']),
           },
         },
       })
@@ -1294,7 +1295,7 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const comment = await ctx.prisma.pcListingComment.findUnique({
         where: { id: input.commentId },
-        include: { user: { select: { id: true } } },
+        include: { user: { select: userSelect(['id']) } },
       })
 
       if (!comment) return ResourceError.comment.notFound()
@@ -1418,8 +1419,8 @@ export const pcListingsRouter = createTRPCRouter({
         include: {
           pcListing: {
             include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
+              game: { select: gameTitleSelect },
+              author: { select: userSelect(['name']) },
             },
           },
         },
@@ -1446,15 +1447,15 @@ export const pcListingsRouter = createTRPCRouter({
           include: {
             pcListing: {
               include: {
-                game: { select: { id: true, title: true } },
-                author: { select: { id: true, name: true } },
+                game: { select: gameTitleSelect },
+                author: { select: userIdNameSelect },
                 cpu: true,
                 gpu: true,
-                emulator: { select: { id: true, name: true } },
+                emulator: { select: emulatorBasicSelect },
               },
             },
-            reportedBy: { select: { id: true, name: true, email: true } },
-            reviewedBy: { select: { id: true, name: true } },
+            reportedBy: { select: userSelect(['id', 'name', 'email']) },
+            reviewedBy: { select: userIdNameSelect },
           },
         }),
         ctx.prisma.pcListingReport.count({ where }),
@@ -1509,12 +1510,12 @@ export const pcListingsRouter = createTRPCRouter({
         include: {
           pcListing: {
             include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
+              game: { select: gameTitleSelect },
+              author: { select: userSelect(['name']) },
             },
           },
-          reportedBy: { select: { name: true } },
-          reviewedBy: { select: { name: true } },
+          reportedBy: { select: userSelect(['name']) },
+          reviewedBy: { select: userSelect(['name']) },
         },
       })
     }),
@@ -1556,7 +1557,7 @@ export const pcListingsRouter = createTRPCRouter({
           notes,
         },
         include: {
-          developer: { select: { id: true, name: true } },
+          developer: { select: userIdNameSelect },
         },
       })
     }),
@@ -1588,7 +1589,7 @@ export const pcListingsRouter = createTRPCRouter({
       return ctx.prisma.pcListingDeveloperVerification.findMany({
         where: { pcListingId: input.pcListingId },
         include: {
-          developer: { select: { id: true, name: true } },
+          developer: { select: userIdNameSelect },
         },
         orderBy: { verifiedAt: 'desc' },
       })

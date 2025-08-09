@@ -5,6 +5,7 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import { userIdNameSelect, gameTitleSelect } from '@/server/utils/selects'
 import { ReportStatus } from '@orm'
 
 export const mobileListingReportsRouter = createMobileTRPCRouter({
@@ -44,8 +45,8 @@ export const mobileListingReportsRouter = createMobileTRPCRouter({
         include: {
           listing: {
             include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
+              game: { select: gameTitleSelect },
+              author: { select: userIdNameSelect },
             },
           },
         },

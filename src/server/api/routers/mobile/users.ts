@@ -1,6 +1,13 @@
 import { AppError, ResourceError } from '@/lib/errors'
 import { GetUserByIdSchema } from '@/schemas/user'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import {
+  userSelect,
+  brandBasicSelect,
+  emulatorBasicSelect,
+  performanceBasicSelect,
+  gameTitleSelect,
+} from '@/server/utils/selects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role, Prisma } from '@orm'
 
@@ -33,7 +40,7 @@ export const mobileUsersRouter = createMobileTRPCRouter({
             isActive: true,
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
-          select: { id: true },
+          select: userSelect(['id']),
         },
       },
     })
@@ -123,12 +130,12 @@ export const mobileUsersRouter = createMobileTRPCRouter({
                 select: {
                   id: true,
                   modelName: true,
-                  brand: { select: { id: true, name: true } },
+                  brand: { select: brandBasicSelect },
                 },
               },
-              game: { select: { id: true, title: true } },
-              emulator: { select: { id: true, name: true } },
-              performance: { select: { id: true, label: true, rank: true } },
+              game: { select: gameTitleSelect },
+              emulator: { select: emulatorBasicSelect },
+              performance: { select: performanceBasicSelect },
               _count: { select: { votes: true, comments: true } },
             },
             orderBy: { createdAt: 'desc' },
@@ -147,14 +154,12 @@ export const mobileUsersRouter = createMobileTRPCRouter({
                     select: {
                       id: true,
                       modelName: true,
-                      brand: { select: { id: true, name: true } },
+                      brand: { select: brandBasicSelect },
                     },
                   },
-                  game: { select: { id: true, title: true } },
-                  emulator: { select: { id: true, name: true } },
-                  performance: {
-                    select: { id: true, label: true, rank: true },
-                  },
+                  game: { select: gameTitleSelect },
+                  emulator: { select: emulatorBasicSelect },
+                  performance: { select: performanceBasicSelect },
                 },
               },
             },

@@ -21,6 +21,13 @@ import { buildOrderBy, calculateOffset, createPaginationResult } from '@/server/
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
+import {
+  userSelect,
+  systemBasicSelect,
+  gameTitleSelect,
+  brandBasicSelect,
+  emulatorBasicSelect,
+} from '@/server/utils/selects'
 import { withOptimisticLock } from '@/server/utils/transactions'
 import { hasPermissionInContext, PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
@@ -58,12 +65,12 @@ export const usersRouter = createTRPCRouter({
             createdAt: true,
             device: {
               select: {
-                brand: { select: { id: true, name: true } },
+                brand: { select: brandBasicSelect },
                 modelName: true,
               },
             },
-            game: { select: { title: true } },
-            emulator: { select: { name: true } },
+            game: { select: gameTitleSelect },
+            emulator: { select: emulatorBasicSelect },
             performance: { select: { label: true } },
           },
           orderBy: { createdAt: 'desc' },
@@ -77,7 +84,7 @@ export const usersRouter = createTRPCRouter({
             status: true,
             submittedAt: true,
             approvedAt: true,
-            system: { select: { id: true, name: true } },
+            system: { select: systemBasicSelect },
           },
           orderBy: { submittedAt: 'desc' },
           take: 10, // Limit to 10 most recent submissions
@@ -93,12 +100,12 @@ export const usersRouter = createTRPCRouter({
                 id: true,
                 device: {
                   select: {
-                    brand: { select: { id: true, name: true } },
+                    brand: { select: brandBasicSelect },
                     modelName: true,
                   },
                 },
-                game: { select: { title: true } },
-                emulator: { select: { name: true } },
+                game: { select: gameTitleSelect },
+                emulator: { select: userSelect(['name']) },
                 performance: { select: { label: true } },
               },
             },
@@ -156,7 +163,7 @@ export const usersRouter = createTRPCRouter({
             isActive: true,
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
-          select: { id: true },
+          select: userSelect(['id']),
         },
       },
     })
@@ -250,7 +257,7 @@ export const usersRouter = createTRPCRouter({
               id: true,
               reason: true,
               expiresAt: true,
-              bannedBy: { select: { name: true } },
+              bannedBy: { select: userSelect(['name']) },
               createdAt: true,
             },
           },
@@ -288,18 +295,18 @@ export const usersRouter = createTRPCRouter({
           status: true,
           device: {
             select: {
-              brand: { select: { id: true, name: true } },
+              brand: { select: brandBasicSelect },
               modelName: true,
             },
           },
           game: {
             select: {
               title: true,
-              system: { select: { id: true, name: true, key: true } },
+              system: { select: systemBasicSelect },
             },
           },
-          emulator: { select: { name: true } },
-          performance: { select: { label: true, rank: true } },
+          emulator: { select: userSelect(['name']) },
+          performance: { select: performanceBasicSelect },
         },
         orderBy: { createdAt: 'desc' },
         skip: listingsSkip,
@@ -323,18 +330,18 @@ export const usersRouter = createTRPCRouter({
               id: true,
               device: {
                 select: {
-                  brand: { select: { id: true, name: true } },
+                  brand: { select: brandBasicSelect },
                   modelName: true,
                 },
               },
               game: {
                 select: {
                   title: true,
-                  system: { select: { id: true, name: true, key: true } },
+                  system: { select: systemBasicSelect },
                 },
               },
-              emulator: { select: { name: true } },
-              performance: { select: { label: true, rank: true } },
+              emulator: { select: userSelect(['name']) },
+              performance: { select: performanceBasicSelect },
             },
           },
         },
@@ -349,12 +356,12 @@ export const usersRouter = createTRPCRouter({
     const [availableSystems, availableEmulators] = await Promise.all([
       ctx.prisma.listing.findMany({
         where: { authorId: userId },
-        select: { device: { select: { brand: { select: { name: true } } } } },
+        select: { device: { select: { brand: { select: userSelect(['name']) } } } },
         distinct: ['deviceId'],
       }),
       ctx.prisma.listing.findMany({
         where: { authorId: userId },
-        select: { emulator: { select: { name: true } } },
+        select: { emulator: { select: userSelect(['name']) } },
         distinct: ['emulatorId'],
       }),
     ])
@@ -573,7 +580,7 @@ export const usersRouter = createTRPCRouter({
       // Get the target user's current role
       const targetUser = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, role: true, name: true, email: true },
+        select: userSelect(['id', 'role', 'name', 'email']),
       })
 
       if (!targetUser) return ResourceError.user.notFound()
@@ -631,7 +638,7 @@ export const usersRouter = createTRPCRouter({
       // Return updated user data
       const updatedUser = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, email: true, role: true },
+        select: userSelect(['id', 'name', 'email', 'role']),
       })
 
       // Invalidate SEO cache for user profile
@@ -682,13 +689,7 @@ export const usersRouter = createTRPCRouter({
 
       return await ctx.prisma.user.findMany({
         where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          profileImage: true,
-          role: true,
-        },
+        select: userSelect(['id', 'name', 'email', 'profileImage', 'role']),
         orderBy: [{ name: 'asc' }, { email: 'asc' }],
         take: limit,
       })
