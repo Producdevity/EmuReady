@@ -26,44 +26,11 @@ export async function OPTIONS(request: NextRequest) {
 const handler = async (req: NextRequest) => {
   const corsHeaders = getTRPCCorsHeaders(req)
 
-  // Debug: Log ALL headers to see what's actually arriving
-  const headers: Record<string, string> = {}
-  req.headers.forEach((value, key) => {
-    headers[key] = value.substring(0, 50) // Truncate for security
-  })
-
-  console.log('[Mobile Route] Handling request to:', req.url)
-  console.log('[Mobile Route] ALL headers received:', JSON.stringify(headers))
-
-  // Check for Vercel's special header that might contain the stripped auth
-  const vercelScHeaders = req.headers.get('x-vercel-sc-headers')
-  if (vercelScHeaders) {
-    console.log('[Mobile Route] Found x-vercel-sc-headers:', vercelScHeaders.substring(0, 200))
-  }
-
-  // Check for authorization header in different cases and custom headers
-  const authCheck = {
-    authorization: !!req.headers.get('authorization'),
-    Authorization: !!req.headers.get('Authorization'),
-    xAuthToken: !!req.headers.get('x-auth-token'),
-  }
-  console.log('[Mobile Route] Auth header check:', authCheck)
-
   try {
     // Create a new request with properly decoded URL to prevent double encoding issues
     const url = new URL(req.url)
     const decodedPathname = decodeURIComponent(url.pathname)
     const correctedUrl = new URL(decodedPathname + url.search, url.origin)
-
-    // Debug: Check if headers are preserved when creating new Request
-    console.log(
-      '[Mobile Route] Before new Request - auth header:',
-      req.headers.get('authorization'),
-    )
-    console.log(
-      '[Mobile Route] Before new Request - x-auth-token:',
-      req.headers.get('x-auth-token'),
-    )
 
     const correctedRequest = new Request(correctedUrl, {
       method: req.method,
@@ -71,16 +38,6 @@ const handler = async (req: NextRequest) => {
       body: req.body,
       duplex: 'half',
     } as RequestInit & { duplex: 'half' })
-
-    // Debug: Check headers after creating new Request
-    console.log(
-      '[Mobile Route] After new Request - auth header:',
-      correctedRequest.headers.get('authorization'),
-    )
-    console.log(
-      '[Mobile Route] After new Request - x-auth-token:',
-      correctedRequest.headers.get('x-auth-token'),
-    )
 
     const response = await fetchRequestHandler({
       endpoint: '/api/mobile/trpc',

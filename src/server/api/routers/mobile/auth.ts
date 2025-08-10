@@ -19,30 +19,6 @@ const clerkClient = createClerkClient({
 
 export const mobileAuthRouter = createMobileTRPCRouter({
   /**
-   * Test endpoint to check if token is being sent
-   */
-  testAuth: mobilePublicProcedure.query(async ({ ctx }) => {
-    const headers = ctx.headers
-    const authHeader = headers?.get('authorization') || headers?.get('Authorization')
-    const xAuthToken = headers?.get('x-auth-token')
-
-    console.log('[Mobile Auth Test] Headers check:', {
-      hasAuthHeader: !!authHeader,
-      hasXAuthToken: !!xAuthToken,
-      authHeaderLength: authHeader?.length,
-      xAuthTokenLength: xAuthToken?.length,
-    })
-
-    return {
-      hasAuthHeader: !!authHeader,
-      hasXAuthToken: !!xAuthToken,
-      authHeaderPrefix: authHeader ? `${authHeader.substring(0, 20)}...` : null,
-      xAuthTokenPrefix: xAuthToken ? `${xAuthToken.substring(0, 20)}...` : null,
-      timestamp: new Date().toISOString(),
-    }
-  }),
-
-  /**
    * Validate JWT token
    */
   validateToken: mobilePublicProcedure.input(ValidateTokenSchema).query(async ({ input }) => {
