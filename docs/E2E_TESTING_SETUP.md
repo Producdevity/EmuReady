@@ -1,82 +1,60 @@
-# E2E Testing Setup Guide
-
-This guide explains the E2E testing setup for EmuReady using Playwright.
+# E2E Testing Setup
 
 ## Quick Start
 
 ```bash
-# Run all tests with production build (fast)
-./run-e2e.sh
+# Run tests with UI (for development)
+npm run test:e2e
 
-# First time? Setup authentication
-./run-e2e.sh --setup-auth
-
-# Run with Playwright UI
-./run-e2e.sh --ui
-
-# Debug mode
-./run-e2e.sh --debug
-
-# Force rebuild
-./run-e2e.sh --build
+# Run tests headless (for CI)
+npm run test:e2e:ci
 ```
 
-## Configuration
+## Prerequisites
 
-- Uses `playwright.config.ts` for all test scenarios
-- Runs against production build by default (faster)
-- Cookie banner disabled via `NEXT_PUBLIC_DISABLE_COOKIE_BANNER` in `.env.test.local`
-- Separate test projects for different auth roles
-
-## Installation
-
+1. Install Playwright browsers:
 ```bash
-# Install dependencies (already done if you ran npm install)
-npm install
-
-# Install Playwright browsers
 npx playwright install
 ```
 
-## Running Tests
+2. Configure test environment:
+- Copy `.env.test.example` to `.env.test.local`
+- Add test user credentials to `.env.test.local`
 
-### Simple Commands
+## Configuration
 
-```bash
-# Run all tests headless (fast)
-npm run e2e
+Tests use `playwright.config.ts` with the following setup:
+- Runs against production build on port 3000
+- Uses `.env.test.local` for environment variables
+- Auth setup runs automatically before tests
+- Global setup initializes Clerk
 
-# Run with Playwright UI (interactive)
-npm run e2e:ui
+## Test Structure
 
-# Debug mode (step through tests)
-npm run e2e:debug
+```
+tests/
+├── .auth/              # Authentication states (gitignored)
+├── helpers/            # Test utilities
+├── pages/              # Page object models
+├── auth.setup.ts       # Authentication setup
+├── global.setup.ts     # Global initialization
+└── *.spec.ts          # Test files
 ```
 
-### Using the Runner Script
+## Authentication
 
-The `run-e2e.sh` script handles everything automatically:
+The auth setup creates state files for test users that already exist in your database. Tests check authentication status dynamically using the `isAuthenticated()` helper rather than relying on storage states.
 
-```bash
-# Basic usage - runs all tests
-./run-e2e.sh
-
-# With UI mode
-./run-e2e.sh --ui
-
-# Force rebuild
-./run-e2e.sh --build
-```
-
-## Test Modes
-
-- **Production mode**: `USE_DEV_SERVER=false` (default)
-- **Dev mode**: `USE_DEV_SERVER=true` (for debugging)
-
+Test roles configured in `.env.test.local`:
+- Regular user
+- Author
+- Moderator  
+- Developer
+- Admin
 
 ## Writing Tests
 
-Tests go in the `tests/` directory with `.spec.ts` extension:
+Tests go in `tests/` directory with `.spec.ts` extension:
 
 ```typescript
 import { test, expect } from '@playwright/test'
@@ -88,67 +66,97 @@ test('should navigate to games page', async ({ page }) => {
 })
 ```
 
-## CI/CD
+## Running Specific Tests
 
-GitHub Actions uses the CI test runner:
+```bash
+# Run a specific test file
+npx playwright test tests/navigation.spec.ts
 
-```yaml
-- name: Run E2E tests
-  run: ./tests/run-ci-tests.sh
+# Run tests matching a pattern
+npx playwright test -g "should display"
+
+# Run with specific reporter
+npx playwright test --reporter=html
 ```
 
-Or directly with Playwright:
+## CI/CD Integration
+
+GitHub Actions example:
 
 ```yaml
+- name: Install Playwright
+  run: npx playwright install --with-deps
+
 - name: Run E2E tests
-  run: npx playwright test
+  run: npm run test:e2e:ci
+```
+
+## Environment Variables
+
+Required in `.env.test.local`:
+
+```bash
+# Database
+DATABASE_URL=postgresql://...
+DATABASE_DIRECT_URL=postgresql://...
+
+# Clerk Auth
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Test Users (must exist in database)
+TEST_USER_EMAIL=user@emuready.com
+TEST_USER_PASSWORD=DevPassword123!
+TEST_AUTHOR_EMAIL=author@emuready.com
+TEST_AUTHOR_PASSWORD=DevPassword123!
+TEST_MODERATOR_EMAIL=moderator@emuready.com
+TEST_MODERATOR_PASSWORD=DevPassword123!
+TEST_DEVELOPER_EMAIL=developer@emuready.com
+TEST_DEVELOPER_PASSWORD=DevPassword123!
+TEST_ADMIN_EMAIL=admin@emuready.com
+TEST_ADMIN_PASSWORD=DevPassword123!
+
+# Test Configuration
+NEXT_PUBLIC_DISABLE_COOKIE_BANNER=true
+NEXT_PUBLIC_LOCAL_STORAGE_PREFIX="@TestEmuReady_"
 ```
 
 ## Troubleshooting
 
-### Tests are slow
-- The first run builds the app, subsequent runs are faster
-- Use `./run-e2e.sh` which uses production build
-
-### Cookie banner issues
-- Disabled via `NEXT_PUBLIC_DISABLE_COOKIE_BANNER=true` in `.env.test.local`
-- Make sure to rebuild after setting this: `npm run build:turbo`
-- The banner won't render at all when this is set
-
-### Need authenticated tests
-- Run `./run-e2e.sh --setup-auth` to generate auth states
-- Use specific projects: `--project=chromium-auth-user` or `--project=chromium-auth-admin`
-- Most tests work fine without authentication
-
-## Environment Variables
-
-`.env.test.local` contains:
-- `NEXT_PUBLIC_DISABLE_COOKIE_BANNER=true` - Disables cookie banner
-- `NEXT_PUBLIC_LOCAL_STORAGE_PREFIX="@TestEmuReady_"` - Test localStorage prefix
-- Test user credentials for each role
-
-## Authentication Setup
-
-For tests that require authentication:
-
+### Port 3000 already in use
+Kill existing processes:
 ```bash
-# Generate auth states for all roles
-./run-e2e.sh --setup-auth
-
-# Or manually
-npx playwright test --project=auth-setup
+pkill -f "next start" || pkill -f "next dev"
 ```
 
-This creates auth files in `tests/.auth/` for:
-- Regular user
-- Author
-- Moderator  
-- Developer
-- Admin
+### Tests timing out
+- Increase timeout in playwright.config.ts
+- Check if production build is up to date: `npm run build`
 
-## Notes
+### Authentication issues
+- Verify test users exist in database
+- Check Clerk keys are valid
+- Ensure `.env.test.local` is configured correctly
 
-- First run builds the app (takes longer)
-- Use `--ui` mode to debug failing tests
-- Rebuild with `npm run build:turbo` after changing environment variables
-- Check `tests/.auth/` exists for authenticated tests
+### Rate limiting errors
+Tests may hit rate limits during parallel execution. Reduce workers in playwright.config.ts if needed.
+
+### Missing elements
+- Tests expect certain data-testid attributes that may not exist
+- Admin tests require actual admin authentication
+
+## Test Status
+
+Current test suite includes 238 tests covering:
+- Accessibility
+- Authentication flows
+- Admin dashboard
+- User flows
+- Navigation
+- Forms
+- Comments
+- Voting
+- Error handling
+- Performance
+
+All tests should pass when the database is properly seeded with test users. The seeder creates all required test accounts with appropriate roles.

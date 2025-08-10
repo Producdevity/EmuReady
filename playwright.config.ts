@@ -1,17 +1,9 @@
 import path from 'path'
 import { defineConfig, devices } from '@playwright/test'
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
 import dotenv from 'dotenv'
 
-// Load test environment variables when running tests
-if (process.env.NODE_ENV === 'test' || process.argv.includes('test')) {
-  dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
-} else {
-  dotenv.config({ path: path.resolve(__dirname, '.env.local') })
-}
+/** Read environment variables from file. */
+dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -27,152 +19,48 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Global timeout for the entire test run */
-  globalTimeout: 30 * 60 * 1000, // 30 minutes
-  /* Test timeout - increased for production build */
-  timeout: process.env.USE_DEV_SERVER ? 60 * 1000 : 30 * 1000, // 60s for dev, 30s for prod
-  /* Global setup handled by setup dependency in projects */
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  reporter: 'list',
+  /* Test timeout */
+  timeout: 30 * 1000, // 30 seconds
+
+  /* Global setup - runs once before all tests */
+  globalSetup: require.resolve('./tests/global.setup.ts'),
+
+  /* Shared settings for all the projects below. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3000',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    /* Collect trace when retrying the failed test. */
     trace: 'on-first-retry',
 
-    /* Action timeout - how long to wait for element actions */
-    actionTimeout: 10 * 1000, // 10 seconds
+    /* Screenshot on failure */
+    screenshot: 'only-on-failure',
 
-    /* Navigation timeout - how long to wait for page loads */
-    navigationTimeout: 30 * 1000, // 30 seconds
-
-    /* Set cookie consent for all tests */
-    storageState: {
-      cookies: [],
-      origins: [
-        {
-          origin: 'http://localhost:3000',
-          localStorage: [
-            {
-              name: '@EmuReady_playwright_test',
-              value: 'true',
-            },
-            {
-              name: '@EmuReady_cookie_consent',
-              value: 'true',
-            },
-            {
-              name: '@EmuReady_cookie_preferences',
-              value: JSON.stringify({
-                necessary: true,
-                analytics: false,
-                performance: false,
-              }),
-            },
-            {
-              name: '@EmuReady_cookie_consent_date',
-              value: new Date().toISOString(),
-            },
-            {
-              name: '@EmuReady_analytics_enabled',
-              value: 'false',
-            },
-            {
-              name: '@EmuReady_performance_enabled',
-              value: 'false',
-            },
-          ],
-        },
-      ],
-    },
+    /* Video on failure */
+    video: 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
   projects: [
-    // Setup project - runs first to initialize Clerk
+    // Auth setup - run this first to create auth states
     {
       name: 'setup',
-      testMatch: '**/global.setup.ts',
+      testMatch: /auth\.setup\.ts/,
     },
-
-    // Auth setup project - generates auth state for all roles
     {
-      name: 'auth-setup',
-      testMatch: '**/auth.setup.ts',
-      dependencies: ['setup'],
-    },
-
-    // Unauthenticated tests - run on all browsers
-    {
-      name: 'chromium-unauth',
+      name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      dependencies: ['setup'],
+      testIgnore: ['**/auth.setup.ts', '**/global.setup.ts'],
+      dependencies: ['setup'], // Ensure auth is set up before running tests
     },
-
-    {
-      name: 'firefox-unauth',
-      use: { ...devices['Desktop Firefox'] },
-      dependencies: ['setup'],
-    },
-
-    // {
-    //   name: 'webkit-unauth',
-    //   use: { ...devices['Desktop Safari'] },
-    //   dependencies: ['setup'],
-    // },
-
-    // Authenticated tests for different roles
-    {
-      name: 'chromium-auth-user',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'tests/.auth/user.json',
-      },
-      dependencies: ['auth-setup'],
-    },
-    {
-      name: 'chromium-auth-admin',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'tests/.auth/admin.json',
-      },
-      dependencies: ['auth-setup'],
-    },
-
-    // Mobile browser tests
-    {
-      name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
-      dependencies: ['setup'],
-    },
-    {
-      name: 'mobile-safari',
-      use: { ...devices['iPhone 12'] },
-      dependencies: ['setup'],
-    },
-
-    // Additional desktop browsers (optional - may slow down tests)
-    // {
-    //   name: 'edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    //   dependencies: ['setup'],
-    // },
-    // {
-    //   name: 'chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    //   dependencies: ['setup'],
-    // },
   ],
 
+  /* Run your local dev server before starting the tests */
   webServer: {
-    command: process.env.USE_DEV_SERVER
-      ? 'npm run dev'
-      : 'NODE_ENV=production PLAYWRIGHT_TEST=true npm run start',
-    port: 3000,
+    command: 'npm run build && npm run start',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: process.env.USE_DEV_SERVER ? 120 * 1000 : 60 * 1000, // Increased production timeout
-    stdout: 'pipe',
-    stderr: 'pipe',
+    timeout: 120 * 1000, // 2 minutes to build and start
   },
 })

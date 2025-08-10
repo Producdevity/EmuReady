@@ -45,6 +45,24 @@ jobs:
       NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
       RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
       THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
+      # Test configuration
+      NEXT_PUBLIC_DISABLE_COOKIE_BANNER: "true"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_DISCORD_LINK: "https://discord.gg/test"
+      EMAIL_ENABLED: "false"
+      # Test user credentials
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL || 'user@emuready.com' }}
+      TEST_AUTHOR_EMAIL: ${{ secrets.TEST_AUTHOR_EMAIL || 'author@emuready.com' }}
+      TEST_MODERATOR_EMAIL: ${{ secrets.TEST_MODERATOR_EMAIL || 'moderator@emuready.com' }}
+      TEST_DEVELOPER_EMAIL: ${{ secrets.TEST_DEVELOPER_EMAIL || 'developer@emuready.com' }}
+      TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL || 'admin@emuready.com' }}
+      TEST_SUPER_ADMIN_EMAIL: ${{ secrets.TEST_SUPER_ADMIN_EMAIL || 'superadmin@emuready.com' }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD || 'DevPassword123!' }}
+      TEST_AUTHOR_PASSWORD: ${{ secrets.TEST_AUTHOR_PASSWORD || 'DevPassword123!' }}
+      TEST_MODERATOR_PASSWORD: ${{ secrets.TEST_MODERATOR_PASSWORD || 'DevPassword123!' }}
+      TEST_DEVELOPER_PASSWORD: ${{ secrets.TEST_DEVELOPER_PASSWORD || 'DevPassword123!' }}
+      TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD || 'DevPassword123!' }}
+      TEST_SUPER_ADMIN_PASSWORD: ${{ secrets.TEST_SUPER_ADMIN_PASSWORD || 'DevPassword123!' }}
 
     steps:
       - name: Checkout code
@@ -70,6 +88,9 @@ jobs:
       - name: Run database migrations
         run: npx prisma migrate deploy
 
+      - name: Seed test database
+        run: npx prisma db seed
+
       - name: Build application
         run: npm run build
 
@@ -77,11 +98,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run E2E tests
-        run: |
-          export USE_DEV_SERVER=false
-          # Run only non-admin tests in CI for now
-          # Admin tests require proper seed data and authentication setup
-          npx playwright test --reporter=github --grep-invert "Admin|Requires Admin Role"
+        run: npm run test:e2e:ci
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
