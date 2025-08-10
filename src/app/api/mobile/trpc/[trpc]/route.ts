@@ -9,8 +9,8 @@ function getTRPCCorsHeaders(request: NextRequest) {
   const baseHeaders = getCORSHeaders(request)
   return {
     ...baseHeaders,
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-trpc-source, x-client-type',
-    'Access-Control-Expose-Headers': 'x-trpc-source',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth-token',
+    'Access-Control-Expose-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400', // 24 hours
   }
 }
@@ -25,8 +25,23 @@ export async function OPTIONS(request: NextRequest) {
 
 const handler = async (req: NextRequest) => {
   const corsHeaders = getTRPCCorsHeaders(req)
+
+  // Debug: Log ALL headers to see what's actually arriving
+  const headers: Record<string, string> = {}
+  req.headers.forEach((value, key) => {
+    headers[key] = value.substring(0, 50) // Truncate for security
+  })
+
   console.log('[Mobile Route] Handling request to:', req.url)
-  console.log('[Mobile Route] Authorization header present:', !!req.headers.get('authorization'))
+  console.log('[Mobile Route] ALL headers received:', JSON.stringify(headers))
+
+  // Check for authorization header in different cases and custom headers
+  const authCheck = {
+    authorization: !!req.headers.get('authorization'),
+    Authorization: !!req.headers.get('Authorization'),
+    xAuthToken: !!req.headers.get('x-auth-token'),
+  }
+  console.log('[Mobile Route] Auth header check:', authCheck)
 
   try {
     // Create a new request with properly decoded URL to prevent double encoding issues
@@ -90,5 +105,8 @@ const handler = async (req: NextRequest) => {
     )
   }
 }
+
+// Export as edge runtime to bypass Node.js middleware
+export const runtime = 'edge'
 
 export { handler as GET, handler as POST }

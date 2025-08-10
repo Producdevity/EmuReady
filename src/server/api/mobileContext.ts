@@ -173,10 +173,30 @@ export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOpt
   let session: Nullable<Session> = null
   let clerkUserId: string | null = null
 
-  // Try mobile JWT token from Authorization header
-  const authHeader = opts.req.headers.get('authorization')
+  // Debug: Log all headers to understand what's arriving
+  const allHeaders: Record<string, string> = {}
+  opts.req.headers.forEach((value: string, key: string) => {
+    allHeaders[key] = value.substring(0, 50) // Truncate for security
+  })
+  console.log('[Mobile Context] ALL headers:', JSON.stringify(allHeaders))
+
+  // Try mobile JWT token from Authorization header (check both cases)
+  // Also check for custom header as fallback if Authorization is stripped
+  const authHeader =
+    opts.req.headers.get('authorization') ||
+    opts.req.headers.get('Authorization') ||
+    opts.req.headers.get('x-auth-token')
   const token = authHeader?.replace('Bearer ', '')
-  console.log('[Mobile Context] Found authorization header:', !!token)
+
+  console.log('[Mobile Context] Parsed headers:', {
+    hasAuth: !!token,
+    authHeaderFound: !!authHeader,
+    headerUsed: authHeader
+      ? authHeader === opts.req.headers.get('x-auth-token')
+        ? 'x-auth-token'
+        : 'Authorization'
+      : 'none',
+  })
 
   if (token) {
     try {
