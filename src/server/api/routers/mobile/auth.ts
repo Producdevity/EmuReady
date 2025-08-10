@@ -48,6 +48,15 @@ export const mobileAuthRouter = createMobileTRPCRouter({
     .query(async ({ ctx }) => {
       const user = ctx.session.user
 
+      // Fetch additional user data including trust score
+      const userData = await ctx.prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          trustScore: true,
+          profileImage: true,
+        },
+      })
+
       return {
         user: {
           id: user.id,
@@ -55,6 +64,8 @@ export const mobileAuthRouter = createMobileTRPCRouter({
           name: user.name,
           role: user.role,
           permissions: user.permissions,
+          trustScore: userData?.trustScore ?? 0,
+          profileImage: userData?.profileImage ?? null,
         },
         isAuthenticated: true,
       }
