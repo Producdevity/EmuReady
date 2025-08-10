@@ -15,6 +15,7 @@ import {
   userSelect,
   userIdNameSelect,
   emulatorBasicSelect,
+  brandBasicSelect,
   gameTitleSelect,
 } from '@/server/utils/selects'
 
@@ -159,8 +160,8 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
             listing: {
               include: {
                 game: { select: { title: true } },
-                emulator: { select: userSelect(['name']) },
-                device: { include: { brand: { select: userSelect(['name']) } } },
+                emulator: { select: emulatorBasicSelect },
+                device: { include: { brand: { select: brandBasicSelect } } },
               },
             },
           },

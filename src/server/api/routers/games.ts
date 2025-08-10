@@ -370,7 +370,7 @@ export const gamesRouter = createTRPCRouter({
                     isActive: true,
                     OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                   },
-                  select: userSelect(['id']),
+                  select: { id: true },
                 },
               }),
             },
@@ -410,7 +410,7 @@ export const gamesRouter = createTRPCRouter({
                     isActive: true,
                     OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                   },
-                  select: userSelect(['id']),
+                  select: { id: true },
                 },
               }),
             },
@@ -456,7 +456,7 @@ export const gamesRouter = createTRPCRouter({
           id: true,
           tgdbGameId: true,
           title: true,
-          system: { select: userSelect(['name']) },
+          system: { select: systemBasicSelect },
         },
       })
 

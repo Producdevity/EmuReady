@@ -32,6 +32,7 @@ import {
   systemBasicSelect,
   gameTitleSelect,
   emulatorBasicSelect,
+  brandBasicSelect,
 } from '@/server/utils/selects'
 import { ApprovalStatus, Prisma, ReportStatus, TrustAction } from '@orm'
 
@@ -402,7 +403,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
             listing: {
               include: {
                 game: { select: gameTitleSelect },
-                device: { include: { brand: { select: userSelect(['name']) } } },
+                device: { include: { brand: { select: brandBasicSelect } } },
                 emulator: { select: emulatorBasicSelect },
                 author: { select: userIdNameSelect },
               },
@@ -446,7 +447,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           reviewedAt: new Date(),
         },
         include: {
-          listing: { select: userSelect(['id']) },
+          listing: { select: { id: true } },
           reportedBy: { select: userIdNameSelect },
           reviewedBy: { select: userIdNameSelect },
         },

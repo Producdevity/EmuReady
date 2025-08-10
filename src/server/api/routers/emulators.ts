@@ -19,7 +19,12 @@ import {
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { batchQueries } from '@/server/utils/query-performance'
-import { userSelect, emulatorBasicSelect, systemBasicSelect } from '@/server/utils/selects'
+import {
+  userSelect,
+  emulatorBasicSelect,
+  systemBasicSelect,
+  systemIdSelect,
+} from '@/server/utils/selects'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
@@ -278,7 +283,7 @@ export const emulatorsRouter = createTRPCRouter({
 
       const systems = await ctx.prisma.system.findMany({
         where: { id: { in: input.systemIds } },
-        select: userSelect(['id']),
+        select: systemIdSelect,
       })
 
       if (systems.length !== input.systemIds.length) {

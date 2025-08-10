@@ -23,6 +23,7 @@ import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
 import {
   userSelect,
+  userNameSelect,
   systemBasicSelect,
   gameTitleSelect,
   brandBasicSelect,
@@ -105,7 +106,7 @@ export const usersRouter = createTRPCRouter({
                   },
                 },
                 game: { select: gameTitleSelect },
-                emulator: { select: userSelect(['name']) },
+                emulator: { select: emulatorBasicSelect },
                 performance: { select: { label: true } },
               },
             },
@@ -257,7 +258,7 @@ export const usersRouter = createTRPCRouter({
               id: true,
               reason: true,
               expiresAt: true,
-              bannedBy: { select: userSelect(['name']) },
+              bannedBy: { select: userNameSelect },
               createdAt: true,
             },
           },
@@ -305,7 +306,7 @@ export const usersRouter = createTRPCRouter({
               system: { select: systemBasicSelect },
             },
           },
-          emulator: { select: userSelect(['name']) },
+          emulator: { select: emulatorBasicSelect },
           performance: { select: performanceBasicSelect },
         },
         orderBy: { createdAt: 'desc' },
@@ -340,7 +341,7 @@ export const usersRouter = createTRPCRouter({
                   system: { select: systemBasicSelect },
                 },
               },
-              emulator: { select: userSelect(['name']) },
+              emulator: { select: emulatorBasicSelect },
               performance: { select: performanceBasicSelect },
             },
           },
@@ -356,12 +357,12 @@ export const usersRouter = createTRPCRouter({
     const [availableSystems, availableEmulators] = await Promise.all([
       ctx.prisma.listing.findMany({
         where: { authorId: userId },
-        select: { device: { select: { brand: { select: userSelect(['name']) } } } },
+        select: { device: { select: { brand: { select: brandBasicSelect } } } },
         distinct: ['deviceId'],
       }),
       ctx.prisma.listing.findMany({
         where: { authorId: userId },
-        select: { emulator: { select: userSelect(['name']) } },
+        select: { emulator: { select: emulatorBasicSelect } },
         distinct: ['emulatorId'],
       }),
     ])

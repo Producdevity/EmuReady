@@ -39,6 +39,7 @@ import {
   userSelect,
   userIdNameSelect,
   systemBasicSelect,
+  systemIdSelect,
   performanceBasicSelect,
   brandBasicSelect,
 } from '@/server/utils/selects'
@@ -528,7 +529,7 @@ export const coreRouter = createTRPCRouter({
           isActive: true,
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        select: userSelect(['id']),
+        select: { id: true },
       })
 
       if (authorBanStatus) {
@@ -632,7 +633,7 @@ export const coreRouter = createTRPCRouter({
 
       const emulator = await tx.emulator.findUnique({
         where: { id: emulatorId },
-        include: { systems: { select: userSelect(['id']) } },
+        include: { systems: { select: systemIdSelect } },
       })
 
       if (!emulator) return ResourceError.emulator.notFound()

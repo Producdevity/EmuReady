@@ -15,7 +15,7 @@ import {
   viewUserBansProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
-import { userSelect, userIdNameSelect } from '@/server/utils/selects'
+import { userSelect, userNameSelect, userIdNameSelect } from '@/server/utils/selects'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { Role, type Prisma } from '@orm'
@@ -237,7 +237,7 @@ export const userBansRouter = createTRPCRouter({
           isActive: true,
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        include: { bannedBy: { select: userSelect(['name']) } },
+        include: { bannedBy: { select: userNameSelect } },
       })
 
       return {

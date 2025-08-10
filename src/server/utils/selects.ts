@@ -22,8 +22,10 @@ export const brandSelect = buildSelect<Prisma.DeviceBrandSelect>()
 
 // Commonly reused selections
 export const userIdNameSelect = userSelect(['id', 'name'])
+export const userNameSelect = userSelect(['name'])
 export const gameTitleSelect = gameSelect(['id', 'title'])
 export const systemBasicSelect = systemSelect(['id', 'name', 'key'])
+export const systemIdSelect = systemSelect(['id'])
 export const emulatorBasicSelect = emulatorSelect(['id', 'name', 'logo'])
 export const performanceBasicSelect = performanceSelect(['id', 'label', 'rank'])
 export const brandBasicSelect = brandSelect(['id', 'name'])

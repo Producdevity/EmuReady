@@ -60,9 +60,11 @@ import { buildNsfwFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import {
   userSelect,
+  userNameSelect,
   userIdNameSelect,
   gameTitleSelect,
   emulatorBasicSelect,
+  systemIdSelect,
 } from '@/server/utils/selects'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
@@ -345,7 +347,7 @@ export const pcListingsRouter = createTRPCRouter({
       input.gpuId ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }) : null,
       ctx.prisma.emulator.findUnique({
         where: { id: input.emulatorId },
-        include: { systems: { select: userSelect(['id']) } },
+        include: { systems: { select: systemIdSelect } },
       }),
       ctx.prisma.performanceScale.findUnique({
         where: { id: input.performanceId },
@@ -1420,7 +1422,7 @@ export const pcListingsRouter = createTRPCRouter({
           pcListing: {
             include: {
               game: { select: gameTitleSelect },
-              author: { select: userSelect(['name']) },
+              author: { select: userNameSelect },
             },
           },
         },
@@ -1511,11 +1513,11 @@ export const pcListingsRouter = createTRPCRouter({
           pcListing: {
             include: {
               game: { select: gameTitleSelect },
-              author: { select: userSelect(['name']) },
+              author: { select: userNameSelect },
             },
           },
-          reportedBy: { select: userSelect(['name']) },
-          reviewedBy: { select: userSelect(['name']) },
+          reportedBy: { select: userNameSelect },
+          reviewedBy: { select: userNameSelect },
         },
       })
     }),

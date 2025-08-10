@@ -131,7 +131,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           user: { select: userSelect(['name', 'email']) },
-          emulator: { select: userSelect(['name']) },
+          emulator: { select: emulatorBasicSelect },
         },
       })
 

@@ -17,6 +17,7 @@ import { calculateOffset, createPaginationResult } from '@/server/utils/paginati
 import { batchQueries } from '@/server/utils/query-performance'
 import {
   userSelect,
+  userNameSelect,
   userIdNameSelect,
   gameTitleSelect,
   emulatorBasicSelect,
@@ -182,7 +183,7 @@ export const listingReportsRouter = createTRPCRouter({
         listing: {
           include: {
             game: { select: gameTitleSelect },
-            author: { select: userSelect(['name']) },
+            author: { select: userNameSelect },
           },
         },
       },
@@ -232,11 +233,11 @@ export const listingReportsRouter = createTRPCRouter({
           listing: {
             include: {
               game: { select: gameTitleSelect },
-              author: { select: userSelect(['name']) },
+              author: { select: userNameSelect },
             },
           },
-          reportedBy: { select: userSelect(['name']) },
-          reviewedBy: { select: userSelect(['name']) },
+          reportedBy: { select: userNameSelect },
+          reviewedBy: { select: userNameSelect },
         },
       })
     }),

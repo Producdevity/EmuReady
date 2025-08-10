@@ -10,6 +10,7 @@ import {
   userIdNameSelect,
   emulatorBasicSelect,
   gameTitleSelect,
+  brandBasicSelect,
 } from '@/server/utils/selects'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
@@ -133,10 +134,10 @@ export const listingVerificationsRouter = createTRPCRouter({
             listing: {
               include: {
                 game: { select: { title: true } },
-                emulator: { select: userSelect(['name']) },
+                emulator: { select: emulatorBasicSelect },
                 device: {
                   include: {
-                    brand: { select: userSelect(['name']) },
+                    brand: { select: brandBasicSelect },
                   },
                 },
               },
