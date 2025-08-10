@@ -35,6 +35,12 @@ const handler = async (req: NextRequest) => {
   console.log('[Mobile Route] Handling request to:', req.url)
   console.log('[Mobile Route] ALL headers received:', JSON.stringify(headers))
 
+  // Check for Vercel's special header that might contain the stripped auth
+  const vercelScHeaders = req.headers.get('x-vercel-sc-headers')
+  if (vercelScHeaders) {
+    console.log('[Mobile Route] Found x-vercel-sc-headers:', vercelScHeaders.substring(0, 200))
+  }
+
   // Check for authorization header in different cases and custom headers
   const authCheck = {
     authorization: !!req.headers.get('authorization'),
@@ -49,12 +55,32 @@ const handler = async (req: NextRequest) => {
     const decodedPathname = decodeURIComponent(url.pathname)
     const correctedUrl = new URL(decodedPathname + url.search, url.origin)
 
+    // Debug: Check if headers are preserved when creating new Request
+    console.log(
+      '[Mobile Route] Before new Request - auth header:',
+      req.headers.get('authorization'),
+    )
+    console.log(
+      '[Mobile Route] Before new Request - x-auth-token:',
+      req.headers.get('x-auth-token'),
+    )
+
     const correctedRequest = new Request(correctedUrl, {
       method: req.method,
       headers: req.headers,
       body: req.body,
       duplex: 'half',
     } as RequestInit & { duplex: 'half' })
+
+    // Debug: Check headers after creating new Request
+    console.log(
+      '[Mobile Route] After new Request - auth header:',
+      correctedRequest.headers.get('authorization'),
+    )
+    console.log(
+      '[Mobile Route] After new Request - x-auth-token:',
+      correctedRequest.headers.get('x-auth-token'),
+    )
 
     const response = await fetchRequestHandler({
       endpoint: '/api/mobile/trpc',
