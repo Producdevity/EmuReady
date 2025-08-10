@@ -180,22 +180,28 @@ function ApprovalModal(props: Props) {
             Cancel
           </Button>
           <Button
-            variant={
-              props.approvalDecision === ApprovalStatus.APPROVED
-                ? props.selectedListingForApproval.authorReportStats?.hasReports
-                  ? 'destructive'
-                  : 'primary'
-                : 'danger'
-            }
+            variant={(() => {
+              if (props.approvalDecision === ApprovalStatus.REJECTED) {
+                return 'danger'
+              }
+              // For approval, use destructive variant if author has any reports
+              const hasReports =
+                props.selectedListingForApproval.authorReportStats?.hasReports ?? false
+              return hasReports ? 'destructive' : 'primary'
+            })()}
             onClick={props.handleApprovalSubmit}
             isLoading={props.approveMutation.isPending || props.rejectMutation.isPending}
             disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
           >
-            {props.approvalDecision === ApprovalStatus.APPROVED
-              ? props.selectedListingForApproval.authorReportStats?.hasReports
-                ? 'Approve Anyway'
-                : 'Confirm Approval'
-              : 'Confirm Rejection'}
+            {(() => {
+              if (props.approvalDecision === ApprovalStatus.REJECTED) {
+                return 'Confirm Rejection'
+              }
+              // For approval, show warning text if author has reports
+              const hasReports =
+                props.selectedListingForApproval.authorReportStats?.hasReports ?? false
+              return hasReports ? 'Approve Anyway' : 'Confirm Approval'
+            })()}
           </Button>
         </div>
       </div>

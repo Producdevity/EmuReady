@@ -256,6 +256,10 @@ export class ResourceError {
     notPending: () => AppError.notFound('Pending listing not found or already processed'),
   }
 
+  static notification = {
+    notFound: () => AppError.notFound('Notification'),
+  }
+
   static customField = {
     notFound: () => AppError.notFound('Custom field'),
     alreadyExists: (name: string) =>

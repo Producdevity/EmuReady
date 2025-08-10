@@ -1,4 +1,4 @@
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreatePcListingSchema,
   GetCpusSchema,
@@ -172,7 +172,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       select: { authorId: true },
     })
 
-    if (!existing) return AppError.notFound('PC Listing')
+    if (!existing) return ResourceError.pcListing.notFound()
 
     if (existing.authorId !== ctx.session.user.id) {
       return AppError.forbidden('You can only edit your own PC listings')

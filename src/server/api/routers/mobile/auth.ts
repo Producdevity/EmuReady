@@ -1,5 +1,5 @@
 import { createClerkClient } from '@clerk/backend'
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   DeleteMobileAccountSchema,
   MobileSessionSchema,
@@ -93,7 +93,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
       })
 
       if (!user?.clerkId) {
-        return AppError.notFound('User not found')
+        return ResourceError.user.notFound()
       }
 
       const updateData: Record<string, string> = {}

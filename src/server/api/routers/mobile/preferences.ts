@@ -41,7 +41,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       },
     })
 
-    if (!user) return AppError.notFound('User')
+    if (!user) return ResourceError.user.notFound()
 
     return {
       devicePreferences: user.devicePreferences,

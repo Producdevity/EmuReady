@@ -327,7 +327,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       select: { authorId: true },
     })
 
-    if (!existing) return AppError.notFound('Listing')
+    if (!existing) return ResourceError.listing.notFound()
 
     if (existing.authorId !== ctx.session.user.id) {
       return AppError.forbidden('You can only edit your own listings')
@@ -372,7 +372,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       select: { authorId: true },
     })
 
-    if (!existing) return AppError.notFound('Listing')
+    if (!existing) return ResourceError.listing.notFound()
 
     return existing.authorId !== ctx.session.user.id
       ? AppError.forbidden('You can only delete your own listings')
@@ -543,7 +543,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       })
 
       if (!listing) {
-        return AppError.notFound('Listing')
+        return ResourceError.listing.notFound()
       }
 
       // Determine emulator type
