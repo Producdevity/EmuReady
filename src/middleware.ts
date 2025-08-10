@@ -2,7 +2,7 @@ import { clerkMiddleware } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { getAllowedOrigins } from '@/lib/cors'
 import { ms } from '@/utils/time'
-import type { NextRequest } from 'next/server'
+import type { NextRequest, NextFetchEvent } from 'next/server'
 
 // In-memory rate limiting with automatic cleanup
 // TODO: For distributed deployments, consider Redis or database-backed rate limiting
@@ -158,33 +158,33 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
   return response
 }
 
-export default clerkMiddleware((_auth, req: NextRequest) => {
-  const pathname = req.nextUrl.pathname
-
-  // Apply API protection first
+const handleClerkAuth = clerkMiddleware((auth, req) => {
   const apiProtectionResponse = protectTRPCAPI(req)
   if (apiProtectionResponse) return apiProtectionResponse
-
-  // Skip Clerk middleware for webhook endpoints
-  if (pathname.startsWith('/api/webhooks/')) {
-    console.info('Skipping Clerk middleware for webhook:', pathname)
-    return
-  }
-
-  // Skip Clerk middleware for mobile API routes to prevent CORS issues
-  if (pathname.startsWith('/api/mobile/')) {
-    console.info('Skipping Clerk middleware for mobile API:', pathname)
-    return
-  }
-
   return
 })
+
+export default function middleware(req: NextRequest, evt: NextFetchEvent) {
+  const pathname = req.nextUrl.pathname
+
+  if (pathname.startsWith('/api/mobile/')) {
+    const apiProtectionResponse = protectTRPCAPI(req)
+    if (apiProtectionResponse) return apiProtectionResponse
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/api/webhooks/')) {
+    return NextResponse.next()
+  }
+
+  return handleClerkAuth(req, evt)
+}
 
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Exclude mobile and webhook endpoints completely from middleware
-    '/((?!api/mobile|api/webhooks).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
   ],
 }
