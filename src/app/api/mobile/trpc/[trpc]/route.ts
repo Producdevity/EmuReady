@@ -25,6 +25,8 @@ export async function OPTIONS(request: NextRequest) {
 
 const handler = async (req: NextRequest) => {
   const corsHeaders = getTRPCCorsHeaders(req)
+  console.log('[Mobile Route] Handling request to:', req.url)
+  console.log('[Mobile Route] Authorization header present:', !!req.headers.get('authorization'))
 
   try {
     // Create a new request with properly decoded URL to prevent double encoding issues
