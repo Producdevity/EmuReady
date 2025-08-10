@@ -41,7 +41,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       },
     })
 
-    if (!user) return AppError.notFound('User')
+    if (!user) return ResourceError.user.notFound()
 
     return {
       devicePreferences: user.devicePreferences,
@@ -189,20 +189,41 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
         }
       }
 
-      // Remove existing preferences
-      await ctx.prisma.userDevicePreference.deleteMany({
-        where: { userId: user.id },
-      })
-
-      // Add new preferences
-      if (input.deviceIds.length > 0) {
-        await ctx.prisma.userDevicePreference.createMany({
-          data: input.deviceIds.map((deviceId) => ({
-            userId: user.id,
-            deviceId,
-          })),
+      // Use transaction for atomic operation
+      await ctx.prisma.$transaction(async (tx) => {
+        // Get existing preferences
+        const existing = await tx.userDevicePreference.findMany({
+          where: { userId: user.id },
+          select: { deviceId: true },
         })
-      }
+
+        const existingIds = new Set(existing.map((e) => e.deviceId))
+        const newIds = new Set(input.deviceIds)
+
+        // Calculate differences
+        const toDelete = [...existingIds].filter((id) => !newIds.has(id))
+        const toAdd = [...newIds].filter((id) => !existingIds.has(id))
+
+        // Delete removed preferences
+        if (toDelete.length > 0) {
+          await tx.userDevicePreference.deleteMany({
+            where: {
+              userId: user.id,
+              deviceId: { in: toDelete },
+            },
+          })
+        }
+
+        // Add new preferences
+        if (toAdd.length > 0) {
+          await tx.userDevicePreference.createMany({
+            data: toAdd.map((deviceId) => ({
+              userId: user.id,
+              deviceId,
+            })),
+          })
+        }
+      })
 
       // Return updated preferences
       return ctx.prisma.userDevicePreference.findMany({
@@ -237,17 +258,38 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
         }
       }
 
-      // Remove existing preferences
-      await ctx.prisma.userSocPreference.deleteMany({
-        where: { userId: user.id },
-      })
-
-      // Add new preferences
-      if (input.socIds.length > 0) {
-        await ctx.prisma.userSocPreference.createMany({
-          data: input.socIds.map((socId) => ({ userId: user.id, socId })),
+      // Use transaction for atomic operation
+      await ctx.prisma.$transaction(async (tx) => {
+        // Get existing preferences
+        const existing = await tx.userSocPreference.findMany({
+          where: { userId: user.id },
+          select: { socId: true },
         })
-      }
+
+        const existingIds = new Set(existing.map((e) => e.socId))
+        const newIds = new Set(input.socIds)
+
+        // Calculate differences
+        const toDelete = [...existingIds].filter((id) => !newIds.has(id))
+        const toAdd = [...newIds].filter((id) => !existingIds.has(id))
+
+        // Delete removed preferences
+        if (toDelete.length > 0) {
+          await tx.userSocPreference.deleteMany({
+            where: {
+              userId: user.id,
+              socId: { in: toDelete },
+            },
+          })
+        }
+
+        // Add new preferences
+        if (toAdd.length > 0) {
+          await tx.userSocPreference.createMany({
+            data: toAdd.map((socId) => ({ userId: user.id, socId })),
+          })
+        }
+      })
 
       // Return updated preferences
       return ctx.prisma.userSocPreference.findMany({
@@ -260,16 +302,53 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
    * Get current user's profile
    */
   currentProfile: mobileProtectedProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.user.findUnique({
+    const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
       select: {
         id: true,
         name: true,
+        email: true,
+        trustScore: true,
+        profileImage: true,
+        role: true,
         bio: true,
         createdAt: true,
-        _count: { select: { listings: true, votes: true, comments: true } },
+        _count: {
+          select: {
+            listings: true,
+            votes: true,
+            comments: true,
+            submittedGames: true,
+            pcListings: true,
+          },
+        },
       },
     })
+
+    if (!user) return null
+
+    // Get total votes received on user's content
+    const [listingVotesReceived, pcListingVotesReceived] = await Promise.all([
+      ctx.prisma.vote.count({
+        where: {
+          listing: {
+            authorId: ctx.session.user.id,
+          },
+        },
+      }),
+      ctx.prisma.pcListingVote.count({
+        where: {
+          pcListing: {
+            authorId: ctx.session.user.id,
+          },
+        },
+      }),
+    ])
+
+    return {
+      ...user,
+      votesReceived: listingVotesReceived + pcListingVotesReceived,
+    }
   }),
 
   /**

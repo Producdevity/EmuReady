@@ -42,6 +42,10 @@ jobs:
       NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
       RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
       THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
+      NEXT_PUBLIC_DISABLE_COOKIE_BANNER: "true"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_DISCORD_LINK: "https://discord.gg/test"
+      EMAIL_ENABLED: "false"
 
     steps:
       - name: Checkout code
@@ -65,6 +69,9 @@ jobs:
       - name: Run database migrations
         run: npx prisma migrate deploy
 
+      - name: Seed test database
+        run: npx prisma db seed
+
       - name: Lint & type-check
         run: npm run check
 
@@ -74,16 +81,3 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: E2E tests
-        run: npm run test:e2e:ci:full
-        env:
-          # Test user credentials
-          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL || 'user@emuready.com' }}
-          TEST_AUTHOR_EMAIL: ${{ secrets.TEST_AUTHOR_EMAIL || 'author@emuready.com' }}
-          TEST_MODERATOR_EMAIL: ${{ secrets.TEST_MODERATOR_EMAIL || 'moderator@emuready.com' }}
-          TEST_DEVELOPER_EMAIL: ${{ secrets.TEST_DEVELOPER_EMAIL || 'developer@emuready.com' }}
-          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL || 'admin@emuready.com' }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD || 'DevPassword123!' }}

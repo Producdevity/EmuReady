@@ -66,6 +66,15 @@ function AdminLayout(props: PropsWithChildren) {
   })
 
   const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
+
+  // Get pending reports count for admin navigation
+  const reportsStatsQuery = api.listingReports.getStats.useQuery(undefined, {
+    enabled: !!userQuery.data && isSuperAdmin,
+    refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
+    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  })
   const isAdmin = hasRolePermission(userQuery.data?.role, Role.ADMIN)
   const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
   const isDeveloper = userQuery.data?.role === Role.DEVELOPER // Exact match, not hierarchical
@@ -107,13 +116,21 @@ function AdminLayout(props: PropsWithChildren) {
     return item
   })
 
+  // Create super admin navigation items with counts
+  const superAdminNavItemsWithCounts = superAdminNavItems.map((item) => {
+    if (item.href === '/admin/reports' && reportsStatsQuery.data) {
+      return { ...item, count: reportsStatsQuery.data.pending }
+    }
+    return item
+  })
+
   // Select appropriate nav items based on a user role
   let navItems: AdminNavItem[] = []
   let superAdminItems: AdminNavItem[] = []
 
   if (isSuperAdmin) {
     navItems = adminNavItemsWithCounts
-    superAdminItems = superAdminNavItems
+    superAdminItems = superAdminNavItemsWithCounts
   } else if (isAdmin) {
     navItems = adminNavItemsWithCounts
   } else if (isModerator) {

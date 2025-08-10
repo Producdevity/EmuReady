@@ -1,6 +1,5 @@
 import path from 'path'
 import { test as setup, type Page } from '@playwright/test'
-import { AuthHelpers } from './helpers/auth'
 
 // Define auth files for different roles
 const authFiles = {
@@ -12,249 +11,208 @@ const authFiles = {
 }
 
 // Helper function to login with specific credentials
-async function authenticateUser(page: Page, email: string, password: string) {
-  const auth = new AuthHelpers(page)
+async function authenticateUser(page: Page, email: string, password: string, role: string) {
+  console.log(`🔐 Setting up authentication for ${role}: ${email}`)
 
-  // Set cookie consent before navigation to prevent banner
-  await page.addInitScript(() => {
-    const PREFIX = '@TestEmuReady_'
-    localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
-    localStorage.setItem(
-      `${PREFIX}cookie_preferences`,
-      JSON.stringify({
-        necessary: true,
-        analytics: false,
-        performance: false,
-      }),
-    )
-    localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
-    localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
-    localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
-  })
+  try {
+    // Navigate to home page
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
 
-  // Go to the app
-  await page.goto('/')
+    // Check if already authenticated by looking for user menu
+    const userMenuButton = page
+      .locator('.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]')
+      .first()
+    const isAlreadySignedIn = await userMenuButton.isVisible({ timeout: 3000 }).catch(() => false)
 
-  // Check if cookie banner is still present (shouldn't be)
-  const cookieBanner = page
-    .locator('.fixed.inset-0.z-\\[70\\]')
-    .filter({ hasText: /Cookie Preferences/i })
-  const isBannerVisible = await cookieBanner.isVisible({ timeout: 1000 }).catch(() => false)
+    if (isAlreadySignedIn) {
+      console.log(`🔄 Already signed in, signing out first...`)
+      await userMenuButton.click()
 
-  if (isBannerVisible) {
-    console.log('Cookie banner detected, attempting to dismiss...')
+      // Look for sign out option
+      const signOutButton = page
+        .getByRole('menuitem', { name: /sign out/i })
+        .or(page.getByText(/sign out/i))
+      await signOutButton.click()
 
-    // Try clicking Accept All button first
-    const acceptButton = page.getByRole('button', { name: /accept all/i })
-    if (await acceptButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await acceptButton.click()
-      await page.waitForTimeout(1000)
-    } else {
-      // Try clicking the backdrop to dismiss
-      const backdrop = page.locator('.absolute.inset-0.bg-black\\/30')
-      if (await backdrop.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await backdrop.click({ force: true, position: { x: 10, y: 10 } })
-        await page.waitForTimeout(1000)
-      }
+      // Wait for sign out to complete
+      await page.waitForTimeout(2000)
+      await page.goto('/')
     }
 
-    // Wait for banner to disappear
-    await cookieBanner.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-  }
+    // Click sign in button
+    const signInButton = page.getByRole('button', { name: /sign in/i }).first()
+    await signInButton.waitFor({ state: 'visible', timeout: 10000 })
+    await signInButton.click()
 
-  // Check if already authenticated
-  const isAuthenticated = await auth.isAuthenticated()
-  if (isAuthenticated) {
-    console.log(`Already authenticated - signing out first`)
+    // Wait for Clerk sign-in modal to load
+    await page.waitForSelector(
+      'input[name="identifier"], input[name="emailAddress"], input[type="email"]',
+      {
+        timeout: 10000,
+        state: 'visible',
+      },
+    )
 
-    // Find and click the user button
-    const userButton = page
-      .locator('button')
-      .filter({ hasText: /open user button/i })
-      .or(page.locator('[data-testid="user-button"]'))
-    await userButton.click()
-
-    // Wait for menu and click sign out
-    await page.waitForTimeout(1000)
-    const signOutButton = page.getByRole('button', { name: /sign out/i })
-    await signOutButton.click()
-
-    // Wait for sign out to complete
-    await page.waitForTimeout(2000)
-  }
-
-  // Wait for auth components to load
-  await auth.waitForAuthComponents()
-
-  // Click sign in button
-  await auth.clickSignInButton()
-
-  // Wait for Clerk modal
-  await auth.waitForClerkModal('sign-in')
-
-  // Fill in email - Clerk uses "identifier" field
-  const emailInput = page
-    .locator('input[name="identifier"], input[type="email"], input[name="email"]')
-    .first()
-  await emailInput.waitFor({ state: 'visible' })
-  await emailInput.fill(email)
-
-  // Click continue/next button
-  const continueButton = page.getByRole('button', { name: /continue|next/i })
-  await continueButton.click()
-
-  // Wait for password field to appear
-  await page.waitForTimeout(1000)
-
-  // Check if password field is visible or if we need to handle different flow
-  const passwordField = page.locator('input[type="password"]')
-  const passwordVisible = await passwordField.isVisible({ timeout: 5000 }).catch(() => false)
-
-  if (!passwordVisible) {
-    // Might be a one-step login form, try filling both fields
-    const emailFieldAgain = page
-      .locator('input[name="identifier"], input[type="email"], input[name="email"]')
+    // Fill email
+    const emailField = page
+      .locator('input[name="identifier"], input[name="emailAddress"], input[type="email"]')
       .first()
-    await emailFieldAgain.fill(email)
+    await emailField.fill(email)
 
-    const passwordFieldAlt = page.locator('input[name="password"], input[type="password"]').first()
-    await passwordFieldAlt.fill(password)
+    // Continue to password step
+    const continueBtn = page.getByRole('button', { name: /continue/i })
+    if (await continueBtn.isVisible({ timeout: 2000 })) {
+      await continueBtn.click()
+      await page.waitForTimeout(1000)
+    }
 
-    // Submit the form
-    const submitButton = page.getByRole('button', {
-      name: /sign in|log in|submit/i,
-    })
-    await submitButton.click()
-  } else {
-    // Fill in password
+    // Fill password
+    const passwordField = page.locator('input[name="password"], input[type="password"]').first()
+    await passwordField.waitFor({ state: 'visible', timeout: 5000 })
     await passwordField.fill(password)
 
-    // Submit the form
-    const signInButton = page.getByRole('button', { name: /continue|sign in/i })
-    await signInButton.click()
-  }
+    // Submit
+    const submitButton = page.getByRole('button', { name: /sign in|continue/i }).first()
+    await submitButton.click()
 
-  // Wait for navigation or URL change after login
-  await page.waitForLoadState('domcontentloaded')
-  // Give auth time to settle
-  await page.waitForTimeout(2000)
+    // Wait for redirect after authentication
+    try {
+      await page.waitForURL('/', { timeout: 15000 })
+    } catch {
+      // URL navigation may timeout if redirect is slow or goes to different page
+      console.log(`URL navigation timeout, checking authentication status anyway...`)
+    }
 
-  // Wait for successful login - look for user button or profile link
-  const successIndicators = [
-    page.locator('[data-testid="user-button"]'),
-    page.locator('button').filter({ hasText: /open user button/i }),
-    page.getByRole('link', { name: /profile/i }),
-    // Also check for navigation menu items that appear when logged in
-    page.getByRole('link', { name: /my listings/i }),
-    page.getByRole('link', { name: /new listing/i }),
-    // Check for clerk user button
-    page.locator('.cl-userButton'),
-    page.locator('[data-clerk-element="userButton"]'),
-  ]
+    // Wait for page to stabilize
+    await page.waitForTimeout(2000)
 
-  let loginSuccess = false
-  // Try multiple times as auth can be slow
-  for (let attempt = 0; attempt < 3; attempt++) {
-    for (const indicator of successIndicators) {
-      if (await indicator.isVisible({ timeout: 5000 }).catch(() => false)) {
-        loginSuccess = true
-        break
+    // Verify authentication status
+    const profileButton = page
+      .getByRole('link', { name: /profile/i })
+      .or(page.getByRole('button', { name: /profile/i }))
+    const adminButton = page
+      .getByRole('link', { name: /admin/i })
+      .or(page.getByRole('button', { name: /admin/i }))
+    const userMenu = page
+      .locator('.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]')
+      .first()
+    const signOutButton = page.getByRole('button', { name: /sign out/i })
+
+    // Check authentication indicators sequentially
+    let authenticated = false
+    try {
+      authenticated = await profileButton.isVisible({ timeout: 3000 })
+    } catch {
+      // Not visible
+    }
+
+    if (!authenticated) {
+      try {
+        authenticated = await adminButton.isVisible({ timeout: 3000 })
+      } catch {
+        // Not visible
       }
     }
-    if (loginSuccess) break
-    await page.waitForTimeout(2000)
-  }
 
-  if (!loginSuccess) {
-    // Check if we're still on the login page - might indicate wrong credentials
-    const stillOnLogin = await page
-      .locator('input[name="identifier"], input[type="email"]')
-      .isVisible({ timeout: 1000 })
-      .catch(() => false)
-    if (stillOnLogin) {
-      throw new Error('Login failed - still on login page. Check credentials.')
+    if (!authenticated) {
+      try {
+        authenticated = await userMenu.isVisible({ timeout: 3000 })
+      } catch {
+        // Not visible
+      }
     }
 
-    // Try to take a screenshot for debugging
-    await page.screenshot({
-      path: `tests/screenshots/auth-failed-${email.replace('@', '-')}.png`,
-    })
-    throw new Error(`Login failed - no success indicators found for ${email}`)
-  }
+    if (!authenticated) {
+      // Check user menu for sign out option
+      try {
+        await userMenu.click({ timeout: 2000 })
+        authenticated = await signOutButton.isVisible({ timeout: 2000 })
+        // Close menu
+        await page.keyboard.press('Escape')
+      } catch {
+        // Not authenticated
+      }
+    }
 
-  console.log(`✅ Successfully authenticated as ${email}`)
+    if (!authenticated) {
+      // Capture screenshot for debugging
+      await page.screenshot({
+        path: `test-results/auth-failed-${role}-${Date.now()}.png`,
+        fullPage: true,
+      })
+      throw new Error(`Authentication verification failed for ${email}`)
+    }
+
+    console.log(`✅ Successfully authenticated ${role}: ${email}`)
+    return true
+  } catch (error) {
+    console.error(`❌ Authentication failed for ${role} (${email}):`, error)
+    // Take screenshot for debugging
+    await page.screenshot({
+      path: `test-results/auth-failed-${role}.png`,
+    })
+    throw error
+  }
 }
 
-// Setup for regular user
-setup('authenticate as user', async ({ page }) => {
-  const email = process.env.TEST_USER_EMAIL
-  const password = process.env.TEST_USER_PASSWORD
+// Clean up any previous auth states on startup
+setup.beforeAll(async () => {
+  const fs = await import('fs')
+  const authDir = path.join(__dirname, '.auth')
 
-  if (!email || !password) {
-    console.log('⚠️  Skipping user auth - TEST_USER_EMAIL or TEST_USER_PASSWORD not set')
-    return
+  // Create .auth directory if it doesn't exist
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true })
   }
 
-  await authenticateUser(page, email, password)
-  await page.context().storageState({ path: authFiles.user })
+  console.log('🧹 Auth setup initialized')
 })
 
-// Setup for author
-setup('authenticate as author', async ({ page }) => {
-  const email = process.env.TEST_AUTHOR_EMAIL
-  const password = process.env.TEST_AUTHOR_PASSWORD
+// Auth setup tests - only run the ones we have credentials for
+const authConfigs = [
+  {
+    role: 'user',
+    email: process.env.TEST_USER_EMAIL,
+    password: process.env.TEST_USER_PASSWORD,
+    file: authFiles.user,
+  },
+  {
+    role: 'author',
+    email: process.env.TEST_AUTHOR_EMAIL,
+    password: process.env.TEST_AUTHOR_PASSWORD,
+    file: authFiles.author,
+  },
+  {
+    role: 'moderator',
+    email: process.env.TEST_MODERATOR_EMAIL,
+    password: process.env.TEST_MODERATOR_PASSWORD,
+    file: authFiles.moderator,
+  },
+  {
+    role: 'developer',
+    email: process.env.TEST_DEVELOPER_EMAIL,
+    password: process.env.TEST_DEVELOPER_PASSWORD,
+    file: authFiles.developer,
+  },
+  {
+    role: 'admin',
+    email: process.env.TEST_ADMIN_EMAIL,
+    password: process.env.TEST_ADMIN_PASSWORD,
+    file: authFiles.admin,
+  },
+]
 
-  if (!email || !password) {
-    console.log('⚠️  Skipping author auth - TEST_AUTHOR_EMAIL or TEST_AUTHOR_PASSWORD not set')
-    return
+// Generate setup tests for each role that has credentials
+for (const config of authConfigs) {
+  if (config.email && config.password) {
+    setup(`authenticate as ${config.role}`, async ({ page }) => {
+      await authenticateUser(page, config.email!, config.password!, config.role)
+      await page.context().storageState({ path: config.file })
+    })
+  } else {
+    setup.skip(`authenticate as ${config.role}`, async () => {
+      console.log(`⚠️  Skipping ${config.role} auth - credentials not provided`)
+    })
   }
-
-  await authenticateUser(page, email, password)
-  await page.context().storageState({ path: authFiles.author })
-})
-
-// Setup for moderator
-setup('authenticate as moderator', async ({ page }) => {
-  const email = process.env.TEST_MODERATOR_EMAIL
-  const password = process.env.TEST_MODERATOR_PASSWORD
-
-  if (!email || !password) {
-    console.log(
-      '⚠️  Skipping moderator auth - TEST_MODERATOR_EMAIL or TEST_MODERATOR_PASSWORD not set',
-    )
-    return
-  }
-
-  await authenticateUser(page, email, password)
-  await page.context().storageState({ path: authFiles.moderator })
-})
-
-// Setup for developer
-setup('authenticate as developer', async ({ page }) => {
-  const email = process.env.TEST_DEVELOPER_EMAIL
-  const password = process.env.TEST_DEVELOPER_PASSWORD
-
-  if (!email || !password) {
-    console.log(
-      '⚠️  Skipping developer auth - TEST_DEVELOPER_EMAIL or TEST_DEVELOPER_PASSWORD not set',
-    )
-    return
-  }
-
-  await authenticateUser(page, email, password)
-  await page.context().storageState({ path: authFiles.developer })
-})
-
-// Setup for admin
-setup('authenticate as admin', async ({ page }) => {
-  const email = process.env.TEST_ADMIN_EMAIL
-  const password = process.env.TEST_ADMIN_PASSWORD
-
-  if (!email || !password) {
-    console.log('⚠️  Skipping admin auth - TEST_ADMIN_EMAIL or TEST_ADMIN_PASSWORD not set')
-    return
-  }
-
-  await authenticateUser(page, email, password)
-  await page.context().storageState({ path: authFiles.admin })
-})
+}

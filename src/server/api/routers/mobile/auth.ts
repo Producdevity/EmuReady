@@ -1,5 +1,5 @@
 import { createClerkClient } from '@clerk/backend'
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   DeleteMobileAccountSchema,
   MobileSessionSchema,
@@ -11,6 +11,7 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY!,
@@ -32,7 +33,14 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         userId: payload.sub,
         expiresAt: payload.exp ? new Date(payload.exp * 1000) : null,
       }
-    } catch {
+    } catch (error) {
+      // Log validation failures for security monitoring
+      console.error('[Security] Token validation failed:', {
+        timestamp: new Date().toISOString(),
+        error: getErrorMessage(error),
+        tokenLength: input.token?.length,
+      })
+
       return {
         valid: false,
         userId: null,
@@ -48,6 +56,15 @@ export const mobileAuthRouter = createMobileTRPCRouter({
     .query(async ({ ctx }) => {
       const user = ctx.session.user
 
+      // Fetch additional user data including trust score
+      const userData = await ctx.prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          trustScore: true,
+          profileImage: true,
+        },
+      })
+
       return {
         user: {
           id: user.id,
@@ -55,6 +72,8 @@ export const mobileAuthRouter = createMobileTRPCRouter({
           name: user.name,
           role: user.role,
           permissions: user.permissions,
+          trustScore: userData?.trustScore ?? 0,
+          profileImage: userData?.profileImage ?? null,
         },
         isAuthenticated: true,
       }
@@ -74,7 +93,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
       })
 
       if (!user?.clerkId) {
-        return AppError.notFound('User not found')
+        return ResourceError.user.notFound()
       }
 
       const updateData: Record<string, string> = {}

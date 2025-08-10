@@ -151,6 +151,17 @@ function PcListingApprovalsPage() {
   }
 
   const handleReject = async (id: string) => {
+    const listing = pendingPcListingsQuery.data?.pcListings.find((l) => l.id === id)
+    if (!listing) return
+
+    const confirmed = await confirm({
+      title: 'Reject PC Listing',
+      description: `Are you sure you want to reject the PC listing for "${listing.game.title}"? This action will notify the user.`,
+      confirmText: 'Reject',
+    })
+
+    if (!confirmed) return
+
     await rejectMutation.mutateAsync({ pcListingId: id })
   }
 

@@ -106,7 +106,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
         where: { id: input.verificationId },
       })
 
-      if (!verification) return AppError.notFound('Verification not found')
+      if (!verification) return ResourceError.verification.notFound()
 
       if (verification.verifiedBy !== userId) {
         return AppError.forbidden('You can only remove your own verifications')

@@ -1,4 +1,4 @@
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import { GetNotificationsSchema, MarkNotificationReadSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
 
@@ -71,7 +71,7 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
         select: { userId: true },
       })
 
-      if (!notification) return AppError.notFound('Notification')
+      if (!notification) return ResourceError.notification.notFound()
 
       if (notification.userId !== ctx.session.user.id) {
         return AppError.forbidden('You can only mark your own notifications as read')

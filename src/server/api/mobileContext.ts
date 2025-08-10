@@ -169,12 +169,14 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
  * Creates tRPC context for mobile fetch requests (used by the fetch adapter)
  */
 export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOptions) => {
+  console.log('[Mobile Context] Creating mobile tRPC context for:', opts.req.url)
   let session: Nullable<Session> = null
   let clerkUserId: string | null = null
 
   // Try mobile JWT token from Authorization header
   const authHeader = opts.req.headers.get('authorization')
   const token = authHeader?.replace('Bearer ', '')
+  console.log('[Mobile Context] Found authorization header:', !!token)
 
   if (token) {
     try {
@@ -200,6 +202,7 @@ export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOpt
         clockSkewInMs: 60000, // 60 seconds tolerance
       })
       clerkUserId = payload.sub
+      console.log('[Mobile Context] Token verification successful, userId:', clerkUserId)
     } catch (error) {
       // Invalid or expired token - continue without auth for public endpoints
       if (process.env.NODE_ENV === 'development') {

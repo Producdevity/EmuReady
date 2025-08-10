@@ -1,12 +1,12 @@
 {
   "name": "emuready",
-  "version": "0.9.2",
+  "version": "0.9.5",
   "private": false,
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
   "scripts": {
     "analyze": "ANALYZE=true next build",
-    "analyze:turbo": "ANALYZE=true next build  --turbopack",
+    "analyze:turbo": "ANALYZE=true next build --turbopack",
     "build": "next build",
     "build:turbo": "next build  --turbopack",
     "check": "npm run lint:fix && npm run types",
@@ -38,12 +38,11 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:ci": "vitest run",
-    "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui",
-    "e2e:debug": "playwright test --debug",
-    "test:e2e:ci:full": "playwright test --reporter=github",
+    "test:e2e": "playwright test --ui",
+    "test:e2e:ci": "playwright test",
     "types": "tsc --noEmit",
-    "vercel:build": "prisma migrate deploy && next build"
+    "vercel:build": "prisma migrate deploy && next build",
+    "version:sync": "node scripts/sync-version.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.24.0",
