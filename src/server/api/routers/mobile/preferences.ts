@@ -260,16 +260,53 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
    * Get current user's profile
    */
   currentProfile: mobileProtectedProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.user.findUnique({
+    const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
       select: {
         id: true,
         name: true,
+        email: true,
+        trustScore: true,
+        profileImage: true,
+        role: true,
         bio: true,
         createdAt: true,
-        _count: { select: { listings: true, votes: true, comments: true } },
+        _count: {
+          select: {
+            listings: true,
+            votes: true,
+            comments: true,
+            submittedGames: true,
+            pcListings: true,
+          },
+        },
       },
     })
+
+    if (!user) return null
+
+    // Get total votes received on user's listings and PC listings
+    const [listingVotesReceived, pcListingVotesReceived] = await Promise.all([
+      ctx.prisma.vote.count({
+        where: {
+          listing: {
+            authorId: ctx.session.user.id,
+          },
+        },
+      }),
+      ctx.prisma.pcListingVote.count({
+        where: {
+          pcListing: {
+            authorId: ctx.session.user.id,
+          },
+        },
+      }),
+    ])
+
+    return {
+      ...user,
+      votesReceived: listingVotesReceived + pcListingVotesReceived,
+    }
   }),
 
   /**
