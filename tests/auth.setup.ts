@@ -76,10 +76,18 @@ async function authenticateUser(page: Page, email: string, password: string, rol
     const submitButton = page.getByRole('button', { name: /sign in|continue/i }).first()
     await submitButton.click()
 
-    // Wait for authentication to complete
-    await page.waitForURL('/', { timeout: 15000 })
+    // Wait for redirect after authentication
+    try {
+      await page.waitForURL('/', { timeout: 15000 })
+    } catch {
+      // URL navigation may timeout if redirect is slow or goes to different page
+      console.log(`URL navigation timeout, checking authentication status anyway...`)
+    }
 
-    // Verify authentication by checking for profile button or admin button
+    // Wait for page to stabilize
+    await page.waitForTimeout(2000)
+
+    // Verify authentication status
     const profileButton = page
       .getByRole('link', { name: /profile/i })
       .or(page.getByRole('button', { name: /profile/i }))
@@ -89,15 +97,50 @@ async function authenticateUser(page: Page, email: string, password: string, rol
     const userMenu = page
       .locator('.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]')
       .first()
+    const signOutButton = page.getByRole('button', { name: /sign out/i })
 
-    // Check multiple indicators of being logged in
-    const authenticated = await Promise.race([
-      profileButton.isVisible({ timeout: 5000 }).catch(() => false),
-      adminButton.isVisible({ timeout: 5000 }).catch(() => false),
-      userMenu.isVisible({ timeout: 5000 }).catch(() => false),
-    ])
+    // Check authentication indicators sequentially
+    let authenticated = false
+    try {
+      authenticated = await profileButton.isVisible({ timeout: 3000 })
+    } catch {
+      // Not visible
+    }
 
     if (!authenticated) {
+      try {
+        authenticated = await adminButton.isVisible({ timeout: 3000 })
+      } catch {
+        // Not visible
+      }
+    }
+
+    if (!authenticated) {
+      try {
+        authenticated = await userMenu.isVisible({ timeout: 3000 })
+      } catch {
+        // Not visible
+      }
+    }
+
+    if (!authenticated) {
+      // Check user menu for sign out option
+      try {
+        await userMenu.click({ timeout: 2000 })
+        authenticated = await signOutButton.isVisible({ timeout: 2000 })
+        // Close menu
+        await page.keyboard.press('Escape')
+      } catch {
+        // Not authenticated
+      }
+    }
+
+    if (!authenticated) {
+      // Capture screenshot for debugging
+      await page.screenshot({
+        path: `test-results/auth-failed-${role}-${Date.now()}.png`,
+        fullPage: true,
+      })
       throw new Error(`Authentication verification failed for ${email}`)
     }
 

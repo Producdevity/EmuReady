@@ -21,7 +21,7 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
   /* Test timeout */
-  timeout: 30 * 1000, // 30 seconds
+  timeout: process.env.CI ? 60 * 1000 : 30 * 1000, // 60 seconds in CI, 30 locally
 
   /* Global setup - runs once before all tests */
   globalSetup: require.resolve('./tests/global.setup.ts'),

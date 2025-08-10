@@ -99,6 +99,8 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e:ci
+        env:
+          DEBUG: pw:api  # Enable Playwright debug logs
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

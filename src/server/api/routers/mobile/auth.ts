@@ -11,6 +11,7 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import getErrorMessage from '@/utils/getErrorMessage'
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY!,
@@ -32,7 +33,14 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         userId: payload.sub,
         expiresAt: payload.exp ? new Date(payload.exp * 1000) : null,
       }
-    } catch {
+    } catch (error) {
+      // Log validation failures for security monitoring
+      console.error('[Security] Token validation failed:', {
+        timestamp: new Date().toISOString(),
+        error: getErrorMessage(error),
+        tokenLength: input.token?.length,
+      })
+
       return {
         valid: false,
         userId: null,

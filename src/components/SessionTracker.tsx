@@ -73,7 +73,7 @@ function SessionTracker() {
       return console.log('📊 Page View:', {
         pathname,
         loadTime,
-        userId: user?.id,
+        userSession: user ? 'authenticated' : 'anonymous',
       })
     }
 
@@ -100,7 +100,7 @@ function SessionTracker() {
 
     // Reset page load timer
     pageLoadTimeRef.current = Date.now()
-  }, [pathname, analyticsAllowed, user?.id])
+  }, [pathname, analyticsAllowed, user])
 
   // Track session duration on page unloading
   useEffect(() => {
@@ -121,7 +121,7 @@ function SessionTracker() {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [analyticsAllowed, user?.id])
+  }, [analyticsAllowed, user])
 
   return null
 }
