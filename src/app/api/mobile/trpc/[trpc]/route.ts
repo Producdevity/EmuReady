@@ -132,7 +132,4 @@ const handler = async (req: NextRequest) => {
   }
 }
 
-// Export as edge runtime to bypass Node.js middleware
-export const runtime = 'edge'
-
 export { handler as GET, handler as POST }
