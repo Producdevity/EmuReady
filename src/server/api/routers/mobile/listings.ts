@@ -87,12 +87,7 @@ async function getListingsHelper(
   if (emulatorFilter) {
     Object.assign(baseWhere, emulatorFilter)
   }
-  if (systemId) {
-    baseWhere.game = {
-      ...(baseWhere.game || {}),
-      systemId,
-    }
-  }
+  if (systemId) baseWhere.game = { ...(baseWhere.game || {}), systemId }
 
   // Add search filtering at database level
   const searchConditions = buildSearchFilter(search, ['game.title', 'notes'])
@@ -105,11 +100,7 @@ async function getListingsHelper(
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
         device: { include: { brand: true, soc: true } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
@@ -169,9 +160,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
-        game: {
-          include: { system: { select: { id: true, name: true, key: true } } },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
         device: { include: { brand: true, soc: true } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
@@ -220,11 +209,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.id },
       include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
         device: { include: { brand: true, soc: true } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
@@ -233,13 +218,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         customFieldValues: {
           include: {
             customFieldDefinition: {
-              select: {
-                id: true,
-                name: true,
-                label: true,
-                type: true,
-                options: true,
-              },
+              select: { id: true, name: true, label: true, type: true, options: true },
             },
           },
         },
@@ -258,14 +237,8 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     return await ctx.prisma.listing.findMany({
       where: { authorId: input.userId },
       include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
-        device: {
-          include: { brand: { select: { id: true, name: true } } },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
+        device: { include: { brand: { select: { id: true, name: true } } } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
         _count: { select: { votes: true, comments: true } },
@@ -297,11 +270,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           : undefined,
       },
       include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
         device: { include: { brand: { select: { id: true, name: true } } } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
