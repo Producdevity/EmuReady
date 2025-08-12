@@ -1023,7 +1023,7 @@ export const adminRouter = createTRPCRouter({
               data: customFieldValues.map((cfv) => ({
                 listingId: id,
                 customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value ?? null,
+                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
               })),
             })
           }

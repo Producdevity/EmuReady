@@ -30,7 +30,7 @@ import {
   serializeGameNativeConfig,
 } from '@/server/utils/emulator-config/gamenative-converter'
 import { buildSearchFilter, buildNsfwFilter, buildArrayFilter } from '@/server/utils/query-builders'
-import { ApprovalStatus, type PrismaClient } from '@orm'
+import { ApprovalStatus, Prisma, type PrismaClient } from '@orm'
 
 // Helper function to calculate listing stats
 async function calculateListingStats(
@@ -39,14 +39,10 @@ async function calculateListingStats(
   userId?: string,
 ) {
   const [upVotes, userVote] = await Promise.all([
-    prisma.vote.count({
-      where: { listingId: listing.id, value: true },
-    }),
+    prisma.vote.count({ where: { listingId: listing.id, value: true } }),
     userId
       ? prisma.vote.findUnique({
-          where: {
-            userId_listingId: { userId: userId, listingId: listing.id },
-          },
+          where: { userId_listingId: { userId: userId, listingId: listing.id } },
         })
       : null,
   ])
@@ -93,7 +89,7 @@ async function getListingsHelper(
   }
   if (systemId) {
     baseWhere.game = {
-      ...(baseWhere.game as Record<string, unknown>),
+      ...(baseWhere.game || {}),
       systemId,
     }
   }
@@ -295,7 +291,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           ? {
               create: input.customFieldValues.map((cfv) => ({
                 customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value,
+                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
               })),
             }
           : undefined,
@@ -342,7 +338,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               deleteMany: {},
               create: customFieldValues.map((cfv) => ({
                 customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value,
+                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
               })),
             }
           : undefined,

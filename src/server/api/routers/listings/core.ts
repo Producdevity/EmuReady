@@ -272,43 +272,56 @@ export const coreRouter = createTRPCRouter({
         },
       )
 
-      // Calculate success rates for all listings
-      const allListingsWithStats = await Promise.all(
-        allListings.map(async (listing) => {
-          // Count upvotes
-          const upVotes = await ctx.prisma.vote.count({
-            where: { listingId: listing.id, value: true },
-          })
+      // Batch fetch upvote counts for all listings
+      const listingIds = allListings.map((l) => l.id)
+      const upvoteCounts = await ctx.prisma.vote.groupBy({
+        by: ['listingId'],
+        where: {
+          listingId: { in: listingIds },
+          value: true,
+        },
+        _count: {
+          listingId: true,
+        },
+      })
+      const upvoteMap = new Map(upvoteCounts.map((vc) => [vc.listingId, vc._count.listingId]))
 
-          const totalVotes = listing._count.votes
-          const downVotes = totalVotes - upVotes
-          const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-
-          const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
-
-          // Check if the author is a verified developer for this emulator
-          const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-            where: {
-              userId_emulatorId: {
-                userId: listing.authorId,
-                emulatorId: listing.emulatorId,
-              },
-            },
-          })
-
-          return {
-            ...listing,
-            successRate,
-            upVotes,
-            downVotes,
-            totalVotes,
-            userVote,
-            isVerifiedDeveloper: !!isVerifiedDeveloper,
-            // Remove the raw votes array from the response
-            votes: undefined,
-          }
-        }),
+      // Batch fetch verified developers
+      const authorEmulatorPairs = allListings.map((l) => ({
+        userId: l.authorId,
+        emulatorId: l.emulatorId,
+      }))
+      const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
+        where: {
+          OR: authorEmulatorPairs,
+        },
+      })
+      const verifiedDevMap = new Set(
+        verifiedDevelopers.map((vd) => `${vd.userId}_${vd.emulatorId}`),
       )
+
+      // Calculate success rates for all listings
+      const allListingsWithStats = allListings.map((listing) => {
+        const upVotes = upvoteMap.get(listing.id) || 0
+        const totalVotes = listing._count.votes
+        const downVotes = totalVotes - upVotes
+        const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
+
+        const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
+        const isVerifiedDeveloper = verifiedDevMap.has(`${listing.authorId}_${listing.emulatorId}`)
+
+        return {
+          ...listing,
+          successRate,
+          upVotes,
+          downVotes,
+          totalVotes,
+          userVote,
+          isVerifiedDeveloper,
+          // Remove the raw votes array from the response
+          votes: undefined,
+        }
+      })
 
       // Sort by success rate with vote count as secondary criteria
       allListingsWithStats.sort((a, b) => {
@@ -664,7 +677,7 @@ export const coreRouter = createTRPCRouter({
           data: customFieldValues.map((cfv) => ({
             listingId: newListing.id,
             customFieldDefinitionId: cfv.customFieldDefinitionId,
-            value: cfv.value === null ? Prisma.JsonNull : (cfv.value as Prisma.InputJsonValue),
+            value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
           })),
         })
       }
@@ -1183,7 +1196,7 @@ export const coreRouter = createTRPCRouter({
             data: input.customFieldValues.map((cfv) => ({
               listingId: input.id,
               customFieldDefinitionId: cfv.customFieldDefinitionId,
-              value: cfv.value,
+              value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
             })),
           })
         }

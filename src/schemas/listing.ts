@@ -2,6 +2,17 @@ import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 import { ApprovalStatus } from '@orm'
 
+const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JsonValueSchema),
+    z.record(JsonValueSchema),
+  ]),
+)
+
 export const CreateListingSchema = z.object({
   gameId: z.string().uuid(),
   deviceId: z.string().uuid(),
@@ -12,7 +23,7 @@ export const CreateListingSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
+        value: JsonValueSchema,
       }),
     )
     .optional(),
@@ -176,7 +187,7 @@ export const UpdateListingAdminSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
+        value: JsonValueSchema,
       }),
     )
     .optional(),
@@ -190,7 +201,7 @@ export const UpdateListingUserSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
+        value: JsonValueSchema,
       }),
     )
     .optional(),

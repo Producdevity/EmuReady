@@ -77,12 +77,12 @@ describe('Listing Schemas', () => {
       })
       expect(invalidUuidResult.success).toBe(false)
 
-      // Test missing value - this passes because value can be any type including undefined
+      // Test missing value - this should fail because value is required
       const missingValueResult = CreateListingSchema.safeParse({
         ...validData,
         customFieldValues: [{ customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174003' }],
       })
-      expect(missingValueResult.success).toBe(true)
+      expect(missingValueResult.success).toBe(false)
     })
 
     it('should accept various value types for custom fields', () => {
