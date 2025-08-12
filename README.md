@@ -10,7 +10,7 @@
   <a href="https://emuready.com">
     <img src="https://img.shields.io/badge/🌐_Visit-EmuReady.com-blue?style=for-the-badge" alt="Visit EmuReady">
   </a>
-  <a href="https://discord.gg/fWQXvFeZcY">
+  <a href="https://discord.gg/CYhCzApXav">
     <img src="https://img.shields.io/badge/Discord-Join_Community-7289DA?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
   </a>
 </p>
@@ -500,7 +500,7 @@ If you discover a security vulnerability, please:
 ## Support
 
 - **GitHub Issues**: [Report bugs and feature requests](https://github.com/Producdevity/emuready/issues)
-- **Discord**: [Join our community](https://discord.gg/fWQXvFeZcY)
+- **Discord**: [Join our community](https://discord.gg/CYhCzApXav)
 - **Discussions**: [GitHub Discussions](https://github.com/Producdevity/emuready/discussions)
 
 ## Acknowledgements
@@ -530,7 +530,7 @@ EmuReady is actively maintained and continuously improved with new features, per
 
 📋 Check the [Release Notes](https://github.com/Producdevity/EmuReady/releases) for detailed changelogs  
 🗺️ View our [Roadmap](https://github.com/Producdevity/emuready/projects) for upcoming features  
-💬 Join the discussion in our [Discord Community](https://discord.gg/fWQXvFeZcY)
+💬 Join the discussion in our [Discord Community](https://discord.gg/CYhCzApXav)
 
 ---
 
