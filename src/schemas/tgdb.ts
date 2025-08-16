@@ -2,12 +2,12 @@ import { z } from 'zod'
 
 export const SearchGameImagesSchema = z.object({
   query: z.string().min(1, 'Search query is required'),
-  tgdbPlatformId: z.number().optional(),
+  systemKey: z.string().nullable().optional(),
 })
 
 export const SearchGamesSchema = z.object({
   query: z.string().min(1, 'Search query is required'),
-  tgdbPlatformId: z.number().optional(),
+  systemKey: z.string().nullable().optional(),
   page: z.number().min(1).default(1),
 })
 

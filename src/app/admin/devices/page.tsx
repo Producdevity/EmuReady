@@ -54,12 +54,12 @@ function AdminDevicesPage() {
   })
 
   const devicesQuery = api.devices.get.useQuery({
-    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
+    search: isEmpty(table.debouncedSearch) ? null : table.debouncedSearch,
+    sortField: table.sortField ?? null,
+    sortDirection: table.sortDirection ?? null,
     limit: table.limit,
     page: table.page,
-    brandId: table.additionalParams.brandId || undefined,
+    brandId: table.additionalParams.brandId || null,
   })
 
   const devicesStatsQuery = api.devices.stats.useQuery()
@@ -100,6 +100,7 @@ function AdminDevicesPage() {
   }
 
   const handleModalSuccess = () => {
+    // Invalidate queries to refetch fresh data
     utils.devices.get.invalidate().catch(console.error)
     utils.devices.stats.invalidate().catch(console.error)
     closeModal()

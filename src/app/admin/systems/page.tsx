@@ -26,10 +26,11 @@ import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import SystemModal from './components/SystemModal'
 
-type SystemSortField = 'name' | 'gamesCount'
+type SystemSortField = 'name' | 'key' | 'gamesCount'
 
 const SYSTEMS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'System Name', defaultVisible: true },
+  { key: 'key', label: 'System Key', defaultVisible: true },
   { key: 'gamesCount', label: 'Games', defaultVisible: true },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
@@ -45,9 +46,9 @@ function AdminSystemsPage() {
   })
 
   const systemsQuery = api.systems.get.useQuery({
-    search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
+    search: isEmpty(table.debouncedSearch) ? null : table.debouncedSearch,
+    sortField: table.sortField ?? null,
+    sortDirection: table.sortDirection ?? null,
   })
   const systemsStatsQuery = api.systems.stats.useQuery()
   const deleteSystem = api.systems.delete.useMutation()
@@ -56,12 +57,14 @@ function AdminSystemsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [systemName, setSystemName] = useState('')
+  const [systemKey, setSystemKey] = useState('')
 
   const utils = api.useUtils()
 
-  const openModal = (system?: { id: string; name: string }) => {
+  const openModal = (system?: { id: string; name: string; key: string | null }) => {
     setEditId(system?.id ?? null)
     setSystemName(system?.name ?? '')
+    setSystemKey(system?.key ?? '')
     setModalOpen(true)
   }
 
@@ -69,6 +72,7 @@ function AdminSystemsPage() {
     setModalOpen(false)
     setEditId(null)
     setSystemName('')
+    setSystemKey('')
   }
 
   const handleModalSuccess = () => {
@@ -155,6 +159,15 @@ function AdminSystemsPage() {
                       onSort={table.handleSort}
                     />
                   )}
+                  {columnVisibility.isColumnVisible('key') && (
+                    <SortableHeader
+                      label="System Key"
+                      field="key"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
+                  )}
                   {columnVisibility.isColumnVisible('gamesCount') && (
                     <SortableHeader
                       label="Games"
@@ -180,6 +193,11 @@ function AdminSystemsPage() {
                     {columnVisibility.isColumnVisible('name') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {system.name}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('key') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
+                        {system.key || '-'}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('gamesCount') && (
@@ -213,6 +231,7 @@ function AdminSystemsPage() {
         onClose={closeModal}
         editId={editId}
         systemName={systemName}
+        systemKey={systemKey}
         onSuccess={handleModalSuccess}
       />
     </div>

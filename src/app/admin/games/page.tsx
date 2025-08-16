@@ -92,13 +92,13 @@ function AdminGamesPage() {
 
   const systemsQuery = api.systems.get.useQuery()
   const gamesQuery = api.games.get.useQuery({
-    search: isEmpty(table.search) ? undefined : table.search,
-    systemId: isEmpty(systemId) ? undefined : systemId,
+    search: isEmpty(table.search) ? null : table.search,
+    systemId: isEmpty(systemId) ? null : systemId,
     page: table.page,
     limit: table.limit,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
-    status: isNullish(statusFilter) ? undefined : statusFilter,
+    sortField: table.sortField ?? null,
+    sortDirection: table.sortDirection ?? null,
+    status: isNullish(statusFilter) ? null : statusFilter,
     listingFilter: 'all',
   })
 

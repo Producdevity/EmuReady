@@ -16,48 +16,21 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { Role } from '@orm'
-import GamePreviewModal from './components/GamePreviewModal'
-import NotSignedInMessage from '../components/NotSignedInMessage'
-import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
+import IGDBGamePreviewModal from './components/IGDBGamePreviewModal'
+import NotSignedInMessage from '../../components/NotSignedInMessage'
 
-// Extended TGDB game result that extends BaseGameResult
-interface TGDBGameResult extends BaseGameResult {
-  id: string
-  overview?: string
-  developers?: number[]
-  publishers?: number[]
-  alternates?: string[]
-  boxart?: string
+// Extended IGDB game result that extends BaseGameResult
+interface IGDBGameResult extends BaseGameResult {
+  id: number
+  summary?: string | null
+  storyline?: string
+  themes?: Array<{ id: number; name: string }>
+  cover?: { url: string }
+  artworks?: Array<{ url: string }>
+  screenshots?: Array<{ url: string }>
 }
 
-interface TGDBGameWithBoxart extends Omit<TGDBGame, 'genres'> {
-  boxart?: string
-  platform_name?: string
-  genre_names?: string[]
-  genres?: number[]
-}
-
-function mapTGDBToBaseGame(game: TGDBGameWithBoxart): TGDBGameResult {
-  return {
-    id: String(game.id),
-    name: game.game_title,
-    releaseDate: game.release_date ?? null,
-    platforms: game.platform_name ? [{ name: game.platform_name }] : [],
-    genres: game.genre_names?.map((g) => ({ name: g })) ?? [],
-    imageUrl: game.boxart ?? null,
-    boxartUrl: game.boxart ?? null,
-    bannerUrl: null,
-    summary: game.overview ?? null,
-    isErotic: false,
-    overview: game.overview,
-    developers: game.developers,
-    publishers: game.publishers,
-    alternates: game.alternates,
-    boxart: game.boxart,
-  }
-}
-
-function TGDBSearchContent() {
+function IGDBSearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -68,11 +41,10 @@ function TGDBSearchContent() {
   const urlSystemId = searchParams.get('system') ?? ''
 
   const [searchResults, setSearchResults] = useState<{
-    games: TGDBGameResult[]
+    games: IGDBGameResult[]
     count: number
   } | null>(null)
-  const [selectedGame, setSelectedGame] = useState<TGDBGameWithBoxart | null>(null)
-  const [searchResponse, setSearchResponse] = useState<TGDBGamesByNameResponse | null>(null)
+  const [selectedGame, setSelectedGame] = useState<IGDBGameResult | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSelecting, setIsSelecting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
@@ -122,36 +94,19 @@ function TGDBSearchContent() {
       // Update URL with search parameters
       updateSearchParams(query, systemId)
 
-      // Get system key from systemId
-      const selectedSystem = systemId ? systemsQuery.data?.find((s) => s.id === systemId) : null
-
       try {
-        const results = await utils.tgdb.searchGames.fetch({
+        const results = await utils.igdb.searchGames.fetch({
           query,
-          systemKey: selectedSystem?.key,
+          platformId,
+          limit: 20,
         })
-
-        setSearchResponse(results) // Store for modal
-
-        // Map TGDB games to our unified format
-        const gameData = results.data?.games ?? []
-        const mappedGames = gameData.map((game) => {
-          const enrichedGame: TGDBGameWithBoxart = {
-            ...game,
-            boxart: 'boxart' in game && typeof game.boxart === 'string' ? game.boxart : undefined,
-            platform_name: typeof game.platform === 'string' ? game.platform : undefined,
-            genre_names:
-              Array.isArray(game.genres) &&
-              game.genres.length > 0 &&
-              typeof game.genres[0] === 'string'
-                ? game.genres.map(String)
-                : undefined,
-          }
-          return mapTGDBToBaseGame(enrichedGame)
-        })
+        // Map the results to ensure consistent types
         setSearchResults({
-          games: mappedGames,
-          count: results.data?.count ?? 0,
+          games: results.games.map((game) => ({
+            ...game,
+            summary: game.summary ?? null,
+          })),
+          count: results.count,
         })
       } catch (error) {
         console.error('Search error:', error)
@@ -160,7 +115,7 @@ function TGDBSearchContent() {
         setIsSearching(false)
       }
     },
-    [utils, updateSearchParams, systemsQuery.data],
+    [utils, updateSearchParams],
   )
 
   // Auto-search on page load if URL has parameters
@@ -171,29 +126,18 @@ function TGDBSearchContent() {
         : null
 
       if (selectedSystem) {
-        handleSearch(urlQuery, null, selectedSystem.id).catch(console.error)
+        // Map system to IGDB platform ID if needed
+        handleSearch(urlQuery, null, selectedSystem.id)
       }
     }
   }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
 
   const handleGamePreview = useCallback(
     (game: BaseGameResult) => {
-      // Find the original TGDB game for the modal
-      const tgdbGame = searchResults?.games.find((g) => g.id === game.id)
-      if (tgdbGame) {
-        const originalGame: TGDBGameWithBoxart = {
-          id: Number(tgdbGame.id),
-          game_title: tgdbGame.name,
-          release_date: typeof tgdbGame.releaseDate === 'string' ? tgdbGame.releaseDate : undefined,
-          platform_name: tgdbGame.platforms?.[0]?.name,
-          genre_names: tgdbGame.genres?.map((g) => g.name) ?? [],
-          boxart: tgdbGame.boxart,
-          overview: tgdbGame.overview,
-          developers: tgdbGame.developers,
-          publishers: tgdbGame.publishers,
-          alternates: tgdbGame.alternates,
-        }
-        setSelectedGame(originalGame)
+      // The game from search results is already an IGDBGameResult
+      const igdbGame = searchResults?.games.find((g) => g.id === game.id)
+      if (igdbGame) {
+        setSelectedGame(igdbGame)
         setIsModalOpen(true)
       }
     },
@@ -201,19 +145,19 @@ function TGDBSearchContent() {
   )
 
   const handleGameSelect = useCallback(
-    async (game: TGDBGameWithBoxart, systemId: string) => {
-      if (!user) return
+    async (systemId: string) => {
+      if (!selectedGame || !user) return
 
       setIsSelecting(true)
       try {
         const newGame = await createGame.mutateAsync({
-          title: game.game_title,
+          title: selectedGame.name,
           systemId,
-          imageUrl: game.boxart ?? null,
-          boxartUrl: game.boxart ?? null,
-          bannerUrl: null,
-          isErotic: false,
-          tgdbGameId: game.id,
+          imageUrl: selectedGame.imageUrl ?? null,
+          boxartUrl: selectedGame.boxartUrl ?? null,
+          bannerUrl: selectedGame.bannerUrl ?? null,
+          isErotic: selectedGame.isErotic ?? false,
+          igdbGameId: Number(selectedGame.id),
         })
 
         // Invalidate the existing games cache to ensure the new game is reflected
@@ -233,7 +177,7 @@ function TGDBSearchContent() {
             toast.info('Game already exists. Redirecting...')
             router.push(`/listings/new?gameId=${cause.existingGameId}`)
           } else {
-            // If we can't get the ID, just show the error
+            // Show error if ID is unavailable
             toast.error(errorMessage)
           }
         } else {
@@ -243,7 +187,7 @@ function TGDBSearchContent() {
         setIsSelecting(false)
       }
     },
-    [user, createGame, router, utils],
+    [selectedGame, user, createGame, router, utils],
   )
 
   const isModeratorOrHigher = useMemo(() => {
@@ -267,14 +211,14 @@ function TGDBSearchContent() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <GameSearchHeader
-        provider="tgdb"
+        provider="igdb"
         showBackButton={isAdmin}
         showAlternativeSearch={isAdmin}
         isAdmin={isAdmin}
       />
 
       <GameSearchForm
-        provider="tgdb"
+        provider="igdb"
         onSearch={handleSearch}
         systems={systemsQuery.data ?? []}
         initialQuery={urlQuery}
@@ -284,8 +228,8 @@ function TGDBSearchContent() {
       />
 
       {searchResults && (
-        <GameSearchResults<TGDBGameResult>
-          provider="tgdb"
+        <GameSearchResults<IGDBGameResult>
+          provider="igdb"
           results={searchResults}
           onGameSelect={handleGamePreview}
           existingGames={existingGamesQuery.data ?? {}}
@@ -293,22 +237,21 @@ function TGDBSearchContent() {
         />
       )}
 
-      <GamePreviewModal
+      <IGDBGamePreviewModal
         game={selectedGame}
-        searchResponse={searchResponse}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSelect={(game) => {
-          const gameWithBoxart = { ...game, boxart: selectedGame?.boxart }
-          handleGameSelect(gameWithBoxart, urlSystemId)
-        }}
+        onSelect={handleGameSelect}
+        systems={systemsQuery.data ?? []}
         isSelecting={isSelecting}
+        existingGames={existingGamesQuery.data ?? {}}
+        currentSystemId={urlSystemId}
       />
     </div>
   )
 }
 
-export default function GameSearchPage() {
+export default function IGDBSearchPage() {
   return (
     <Suspense
       fallback={
@@ -317,7 +260,7 @@ export default function GameSearchPage() {
         </div>
       }
     >
-      <TGDBSearchContent />
+      <IGDBSearchContent />
     </Suspense>
   )
 }

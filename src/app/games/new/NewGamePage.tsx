@@ -79,9 +79,7 @@ function AddGamePage() {
     ev.preventDefault()
     setError('')
     setSuccess('')
-    if (!title || !systemId) {
-      return setError('Please fill in all required fields.')
-    }
+    if (!title || !systemId) return setError('Please fill in all required fields.')
 
     try {
       const result = await createGame.mutateAsync({
@@ -94,6 +92,7 @@ function AddGamePage() {
       // Invalidate games queries to refresh the list
       await utils.games.get.invalidate()
       await utils.games.checkExistingByTgdbIds.invalidate()
+      await utils.games.checkExistingByNamesAndSystems.invalidate()
 
       setSuccess('Game added successfully!')
       const timeoutId = window.setTimeout(() => router.push(`/games/${result.id}`), 1500)

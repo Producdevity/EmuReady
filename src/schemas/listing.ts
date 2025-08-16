@@ -18,7 +18,7 @@ export const CreateListingSchema = z.object({
   deviceId: z.string().uuid(),
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
-  notes: z.string().max(5000).optional(),
+  notes: z.string().max(5000).nullable().optional(),
   customFieldValues: z
     .array(
       z.object({
@@ -26,17 +26,18 @@ export const CreateListingSchema = z.object({
         value: JsonValueSchema,
       }),
     )
+    .nullable()
     .optional(),
-  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
+  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
 })
 
 export const GetListingsSchema = z.object({
-  systemIds: z.array(z.string().uuid()).optional(),
-  deviceIds: z.array(z.string().uuid()).optional(),
-  socIds: z.array(z.string().uuid()).optional(),
-  emulatorIds: z.array(z.string().uuid()).optional(),
-  performanceIds: z.array(z.number()).optional(),
-  searchTerm: z.string().optional(),
+  systemIds: z.array(z.string().uuid()).nullable().optional(),
+  deviceIds: z.array(z.string().uuid()).nullable().optional(),
+  socIds: z.array(z.string().uuid()).nullable().optional(),
+  emulatorIds: z.array(z.string().uuid()).nullable().optional(),
+  performanceIds: z.array(z.number()).nullable().optional(),
+  searchTerm: z.string().nullable().optional(),
   page: z.number().default(1),
   limit: z.number().default(10),
   sortField: z
@@ -50,17 +51,18 @@ export const GetListingsSchema = z.object({
       'author.name',
       'createdAt',
     ])
+    .nullable()
     .optional(),
   sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  approvalStatus: z.nativeEnum(ApprovalStatus).optional(),
-  myListings: z.boolean().optional(),
+  approvalStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+  myListings: z.boolean().nullable().optional(),
 })
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
 
 export const GetPendingListingsSchema = z
   .object({
-    search: z.string().optional(),
+    search: z.string().nullable().optional(),
     page: z.number().default(1),
     limit: z.number().default(PAGINATION.DEFAULT_LIMIT),
     sortField: z
@@ -72,8 +74,9 @@ export const GetPendingListingsSchema = z
         'author.name',
         'createdAt',
       ])
+      .nullable()
       .optional(),
-    sortDirection: z.enum(['asc', 'desc']).optional(),
+    sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
   })
   .optional()
 
@@ -82,20 +85,20 @@ export const DeleteListingSchema = z.object({ id: z.string().uuid() })
 export const GetProcessedSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
-  filterStatus: z.nativeEnum(ApprovalStatus).optional(),
-  search: z.string().optional(),
+  filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+  search: z.string().nullable().optional(),
 })
 
 export const OverrideApprovalStatusSchema = z.object({
   listingId: z.string().uuid(),
   newStatus: z.nativeEnum(ApprovalStatus), // PENDING, APPROVED, or REJECTED
-  overrideNotes: z.string().optional(),
+  overrideNotes: z.string().nullable().optional(),
 })
 
 export const CreateVoteSchema = z.object({
   listingId: z.string().uuid(),
   value: z.boolean(),
-  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
+  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
 })
 
 export const CreateVoteComment = z.object({
@@ -105,8 +108,8 @@ export const CreateVoteComment = z.object({
 export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1).max(1000),
-  parentId: z.string().uuid().optional(),
-  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
+  parentId: z.string().uuid().nullable().optional(),
+  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
 })
 
 export const EditCommentSchema = z.object({
@@ -126,7 +129,7 @@ export const DeleteCommentSchema = z.object({ commentId: z.string().uuid() })
 export const ApproveListingSchema = z.object({ listingId: z.string().uuid() })
 export const RejectListingSchema = z.object({
   listingId: z.string().uuid(),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
 })
 
 export const BulkApproveListingsSchema = z.object({
@@ -135,17 +138,17 @@ export const BulkApproveListingsSchema = z.object({
 
 export const BulkRejectListingsSchema = z.object({
   listingIds: z.array(z.string().uuid()).min(1, 'At least one listing must be selected'),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
 })
 
 export const VerifyListingSchema = z.object({
   listingId: z.string().uuid(),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
 })
 
 export const UnverifyListingSchema = z.object({
   listingId: z.string().uuid(),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
 })
 
 // Admin schemas for listing management
@@ -163,12 +166,13 @@ export const GetAllListingsAdminSchema = z.object({
       'createdAt',
       'status',
     ])
+    .nullable()
     .optional(),
-  sortDirection: z.enum(['asc', 'desc']).optional(),
-  search: z.string().min(1).optional(),
-  statusFilter: z.nativeEnum(ApprovalStatus).optional(),
-  systemFilter: z.string().uuid().optional(),
-  emulatorFilter: z.string().uuid().optional(),
+  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+  search: z.string().min(1).nullable().optional(),
+  statusFilter: z.nativeEnum(ApprovalStatus).nullable().optional(),
+  systemFilter: z.string().uuid().nullable().optional(),
+  emulatorFilter: z.string().uuid().nullable().optional(),
 })
 
 export const GetListingForEditSchema = z.object({
@@ -181,7 +185,7 @@ export const UpdateListingAdminSchema = z.object({
   deviceId: z.string().uuid(),
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
   status: z.nativeEnum(ApprovalStatus),
   customFieldValues: z
     .array(
@@ -190,6 +194,7 @@ export const UpdateListingAdminSchema = z.object({
         value: JsonValueSchema,
       }),
     )
+    .nullable()
     .optional(),
 })
 
@@ -204,6 +209,7 @@ export const UpdateListingUserSchema = z.object({
         value: JsonValueSchema,
       }),
     )
+    .nullable()
     .optional(),
 })
 

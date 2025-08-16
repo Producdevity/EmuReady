@@ -9,14 +9,9 @@ interface ClerkWebhookEvent {
   data: {
     id: string
     username?: string
-    email_addresses: Array<{
-      id: string
-      email_address: string
-    }>
+    email_addresses: { id: string; email_address: string }[]
     primary_email_address_id?: string
-    public_metadata?: {
-      role?: Role
-    }
+    public_metadata?: { role?: Role }
     image_url?: string
   }
   type: string
@@ -35,9 +30,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
   const role = (data.public_metadata?.role as Role) ?? Role.USER
 
   let displayName: string | null = null
-  if (data.username) {
-    displayName = data.username
-  }
+  if (data.username) displayName = data.username
 
   try {
     const user = await prisma.user.create({
@@ -50,17 +43,11 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       },
     })
 
-    analytics.user.signedUp({
-      userId: user.id,
-    })
+    analytics.user.signedUp({ userId: user.id })
 
-    analytics.userJourney.registrationCompleted({
-      userId: user.id,
-    })
+    analytics.userJourney.registrationCompleted({ userId: user.id })
 
-    analytics.userJourney.registrationStarted({
-      userId: user.id,
-    })
+    analytics.userJourney.registrationStarted({ userId: user.id })
 
     analytics.conversion.funnelStepCompleted({
       userId: user.id,
@@ -87,16 +74,11 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
   const role = data.public_metadata?.role as Role
 
   let displayName: string | null = null
-  if (data.username) {
-    displayName = data.username
-  }
+  if (data.username) displayName = data.username
 
   if (displayName) {
     const existingUserWithName = await prisma.user.findFirst({
-      where: {
-        name: displayName,
-        clerkId: { not: data.id },
-      },
+      where: { name: displayName, clerkId: { not: data.id } },
     })
 
     if (existingUserWithName) {
@@ -115,10 +97,7 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
   }
 
   try {
-    await prisma.user.update({
-      where: { clerkId: data.id },
-      data: updateData,
-    })
+    await prisma.user.update({ where: { clerkId: data.id }, data: updateData })
   } catch (error) {
     console.error('❌ Failed to update user in database:', error)
     throw error
@@ -127,9 +106,7 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
 
 async function handleUserDeleted(data: ClerkWebhookEvent['data']) {
   try {
-    await prisma.user.delete({
-      where: { clerkId: data.id },
-    })
+    await prisma.user.delete({ where: { clerkId: data.id } })
   } catch (error) {
     console.error('❌ Failed to delete user from database:', error)
     throw error

@@ -32,7 +32,7 @@ const CustomFieldValuesSchema = z.array(CustomFieldValueSchema)
 export async function validateCustomFields(
   tx: PrismaTransactionClient,
   emulatorId: string,
-  customFieldValues?: CustomFieldValue[],
+  customFieldValues?: CustomFieldValue[] | null,
 ): Promise<void> {
   // Validate the structure of custom field values if provided
   if (customFieldValues) {

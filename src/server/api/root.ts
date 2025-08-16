@@ -9,6 +9,7 @@ import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { gamesRouter } from './routers/games'
 import { gpusRouter } from './routers/gpus'
+import { igdbRouter } from './routers/igdb'
 import { listingReportsRouter } from './routers/listingReports'
 import { listingsRouter } from './routers/listings'
 import { listingVerificationsRouter } from './routers/listingVerifications'
@@ -53,6 +54,7 @@ export const appRouter = createTRPCRouter({
   trust: trustRouter,
   rawg: rawgRouter,
   tgdb: tgdbRouter,
+  igdb: igdbRouter,
   mobile: mobileRouter,
   verifiedDevelopers: verifiedDevelopersRouter,
   listingVerifications: listingVerificationsRouter,

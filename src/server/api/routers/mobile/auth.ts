@@ -92,9 +92,7 @@ export const mobileAuthRouter = createMobileTRPCRouter({
         select: { clerkId: true },
       })
 
-      if (!user?.clerkId) {
-        return ResourceError.user.notFound()
-      }
+      if (!user?.clerkId) return ResourceError.user.notFound()
 
       const updateData: Record<string, string> = {}
       if (input.firstName) updateData.firstName = input.firstName

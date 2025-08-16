@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse } from 'axios'
+import { PLATFORM_MAPPINGS, type PlatformKey } from '@/data/constants'
 import { isValidImageUrl } from '@/lib/tgdb-utils'
 import {
   tgdbGamesCache,
@@ -44,13 +45,8 @@ async function makeRequest<T>(
 ): Promise<T> {
   try {
     const response: AxiosResponse<T> = await axios.get(`${TGDB_BASE_URL}${endpoint}`, {
-      params: {
-        apikey: getApiKey(),
-        ...params,
-      },
-      headers: {
-        'User-Agent': 'EmuReady/1.0',
-      },
+      params: { apikey: getApiKey(), ...params },
+      headers: { 'User-Agent': 'EmuReady/1.0' },
     })
 
     return response.data
@@ -73,7 +69,7 @@ async function makeRequest<T>(
 
 export async function searchGames(
   query: string,
-  tgdbPlatformId?: number,
+  systemKey?: string | null,
   page = 1,
   _pageSize = 10,
 ): Promise<TGDBGamesByNameResponse> {
@@ -81,8 +77,13 @@ export async function searchGames(
     throw new TGDBError('Search query cannot be empty')
   }
 
+  // Get TGDB platform ID from system key
+  const tgdbPlatformId = systemKey
+    ? (PLATFORM_MAPPINGS.tgdb[systemKey as PlatformKey] ?? null)
+    : null
+
   // Create cache key for this search
-  const cacheKey = createCacheKey('tgdb:searchGames', query.trim(), tgdbPlatformId ?? 'none', page)
+  const cacheKey = createCacheKey('tgdb:searchGames', query.trim(), systemKey ?? 'none', page)
 
   // Check cache first
   const cached = tgdbGamesCache.get(cacheKey)
@@ -95,9 +96,7 @@ export async function searchGames(
   }
 
   // Add platform filter if platform ID is provided
-  if (tgdbPlatformId) {
-    params['filter[platform]'] = tgdbPlatformId.toString()
-  }
+  if (tgdbPlatformId) params['filter[platform]'] = tgdbPlatformId.toString()
 
   const response = await makeRequest<TGDBGamesByNameResponse>('/v1.1/Games/ByGameName', params)
 
@@ -232,10 +231,10 @@ export async function getGameImageUrls(
 
 export async function searchGameImages(
   query: string,
-  tgdbPlatformId?: number,
+  systemKey?: string | null,
 ): Promise<Map<number, GameImageOption[]>> {
   // Create cache key for this search
-  const cacheKey = createCacheKey('tgdb:searchGameImages', query.trim(), tgdbPlatformId ?? 'none')
+  const cacheKey = createCacheKey('tgdb:searchGameImages', query.trim(), systemKey ?? 'none')
 
   // Check cache first - need to handle Map serialization
   const cached = tgdbGameImagesCache.get(cacheKey)
@@ -248,7 +247,7 @@ export async function searchGameImages(
     return resultMap
   }
 
-  const gamesResponse = await searchGames(query, tgdbPlatformId, 1, 20)
+  const gamesResponse = await searchGames(query, systemKey, 1, 20)
   const gameImageMap = new Map<number, GameImageOption[]>()
 
   if (gamesResponse.data.games.length === 0) {

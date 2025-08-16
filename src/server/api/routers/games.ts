@@ -2,6 +2,7 @@ import { AppError, ResourceError } from '@/lib/errors'
 import {
   ApproveGameSchema,
   CheckExistingByTgdbIdsSchema,
+  CheckExistingByNamesAndSystemsSchema,
   CreateGameSchema,
   DeleteGameSchema,
   GetGameByIdSchema,
@@ -469,6 +470,51 @@ export const gamesRouter = createTRPCRouter({
               }
         },
         {} as Record<number, { id: string; title: string; systemName: string }>,
+      )
+    }),
+
+  checkExistingByNamesAndSystems: publicProcedure
+    .input(CheckExistingByNamesAndSystemsSchema)
+    .query(async ({ ctx, input }) => {
+      // Build where clause that includes approval status filtering
+      const where: Prisma.GameWhereInput = {
+        OR: input.games.map((game) => ({
+          title: game.name,
+          systemId: game.systemId,
+        })),
+      }
+
+      // Apply same approval logic as the get query
+      if (hasPermission(ctx.session?.user?.role, Role.ADMIN)) {
+        // Admins can see all games including pending/rejected
+      } else if (ctx.session?.user) {
+        // Authenticated users see approved games + their own pending games
+        where.AND = {
+          OR: [
+            { status: ApprovalStatus.APPROVED },
+            {
+              status: ApprovalStatus.PENDING,
+              submittedBy: ctx.session.user.id,
+            },
+          ],
+        }
+      } else {
+        // Public users only see approved games
+        where.status = ApprovalStatus.APPROVED
+      }
+
+      const existingGames = await ctx.prisma.game.findMany({
+        where,
+        select: { id: true, title: true, systemId: true },
+      })
+
+      // Return a map with composite key for easy lookup
+      return existingGames.reduce(
+        (acc, game) => {
+          const key = `${game.title}_${game.systemId}`
+          return { ...acc, [key]: game.id }
+        },
+        {} as Record<string, string>,
       )
     }),
 

@@ -24,21 +24,23 @@ export const GetGamesSchema = z
     systemId: z
       .string()
       .uuid()
+      .nullable()
       .optional()
-      .or(z.literal('').transform(() => undefined)),
+      .or(z.literal('').transform(() => null)),
     search: z
       .string()
+      .nullable()
       .optional()
-      .or(z.literal('').transform(() => undefined)),
-    status: GameApprovalStatusSchema.optional(),
-    submittedBy: z.string().uuid().optional(),
+      .or(z.literal('').transform(() => null)),
+    status: GameApprovalStatusSchema.nullable().optional(),
+    submittedBy: z.string().uuid().nullable().optional(),
     hideGamesWithNoListings: z.boolean().optional().default(false), // Keep for backward compatibility
-    listingFilter: GameListingFilter.optional().default('withListings'),
+    listingFilter: GameListingFilter.nullable().optional().default('withListings'),
     limit: z.number().default(100),
     offset: z.number().default(0),
     page: z.number().optional(),
-    sortField: GameSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortField: GameSortField.nullable().optional(),
+    sortDirection: SortDirection.nullable().optional(),
   })
   .optional()
   .transform((data) => {
@@ -58,13 +60,23 @@ export const CheckExistingByTgdbIdsSchema = z.object({
   tgdbGameIds: z.array(z.number()),
 })
 
+export const CheckExistingByNamesAndSystemsSchema = z.object({
+  games: z.array(
+    z.object({
+      name: z.string(),
+      systemId: z.string().uuid(),
+    }),
+  ),
+})
+
 export const CreateGameSchema = z.object({
   title: z.string().min(1),
   systemId: z.string().uuid(),
-  imageUrl: z.string().optional(),
-  boxartUrl: z.string().optional(),
-  bannerUrl: z.string().optional(),
-  tgdbGameId: z.number().optional(),
+  imageUrl: z.string().nullable().optional(),
+  boxartUrl: z.string().nullable().optional(),
+  bannerUrl: z.string().nullable().optional(),
+  tgdbGameId: z.number().nullable().optional(),
+  igdbGameId: z.number().nullable().optional(), // TODO: For IGDB game creation (stored in metadata for now)
   isErotic: z.boolean().optional(),
 })
 

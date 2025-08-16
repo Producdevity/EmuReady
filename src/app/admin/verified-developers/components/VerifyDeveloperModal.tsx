@@ -108,7 +108,7 @@ function VerifyDeveloperModal(props: Props) {
             loadItems={loadUsers}
             optionToValue={(user) => user.id}
             optionToLabel={(user) => user.name || user.email}
-            customOptionRenderer={(user, _isHighlighted) => (
+            customOptionRenderer={(user) => (
               <div className="flex items-center justify-between w-full">
                 <div>
                   <div className="font-medium">{user.name || user.email}</div>

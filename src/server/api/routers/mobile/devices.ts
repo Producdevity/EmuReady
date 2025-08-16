@@ -2,22 +2,22 @@ import { ResourceError } from '@/lib/errors'
 import { GetDeviceByIdSchema } from '@/schemas/device'
 import { GetDevicesSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus, Prisma } from '@orm'
 
 export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
-   * Get devices with search and filtering
+   * Get devices with optional search, brand filtering, and pagination
    */
   get: mobilePublicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
+    const mode = Prisma.QueryMode.insensitive
     const { brandId, search, limit } = input ?? {}
     const baseWhere: Record<string, unknown> = {}
     if (brandId) baseWhere.brandId = brandId
 
-    // Add search filtering at database level
     if (search) {
       baseWhere.OR = [
-        { modelName: { contains: search, mode: 'insensitive' } },
-        { brand: { name: { contains: search, mode: 'insensitive' } } },
+        { modelName: { contains: search, mode } },
+        { brand: { name: { contains: search, mode } } },
       ]
     }
 
@@ -26,11 +26,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
       include: {
         brand: { select: { id: true, name: true } },
         soc: { select: { id: true, name: true, manufacturer: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
+        _count: { select: { listings: { where: { status: ApprovalStatus.APPROVED } } } },
       },
       orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
       take: limit,
@@ -38,7 +34,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
   }),
 
   /**
-   * Get device brands
+   * Get all device brands sorted alphabetically
    */
   brands: mobilePublicProcedure.query(
     async ({ ctx }) =>
@@ -68,11 +64,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
       include: {
         brand: { select: { id: true, name: true } },
         soc: { select: { id: true, name: true, manufacturer: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
+        _count: { select: { listings: { where: { status: ApprovalStatus.APPROVED } } } },
       },
     })
 

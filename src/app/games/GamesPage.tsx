@@ -14,6 +14,8 @@ import { Role } from '@orm'
 import GameCard from './components/GameCard'
 import GameFilters from './components/GameFilters'
 
+const ABOVE_FOLD_IMAGE_COUNT = 4 // First row on largest grid (xl:grid-cols-4)
+
 function GamesContent() {
   const { user } = useUser()
   const router = useRouter()
@@ -206,8 +208,8 @@ function GamesContent() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {games.map((game) => (
-                <GameCard key={game.id} game={game} />
+              {games.map((game, index) => (
+                <GameCard key={game.id} game={game} priority={index < ABOVE_FOLD_IMAGE_COUNT} />
               ))}
             </div>
 

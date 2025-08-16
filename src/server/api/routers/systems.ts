@@ -23,6 +23,9 @@ export const systemsRouter = createTRPCRouter({
         case 'name':
           orderBy.push({ name: sortDirection })
           break
+        case 'key':
+          orderBy.push({ key: sortDirection })
+          break
         case 'gamesCount':
           orderBy.push({ games: { _count: sortDirection } })
           break
@@ -30,11 +33,9 @@ export const systemsRouter = createTRPCRouter({
     }
 
     // Default ordering if no sort specified
-    if (!orderBy.length) {
-      orderBy.push({ name: 'asc' })
-    }
+    if (!orderBy.length) orderBy.push({ name: 'asc' })
 
-    const searchConditions = buildSearchFilter(search, ['name'])
+    const searchConditions = buildSearchFilter(search, ['name', 'key'])
     const where = searchConditions ? { OR: searchConditions } : undefined
 
     return await ctx.prisma.system.findMany({
@@ -65,13 +66,9 @@ export const systemsRouter = createTRPCRouter({
         where: { name: input.name },
       })
 
-      if (existing) {
-        ResourceError.system.alreadyExists(input.name)
-      }
+      if (existing) return ResourceError.system.alreadyExists(input.name)
 
-      return ctx.prisma.system.create({
-        data: input,
-      })
+      return ctx.prisma.system.create({ data: input })
     }),
 
   update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
@@ -79,27 +76,19 @@ export const systemsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
 
-      const system = await ctx.prisma.system.findUnique({
-        where: { id },
-      })
+      const system = await ctx.prisma.system.findUnique({ where: { id } })
 
-      if (!system) {
-        ResourceError.system.notFound()
-      }
+      if (!system) return ResourceError.system.notFound()
 
       if (name !== system?.name) {
-        const existing = await ctx.prisma.system.findUnique({
-          where: { name },
-        })
+        const existing = await ctx.prisma.system.findUnique({ where: { name } })
 
-        if (existing) {
-          ResourceError.system.alreadyExists(name)
-        }
+        if (existing) return ResourceError.system.alreadyExists(name)
       }
 
       return ctx.prisma.system.update({
         where: { id },
-        data: { name },
+        data: { name, key: input.key },
       })
     }),
 
@@ -107,40 +96,21 @@ export const systemsRouter = createTRPCRouter({
     .input(DeleteSystemSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if system has games
-      const gamesCount = await ctx.prisma.game.count({
-        where: { systemId: input.id },
-      })
+      const gamesCount = await ctx.prisma.game.count({ where: { systemId: input.id } })
 
-      if (gamesCount > 0) {
-        ResourceError.system.hasGames(gamesCount)
-      }
+      if (gamesCount > 0) return ResourceError.system.hasGames(gamesCount)
 
-      return ctx.prisma.system.delete({
-        where: { id: input.id },
-      })
+      return ctx.prisma.system.delete({ where: { id: input.id } })
     }),
 
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
-    const [total, withGames, withoutGames] = await batchQueries([
-      ctx.prisma.system.count(),
-      ctx.prisma.system.count({
-        where: {
-          games: {
-            some: {},
-          },
-        },
-      }),
-      ctx.prisma.system.count({
-        where: {
-          games: {
-            none: {},
-          },
-        },
-      }),
+    const [withGames, withoutGames] = await batchQueries([
+      ctx.prisma.system.count({ where: { games: { some: {} } } }),
+      ctx.prisma.system.count({ where: { games: { none: {} } } }),
     ])
 
     return {
-      total,
+      total: withGames + withoutGames,
       withGames,
       withoutGames,
     }
