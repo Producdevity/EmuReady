@@ -184,8 +184,8 @@ test.describe('Game Form Tests', () => {
           expect(true).toBe(true)
         }
       }
-    } catch (_error) {
-      console.log('Error checking for add game button:', _error)
+    } catch (error) {
+      console.log('Error checking for add game button:', error)
       // Not a failure - UI might have variations
       expect(true).toBe(true)
     }
@@ -340,8 +340,8 @@ test.describe('Listing Form Tests', () => {
           expect(true).toBe(true)
         }
       }
-    } catch (_error) {
-      console.log('Error checking for add listing button:', _error)
+    } catch (error) {
+      console.log('Error checking for add listing button:', error)
       // Not a failure - UI might have variations
       expect(true).toBe(true)
     }

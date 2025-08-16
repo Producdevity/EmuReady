@@ -329,8 +329,8 @@ test.describe('Browser Compatibility Error Tests', () => {
     let jsErrorOccurred = false
 
     // Listen for JavaScript errors
-    page.on('pageerror', (_error) => {
-      console.log('JavaScript error:', _error.message)
+    page.on('pageerror', (error) => {
+      console.error('JavaScript error:', error.message)
       jsErrorOccurred = true
     })
 

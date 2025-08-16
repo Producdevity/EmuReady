@@ -952,7 +952,7 @@ describe('Autocomplete Component', () => {
         const options = screen.getAllByRole('option')
         expect(options).toHaveLength(mockStaticItems.length)
 
-        options.forEach((option, _index) => {
+        options.forEach((option) => {
           expect(option).toHaveAttribute('role', 'option')
           expect(option).toHaveAttribute('id', expect.stringContaining('option'))
         })
