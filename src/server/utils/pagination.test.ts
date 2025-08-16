@@ -189,6 +189,54 @@ describe('pagination utilities', () => {
     })
   })
 
+  describe('buildOrderBy - Null Handling', () => {
+    it('should handle null sortField correctly', () => {
+      const sortConfig = {
+        title: (dir: 'asc' | 'desc') => ({ title: dir }),
+        name: (dir: 'asc' | 'desc') => ({ name: dir }),
+      }
+
+      const result = buildOrderBy<any>(sortConfig, null, 'asc', { createdAt: 'desc' })
+      expect(result).toEqual([{ createdAt: 'desc' }])
+    })
+
+    it('should handle null sortDirection correctly', () => {
+      const sortConfig = {
+        title: (dir: 'asc' | 'desc') => ({ title: dir }),
+      }
+
+      const result = buildOrderBy<any>(sortConfig, 'title', null, { createdAt: 'desc' })
+      expect(result).toEqual([{ createdAt: 'desc' }])
+    })
+
+    it('should handle both null sortField and sortDirection', () => {
+      const sortConfig = {
+        title: (dir: 'asc' | 'desc') => ({ title: dir }),
+      }
+
+      const result = buildOrderBy<any>(sortConfig, null, null, { createdAt: 'desc' })
+      expect(result).toEqual([{ createdAt: 'desc' }])
+    })
+
+    it('should handle undefined values as null', () => {
+      const sortConfig = {
+        title: (dir: 'asc' | 'desc') => ({ title: dir }),
+      }
+
+      const result = buildOrderBy<any>(sortConfig, undefined, undefined, { createdAt: 'desc' })
+      expect(result).toEqual([{ createdAt: 'desc' }])
+    })
+
+    it('should return empty array when no default and null values', () => {
+      const sortConfig = {
+        title: (dir: 'asc' | 'desc') => ({ title: dir }),
+      }
+
+      const result = buildOrderBy<any>(sortConfig, null, null)
+      expect(result).toEqual([])
+    })
+  })
+
   describe('buildSearchConditions', () => {
     it('should build search conditions for multiple fields', () => {
       type SearchCondition =
