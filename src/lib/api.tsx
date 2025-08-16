@@ -17,16 +17,14 @@ export function TRPCProvider(props: PropsWithChildren) {
         defaultOptions: {
           queries: {
             // Default settings for all queries
-            staleTime: ms.minutes(5),
-            gcTime: ms.minutes(30),
-            refetchOnWindowFocus: false, // Don't refetch on window focus
-            refetchOnReconnect: true, // Refetch when reconnecting
-            retry: 3, // Retry failed queries 3 times
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+            staleTime: ms.seconds(30),
+            gcTime: ms.minutes(5),
+            refetchOnWindowFocus: true,
+            refetchOnReconnect: true,
+            retry: 3,
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
           },
-          mutations: {
-            retry: 1, // Retry failed mutations once
-          },
+          mutations: { retry: 1 },
         },
       }),
   )
@@ -38,7 +36,6 @@ export function TRPCProvider(props: PropsWithChildren) {
           url: '/api/trpc',
           transformer: superjson,
           headers: () => ({}),
-          // Reduce batch size to minimize connection issues
           maxURLLength: 2000,
         }),
       ],
