@@ -91,21 +91,36 @@ export async function fetchDriverVersions(): Promise<DriverRelease[]> {
       const url = `${GITHUB_API_URL}/${repo.path}/releases?per_page=100`
       const { data } = await axios.get<GitHubRelease[]>(url, { headers })
       const releases: DriverRelease[] = data
-        .map((rel) => ({
-          id: rel.id.toString(),
-          name: repo?.useTagName ? rel.tag_name : rel.name || rel.tag_name,
-          label: `[${repo.name}] ${rel.name}`,
-          value: `[${repo.path}] ${rel.name}`,
-          tagName: rel.tag_name,
-          publishedAt: rel.published_at,
-          assets: rel.assets.map((a) => ({
-            id: a.id,
-            name: a.name,
-            downloadUrl: a.browser_download_url,
-            contentType: a.content_type,
-            size: a.size,
-          })),
-        }))
+        .map((rel) => {
+          // Find the primary driver asset (prioritize .adpkg, then .zip)
+          const primaryAsset =
+            rel.assets.find((a) => a.name.endsWith('.adpkg') || a.name.endsWith('.adpkg.zip')) ||
+            rel.assets.find(
+              (a) => a.name.endsWith('.zip') && !a.name.toLowerCase().includes('source'),
+            )
+
+          // Create a value that includes filename info but displays nicely
+          // Format: "display|||filename" where ||| is a separator unlikely to appear in names
+          const displayValue = `[${repo.name}] ${rel.name || rel.tag_name}`
+          const filename = primaryAsset?.name || ''
+          const combinedValue = filename ? `${displayValue}|||${filename}` : displayValue
+
+          return {
+            id: rel.id.toString(),
+            name: repo?.useTagName ? rel.tag_name : rel.name || rel.tag_name,
+            label: displayValue,
+            value: combinedValue, // Store display with optional filename
+            tagName: rel.tag_name,
+            publishedAt: rel.published_at,
+            assets: rel.assets.map((a) => ({
+              id: a.id,
+              name: a.name,
+              downloadUrl: a.browser_download_url,
+              contentType: a.content_type,
+              size: a.size,
+            })),
+          }
+        })
         .toSorted(
           (a, b) =>
             repo.sortMode === 'PublishTime'

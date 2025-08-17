@@ -46,7 +46,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   errorMessage?: string
 }
 
-const DRIVER_VERSION_FIELD_NAME = 'dynamic_driver_version' as const
+export const DRIVER_VERSION_FIELD_NAME = 'dynamic_driver_version' as const
 
 function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,

@@ -1507,5 +1507,119 @@ describe('Eden Converter', () => {
       const customValueLines = serialized.match(/\\use_global=false/g)
       expect(customValueLines).toBeNull()
     })
+
+    it('should handle separator format with filename', () => {
+      const input: EdenConfigInput = {
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'dynamic_driver_version',
+              label: 'Dynamic Graphics Driver',
+              type: 'TEXT',
+            },
+            value: '[KIMCHI Turnip] Qualcomm driver v762.10|||turnip_v762.10.adpkg',
+          },
+        ],
+      }
+
+      const config = convertToEdenConfig(input)
+      expect(config.GpuDriver?.driver_path?.value).toBe(
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip_v762.10.adpkg.zip',
+      )
+    })
+
+    it('should handle separator format with .zip extension already present', () => {
+      const input: EdenConfigInput = {
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'dynamic_driver_version',
+              label: 'Dynamic Graphics Driver',
+              type: 'TEXT',
+            },
+            value: '[KIMCHI Turnip] Qualcomm driver v762.10|||turnip_v762.10.adpkg.zip',
+          },
+        ],
+      }
+
+      const config = convertToEdenConfig(input)
+      expect(config.GpuDriver?.driver_path?.value).toBe(
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/turnip_v762.10.adpkg.zip',
+      )
+    })
+
+    it('should handle separator format without filename (fallback to display)', () => {
+      const input: EdenConfigInput = {
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'dynamic_driver_version',
+              label: 'Dynamic Graphics Driver',
+              type: 'TEXT',
+            },
+            value: '[KIMCHI Turnip] Qualcomm driver v762.10|||',
+          },
+        ],
+      }
+
+      const config = convertToEdenConfig(input)
+      // Separator format without filename uses display part
+      expect(config.GpuDriver?.driver_path?.value).toBe(
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/[KIMCHI Turnip] Qualcomm driver v762.10.adpkg.zip',
+      )
+    })
+
+    it('should handle legacy format without separator', () => {
+      const input: EdenConfigInput = {
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'dynamic_driver_version',
+              label: 'Dynamic Graphics Driver',
+              type: 'TEXT',
+            },
+            value: '[K11MCH1/AdrenoToolsDrivers] Qualcomm driver v762.10',
+          },
+        ],
+      }
+
+      const config = convertToEdenConfig(input)
+      // Empty filename falls back to display name
+      expect(config.GpuDriver?.driver_path?.value).toBe(
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/[K11MCH1/AdrenoToolsDrivers] Qualcomm driver v762.10.adpkg.zip',
+      )
+    })
+
+    it('should handle special driver values', () => {
+      const specialValues = ['N/A', 'Default System Driver', 'System Default']
+
+      specialValues.forEach((value) => {
+        const input: EdenConfigInput = {
+          listingId: 'test-id',
+          gameId: 'game-id',
+          customFieldValues: [
+            {
+              customFieldDefinition: {
+                name: 'dynamic_driver_version',
+                label: 'Dynamic Graphics Driver',
+                type: 'TEXT',
+              },
+              value,
+            },
+          ],
+        }
+
+        const config = convertToEdenConfig(input)
+        expect(config.GpuDriver?.driver_path?.value).toBe('')
+      })
+    })
   })
 })

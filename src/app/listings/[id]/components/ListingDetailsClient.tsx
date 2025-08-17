@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { isNullish, isNumber } from 'remeda'
+import { DRIVER_VERSION_FIELD_NAME } from '@/app/listings/components/shared/CustomFieldRenderer'
 import {
   Card,
   Badge,
@@ -147,6 +148,39 @@ function ListingDetailsClient(props: Props) {
         }
         return String(fieldValue.value)
       case CustomFieldType.TEXT:
+        // Special handling for driver version field
+        if (fieldValue.customFieldDefinition.name === DRIVER_VERSION_FIELD_NAME) {
+          const valueStr = String(fieldValue.value ?? '')
+
+          // Check for separator format: "display|||filename"
+          if (valueStr.includes('|||')) {
+            const [displayPart] = valueStr.split('|||')
+            return <span className="break-words overflow-wrap-anywhere">{displayPart}</span>
+          }
+
+          // Try to parse as JSON for backward compatibility
+          try {
+            const parsed = JSON.parse(valueStr)
+            if (parsed && typeof parsed === 'object') {
+              // It's JSON - show display value or fallback to a safe message
+              return (
+                <span className="break-words overflow-wrap-anywhere">
+                  {parsed.display || parsed.release || 'Custom Driver'}
+                </span>
+              )
+            }
+          } catch {
+            // Not JSON, show as-is (legacy format)
+          }
+
+          // Legacy format or simple string - show as-is
+          return <span className="break-words overflow-wrap-anywhere">{valueStr}</span>
+        }
+        return (
+          <span className="break-words overflow-wrap-anywhere">
+            {String(fieldValue.value ?? '')}
+          </span>
+        )
       case CustomFieldType.TEXTAREA:
       default:
         return (

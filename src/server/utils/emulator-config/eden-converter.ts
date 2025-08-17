@@ -277,6 +277,57 @@ const FIELD_MAPPINGS: Record<
         return undefined
       }
 
+      // Check for new separator format first: "display|||filename"
+      if (driverString.includes('|||')) {
+        const parts = driverString.split('|||')
+        const displayPart = parts[0]
+        const filenamePart = parts[1]
+
+        if (filenamePart && filenamePart.trim() !== '') {
+          let filename = filenamePart.trim()
+
+          // Ensure .adpkg files have .zip extension for Eden
+          if (filename.endsWith('.adpkg') && !filename.endsWith('.adpkg.zip')) {
+            filename = `${filename}.zip`
+          }
+
+          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${filename}`
+        } else {
+          // No filename, fallback to trying to extract from display part
+          const bracketMatch = displayPart.match(/\]\s*(.+\.adpkg)/i)
+          if (bracketMatch && bracketMatch[1]) {
+            return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
+          }
+          // Use the display part as-is
+          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${displayPart}.adpkg.zip`
+        }
+      }
+
+      // Try to parse as JSON for backward compatibility with any existing JSON data
+      try {
+        const parsed = JSON.parse(driverString)
+        if (parsed.filename && parsed.filename.trim() !== '') {
+          let filename = parsed.filename
+
+          if (filename.endsWith('.adpkg') && !filename.endsWith('.adpkg.zip')) {
+            filename = `${filename}.zip`
+          }
+
+          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${filename}`
+        } else if (typeof parsed === 'object' && 'display' in parsed) {
+          // JSON format but no filename - shouldn't happen anymore but handle it
+          const displayName = parsed.display || driverString
+          const bracketMatch = displayName.match(/\]\s*(.+\.adpkg)/i)
+          if (bracketMatch && bracketMatch[1]) {
+            return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
+          }
+          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${displayName}.adpkg.zip`
+        }
+      } catch {
+        // Not JSON, continue to legacy format handling
+      }
+
+      // Legacy format handling for backward compatibility
       const bracketMatch = driverString.match(/\]\s*(.+\.adpkg)/i)
       if (bracketMatch && bracketMatch[1]) {
         return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
@@ -295,6 +346,7 @@ const FIELD_MAPPINGS: Record<
         return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${driverString}.adpkg.zip`
       }
 
+      // For unrecognized formats, return undefined to use default driver
       return undefined
     },
   },
