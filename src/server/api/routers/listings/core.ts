@@ -38,10 +38,12 @@ import {
 import { withSavepoint } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
+import { ms } from '@/utils/time'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
 
 const EDIT_TIME_LIMIT_MINUTES = 60
+const EDIT_TIME_LIMIT = ms.minutes(EDIT_TIME_LIMIT_MINUTES)
 const mode = Prisma.QueryMode.insensitive
 
 export const coreRouter = createTRPCRouter({
@@ -1091,12 +1093,11 @@ export const coreRouter = createTRPCRouter({
 
       const now = new Date()
       const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
-      const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
 
-      const remainingTime = timeLimit - timeSinceApproval
+      const remainingTime = EDIT_TIME_LIMIT - timeSinceApproval
       const remainingMinutes = Math.floor(remainingTime / (60 * 1000))
 
-      if (timeSinceApproval > timeLimit) {
+      if (timeSinceApproval > EDIT_TIME_LIMIT) {
         return {
           canEdit: false,
           isOwner: true,
@@ -1131,7 +1132,11 @@ export const coreRouter = createTRPCRouter({
 
     if (!listing) return ResourceError.listing.notFound()
 
-    if (listing.authorId !== ctx.session.user.id) {
+    const userRole = ctx.session.user.role
+    const isModerator = hasPermission(userRole, Role.MODERATOR)
+
+    // Check ownership unless user is a moderator or higher
+    if (!isModerator && listing.authorId !== ctx.session.user.id) {
       return AppError.forbidden('You can only edit your own listings')
     }
 
@@ -1140,26 +1145,23 @@ export const coreRouter = createTRPCRouter({
       return AppError.badRequest('Rejected listings cannot be edited. Please create a new listing.')
     }
 
-    // PENDING listings can always be edited
-    if (listing.status === ApprovalStatus.PENDING) {
-      // No time restrictions for pending listings
-    } else if (listing.status === ApprovalStatus.APPROVED) {
-      // APPROVED listings have a time limit
-      if (!listing.processedAt) {
-        return AppError.badRequest('Listing approval time not found')
-      }
+    // For APPROVED listings, check permissions and time limits
+    if (listing.status === ApprovalStatus.APPROVED) {
+      // Moderators and higher can always edit approved listings
+      if (!isModerator) {
+        // Regular users have a time limit for approved listings
+        if (!listing.processedAt) return AppError.badRequest('Listing approval time not found')
 
-      const now = new Date()
-      const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
-      const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
+        const now = new Date()
+        const timeSinceApproval = now.getTime() - listing.processedAt.getTime()
+        const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
 
-      if (timeSinceApproval > timeLimit) {
-        return AppError.badRequest(
-          `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
-        )
+        if (timeSinceApproval > timeLimit) {
+          return AppError.badRequest(
+            `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
+          )
+        }
       }
-    } else {
-      return AppError.badRequest('Invalid listing status')
     }
 
     // Update the listing using a transaction to handle custom fields
