@@ -267,15 +267,19 @@ const FIELD_MAPPINGS: Record<
     transform: (value) => Boolean(value),
   },
 
+  /**
+   * Parses driver version value with new separator format: "display|||filename"
+   * Falls back to legacy formats for backward compatibility
+   */
   dynamic_driver_version: {
     section: 'GpuDriver',
     key: 'driver_path',
     transform: (value) => {
+      const BASE_DRIVER_PATH =
+        '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers'
       const driverString = String(value).trim()
 
-      if (EdenDefaults.isNoDriverValue(driverString)) {
-        return undefined
-      }
+      if (EdenDefaults.isNoDriverValue(driverString)) return undefined
 
       // Check for new separator format first: "display|||filename"
       if (driverString.includes('|||')) {
@@ -291,15 +295,13 @@ const FIELD_MAPPINGS: Record<
             filename = `${filename}.zip`
           }
 
-          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${filename}`
+          return `${BASE_DRIVER_PATH}/${filename}`
         } else {
           // No filename, fallback to trying to extract from display part
           const bracketMatch = displayPart.match(/\]\s*(.+\.adpkg)/i)
-          if (bracketMatch && bracketMatch[1]) {
-            return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
-          }
+          if (bracketMatch && bracketMatch[1]) return `${BASE_DRIVER_PATH}/${bracketMatch[1]}.zip`
           // Use the display part as-is
-          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${displayPart}.adpkg.zip`
+          return `${BASE_DRIVER_PATH}/${displayPart}.adpkg.zip`
         }
       }
 
@@ -313,15 +315,15 @@ const FIELD_MAPPINGS: Record<
             filename = `${filename}.zip`
           }
 
-          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${filename}`
+          return `${BASE_DRIVER_PATH}/${filename}`
         } else if (typeof parsed === 'object' && 'display' in parsed) {
           // JSON format but no filename - shouldn't happen anymore but handle it
           const displayName = parsed.display || driverString
           const bracketMatch = displayName.match(/\]\s*(.+\.adpkg)/i)
           if (bracketMatch && bracketMatch[1]) {
-            return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
+            return `${BASE_DRIVER_PATH}/${bracketMatch[1]}.zip`
           }
-          return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${displayName}.adpkg.zip`
+          return `${BASE_DRIVER_PATH}/${displayName}.adpkg.zip`
         }
       } catch {
         // Not JSON, continue to legacy format handling
@@ -330,12 +332,12 @@ const FIELD_MAPPINGS: Record<
       // Legacy format handling for backward compatibility
       const bracketMatch = driverString.match(/\]\s*(.+\.adpkg)/i)
       if (bracketMatch && bracketMatch[1]) {
-        return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${bracketMatch[1]}.zip`
+        return `${BASE_DRIVER_PATH}/${bracketMatch[1]}.zip`
       }
 
       if (driverString.toLowerCase().endsWith('.adpkg')) {
         const filename = driverString.split('/').pop() || driverString
-        return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${filename}.zip`
+        return `${BASE_DRIVER_PATH}/${filename}.zip`
       }
 
       if (driverString.startsWith('/') && driverString.includes('gpu_drivers')) {
@@ -343,7 +345,7 @@ const FIELD_MAPPINGS: Record<
       }
 
       if (EdenDefaults.isCommonDriverName(driverString)) {
-        return `/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers/${driverString}.adpkg.zip`
+        return `${BASE_DRIVER_PATH}/${driverString}.adpkg.zip`
       }
 
       // For unrecognized formats, return undefined to use default driver
@@ -484,9 +486,7 @@ export function serializeEdenConfig(config: EdenConfig): string {
     lines.push('')
   }
 
-  while (lines.length > 0 && lines[lines.length - 1] === '') {
-    lines.pop()
-  }
+  while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop()
 
   return lines.join('\n')
 }
