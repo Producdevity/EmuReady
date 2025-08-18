@@ -103,7 +103,6 @@ function generateResponseExampleByStructure(
   routerName: string,
   procedureName: string,
   structure: string,
-  _filePath?: string,
 ): unknown {
   // Use structure analysis to generate accurate examples
   switch (structure) {
@@ -384,25 +383,86 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
       /(\w+):\s*(mobilePublicProcedure|mobileProtectedProcedure)\s*(?:\.input\((\w+)\))?\s*\.(query|mutation)/g
     let match
 
+    // First, find where nested routers are defined
+    const nestedRouterPattern = /(\w+):\s*createMobileTRPCRouter\s*\(/g
+    const nestedRouters: { name: string; startIndex: number; endIndex: number }[] = []
+    let nestedMatch
+
+    while ((nestedMatch = nestedRouterPattern.exec(content)) !== null) {
+      const startIndex = nestedMatch.index
+      // Find the closing brace for this nested router
+      let braceCount = 0
+      let foundStart = false
+      let endIndex = -1
+
+      for (let i = startIndex; i < content.length; i++) {
+        if (content[i] === '(' && !foundStart) {
+          foundStart = true
+        } else if (foundStart && content[i] === '{') {
+          braceCount++
+        } else if (foundStart && content[i] === '}') {
+          braceCount--
+          if (braceCount === 0) {
+            // Look for the closing parenthesis after the brace
+            for (let j = i; j < content.length && j < i + 10; j++) {
+              if (content[j] === ')') {
+                endIndex = j
+                break
+              }
+            }
+            if (endIndex !== -1) break
+          }
+        }
+      }
+
+      if (endIndex !== -1) {
+        nestedRouters.push({
+          name: nestedMatch[1],
+          startIndex,
+          endIndex,
+        })
+      }
+    }
+
     while ((match = procedureRegex.exec(content)) !== null) {
       const [, name, authType, inputSchema, type] = match
+
+      // Check if this procedure is inside a nested router
+      let isInNestedRouter = false
+      for (const nested of nestedRouters) {
+        if (match.index > nested.startIndex && match.index < nested.endIndex) {
+          isInNestedRouter = true
+          break
+        }
+      }
+
+      // Skip procedures that are inside nested routers
+      if (isInNestedRouter) continue
 
       // Extract JSDoc comment for this procedure
       const beforeProcedure = content.substring(0, match.index)
       const lastCommentMatch = beforeProcedure.match(/\/\*\*\s*\n\s*\*\s*(.+?)\s*\n\s*\*\//g)
-      const description = lastCommentMatch
+      let description = lastCommentMatch
         ? lastCommentMatch[lastCommentMatch.length - 1]
             .replace(/\/\*\*\s*\n\s*\*\s*|\s*\n\s*\*\//g, '')
             .replace(/\s*\*\s*/g, ' ')
             .trim()
         : undefined
 
+      // Skip comments that are clearly for nested routers, not procedures
+      if (description && description.toLowerCase().includes('nested router')) {
+        description = undefined
+      }
+
+      // Use the JSDoc description as is, since we're now excluding nested router procedures
+      const finalDescription = description
+
       procedures.push({
         name,
         type: type as 'query' | 'mutation',
         input: inputSchema,
         auth: authType === 'mobileProtectedProcedure' ? 'protected' : 'public',
-        description,
+        description: finalDescription || description,
         returnStructure: analyzeReturnStructure(filePath, name),
       })
     }
@@ -428,7 +488,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
     for (const procedure of routerInfo.procedures) {
       // tRPC uses GET for queries and POST for mutations when using fetchRequestHandler
       const method = procedure.type === 'mutation' ? 'post' : 'get'
-      const path = `/api/mobile/trpc/${routerInfo.router}.${procedure.name}`
+      const path = `/${routerInfo.router}.${procedure.name}`
 
       // Get input schema if available
       let requestBody: unknown = undefined
