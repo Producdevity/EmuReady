@@ -105,6 +105,12 @@ self.addEventListener(
     // Never cache navigations (dynamic HTML).
     if (event.request.mode === 'navigate') return
 
+    // Always bypass cache for API requests to ensure fresh data
+    if (url.pathname.startsWith('/api')) {
+      event.respondWith(fetch(event.request))
+      return
+    }
+
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached
