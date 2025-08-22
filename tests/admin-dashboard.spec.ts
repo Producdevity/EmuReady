@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     // Navigate to admin dashboard
     await page.goto('/admin')
@@ -231,6 +232,7 @@ test.describe('Admin Dashboard Tests - Requires Admin Role', () => {
 })
 
 test.describe('Admin Dashboard Data Visualizations - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin')
     await expect(page).toHaveURL(/\/admin/)

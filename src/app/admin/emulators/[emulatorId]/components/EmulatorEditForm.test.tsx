@@ -58,7 +58,7 @@ const mockEmulator = {
   systems: [],
   verifiedDevelopers: [],
   customFieldDefinitions: [],
-  _count: { listings: 0 },
+  _count: { listings: 0, systems: 0, customFieldDefinitions: 0 },
 }
 
 const mockMutate = vi.fn()

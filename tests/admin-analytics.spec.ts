@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Admin Analytics Tests - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     // Try primary analytics path
     await page.goto('/admin/analytics')
@@ -8,7 +9,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
     // If not found, try alternative paths
     if (!page.url().includes('analytics')) {
       const alternativePaths = ['/admin/stats', '/admin/dashboard/analytics']
-      for (const path of alternativePaths) {
+      for(const path of alternativePaths) {
         await page.goto(path)
         if (
           page.url().includes('admin') &&
@@ -58,13 +59,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
       if (await userGrowth.isVisible({ timeout: 3000 })) {
         // Key user metrics
         const userMetrics = {
-          'Total Users': /\d+.*total.*users/i,
+          'Total Users':     /\d+.*total.*users/i,
           'New Users Today': /\d+.*new.*today/i,
-          'Active Users': /\d+.*active/i,
-          'User Retention': /\d+%.*retention/i,
+          'Active Users':    /\d+.*active/i,
+          'User Retention':  /\d+%.*retention/i,
         }
 
-        for (const [label, pattern] of Object.entries(userMetrics)) {
+        for(const [label, pattern] of Object.entries(userMetrics)) {
           const metric = userGrowth.locator('.metric, .stat').filter({ hasText: pattern })
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()
@@ -97,7 +98,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
           'Popular Games',
         ]
 
-        for (const metric of metrics) {
+        for(const metric of metrics) {
           const metricElement = listingAnalytics
             .locator('.metric, .stat-card')
             .filter({ hasText: metric })
@@ -127,13 +128,13 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
       if (await engagement.isVisible({ timeout: 3000 })) {
         // Engagement metrics
         const engagementMetrics = {
-          'Total Votes': /\d+.*votes/i,
-          'Total Comments': /\d+.*comments/i,
-          'Avg Engagement': /\d+.*engagement/i,
+          'Total Votes':        /\d+.*votes/i,
+          'Total Comments':     /\d+.*comments/i,
+          'Avg Engagement':     /\d+.*engagement/i,
           'Active Discussions': /\d+.*discussion/i,
         }
 
-        for (const [label, pattern] of Object.entries(engagementMetrics)) {
+        for(const [label, pattern] of Object.entries(engagementMetrics)) {
           const metric = engagement.locator('.metric').filter({ hasText: pattern })
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()
@@ -163,7 +164,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         // Common date ranges
         const ranges = ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Custom']
 
-        for (const range of ranges) {
+        for(const range of ranges) {
           const rangeOption = page.locator('button, a').filter({ hasText: range })
           if (await rangeOption.isVisible({ timeout: 1000 }).catch(() => false)) {
             console.log(`✓ Date range: ${range}`)
@@ -273,7 +274,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         // Device categories
         const deviceTypes = ['Desktop', 'Mobile', 'Tablet']
 
-        for (const device of deviceTypes) {
+        for(const device of deviceTypes) {
           const deviceMetric = deviceAnalytics
             .locator('.metric, .device-stat')
             .filter({ hasText: device })
@@ -313,7 +314,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
           // Export formats
           const formats = ['PDF Report', 'CSV Data', 'Excel', 'Raw Data']
 
-          for (const format of formats) {
+          for(const format of formats) {
             const formatOption = page.locator('button, a').filter({ hasText: format })
             if (await formatOption.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Export format: ${format}`)
@@ -376,7 +377,7 @@ test.describe('Admin Analytics Tests - Requires Admin Role', () => {
         // Funnel stages
         const funnelStages = ['Visitors', 'Registered Users', 'Active Users', 'Contributors']
 
-        for (const stage of funnelStages) {
+        for(const stage of funnelStages) {
           const stageElement = conversions
             .locator('.funnel-stage, .stage')
             .filter({ hasText: stage })
