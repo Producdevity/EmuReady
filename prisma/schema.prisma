@@ -71,32 +71,32 @@ enum PermissionCategory {
 }
 
 model User {
-  id                   String      @id @default(uuid())
-  clerkId              String      @unique
-  email                String      @unique
-  name                 String?
-  bio                  String?
-  profileImage         String?
-  role                 Role        @default(USER)
-  createdAt            DateTime    @default(now())
+  id                          String                            @id @default(uuid())
+  clerkId                     String                            @unique
+  email                       String                            @unique
+  name                        String?
+  bio                         String?
+  profileImage                String?
+  role                        Role                              @default(USER)
+  createdAt                   DateTime                          @default(now())
   // Trust system fields
-  trustScore           Int         @default(0)
-  lastActiveAt         DateTime    @default(now())
+  trustScore                  Int                               @default(0)
+  lastActiveAt                DateTime                          @default(now())
   // User preferences
-  defaultToUserDevices Boolean     @default(false)
-  defaultToUserSocs    Boolean     @default(false)
-  notifyOnNewListings  Boolean     @default(true)
-  showNsfw            Boolean     @default(false)
-  lastUsedDeviceId     String?     // Track the last used device
+  defaultToUserDevices        Boolean                           @default(false)
+  defaultToUserSocs           Boolean                           @default(false)
+  notifyOnNewListings         Boolean                           @default(true)
+  showNsfw                    Boolean                           @default(false)
+  lastUsedDeviceId            String? // Track the last used device
   // Relations
-  comments             Comment[]
-  listings             Listing[]
-  pcListings           PcListing[]
-  processedListings    Listing[]   @relation("ListingsProcessedByAdmin")
-  processedPcListings  PcListing[] @relation("PcListingsProcessedByAdmin")
-  submittedGames       Game[]      @relation("GamesSubmittedByUser")
-  approvedGames        Game[]      @relation("GamesApprovedByAdmin")
-  votes                Vote[]
+  comments                    Comment[]
+  listings                    Listing[]
+  pcListings                  PcListing[]
+  processedListings           Listing[]                         @relation("ListingsProcessedByAdmin")
+  processedPcListings         PcListing[]                       @relation("PcListingsProcessedByAdmin")
+  submittedGames              Game[]                            @relation("GamesSubmittedByUser")
+  approvedGames               Game[]                            @relation("GamesApprovedByAdmin")
+  votes                       Vote[]
   commentVotes                CommentVote[]
   pcListingVotes              PcListingVote[]
   pcListingComments           PcListingComment[]
@@ -111,35 +111,35 @@ model User {
   triggeredNotificationEvents NotificationEvent[]
   trustActionLogs             TrustActionLog[]
   // Verified developer relations
-  verifiedDeveloperFor        VerifiedDeveloper[] @relation("UserVerifiedDeveloper")
-  verifiedDeveloperBy         VerifiedDeveloper[] @relation("VerifiedBy")
+  verifiedDeveloperFor        VerifiedDeveloper[]               @relation("UserVerifiedDeveloper")
+  verifiedDeveloperBy         VerifiedDeveloper[]               @relation("VerifiedBy")
   developerVerifications      ListingDeveloperVerification[]
   pcDeveloperVerifications    PcListingDeveloperVerification[]
   // Permission system relations
   assignedRolePermissions     RolePermission[]
   permissionActionLogs        PermissionActionLog[]
   // Report and ban system relations
-  reportsSubmitted            ListingReport[]  @relation("UserReports")
-  reportsReviewed             ListingReport[]  @relation("ReportsReviewed")
-  pcReportsSubmitted          PcListingReport[] @relation("UserPcReports")
-  pcReportsReviewed           PcListingReport[] @relation("PcReportsReviewed")
-  userBans                    UserBan[]        @relation("UserBans")
-  bansCreated                 UserBan[]        @relation("BansCreated")
-  bansLifted                  UserBan[]        @relation("BansLifted")
+  reportsSubmitted            ListingReport[]                   @relation("UserReports")
+  reportsReviewed             ListingReport[]                   @relation("ReportsReviewed")
+  pcReportsSubmitted          PcListingReport[]                 @relation("UserPcReports")
+  pcReportsReviewed           PcListingReport[]                 @relation("PcReportsReviewed")
+  userBans                    UserBan[]                         @relation("UserBans")
+  bansCreated                 UserBan[]                         @relation("BansCreated")
+  bansLifted                  UserBan[]                         @relation("BansLifted")
   // Badge system relations
   userBadges                  UserBadge[]
-  badgesCreated               Badge[]          @relation("BadgesCreatedBy")
-  badgeAssignments            UserBadge[]      @relation("BadgeAssignments")
+  badgesCreated               Badge[]                           @relation("BadgesCreatedBy")
+  badgeAssignments            UserBadge[]                       @relation("BadgeAssignments")
 }
 
 model UserDevicePreference {
-  id        String @id  @default(uuid())
+  id        String   @id @default(uuid())
   userId    String
   deviceId  String
-  createdAt DateTime    @default(now())
+  createdAt DateTime @default(now())
 
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device    Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, deviceId])
   @@index([userId])
@@ -170,36 +170,36 @@ model DeviceBrand {
 }
 
 model SoC {
-  id           String   @id @default(uuid())
-  name         String   @unique
-  manufacturer String
-  architecture String?  // e.g., "ARM64", "x86_64"
-  processNode  String?  // e.g., "5nm", "7nm"
-  cpuCores     Int?
-  gpuModel     String?
-  createdAt    DateTime @default(now())
-  devices      Device[]
+  id              String              @id @default(uuid())
+  name            String              @unique
+  manufacturer    String
+  architecture    String? // e.g., "ARM64", "x86_64"
+  processNode     String? // e.g., "5nm", "7nm"
+  cpuCores        Int?
+  gpuModel        String?
+  createdAt       DateTime            @default(now())
+  devices         Device[]
   userPreferences UserSocPreference[]
 }
 
 model Device {
-  id        String      @id @default(uuid())
-  brandId   String
-  modelName String
-  socId     String?
-  brand     DeviceBrand @relation(fields: [brandId], references: [id])
-  soc       SoC?        @relation(fields: [socId], references: [id])
-  listings  Listing[]
+  id              String                 @id @default(uuid())
+  brandId         String
+  modelName       String
+  socId           String?
+  brand           DeviceBrand            @relation(fields: [brandId], references: [id])
+  soc             SoC?                   @relation(fields: [socId], references: [id])
+  listings        Listing[]
   userPreferences UserDevicePreference[]
 
   @@unique([brandId, modelName])
 }
 
 model System {
-  id             String  @id @default(uuid())
-  name           String  @unique
-  key            String? @unique
-  tgdbPlatformId Int?    // TheGamesDB platform ID for image searching
+  id             String     @id @default(uuid())
+  name           String     @unique
+  key            String?    @unique
+  tgdbPlatformId Int? // TheGamesDB platform ID for image searching
   games          Game[]
   emulators      Emulator[]
 }
@@ -208,13 +208,14 @@ model Game {
   id          String         @id @default(uuid())
   title       String
   systemId    String
-  imageUrl    String?        // Fallback image URL
-  boxartUrl   String?        // TGDB boxart image URL
-  bannerUrl   String?        // TGDB banner image URL
-  tgdbGameId  Int?           // TheGamesDB game ID for reliable duplicate detection
+  imageUrl    String? // Fallback image URL
+  boxartUrl   String? // TGDB boxart image URL
+  bannerUrl   String? // TGDB banner image URL
+  tgdbGameId  Int? // TheGamesDB game ID for reliable duplicate detection
+  metadata    Json? // External provider IDs: { tgdbId?: number, rawgId?: number, igdbId?: number }
   isErotic    Boolean        @default(false)
   status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
-  submittedBy String?                     // null for existing games, userId for new submissions
+  submittedBy String? // null for existing games, userId for new submissions
   submittedAt DateTime?
   approvedBy  String?
   approvedAt  DateTime?
@@ -235,25 +236,25 @@ model Game {
 }
 
 model CustomFieldDefinition {
-  id           String            @id @default(uuid())
-  emulatorId   String
-  name         String // Internal name, e.g., "driver_version"
-  label        String // UI display label, e.g., "Driver Version"
-  type         CustomFieldType
-  options      Json? // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
-  defaultValue Json? // Default value for the field (boolean: true/false, select: option value, text: string)
-  placeholder  String? // Placeholder text for TEXT fields
+  id              String                      @id @default(uuid())
+  emulatorId      String
+  name            String // Internal name, e.g., "driver_version"
+  label           String // UI display label, e.g., "Driver Version"
+  type            CustomFieldType
+  options         Json? // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
+  defaultValue    Json? // Default value for the field (boolean: true/false, select: option value, text: string)
+  placeholder     String? // Placeholder text for TEXT fields
   // Range-specific fields
-  rangeMin     Float? // Minimum value for RANGE type
-  rangeMax     Float? // Maximum value for RANGE type
-  rangeUnit    String? // Unit for RANGE type (e.g., "%", "GB", "MB")
-  rangeDecimals Int? // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
-  isRequired   Boolean           @default(false)
-  displayOrder Int               @default(0)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  emulator     Emulator          @relation(fields: [emulatorId], references: [id])
-  listingValues ListingCustomFieldValue[]
+  rangeMin        Float? // Minimum value for RANGE type
+  rangeMax        Float? // Maximum value for RANGE type
+  rangeUnit       String? // Unit for RANGE type (e.g., "%", "GB", "MB")
+  rangeDecimals   Int? // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
+  isRequired      Boolean                     @default(false)
+  displayOrder    Int                         @default(0)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  emulator        Emulator                    @relation(fields: [emulatorId], references: [id])
+  listingValues   ListingCustomFieldValue[]
   pcListingValues PcListingCustomFieldValue[]
 
   @@unique([emulatorId, name])
@@ -270,46 +271,46 @@ model CustomFieldTemplate {
 }
 
 model CustomFieldTemplateField {
-  id           String              @id @default(uuid())
-  templateId   String
-  name         String              // Internal name, e.g., "driver_version"
-  label        String              // UI display label, e.g., "Driver Version"
-  type         CustomFieldType
-  options      Json?               // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
-  defaultValue Json?               // Default value for the field (boolean: true/false, select: option value, text: string)
-  placeholder  String?             // Placeholder text for TEXT fields
+  id            String              @id @default(uuid())
+  templateId    String
+  name          String // Internal name, e.g., "driver_version"
+  label         String // UI display label, e.g., "Driver Version"
+  type          CustomFieldType
+  options       Json? // For SELECT type: [{ value: "v1", label: "Version 1" }, { value: "v2", label: "Version 2" }]
+  defaultValue  Json? // Default value for the field (boolean: true/false, select: option value, text: string)
+  placeholder   String? // Placeholder text for TEXT fields
   // Range-specific fields
-  rangeMin     Float?              // Minimum value for RANGE type
-  rangeMax     Float?              // Maximum value for RANGE type
-  rangeUnit    String?             // Unit for RANGE type (e.g., "%", "GB", "MB")
-  rangeDecimals Int?               // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
-  isRequired   Boolean             @default(false)
-  displayOrder Int                 @default(0)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  template     CustomFieldTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  rangeMin      Float? // Minimum value for RANGE type
+  rangeMax      Float? // Maximum value for RANGE type
+  rangeUnit     String? // Unit for RANGE type (e.g., "%", "GB", "MB")
+  rangeDecimals Int? // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
+  isRequired    Boolean             @default(false)
+  displayOrder  Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  template      CustomFieldTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@unique([templateId, name])
   @@index([templateId])
 }
 
 model Emulator {
-  id                    String                  @id @default(uuid())
-  name                  String                  @unique
-  logo                  String?                 // Logo filename (e.g., "aethersx2.png")
-  description           String?                 // Markdown description/notes
-  repositoryUrl         String?                 // Repository/source code URL
-  officialUrl           String?                 // Official website URL
-  listings              Listing[]
-  pcListings            PcListing[]
+  id                     String                  @id @default(uuid())
+  name                   String                  @unique
+  logo                   String? // Logo filename (e.g., "aethersx2.png")
+  description            String? // Markdown description/notes
+  repositoryUrl          String? // Repository/source code URL
+  officialUrl            String? // Official website URL
+  listings               Listing[]
+  pcListings             PcListing[]
   customFieldDefinitions CustomFieldDefinition[]
-  systems               System[]
-  verifiedDevelopers    VerifiedDeveloper[]
+  systems                System[]
+  verifiedDevelopers     VerifiedDeveloper[]
 }
 
 model PerformanceScale {
-  id          Int       @id @default(autoincrement())
-  label       String    @unique
+  id          Int         @id @default(autoincrement())
+  label       String      @unique
   rank        Int
   description String?
   listings    Listing[]
@@ -317,33 +318,41 @@ model PerformanceScale {
 }
 
 model Listing {
-  id              String                 @id @default(uuid())
-  deviceId        String
-  gameId          String
-  emulatorId      String
-  performanceId   Int
-  notes           String?
-  authorId        String
-  createdAt       DateTime               @default(now())
-  status          ApprovalStatus  @default(PENDING)
-  processedAt     DateTime?
-  processedNotes  String?
+  id                String         @id @default(uuid())
+  deviceId          String
+  gameId            String
+  emulatorId        String
+  performanceId     Int
+  notes             String?
+  authorId          String
+  createdAt         DateTime       @default(now())
+  status            ApprovalStatus @default(PENDING)
+  processedAt       DateTime?
+  processedNotes    String?
   processedByUserId String?
 
-  author          User                   @relation(fields: [authorId], references: [id])
-  processedByUser User?                  @relation("ListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
-  performance     PerformanceScale       @relation(fields: [performanceId], references: [id])
-  emulator        Emulator               @relation(fields: [emulatorId], references: [id])
-  game            Game                   @relation(fields: [gameId], references: [id])
-  device          Device                 @relation(fields: [deviceId], references: [id])
-  comments              Comment[]
-  votes                 Vote[]
-  customFieldValues     ListingCustomFieldValue[]
-  notificationPrefs     ListingNotificationPreference[]
+  // Vote statistics (materialized for performance)
+  upvoteCount   Int   @default(0)
+  downvoteCount Int   @default(0)
+  voteCount     Int   @default(0)
+  successRate   Float @default(0)
+
+  author                 User                            @relation(fields: [authorId], references: [id])
+  processedByUser        User?                           @relation("ListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
+  performance            PerformanceScale                @relation(fields: [performanceId], references: [id])
+  emulator               Emulator                        @relation(fields: [emulatorId], references: [id])
+  game                   Game                            @relation(fields: [gameId], references: [id])
+  device                 Device                          @relation(fields: [deviceId], references: [id])
+  comments               Comment[]
+  votes                  Vote[]
+  customFieldValues      ListingCustomFieldValue[]
+  notificationPrefs      ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
-  reports               ListingReport[]
+  reports                ListingReport[]
 
   @@index([processedByUserId])
+  @@index([successRate, voteCount])
+  @@index([voteCount])
 }
 
 model Vote {
@@ -388,15 +397,15 @@ model CommentVote {
 }
 
 model ListingCustomFieldValue {
-  id                      String                @id @default(uuid())
+  id                      String   @id @default(uuid())
   listingId               String
   customFieldDefinitionId String
   value                   Json
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  listing                 Listing               @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  customFieldDefinition   CustomFieldDefinition @relation(fields: [customFieldDefinitionId], references: [id], onDelete: Cascade)
+  listing               Listing               @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  customFieldDefinition CustomFieldDefinition @relation(fields: [customFieldDefinitionId], references: [id], onDelete: Cascade)
 
   @@unique([listingId, customFieldDefinitionId])
   @@index([listingId])
@@ -405,18 +414,18 @@ model ListingCustomFieldValue {
 
 // Notification System Models
 model Notification {
-  id              String                 @id @default(cuid())
+  id              String                     @id @default(cuid())
   userId          String
   type            NotificationType
   category        NotificationCategory
-  title           String                 @db.VarChar(255)
-  message         String                 @db.Text
+  title           String                     @db.VarChar(255)
+  message         String                     @db.Text
   actionUrl       String?
   metadata        Json?
-  isRead          Boolean                @default(false)
-  deliveryChannel DeliveryChannel        @default(IN_APP)
+  isRead          Boolean                    @default(false)
+  deliveryChannel DeliveryChannel            @default(IN_APP)
   deliveryStatus  NotificationDeliveryStatus @default(PENDING)
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -461,13 +470,13 @@ model ListingNotificationPreference {
 }
 
 model NotificationEvent {
-  id           String    @id @default(cuid())
-  eventType    String
-  entityType   String
-  entityId     String
-  triggeredBy  String?
-  payload      Json?
-  processedAt  DateTime?
+  id          String    @id @default(cuid())
+  eventType   String
+  entityType  String
+  entityId    String
+  triggeredBy String?
+  payload     Json?
+  processedAt DateTime?
 
   createdAt DateTime @default(now())
 
@@ -543,6 +552,14 @@ enum TrustAction {
   MONTHLY_ACTIVE_BONUS
   LISTING_RECEIVED_UPVOTE
   LISTING_RECEIVED_DOWNVOTE
+  LISTING_DEVELOPER_VERIFIED
+  COMMENT_RECEIVED_UPVOTE
+  COMMENT_RECEIVED_DOWNVOTE
+  REPORT_CONFIRMED
+  FALSE_REPORT
+  GAME_SUBMISSION_APPROVED
+  GAME_SUBMISSION_REJECTED
+  HELPFUL_COMMENT
   ADMIN_ADJUSTMENT_POSITIVE
   ADMIN_ADJUSTMENT_NEGATIVE
 
@@ -554,7 +571,7 @@ model TrustActionLog {
   userId    String
   action    TrustAction
   weight    Int
-  metadata  Json?       // Additional context like listingId, targetUserId, etc.
+  metadata  Json? // Additional context like listingId, targetUserId, etc.
   createdAt DateTime    @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -568,17 +585,17 @@ model TrustActionLog {
 
 // Permission System Models
 model Permission {
-  id          String           @id @default(uuid())
-  key         String           @unique // Unique identifier like "approve_listings"
-  label       String           // Display name like "Approve Listings"
-  description String?          // Detailed explanation of what this permission does
-  category    PermissionCategory? // Category like "CONTENT", "USER_MANAGEMENT", "SYSTEM"
-  isSystem    Boolean          @default(false) // System permissions that cannot be deleted
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  
+  id          String   @id @default(uuid())
+  key         String   @unique // Unique identifier like "approve_listings"
+  label       String // Display name like "Approve Listings"
+  description String? // Detailed explanation of what this permission does
+  category    PermissionCategory? // Category for organizing permissions
+  isSystem    Boolean  @default(false) // System permissions that cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   rolePermissions RolePermission[]
-  actionLogs     PermissionActionLog[]
+  actionLogs      PermissionActionLog[]
 
   @@index([category])
   @@index([isSystem])
@@ -586,14 +603,14 @@ model Permission {
 }
 
 model RolePermission {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   role         Role
   permissionId String
-  assignedBy   String?    // UserId who assigned this permission
-  assignedAt   DateTime   @default(now())
-  
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  assignedByUser User?    @relation(fields: [assignedBy], references: [id], onDelete: SetNull)
+  assignedBy   String? // UserId who assigned this permission
+  assignedAt   DateTime @default(now())
+
+  permission     Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  assignedByUser User?      @relation(fields: [assignedBy], references: [id], onDelete: SetNull)
 
   @@unique([role, permissionId])
   @@index([role])
@@ -602,16 +619,16 @@ model RolePermission {
 }
 
 model PermissionActionLog {
-  id           String                   @id @default(uuid())
+  id           String               @id @default(uuid())
   userId       String
   action       PermissionActionType
-  targetRole   Role?                   // For role-permission assignments
-  permissionId String?                 // For permission-related actions
-  metadata     Json?                   // Additional context (old values, etc.)
-  createdAt    DateTime                @default(now())
-  
-  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission   Permission?             @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+  targetRole   Role? // For role-permission assignments
+  permissionId String? // For permission-related actions
+  metadata     Json? // Additional context (old values, etc.)
+  createdAt    DateTime             @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission? @relation(fields: [permissionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])
@@ -628,22 +645,22 @@ enum PermissionActionType {
   ROLE_PERMISSION_ASSIGNED
   ROLE_PERMISSION_REMOVED
   USER_ROLE_CHANGED
-  
+
   @@map("permission_action_type")
 }
 
 model VerifiedDeveloper {
-  id          String   @id @default(uuid())
-  userId      String
-  emulatorId  String
-  verifiedAt  DateTime @default(now())
-  verifiedBy  String
-  notes       String?
-  
-  user        User     @relation("UserVerifiedDeveloper", fields: [userId], references: [id], onDelete: Cascade)
-  emulator    Emulator @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
-  verifier    User     @relation("VerifiedBy", fields: [verifiedBy], references: [id])
-  
+  id         String   @id @default(uuid())
+  userId     String
+  emulatorId String
+  verifiedAt DateTime @default(now())
+  verifiedBy String
+  notes      String?
+
+  user     User     @relation("UserVerifiedDeveloper", fields: [userId], references: [id], onDelete: Cascade)
+  emulator Emulator @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
+  verifier User     @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+
   @@unique([userId, emulatorId])
   @@index([userId])
   @@index([emulatorId])
@@ -651,15 +668,15 @@ model VerifiedDeveloper {
 }
 
 model ListingDeveloperVerification {
-  id          String   @id @default(uuid())
-  listingId   String
-  verifiedBy  String
-  verifiedAt  DateTime @default(now())
-  notes       String?
-  
-  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  developer   User     @relation(fields: [verifiedBy], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(uuid())
+  listingId  String
+  verifiedBy String
+  verifiedAt DateTime @default(now())
+  notes      String?
+
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  developer User    @relation(fields: [verifiedBy], references: [id], onDelete: Cascade)
+
   @@unique([listingId, verifiedBy])
   @@index([listingId])
   @@index([verifiedBy])
@@ -683,22 +700,22 @@ enum ReportStatus {
 }
 
 model ListingReport {
-  id              String       @id @default(uuid())
-  listingId       String
-  reportedById    String
-  reason          ReportReason
-  description     String?
-  status          ReportStatus @default(PENDING)
-  reviewedById    String?
-  reviewedAt      DateTime?
-  reviewNotes     String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
-  listing         Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  reportedBy      User         @relation("UserReports", fields: [reportedById], references: [id], onDelete: Cascade)
-  reviewedBy      User?        @relation("ReportsReviewed", fields: [reviewedById], references: [id])
-  
+  id           String       @id @default(uuid())
+  listingId    String
+  reportedById String
+  reason       ReportReason
+  description  String?
+  status       ReportStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNotes  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reportedBy User    @relation("UserReports", fields: [reportedById], references: [id], onDelete: Cascade)
+  reviewedBy User?   @relation("ReportsReviewed", fields: [reviewedById], references: [id])
+
   @@unique([listingId, reportedById])
   @@index([listingId])
   @@index([reportedById])
@@ -721,11 +738,11 @@ model UserBan {
   unbannedById String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  
-  user         User      @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
-  bannedBy     User      @relation("BansCreated", fields: [bannedById], references: [id])
-  unbannedBy   User?     @relation("BansLifted", fields: [unbannedById], references: [id])
-  
+
+  user       User  @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
+  bannedBy   User  @relation("BansCreated", fields: [bannedById], references: [id])
+  unbannedBy User? @relation("BansLifted", fields: [unbannedById], references: [id])
+
   @@index([userId])
   @@index([bannedById])
   @@index([isActive])
@@ -735,20 +752,20 @@ model UserBan {
 }
 
 model UserPcPreset {
-  id        String @id @default(uuid())
-  userId    String
-  name      String
-  cpuId     String
-  gpuId     String?  // Optional for integrated graphics
-  memorySize Int    // in GB
-  os        PcOs
-  osVersion String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  userId     String
+  name       String
+  cpuId      String
+  gpuId      String? // Optional for integrated graphics
+  memorySize Int // in GB
+  os         PcOs
+  osVersion  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   cpu  Cpu  @relation(fields: [cpuId], references: [id])
-  gpu  Gpu?  @relation(fields: [gpuId], references: [id])
+  gpu  Gpu? @relation(fields: [gpuId], references: [id])
 
   @@unique([userId, name])
   @@index([userId])
@@ -756,13 +773,13 @@ model UserPcPreset {
 }
 
 model Cpu {
-  id        String      @id @default(uuid())
-  brandId   String
-  modelName String
-  createdAt DateTime    @default(now())
-  brand     DeviceBrand @relation(fields: [brandId], references: [id])
+  id         String         @id @default(uuid())
+  brandId    String
+  modelName  String
+  createdAt  DateTime       @default(now())
+  brand      DeviceBrand    @relation(fields: [brandId], references: [id])
   pcListings PcListing[]
-  presets   UserPcPreset[]
+  presets    UserPcPreset[]
 
   @@unique([brandId, modelName])
   @@index([brandId])
@@ -770,13 +787,13 @@ model Cpu {
 }
 
 model Gpu {
-  id        String      @id @default(uuid())
-  brandId   String
-  modelName String
-  createdAt DateTime    @default(now())
-  brand     DeviceBrand @relation(fields: [brandId], references: [id])
+  id         String         @id @default(uuid())
+  brandId    String
+  modelName  String
+  createdAt  DateTime       @default(now())
+  brand      DeviceBrand    @relation(fields: [brandId], references: [id])
   pcListings PcListing[]
-  presets   UserPcPreset[]
+  presets    UserPcPreset[]
 
   @@unique([brandId, modelName])
   @@index([brandId])
@@ -784,38 +801,44 @@ model Gpu {
 }
 
 model PcListing {
-  id              String   @id @default(uuid())
-  gameId          String
-  emulatorId      String
-  performanceId   Int
-  notes           String?
-  authorId        String
-  updatedAt       DateTime @updatedAt
-  createdAt       DateTime @default(now())
-  status          ApprovalStatus  @default(PENDING)
-  processedAt     DateTime?
-  processedNotes  String?
+  id                String         @id @default(uuid())
+  gameId            String
+  emulatorId        String
+  performanceId     Int
+  notes             String?
+  authorId          String
+  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime       @default(now())
+  status            ApprovalStatus @default(PENDING)
+  processedAt       DateTime?
+  processedNotes    String?
   processedByUserId String?
-  memorySize      Int  // in GB
-  cpuId           String
-  gpuId           String?  // Optional for integrated graphics
-  os              PcOs
-  osVersion       String
+  memorySize        Int // in GB
+  cpuId             String
+  gpuId             String? // Optional for integrated graphics
+  os                PcOs
+  osVersion         String
 
-  author          User                   @relation(fields: [authorId], references: [id])
-  processedByUser User?                  @relation("PcListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
-  performance     PerformanceScale       @relation(fields: [performanceId], references: [id])
-  emulator        Emulator               @relation(fields: [emulatorId], references: [id])
-  game            Game                   @relation(fields: [gameId], references: [id])
-  gpu             Gpu?                   @relation(fields: [gpuId], references: [id])
-  cpu             Cpu                    @relation(fields: [cpuId], references: [id])
+  // Vote statistics (materialized for performance)
+  upvoteCount   Int   @default(0)
+  downvoteCount Int   @default(0)
+  voteCount     Int   @default(0)
+  successRate   Float @default(0)
 
-  customFieldValues     PcListingCustomFieldValue[]
-  notificationPrefs     PcListingNotificationPreference[]
+  author          User             @relation(fields: [authorId], references: [id])
+  processedByUser User?            @relation("PcListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
+  performance     PerformanceScale @relation(fields: [performanceId], references: [id])
+  emulator        Emulator         @relation(fields: [emulatorId], references: [id])
+  game            Game             @relation(fields: [gameId], references: [id])
+  gpu             Gpu?             @relation(fields: [gpuId], references: [id])
+  cpu             Cpu              @relation(fields: [cpuId], references: [id])
+
+  customFieldValues      PcListingCustomFieldValue[]
+  notificationPrefs      PcListingNotificationPreference[]
   developerVerifications PcListingDeveloperVerification[]
-  reports               PcListingReport[]
-  votes                 PcListingVote[]
-  comments              PcListingComment[]
+  reports                PcListingReport[]
+  votes                  PcListingVote[]
+  comments               PcListingComment[]
 
   @@index([processedByUserId])
   @@index([status])
@@ -824,19 +847,21 @@ model PcListing {
   @@index([cpuId])
   @@index([gpuId])
   @@index([authorId])
+  @@index([successRate, voteCount])
+  @@index([voteCount])
   @@map("pc_listings")
 }
 
 model PcListingCustomFieldValue {
-  id                      String                @id @default(uuid())
+  id                      String   @id @default(uuid())
   pcListingId             String
   customFieldDefinitionId String
   value                   Json
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  pcListing               PcListing             @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
-  customFieldDefinition   CustomFieldDefinition @relation(fields: [customFieldDefinitionId], references: [id], onDelete: Cascade)
+  pcListing             PcListing             @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  customFieldDefinition CustomFieldDefinition @relation(fields: [customFieldDefinitionId], references: [id], onDelete: Cascade)
 
   @@unique([pcListingId, customFieldDefinitionId])
   @@index([pcListingId])
@@ -845,10 +870,10 @@ model PcListingCustomFieldValue {
 }
 
 model PcListingNotificationPreference {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   userId      String
   pcListingId String
-  isEnabled   Boolean   @default(true)
+  isEnabled   Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -866,10 +891,10 @@ model PcListingDeveloperVerification {
   verifiedBy  String
   verifiedAt  DateTime @default(now())
   notes       String?
-  
-  pcListing   PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
-  developer   User      @relation(fields: [verifiedBy], references: [id], onDelete: Cascade)
-  
+
+  pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  developer User      @relation(fields: [verifiedBy], references: [id], onDelete: Cascade)
+
   @@unique([pcListingId, verifiedBy])
   @@index([pcListingId])
   @@index([verifiedBy])
@@ -877,22 +902,22 @@ model PcListingDeveloperVerification {
 }
 
 model PcListingReport {
-  id              String       @id @default(uuid())
-  pcListingId     String
-  reportedById    String
-  reason          ReportReason
-  description     String?
-  status          ReportStatus @default(PENDING)
-  reviewedById    String?
-  reviewedAt      DateTime?
-  reviewNotes     String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
-  pcListing       PcListing    @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
-  reportedBy      User         @relation("UserPcReports", fields: [reportedById], references: [id], onDelete: Cascade)
-  reviewedBy      User?        @relation("PcReportsReviewed", fields: [reviewedById], references: [id])
-  
+  id           String       @id @default(uuid())
+  pcListingId  String
+  reportedById String
+  reason       ReportReason
+  description  String?
+  status       ReportStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNotes  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  pcListing  PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  reportedBy User      @relation("UserPcReports", fields: [reportedById], references: [id], onDelete: Cascade)
+  reviewedBy User?     @relation("PcReportsReviewed", fields: [reviewedById], references: [id])
+
   @@unique([pcListingId, reportedById])
   @@index([pcListingId])
   @@index([reportedById])
@@ -903,15 +928,15 @@ model PcListingReport {
 }
 
 model PcListingVote {
-  id          String    @id @default(uuid())
-  value       Boolean   // true = upvote, false = downvote
+  id          String   @id @default(uuid())
+  value       Boolean // true = upvote, false = downvote
   userId      String
   pcListingId String
-  createdAt   DateTime  @default(now())
-  
-  pcListing   PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  createdAt   DateTime @default(now())
+
+  pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, pcListingId])
   @@index([pcListingId])
   @@index([userId])
@@ -919,23 +944,23 @@ model PcListingVote {
 }
 
 model PcListingComment {
-  id          String               @id @default(uuid())
+  id          String    @id @default(uuid())
   content     String
   userId      String
   pcListingId String
   parentId    String?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
-  isEdited    Boolean              @default(false)
-  score       Int                  @default(0)
-  
-  parent      PcListingComment?    @relation("PcCommentThread", fields: [parentId], references: [id])
-  replies     PcListingComment[]   @relation("PcCommentThread")
-  pcListing   PcListing            @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
-  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  votes       PcListingCommentVote[]
-  
+  isEdited    Boolean   @default(false)
+  score       Int       @default(0)
+
+  parent    PcListingComment?      @relation("PcCommentThread", fields: [parentId], references: [id])
+  replies   PcListingComment[]     @relation("PcCommentThread")
+  pcListing PcListing              @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     PcListingCommentVote[]
+
   @@index([pcListingId])
   @@index([userId])
   @@index([parentId])
@@ -944,15 +969,15 @@ model PcListingComment {
 }
 
 model PcListingCommentVote {
-  id        String           @id @default(uuid())
-  value     Boolean          // true = upvote, false = downvote
+  id        String   @id @default(uuid())
+  value     Boolean // true = upvote, false = downvote
   userId    String
   commentId String
-  createdAt DateTime         @default(now())
-  
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment   PcListingComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  
+  createdAt DateTime @default(now())
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment PcListingComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
   @@unique([userId, commentId])
   @@index([commentId])
   @@index([userId])
@@ -961,18 +986,18 @@ model PcListingCommentVote {
 
 // Badge System Models
 model Badge {
-  id          String    @id @default(uuid())
-  name        String    @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  color       String    @default("#3B82F6") // Default blue color
-  icon        String?   // Icon name or path
-  isActive    Boolean   @default(true)
+  color       String   @default("#3B82F6") // Default blue color
+  icon        String? // Icon name or path
+  isActive    Boolean  @default(true)
   createdBy   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  creator     User        @relation("BadgesCreatedBy", fields: [createdBy], references: [id])
-  userBadges  UserBadge[]
+  creator    User        @relation("BadgesCreatedBy", fields: [createdBy], references: [id])
+  userBadges UserBadge[]
 
   @@index([isActive])
   @@index([createdBy])
@@ -989,9 +1014,9 @@ model UserBadge {
   notes      String?
   color      TailwindColor @default(blue)
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  assignedByUser User @relation("BadgeAssignments", fields: [assignedBy], references: [id])
+  user           User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge          Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  assignedByUser User  @relation("BadgeAssignments", fields: [assignedBy], references: [id])
 
   @@unique([userId, badgeId])
   @@index([userId])
