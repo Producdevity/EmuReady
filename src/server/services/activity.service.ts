@@ -163,33 +163,33 @@ export class ActivityService {
     userId?: string,
   ): Promise<ActivityTypes.RecentListing[]> {
     const dateFrom = this.getDateRange(timeRange)
-    const canSeeAll = roleIncludesRole(userRole, Role.DEVELOPER)
-    const isDeveloper = userRole === Role.DEVELOPER
+
+    // Clear permission hierarchy
+    const isModerator = roleIncludesRole(userRole, Role.MODERATOR)
+    const isDeveloperOrHigher = roleIncludesRole(userRole, Role.DEVELOPER)
+    const isDeveloperExactly = userRole === Role.DEVELOPER
 
     // Build where clause based on permissions
     const whereClause: Prisma.ListingWhereInput = {
       createdAt: { gte: dateFrom },
     }
 
-    // Only apply status filter for users below DEVELOPER role
-    if (!canSeeAll) {
+    // Users below DEVELOPER only see approved listings
+    if (!isDeveloperOrHigher) {
       whereClause.status = ApprovalStatus.APPROVED
     }
 
-    // Developers can filter to see only their emulator listings
-    if (isDeveloper && userId && !roleIncludesRole(userRole, Role.MODERATOR)) {
-      const verifiedEmulators = await this.prisma.verifiedDeveloper.findMany({
-        where: { userId },
-        select: { emulatorId: true },
-      })
-      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
-
-      if (emulatorIds.length === 0) return []
-      whereClause.emulatorId = { in: emulatorIds }
+    // DEVELOPER role (not MODERATOR+) only sees their verified emulator listings
+    if (isDeveloperExactly && userId) {
+      whereClause.emulator = {
+        verifiedDevelopers: {
+          some: { userId },
+        },
+      }
     }
 
-    // Apply shadow ban filter for non-moderators
-    if (!roleIncludesRole(userRole, Role.MODERATOR)) {
+    // Non-moderators don't see content from banned users
+    if (!isModerator) {
       whereClause.author = {
         userBans: {
           none: {

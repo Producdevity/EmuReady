@@ -29,8 +29,21 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
 
   const role = (data.public_metadata?.role as Role) ?? Role.USER
 
+  // Normalize username to lowercase for consistency
   let displayName: string | null = null
-  if (data.username) displayName = data.username
+  if (data.username) {
+    const sanitizedUsername = data.username.trim().toLowerCase()
+    // Validate username: lowercase alphanumeric, underscores, hyphens, 3-30 chars
+    const isValidUsername = /^[a-z0-9_-]{3,30}$/.test(sanitizedUsername)
+
+    if (isValidUsername) {
+      displayName = sanitizedUsername
+    } else {
+      console.warn(
+        `⚠️ Invalid username format during user creation: "${data.username}" (normalized: "${sanitizedUsername}") for user ${data.id}. Creating user without username.`,
+      )
+    }
+  }
 
   try {
     const user = await prisma.user.create({
@@ -73,12 +86,30 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
 
   const role = data.public_metadata?.role as Role
 
+  // Sanitize and validate display name
   let displayName: string | null = null
-  if (data.username) displayName = data.username
+  if (data.username) {
+    // Normalize to lowercase and trim whitespace
+    const sanitizedUsername = data.username.trim().toLowerCase()
+    // Validate username: lowercase alphanumeric, underscores, hyphens, 3-30 chars
+    const isValidUsername = /^[a-z0-9_-]{3,30}$/.test(sanitizedUsername)
+
+    if (!isValidUsername) {
+      console.warn(
+        `⚠️ Invalid username format: "${data.username}" (normalized: "${sanitizedUsername}") for user ${data.id}. Skipping username update.`,
+      )
+    } else {
+      displayName = sanitizedUsername
+    }
+  }
 
   if (displayName) {
+    // Use case-insensitive search to prevent duplicates with different casing
     const existingUserWithName = await prisma.user.findFirst({
-      where: { name: displayName, clerkId: { not: data.id } },
+      where: {
+        name: { equals: displayName, mode: 'insensitive' },
+        clerkId: { not: data.id },
+      },
     })
 
     if (existingUserWithName) {
