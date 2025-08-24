@@ -1,14 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { type ReactNode } from 'react'
+import { type PropsWithChildren, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-interface Props {
+interface Props extends PropsWithChildren {
   title: string
   description?: string
   icon?: ReactNode
-  children: ReactNode
   className?: string
   delay?: number
 }

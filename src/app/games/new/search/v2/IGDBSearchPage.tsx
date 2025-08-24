@@ -1,6 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
+import { AlertTriangle } from 'lucide-react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
@@ -25,10 +26,10 @@ interface IGDBGameResult extends BaseGameResult {
   id: number
   summary?: string | null
   storyline?: string
-  themes?: Array<{ id: number; name: string }>
+  themes?: { id: number; name: string }[]
   cover?: { url: string }
-  artworks?: Array<{ url: string }>
-  screenshots?: Array<{ url: string }>
+  artworks?: { url: string }[]
+  screenshots?: { url: string }[]
 }
 
 function IGDBSearchContent() {
@@ -91,6 +92,12 @@ function IGDBSearchContent() {
 
   const handleSearch = useCallback(
     async (query: string, platformId: number | null, systemId: string | null) => {
+      // Require system selection for game creation
+      if (!systemId) {
+        toast.warning('Please select a system before searching for games')
+        return
+      }
+
       setIsSearching(true)
 
       // Update URL with search parameters
@@ -122,35 +129,29 @@ function IGDBSearchContent() {
 
   // Auto-search on page load if URL has parameters
   useEffect(() => {
-    if (urlQuery && systemsQuery.data && !searchResults) {
-      const selectedSystem = urlSystemId
-        ? systemsQuery.data.find((system) => system.id === urlSystemId)
-        : null
+    if (urlQuery && urlSystemId && systemsQuery.data && !searchResults) {
+      const selectedSystem = systemsQuery.data.find((system) => system.id === urlSystemId)
 
       if (selectedSystem) {
         const igdbPlatformId = getIGDBPlatformId(selectedSystem)
-        handleSearch(urlQuery, igdbPlatformId, selectedSystem.id)
-      } else if (urlQuery) {
-        // Search without platform filter if no system selected
-        handleSearch(urlQuery, null, null)
+        void handleSearch(urlQuery, igdbPlatformId, selectedSystem.id)
       }
     }
   }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
 
   const showGameCreatedConfirmation = useCallback(
     async (gameId: string) => {
-      const addMobileListing = await confirm({
+      const addHandheldListing = await confirm({
         title: 'Game Added Successfully!',
-        description: 'Would you like to add a mobile device listing or PC listing for this game?',
-        confirmText: 'Add Mobile Listing',
+        description: 'Would you like to add a handheld device listing or PC listing for this game?',
+        confirmText: 'Add Handheld Listing',
         cancelText: 'Add PC Listing',
       })
 
-      if (addMobileListing) {
-        router.push(`/listings/new?gameId=${gameId}`)
-      } else {
-        router.push(`/pc-listings/new?gameId=${gameId}`)
-      }
+      const url = addHandheldListing
+        ? `/listings/new?gameId=${gameId}`
+        : `/pc-listings/new?gameId=${gameId}`
+      router.push(url)
     },
     [confirm, router],
   )
@@ -250,7 +251,22 @@ function IGDBSearchContent() {
         showModeratorFeatures={isModeratorOrHigher}
       />
 
-      {searchResults && (
+      {searchResults && !urlSystemId && (
+        <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-amber-900 dark:text-amber-200">System Required</h3>
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                Please select a system from the dropdown above before searching for games. Games
+                must be associated with a specific system to be added to the database.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {searchResults && urlSystemId && (
         <GameSearchResults<IGDBGameResult>
           provider="igdb"
           results={searchResults}

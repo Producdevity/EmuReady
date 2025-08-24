@@ -15,12 +15,12 @@ interface IGDBGameResult {
   summary?: string | null
   storyline?: string
   releaseDate?: string | Date | null
-  platforms?: Array<{ name: string }>
-  genres?: Array<{ name: string }>
-  themes?: Array<{ id: number; name: string }>
+  platforms?: { name: string }[]
+  genres?: { name: string }[]
+  themes?: { id: number; name: string }[]
   cover?: { url: string }
-  artworks?: Array<{ url: string }>
-  screenshots?: Array<{ url: string }>
+  artworks?: { url: string }[]
+  screenshots?: { url: string }[]
   imageUrl: string | null
   boxartUrl: string | null
   bannerUrl: string | null

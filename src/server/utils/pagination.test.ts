@@ -244,7 +244,7 @@ describe('pagination utilities', () => {
         | { description: { contains: string } }
         | { author: { name: { contains: string } } }
 
-      const fields: Array<(term: string) => SearchCondition> = [
+      const fields: ((term: string) => SearchCondition)[] = [
         (term: string) => ({ title: { contains: term } }),
         (term: string) => ({ description: { contains: term } }),
         (term: string) => ({ author: { name: { contains: term } } }),

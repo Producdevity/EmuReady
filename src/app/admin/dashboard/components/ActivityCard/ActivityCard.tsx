@@ -3,6 +3,7 @@
 import { RefreshCw, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { type PropsWithChildren, type ReactNode } from 'react'
+import { type AdminRoute } from '@/app/admin/config/routes'
 import { cn } from '@/lib/utils'
 import { type TimeRange } from '@/schemas/activity'
 
@@ -13,7 +14,7 @@ interface Props extends PropsWithChildren {
   onTimeRangeChange: (range: TimeRange) => void
   onRefresh: () => void
   isLoading?: boolean
-  viewAllHref?: string
+  viewAllHref?: AdminRoute | string
   className?: string
 }
 

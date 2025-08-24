@@ -12,8 +12,8 @@ export interface BaseGameResult {
   id: string | number
   name: string
   releaseDate?: string | Date | null
-  platforms?: Array<{ id?: number; name: string }>
-  genres?: Array<{ id?: number; name: string }>
+  platforms?: { id?: number; name: string }[]
+  genres?: { id?: number; name: string }[]
   imageUrl: string | null
   boxartUrl: string | null
   bannerUrl: string | null

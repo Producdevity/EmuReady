@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import {
   calculateOffset,
   createPaginationResult,
@@ -19,11 +20,7 @@ export class CpusRepository extends BaseRepository {
 
     withCounts: {
       brand: true,
-      _count: {
-        select: {
-          pcListings: true,
-        },
-      },
+      _count: { select: { pcListings: true } },
     } satisfies Prisma.CpuInclude,
   } as const
 
@@ -136,7 +133,15 @@ export class CpusRepository extends BaseRepository {
     }>[]
     pagination: PaginationResult
   }> {
-    const { search, brandId, limit = 20, offset = 0, page, sortField, sortDirection } = filters
+    const {
+      search,
+      brandId,
+      limit = PAGINATION.DEFAULT_LIMIT,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
+    } = filters
 
     const actualOffset = calculateOffset({ page, offset }, limit)
     const where = this.buildWhereClause(search, brandId)
@@ -169,7 +174,15 @@ export class CpusRepository extends BaseRepository {
     }>[]
     pagination: PaginationResult
   }> {
-    const { search, brandId, limit = 20, offset = 0, page, sortField, sortDirection } = filters
+    const {
+      search,
+      brandId,
+      limit = PAGINATION.DEFAULT_LIMIT,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
+    } = filters
 
     const actualOffset = calculateOffset({ page, offset }, limit)
     const where = this.buildWhereClause(search, brandId)

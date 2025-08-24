@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import {
   calculateOffset,
   createPaginationResult,
@@ -56,7 +57,14 @@ export class EmulatorsRepository extends BaseRepository {
     }>[]
     pagination: PaginationResult
   }> {
-    const { search, limit = 20, offset = 0, page, sortField, sortDirection } = filters
+    const {
+      search,
+      limit = PAGINATION.DEFAULT_LIMIT,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
+    } = filters
 
     const where = this.buildWhereClause(search)
     const orderBy = this.buildOrderBy(sortField, sortDirection)

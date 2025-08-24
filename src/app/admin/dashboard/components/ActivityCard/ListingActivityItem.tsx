@@ -10,7 +10,7 @@ interface Props {
 
 export function ListingActivityItem(props: Props) {
   const href =
-    props.listing.type === 'mobile'
+    props.listing.type === 'handheld'
       ? `/listings/${props.listing.id}`
       : `/pc-listings/${props.listing.id}`
 
@@ -24,7 +24,7 @@ export function ListingActivityItem(props: Props) {
           {props.listing.gameTitle}
         </Link>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          {props.listing.type === 'mobile'
+          {props.listing.type === 'handheld'
             ? `on ${props.listing.deviceName}`
             : `${props.listing.cpuName || 'Unknown CPU'} / ${props.listing.gpuName || 'Unknown GPU'}`}
         </p>

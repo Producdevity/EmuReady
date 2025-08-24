@@ -893,12 +893,12 @@ interface EndpointInfo {
   summary: string
   description?: string
   tags?: string[]
-  parameters?: Array<{
+  parameters?: {
     name: string
     schema: { type: string }
     required: boolean
     description?: string
-  }>
+  }[]
   requestBody?: {
     required?: boolean
     content?: unknown

@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import {
   calculateOffset,
   createPaginationResult,
@@ -130,11 +131,7 @@ export namespace GamesRepositoryTypes {
       status: true
       createdAt: true
       system: { select: { id: true; name: true; key: true } }
-      _count: {
-        select: {
-          listings: true
-        }
-      }
+      _count: { select: { listings: true } }
     }
   }>
 }
@@ -291,7 +288,7 @@ export class GamesRepository extends BaseRepository {
    * @param filters.listingFilter - Filter by listing existence
    * @param filters.userRole - User's role for permission checking
    * @param filters.userId - User's ID for showing their pending games
-   * @param filters.limit - Number of items per page (default: 20)
+   * @param filters.limit - Number of items per page (default: PAGINATION.DEFAULT_LIMIT)
    * @param filters.page - Page number for pagination
    * @returns Games array with complete pagination metadata
    * @throws {Error} If database query fails
@@ -300,13 +297,20 @@ export class GamesRepository extends BaseRepository {
     games: (GamesRepositoryTypes.WithSubmitter | GamesRepositoryTypes.WithCounts)[]
     pagination: PaginationResult
   }> {
-    const { limit = 20, offset = 0, page, sortField, sortDirection, userRole } = filters
+    const {
+      limit = PAGINATION.DEFAULT_LIMIT,
+      offset = 0,
+      page,
+      sortField,
+      sortDirection,
+      userRole,
+    } = filters
 
     const where = this.buildWhereClause(filters)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
     const actualOffset = calculateOffset(
       { page: page ?? undefined, offset: offset ?? undefined },
-      limit ?? 20,
+      limit ?? PAGINATION.DEFAULT_LIMIT,
     )
 
     const includeSubmitter = hasPermission(userRole, Role.ADMIN)
@@ -320,14 +324,14 @@ export class GamesRepository extends BaseRepository {
           : GamesRepository.selects.withCounts,
         orderBy,
         skip: actualOffset,
-        take: limit ?? 20,
+        take: limit ?? PAGINATION.DEFAULT_LIMIT,
       }),
     ])
 
     const pagination = createPaginationResult(
       total,
       { page: page ?? undefined, offset: offset ?? undefined },
-      limit ?? 20,
+      limit ?? PAGINATION.DEFAULT_LIMIT,
       actualOffset,
     )
 
@@ -343,22 +347,21 @@ export class GamesRepository extends BaseRepository {
    * @param filters.search - Search in game titles
    * @param filters.showNsfw - Include NSFW content (default: false)
    * @param filters.page - Page number (default: 1)
-   * @param filters.limit - Items per page (default: 20)
+   * @param filters.limit - Items per page (default: PAGINATION.DEFAULT_LIMIT)
    * @returns Simplified game data optimized for mobile consumption
    */
   async getMobile(filters: GameFilters = {}): Promise<{
     games: GamesRepositoryTypes.Mobile[]
-    pagination: {
-      total: number
-      pages: number
-      page: number
-      limit: number
-    }
+    pagination: PaginationResult
   }> {
-    const { systemId, search, showNsfw = false } = filters
-    const page = filters.page ?? 1
-    const limit = filters.limit ?? 20
-    const skip = (page - 1) * limit
+    const {
+      systemId,
+      search,
+      showNsfw = false,
+      page,
+      offset,
+      limit = PAGINATION.DEFAULT_LIMIT,
+    } = filters
 
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
@@ -366,6 +369,11 @@ export class GamesRepository extends BaseRepository {
       ...(search && { title: { contains: search, mode: Prisma.QueryMode.insensitive } }),
       ...(!showNsfw && { isErotic: false }),
     }
+
+    const actualOffset = calculateOffset(
+      { page: page ?? undefined, offset: offset ?? undefined },
+      limit ?? PAGINATION.DEFAULT_LIMIT,
+    )
 
     const [games, total] = await Promise.all([
       this.prisma.game.findMany({
@@ -376,20 +384,22 @@ export class GamesRepository extends BaseRepository {
           { createdAt: 'desc' },
           { title: this.sortOrder },
         ],
-        skip,
-        take: limit,
+        skip: actualOffset,
+        take: limit ?? PAGINATION.DEFAULT_LIMIT,
       }),
       this.prisma.game.count({ where }),
     ])
 
+    const pagination = createPaginationResult(
+      total,
+      { page: page ?? undefined, offset: offset ?? undefined },
+      limit ?? PAGINATION.DEFAULT_LIMIT,
+      actualOffset,
+    )
+
     return {
       games,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page,
-        limit,
-      },
+      pagination,
     }
   }
 
@@ -410,7 +420,7 @@ export class GamesRepository extends BaseRepository {
       where,
       select: GamesRepository.selects.mobile,
       orderBy: { listings: { _count: Prisma.SortOrder.desc } },
-      take: 20,
+      take: PAGINATION.DEFAULT_LIMIT,
     })
   }
 
@@ -437,7 +447,7 @@ export class GamesRepository extends BaseRepository {
         { createdAt: Prisma.SortOrder.desc },
         { title: this.sortOrder },
       ],
-      take: 20,
+      take: PAGINATION.DEFAULT_LIMIT,
     })
   }
 
@@ -480,14 +490,8 @@ export class GamesRepository extends BaseRepository {
     // Build the include based on the static full include shape
     const fullInclude = {
       ...GamesRepository.includes.full,
-      listings: {
-        ...GamesRepository.includes.full.listings,
-        where: listingsWhere,
-      },
-      pcListings: {
-        ...GamesRepository.includes.full.pcListings,
-        where: pcListingsWhere,
-      },
+      listings: { ...GamesRepository.includes.full.listings, where: listingsWhere },
+      pcListings: { ...GamesRepository.includes.full.pcListings, where: pcListingsWhere },
     }
 
     return this.prisma.game.findUnique({
@@ -505,9 +509,7 @@ export class GamesRepository extends BaseRepository {
    * @returns True if game exists, false otherwise
    */
   async exists(title: string, systemId: string): Promise<boolean> {
-    const game = await this.prisma.game.findFirst({
-      where: { title, systemId },
-    })
+    const game = await this.prisma.game.findFirst({ where: { title, systemId } })
     return !!game
   }
 
@@ -620,10 +622,7 @@ export class GamesRepository extends BaseRepository {
       } else {
         where.OR = [
           { status: ApprovalStatus.APPROVED },
-          {
-            status: ApprovalStatus.PENDING,
-            submittedBy: userId,
-          },
+          { status: ApprovalStatus.PENDING, submittedBy: userId },
         ]
       }
     } else {

@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import {
   calculateOffset,
   createPaginationResult,
@@ -130,7 +131,7 @@ export class CommentsRepository extends BaseRepository {
     comments: CommentsRepositoryTypes.Default[]
     pagination: PaginationResult
   }> {
-    const { limit = 20, offset = 0, page, sortField, sortDirection } = filters
+    const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0, page, sortField, sortDirection } = filters
 
     const where = this.buildWhereClause(filters)
     const orderBy = this.buildOrderBy(sortField, sortDirection)

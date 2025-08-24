@@ -31,16 +31,16 @@ interface FiltersProps {
   emulatorIds: string[]
   performanceIds: number[]
   searchTerm: string
-  systems: Array<{ id: string; name: string }>
-  devices: Array<{
+  systems: { id: string; name: string }[]
+  devices: {
     id: string
     brandId: string
     modelName: string
     brand: { id: string; name: string; createdAt: Date }
-  }>
-  socs: Array<{ id: string; name: string; manufacturer: string }>
-  emulators: Array<{ id: string; name: string }>
-  performanceScales: Array<{ id: number; label: string }>
+  }[]
+  socs: { id: string; name: string; manufacturer: string }[]
+  emulators: { id: string; name: string }[]
+  performanceScales: { id: number; label: string }[]
   onSystemChange: (values: string[]) => void
   onDeviceChange: (values: string[]) => void
   onSocChange: (values: string[]) => void

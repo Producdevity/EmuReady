@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import { Prisma, type SoC } from '@orm'
 import { BaseRepository } from './base.repository'
 import type { GetSoCsInput, CreateSoCInput, UpdateSoCInput } from '@/schemas/soc'
@@ -9,7 +10,7 @@ export class SoCsRepository extends BaseRepository {
   async get(filters: GetSoCsInput = {}): Promise<SoC[]> {
     const sortDirection = filters.sortDirection ?? this.sortOrder
     const sortField = filters.sortField ?? 'name'
-    const { limit = 20, offset = 0 } = filters
+    const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0 } = filters
 
     const where: Prisma.SoCWhereInput = {
       ...(filters.search && {

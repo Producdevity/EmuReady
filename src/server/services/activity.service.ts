@@ -25,7 +25,7 @@ export namespace ActivityTypes {
 
   export type RecentListing = {
     id: string
-    type: 'mobile' | 'pc'
+    type: 'handheld' | 'pc'
     gameTitle: string
     gameId: string
     deviceName?: string
@@ -41,7 +41,7 @@ export namespace ActivityTypes {
     id: string
     content: string
     listingId: string
-    listingType: 'mobile' | 'pc'
+    listingType: 'handheld' | 'pc'
     gameTitle: string
     authorName: string | null
     authorId: string
@@ -154,7 +154,7 @@ export class ActivityService {
    * @param limit - Maximum number of listings to return
    * @param userRole - Role of the requesting user
    * @param userId - ID of the requesting user
-   * @returns Combined array of mobile and PC listings sorted by creation date
+   * @returns Combined array of handheld and PC listings sorted by creation date
    */
   async getRecentListings(
     timeRange: TimeRange,
@@ -193,17 +193,17 @@ export class ActivityService {
     }
 
     // Get counts first to determine optimal distribution
-    const [mobileCount, pcCount] = await Promise.all([
+    const [handheldCount, pcCount] = await Promise.all([
       this.prisma.listing.count({ where: whereClause }),
       this.prisma.pcListing.count({ where: whereClause as Prisma.PcListingWhereInput }),
     ])
 
-    const totalCount = mobileCount + pcCount
+    const totalCount = handheldCount + pcCount
     const handheldLimit =
-      totalCount > 0 ? Math.round((mobileCount / totalCount) * limit) : Math.ceil(limit / 2)
+      totalCount > 0 ? Math.round((handheldCount / totalCount) * limit) : Math.ceil(limit / 2)
     const pcLimit = limit - handheldLimit
 
-    // Fetch both mobile and PC listings with proper limits
+    // Fetch both handheld and PC listings with proper limits
     const [handheldListings, pcListings] = await Promise.all([
       this.prisma.listing.findMany({
         where: whereClause,
@@ -238,7 +238,7 @@ export class ActivityService {
     const combined: ActivityTypes.RecentListing[] = [
       ...handheldListings.map((listing) => ({
         id: listing.id,
-        type: 'mobile' as const,
+        type: 'handheld' as const,
         gameTitle: listing.game.title,
         gameId: listing.game.id,
         deviceName: `${listing.device.brand.name} ${listing.device.modelName}`,
@@ -337,7 +337,7 @@ export class ActivityService {
         c.content.substring(0, CONTENT_PREVIEW_LENGTH) +
         (c.content.length > CONTENT_PREVIEW_LENGTH ? '...' : ''),
       listingId: c.listingId,
-      listingType: 'mobile' as const,
+      listingType: 'handheld' as const,
       gameTitle: c.listing.game.title,
       authorName: c.user.name,
       authorId: c.user.id,

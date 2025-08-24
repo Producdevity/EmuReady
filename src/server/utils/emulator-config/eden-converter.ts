@@ -470,7 +470,7 @@ export function convertToEdenConfig(input: EdenConfigInput): EdenConfig {
  */
 export function serializeEdenConfig(config: EdenConfig): string {
   const lines: string[] = []
-  const sectionOrder: Array<keyof EdenConfig> = [
+  const sectionOrder: (keyof EdenConfig)[] = [
     'Controls',
     'Core',
     'Cpu',

@@ -3,6 +3,7 @@
  * Handles all database operations for PC listings with optimized vote count queries
  */
 
+import { PAGINATION } from '@/data/constants'
 import { Prisma, ApprovalStatus, type PcOs, type Role } from '@orm'
 import { BaseRepository } from './base.repository'
 import { pcListingInclude, type PcListingWithInclude } from '../api/utils/pcListingHelpers'
@@ -127,7 +128,7 @@ export class PcListingsRepository extends BaseRepository {
       performanceIds,
       searchTerm,
       page = 1,
-      limit = 20,
+      limit = PAGINATION.DEFAULT_LIMIT,
       sortField,
       sortDirection,
       approvalStatus = ApprovalStatus.APPROVED,
@@ -399,7 +400,10 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get PC listings for a specific game
    */
-  async getByGameId(gameId: string, limit: number = 20): Promise<PcListingWithRelations[]> {
+  async getByGameId(
+    gameId: string,
+    limit: number = PAGINATION.DEFAULT_LIMIT,
+  ): Promise<PcListingWithRelations[]> {
     const result = await this.getPcListings({
       gameId,
       limit,
@@ -412,7 +416,10 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get PC listings for a specific CPU
    */
-  async getByCpuId(cpuId: string, limit: number = 20): Promise<PcListingWithRelations[]> {
+  async getByCpuId(
+    cpuId: string,
+    limit: number = PAGINATION.DEFAULT_LIMIT,
+  ): Promise<PcListingWithRelations[]> {
     return this.getPcListings({
       cpuIds: [cpuId],
       limit,
@@ -424,7 +431,10 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get PC listings for a specific GPU
    */
-  async getByGpuId(gpuId: string, limit: number = 20): Promise<PcListingWithRelations[]> {
+  async getByGpuId(
+    gpuId: string,
+    limit: number = PAGINATION.DEFAULT_LIMIT,
+  ): Promise<PcListingWithRelations[]> {
     return this.getPcListings({
       gpuIds: [gpuId],
       limit,
@@ -611,7 +621,7 @@ export class PcListingsRepository extends BaseRepository {
       emulatorIds,
       search,
       page = 1,
-      limit = 20,
+      limit = PAGINATION.DEFAULT_LIMIT,
       sortField,
       sortDirection = 'asc',
       canSeeBannedUsers = false,

@@ -154,7 +154,7 @@ export default function TestingPage() {
     } catch (error) {
       console.error('Sign in error:', error)
       const err = error as {
-        errors?: Array<{ message: string }>
+        errors?: { message: string }[]
         message?: string
       }
       if (err?.errors?.[0]?.message) {

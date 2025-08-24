@@ -211,7 +211,7 @@ function shouldApplyDefaultSort<T>(
  */
 export function buildSearchConditions<T = unknown>(
   searchTerm: string,
-  fields: Array<(term: string) => T>,
+  fields: ((term: string) => T)[],
 ): T[] {
   return fields.map((fieldConfig) => fieldConfig(searchTerm))
 }

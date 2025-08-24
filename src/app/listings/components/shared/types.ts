@@ -14,10 +14,10 @@ export interface GameOption extends AutocompleteOptionBase {
 export interface EmulatorOption extends AutocompleteOptionBase {
   id: string
   name: string
-  systems: Array<{
+  systems: {
     id: string
     name: string
-  }>
+  }[]
 }
 
 export interface DeviceOption extends AutocompleteOptionBase {

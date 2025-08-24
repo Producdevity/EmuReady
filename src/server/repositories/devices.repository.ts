@@ -126,13 +126,13 @@ export class DevicesRepository extends BaseRepository {
   }
 
   async getMobile(filters: GetDevicesInput = {}): Promise<{
-    devices: Array<{
+    devices: {
       id: string
       modelName: string
       brandName: string
       socName: string | null
       listingsCount: number
-    }>
+    }[]
     pagination: {
       total: number
       pages: number

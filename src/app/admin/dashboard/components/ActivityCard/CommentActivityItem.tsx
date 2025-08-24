@@ -10,7 +10,7 @@ interface Props {
 
 export function CommentActivityItem(props: Props) {
   const href =
-    props.comment.listingType === 'mobile'
+    props.comment.listingType === 'handheld'
       ? `/listings/${props.comment.listingId}`
       : `/pc-listings/${props.comment.listingId}`
 

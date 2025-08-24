@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import {
   buildNsfwFilter,
@@ -452,7 +453,7 @@ export class ListingsRepository extends BaseRepository {
   /**
    * Get recent listings
    */
-  async getRecentListings(limit: number = 20) {
+  async getRecentListings(limit: number = PAGINATION.DEFAULT_LIMIT) {
     return this.getListings({ limit, sortField: 'createdAt', sortDirection: 'desc' })
   }
 
