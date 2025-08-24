@@ -35,9 +35,23 @@ if ('serviceWorker' in navigator) {
   if (isDevelopment) {
     console.log('Service Worker disabled in development mode')
   } else {
-    window.addEventListener('load', function () {
+    window.addEventListener('load', async function () {
+      const swUrl = '/service-worker.js'
+
+      // Unregister any previous service workers that might be controlling the page
+      if (navigator.serviceWorker.getRegistrations) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        const currentSwUrl = new URL(swUrl, window.location.href).href
+
+        for (const registration of registrations) {
+          if (registration.active && registration.active.scriptURL !== currentSwUrl) {
+            await registration.unregister()
+          }
+        }
+      }
+
       navigator.serviceWorker
-        .register('/service-worker.js')
+        .register(swUrl, { updateViaCache: 'none' })
         .then(function (registration) {
           console.log('Service Worker registered with scope:', registration.scope)
         })

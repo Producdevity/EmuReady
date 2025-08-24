@@ -152,7 +152,7 @@ self.addEventListener(
 
     const cacheDuration = getCacheDuration(url.pathname)
 
-    // Bypass cache for zero-duration resources
+    // Bypass cache for zero-duration resources (includes API and tRPC routes)
     if (cacheDuration === 0) return
 
     event.respondWith(
