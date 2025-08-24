@@ -133,9 +133,7 @@ export function useAdminTable<TSortField extends string>(
 
     // Add additional params to URL
     Object.entries(additionalParams).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value)
-      }
+      if (value) params.set(key, value)
     })
 
     const url = params.toString() ? `?${params.toString()}` : ''
@@ -144,9 +142,7 @@ export function useAdminTable<TSortField extends string>(
 
   // Update URL when relevant state changes
   useEffect(() => {
-    if (enableUrlState) {
-      updateUrl()
-    }
+    if (enableUrlState) updateUrl()
   }, [debouncedSearch, page, sortField, sortDirection, additionalParams, enableUrlState, updateUrl])
 
   const setSearch = (newSearch: string) => {
