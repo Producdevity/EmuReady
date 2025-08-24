@@ -1,5 +1,5 @@
 import { ActivityQuerySchema, DashboardQuerySchema } from '@/schemas/activity'
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { createTRPCRouter, moderatorProcedure, protectedProcedure } from '@/server/api/trpc'
 import { ActivityService } from '@/server/services/activity.service'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
@@ -8,13 +8,13 @@ export const activityRouter = createTRPCRouter({
   /**
    * Get recent users (MODERATOR+)
    */
-  recentUsers: protectedProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
+  recentUsers: moderatorProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)
     return service.getRecentUsers(input.timeRange, input.limit, ctx.session.user.role)
   }),
 
   /**
-   * Get recent listings
+   * Get recent listings - accessible to all logged in users, filtered by role
    */
   recentListings: protectedProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)
@@ -27,7 +27,7 @@ export const activityRouter = createTRPCRouter({
   }),
 
   /**
-   * Get recent comments
+   * Get recent comments - accessible to all logged in users, filtered by role
    */
   recentComments: protectedProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)
@@ -42,7 +42,7 @@ export const activityRouter = createTRPCRouter({
   /**
    * Get recent reports (MODERATOR+)
    */
-  recentReports: protectedProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
+  recentReports: moderatorProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)
     return service.getRecentReports(input.timeRange, input.limit, ctx.session.user.role)
   }),
@@ -50,13 +50,13 @@ export const activityRouter = createTRPCRouter({
   /**
    * Get recent bans (MODERATOR+)
    */
-  recentBans: protectedProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
+  recentBans: moderatorProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)
     return service.getRecentBans(input.timeRange, input.limit, ctx.session.user.role)
   }),
 
   /**
-   * Get critical actions that need attention
+   * Get critical actions - accessible to all logged in users, filtered by role
    */
   criticalActions: protectedProcedure.query(async ({ ctx }) => {
     const service = new ActivityService(ctx.prisma)
@@ -64,7 +64,7 @@ export const activityRouter = createTRPCRouter({
   }),
 
   /**
-   * Get platform statistics
+   * Get platform statistics - accessible to all logged in users
    */
   platformStats: protectedProcedure
     .input(ActivityQuerySchema.pick({ timeRange: true }))
@@ -74,7 +74,7 @@ export const activityRouter = createTRPCRouter({
     }),
 
   /**
-   * Get all activity data for dashboard
+   * Get all activity data for dashboard - accessible to all logged in users, data filtered by role
    */
   dashboard: protectedProcedure.input(DashboardQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)

@@ -79,12 +79,6 @@ export const adminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Manage verified developers for emulators.',
   },
-  {
-    href: '/admin/performance',
-    label: 'Performance Scales',
-    exact: true,
-    description: 'Manage performance scales.',
-  },
 ]
 
 export const superAdminNavItems: AdminNavItem[] = [

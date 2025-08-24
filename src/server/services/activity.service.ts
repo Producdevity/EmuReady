@@ -1,8 +1,7 @@
-import { type PrismaClient } from '@prisma/client'
 import { subDays, subHours } from 'date-fns'
 import { type TimeRange } from '@/schemas/activity'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { type Prisma } from '@orm'
+import { type PrismaClient, type Prisma } from '@orm'
 import { Role, ReportStatus, ApprovalStatus } from '@orm'
 
 // Constants for magic numbers
@@ -183,7 +182,7 @@ export class ActivityService {
         where: { userId },
         select: { emulatorId: true },
       })
-      const emulatorIds = verifiedEmulators.map((ve: { emulatorId: string }) => ve.emulatorId)
+      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
 
       if (emulatorIds.length === 0) return []
       whereClause.emulatorId = { in: emulatorIds }
@@ -239,8 +238,8 @@ export class ActivityService {
         select: {
           id: true,
           game: { select: { id: true, title: true } },
-          cpu: { select: { name: true } },
-          gpu: { select: { name: true } },
+          cpu: { select: { modelName: true } },
+          gpu: { select: { modelName: true } },
           author: { select: { id: true, name: true } },
           status: true,
           createdAt: true,
@@ -271,8 +270,8 @@ export class ActivityService {
         gameTitle: l.game.title,
         gameId: l.game.id,
         deviceName: undefined,
-        cpuName: l.cpu?.name,
-        gpuName: l.gpu?.name,
+        cpuName: l.cpu?.modelName,
+        gpuName: l.gpu?.modelName,
         authorName: l.author.name,
         authorId: l.author.id,
         status: l.status,
@@ -324,7 +323,7 @@ export class ActivityService {
         where: { userId },
         select: { emulatorId: true },
       })
-      const emulatorIds = verifiedEmulators.map((ve: { emulatorId: string }) => ve.emulatorId)
+      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
 
       if (emulatorIds.length === 0) return []
 
@@ -392,14 +391,8 @@ export class ActivityService {
           createdAt: { gte: dateFrom },
           status: { not: ReportStatus.RESOLVED },
         },
-        select: {
-          id: true,
-          listingId: true,
-          reason: true,
-          description: true,
-          reporter: { select: { id: true, name: true } },
-          status: true,
-          createdAt: true,
+        include: {
+          reportedBy: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'desc' },
         take: halfLimit,
@@ -409,14 +402,8 @@ export class ActivityService {
           createdAt: { gte: dateFrom },
           status: { not: ReportStatus.RESOLVED },
         },
-        select: {
-          id: true,
-          pcListingId: true,
-          reason: true,
-          description: true,
-          reporter: { select: { id: true, name: true } },
-          status: true,
-          createdAt: true,
+        include: {
+          reportedBy: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'desc' },
         take: halfLimit,
@@ -431,8 +418,8 @@ export class ActivityService {
         targetId: r.listingId,
         reason: r.reason,
         description: r.description,
-        reporterName: r.reporter.name,
-        reporterId: r.reporter.id,
+        reporterName: r.reportedBy.name,
+        reporterId: r.reportedBy.id,
         status: r.status,
         createdAt: r.createdAt,
       })),
@@ -442,8 +429,8 @@ export class ActivityService {
         targetId: r.pcListingId,
         reason: r.reason,
         description: r.description,
-        reporterName: r.reporter.name,
-        reporterId: r.reporter.id,
+        reporterName: r.reportedBy.name,
+        reporterId: r.reportedBy.id,
         status: r.status,
         createdAt: r.createdAt,
       })),
@@ -477,14 +464,9 @@ export class ActivityService {
         createdAt: { gte: dateFrom },
         isActive: true,
       },
-      select: {
-        id: true,
-        userId: true,
+      include: {
         user: { select: { name: true } },
-        reason: true,
         bannedBy: { select: { name: true } },
-        expiresAt: true,
-        createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -521,11 +503,8 @@ export class ActivityService {
     if (canSeeAll) {
       const games = await this.prisma.game.findMany({
         where: { status: ApprovalStatus.PENDING },
-        select: {
-          id: true,
-          title: true,
-          submittedBy: { select: { id: true, name: true } },
-          createdAt: true,
+        include: {
+          submitter: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'asc' }, // Oldest first for fairness
         take: PREVIEW_ITEMS_COUNT,
@@ -536,8 +515,8 @@ export class ActivityService {
           id: g.id,
           type: 'game' as const,
           title: g.title,
-          submittedBy: g.submittedBy?.name ?? null,
-          submittedById: g.submittedBy?.id ?? '',
+          submittedBy: g.submitter?.name ?? null,
+          submittedById: g.submitter?.id ?? '',
           createdAt: g.createdAt,
         })),
       )
@@ -553,7 +532,7 @@ export class ActivityService {
         where: { userId },
         select: { emulatorId: true },
       })
-      const emulatorIds = verifiedEmulators.map((ve: { emulatorId: string }) => ve.emulatorId)
+      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
 
       if (emulatorIds.length > 0) {
         listingWhere.emulatorId = { in: emulatorIds }
@@ -567,11 +546,9 @@ export class ActivityService {
       // Mobile Listings
       const listings = await this.prisma.listing.findMany({
         where: listingWhere,
-        select: {
-          id: true,
+        include: {
           game: { select: { title: true } },
           author: { select: { id: true, name: true } },
-          createdAt: true,
         },
         orderBy: { createdAt: 'asc' },
         take: PREVIEW_ITEMS_COUNT,
@@ -591,11 +568,9 @@ export class ActivityService {
       // PC Listings
       const pcListings = await this.prisma.pcListing.findMany({
         where: listingWhere as Prisma.PcListingWhereInput,
-        select: {
-          id: true,
+        include: {
           game: { select: { title: true } },
           author: { select: { id: true, name: true } },
-          createdAt: true,
         },
         orderBy: { createdAt: 'asc' },
         take: PREVIEW_ITEMS_COUNT,
