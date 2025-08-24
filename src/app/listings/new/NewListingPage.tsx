@@ -95,7 +95,11 @@ function AddListingPage() {
       setGameSearchTerm(query)
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.games.get.fetch({ search: query, limit: 20 })
+        const result = await utils.games.get.fetch({
+          search: query,
+          limit: 20,
+          listingFilter: 'all',
+        })
         return (
           result.games.map((game) => ({
             id: game.id,
@@ -306,7 +310,7 @@ function AddListingPage() {
 
   const onSubmit = async (data: ListingFormValues) => {
     if (!currentUserQuery.data?.id) {
-      return toast.error('Yu must be signed in to create a listing.')
+      return toast.error('You must be signed in to create a listing.')
     }
 
     // Get CAPTCHA token if enabled
@@ -333,6 +337,15 @@ function AddListingPage() {
   }
 
   if (!mounted) return null
+
+  // Show loading state while authentication is being checked
+  if (currentUserQuery.isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
 
   if (!currentUserQuery.data?.id) {
     return (

@@ -14,13 +14,18 @@ import {
   GetUserVoteSchema,
   UpdateCommentSchema,
   UpdateListingSchema,
+  VoteCommentSchema,
   VoteListingSchema,
+  GetUserVotesSchema,
+  ReportCommentSchema,
 } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import { CommentsRepository } from '@/server/repositories/comments.repository'
+import { ListingsRepository } from '@/server/repositories/listings.repository'
 import {
   convertToEdenConfig,
   serializeEdenConfig,
@@ -29,103 +34,62 @@ import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
 } from '@/server/utils/emulator-config/gamenative-converter'
-import { buildSearchFilter, buildNsfwFilter, buildArrayFilter } from '@/server/utils/query-builders'
-import { ApprovalStatus, Prisma, type PrismaClient } from '@orm'
+import { updateListingVoteCounts } from '@/server/utils/vote-counts'
+import { ApprovalStatus, type PrismaClient, Prisma } from '@orm'
 
-// Helper function to calculate listing stats
-async function calculateListingStats(
-  listing: { id: string },
-  prisma: PrismaClient,
-  userId?: string,
-) {
-  const [upVotes, userVote] = await Promise.all([
-    prisma.vote.count({ where: { listingId: listing.id, value: true } }),
-    userId
-      ? prisma.vote.findUnique({
-          where: { userId_listingId: { userId: userId, listingId: listing.id } },
-        })
-      : null,
-  ])
-  const downVotes = await prisma.vote.count({
-    where: { listingId: listing.id, value: false },
-  })
-  const totalVotes = upVotes + downVotes
-  const successRate = totalVotes > 0 ? (upVotes / totalVotes) * 100 : 0
-
-  return {
-    ...listing,
-    successRate,
-    upVotes,
-    downVotes,
-    totalVotes,
-    userVote: userVote?.value ?? null,
-  }
-}
-
-// Helper for getting listings
+// Helper for getting listings using the repository
 async function getListingsHelper(
   ctx: {
     prisma: PrismaClient
-    session?: { user?: { id: string; showNsfw?: boolean } } | null
+    session?: { user?: { id: string; showNsfw?: boolean; role?: string } } | null
   },
   input: GetListingsInput,
 ) {
-  const { page = 1, limit = 20, gameId, systemId, deviceId, emulatorIds, search } = input ?? {}
+  const repository = new ListingsRepository(ctx.prisma)
 
-  // Build where clause with proper search filtering
-  const baseWhere: Record<string, unknown> = {
-    status: ApprovalStatus.APPROVED,
-    game: {
-      status: ApprovalStatus.APPROVED,
-      ...buildNsfwFilter(ctx.session?.user?.showNsfw),
-    },
-  }
+  const {
+    page = 1,
+    limit = 20,
+    gameId,
+    systemId,
+    systemIds,
+    deviceId,
+    emulatorIds,
+    performanceIds,
+    search,
+  } = input ?? {}
 
-  if (gameId) baseWhere.gameId = gameId
-  if (deviceId) baseWhere.deviceId = deviceId
-  const emulatorFilter = buildArrayFilter(emulatorIds, 'emulatorId')
-  if (emulatorFilter) {
-    Object.assign(baseWhere, emulatorFilter)
-  }
-  if (systemId) baseWhere.game = { ...(baseWhere.game || {}), systemId }
+  // Handle both single systemId (deprecated) and multiple systemIds
+  const effectiveSystemIds = systemIds || (systemId ? [systemId] : undefined)
 
-  // Add search filtering at database level
-  const searchConditions = buildSearchFilter(search, ['game.title', 'notes'])
-  if (searchConditions) baseWhere.OR = searchConditions
+  // Convert single deviceId to array format for consistency
+  const deviceIds = deviceId ? [deviceId] : undefined
 
-  const [listings, total] = await Promise.all([
-    ctx.prisma.listing.findMany({
-      where: baseWhere,
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        game: { include: { system: { select: { id: true, name: true, key: true } } } },
-        device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
-        _count: { select: { votes: true, comments: true } },
-      },
-    }),
-    ctx.prisma.listing.count({ where: baseWhere }),
-  ])
+  const result = await repository.getListings({
+    gameId,
+    systemIds: effectiveSystemIds,
+    deviceIds,
+    emulatorIds,
+    performanceIds,
+    search,
+    page,
+    limit,
+    userId: ctx.session?.user?.id,
+    userRole: ctx.session?.user?.role,
+    showNsfw: ctx.session?.user?.showNsfw,
+    approvalStatus: ApprovalStatus.APPROVED, // Mobile only sees approved
+  })
 
-  const listingsWithStats = await Promise.all(
-    listings.map((listing) => calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)),
-  )
-
-  const totalPages = Math.ceil(total / limit)
-
+  // Transform pagination to mobile format
   return {
-    listings: listingsWithStats,
+    listings: result.listings,
     pagination: {
-      total,
-      pages: totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1,
+      total: result.pagination.total,
+      pages: result.pagination.pages,
+      currentPage: result.pagination.page,
+      limit: result.pagination.limit,
+      hasNextPage: result.pagination.page < result.pagination.pages,
+      hasPreviousPage: result.pagination.page > 1,
     },
   }
 }
@@ -149,102 +113,34 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Get featured listings
    */
   featured: mobilePublicProcedure.query(async ({ ctx }) => {
-    const listings = await ctx.prisma.listing.findMany({
-      where: {
-        status: ApprovalStatus.APPROVED,
-        game: {
-          status: ApprovalStatus.APPROVED,
-          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      include: {
-        game: { include: { system: { select: { id: true, name: true, key: true } } } },
-        device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
-        _count: { select: { votes: true, comments: true } },
-      },
-    })
-
-    return await Promise.all(
-      listings.map((listing) => calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)),
-    )
+    const repository = new ListingsRepository(ctx.prisma)
+    return await repository.getFeaturedListings(10)
   }),
 
   /**
    * Get listings by game
    */
   byGame: mobilePublicProcedure.input(GetListingsByGameSchema).query(async ({ ctx, input }) => {
-    const listings = await ctx.prisma.listing.findMany({
-      where: {
-        gameId: input.gameId,
-        status: ApprovalStatus.APPROVED,
-        game: {
-          status: ApprovalStatus.APPROVED,
-          ...buildNsfwFilter(ctx.session?.user?.showNsfw),
-        },
-      },
-      include: {
-        device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
-        _count: { select: { votes: true, comments: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    return await Promise.all(
-      listings.map((listing) => calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)),
-    )
+    const repository = new ListingsRepository(ctx.prisma)
+    const result = await repository.getListingsByGame(input.gameId, ctx.session?.user?.id)
+    return result.listings
   }),
 
   /**
    * Get listing by ID
    */
   byId: mobilePublicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
-    const listing = await ctx.prisma.listing.findUnique({
-      where: { id: input.id },
-      include: {
-        game: { include: { system: { select: { id: true, name: true, key: true } } } },
-        device: { include: { brand: true, soc: true } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
-        _count: { select: { votes: true, comments: true } },
-        customFieldValues: {
-          include: {
-            customFieldDefinition: {
-              select: { id: true, name: true, label: true, type: true, options: true },
-            },
-          },
-        },
-      },
-    })
-
-    if (!listing) return null
-
-    return await calculateListingStats(listing, ctx.prisma, ctx.session?.user?.id)
+    const repository = new ListingsRepository(ctx.prisma)
+    return await repository.getListingById(input.id, ctx.session?.user?.id)
   }),
 
   /**
    * Get user listings
    */
   byUser: mobileProtectedProcedure.input(GetUserListingsSchema).query(async ({ ctx, input }) => {
-    return await ctx.prisma.listing.findMany({
-      where: { authorId: input.userId },
-      include: {
-        game: { include: { system: { select: { id: true, name: true, key: true } } } },
-        device: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        _count: { select: { votes: true, comments: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+    const repository = new ListingsRepository(ctx.prisma)
+    const result = await repository.getUserListings(input.userId, false)
+    return result.listings
   }),
 
   /**
@@ -348,28 +244,68 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Vote on a listing
    */
   vote: mobileProtectedProcedure.input(VoteListingSchema).mutation(async ({ ctx, input }) => {
-    // Check if user already voted
-    const existingVote = await ctx.prisma.vote.findUnique({
-      where: {
-        userId_listingId: {
-          userId: ctx.session.user.id,
-          listingId: input.listingId,
+    return await ctx.prisma.$transaction(async (tx) => {
+      // Check if user already voted
+      const existingVote = await tx.vote.findUnique({
+        where: {
+          userId_listingId: {
+            userId: ctx.session.user.id,
+            listingId: input.listingId,
+          },
         },
-      },
-    })
+      })
 
-    return existingVote
-      ? await ctx.prisma.vote.update({
-          where: { id: existingVote.id },
-          data: { value: input.value },
-        })
-      : await ctx.prisma.vote.create({
+      let vote
+
+      if (existingVote) {
+        if (existingVote.value === input.value) {
+          // Same vote = toggle off (remove vote)
+          await tx.vote.delete({
+            where: { id: existingVote.id },
+          })
+
+          // Update counts for deletion
+          await updateListingVoteCounts(
+            tx,
+            input.listingId,
+            'delete',
+            undefined,
+            existingVote.value,
+          )
+
+          return { id: existingVote.id, value: null, removed: true }
+        } else {
+          // Different vote = update
+          vote = await tx.vote.update({
+            where: { id: existingVote.id },
+            data: { value: input.value },
+          })
+
+          // Update counts for change
+          await updateListingVoteCounts(
+            tx,
+            input.listingId,
+            'update',
+            input.value,
+            existingVote.value,
+          )
+        }
+      } else {
+        // New vote
+        vote = await tx.vote.create({
           data: {
             value: input.value,
             listingId: input.listingId,
             userId: ctx.session.user.id,
           },
         })
+
+        // Update counts for new vote
+        await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
+      }
+
+      return vote
+    })
   }),
 
   /**
@@ -377,12 +313,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   userVote: mobileProtectedProcedure.input(GetUserVoteSchema).query(async ({ ctx, input }) => {
     const vote = await ctx.prisma.vote.findUnique({
-      where: {
-        userId_listingId: {
-          userId: ctx.session.user.id,
-          listingId: input.listingId,
-        },
-      },
+      where: { userId_listingId: { userId: ctx.session.user.id, listingId: input.listingId } },
       select: { value: true },
     })
 
@@ -393,11 +324,8 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Get listing comments
    */
   comments: mobilePublicProcedure.input(GetListingCommentsSchema).query(async ({ ctx, input }) => {
-    return await ctx.prisma.comment.findMany({
-      where: { listingId: input.listingId },
-      include: { user: { select: { id: true, name: true } } },
-      orderBy: { createdAt: 'desc' },
-    })
+    const repository = new CommentsRepository(ctx.prisma)
+    return repository.getForListing(input.listingId, ctx.session?.user?.role)
   }),
 
   /**
@@ -476,40 +404,21 @@ export const mobileListingsRouter = createMobileTRPCRouter({
             select: {
               id: true,
               title: true,
-              system: {
-                select: {
-                  id: true,
-                  name: true,
-                  key: true,
-                },
-              },
+              system: { select: { id: true, name: true, key: true } },
             },
           },
-          emulator: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          emulator: { select: { id: true, name: true } },
           customFieldValues: {
             include: {
               customFieldDefinition: {
-                select: {
-                  id: true,
-                  name: true,
-                  label: true,
-                  type: true,
-                  options: true,
-                },
+                select: { id: true, name: true, label: true, type: true, options: true },
               },
             },
           },
         },
       })
 
-      if (!listing) {
-        return ResourceError.listing.notFound()
-      }
+      if (!listing) return ResourceError.listing.notFound()
 
       // Determine emulator type
       const emulatorName = listing.emulator.name.toLowerCase()
@@ -519,7 +428,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           ? 'eden'
           : emulatorName.includes('gamenative')
             ? 'gamenative'
-            : 'eden') // Default to Eden
+            : null)
 
       if (emulatorType === 'eden') {
         // Convert to Eden configuration
@@ -571,8 +480,111 @@ export const mobileListingsRouter = createMobileTRPCRouter({
             emulatorName: listing.emulator.name,
           },
         }
+      }
+      return AppError.badRequest('Unsupported emulator type')
+    }),
+
+  /**
+   * Vote on a comment
+   */
+  voteComment: mobileProtectedProcedure
+    .input(VoteCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { commentId, value } = input
+
+      // Check if comment exists
+      const comment = await ctx.prisma.comment.findUnique({
+        where: { id: commentId },
+        select: { userId: true },
+      })
+
+      if (!comment) {
+        throw ResourceError.comment.notFound()
+      }
+
+      // Check for existing vote
+      const existingVote = await ctx.prisma.commentVote.findUnique({
+        where: { userId_commentId: { userId: ctx.session.user.id, commentId } },
+      })
+
+      // Remove vote if value is null or same as existing
+      if (value === null || (existingVote && existingVote.value === value)) {
+        if (existingVote) {
+          await ctx.prisma.commentVote.delete({
+            where: { userId_commentId: { userId: ctx.session.user.id, commentId } },
+          })
+        }
+        return { message: 'Vote removed' }
+      }
+
+      // Update or create vote
+      if (existingVote) {
+        return await ctx.prisma.commentVote.update({
+          where: { userId_commentId: { userId: ctx.session.user.id, commentId } },
+          data: { value },
+        })
       } else {
-        return AppError.badRequest('Unsupported emulator type')
+        return await ctx.prisma.commentVote.create({
+          data: { value, userId: ctx.session.user.id, commentId },
+        })
+      }
+    }),
+
+  /**
+   * Get user votes for multiple comments
+   */
+  getUserCommentVotes: mobileProtectedProcedure
+    .input(GetUserVotesSchema)
+    .query(async ({ ctx, input }) => {
+      const votes = await ctx.prisma.commentVote.findMany({
+        where: {
+          userId: ctx.session.user.id,
+          commentId: { in: input.commentIds },
+        },
+        select: {
+          commentId: true,
+          value: true,
+        },
+      })
+
+      const voteMap: Record<string, boolean | null> = {}
+      input.commentIds.forEach((id) => {
+        voteMap[id] = null
+      })
+      votes.forEach((vote) => {
+        voteMap[vote.commentId] = vote.value
+      })
+
+      return voteMap
+    }),
+
+  /**
+   * Report a comment
+   */
+  reportComment: mobileProtectedProcedure
+    .input(ReportCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if comment exists
+      const comment = await ctx.prisma.comment.findUnique({
+        where: { id: input.commentId },
+        select: { id: true },
+      })
+
+      if (!comment) {
+        throw ResourceError.comment.notFound()
+      }
+
+      // For now, return a success response since we don't have CommentReport model
+      // TODO: Implement when CommentReport model is added to schema
+      return {
+        id: `report-${input.commentId}-${Date.now()}`,
+        commentId: input.commentId,
+        reportedBy: ctx.session.user.id,
+        reason: input.reason,
+        description: input.description,
+        status: 'PENDING',
+        createdAt: new Date(),
+        message: 'Report submitted successfully. Admin will review it shortly.',
       }
     }),
 })

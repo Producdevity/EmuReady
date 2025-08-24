@@ -76,8 +76,8 @@ function ListingsPage() {
 
   const userQuery = api.users.me.useQuery()
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
-    staleTime: ms.seconds(30), // Cache for 30 seconds to reduce excessive refetching
-    gcTime: ms.minutes(5), // Keep in cache for 5 minutes
+    staleTime: ms.seconds(30),
+    gcTime: ms.minutes(5),
   })
 
   const userRole = userQuery?.data?.role

@@ -7,112 +7,61 @@ import {
   DeleteSystemSchema,
 } from '@/schemas/system'
 import { createTRPCRouter, publicProcedure, permissionProcedure } from '@/server/api/trpc'
-import { buildSearchFilter } from '@/server/utils/query-builders'
-import { batchQueries } from '@/server/utils/query-performance'
+import { SystemsRepository } from '@/server/repositories/systems.repository'
 import { PERMISSIONS } from '@/utils/permission-system'
-import type { Prisma } from '@orm'
 
 export const systemsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSystemsSchema).query(async ({ ctx, input }) => {
-    const { search, sortField, sortDirection } = input ?? {}
-
-    const orderBy: Prisma.SystemOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'name':
-          orderBy.push({ name: sortDirection })
-          break
-        case 'key':
-          orderBy.push({ key: sortDirection })
-          break
-        case 'gamesCount':
-          orderBy.push({ games: { _count: sortDirection } })
-          break
-      }
-    }
-
-    // Default ordering if no sort specified
-    if (!orderBy.length) orderBy.push({ name: 'asc' })
-
-    const searchConditions = buildSearchFilter(search, ['name', 'key'])
-    const where = searchConditions ? { OR: searchConditions } : undefined
-
-    return await ctx.prisma.system.findMany({
-      where,
-      include: { _count: { select: { games: true } } },
-      orderBy,
-    })
+    const repository = new SystemsRepository(ctx.prisma)
+    return repository.get(input ?? {})
   }),
 
   byId: publicProcedure.input(GetSystemByIdSchema).query(async ({ ctx, input }) => {
-    const system = await ctx.prisma.system.findUnique({
-      where: { id: input.id },
-      include: {
-        games: { orderBy: { title: 'asc' } },
-        _count: { select: { games: true } },
-      },
-    })
-
-    if (!system) return ResourceError.system.notFound()
-
-    return system
+    const repository = new SystemsRepository(ctx.prisma)
+    const system = await repository.byId(input.id)
+    return system ?? ResourceError.system.notFound()
   }),
 
   create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(CreateSystemSchema)
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.prisma.system.findUnique({
-        where: { name: input.name },
-      })
-
+      const repository = new SystemsRepository(ctx.prisma)
+      const existing = await repository.byName(input.name)
       if (existing) return ResourceError.system.alreadyExists(input.name)
-
-      return ctx.prisma.system.create({ data: input })
+      return repository.create(input)
     }),
 
   update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(UpdateSystemSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, name } = input
+      const repository = new SystemsRepository(ctx.prisma)
 
-      const system = await ctx.prisma.system.findUnique({ where: { id } })
-
+      const system = await repository.byId(id)
       if (!system) return ResourceError.system.notFound()
 
-      if (name !== system?.name) {
-        const existing = await ctx.prisma.system.findUnique({ where: { name } })
-
+      if (name !== system.name) {
+        const existing = await repository.byName(name)
         if (existing) return ResourceError.system.alreadyExists(name)
       }
 
-      return ctx.prisma.system.update({
-        where: { id },
-        data: { name, key: input.key },
-      })
+      return repository.update(id, { name, key: input.key })
     }),
 
   delete: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(DeleteSystemSchema)
     .mutation(async ({ ctx, input }) => {
+      const repository = new SystemsRepository(ctx.prisma)
       // Check if system has games
       const gamesCount = await ctx.prisma.game.count({ where: { systemId: input.id } })
 
       if (gamesCount > 0) return ResourceError.system.hasGames(gamesCount)
 
-      return ctx.prisma.system.delete({ where: { id: input.id } })
+      return repository.delete(input.id)
     }),
 
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
-    const [withGames, withoutGames] = await batchQueries([
-      ctx.prisma.system.count({ where: { games: { some: {} } } }),
-      ctx.prisma.system.count({ where: { games: { none: {} } } }),
-    ])
-
-    return {
-      total: withGames + withoutGames,
-      withGames,
-      withoutGames,
-    }
+    const repository = new SystemsRepository(ctx.prisma)
+    return repository.getStats()
   }),
 })

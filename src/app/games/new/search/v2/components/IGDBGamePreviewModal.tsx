@@ -85,7 +85,7 @@ export default function IGDBGamePreviewModal(props: Props) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             {game.name}
@@ -235,9 +235,17 @@ export default function IGDBGamePreviewModal(props: Props) {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={isSelecting}
+                className="w-full sm:w-auto sm:min-w-[100px]"
+              >
+                Cancel
+              </Button>
               {existingGameId ? (
-                <Link href={`/listings/new?gameId=${existingGameId}`} className="flex-1">
+                <Link href={`/listings/new?gameId=${existingGameId}`} className="w-full sm:flex-1">
                   <Button variant="outline" className="w-full">
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Go to Existing Game
@@ -251,19 +259,11 @@ export default function IGDBGamePreviewModal(props: Props) {
                   }}
                   disabled={(!currentSystemId && !selectedSystemId) || isSelecting}
                   isLoading={isSelecting}
-                  className="flex-1"
+                  className="w-full sm:flex-1 whitespace-nowrap"
                 >
-                  Add Game & Continue
+                  Add Game &amp; Continue
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={onClose}
-                disabled={isSelecting}
-                className="sm:min-w-[100px]"
-              >
-                Cancel
-              </Button>
             </div>
           </div>
         </div>

@@ -89,6 +89,12 @@ export const adminNavItems: AdminNavItem[] = [
 
 export const superAdminNavItems: AdminNavItem[] = [
   {
+    href: '/admin/analytics',
+    label: 'Analytics',
+    exact: false,
+    description: 'View platform analytics and insights.',
+  },
+  {
     href: '/admin/users',
     label: 'Users',
     exact: false,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, useEffect } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
@@ -11,6 +11,7 @@ interface Props {
   onClose: () => void
   editId: string | null
   systemName: string
+  systemKey: string
   onSuccess: () => void
 }
 
@@ -18,8 +19,27 @@ function SystemModal(props: Props) {
   const createSystem = api.systems.create.useMutation()
   const updateSystem = api.systems.update.useMutation()
   const [name, setName] = useState(props.systemName)
+  const [key, setKey] = useState(props.systemKey)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  useEffect(() => {
+    if (props.isOpen) {
+      setName(props.systemName || '')
+      setKey(props.systemKey || '')
+      setError('')
+      setSuccess('')
+    }
+  }, [props.isOpen, props.systemName, props.systemKey])
+
+  useEffect(() => {
+    if (!props.isOpen) {
+      setName('')
+      setKey('')
+      setError('')
+      setSuccess('')
+    }
+  }, [props.isOpen])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -30,15 +50,18 @@ function SystemModal(props: Props) {
         await updateSystem.mutateAsync({
           id: props.editId,
           name,
+          key: key || null,
         } satisfies RouterInput['systems']['update'])
         setSuccess('System updated!')
       } else {
         await createSystem.mutateAsync({
           name,
+          key: key || null,
         } satisfies RouterInput['systems']['create'])
         setSuccess('System created!')
       }
       setName('')
+      setKey('')
       props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save system.'))
@@ -67,6 +90,22 @@ function SystemModal(props: Props) {
             className="w-full"
             placeholder="Enter system name"
           />
+        </div>
+
+        <div>
+          <label htmlFor="key" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+            System Key (optional)
+          </label>
+          <Input
+            id="key"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            className="w-full font-mono"
+            placeholder="e.g., nintendo_switch, sony_playstation_5"
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Used for API integrations (IGDB, TGDB, RAWG)
+          </p>
         </div>
 
         {error && (

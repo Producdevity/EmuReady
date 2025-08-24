@@ -2,6 +2,7 @@ import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
+import { TrustService } from '@/lib/trust/service'
 import {
   CreateCommentSchema,
   EditCommentSchema,
@@ -12,7 +13,10 @@ import {
 } from '@/schemas/listing'
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { CommentsRepository } from '@/server/repositories/comments.repository'
+import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
+import { Role, TrustAction } from '@orm'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {
@@ -40,9 +44,7 @@ export const commentsRouter = createTRPCRouter({
 
     // If parentId is provided, check if parent comment exists
     if (parentId) {
-      const parentComment = await ctx.prisma.comment.findUnique({
-        where: { id: parentId },
-      })
+      const parentComment = await ctx.prisma.comment.findUnique({ where: { id: parentId } })
 
       if (!parentComment) return ResourceError.comment.parentNotFound()
     }
@@ -54,9 +56,12 @@ export const commentsRouter = createTRPCRouter({
 
     if (!userExists) return ResourceError.user.notInDatabase(userId)
 
-    const comment = await ctx.prisma.comment.create({
-      data: { content, userId, listingId, parentId },
-      include: { user: { select: { id: true, name: true } } },
+    const repository = new CommentsRepository(ctx.prisma)
+    const comment = await repository.create({
+      content,
+      user: { connect: { id: userId } },
+      listing: { connect: { id: listingId } },
+      ...(parentId && { parent: { connect: { id: parentId } } }),
     })
 
     notificationEventEmitter.emitNotificationEvent({
@@ -99,50 +104,31 @@ export const commentsRouter = createTRPCRouter({
 
   get: publicProcedure.input(GetCommentsSchema).query(async ({ ctx, input }) => {
     const { listingId } = input
-
-    const comments = await ctx.prisma.comment.findMany({
-      where: {
-        listingId,
-        parentId: null, // Only get top-level comments
-        deletedAt: null, // Don't show soft-deleted comments
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            role: true,
-          },
-        },
-        replies: {
-          where: {
-            deletedAt: null, // Don't show soft-deleted replies
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-                role: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
+    const repository = new CommentsRepository(ctx.prisma)
+    const comments = await repository.getForListing(listingId, ctx.session?.user?.role)
     return { comments }
   }),
 
   getSorted: publicProcedure.input(GetSortedCommentsSchema).query(async ({ ctx, input }) => {
     // Get ALL comments for this listing (not just top-level)
+    // Note: We need the role field which isn't in the repository's default include,
+    // so we do a custom query here but still apply shadow ban filtering
+    const canSeeBannedUsers = roleIncludesRole(ctx.session?.user?.role, Role.MODERATOR)
+
     const allComments = await ctx.prisma.comment.findMany({
       where: {
         listingId: input.listingId,
+        // Apply shadow ban filter
+        ...(!canSeeBannedUsers && {
+          user: {
+            userBans: {
+              none: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+            },
+          },
+        }),
       },
       include: {
         user: {
@@ -320,13 +306,9 @@ export const commentsRouter = createTRPCRouter({
     const { commentId, value } = input
     const userId = ctx.session.user.id
 
-    const comment = await ctx.prisma.comment.findUnique({
-      where: { id: commentId },
-    })
+    const comment = await ctx.prisma.comment.findUnique({ where: { id: commentId } })
 
-    if (!comment) {
-      ResourceError.comment.notFound()
-    }
+    if (!comment) return ResourceError.comment.notFound()
 
     // Check if user already voted on this comment
     const existingVote = await ctx.prisma.commentVote.findUnique({
@@ -337,6 +319,7 @@ export const commentsRouter = createTRPCRouter({
     return ctx.prisma.$transaction(async (tx) => {
       let voteResult
       let scoreChange: number
+      let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
 
       if (existingVote) {
         // If vote is the same, remove the vote (toggle)
@@ -348,6 +331,7 @@ export const commentsRouter = createTRPCRouter({
           // Update score: if removing upvote, decrement score, if removing downvote, increment score
           scoreChange = existingVote.value ? -1 : 1
           voteResult = { message: 'Vote removed' }
+          trustActionNeeded = 'remove'
         } else {
           voteResult = await tx.commentVote.update({
             where: { userId_commentId: { userId, commentId } },
@@ -356,6 +340,7 @@ export const commentsRouter = createTRPCRouter({
 
           // Update score: changing from downvote to upvote = +2, from upvote to downvote = -2
           scoreChange = value ? 2 : -2
+          trustActionNeeded = 'change'
         }
       } else {
         voteResult = await tx.commentVote.create({
@@ -364,13 +349,130 @@ export const commentsRouter = createTRPCRouter({
 
         // Update score: +1 for upvote, -1 for downvote
         scoreChange = value ? 1 : -1
+        trustActionNeeded = value ? 'upvote' : 'downvote'
       }
 
       // Update the comment score
-      await tx.comment.update({
+      const updatedComment = await tx.comment.update({
         where: { id: commentId },
         data: { score: { increment: scoreChange } },
       })
+
+      // Award trust points to the comment author (not the voter)
+      if (comment && comment.userId !== userId) {
+        // Don't award points for self-votes
+        const trustService = new TrustService(tx)
+
+        if (trustActionNeeded === 'upvote') {
+          // New upvote: +2 points to comment author
+          await trustService.logAction({
+            userId: comment.userId,
+            action: TrustAction.COMMENT_RECEIVED_UPVOTE,
+            targetUserId: userId,
+            metadata: {
+              commentId,
+              voterId: userId,
+              listingId: comment.listingId,
+            },
+          })
+        } else if (trustActionNeeded === 'downvote') {
+          // New downvote: -1 point to comment author
+          await trustService.logAction({
+            userId: comment.userId,
+            action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
+            targetUserId: userId,
+            metadata: {
+              commentId,
+              voterId: userId,
+              listingId: comment.listingId,
+            },
+          })
+        } else if (trustActionNeeded === 'change') {
+          // Vote changed: reverse previous and apply new
+          if (value) {
+            // Changed from downvote to upvote: +1 (reverse) +2 (new) = +3 net
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
+              targetUserId: userId,
+              metadata: {
+                commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+                reversed: true,
+              },
+            })
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.COMMENT_RECEIVED_UPVOTE,
+              targetUserId: userId,
+              metadata: {
+                commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+              },
+            })
+          } else {
+            // Changed from upvote to downvote: -2 (reverse) -1 (new) = -3 net
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.COMMENT_RECEIVED_UPVOTE,
+              targetUserId: userId,
+              metadata: {
+                commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+                reversed: true,
+              },
+            })
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
+              targetUserId: userId,
+              metadata: {
+                commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+              },
+            })
+          }
+        } else if (trustActionNeeded === 'remove' && existingVote) {
+          // Vote removed: reverse the previous vote's effect
+          const action = existingVote.value
+            ? TrustAction.COMMENT_RECEIVED_UPVOTE
+            : TrustAction.COMMENT_RECEIVED_DOWNVOTE
+          await trustService.logAction({
+            userId: comment.userId,
+            action,
+            targetUserId: userId,
+            metadata: {
+              commentId,
+              voterId: userId,
+              listingId: comment.listingId,
+              reversed: true,
+            },
+          })
+        }
+
+        // Check if comment has reached the helpful threshold (5+ score)
+        // Award bonus only when crossing the threshold for the first time
+        const HELPFUL_THRESHOLD = 5
+        const previousScore = updatedComment.score - scoreChange
+
+        if (previousScore < HELPFUL_THRESHOLD && updatedComment.score >= HELPFUL_THRESHOLD) {
+          // Comment just crossed the threshold - award bonus
+          await trustService.logAction({
+            userId: comment.userId,
+            action: TrustAction.HELPFUL_COMMENT,
+            metadata: {
+              commentId,
+              listingId: comment.listingId,
+              score: updatedComment.score,
+              threshold: HELPFUL_THRESHOLD,
+            },
+          })
+        }
+      }
 
       // Emit notification event
       if (comment) {

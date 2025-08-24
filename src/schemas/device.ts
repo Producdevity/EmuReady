@@ -32,3 +32,8 @@ export const UpdateDeviceSchema = z.object({
 })
 
 export const DeleteDeviceSchema = z.object({ id: z.string().uuid() })
+
+// Type exports for repository use
+export type GetDevicesInput = z.input<typeof GetDevicesSchema>
+export type CreateDeviceInput = z.infer<typeof CreateDeviceSchema>
+export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>

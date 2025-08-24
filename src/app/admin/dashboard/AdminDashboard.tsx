@@ -1,0 +1,222 @@
+'use client'
+
+import { Users, FileText, MessageSquare, AlertTriangle, Ban } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { api } from '@/lib/api'
+import { type TimeRange } from '@/schemas/activity'
+import { type Role } from '@orm'
+import {
+  ActivityCard,
+  UserActivityItem,
+  ListingActivityItem,
+  ReportActivityItem,
+  BanActivityItem,
+  CommentActivityItem,
+} from './components/ActivityCard'
+import { CriticalActions } from './components/CriticalActions'
+import { PlatformStats } from './components/PlatformStats'
+import { QuickNavigation } from '../components/QuickNavigation/QuickNavigation'
+import { type AdminNavItem } from '../data'
+
+interface Props {
+  userRole: Role
+  navItems: AdminNavItem[]
+}
+
+export function AdminDashboard(props: Props) {
+  // Time range states for each section
+  const [usersTimeRange, setUsersTimeRange] = useState<TimeRange>('24h')
+  const [listingsTimeRange, setListingsTimeRange] = useState<TimeRange>('24h')
+  const [commentsTimeRange, setCommentsTimeRange] = useState<TimeRange>('24h')
+  const [reportsTimeRange, setReportsTimeRange] = useState<TimeRange>('24h')
+  const [bansTimeRange, setBansTimeRange] = useState<TimeRange>('24h')
+  const [statsTimeRange] = useState<TimeRange>('24h')
+
+  const dashboardQuery = api.activity.dashboard.useQuery({
+    usersTimeRange,
+    listingsTimeRange,
+    commentsTimeRange,
+    reportsTimeRange,
+    bansTimeRange,
+    statsTimeRange,
+  })
+
+  // Unified refetch function for all sections
+  const refetchData = useCallback(() => {
+    void dashboardQuery.refetch()
+  }, [dashboardQuery])
+
+  const showUsers = dashboardQuery.data?.permissions.canSeeUsers ?? false
+  const showReports = dashboardQuery.data?.permissions.canSeeReports ?? false
+  const showBans = dashboardQuery.data?.permissions.canSeeBans ?? false
+
+  // Handle error state - show navigation but with error message for data
+  const hasError = !!dashboardQuery.error
+
+  return (
+    <div className="space-y-6">
+      {/* Quick Navigation - Collapsible */}
+      <QuickNavigation items={props.navItems} title="Quick Navigation" defaultExpanded={true} />
+
+      {/* Show error banner if API call failed */}
+      {hasError && (
+        <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-700">
+          <h3 className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">
+            Failed to load dashboard data
+          </h3>
+          <p className="text-sm text-red-700 dark:text-red-400">
+            {dashboardQuery.error.message || 'An unexpected error occurred'}
+          </p>
+          <button
+            onClick={() => void dashboardQuery.refetch()}
+            className="mt-3 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Critical Actions - Only show if there are pending items */}
+      {!hasError &&
+        dashboardQuery.data?.criticalActions &&
+        dashboardQuery.data.criticalActions.length > 0 && (
+          <CriticalActions actions={dashboardQuery.data.criticalActions} />
+        )}
+
+      {/* Activity Grid - Only show if no error */}
+      {!hasError && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Users - MODERATOR+ */}
+          {showUsers && (
+            <ActivityCard
+              title="Recent Users"
+              icon={<Users className="h-5 w-5 text-blue-500" />}
+              timeRange={usersTimeRange}
+              onTimeRangeChange={setUsersTimeRange}
+              onRefresh={refetchData}
+              isLoading={dashboardQuery.isLoading}
+              viewAllHref="/admin/users"
+            >
+              <div className="space-y-2">
+                {dashboardQuery.data?.recentUsers.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    No new users in this period
+                  </p>
+                ) : (
+                  dashboardQuery.data?.recentUsers.map((user) => (
+                    <UserActivityItem key={user.id} user={user} userRole={props.userRole} />
+                  ))
+                )}
+              </div>
+            </ActivityCard>
+          )}
+
+          {/* Recent Listings */}
+          <ActivityCard
+            title="Recent Listings"
+            icon={<FileText className="h-5 w-5 text-green-500" />}
+            timeRange={listingsTimeRange}
+            onTimeRangeChange={setListingsTimeRange}
+            onRefresh={refetchData}
+            isLoading={dashboardQuery.isLoading}
+            viewAllHref="/listings"
+          >
+            <div className="space-y-2">
+              {dashboardQuery.data?.recentListings.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                  No new listings in this period
+                </p>
+              ) : (
+                dashboardQuery.data?.recentListings.map((listing) => (
+                  <ListingActivityItem key={listing.id} listing={listing} />
+                ))
+              )}
+            </div>
+          </ActivityCard>
+
+          {/* Recent Comments */}
+          <ActivityCard
+            title="Recent Comments"
+            icon={<MessageSquare className="h-5 w-5 text-purple-500" />}
+            timeRange={commentsTimeRange}
+            onTimeRangeChange={setCommentsTimeRange}
+            onRefresh={refetchData}
+            isLoading={dashboardQuery.isLoading}
+          >
+            <div className="space-y-2">
+              {dashboardQuery.data?.recentComments.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                  No new comments in this period
+                </p>
+              ) : (
+                dashboardQuery.data?.recentComments.map((comment) => (
+                  <CommentActivityItem key={comment.id} comment={comment} />
+                ))
+              )}
+            </div>
+          </ActivityCard>
+
+          {/* Platform Stats */}
+          {dashboardQuery.data && (
+            <PlatformStats
+              stats={dashboardQuery.data.platformStats}
+              timeRange={statsTimeRange}
+              onRefresh={refetchData}
+              isLoading={dashboardQuery.isLoading}
+            />
+          )}
+
+          {/* Recent Reports - MODERATOR+ */}
+          {showReports && (
+            <ActivityCard
+              title="Recent Reports"
+              icon={<AlertTriangle className="h-5 w-5 text-orange-500" />}
+              timeRange={reportsTimeRange}
+              onTimeRangeChange={setReportsTimeRange}
+              onRefresh={refetchData}
+              isLoading={dashboardQuery.isLoading}
+              viewAllHref="/admin/reports"
+            >
+              <div className="space-y-2">
+                {dashboardQuery.data?.recentReports.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    No new reports in this period
+                  </p>
+                ) : (
+                  dashboardQuery.data?.recentReports.map((report) => (
+                    <ReportActivityItem key={report.id} report={report} />
+                  ))
+                )}
+              </div>
+            </ActivityCard>
+          )}
+
+          {/* Recent Bans - MODERATOR+ */}
+          {showBans && (
+            <ActivityCard
+              title="Recent Bans"
+              icon={<Ban className="h-5 w-5 text-red-500" />}
+              timeRange={bansTimeRange}
+              onTimeRangeChange={setBansTimeRange}
+              onRefresh={refetchData}
+              isLoading={dashboardQuery.isLoading}
+              viewAllHref="/admin/user-bans"
+            >
+              <div className="space-y-2">
+                {dashboardQuery.data?.recentBans.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    No new bans in this period
+                  </p>
+                ) : (
+                  dashboardQuery.data?.recentBans.map((ban) => (
+                    <BanActivityItem key={ban.id} ban={ban} />
+                  ))
+                )}
+              </div>
+            </ActivityCard>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

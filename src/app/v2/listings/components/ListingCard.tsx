@@ -57,7 +57,9 @@ export function ListingCard({
   }
 
   // Get game cover image or placeholder
-  const gameCoverUrl = getGameImageUrl(listing.game) || '/placeholder/game.svg'
+  const gameCoverUrl =
+    getGameImageUrl(listing.game as Parameters<typeof getGameImageUrl>[0]) ||
+    '/placeholder/game.svg'
 
   // Generate accessible labels
   const gameTitle = listing.game.title

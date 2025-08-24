@@ -123,12 +123,12 @@ function AdminPerformancePage() {
           },
           {
             label: 'Used in Listings',
-            value: performanceStatsQuery.data?.usedInListings,
+            value: performanceStatsQuery.data?.withListings,
             color: 'green',
           },
           {
             label: 'Unused',
-            value: performanceStatsQuery.data?.unused,
+            value: performanceStatsQuery.data?.withoutListings,
             color: 'gray',
           },
         ]}

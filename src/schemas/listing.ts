@@ -1,17 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
+import { JsonValueSchema } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
-
-const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(JsonValueSchema),
-    z.record(JsonValueSchema),
-  ]),
-)
 
 export const CreateListingSchema = z.object({
   gameId: z.string().uuid(),

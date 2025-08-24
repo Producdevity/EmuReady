@@ -479,7 +479,9 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('submitter') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game.submitter?.name ?? 'System'}
+                          {'submitter' in game && game.submitter?.name
+                            ? game.submitter.name
+                            : 'System'}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('submittedAt') && (

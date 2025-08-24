@@ -29,3 +29,8 @@ export const UpdateCpuSchema = z.object({
 })
 
 export const DeleteCpuSchema = z.object({ id: z.string().uuid() })
+
+// Type exports for repository use
+export type GetCpusInput = z.input<typeof GetCpusSchema>
+export type CreateCpuInput = z.infer<typeof CreateCpuSchema>
+export type UpdateCpuInput = z.infer<typeof UpdateCpuSchema>

@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useState, useEffect, useCallback, Suspense, type ChangeEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense, type ChangeEvent } from 'react'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
@@ -89,15 +89,9 @@ function GamesContent() {
       }
 
       // Apply updates
-      if (updates.search !== undefined) {
-        setParam('search', updates.search.trim(), '')
-      }
-      if (updates.systemId !== undefined) {
-        setParam('systemId', updates.systemId, '')
-      }
-      if (updates.page !== undefined) {
-        setParam('page', updates.page.toString(), '1')
-      }
+      if (updates.search !== undefined) setParam('search', updates.search.trim(), '')
+      if (updates.systemId !== undefined) setParam('systemId', updates.systemId, '')
+      if (updates.page !== undefined) setParam('page', updates.page.toString(), '1')
       if (updates.hideNoListings !== undefined) {
         setParam('hideNoListings', updates.hideNoListings.toString(), 'true')
       }
@@ -140,13 +134,32 @@ function GamesContent() {
   }, [debouncedSearch, search, updateUrlParams])
 
   // Update input when URL changes (browser back/forward)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const isTypingRef = useRef(false)
+  const prevSearchRef = useRef(search)
+
   useEffect(() => {
-    setInputValue(search)
+    // Only sync from URL if it's an external change (browser navigation)
+    if (search !== prevSearchRef.current && !isTypingRef.current) {
+      setInputValue(search)
+    }
+    prevSearchRef.current = search
   }, [search])
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
     const newInputValue = ev.target.value
     setInputValue(newInputValue)
+    isTypingRef.current = true
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // Set new timeout to clear typing flag
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false
+    }, 600)
   }
 
   const handleSystemChange = (value: string | null) => {

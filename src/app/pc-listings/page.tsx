@@ -8,8 +8,8 @@ export const metadata: Metadata = generatePageMetadata(
   '/pc-listings',
 )
 
-// Revalidate every 15 minutes to show new listings
-export const revalidate = 900
+// Revalidate every 10 seconds for near real-time updates
+export const revalidate = 10
 
 export default function Page() {
   return <PcListingsPage />

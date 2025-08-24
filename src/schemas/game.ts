@@ -136,3 +136,12 @@ export const GetBestSwitchTitleIdSchema = z.object({
 })
 
 export const GetSwitchGamesStatsSchema = z.object({}).optional()
+
+// Type exports for repository use
+export type GetGamesInput = z.input<typeof GetGamesSchema>
+export type CreateGameInput = z.infer<typeof CreateGameSchema>
+export type UpdateGameInput = z.infer<typeof UpdateGameSchema>
+export type GetPendingGamesInput = z.input<typeof GetPendingGamesSchema>
+export type ApproveGameInput = z.infer<typeof ApproveGameSchema>
+export type BulkApproveGamesInput = z.infer<typeof BulkApproveGamesSchema>
+export type BulkRejectGamesInput = z.infer<typeof BulkRejectGamesSchema>

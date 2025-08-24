@@ -100,6 +100,21 @@ export const DeleteCommentSchema = z.object({
   commentId: z.string().uuid(),
 })
 
+export const VoteCommentSchema = z.object({
+  commentId: z.string().uuid(),
+  value: z.boolean().nullable(), // true = upvote, false = downvote, null = remove vote
+})
+
+export const GetUserVotesSchema = z.object({
+  commentIds: z.array(z.string().uuid()).min(1).max(100),
+})
+
+export const ReportCommentSchema = z.object({
+  commentId: z.string().uuid(),
+  reason: z.enum(['INAPPROPRIATE_CONTENT', 'SPAM', 'MISLEADING_INFORMATION', 'OTHER']),
+  description: z.string().max(1000).optional(),
+})
+
 export const UpdateProfileSchema = z.object({
   name: z.string().optional(),
   bio: z.string().optional(),

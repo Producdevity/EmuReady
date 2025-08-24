@@ -1,4 +1,5 @@
 import { createTRPCRouter } from '@/server/api/trpc'
+import { activityRouter } from './routers/admin/activity'
 import { badgesRouter } from './routers/badges'
 import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
@@ -30,6 +31,7 @@ import { usersRouter } from './routers/users'
 import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 
 export const appRouter = createTRPCRouter({
+  activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
   devices: devicesRouter,

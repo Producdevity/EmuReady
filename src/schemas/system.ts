@@ -25,3 +25,8 @@ export const UpdateSystemSchema = z.object({
 })
 
 export const DeleteSystemSchema = z.object({ id: z.string().uuid() })
+
+// Type exports for repository use
+export type GetSystemsInput = z.input<typeof GetSystemsSchema>
+export type CreateSystemInput = z.infer<typeof CreateSystemSchema>
+export type UpdateSystemInput = z.infer<typeof UpdateSystemSchema>

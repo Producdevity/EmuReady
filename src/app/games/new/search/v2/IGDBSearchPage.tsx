@@ -10,10 +10,11 @@ import {
   GameSearchHeader,
   type BaseGameResult,
 } from '@/components/game-search'
-import { LoadingSpinner } from '@/components/ui'
+import { LoadingSpinner, useConfirmDialog } from '@/components/ui'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
+import { getIGDBPlatformId } from '@/utils/system-platform-mapping'
 import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import IGDBGamePreviewModal from './components/IGDBGamePreviewModal'
@@ -55,6 +56,7 @@ function IGDBSearchContent() {
   })
   const createGame = api.games.create.useMutation()
   const systemsQuery = api.systems.get.useQuery()
+  const confirm = useConfirmDialog()
 
   // Check for existing games by name and system
   const gameNamesAndSystems = useMemo(() => {
@@ -126,11 +128,32 @@ function IGDBSearchContent() {
         : null
 
       if (selectedSystem) {
-        // Map system to IGDB platform ID if needed
-        handleSearch(urlQuery, null, selectedSystem.id)
+        const igdbPlatformId = getIGDBPlatformId(selectedSystem)
+        handleSearch(urlQuery, igdbPlatformId, selectedSystem.id)
+      } else if (urlQuery) {
+        // Search without platform filter if no system selected
+        handleSearch(urlQuery, null, null)
       }
     }
   }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
+
+  const showGameCreatedConfirmation = useCallback(
+    async (gameId: string) => {
+      const addMobileListing = await confirm({
+        title: 'Game Added Successfully!',
+        description: 'Would you like to add a mobile device listing or PC listing for this game?',
+        confirmText: 'Add Mobile Listing',
+        cancelText: 'Add PC Listing',
+      })
+
+      if (addMobileListing) {
+        router.push(`/listings/new?gameId=${gameId}`)
+      } else {
+        router.push(`/pc-listings/new?gameId=${gameId}`)
+      }
+    },
+    [confirm, router],
+  )
 
   const handleGamePreview = useCallback(
     (game: BaseGameResult) => {
@@ -164,7 +187,7 @@ function IGDBSearchContent() {
         await utils.games.checkExistingByNamesAndSystems.invalidate()
 
         toast.success('Game added successfully!')
-        router.push(`/listings/new?gameId=${newGame.id}`)
+        await showGameCreatedConfirmation(newGame.id)
       } catch (error) {
         // Check if the game already exists and get the existing game ID
         const errorMessage = getErrorMessage(error, 'Failed to add game')
@@ -174,8 +197,8 @@ function IGDBSearchContent() {
           // Extract the existing game ID from the error if available
           const cause = (error as Error & { cause?: { existingGameId?: string } })?.cause
           if (cause?.existingGameId) {
-            toast.info('Game already exists. Redirecting...')
-            router.push(`/listings/new?gameId=${cause.existingGameId}`)
+            toast.info('Game already exists.')
+            await showGameCreatedConfirmation(cause.existingGameId)
           } else {
             // Show error if ID is unavailable
             toast.error(errorMessage)
@@ -187,7 +210,7 @@ function IGDBSearchContent() {
         setIsSelecting(false)
       }
     },
-    [selectedGame, user, createGame, router, utils],
+    [selectedGame, user, createGame, utils, showGameCreatedConfirmation],
   )
 
   const isModeratorOrHigher = useMemo(() => {
