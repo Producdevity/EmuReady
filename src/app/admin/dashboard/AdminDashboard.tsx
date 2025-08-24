@@ -1,7 +1,11 @@
 'use client'
 
 import { Users, FileText, MessageSquare, AlertTriangle, Ban } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { ErrorBoundary } from '@/app/admin/components/ErrorBoundary'
+import { QuickNavigation } from '@/app/admin/components/QuickNavigation/QuickNavigation'
+import { ADMIN_ROUTES } from '@/app/admin/config/routes'
+import { type AdminNavItem } from '@/app/admin/data'
 import { api } from '@/lib/api'
 import { type TimeRange } from '@/schemas/activity'
 import { type Role } from '@orm'
@@ -15,8 +19,6 @@ import {
 } from './components/ActivityCard'
 import { CriticalActions } from './components/CriticalActions'
 import { PlatformStats } from './components/PlatformStats'
-import { QuickNavigation } from '../components/QuickNavigation/QuickNavigation'
-import { type AdminNavItem } from '../data'
 
 interface Props {
   userRole: Role
@@ -41,11 +43,6 @@ export function AdminDashboard(props: Props) {
     statsTimeRange,
   })
 
-  // Unified refetch function for all sections
-  const refetchData = useCallback(() => {
-    void dashboardQuery.refetch()
-  }, [dashboardQuery])
-
   const showUsers = dashboardQuery.data?.permissions.canSeeUsers ?? false
   const showReports = dashboardQuery.data?.permissions.canSeeReports ?? false
   const showBans = dashboardQuery.data?.permissions.canSeeBans ?? false
@@ -56,7 +53,9 @@ export function AdminDashboard(props: Props) {
   return (
     <div className="space-y-6">
       {/* Quick Navigation - Collapsible */}
-      <QuickNavigation items={props.navItems} title="Quick Navigation" defaultExpanded={true} />
+      <ErrorBoundary>
+        <QuickNavigation items={props.navItems} title="Quick Navigation" defaultExpanded={true} />
+      </ErrorBoundary>
 
       {/* Show error banner if API call failed */}
       {hasError && (
@@ -80,7 +79,9 @@ export function AdminDashboard(props: Props) {
       {!hasError &&
         dashboardQuery.data?.criticalActions &&
         dashboardQuery.data.criticalActions.length > 0 && (
-          <CriticalActions actions={dashboardQuery.data.criticalActions} />
+          <ErrorBoundary>
+            <CriticalActions actions={dashboardQuery.data.criticalActions} />
+          </ErrorBoundary>
         )}
 
       {/* Activity Grid - Only show if no error */}
@@ -93,9 +94,9 @@ export function AdminDashboard(props: Props) {
               icon={<Users className="h-5 w-5 text-blue-500" />}
               timeRange={usersTimeRange}
               onTimeRangeChange={setUsersTimeRange}
-              onRefresh={refetchData}
-              isLoading={dashboardQuery.isLoading}
-              viewAllHref="/admin/users"
+              onRefresh={() => void dashboardQuery.refetch()}
+              isLoading={dashboardQuery.isFetching}
+              viewAllHref={ADMIN_ROUTES.USERS}
             >
               <div className="space-y-2">
                 {dashboardQuery.data?.recentUsers.length === 0 ? (
@@ -117,7 +118,7 @@ export function AdminDashboard(props: Props) {
             icon={<FileText className="h-5 w-5 text-green-500" />}
             timeRange={listingsTimeRange}
             onTimeRangeChange={setListingsTimeRange}
-            onRefresh={refetchData}
+            onRefresh={() => void dashboardQuery.refetch()}
             isLoading={dashboardQuery.isLoading}
             viewAllHref="/listings"
           >
@@ -140,7 +141,7 @@ export function AdminDashboard(props: Props) {
             icon={<MessageSquare className="h-5 w-5 text-purple-500" />}
             timeRange={commentsTimeRange}
             onTimeRangeChange={setCommentsTimeRange}
-            onRefresh={refetchData}
+            onRefresh={() => void dashboardQuery.refetch()}
             isLoading={dashboardQuery.isLoading}
           >
             <div className="space-y-2">
@@ -161,8 +162,8 @@ export function AdminDashboard(props: Props) {
             <PlatformStats
               stats={dashboardQuery.data.platformStats}
               timeRange={statsTimeRange}
-              onRefresh={refetchData}
-              isLoading={dashboardQuery.isLoading}
+              onRefresh={() => void dashboardQuery.refetch()}
+              isLoading={dashboardQuery.isFetching}
             />
           )}
 
@@ -173,9 +174,9 @@ export function AdminDashboard(props: Props) {
               icon={<AlertTriangle className="h-5 w-5 text-orange-500" />}
               timeRange={reportsTimeRange}
               onTimeRangeChange={setReportsTimeRange}
-              onRefresh={refetchData}
-              isLoading={dashboardQuery.isLoading}
-              viewAllHref="/admin/reports"
+              onRefresh={() => void dashboardQuery.refetch()}
+              isLoading={dashboardQuery.isFetching}
+              viewAllHref={ADMIN_ROUTES.REPORTS}
             >
               <div className="space-y-2">
                 {dashboardQuery.data?.recentReports.length === 0 ? (
@@ -198,9 +199,9 @@ export function AdminDashboard(props: Props) {
               icon={<Ban className="h-5 w-5 text-red-500" />}
               timeRange={bansTimeRange}
               onTimeRangeChange={setBansTimeRange}
-              onRefresh={refetchData}
-              isLoading={dashboardQuery.isLoading}
-              viewAllHref="/admin/user-bans"
+              onRefresh={() => void dashboardQuery.refetch()}
+              isLoading={dashboardQuery.isFetching}
+              viewAllHref={ADMIN_ROUTES.USER_BANS}
             >
               <div className="space-y-2">
                 {dashboardQuery.data?.recentBans.length === 0 ? (

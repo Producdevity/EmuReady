@@ -4,7 +4,7 @@ import { roleIncludesRole } from '@/utils/permission-system'
 import { type PrismaClient, type Prisma } from '@orm'
 import { Role, ReportStatus, ApprovalStatus } from '@orm'
 
-// Constants for magic numbers
+// Dashboard-specific constants
 const PREVIEW_ITEMS_COUNT = 3
 const HALF_LIMIT_DIVIDER = 2
 const CONTENT_PREVIEW_LENGTH = 100
@@ -170,22 +170,14 @@ export class ActivityService {
     const isDeveloperExactly = userRole === Role.DEVELOPER
 
     // Build where clause based on permissions
-    const whereClause: Prisma.ListingWhereInput = {
-      createdAt: { gte: dateFrom },
-    }
+    const whereClause: Prisma.ListingWhereInput = { createdAt: { gte: dateFrom } }
 
     // Users below DEVELOPER only see approved listings
-    if (!isDeveloperOrHigher) {
-      whereClause.status = ApprovalStatus.APPROVED
-    }
+    if (!isDeveloperOrHigher) whereClause.status = ApprovalStatus.APPROVED
 
     // DEVELOPER role (not MODERATOR+) only sees their verified emulator listings
     if (isDeveloperExactly && userId) {
-      whereClause.emulator = {
-        verifiedDevelopers: {
-          some: { userId },
-        },
-      }
+      whereClause.emulator = { verifiedDevelopers: { some: { userId } } }
     }
 
     // Non-moderators don't see content from banned users
@@ -207,31 +199,24 @@ export class ActivityService {
     ])
 
     const totalCount = mobileCount + pcCount
-    const mobileLimit =
-      totalCount > 0
-        ? Math.round((mobileCount / totalCount) * limit)
-        : Math.ceil(limit / HALF_LIMIT_DIVIDER)
-    const pcLimit = limit - mobileLimit
+    const handheldLimit =
+      totalCount > 0 ? Math.round((mobileCount / totalCount) * limit) : Math.ceil(limit / 2)
+    const pcLimit = limit - handheldLimit
 
     // Fetch both mobile and PC listings with proper limits
-    const [mobileListings, pcListings] = await Promise.all([
+    const [handheldListings, pcListings] = await Promise.all([
       this.prisma.listing.findMany({
         where: whereClause,
         select: {
           id: true,
           game: { select: { id: true, title: true } },
-          device: {
-            select: {
-              modelName: true,
-              brand: { select: { name: true } },
-            },
-          },
+          device: { select: { modelName: true, brand: { select: { name: true } } } },
           author: { select: { id: true, name: true } },
           status: true,
           createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
-        take: mobileLimit,
+        take: handheldLimit,
       }),
       this.prisma.pcListing.findMany({
         where: whereClause as Prisma.PcListingWhereInput,
@@ -251,31 +236,31 @@ export class ActivityService {
 
     // Combine and format results
     const combined: ActivityTypes.RecentListing[] = [
-      ...mobileListings.map((l: (typeof mobileListings)[0]) => ({
-        id: l.id,
+      ...handheldListings.map((listing) => ({
+        id: listing.id,
         type: 'mobile' as const,
-        gameTitle: l.game.title,
-        gameId: l.game.id,
-        deviceName: `${l.device.brand.name} ${l.device.modelName}`,
+        gameTitle: listing.game.title,
+        gameId: listing.game.id,
+        deviceName: `${listing.device.brand.name} ${listing.device.modelName}`,
         cpuName: undefined,
         gpuName: undefined,
-        authorName: l.author.name,
-        authorId: l.author.id,
-        status: l.status,
-        createdAt: l.createdAt,
+        authorName: listing.author.name,
+        authorId: listing.author.id,
+        status: listing.status,
+        createdAt: listing.createdAt,
       })),
-      ...pcListings.map((l: (typeof pcListings)[0]) => ({
-        id: l.id,
+      ...pcListings.map((listing) => ({
+        id: listing.id,
         type: 'pc' as const,
-        gameTitle: l.game.title,
-        gameId: l.game.id,
+        gameTitle: listing.game.title,
+        gameId: listing.game.id,
         deviceName: undefined,
-        cpuName: l.cpu?.modelName,
-        gpuName: l.gpu?.modelName,
-        authorName: l.author.name,
-        authorId: l.author.id,
-        status: l.status,
-        createdAt: l.createdAt,
+        cpuName: listing.cpu?.modelName,
+        gpuName: listing.gpu?.modelName,
+        authorName: listing.author.name,
+        authorId: listing.author.id,
+        status: listing.status,
+        createdAt: listing.createdAt,
       })),
     ]
 
@@ -338,11 +323,7 @@ export class ActivityService {
         id: true,
         content: true,
         listingId: true,
-        listing: {
-          select: {
-            game: { select: { title: true } },
-          },
-        },
+        listing: { select: { game: { select: { title: true } } } },
         user: { select: { id: true, name: true } },
         createdAt: true,
       },

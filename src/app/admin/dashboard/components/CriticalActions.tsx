@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from 'date-fns'
 import { AlertCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { getApprovalRoute } from '@/app/admin/config/routes'
 import { cn } from '@/lib/utils'
 import { type ActivityTypes } from '@/server/services/activity.service'
 
@@ -25,16 +26,7 @@ export function CriticalActions({ actions, className }: CriticalActionsProps) {
   )
 
   const getActionUrl = (action: ActivityTypes.PendingApproval) => {
-    switch (action.type) {
-      case 'game':
-        return '/admin/games/approvals'
-      case 'listing':
-        return '/admin/approvals'
-      case 'pcListing':
-        return '/admin/pc-listing-approvals'
-      default:
-        return '/admin'
-    }
+    return getApprovalRoute(action.type as 'game' | 'listing' | 'pcListing')
   }
 
   const getActionLabel = (type: string, count: number) => {
