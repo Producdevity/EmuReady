@@ -45,9 +45,8 @@ export const mobileGamesRouter = createMobileTRPCRouter({
 
   /**
    * Get game by ID
-   * TODO: change to byId and deprecate getGameById
    */
-  getGameById: mobilePublicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
+  byId: mobilePublicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
     const repository = new GamesRepository(ctx.prisma)
     return repository.getByIdMobile(input.id)
   }),
