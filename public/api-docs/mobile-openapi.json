@@ -906,6 +906,89 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#"
       },
+      "VoteCommentSchema": {
+        "$ref": "#/definitions/VoteCommentSchema",
+        "definitions": {
+          "VoteCommentSchema": {
+            "type": "object",
+            "properties": {
+              "commentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "value": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "commentId",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "GetUserVotesSchema": {
+        "$ref": "#/definitions/GetUserVotesSchema",
+        "definitions": {
+          "GetUserVotesSchema": {
+            "type": "object",
+            "properties": {
+              "commentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "minItems": 1,
+                "maxItems": 100
+              }
+            },
+            "required": [
+              "commentIds"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "ReportCommentSchema": {
+        "$ref": "#/definitions/ReportCommentSchema",
+        "definitions": {
+          "ReportCommentSchema": {
+            "type": "object",
+            "properties": {
+              "commentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "INAPPROPRIATE_CONTENT",
+                  "SPAM",
+                  "MISLEADING_INFORMATION",
+                  "OTHER"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "commentId",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
       "GetNotificationsSchema": {
         "$ref": "#/definitions/GetNotificationsSchema",
         "definitions": {
@@ -3873,8 +3956,8 @@
     },
     "/games.getGameById": {
       "get": {
-        "summary": "Get game by ID",
-        "description": "Get game by ID",
+        "summary": "Search games",
+        "description": "Search games",
         "tags": [
           "games"
         ],
@@ -8021,6 +8104,457 @@
           }
         },
         "security": []
+      }
+    },
+    "/listings.voteComment": {
+      "post": {
+        "summary": "Vote on a comment",
+        "description": "Vote on a comment",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteCommentSchema"
+              },
+              "example": {
+                "commentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              }
+            }
+          },
+          "description": "Input data for mutation procedure."
+        },
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from listings.voteComment"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from listings.voteComment",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "listings.voteComment",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/listings.getUserCommentVotes": {
+      "get": {
+        "summary": "Get user votes for multiple comments",
+        "description": "Get user votes for multiple comments",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching GetUserVotesSchema schema. See components/schemas/GetUserVotesSchema for structure.",
+            "example": "{\"json\":{}}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from listings.getUserCommentVotes"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from listings.getUserCommentVotes",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "listings.getUserCommentVotes",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/listings.reportComment": {
+      "post": {
+        "summary": "Report a comment",
+        "description": "Report a comment",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportCommentSchema"
+              },
+              "example": {
+                "commentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                "reason": "example"
+              }
+            }
+          },
+          "description": "Input data for mutation procedure."
+        },
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from listings.reportComment"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from listings.reportComment",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "listings.reportComment",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
       }
     },
     "/notifications.get": {
