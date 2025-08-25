@@ -64,7 +64,7 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
               !value ||
               (isString(value) && value.trim() === '') ||
               (Array.isArray(value) && value.length === 0) ||
-              (typeof value === 'object' && value !== null && Object.keys(value).length === 0)
+              (typeof value === 'object' && Object.keys(value).length === 0)
 
             return isValueEmpty ? `${props.fieldDef.label} is required` : true
           }
