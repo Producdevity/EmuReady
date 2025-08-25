@@ -102,7 +102,7 @@ export const DeleteCommentSchema = z.object({
 
 export const VoteCommentSchema = z.object({
   commentId: z.string().uuid(),
-  value: z.boolean().nullable(), // true = upvote, false = downvote, null = remove vote
+  value: z.union([z.boolean(), z.null()]), // true = upvote, false = downvote, null = remove vote
 })
 
 export const GetUserVotesSchema = z.object({
@@ -111,7 +111,14 @@ export const GetUserVotesSchema = z.object({
 
 export const ReportCommentSchema = z.object({
   commentId: z.string().uuid(),
-  reason: z.enum(['INAPPROPRIATE_CONTENT', 'SPAM', 'MISLEADING_INFORMATION', 'OTHER']),
+  reason: z.enum([
+    'INAPPROPRIATE_CONTENT',
+    'SPAM',
+    'MISLEADING_INFORMATION',
+    'FAKE_LISTING',
+    'COPYRIGHT_VIOLATION',
+    'OTHER',
+  ]),
   description: z.string().max(1000).optional(),
 })
 

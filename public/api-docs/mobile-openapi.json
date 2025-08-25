@@ -108,950 +108,165 @@
         ]
       },
       "ValidateTokenSchema": {
-        "$ref": "#/definitions/ValidateTokenSchema",
-        "definitions": {
-          "ValidateTokenSchema": {
-            "type": "object",
-            "properties": {
-              "token": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "token"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false
       },
       "UpdateMobileProfileSchema": {
-        "$ref": "#/definitions/UpdateMobileProfileSchema",
-        "definitions": {
-          "UpdateMobileProfileSchema": {
-            "type": "object",
-            "properties": {
-              "firstName": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "lastName": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "profileImageUrl": {
-                "type": "string",
-                "format": "uri"
-              }
-            },
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "profileImageUrl": {
+            "type": "string",
+            "format": "uri"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "additionalProperties": false
       },
       "DeleteMobileAccountSchema": {
-        "$ref": "#/definitions/DeleteMobileAccountSchema",
-        "definitions": {
-          "DeleteMobileAccountSchema": {
-            "type": "object",
-            "properties": {
-              "confirmationText": {
-                "type": "string",
-                "const": "DELETE"
-              }
-            },
-            "required": [
-              "confirmationText"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "confirmationText": {
+            "type": "string",
+            "const": "DELETE"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "confirmationText"
+        ],
+        "additionalProperties": false
       },
       "GetCpusSchema": {
-        "$ref": "#/definitions/GetCpusSchema",
-        "definitions": {
-          "GetCpusSchema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "IsVerifiedDeveloperSchema": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "userId",
+          "emulatorId"
+        ],
+        "additionalProperties": false
+      },
+      "GetDevicesSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "description": "Search devices by name"
+              },
+              "brandId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Filter by brand ID"
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 1000,
+                "default": 50,
+                "description": "Number of results to return (1-1000)"
+              }
+            },
+            "additionalProperties": false
+          }
+        ],
+        "description": "Get devices with optional filters"
+      },
+      "GetEmulatorsSchema": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "search": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetEmulatorByIdSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "GetGamesSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
             "type": "object",
             "properties": {
               "search": {
                 "type": "string"
               },
-              "brandId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "limit": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 100,
-                "default": 50
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "IsVerifiedDeveloperSchema": {
-        "$ref": "#/definitions/IsVerifiedDeveloperSchema",
-        "definitions": {
-          "IsVerifiedDeveloperSchema": {
-            "type": "object",
-            "properties": {
-              "userId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "emulatorId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "userId",
-              "emulatorId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetDevicesSchema": {
-        "$ref": "#/definitions/GetDevicesSchema",
-        "definitions": {
-          "GetDevicesSchema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "search": {
-                    "type": "string",
-                    "description": "Search devices by name"
-                  },
-                  "brandId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "Filter by brand ID"
-                  },
-                  "limit": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "default": 50,
-                    "description": "Number of results to return (1-1000)"
-                  }
-                },
-                "additionalProperties": false
-              }
-            ],
-            "description": "Get devices with optional filters"
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetEmulatorsSchema": {
-        "$ref": "#/definitions/GetEmulatorsSchema",
-        "definitions": {
-          "GetEmulatorsSchema": {
-            "type": "object",
-            "properties": {
               "systemId": {
                 "type": "string",
                 "format": "uuid"
               },
-              "search": {
-                "type": "string"
-              },
-              "limit": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 100,
-                "default": 50
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetEmulatorByIdSchema": {
-        "$ref": "#/definitions/GetEmulatorByIdSchema",
-        "definitions": {
-          "GetEmulatorByIdSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetGamesSchema": {
-        "$ref": "#/definitions/GetGamesSchema",
-        "definitions": {
-          "GetGamesSchema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "search": {
-                    "type": "string"
-                  },
-                  "systemId": {
-                    "type": "string",
-                    "format": "uuid"
-                  },
-                  "page": {
-                    "type": "number",
-                    "minimum": 1,
-                    "default": 1
-                  },
-                  "limit": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 50,
-                    "default": 20
-                  }
-                },
-                "additionalProperties": false
-              }
-            ]
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "SearchGamesSchema": {
-        "$ref": "#/definitions/SearchGamesSchema",
-        "definitions": {
-          "SearchGamesSchema": {
-            "type": "object",
-            "properties": {
-              "query": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "query"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetGameByIdSchema": {
-        "$ref": "#/definitions/GetGameByIdSchema",
-        "definitions": {
-          "GetGameByIdSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "FindSwitchTitleIdMobileSchema": {
-        "$ref": "#/definitions/FindSwitchTitleIdMobileSchema",
-        "definitions": {
-          "FindSwitchTitleIdMobileSchema": {
-            "type": "object",
-            "properties": {
-              "gameName": {
-                "type": "string",
-                "minLength": 2
-              },
-              "maxResults": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 20,
-                "default": 5
-              }
-            },
-            "required": [
-              "gameName"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetBestSwitchTitleIdMobileSchema": {
-        "$ref": "#/definitions/GetBestSwitchTitleIdMobileSchema",
-        "definitions": {
-          "GetBestSwitchTitleIdMobileSchema": {
-            "type": "object",
-            "properties": {
-              "gameName": {
-                "type": "string",
-                "minLength": 2
-              }
-            },
-            "required": [
-              "gameName"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetSwitchGamesStatsMobileSchema": {
-        "$ref": "#/definitions/GetSwitchGamesStatsMobileSchema",
-        "definitions": {
-          "GetSwitchGamesStatsMobileSchema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": false
-              }
-            ]
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "SearchSuggestionsSchema": {
-        "$ref": "#/definitions/SearchSuggestionsSchema",
-        "definitions": {
-          "SearchSuggestionsSchema": {
-            "type": "object",
-            "properties": {
-              "query": {
-                "type": "string",
-                "minLength": 1
-              },
-              "limit": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 20,
-                "default": 10
-              }
-            },
-            "required": [
-              "query"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetGpusSchema": {
-        "$ref": "#/definitions/GetGpusSchema",
-        "definitions": {
-          "GetGpusSchema": {
-            "type": "object",
-            "properties": {
-              "search": {
-                "type": "string"
-              },
-              "brandId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "limit": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 100,
-                "default": 50
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetListingsSchema": {
-        "$ref": "#/definitions/GetListingsSchema",
-        "definitions": {
-          "GetListingsSchema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "page": {
-                    "type": "number",
-                    "minimum": 1,
-                    "default": 1,
-                    "description": "Page number for pagination"
-                  },
-                  "limit": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 50,
-                    "default": 20,
-                    "description": "Number of results per page (1-50)"
-                  },
-                  "gameId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "Filter by game ID"
-                  },
-                  "systemId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "Filter by single system ID (deprecated - use systemIds)"
-                  },
-                  "systemIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "description": "Filter by multiple system IDs"
-                  },
-                  "deviceId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "Filter by device ID"
-                  },
-                  "emulatorIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "description": "Filter by emulator IDs"
-                  },
-                  "performanceIds": {
-                    "type": "array",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "string"
-                        }
-                      ]
-                    },
-                    "description": "Filter by performance IDs"
-                  },
-                  "search": {
-                    "type": "string",
-                    "description": "Search listings by game name"
-                  }
-                },
-                "additionalProperties": false
-              }
-            ],
-            "description": "Get listings with optional filters and pagination"
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetListingsByGameSchema": {
-        "$ref": "#/definitions/GetListingsByGameSchema",
-        "definitions": {
-          "GetListingsByGameSchema": {
-            "type": "object",
-            "properties": {
-              "gameId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "gameId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetListingByIdSchema": {
-        "$ref": "#/definitions/GetListingByIdSchema",
-        "definitions": {
-          "GetListingByIdSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetUserListingsSchema": {
-        "$ref": "#/definitions/GetUserListingsSchema",
-        "definitions": {
-          "GetUserListingsSchema": {
-            "type": "object",
-            "properties": {
-              "userId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "userId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "CreateListingSchema": {
-        "$ref": "#/definitions/CreateListingSchema",
-        "definitions": {
-          "CreateListingSchema": {
-            "type": "object",
-            "properties": {
-              "gameId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "deviceId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "emulatorId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "performanceId": {
-                "type": "number"
-              },
-              "notes": {
-                "type": "string"
-              },
-              "customFieldValues": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "customFieldDefinitionId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "value": {}
-                  },
-                  "required": [
-                    "customFieldDefinitionId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "gameId",
-              "deviceId",
-              "emulatorId",
-              "performanceId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "UpdateListingSchema": {
-        "$ref": "#/definitions/UpdateListingSchema",
-        "definitions": {
-          "UpdateListingSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "gameId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "deviceId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "emulatorId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "performanceId": {
-                "type": "number"
-              },
-              "notes": {
-                "type": "string"
-              },
-              "customFieldValues": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "customFieldDefinitionId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "value": {}
-                  },
-                  "required": [
-                    "customFieldDefinitionId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "DeleteListingSchema": {
-        "$ref": "#/definitions/DeleteListingSchema",
-        "definitions": {
-          "DeleteListingSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "VoteListingSchema": {
-        "$ref": "#/definitions/VoteListingSchema",
-        "definitions": {
-          "VoteListingSchema": {
-            "type": "object",
-            "properties": {
-              "listingId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "value": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "listingId",
-              "value"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetUserVoteSchema": {
-        "$ref": "#/definitions/GetUserVoteSchema",
-        "definitions": {
-          "GetUserVoteSchema": {
-            "type": "object",
-            "properties": {
-              "listingId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "listingId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetListingCommentsSchema": {
-        "$ref": "#/definitions/GetListingCommentsSchema",
-        "definitions": {
-          "GetListingCommentsSchema": {
-            "type": "object",
-            "properties": {
-              "listingId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "listingId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "CreateCommentSchema": {
-        "$ref": "#/definitions/CreateCommentSchema",
-        "definitions": {
-          "CreateCommentSchema": {
-            "type": "object",
-            "properties": {
-              "listingId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "content": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "listingId",
-              "content"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "UpdateCommentSchema": {
-        "$ref": "#/definitions/UpdateCommentSchema",
-        "definitions": {
-          "UpdateCommentSchema": {
-            "type": "object",
-            "properties": {
-              "commentId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "content": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "commentId",
-              "content"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "DeleteCommentSchema": {
-        "$ref": "#/definitions/DeleteCommentSchema",
-        "definitions": {
-          "DeleteCommentSchema": {
-            "type": "object",
-            "properties": {
-              "commentId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "commentId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetListingEmulatorConfigSchema": {
-        "$ref": "#/definitions/GetListingEmulatorConfigSchema",
-        "definitions": {
-          "GetListingEmulatorConfigSchema": {
-            "type": "object",
-            "properties": {
-              "listingId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "emulatorType": {
-                "type": "string",
-                "enum": [
-                  "eden",
-                  "gamenative"
-                ]
-              }
-            },
-            "required": [
-              "listingId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "VoteCommentSchema": {
-        "$ref": "#/definitions/VoteCommentSchema",
-        "definitions": {
-          "VoteCommentSchema": {
-            "type": "object",
-            "properties": {
-              "commentId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "value": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
-              }
-            },
-            "required": [
-              "commentId",
-              "value"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetUserVotesSchema": {
-        "$ref": "#/definitions/GetUserVotesSchema",
-        "definitions": {
-          "GetUserVotesSchema": {
-            "type": "object",
-            "properties": {
-              "commentIds": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "minItems": 1,
-                "maxItems": 100
-              }
-            },
-            "required": [
-              "commentIds"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "ReportCommentSchema": {
-        "$ref": "#/definitions/ReportCommentSchema",
-        "definitions": {
-          "ReportCommentSchema": {
-            "type": "object",
-            "properties": {
-              "commentId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "reason": {
-                "type": "string",
-                "enum": [
-                  "INAPPROPRIATE_CONTENT",
-                  "SPAM",
-                  "MISLEADING_INFORMATION",
-                  "OTHER"
-                ]
-              },
-              "description": {
-                "type": "string",
-                "maxLength": 1000
-              }
-            },
-            "required": [
-              "commentId",
-              "reason"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetNotificationsSchema": {
-        "$ref": "#/definitions/GetNotificationsSchema",
-        "definitions": {
-          "GetNotificationsSchema": {
-            "anyOf": [
-              {
-                "not": {}
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "page": {
-                    "type": "number",
-                    "minimum": 1,
-                    "default": 1,
-                    "description": "Page number for pagination"
-                  },
-                  "limit": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 50,
-                    "default": 20,
-                    "description": "Number of results per page (1-50)"
-                  },
-                  "unreadOnly": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Show only unread notifications"
-                  }
-                },
-                "additionalProperties": false
-              }
-            ],
-            "description": "Get notifications with optional filters and pagination"
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "MarkNotificationReadSchema": {
-        "$ref": "#/definitions/MarkNotificationReadSchema",
-        "definitions": {
-          "MarkNotificationReadSchema": {
-            "type": "object",
-            "properties": {
-              "notificationId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "notificationId"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetPcListingsSchema": {
-        "$ref": "#/definitions/GetPcListingsSchema",
-        "definitions": {
-          "GetPcListingsSchema": {
-            "type": "object",
-            "properties": {
               "page": {
                 "type": "number",
                 "minimum": 1,
@@ -1062,352 +277,867 @@
                 "minimum": 1,
                 "maximum": 50,
                 "default": 20
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SearchGamesSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "GetGameByIdSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "FindSwitchTitleIdMobileSchema": {
+        "type": "object",
+        "properties": {
+          "gameName": {
+            "type": "string",
+            "minLength": 2
+          },
+          "maxResults": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 5
+          }
+        },
+        "required": [
+          "gameName"
+        ],
+        "additionalProperties": false
+      },
+      "GetBestSwitchTitleIdMobileSchema": {
+        "type": "object",
+        "properties": {
+          "gameName": {
+            "type": "string",
+            "minLength": 2
+          }
+        },
+        "required": [
+          "gameName"
+        ],
+        "additionalProperties": false
+      },
+      "GetSwitchGamesStatsMobileSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SearchSuggestionsSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 10
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "GetGpusSchema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetListingsSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "minimum": 1,
+                "default": 1,
+                "description": "Page number for pagination"
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50,
+                "default": 20,
+                "description": "Number of results per page (1-50)"
               },
               "gameId": {
                 "type": "string",
-                "format": "uuid"
+                "format": "uuid",
+                "description": "Filter by game ID"
               },
               "systemId": {
                 "type": "string",
-                "format": "uuid"
+                "format": "uuid",
+                "description": "Filter by single system ID (deprecated - use systemIds)"
               },
-              "cpuId": {
-                "type": "string",
-                "format": "uuid"
+              "systemIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by multiple system IDs"
               },
-              "gpuId": {
+              "deviceId": {
                 "type": "string",
-                "format": "uuid"
+                "format": "uuid",
+                "description": "Filter by device ID"
               },
-              "emulatorId": {
-                "type": "string",
-                "format": "uuid"
+              "emulatorIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by emulator IDs"
               },
-              "os": {
-                "type": "string",
-                "enum": [
-                  "WINDOWS",
-                  "LINUX",
-                  "MACOS"
-                ]
+              "performanceIds": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "Filter by performance IDs"
               },
               "search": {
-                "type": "string"
-              },
-              "minMemory": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 256
-              },
-              "maxMemory": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 256
+                "type": "string",
+                "description": "Search listings by game name"
               }
             },
             "additionalProperties": false
           }
+        ],
+        "description": "Get listings with optional filters and pagination"
+      },
+      "GetListingsByGameSchema": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "gameId"
+        ],
+        "additionalProperties": false
+      },
+      "GetListingByIdSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "GetUserListingsSchema": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "additionalProperties": false
+      },
+      "CreateListingSchema": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "performanceId": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "customFieldValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "customFieldDefinitionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "value": {}
+              },
+              "required": [
+                "customFieldDefinitionId"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "gameId",
+          "deviceId",
+          "emulatorId",
+          "performanceId"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateListingSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "performanceId": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "customFieldValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "customFieldDefinitionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "value": {}
+              },
+              "required": [
+                "customFieldDefinitionId"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "DeleteListingSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "VoteListingSchema": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "value": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "listingId",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "GetUserVoteSchema": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "listingId"
+        ],
+        "additionalProperties": false
+      },
+      "GetListingCommentsSchema": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "listingId"
+        ],
+        "additionalProperties": false
+      },
+      "CreateCommentSchema": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "listingId",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateCommentSchema": {
+        "type": "object",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "commentId",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "DeleteCommentSchema": {
+        "type": "object",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "commentId"
+        ],
+        "additionalProperties": false
+      },
+      "GetListingEmulatorConfigSchema": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorType": {
+            "type": "string",
+            "enum": [
+              "eden",
+              "gamenative"
+            ]
+          }
+        },
+        "required": [
+          "listingId"
+        ],
+        "additionalProperties": false
+      },
+      "VoteCommentSchema": {
+        "type": "object",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "value": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "commentId",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "GetUserVotesSchema": {
+        "type": "object",
+        "properties": {
+          "commentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "commentIds"
+        ],
+        "additionalProperties": false
+      },
+      "ReportCommentSchema": {
+        "type": "object",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "INAPPROPRIATE_CONTENT",
+              "SPAM",
+              "MISLEADING_INFORMATION",
+              "FAKE_LISTING",
+              "COPYRIGHT_VIOLATION",
+              "OTHER"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "commentId",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "GetNotificationsSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "minimum": 1,
+                "default": 1,
+                "description": "Page number for pagination"
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 50,
+                "default": 20,
+                "description": "Number of results per page (1-50)"
+              },
+              "unreadOnly": {
+                "type": "boolean",
+                "default": false,
+                "description": "Show only unread notifications"
+              }
+            },
+            "additionalProperties": false
+          }
+        ],
+        "description": "Get notifications with optional filters and pagination"
+      },
+      "MarkNotificationReadSchema": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "notificationId"
+        ],
+        "additionalProperties": false
+      },
+      "GetPcListingsSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "minimum": 1,
+            "default": 1
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          },
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "systemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cpuId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gpuId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "os": {
+            "type": "string",
+            "enum": [
+              "WINDOWS",
+              "LINUX",
+              "MACOS"
+            ]
+          },
+          "search": {
+            "type": "string"
+          },
+          "minMemory": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 256
+          },
+          "maxMemory": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 256
+          }
+        },
+        "additionalProperties": false
       },
       "CreatePcListingSchema": {
-        "$ref": "#/definitions/CreatePcListingSchema",
-        "definitions": {
-          "CreatePcListingSchema": {
-            "type": "object",
-            "properties": {
-              "gameId": {
-                "type": "string",
-                "format": "uuid"
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cpuId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gpuId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "performanceId": {
+            "type": "number"
+          },
+          "memorySize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 256
+          },
+          "os": {
+            "type": "string",
+            "enum": [
+              "WINDOWS",
+              "LINUX",
+              "MACOS"
+            ]
+          },
+          "osVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes": {
+            "type": "string"
+          },
+          "customFieldValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "customFieldDefinitionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "value": {}
               },
-              "cpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "gpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "emulatorId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "performanceId": {
-                "type": "number"
-              },
-              "memorySize": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 256
-              },
-              "os": {
-                "type": "string",
-                "enum": [
-                  "WINDOWS",
-                  "LINUX",
-                  "MACOS"
-                ]
-              },
-              "osVersion": {
-                "type": "string",
-                "minLength": 1
-              },
-              "notes": {
-                "type": "string"
-              },
-              "customFieldValues": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "customFieldDefinitionId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "value": {}
-                  },
-                  "required": [
-                    "customFieldDefinitionId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "gameId",
-              "cpuId",
-              "gpuId",
-              "emulatorId",
-              "performanceId",
-              "memorySize",
-              "os",
-              "osVersion"
-            ],
-            "additionalProperties": false
+              "required": [
+                "customFieldDefinitionId"
+              ],
+              "additionalProperties": false
+            }
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "gameId",
+          "cpuId",
+          "gpuId",
+          "emulatorId",
+          "performanceId",
+          "memorySize",
+          "os",
+          "osVersion"
+        ],
+        "additionalProperties": false
       },
       "UpdatePcListingSchema": {
-        "$ref": "#/definitions/UpdatePcListingSchema",
-        "definitions": {
-          "UpdatePcListingSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cpuId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gpuId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emulatorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "performanceId": {
+            "type": "number"
+          },
+          "memorySize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 256
+          },
+          "os": {
+            "type": "string",
+            "enum": [
+              "WINDOWS",
+              "LINUX",
+              "MACOS"
+            ]
+          },
+          "osVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes": {
+            "type": "string"
+          },
+          "customFieldValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "customFieldDefinitionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "value": {}
               },
-              "gameId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "cpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "gpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "emulatorId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "performanceId": {
-                "type": "number"
-              },
-              "memorySize": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 256
-              },
-              "os": {
-                "type": "string",
-                "enum": [
-                  "WINDOWS",
-                  "LINUX",
-                  "MACOS"
-                ]
-              },
-              "osVersion": {
-                "type": "string",
-                "minLength": 1
-              },
-              "notes": {
-                "type": "string"
-              },
-              "customFieldValues": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "customFieldDefinitionId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "value": {}
-                  },
-                  "required": [
-                    "customFieldDefinitionId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
+              "required": [
+                "customFieldDefinitionId"
+              ],
+              "additionalProperties": false
+            }
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
       },
       "UpdateUserPreferencesSchema": {
-        "$ref": "#/definitions/UpdateUserPreferencesSchema",
-        "definitions": {
-          "UpdateUserPreferencesSchema": {
-            "type": "object",
-            "properties": {
-              "defaultToUserDevices": {
-                "type": "boolean"
-              },
-              "defaultToUserSocs": {
-                "type": "boolean"
-              },
-              "notifyOnNewListings": {
-                "type": "boolean"
-              },
-              "bio": {
-                "type": "string"
-              },
-              "showNsfw": {
-                "type": "boolean"
-              }
-            },
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "defaultToUserDevices": {
+            "type": "boolean"
+          },
+          "defaultToUserSocs": {
+            "type": "boolean"
+          },
+          "notifyOnNewListings": {
+            "type": "boolean"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "showNsfw": {
+            "type": "boolean"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "additionalProperties": false
       },
       "AddDevicePreferenceSchema": {
-        "$ref": "#/definitions/AddDevicePreferenceSchema",
-        "definitions": {
-          "AddDevicePreferenceSchema": {
-            "type": "object",
-            "properties": {
-              "deviceId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "deviceId"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "deviceId"
+        ],
+        "additionalProperties": false
       },
       "RemoveDevicePreferenceSchema": {
-        "$ref": "#/definitions/RemoveDevicePreferenceSchema",
-        "definitions": {
-          "RemoveDevicePreferenceSchema": {
-            "type": "object",
-            "properties": {
-              "deviceId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "deviceId"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "deviceId"
+        ],
+        "additionalProperties": false
       },
       "BulkUpdateDevicePreferencesSchema": {
-        "$ref": "#/definitions/BulkUpdateDevicePreferencesSchema",
-        "definitions": {
-          "BulkUpdateDevicePreferencesSchema": {
-            "type": "object",
-            "properties": {
-              "deviceIds": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              }
-            },
-            "required": [
-              "deviceIds"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "deviceIds"
+        ],
+        "additionalProperties": false
       },
       "BulkUpdateSocPreferencesSchema": {
-        "$ref": "#/definitions/BulkUpdateSocPreferencesSchema",
-        "definitions": {
-          "BulkUpdateSocPreferencesSchema": {
-            "type": "object",
-            "properties": {
-              "socIds": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              }
-            },
-            "required": [
-              "socIds"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "socIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "socIds"
+        ],
+        "additionalProperties": false
       },
       "GetUserProfileSchema": {
-        "$ref": "#/definitions/GetUserProfileSchema",
-        "definitions": {
-          "GetUserProfileSchema": {
-            "type": "object",
-            "properties": {
-              "userId": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "userId"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "required": [
+          "userId"
+        ],
+        "additionalProperties": false
       },
       "UpdateProfileSchema": {
-        "$ref": "#/definitions/UpdateProfileSchema",
-        "definitions": {
-          "UpdateProfileSchema": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "bio": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
           }
         },
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "additionalProperties": false
       }
     }
   },
@@ -3954,10 +3684,10 @@
         "security": []
       }
     },
-    "/games.getGameById": {
+    "/games.byId": {
       "get": {
-        "summary": "Search games",
-        "description": "Search games",
+        "summary": "Get game by ID",
+        "description": "Get game by ID",
         "tags": [
           "games"
         ],
@@ -3987,7 +3717,7 @@
                       "properties": {
                         "data": {
                           "type": "object",
-                          "description": "Response data from games.getGameById"
+                          "description": "Response data from games.byId"
                         }
                       }
                     }
@@ -4002,15 +3732,13 @@
                     "value": {
                       "result": {
                         "data": {
-                          "id": "uuid-game",
-                          "title": "Super Mario Bros",
-                          "systemId": "uuid-system",
-                          "imageUrl": "https://example.com/game.jpg",
-                          "status": "APPROVED",
-                          "system": {
-                            "id": "uuid-system",
-                            "name": "Nintendo Entertainment System",
-                            "key": "nes"
+                          "message": "Response from games.byId",
+                          "data": {
+                            "id": "uuid-game",
+                            "title": "Super Mario Bros",
+                            "systemId": "uuid-system",
+                            "imageUrl": "https://example.com/game.jpg",
+                            "status": "APPROVED"
                           }
                         }
                       }
@@ -4038,7 +3766,7 @@
                           "data": {
                             "code": "BAD_REQUEST",
                             "httpStatus": 400,
-                            "path": "games.getGameById",
+                            "path": "games.byId",
                             "zodError": {
                               "formErrors": [
                                 "Required"

@@ -1,6 +1,6 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-08-25T04:27:54.741Z*
+*Auto-generated on: 2025-08-25T23:12:59.597Z*
 
 ## Summary
 - **Total Endpoints**: 81
@@ -128,10 +128,10 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Tags**: games
 
 
-#### 16. **getGameById**
+#### 16. **byId**
 - **Method**: GET
-- **Path**: `/games.getGameById`
-- **Description**: Search games
+- **Path**: `/games.byId`
+- **Description**: Get game by ID
 - **Tags**: games
 
 

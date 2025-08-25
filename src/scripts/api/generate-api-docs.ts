@@ -477,6 +477,87 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
   }
 }
 
+/**
+ * Convert JSON Schema Draft 7 to OpenAPI 3.0 compatible format
+ * Handles nullable types properly for OpenAPI 3.0
+ */
+function convertJsonSchemaToOpenApi30(schema: Record<string, unknown>): Record<string, unknown> {
+  // Deep clone to avoid mutating original
+  const converted = JSON.parse(JSON.stringify(schema)) as Record<string, unknown>
+
+  // If schema has definitions with a $ref pointing to it, flatten it
+  if (converted.definitions && converted.$ref) {
+    const refPath = (converted.$ref as string).split('/').pop()
+    if (refPath && converted.definitions[refPath]) {
+      const definition = converted.definitions[refPath] as Record<string, unknown>
+      // Copy all properties from the definition to the root
+      Object.assign(converted, definition)
+      // Remove JSON Schema specific properties
+      delete converted.definitions
+      delete converted.$ref
+      delete converted.$schema
+    }
+  }
+
+  // Remove JSON Schema specific properties that aren't valid in OpenAPI
+  delete converted.$schema
+
+  function processSchema(obj: Record<string, unknown>): void {
+    // Handle array type format (OpenAPI 3.1) to nullable format (OpenAPI 3.0)
+    if (obj.type && Array.isArray(obj.type)) {
+      const types = obj.type as string[]
+      const nullIndex = types.indexOf('null')
+      if (nullIndex !== -1) {
+        // Remove null from types array
+        types.splice(nullIndex, 1)
+        // If only one type left, use it directly with nullable
+        if (types.length === 1) {
+          obj.type = types[0]
+          obj.nullable = true
+        } else {
+          // Multiple types besides null - use oneOf
+          obj.oneOf = types.map((t) => ({ type: t }))
+          delete obj.type
+          obj.nullable = true
+        }
+      }
+    }
+
+    // Recursively process nested schemas
+    for (const [key, value] of Object.entries(obj)) {
+      if (value && typeof value === 'object') {
+        if (key === 'properties' && !Array.isArray(value)) {
+          // Process each property
+          for (const propValue of Object.values(value)) {
+            if (propValue && typeof propValue === 'object' && !Array.isArray(propValue)) {
+              processSchema(propValue as Record<string, unknown>)
+            }
+          }
+        } else if (key === 'items' && !Array.isArray(value)) {
+          processSchema(value as Record<string, unknown>)
+        } else if (
+          !Array.isArray(value) &&
+          (key === 'allOf' || key === 'anyOf' || key === 'oneOf')
+        ) {
+          // Process schemas in these arrays
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              if (item && typeof item === 'object') {
+                processSchema(item as Record<string, unknown>)
+              }
+            }
+          }
+        } else if (!Array.isArray(value) && typeof value === 'object' && key !== 'definitions') {
+          processSchema(value as Record<string, unknown>)
+        }
+      }
+    }
+  }
+
+  processSchema(converted)
+  return converted
+}
+
 function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
   endpoints: SwaggerEndpoint[]
   schemas: Record<string, unknown>
@@ -503,8 +584,11 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
         if (schema) {
           const jsonSchema = zodToJsonSchema(schema as never, schemaName) as Record<string, unknown>
 
+          // Convert to OpenAPI 3.0 format (handles nullable properly)
+          const openApiSchema = convertJsonSchemaToOpenApi30(jsonSchema)
+
           // Add schema to components/schemas
-          schemas[schemaName] = jsonSchema
+          schemas[schemaName] = openApiSchema
 
           if (method === 'post') {
             // Mutations use POST with request body
