@@ -31,16 +31,16 @@ interface FiltersProps {
   emulatorIds: string[]
   performanceIds: number[]
   searchTerm: string
-  systems: Array<{ id: string; name: string }>
-  devices: Array<{
+  systems: { id: string; name: string }[]
+  devices: {
     id: string
     brandId: string
     modelName: string
     brand: { id: string; name: string; createdAt: Date }
-  }>
-  socs: Array<{ id: string; name: string; manufacturer: string }>
-  emulators: Array<{ id: string; name: string }>
-  performanceScales: Array<{ id: number; label: string }>
+  }[]
+  socs: { id: string; name: string; manufacturer: string }[]
+  emulators: { id: string; name: string }[]
+  performanceScales: { id: number; label: string }[]
   onSystemChange: (values: string[]) => void
   onDeviceChange: (values: string[]) => void
   onSocChange: (values: string[]) => void
@@ -806,7 +806,7 @@ function ListingFilters(props: FiltersProps) {
                             transition={{ delay: 0.25 }}
                             className="flex items-center gap-2"
                           >
-                            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                            <span className="w-2 h-2 bg-purple-500 rounded-full" />
                             SoCs: {props.socIds.length} selected
                           </motion.div>
                         )}
@@ -818,7 +818,7 @@ function ListingFilters(props: FiltersProps) {
                             transition={{ delay: 0.3 }}
                             className="flex items-center gap-2"
                           >
-                            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                            <span className="w-2 h-2 bg-orange-500 rounded-full" />
                             Emulators: {props.emulatorIds.length} selected
                           </motion.div>
                         )}
@@ -830,7 +830,7 @@ function ListingFilters(props: FiltersProps) {
                             transition={{ delay: 0.35 }}
                             className="flex items-center gap-2"
                           >
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span className="w-2 h-2 bg-red-500 rounded-full" />
                             Performance: {props.performanceIds.length} selected
                           </motion.div>
                         )}

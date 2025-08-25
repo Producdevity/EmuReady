@@ -12,150 +12,63 @@ import {
   manageDevicesProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
-import type { Prisma } from '@orm'
+import { GpusRepository } from '@/server/repositories/gpus.repository'
 
 export const gpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
-    const { search, brandId, limit = 20, offset = 0, page, sortField, sortDirection } = input ?? {}
+    const repository = new GpusRepository(ctx.prisma)
 
-    // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : offset
+    // For web, we need counts - use getWithListingCounts for pcListings sort
+    if (input?.sortField === 'pcListings' && (input?.limit || 20) <= 100) {
+      const gpus = await repository.getWithListingCounts(input.limit || 20)
+      const total = await repository.count({ search: input.search, brandId: input.brandId })
 
-    // Build where clause for filtering
-    const where: Prisma.GpuWhereInput = {
-      ...(brandId ? { brandId } : {}),
-      ...(search
-        ? {
-            OR: [
-              // Exact match for model name (highest priority)
-              { modelName: { equals: search, mode: 'insensitive' } },
-              // Exact match for brand name
-              { brand: { name: { equals: search, mode: 'insensitive' } } },
-              // Contains match for model name
-              { modelName: { contains: search, mode: 'insensitive' } },
-              // Contains match for brand name
-              { brand: { name: { contains: search, mode: 'insensitive' } } },
-              // Brand + Model combination search (e.g., "NVIDIA RTX 4090")
-              ...(search.includes(' ')
-                ? [
-                    {
-                      AND: [
-                        {
-                          brand: {
-                            name: {
-                              contains: search.split(' ')[0],
-                              mode: 'insensitive' as const,
-                            },
-                          },
-                        },
-                        {
-                          modelName: {
-                            contains: search.split(' ').slice(1).join(' '),
-                            mode: 'insensitive' as const,
-                          },
-                        },
-                      ],
-                    },
-                  ]
-                : []),
-            ],
-          }
-        : {}),
-    }
-
-    const orderBy: Prisma.GpuOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'brand':
-          orderBy.push({ brand: { name: sortDirection } })
-          break
-        case 'modelName':
-          orderBy.push({ modelName: sortDirection })
-          break
-        case 'pcListings':
-          orderBy.push({ pcListings: { _count: sortDirection } })
-          break
+      return {
+        gpus,
+        pagination: {
+          total,
+          pages: Math.ceil(total / (input.limit || 20)),
+          page: input.page || 1,
+          offset: input.offset || 0,
+          limit: input.limit || 20,
+        },
       }
     }
 
-    // Default ordering if no sort specified - prioritize exact matches when searching
-    if (!orderBy.length) {
-      orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
-    }
-
-    const total = await ctx.prisma.gpu.count({ where })
-
-    // Get GPUs with pagination
-    const gpus = await ctx.prisma.gpu.findMany({
-      where,
-      include: {
-        brand: true,
-        _count: { select: { pcListings: true } },
-      },
-      orderBy,
-      skip: actualOffset,
-      take: limit,
-    })
-
-    return {
-      gpus,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        offset: actualOffset,
-        limit: limit,
-      },
-    }
+    // Regular paginated query
+    return repository.getPaginated(input ?? {})
   }),
 
   byId: publicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {
-    const gpu = await ctx.prisma.gpu.findUnique({
-      where: { id: input.id },
-      include: {
-        brand: true,
-        _count: { select: { pcListings: true } },
-      },
-    })
-
+    const repository = new GpusRepository(ctx.prisma)
+    const gpu = await repository.byIdWithCounts(input.id)
     return gpu ?? ResourceError.gpu.notFound()
   }),
 
   create: manageDevicesProcedure.input(CreateGpuSchema).mutation(async ({ ctx, input }) => {
+    const repository = new GpusRepository(ctx.prisma)
+
     const brand = await ctx.prisma.deviceBrand.findUnique({
       where: { id: input.brandId },
     })
 
     if (!brand) return ResourceError.deviceBrand.notFound()
 
-    const existingGpu = await ctx.prisma.gpu.findFirst({
-      where: {
-        brandId: input.brandId,
-        modelName: { equals: input.modelName, mode: 'insensitive' },
-      },
-    })
-
-    if (existingGpu) {
+    const exists = await repository.existsByModelName(input.modelName)
+    if (exists) {
       return ResourceError.gpu.alreadyExists(input.modelName)
     }
 
-    return ctx.prisma.gpu.create({
-      data: input,
-      include: {
-        brand: true,
-        _count: { select: { pcListings: true } },
-      },
-    })
+    // Create and then fetch with counts for web
+    const created = await repository.create(input)
+    return repository.byIdWithCounts(created.id)
   }),
 
   update: manageDevicesProcedure.input(UpdateGpuSchema).mutation(async ({ ctx, input }) => {
+    const repository = new GpusRepository(ctx.prisma)
     const { id, ...data } = input
 
-    const gpu = await ctx.prisma.gpu.findUnique({
-      where: { id },
-    })
-
+    const gpu = await repository.byId(id)
     if (!gpu) return ResourceError.gpu.notFound()
 
     const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -164,29 +77,19 @@ export const gpusRouter = createTRPCRouter({
 
     if (!brand) return ResourceError.deviceBrand.notFound()
 
-    const existingGpu = await ctx.prisma.gpu.findFirst({
-      where: {
-        brandId: input.brandId,
-        modelName: { equals: input.modelName, mode: 'insensitive' },
-        id: { not: id },
-      },
-    })
-
-    if (existingGpu) {
+    const exists = await repository.existsByModelName(input.modelName, id)
+    if (exists) {
       return ResourceError.gpu.alreadyExists(input.modelName)
     }
 
-    return ctx.prisma.gpu.update({
-      where: { id },
-      data,
-      include: {
-        brand: true,
-        _count: { select: { pcListings: true } },
-      },
-    })
+    // Update and then fetch with counts for web
+    const updated = await repository.update(id, data)
+    return repository.byIdWithCounts(updated.id)
   }),
 
   delete: manageDevicesProcedure.input(DeleteGpuSchema).mutation(async ({ ctx, input }) => {
+    const repository = new GpusRepository(ctx.prisma)
+
     const existingGpu = await ctx.prisma.gpu.findUnique({
       where: { id: input.id },
       include: { _count: { select: { pcListings: true } } },
@@ -200,7 +103,8 @@ export const gpusRouter = createTRPCRouter({
       )
     }
 
-    return ctx.prisma.gpu.delete({ where: { id: input.id } })
+    await repository.delete(input.id)
+    return existingGpu // Return the deleted GPU
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

@@ -201,7 +201,9 @@ function GameApprovalsPage() {
   }
 
   const showConfirmation = (gameId: string, action: ProcessingAction) => {
-    const game = pendingGamesQuery.data?.games.find((g) => g.id === gameId)
+    const games: Game[] | undefined = pendingGamesQuery.data?.games
+    if (!games) return
+    const game = games.find((g) => g.id === gameId)
     if (!game) return
     setConfirmationModal({
       isOpen: true,
@@ -247,11 +249,12 @@ function GameApprovalsPage() {
     setIsImagePreviewOpen(true)
   }
 
-  const selectedGame = selectedGameId
-    ? (pendingGamesQuery.data?.games.find((game) => game.id === selectedGameId) ?? null)
-    : null
+  const games: Game[] = pendingGamesQuery.data?.games ?? []
+  const filteredGames = games
 
-  const filteredGames = pendingGamesQuery.data?.games ?? []
+  const selectedGame = selectedGameId
+    ? (games.find((game) => game.id === selectedGameId) ?? null)
+    : null
 
   return (
     <AdminPageLayout

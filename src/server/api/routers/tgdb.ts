@@ -10,7 +10,7 @@ import { type GameImageOption } from '@/types/tgdb'
 
 export const tgdbRouter = createTRPCRouter({
   searchGameImages: publicProcedure.input(SearchGameImagesSchema).query(async ({ input }) => {
-    const result = await tgdb.searchGameImages(input.query, input.tgdbPlatformId)
+    const result = await tgdb.searchGameImages(input.query, input.systemKey)
 
     // Convert Map to a plain object for serialization
     const serializedResult: Record<string, GameImageOption[]> = {}
@@ -23,7 +23,7 @@ export const tgdbRouter = createTRPCRouter({
 
   searchGames: publicProcedure.input(SearchGamesSchema).query(async ({ input }) => {
     // Just return the search results with boxart included - no additional API calls
-    return tgdb.searchGames(input.query, input.tgdbPlatformId, input.page)
+    return tgdb.searchGames(input.query, input.systemKey, input.page)
   }),
 
   // New endpoint for getting banner images when a game is selected

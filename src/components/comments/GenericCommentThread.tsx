@@ -45,10 +45,10 @@ export interface CommentThreadConfig {
   enableAnalytics?: boolean
 
   // Sort options
-  sortOptions: Array<{
+  sortOptions: {
     value: string
     label: string
-  }>
+  }[]
   defaultSort: string
 
   // Styling

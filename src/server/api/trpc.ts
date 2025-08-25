@@ -72,13 +72,7 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
               profileImage: clerkData.image_url || null,
               role: Role.USER, // Default role
             },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true,
-              showNsfw: true,
-            },
+            select: { id: true, email: true, name: true, role: true, showNsfw: true },
           })
         }
       }
@@ -152,9 +146,7 @@ export const createAppRouterTRPCContext = async () => {
 
   let session: Nullable<Session> = null
 
-  if (userId) {
-    session = await createSessionFromClerkUserId(userId)
-  }
+  if (userId) session = await createSessionFromClerkUserId(userId)
 
   // Initialize notification service
   initializeNotificationService()
@@ -335,9 +327,7 @@ export function developerEmulatorProcedure(emulatorId: string) {
 
     const hasAccess = await hasDeveloperAccessToEmulator(userId, emulatorId, ctx.prisma)
 
-    if (!hasAccess) {
-      AppError.forbidden(`You don't have developer access to this emulator`)
-    }
+    if (!hasAccess) return AppError.insufficientRole(Role.DEVELOPER)
 
     return next({ ctx: { ...ctx, emulatorId } })
   })
@@ -351,13 +341,9 @@ export function developerEmulatorProcedure(emulatorId: string) {
  */
 export function permissionProcedure(requiredPermission: string) {
   return protectedProcedure.use(({ ctx, next }) => {
-    if (!hasPermissionInContext(ctx, requiredPermission)) {
-      AppError.forbidden(`You need the '${requiredPermission}' permission to perform this action`)
-    }
-
-    return next({
-      ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } },
-    })
+    return hasPermissionInContext(ctx, requiredPermission)
+      ? next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
+      : AppError.insufficientPermissions(requiredPermission)
   })
 }
 
@@ -372,13 +358,9 @@ export function multiPermissionProcedure(requiredPermissions: string[]) {
       (permission) => !hasPermissionInContext(ctx, permission),
     )
 
-    if (missingPermissions.length > 0) {
-      AppError.forbidden(`You need the following permissions: ${missingPermissions.join(', ')}`)
-    }
+    if (missingPermissions.length > 0) return AppError.insufficientPermissions(missingPermissions)
 
-    return next({
-      ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } },
-    })
+    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
 }
 
@@ -393,18 +375,9 @@ export function anyPermissionProcedure(requiredPermissions: string[]) {
       hasPermissionInContext(ctx, permission),
     )
 
-    if (!hasAnyPermission) {
-      AppError.forbidden(
-        `You need one of the following permissions: ${requiredPermissions.join(', ')}`,
-      )
-    }
+    if (!hasAnyPermission) return AppError.insufficientRoles(requiredPermissions)
 
-    return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    })
+    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
 }
 

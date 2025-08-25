@@ -8,9 +8,7 @@ import analytics from '@/lib/analytics'
 
 // Generate a UUID compatible with older browsers
 function generateUUID() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
-  }
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   // Fallback for browsers that don't support crypto.randomUUID
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0

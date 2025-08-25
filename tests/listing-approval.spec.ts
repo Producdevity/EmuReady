@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     // Try primary approval path
     await page.goto('/admin/listings/approvals')
@@ -8,7 +9,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     // If not found, try alternative paths
     if (!page.url().includes('approval')) {
       const alternativePaths = ['/admin/games/approvals', '/admin/pending-listings']
-      for (const path of alternativePaths) {
+      for(const path of alternativePaths) {
         await page.goto(path)
         if (
           page.url().includes('admin') &&
@@ -23,8 +24,8 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
   })
 
   test('should display pending listings for approval with required information', async ({
-    page,
-  }) => {
+                                                                                          page,
+                                                                                        }) => {
     // Check for pending listings or empty state
     const pendingListings = page.locator('[data-testid*="pending-listing"], .pending-listing')
     const listingCount = await pendingListings.count()
@@ -83,15 +84,15 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
         if (await detailModal.isVisible({ timeout: 3000 })) {
           // Essential information
           const sections = {
-            Game: '[data-testid*="game"]',
-            Device: '[data-testid*="device"]',
-            Emulator: '[data-testid*="emulator"]',
+            Game:        '[data-testid*="game"]',
+            Device:      '[data-testid*="device"]',
+            Emulator:    '[data-testid*="emulator"]',
             Performance: '[data-testid*="performance"]',
-            Notes: '[data-testid*="notes"], .user-notes',
-            Submitter: '[data-testid*="submitter"], .user-info',
+            Notes:       '[data-testid*="notes"], .user-notes',
+            Submitter:   '[data-testid*="submitter"], .user-info',
           }
 
-          for (const [label, selector] of Object.entries(sections)) {
+          for(const [label, selector] of Object.entries(sections)) {
             const section = detailModal.locator(selector)
             if (await section.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Shows ${label}`)
@@ -124,7 +125,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
           // Check validation items
           const validationItems = validationStatus.locator('.validation-item, li')
 
-          for (let i = 0; i < (await validationItems.count()); i++) {
+          for(let i = 0; i < (await validationItems.count()); i++) {
             const item = validationItems.nth(i)
             const text = await item.textContent()
             const status =
@@ -200,7 +201,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
             await reasonOptions.first().check()
 
             const reasons = []
-            for (let i = 0; i < (await reasonOptions.count()); i++) {
+            for(let i = 0; i < (await reasonOptions.count()); i++) {
               const label = await reasonOptions.nth(i).locator('..').textContent()
               reasons.push(label)
             }
@@ -326,7 +327,7 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
             'Prohibited Content',
           ]
 
-          for (const section of sections) {
+          for(const section of sections) {
             const sectionHeader = guidelinesModal.locator('h3, h4').filter({ hasText: section })
             if (await sectionHeader.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Guidelines include: ${section}`)
@@ -350,13 +351,13 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
 
       if (await metricsSection.isVisible({ timeout: 3000 })) {
         const metrics = {
-          Pending: /\d+.*pending/i,
-          'Approved Today': /\d+.*approved.*today/i,
-          'Rejection Rate': /\d+%.*reject/i,
+          Pending:           /\d+.*pending/i,
+          'Approved Today':  /\d+.*approved.*today/i,
+          'Rejection Rate':  /\d+%.*reject/i,
           'Avg Review Time': /\d+.*(min|hour)/i,
         }
 
-        for (const [label, pattern] of Object.entries(metrics)) {
+        for(const [label, pattern] of Object.entries(metrics)) {
           const metric = metricsSection.locator('.metric, .stat').filter({ hasText: pattern })
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()

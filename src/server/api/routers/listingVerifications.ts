@@ -1,10 +1,12 @@
 import { AppError } from '@/lib/errors'
+import { TrustService } from '@/lib/trust/service'
 import {
   VerifyListingSchema,
   RemoveVerificationSchema,
   GetListingVerificationsSchema,
   GetMyVerificationsSchema,
 } from '@/schemas/listingVerification'
+import { TrustAction } from '@orm'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const listingVerificationsRouter = createTRPCRouter({
@@ -68,6 +70,20 @@ export const listingVerificationsRouter = createTRPCRouter({
             profileImage: true,
           },
         },
+      },
+    })
+
+    // Award trust points to the listing author for developer verification
+    const trustService = new TrustService(ctx.prisma)
+    await trustService.logAction({
+      userId: listing.authorId,
+      action: TrustAction.LISTING_DEVELOPER_VERIFIED,
+      targetUserId: userId, // The developer who verified
+      metadata: {
+        listingId,
+        verifiedBy: userId,
+        emulatorId: listing.emulatorId,
+        gameTitle: listing.game.title,
       },
     })
 

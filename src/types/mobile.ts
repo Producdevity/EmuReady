@@ -125,14 +125,14 @@ export interface MobileUserProfile {
     votes: number
     comments: number
   }
-  devicePreferences: Array<{
+  devicePreferences: {
     id: string
     device: MobileDevice
-  }>
-  socPreferences: Array<{
+  }[]
+  socPreferences: {
     id: string
     soc: MobileSoc
-  }>
+  }[]
 }
 
 // API Response types

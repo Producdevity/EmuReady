@@ -39,9 +39,9 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.9.5'
+const CACHE_NAME = 'emuready_v0.9.9'
 
-/** URLs cached during the installation step. */
+/** URLs cached during the installation step */
 const urlsToCache = [
   '/favicon/favicon-16x16.png',
   '/favicon/favicon-32x32.png',
@@ -49,6 +49,14 @@ const urlsToCache = [
   '/favicon/android-chrome-192x192.png',
   '/favicon/android-chrome-512x512.png',
 ]
+
+/** Cache duration for different asset types (in seconds) */
+const CACHE_DURATIONS = {
+  images: 7 * 24 * 60 * 60, // 604800 seconds
+  scripts: 24 * 60 * 60, // 86400 seconds
+  api: 0, // No caching
+  default: 60, // 60 seconds
+}
 
 /**
  * Install event: pre-cache static assets.
@@ -86,45 +94,107 @@ self.addEventListener(
 )
 
 /**
- * Fetch event:
- *   • Navigations (HTML) are left to the network (no caching).
- *   • Same‑origin asset GETs use cache‑first, then network.
+ * Determine cache duration based on resource type
+ * @param {string} url - The URL to check
+ * @returns {number} Cache duration in seconds
+ */
+function getCacheDuration(url) {
+  // API and tRPC endpoints must not be cached
+  if (url.includes('/api/') || url.includes('/trpc/')) return CACHE_DURATIONS.api
+
+  // Image file extensions
+  if (/\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(url)) return CACHE_DURATIONS.images
+
+  // Next.js static assets with content hashing
+  if (url.includes('/_next/static/')) return CACHE_DURATIONS.scripts
+
+  // Default cache duration for unmatched resources
+  return CACHE_DURATIONS.default
+}
+
+/**
+ * Check if cached response is still fresh
+ * @param {Response} response - The cached response
+ * @param {number} maxAge - Maximum age in seconds
+ * @returns {boolean} Whether the cache is still fresh
+ */
+function isCacheFresh(response, maxAge) {
+  if (maxAge === 0) return false
+
+  const cachedAt = response.headers.get('sw-cached-at')
+  if (!cachedAt) return false
+
+  const age = (Date.now() - parseInt(cachedAt)) / 1000
+  return age < maxAge
+}
+
+/**
+ * Fetch event handler with time-based cache expiration.
+ * Implements cache policies based on resource type to prevent stale data.
  * @param {SWFetchEvent} event - The fetch event triggered by the browser.
  */
 self.addEventListener(
   'fetch',
   /** @param {SWFetchEvent} event */ (event) => {
-    // Only handle GET for http(s) and same‑origin assets.
+    // Process only GET requests
     if (event.request.method !== 'GET') return
-    if (!event.request.url.startsWith('http://') && !event.request.url.startsWith('https://'))
-      return
 
     const url = new URL(event.request.url)
+
+    // Process only same-origin requests
     if (url.origin !== self.location.origin) return
 
-    // Never cache navigations (dynamic HTML).
+    // Exclude HTML navigation requests from caching
     if (event.request.mode === 'navigate') return
 
-    // Always bypass cache for API requests to ensure fresh data
-    if (url.pathname.startsWith('/api')) {
-      event.respondWith(fetch(event.request))
-      return
-    }
+    // Exclude HTML documents based on Accept header
+    if (event.request.headers.get('accept')?.includes('text/html')) return
+
+    const cacheDuration = getCacheDuration(url.pathname)
+
+    // Bypass cache for zero-duration resources (includes API and tRPC routes)
+    if (cacheDuration === 0) return
 
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request)
 
-        const fetchRequest = event.request.clone()
-        return fetch(fetchRequest).then((netRes) => {
-          if (!netRes || netRes.status !== 200 || netRes.type !== 'basic') return netRes
+        // Return cache if within validity period
+        if (cached && isCacheFresh(cached, cacheDuration)) {
+          return cached
+        }
 
-          const resClone = netRes.clone()
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, resClone).catch(() => {})
+        // Fetch from network
+        const fetchPromise = fetch(event.request.clone()).then((response) => {
+          // Cache only successful basic responses
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response
+          }
+
+          // Add timestamp header for cache expiration tracking
+          const responseToCache = response.clone()
+          const headers = new Headers(responseToCache.headers)
+          headers.set('sw-cached-at', Date.now().toString())
+
+          const modifiedResponse = new Response(responseToCache.body, {
+            status: responseToCache.status,
+            statusText: responseToCache.statusText,
+            headers: headers,
           })
-          return netRes
+
+          // Asynchronously update cache
+          cache.put(event.request, modifiedResponse).catch(() => {})
+
+          return response
         })
+
+        // Implement stale-while-revalidate pattern
+        if (cached) {
+          return cached
+        }
+
+        // Await network response when no cache exists
+        return fetchPromise
       }),
     )
   },

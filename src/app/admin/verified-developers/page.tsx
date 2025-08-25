@@ -88,8 +88,8 @@ function AdminVerifiedDevelopersPage() {
   const verifiedDevelopersQuery = api.verifiedDevelopers.getVerifiedDevelopers.useQuery({
     page: table.page,
     limit: table.limit,
-    search: table.search || undefined,
-    emulatorFilter: emulatorFilter || undefined,
+    search: table.search || null,
+    emulatorFilter: emulatorFilter || null,
   })
 
   const removeVerifiedDeveloperMutation =

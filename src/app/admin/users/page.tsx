@@ -83,9 +83,9 @@ function AdminUsersPage() {
   } | null>(null)
 
   const usersQuery = api.users.getAll.useQuery({
-    search: isEmpty(table.search) ? undefined : table.search,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
+    search: isEmpty(table.search) ? null : table.search,
+    sortField: table.sortField ?? null,
+    sortDirection: table.sortDirection ?? null,
     page: table.page,
     limit: table.limit,
   })

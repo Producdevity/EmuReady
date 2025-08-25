@@ -3,7 +3,7 @@
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { isString } from 'remeda'
@@ -44,8 +44,11 @@ const OS_OPTIONS = [
 
 function AddPcListingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const mounted = useMounted()
   const currentUserQuery = api.users.me.useQuery()
+
+  const gameIdFromUrl = searchParams.get('gameId')
 
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(null)
@@ -56,6 +59,7 @@ function AddPcListingPage() {
   const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
     [],
   )
+  const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
   const [schemaState, setSchemaState] = useState<ReturnType<typeof createDynamicPcListingSchema>>(
     createDynamicPcListingSchema([]),
   )
@@ -66,6 +70,12 @@ function AddPcListingPage() {
   const presetsQuery = api.pcListings.presets.get.useQuery({})
   const recaptchaHook = useRecaptchaForCreateListing()
 
+  // Fetch game data if gameId is provided in URL
+  const preSelectedGameQuery = api.games.byId.useQuery(
+    { id: gameIdFromUrl! },
+    { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
+  )
+
   // Async load functions for autocomplete
   // TODO: consider abstracting these into a shared hook
   const loadGameItems = useCallback(
@@ -73,8 +83,12 @@ function AddPcListingPage() {
       setGameSearchTerm(query)
       if (query.length < 2) return Promise.resolve([])
       try {
-        // Windows Games are filtered out server-side
-        const result = await utils.games.get.fetch({ search: query, limit: 20 })
+        // Note: All games are shown in autocomplete (no platform filtering)
+        const result = await utils.games.get.fetch({
+          search: query,
+          limit: 20,
+          listingFilter: 'all',
+        })
         return (
           result.games.map((game) => ({
             id: game.id,
@@ -157,7 +171,7 @@ function AddPcListingPage() {
   const form = useForm<PcListingFormValues>({
     resolver: zodResolver(schemaState),
     defaultValues: {
-      gameId: '',
+      gameId: gameIdFromUrl ?? '',
       cpuId: '',
       gpuId: undefined, // Optional for integrated graphics
       emulatorId: '',
@@ -175,6 +189,23 @@ function AddPcListingPage() {
     { emulatorId: selectedEmulatorId },
     { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
   )
+
+  // Handle pre-selected game from URL parameter
+  useEffect(() => {
+    if (preSelectedGameQuery.data && gameIdFromUrl && !isInitialGameLoaded) {
+      const gameOption: GameOption = {
+        id: preSelectedGameQuery.data.id,
+        title: preSelectedGameQuery.data.title,
+        system: preSelectedGameQuery.data.system,
+        status: preSelectedGameQuery.data.status,
+      }
+      setSelectedGame(gameOption)
+      form.setValue('gameId', preSelectedGameQuery.data.id)
+      setIsInitialGameLoaded(true)
+      // Set the game search term to help with the autocomplete display
+      setGameSearchTerm(preSelectedGameQuery.data.title)
+    }
+  }, [preSelectedGameQuery.data, gameIdFromUrl, isInitialGameLoaded, form])
 
   // Update custom field definitions when emulator changes
   useEffect(() => {
@@ -236,7 +267,7 @@ function AddPcListingPage() {
   const onSubmit = useCallback(
     async (data: PcListingFormValues) => {
       if (!currentUserQuery.data?.id) {
-        return toast.error('Yu must be signed in to create a listing.')
+        return toast.error('You must be signed in to create a listing.')
       }
       try {
         const recaptchaToken = (await recaptchaHook.executeForCreateListing?.()) ?? undefined
@@ -313,6 +344,15 @@ function AddPcListingPage() {
   }
 
   if (!mounted) return null
+
+  // Show loading state while authentication is being checked
+  if (currentUserQuery.isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
 
   if (!currentUserQuery.data?.id) {
     return (

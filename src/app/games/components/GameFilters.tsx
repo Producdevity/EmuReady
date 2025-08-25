@@ -20,7 +20,7 @@ interface Props {
   systemId: string
   hideGamesWithNoListings: boolean
   listingFilter?: ListingFilterValue
-  systems: Array<{ id: string; name: string }> | undefined
+  systems: { id: string; name: string }[] | undefined
   onSearchChange: (ev: ChangeEvent<HTMLInputElement>) => void
   onSystemChange: (value: string | null) => void
   onHideGamesWithNoListingsChange: (hide: boolean) => void

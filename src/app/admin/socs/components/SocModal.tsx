@@ -17,7 +17,6 @@ interface Props {
 }
 
 function SocModal(props: Props) {
-  const utils = api.useUtils()
   const createSoC = api.socs.create.useMutation()
   const updateSoC = api.socs.update.useMutation()
 
@@ -76,12 +75,12 @@ function SocModal(props: Props) {
           id: props.editId,
           ...socData,
         } satisfies RouterInput['socs']['update'])
-        await utils.socs.get.invalidate().catch(console.error)
         setSuccess('SoC updated!')
+        props.onSuccess()
       } else {
         await createSoC.mutateAsync(socData satisfies RouterInput['socs']['create'])
-        await utils.socs.get.invalidate().catch(console.error)
         setSuccess('SoC created!')
+        props.onSuccess()
       }
 
       // Reset form
@@ -91,8 +90,6 @@ function SocModal(props: Props) {
       setProcessNode('')
       setCpuCores('')
       setGpuModel('')
-
-      props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save SoC.'))
     }

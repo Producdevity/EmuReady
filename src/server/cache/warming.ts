@@ -8,6 +8,7 @@ import {
   getApprovedListingsForSitemap,
   getApprovedPcListingsForSitemap,
 } from '@/server/db/seo-queries'
+import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { ms } from '@/utils/time'
 import { ApprovalStatus } from '@orm'
 
@@ -68,13 +69,11 @@ export async function warmRecentListings(limit = 100): Promise<WarmingResult> {
   let warmedItems = 0
 
   try {
-    // Get recent approved listings
-    const recentListings = await prisma.listing.findMany({
-      where: { status: ApprovalStatus.APPROVED },
-      select: { id: true },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    })
+    const repository = new ListingsRepository(prisma)
+
+    // Get recent approved listings using repository
+    const recentListingsResult = await repository.getRecentListings(limit)
+    const recentListings = recentListingsResult.listings.map((listing) => ({ id: listing.id }))
 
     // Get recent approved PC listings
     const recentPcListings = await prisma.pcListing.findMany({

@@ -24,3 +24,8 @@ export const UpdateDeviceBrandSchema = z.object({
 })
 
 export const DeleteDeviceBrandSchema = z.object({ id: z.string().uuid() })
+
+// Type exports for repository use
+export type GetDeviceBrandsInput = z.input<typeof GetDeviceBrandsSchema>
+export type CreateDeviceBrandInput = z.infer<typeof CreateDeviceBrandSchema>
+export type UpdateDeviceBrandInput = z.infer<typeof UpdateDeviceBrandSchema>

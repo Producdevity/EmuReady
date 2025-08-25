@@ -1,6 +1,6 @@
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
-import { canUserAutoApprove } from '@/lib/trust/service'
+import { canUserAutoApprove, TrustService } from '@/lib/trust/service'
 import {
   ApprovePcListingSchema,
   BulkApprovePcListingsSchema,
@@ -54,147 +54,56 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { listingStatsCache } from '@/server/utils/cache'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
-import { buildNsfwFilter } from '@/server/utils/query-builders'
-import { createCountQuery } from '@/server/utils/query-performance'
+import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
-import { Prisma, ApprovalStatus, Role, ReportStatus } from '@orm'
+import { type Prisma, ApprovalStatus, Role, ReportStatus, TrustAction } from '@orm'
 
 export const pcListingsRouter = createTRPCRouter({
   // PC Listing procedures
   get: publicProcedure.input(GetPcListingsSchema).query(async ({ ctx, input }) => {
-    const {
-      systemIds,
-      cpuIds,
-      gpuIds,
-      emulatorIds,
-      performanceIds,
-      osFilter,
-      memoryMin,
-      memoryMax,
-      searchTerm,
-      page = 1,
-      limit = 10,
-      sortField,
-      sortDirection,
-      approvalStatus = ApprovalStatus.APPROVED,
-      myListings = false,
-    } = input
-
-    const mode = Prisma.QueryMode.insensitive
-    const offset = calculateOffset({ page }, limit)
+    const repository = new PcListingsRepository(ctx.prisma)
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
-    // Build base where clause
-    const baseWhere: Prisma.PcListingWhereInput = {
-      status: approvalStatus,
-      ...(myListings && ctx.session?.user ? { authorId: ctx.session.user.id } : {}),
-      // Exclude Microsoft Windows games since PC listings are for emulation
-      game: {
-        system: { key: { not: 'microsoft_windows' } },
-        ...buildNsfwFilter(ctx.session?.user?.showNsfw),
-        ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
-      },
-      ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
-      ...(gpuIds?.length ? { gpuId: { in: gpuIds } } : {}),
-      ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
-      ...(performanceIds?.length ? { performanceId: { in: performanceIds } } : {}),
-      ...(osFilter?.length ? { os: { in: osFilter } } : {}),
-      ...(memoryMin ? { memorySize: { gte: memoryMin } } : {}),
-      ...(memoryMax ? { memorySize: { lte: memoryMax } } : {}),
-      ...(searchTerm
-        ? {
-            OR: [
-              {
-                game: {
-                  title: { contains: searchTerm, mode },
-                  system: { key: { not: 'microsoft_windows' } },
-                },
-              },
-              { cpu: { modelName: { contains: searchTerm, mode } } },
-              { gpu: { modelName: { contains: searchTerm, mode } } },
-              { emulator: { name: { contains: searchTerm, mode } } },
-              { notes: { contains: searchTerm, mode } },
-            ],
-          }
-        : {}),
-    }
-
-    // Apply banned user filtering and get final where clause
-    const where = buildPcListingWhere(baseWhere, canSeeBannedUsers)
-    const orderBy = buildPcListingOrderBy(sortField, sortDirection ?? undefined)
-
-    const [pcListings, total] = await Promise.all([
-      ctx.prisma.pcListing.findMany({
-        where,
-        include: pcListingInclude,
-        orderBy,
-        skip: offset,
-        take: limit,
-      }),
-      ctx.prisma.pcListing.count({ where }),
-    ])
+    const result = await repository.getPcListings({
+      ...input,
+      sortDirection: input.sortDirection ?? undefined,
+      userId: ctx.session?.user?.id,
+      userRole: ctx.session?.user?.role,
+      showNsfw: ctx.session?.user?.showNsfw,
+      canSeeBannedUsers,
+      approvalStatus: input.approvalStatus || ApprovalStatus.APPROVED,
+      page: input.page || 1,
+      limit: input.limit || 10,
+    })
 
     return {
-      pcListings,
-      pagination: createPaginationResult(total, { page }, limit, offset),
+      pcListings: result.pcListings,
+      pagination: createPaginationResult(
+        result.pagination.total,
+        { page: result.pagination.page },
+        result.pagination.limit,
+        result.pagination.offset,
+      ),
     }
   }),
 
   byId: publicProcedure.input(GetPcListingByIdSchema).query(async ({ ctx, input }) => {
+    const repository = new PcListingsRepository(ctx.prisma)
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
-    // Apply banned user filtering
-    const where = buildPcListingWhere({ id: input.id }, canSeeBannedUsers)
-
-    const pcListing = await ctx.prisma.pcListing.findFirst({
-      where,
-      include: {
-        ...pcListingDetailInclude,
-        _count: {
-          select: {
-            votes: true,
-            comments: { where: { deletedAt: null } },
-            reports: true,
-          },
-        },
-      },
-    })
+    const pcListing = await repository.getByIdWithDetails(
+      input.id,
+      canSeeBannedUsers,
+      ctx.session?.user?.id,
+    )
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
-    // Get user's vote if logged in
-    let userVote = null
-    if (ctx.session?.user) {
-      const vote = await ctx.prisma.pcListingVote.findUnique({
-        where: {
-          userId_pcListingId: {
-            userId: ctx.session.user.id,
-            pcListingId: input.id,
-          },
-        },
-      })
-      userVote = vote ? vote.value : null
-    }
-
-    // Calculate vote totals
-    const [upvotes, downvotes] = await Promise.all([
-      ctx.prisma.pcListingVote.count({
-        where: { pcListingId: input.id, value: true },
-      }),
-      ctx.prisma.pcListingVote.count({
-        where: { pcListingId: input.id, value: false },
-      }),
-    ])
-
-    return {
-      ...pcListing,
-      userVote,
-      upvotes,
-      downvotes,
-    }
+    return pcListing
   }),
 
   canEdit: protectedProcedure.input(GetPcListingForUserEditSchema).query(async ({ ctx, input }) => {
@@ -555,72 +464,41 @@ export const pcListingsRouter = createTRPCRouter({
       return AppError.forbidden('You need to be at least a Developer to view pending PC listings')
     }
 
-    const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
-    const offset = calculateOffset({ page }, limit)
+    const repository = new PcListingsRepository(ctx.prisma)
+    const { search, page = 1, limit = 20, sortField, sortDirection = 'asc' } = input ?? {}
 
     // For developers, filter by their assigned emulators
-    let emulatorFilter: Prisma.PcListingWhereInput = {}
+    let emulatorIds: string[] | undefined
     if (!isModerator && isDeveloper) {
-      const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
-        where: { userId: ctx.session.user.id },
-        select: { emulatorId: true },
-      })
+      emulatorIds = await repository.getVerifiedEmulatorIds(ctx.session.user.id)
 
-      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
       if (emulatorIds.length === 0) {
         // Developer has no assigned emulators, return empty results
         return {
           pcListings: [],
-          pagination: createPaginationResult(0, { page }, limit, offset),
+          pagination: createPaginationResult(0, { page }, limit, (page - 1) * limit),
         }
       }
-
-      emulatorFilter = { emulatorId: { in: emulatorIds } }
     }
 
-    const baseWhere: Prisma.PcListingWhereInput = {
-      status: ApprovalStatus.PENDING,
-      ...emulatorFilter,
-      ...(search
-        ? {
-            OR: [
-              { game: { title: { contains: search, mode: 'insensitive' } } },
-              {
-                cpu: { modelName: { contains: search, mode: 'insensitive' } },
-              },
-              {
-                gpu: { modelName: { contains: search, mode: 'insensitive' } },
-              },
-              {
-                emulator: { name: { contains: search, mode: 'insensitive' } },
-              },
-              { author: { name: { contains: search, mode: 'insensitive' } } },
-            ],
-          }
-        : {}),
-    }
-
-    // Moderators can see listings from banned users
-    const where = buildPcListingWhere(baseWhere, true)
-    const orderBy = buildPcListingOrderBy(sortField, sortDirection ?? undefined)
-
-    // Default to ascending for pending items
-    if (!sortField) orderBy[0] = { createdAt: 'asc' }
-
-    const [pcListings, total] = await Promise.all([
-      ctx.prisma.pcListing.findMany({
-        where,
-        include: pcListingInclude,
-        orderBy,
-        skip: offset,
-        take: limit,
-      }),
-      ctx.prisma.pcListing.count({ where }),
-    ])
+    const result = await repository.getPendingListings({
+      emulatorIds,
+      search,
+      page,
+      limit,
+      sortField,
+      sortDirection: sortDirection ?? 'asc',
+      canSeeBannedUsers: true, // Moderators can see listings from banned users
+    })
 
     return {
-      pcListings,
-      pagination: createPaginationResult(total, { page }, limit, offset),
+      pcListings: result.pcListings,
+      pagination: createPaginationResult(
+        result.pagination.total,
+        { page: result.pagination.page },
+        result.pagination.limit,
+        result.pagination.offset,
+      ),
     }
   }),
 
@@ -633,9 +511,9 @@ export const pcListingsRouter = createTRPCRouter({
     if (!isModerator && !isDeveloper) {
       return AppError.forbidden('You need to be at least a Developer to approve PC listings')
     }
-    const pcListing = await ctx.prisma.pcListing.findUnique({
-      where: { id: input.pcListingId },
-    })
+
+    const repository = new PcListingsRepository(ctx.prisma)
+    const pcListing = await repository.getById(input.pcListingId)
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
@@ -645,30 +523,19 @@ export const pcListingsRouter = createTRPCRouter({
 
     // For developers, verify they can approve this emulator's listings
     if (!isModerator && isDeveloper) {
-      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId: ctx.session.user.id,
-            emulatorId: pcListing.emulatorId,
-          },
-        },
-      })
+      const isVerified = await repository.isDeveloperVerifiedForEmulator(
+        ctx.session.user.id,
+        pcListing.emulatorId,
+      )
 
-      if (!verifiedDeveloper) {
+      if (!isVerified) {
         return AppError.forbidden(
           'You can only approve PC listings for emulators you are verified for',
         )
       }
     }
 
-    const approvedListing = await ctx.prisma.pcListing.update({
-      where: { id: input.pcListingId },
-      data: {
-        status: ApprovalStatus.APPROVED,
-        processedAt: new Date(),
-        processedByUserId: ctx.session.user.id,
-      },
-    })
+    const approvedListing = await repository.approve(input.pcListingId, ctx.session.user.id)
 
     // Invalidate stats cache when PC listing is approved
     listingStatsCache.delete('pc-listing-stats')
@@ -685,9 +552,9 @@ export const pcListingsRouter = createTRPCRouter({
     if (!isModerator && !isDeveloper) {
       return AppError.forbidden('You need to be at least a Developer to reject PC listings')
     }
-    const pcListing = await ctx.prisma.pcListing.findUnique({
-      where: { id: input.pcListingId },
-    })
+
+    const repository = new PcListingsRepository(ctx.prisma)
+    const pcListing = await repository.getById(input.pcListingId)
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
@@ -697,31 +564,23 @@ export const pcListingsRouter = createTRPCRouter({
 
     // For developers, verify they can reject this emulator's listings
     if (!isModerator && isDeveloper) {
-      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId: ctx.session.user.id,
-            emulatorId: pcListing.emulatorId,
-          },
-        },
-      })
+      const isVerified = await repository.isDeveloperVerifiedForEmulator(
+        ctx.session.user.id,
+        pcListing.emulatorId,
+      )
 
-      if (!verifiedDeveloper) {
+      if (!isVerified) {
         return AppError.forbidden(
           'You can only reject PC listings for emulators you are verified for',
         )
       }
     }
 
-    const rejectedListing = await ctx.prisma.pcListing.update({
-      where: { id: input.pcListingId },
-      data: {
-        status: ApprovalStatus.REJECTED,
-        processedAt: new Date(),
-        processedByUserId: ctx.session.user.id,
-        processedNotes: input.notes,
-      },
-    })
+    const rejectedListing = await repository.reject(
+      input.pcListingId,
+      ctx.session.user.id,
+      input.notes,
+    )
 
     // Invalidate stats cache when PC listing is rejected
     listingStatsCache.delete('pc-listing-stats')
@@ -907,24 +766,8 @@ export const pcListingsRouter = createTRPCRouter({
     const cached = listingStatsCache.get(STATS_CACHE_KEY)
     if (cached) return cached
 
-    const [pending, approved, rejected] = await Promise.all([
-      createCountQuery(ctx.prisma.pcListing, {
-        status: ApprovalStatus.PENDING,
-      }),
-      createCountQuery(ctx.prisma.pcListing, {
-        status: ApprovalStatus.APPROVED,
-      }),
-      createCountQuery(ctx.prisma.pcListing, {
-        status: ApprovalStatus.REJECTED,
-      }),
-    ])
-
-    const stats = {
-      total: pending + approved + rejected,
-      pending,
-      approved,
-      rejected,
-    }
+    const repository = new PcListingsRepository(ctx.prisma)
+    const stats = await repository.getStats()
 
     listingStatsCache.set(STATS_CACHE_KEY, stats)
     return stats
@@ -1070,28 +913,47 @@ export const pcListingsRouter = createTRPCRouter({
     if (!pcListing) return ResourceError.pcListing.notFound()
 
     // Check if user already voted on this PC listing
-    const existingVote = await ctx.prisma.pcListingVote.findUnique({
-      where: { userId_pcListingId: { userId, pcListingId } },
-    })
+    const repository = new PcListingsRepository(ctx.prisma)
+    const existingVote = await repository.getExistingVote(userId, pcListingId)
 
     let voteResult
 
     if (existingVote) {
       // If vote is the same, remove the vote (toggle)
       if (existingVote.value === value) {
-        await ctx.prisma.pcListingVote.delete({
-          where: { userId_pcListingId: { userId, pcListingId } },
+        // Delete vote and update counts in transaction
+        voteResult = await ctx.prisma.$transaction(async (tx) => {
+          await tx.pcListingVote.delete({
+            where: { userId_pcListingId: { userId, pcListingId } },
+          })
+
+          await updatePcListingVoteCounts(tx, pcListingId, 'delete', undefined, existingVote.value)
+
+          return { message: 'Vote removed' }
         })
-        voteResult = { message: 'Vote removed' }
       } else {
-        voteResult = await ctx.prisma.pcListingVote.update({
-          where: { userId_pcListingId: { userId, pcListingId } },
-          data: { value },
+        // Update vote and counts in transaction
+        voteResult = await ctx.prisma.$transaction(async (tx) => {
+          const vote = await tx.pcListingVote.update({
+            where: { userId_pcListingId: { userId, pcListingId } },
+            data: { value },
+          })
+
+          await updatePcListingVoteCounts(tx, pcListingId, 'update', value, existingVote.value)
+
+          return vote
         })
       }
     } else {
-      voteResult = await ctx.prisma.pcListingVote.create({
-        data: { userId, pcListingId, value },
+      // Create new vote and update counts in transaction
+      voteResult = await ctx.prisma.$transaction(async (tx) => {
+        const vote = await tx.pcListingVote.create({
+          data: { userId, pcListingId, value },
+        })
+
+        await updatePcListingVoteCounts(tx, pcListingId, 'create', value)
+
+        return vote
       })
     }
 
@@ -1117,16 +979,9 @@ export const pcListingsRouter = createTRPCRouter({
   getUserVote: protectedProcedure
     .input(GetPcListingUserVoteSchema)
     .query(async ({ ctx, input }) => {
-      const vote = await ctx.prisma.pcListingVote.findUnique({
-        where: {
-          userId_pcListingId: {
-            userId: ctx.session.user.id,
-            pcListingId: input.pcListingId,
-          },
-        },
-      })
-
-      return { vote: vote ? vote.value : null }
+      const repository = new PcListingsRepository(ctx.prisma)
+      const vote = await repository.getUserVote(ctx.session.user.id, input.pcListingId)
+      return { vote }
     }),
 
   // Comments endpoints
@@ -1327,7 +1182,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!comment) {
-        ResourceError.comment.notFound()
+        return ResourceError.comment.notFound()
       }
 
       // Check if user already voted on this comment
@@ -1494,6 +1349,36 @@ export const pcListingsRouter = createTRPCRouter({
             processedAt: new Date(),
             processedByUserId: reviewerId,
             processedNotes: `Rejected due to report: ${reviewNotes || 'No additional notes'}`,
+          },
+        })
+      }
+
+      // Award trust points based on report outcome
+      const trustService = new TrustService(ctx.prisma)
+
+      if (status === ReportStatus.RESOLVED) {
+        // Report was confirmed - reward the reporter
+        await trustService.logAction({
+          userId: report.reportedById,
+          action: TrustAction.REPORT_CONFIRMED,
+          metadata: {
+            reportId,
+            pcListingId: report.pcListingId,
+            reviewedBy: reviewerId,
+            reason: report.reason,
+          },
+        })
+      } else if (status === ReportStatus.DISMISSED) {
+        // Report was false/malicious - penalize the reporter
+        await trustService.logAction({
+          userId: report.reportedById,
+          action: TrustAction.FALSE_REPORT,
+          metadata: {
+            reportId,
+            pcListingId: report.pcListingId,
+            reviewedBy: reviewerId,
+            reason: report.reason,
+            reviewNotes,
           },
         })
       }

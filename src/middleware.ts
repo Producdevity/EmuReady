@@ -9,7 +9,7 @@ import type { NextRequest, NextFetchEvent } from 'next/server'
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
 // Rate limiting configuration
-const RATE_LIMIT_REQUESTS = 100 // requests per window
+const RATE_LIMIT_REQUESTS = process.env.NODE_ENV === 'test' ? 10000 : 100 // Much higher limit for tests
 const RATE_LIMIT_WINDOW = ms.minutes(3)
 
 function getClientIdentifier(req: NextRequest): string {
@@ -24,10 +24,18 @@ function getClientIdentifier(req: NextRequest): string {
 }
 
 function checkRateLimit(identifier: string): boolean {
-  // Skip rate limiting for localhost in test environment
+  // Skip rate limiting if explicitly disabled (for E2E tests)
+  if (process.env.DISABLE_RATE_LIMIT === 'true') {
+    return true
+  }
+
+  // Skip rate limiting for localhost in test/development environments
   if (
-    process.env.NODE_ENV === 'test' &&
-    (identifier === '::1' || identifier === '127.0.0.1' || identifier === 'localhost')
+    (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') &&
+    (identifier === '::1' ||
+      identifier === '127.0.0.1' ||
+      identifier === 'localhost' ||
+      identifier === 'unknown')
   ) {
     return true
   }
@@ -109,15 +117,16 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
 
   const clientId = getClientIdentifier(req)
 
-  // Check rate limit (skip in test environment for localhost)
-  const isTestLocalhost =
-    process.env.NODE_ENV === 'test' &&
-    (clientId === '::1' ||
-      clientId === '127.0.0.1' ||
-      clientId === 'localhost' ||
-      clientId === 'unknown')
+  // Check rate limit (skip if disabled or in test/dev environment for localhost)
+  const skipRateLimit =
+    process.env.DISABLE_RATE_LIMIT === 'true' ||
+    ((process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') &&
+      (clientId === '::1' ||
+        clientId === '127.0.0.1' ||
+        clientId === 'localhost' ||
+        clientId === 'unknown'))
 
-  if (!isTestLocalhost && !checkRateLimit(clientId)) {
+  if (!skipRateLimit && !checkRateLimit(clientId)) {
     console.warn(`Rate limit exceeded for client: ${clientId}, path: ${pathname}`)
     return NextResponse.json(
       { error: 'Rate limit exceeded. Please try again later.' },
@@ -132,8 +141,8 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
     )
   }
 
-  // Check origin for public API routes
-  if (!isValidOrigin(req)) {
+  // Check origin for public API routes (skip in test environment)
+  if (process.env.NODE_ENV !== 'test' && !isValidOrigin(req)) {
     console.warn(
       `Invalid origin for client: ${clientId}, origin: ${req.headers.get('origin')}, referer: ${req.headers.get('referer')}, path: ${pathname}`,
     )

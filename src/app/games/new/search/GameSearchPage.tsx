@@ -1,25 +1,63 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { motion } from 'framer-motion'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
+import {
+  GameSearchForm,
+  GameSearchResults,
+  GameSearchHeader,
+  type BaseGameResult,
+} from '@/components/game-search'
 import { LoadingSpinner } from '@/components/ui'
-import { UI_CONSTANTS } from '@/data/constants'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
-import SearchForm from './components/SearchForm'
-import SearchHeader from './components/SearchHeader'
-import SearchResults from './components/SearchResults'
 import NotSignedInMessage from '../components/NotSignedInMessage'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
-function GameSearchContent() {
+// Extended TGDB game result that extends BaseGameResult
+interface TGDBGameResult extends BaseGameResult {
+  id: string
+  overview?: string
+  developers?: number[]
+  publishers?: number[]
+  alternates?: string[]
+  boxart?: string
+}
+
+interface TGDBGameWithBoxart extends Omit<TGDBGame, 'genres'> {
+  boxart?: string
+  platform_name?: string
+  genre_names?: string[]
+  genres?: number[]
+}
+
+function mapTGDBToBaseGame(game: TGDBGameWithBoxart): TGDBGameResult {
+  return {
+    id: String(game.id),
+    name: game.game_title,
+    releaseDate: game.release_date ?? null,
+    platforms: game.platform_name ? [{ name: game.platform_name }] : [],
+    genres: game.genre_names?.map((g) => ({ name: g })) ?? [],
+    imageUrl: game.boxart ?? null,
+    boxartUrl: game.boxart ?? null,
+    bannerUrl: null,
+    summary: game.overview ?? null,
+    isErotic: false,
+    overview: game.overview,
+    developers: game.developers,
+    publishers: game.publishers,
+    alternates: game.alternates,
+    boxart: game.boxart,
+  }
+}
+
+function TGDBSearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -29,8 +67,12 @@ function GameSearchContent() {
   const urlQuery = searchParams.get('q') ?? ''
   const urlSystemId = searchParams.get('system') ?? ''
 
-  const [searchResults, setSearchResults] = useState<TGDBGamesByNameResponse | null>(null)
-  const [selectedGame, setSelectedGame] = useState<TGDBGame | null>(null)
+  const [searchResults, setSearchResults] = useState<{
+    games: TGDBGameResult[]
+    count: number
+  } | null>(null)
+  const [selectedGame, setSelectedGame] = useState<TGDBGameWithBoxart | null>(null)
+  const [searchResponse, setSearchResponse] = useState<TGDBGamesByNameResponse | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSelecting, setIsSelecting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
@@ -42,23 +84,27 @@ function GameSearchContent() {
   const createGame = api.games.create.useMutation()
   const systemsQuery = api.systems.get.useQuery()
 
-  // Check for existing games by TGDB IDs
-  const tgdbGameIds = useMemo(() => {
-    if (!searchResults?.data?.games) return []
-    return Object.values(searchResults.data.games).map((game) => game.id)
-  }, [searchResults])
+  // Check for existing games by name and system
+  const gameNamesAndSystems = useMemo(() => {
+    if (!searchResults?.games || !urlSystemId) return []
+    return searchResults.games.map((game) => ({
+      name: game.name,
+      systemId: urlSystemId,
+    }))
+  }, [searchResults, urlSystemId])
 
-  const existingGamesQuery = api.games.checkExistingByTgdbIds.useQuery(
-    { tgdbGameIds },
+  const existingGamesQuery = api.games.checkExistingByNamesAndSystems.useQuery(
+    { games: gameNamesAndSystems },
     {
-      enabled: tgdbGameIds.length > 0,
-      staleTime: ms.minutes(5),
+      enabled: gameNamesAndSystems.length > 0,
+      staleTime: ms.seconds(30),
+      refetchOnWindowFocus: true,
     },
   )
 
   // Update URL when search parameters change
   const updateSearchParams = useCallback(
-    (query: string, systemId?: string) => {
+    (query: string, systemId: string | null) => {
       const params = new URLSearchParams()
       if (query.trim()) params.set('q', query.trim())
       if (systemId) params.set('system', systemId)
@@ -70,18 +116,43 @@ function GameSearchContent() {
   )
 
   const handleSearch = useCallback(
-    async (query: string, platformId?: number, systemId?: string) => {
+    async (query: string, platformId: number | null, systemId: string | null) => {
       setIsSearching(true)
 
       // Update URL with search parameters
       updateSearchParams(query, systemId)
 
+      // Get system key from systemId
+      const selectedSystem = systemId ? systemsQuery.data?.find((s) => s.id === systemId) : null
+
       try {
         const results = await utils.tgdb.searchGames.fetch({
           query,
-          tgdbPlatformId: platformId,
+          systemKey: selectedSystem?.key,
         })
-        setSearchResults(results)
+
+        setSearchResponse(results) // Store for modal
+
+        // Map TGDB games to our unified format
+        const gameData = results.data?.games ?? []
+        const mappedGames = gameData.map((game) => {
+          const enrichedGame: TGDBGameWithBoxart = {
+            ...game,
+            boxart: 'boxart' in game && typeof game.boxart === 'string' ? game.boxart : undefined,
+            platform_name: typeof game.platform === 'string' ? game.platform : undefined,
+            genre_names:
+              Array.isArray(game.genres) &&
+              game.genres.length > 0 &&
+              typeof game.genres[0] === 'string'
+                ? game.genres.map(String)
+                : undefined,
+          }
+          return mapTGDBToBaseGame(enrichedGame)
+        })
+        setSearchResults({
+          games: mappedGames,
+          count: results.data?.count ?? 0,
+        })
       } catch (error) {
         console.error('Search error:', error)
         toast.error(getErrorMessage(error, 'Failed to search games'))
@@ -89,7 +160,7 @@ function GameSearchContent() {
         setIsSearching(false)
       }
     },
-    [utils, updateSearchParams],
+    [utils, updateSearchParams, systemsQuery.data],
   )
 
   // Auto-search on page load if URL has parameters
@@ -99,209 +170,154 @@ function GameSearchContent() {
         ? systemsQuery.data.find((system) => system.id === urlSystemId)
         : null
 
-      handleSearch(
-        urlQuery,
-        selectedSystem?.tgdbPlatformId ?? undefined,
-        urlSystemId || undefined,
-      ).catch(console.error)
+      if (selectedSystem) {
+        handleSearch(urlQuery, null, selectedSystem.id).catch(console.error)
+      }
     }
   }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
 
-  const handlePreview = useCallback((game: TGDBGame) => {
-    setSelectedGame(game)
-    setIsModalOpen(true)
-  }, [])
-
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false)
-    setSelectedGame(null)
-  }, [])
-
-  const handleSelectGame = useCallback(
-    async (game: TGDBGame, extras: { isErotic: boolean }) => {
-      if (!userQuery.data || !systemsQuery.data) {
-        return toast.error('Please sign in to add games')
+  const handleGamePreview = useCallback(
+    (game: BaseGameResult) => {
+      // Find the original TGDB game for the modal
+      const tgdbGame = searchResults?.games.find((g) => g.id === game.id)
+      if (tgdbGame) {
+        const originalGame: TGDBGameWithBoxart = {
+          id: Number(tgdbGame.id),
+          game_title: tgdbGame.name,
+          release_date: typeof tgdbGame.releaseDate === 'string' ? tgdbGame.releaseDate : undefined,
+          platform_name: tgdbGame.platforms?.[0]?.name,
+          genre_names: tgdbGame.genres?.map((g) => g.name) ?? [],
+          boxart: tgdbGame.boxart,
+          overview: tgdbGame.overview,
+          developers: tgdbGame.developers,
+          publishers: tgdbGame.publishers,
+          alternates: tgdbGame.alternates,
+        }
+        setSelectedGame(originalGame)
+        setIsModalOpen(true)
       }
+    },
+    [searchResults],
+  )
+
+  const handleGameSelect = useCallback(
+    async (game: TGDBGameWithBoxart, systemId: string) => {
+      if (!user) return
 
       setIsSelecting(true)
-
       try {
-        // Get platform name from search results
-        const platforms = searchResults?.include?.platform?.data
-          ? Object.values(searchResults.include.platform.data).filter(
-              (platform) => platform.id === game.platform,
-            )
-          : []
-
-        const platformName = platforms.length > 0 ? platforms[0].name : undefined
-
-        // Find matching system
-        const matchingSystem = systemsQuery.data.find(
-          (system) =>
-            system.name === platformName ||
-            (system.tgdbPlatformId && system.tgdbPlatformId === game.platform),
-        )
-
-        if (!matchingSystem) {
-          const errorMsg = platformName
-            ? `System "${platformName}" not found in database`
-            : `No matching system found for TGDB platform ID ${game.platform}`
-          toast.error(errorMsg)
-          return
-        }
-
-        // Get both boxart and banner images for the selected game
-        let imageResponse: { boxartUrl?: string; bannerUrl?: string } | undefined
-
-        try {
-          imageResponse = await utils.tgdb.getGameImageUrls.fetch({
-            gameId: game.id,
-          })
-        } catch (imageError) {
-          console.error('❌ Failed to fetch game images:', imageError)
-          // Continue without images
-        }
-
-        // Create the game
-        const isAdmin = hasPermission(userQuery.data.role, Role.ADMIN)
-        const gameData = {
+        const newGame = await createGame.mutateAsync({
           title: game.game_title,
-          systemId: matchingSystem.id,
-          imageUrl: imageResponse?.boxartUrl,
-          boxartUrl: imageResponse?.boxartUrl,
-          bannerUrl: imageResponse?.bannerUrl,
+          systemId,
+          imageUrl: game.boxart ?? null,
+          boxartUrl: game.boxart ?? null,
+          bannerUrl: null,
+          isErotic: false,
           tgdbGameId: game.id,
-          isErotic: extras.isErotic,
-        }
+        })
 
-        const newGame = await createGame.mutateAsync(gameData)
+        // Invalidate the existing games cache to ensure the new game is reflected
+        await utils.games.checkExistingByNamesAndSystems.invalidate()
 
-        // Invalidate the existing games query to update the UI immediately
-        await utils.games.checkExistingByTgdbIds.invalidate()
-        await utils.games.get.invalidate()
-
-        // Show success message and redirect
-        if (isAdmin) {
-          toast.success('Game added successfully!')
-        } else {
-          toast.success('Game submitted for approval! You can now create listings for this game.', {
-            duration: UI_CONSTANTS.TOAST_DURATION,
-          })
-          router.push(`/games/${newGame.id}`)
-        }
-
-        setIsModalOpen(false)
-        setSelectedGame(null)
+        toast.success('Game added successfully!')
+        router.push(`/listings/new?gameId=${newGame.id}`)
       } catch (error) {
-        console.error('Error adding game:', error)
-
-        // Handle duplicate game error with user-friendly message
+        // Check if the game already exists and get the existing game ID
         const errorMessage = getErrorMessage(error, 'Failed to add game')
 
-        // Check for duplicate game error by message content
-        if (errorMessage.includes('already exists')) {
-          // Try to extract cause information if it exists
-          if (
-            error &&
-            typeof error === 'object' &&
-            'cause' in error &&
-            error.cause &&
-            typeof error.cause === 'object'
-          ) {
-            const cause = error.cause as Record<string, unknown>
-            if (cause.existingGameId && cause.existingGameTitle && cause.systemName) {
-              return toast.error(
-                `Game already exists: "${cause.existingGameTitle}" on ${cause.systemName}`,
-                {
-                  duration: 10000,
-                  action: {
-                    label: 'View Game',
-                    onClick: () => router.push(`/games/${cause.existingGameId}`),
-                  },
-                },
-              )
-            }
+        // Check if this is a duplicate game error
+        if (errorMessage.includes('already exists for the system')) {
+          // Extract the existing game ID from the error if available
+          const cause = (error as Error & { cause?: { existingGameId?: string } })?.cause
+          if (cause?.existingGameId) {
+            toast.info('Game already exists. Redirecting...')
+            router.push(`/listings/new?gameId=${cause.existingGameId}`)
+          } else {
+            // If we can't get the ID, just show the error
+            toast.error(errorMessage)
           }
-
-          // Fallback for duplicate errors without cause info
-          toast.error(errorMessage, { duration: 8000 })
-          return
+        } else {
+          toast.error(errorMessage)
         }
-
-        // Handle all other errors
-        toast.error(errorMessage)
       } finally {
         setIsSelecting(false)
       }
     },
-    [userQuery.data, searchResults, createGame, utils, router, systemsQuery.data],
+    [user, createGame, router, utils],
   )
 
-  if (!isLoaded || userQuery.isPending) {
+  const isModeratorOrHigher = useMemo(() => {
+    return userQuery.data ? hasPermission(userQuery.data.role, Role.MODERATOR) : false
+  }, [userQuery.data])
+
+  const isAdmin = useMemo(() => {
+    return userQuery.data ? hasPermission(userQuery.data.role, Role.ADMIN) : false
+  }, [userQuery.data])
+
+  if (!isLoaded) {
     return (
-      <div className="flex justify-center items-center min-h-96">
-        <LoadingSpinner />
+      <div className="flex h-[50vh] items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
 
-  if (!user || !userQuery.data) return <NotSignedInMessage />
+  if (!user) return <NotSignedInMessage />
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <SearchHeader />
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <GameSearchHeader
+        provider="tgdb"
+        showBackButton={isAdmin}
+        showAlternativeSearch={isAdmin}
+        isAdmin={isAdmin}
+      />
 
-        <SearchForm
-          onSearch={handleSearch}
-          isSearching={isSearching}
-          initialQuery={urlQuery}
-          initialSystemId={urlSystemId}
-        />
+      <GameSearchForm
+        provider="tgdb"
+        onSearch={handleSearch}
+        systems={systemsQuery.data ?? []}
+        initialQuery={urlQuery}
+        initialSystemId={urlSystemId}
+        isSearching={isSearching}
+        showModeratorFeatures={isModeratorOrHigher}
+      />
 
-        {isSearching && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-center py-12"
-          >
-            <LoadingSpinner text="Searching TheGamesDB..." />
-          </motion.div>
-        )}
-
-        <SearchResults
-          searchResults={searchResults}
-          onPreview={handlePreview}
-          onSelect={handleSelectGame}
-          isSelecting={isSelecting}
+      {searchResults && (
+        <GameSearchResults<TGDBGameResult>
+          provider="tgdb"
+          results={searchResults}
+          onGameSelect={handleGamePreview}
           existingGames={existingGamesQuery.data ?? {}}
+          currentSystemId={urlSystemId}
         />
+      )}
 
-        <GamePreviewModal
-          game={selectedGame}
-          searchResponse={searchResults}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onSelect={handleSelectGame}
-          isSelecting={isSelecting}
-        />
-      </div>
+      <GamePreviewModal
+        game={selectedGame}
+        searchResponse={searchResponse}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={(game) => {
+          const gameWithBoxart = { ...game, boxart: selectedGame?.boxart }
+          handleGameSelect(gameWithBoxart, urlSystemId)
+        }}
+        isSelecting={isSelecting}
+      />
     </div>
   )
 }
 
-function GameSearchPage() {
+export default function GameSearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center min-h-96">
-          <LoadingSpinner />
+        <div className="flex h-[50vh] items-center justify-center">
+          <LoadingSpinner size="lg" />
         </div>
       }
     >
-      <GameSearchContent />
+      <TGDBSearchContent />
     </Suspense>
   )
 }
-
-export default GameSearchPage

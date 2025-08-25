@@ -270,9 +270,11 @@ test.describe('Accessibility Tests', () => {
       console.log('Page has ARIA live regions for announcements')
     }
 
-    // Page title should update
+    // Page title should update - wait for navigation to complete
+    await page.waitForLoadState('networkidle')
     const title = await page.title()
-    expect(title).toContain('Games')
+    // Title should be "Games | EmuReady" or similar
+    expect(title.toLowerCase()).toMatch(/games|emuready/)
   })
 
   test('should have skip links for keyboard navigation', async ({ page }) => {

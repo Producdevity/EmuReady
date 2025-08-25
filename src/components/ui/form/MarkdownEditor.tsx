@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils'
 
 interface Props {
   onChange: (value: string) => void
-  value?: string
+  value?: string | null
   placeholder?: string
   className?: string
   rows?: number

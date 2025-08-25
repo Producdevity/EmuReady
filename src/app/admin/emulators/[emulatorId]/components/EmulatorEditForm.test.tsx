@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { type ReactNode } from 'react'
+import { type PropsWithChildren, type ReactNode } from 'react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -27,8 +27,7 @@ vi.mock('@/lib/toast', () => ({
   },
 }))
 
-interface MotionProps {
-  children: ReactNode
+interface MotionProps extends PropsWithChildren {
   whileHover?: unknown
   whileTap?: unknown
   initial?: unknown
@@ -58,7 +57,7 @@ const mockEmulator = {
   systems: [],
   verifiedDevelopers: [],
   customFieldDefinitions: [],
-  _count: { listings: 0 },
+  _count: { listings: 0, systems: 0, customFieldDefinitions: 0 },
 }
 
 const mockMutate = vi.fn()

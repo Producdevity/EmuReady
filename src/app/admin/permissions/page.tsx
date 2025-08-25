@@ -334,12 +334,16 @@ function AdminPermissionsPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <EditButton
-                          onClick={() => handleEdit(permission)}
+                          onClick={() =>
+                            handleEdit({ ...permission, category: permission.category })
+                          }
                           title="Edit Permission"
                         />
                         {!permission.isSystem && (
                           <DeleteButton
-                            onClick={() => handleDelete(permission)}
+                            onClick={() =>
+                              handleDelete({ ...permission, category: permission.category })
+                            }
                             title="Delete Permission"
                             isLoading={deletePermission.isPending}
                             disabled={deletePermission.isPending}

@@ -96,7 +96,7 @@ export function generateEmulatorConfig(input: {
   listingId: string
   gameId: string
   emulatorName: string
-  customFieldValues: Array<{
+  customFieldValues: {
     customFieldDefinition: {
       name: string
       label: string
@@ -104,7 +104,7 @@ export function generateEmulatorConfig(input: {
       options?: Prisma.JsonValue | null
     }
     value: Prisma.JsonValue
-  }>
+  }[]
 }): EmulatorConfigResult {
   const configType = detectEmulatorConfigType(input.emulatorName)
 

@@ -55,16 +55,16 @@ function CpuModal(props: Props) {
           ...cpuData,
         } satisfies RouterInput['cpus']['update'])
         setSuccess('CPU updated!')
+        props.onSuccess()
       } else {
         await createCpu.mutateAsync(cpuData satisfies RouterInput['cpus']['create'])
         setSuccess('CPU created!')
+        props.onSuccess()
       }
 
       // Reset form
       setBrandId('')
       setModelName('')
-
-      props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save CPU.'))
     }

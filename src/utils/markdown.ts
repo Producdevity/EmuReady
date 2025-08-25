@@ -160,11 +160,11 @@ export function hasMarkdownSyntax(text: string): boolean {
     /\*\*.*?\*\*/, // Bold
     /\*.*?\*/, // Italic
     /`.*?`/, // Inline code
-    /^#{1,6}\s/, // Headers
-    /^\s*[\-*+]\s/, // Lists
-    /^\s*\d+\.\s/, // Numbered lists
+    /^#{1,6}\s/m, // Headers (multiline)
+    /^\s*[\-*+]\s/m, // Lists (multiline)
+    /^\s*\d+\.\s/m, // Numbered lists (multiline)
     /\[.*?\]\(.*?\)/, // Links
-    /^>\s/, // Blockquotes
+    /^>\s/m, // Blockquotes (multiline)
     /```[\s\S]*?```/, // Code blocks
   ]
 

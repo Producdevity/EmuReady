@@ -22,6 +22,9 @@ interface TemplateField {
   rangeMax?: number
   rangeUnit?: string
   rangeDecimals?: number
+  // Track if user has manually edited fields
+  userEditedName?: boolean
+  userEditedLabel?: boolean
 }
 
 interface Props {
@@ -294,6 +297,8 @@ function CustomFieldTemplateFormModal(props: Props) {
         rangeMax: 100,
         rangeUnit: '',
         rangeDecimals: 0,
+        userEditedName: false,
+        userEditedLabel: false,
       },
     ])
   }
@@ -500,7 +505,28 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <Input
                         type="text"
                         value={field.name}
-                        onChange={(ev) => updateField(fieldIndex, { name: ev.target.value })}
+                        onChange={(ev) => {
+                          const newName = ev.target.value
+                          // Auto-generate label if user hasn't manually edited it
+                          if (!field.userEditedLabel && newName) {
+                            const words = newName
+                              .split('_')
+                              .map(
+                                (word) =>
+                                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+                              )
+                            updateField(fieldIndex, {
+                              name: newName,
+                              label: words.join(' '),
+                              userEditedName: true, // Mark name as user-edited
+                            })
+                          } else {
+                            updateField(fieldIndex, {
+                              name: newName,
+                              userEditedName: true, // Mark name as user-edited
+                            })
+                          }
+                        }}
                         placeholder="e.g., driver_version"
                         maxLength={50}
                         className={
@@ -523,12 +549,20 @@ function CustomFieldTemplateFormModal(props: Props) {
                         type="text"
                         value={field.label}
                         onChange={(ev) => {
-                          if (!field.name) {
+                          const newLabel = ev.target.value
+                          // Auto-generate name only if user hasn't manually edited it
+                          if (!field.userEditedName && newLabel) {
                             updateField(fieldIndex, {
-                              name: toSnakeCase(ev.target.value),
+                              label: newLabel,
+                              name: toSnakeCase(newLabel),
+                              userEditedLabel: true, // Mark label as user-edited
+                            })
+                          } else {
+                            updateField(fieldIndex, {
+                              label: newLabel,
+                              userEditedLabel: true, // Mark label as user-edited
                             })
                           }
-                          updateField(fieldIndex, { label: ev.target.value })
                         }}
                         placeholder="e.g., Driver Version"
                         maxLength={100}
@@ -617,13 +651,26 @@ function CustomFieldTemplateFormModal(props: Props) {
                   )}
 
                   {/* Default Value Section */}
-                  {(field.type === CustomFieldType.BOOLEAN ||
+                  {(field.type === CustomFieldType.TEXT ||
+                    field.type === CustomFieldType.BOOLEAN ||
                     field.type === CustomFieldType.SELECT) && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium mb-2">
                         Default Value (Optional)
                       </label>
-                      {field.type === CustomFieldType.BOOLEAN ? (
+                      {field.type === CustomFieldType.TEXT ? (
+                        <Input
+                          type="text"
+                          value={field.defaultValue === null ? '' : String(field.defaultValue)}
+                          onChange={(ev) =>
+                            updateField(fieldIndex, {
+                              defaultValue: ev.target.value === '' ? null : ev.target.value,
+                            })
+                          }
+                          placeholder={`e.g., Default ${field.label.toLowerCase()}`}
+                          maxLength={500}
+                        />
+                      ) : field.type === CustomFieldType.BOOLEAN ? (
                         <Input
                           as="select"
                           value={

@@ -285,12 +285,12 @@ export class NotificationRateLimitService {
   }
 
   // Get current rate limit status for a user
-  getUserRateLimitStatus(userId: string): Array<{
+  getUserRateLimitStatus(userId: string): {
     type: NotificationType | 'GLOBAL'
     remaining: number
     resetTime: Date
     windowMs: number
-  }> {
+  }[] {
     const now = new Date()
     const status = []
 
@@ -334,10 +334,10 @@ export class NotificationRateLimitService {
     totalLimits: number
     activeLimits: number
     rules: RateLimitRule[]
-    topLimitedTypes: Array<{
+    topLimitedTypes: {
       type: string
       hitCount: number
-    }>
+    }[]
   } {
     const now = new Date()
     const activeLimits = Array.from(this.limits.values()).filter((entry) => now < entry.resetTime)

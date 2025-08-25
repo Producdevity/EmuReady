@@ -1,6 +1,6 @@
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback, type ChangeEvent } from 'react'
-import { UI_CONSTANTS } from '@/data/constants'
+import { PAGINATION, UI_CONSTANTS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { AdminTableParamsSchema } from '@/schemas/common'
 import { validateClientData } from '@/utils/client-validation'
@@ -45,7 +45,7 @@ export interface UseAdminTableReturn<TSortField extends string> {
   resetFilters: () => void
 }
 
-const DEFAULT_LIMIT = 20
+const DEFAULT_LIMIT = PAGINATION.ADMIN_TABLE_LIMIT
 const DEFAULT_SEARCH_DEBOUNCE = UI_CONSTANTS.DEBOUNCE_DELAY
 
 export function useAdminTable<TSortField extends string>(
@@ -133,9 +133,7 @@ export function useAdminTable<TSortField extends string>(
 
     // Add additional params to URL
     Object.entries(additionalParams).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value)
-      }
+      if (value) params.set(key, value)
     })
 
     const url = params.toString() ? `?${params.toString()}` : ''
@@ -144,9 +142,7 @@ export function useAdminTable<TSortField extends string>(
 
   // Update URL when relevant state changes
   useEffect(() => {
-    if (enableUrlState) {
-      updateUrl()
-    }
+    if (enableUrlState) updateUrl()
   }, [debouncedSearch, page, sortField, sortDirection, additionalParams, enableUrlState, updateUrl])
 
   const setSearch = (newSearch: string) => {

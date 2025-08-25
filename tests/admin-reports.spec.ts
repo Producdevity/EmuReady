@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/reports')
     // Verify admin access - test should fail if not admin
@@ -15,7 +16,7 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
     const headers = reportsTable.locator('thead th')
     const expectedHeaders = ['ID', 'Type', 'Reason', 'Reporter', 'Status', 'Date', 'Actions']
 
-    for (const header of expectedHeaders) {
+    for(const header of expectedHeaders) {
       const headerElement = headers.filter({ hasText: new RegExp(header, 'i') })
       await expect(headerElement).toHaveCount(1)
     }
@@ -36,7 +37,7 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
 
     // Verify all status filter options
     const statuses = ['Pending', 'Under Review', 'Resolved', 'Dismissed']
-    for (const status of statuses) {
+    for(const status of statuses) {
       const statusButton = statusFilters.locator('button, label').filter({ hasText: status })
       await expect(statusButton).toBeVisible()
     }
@@ -84,13 +85,13 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
           // Check report information
           const reportInfo = {
             'Reported Item': /listing|comment|user/i,
-            Reason: /spam|inappropriate|fake/i,
-            Reporter: /.+/,
-            Description: /.+/,
-            Date: /\d{4}|\d+ (hours?|days?|minutes?) ago/,
+            Reason:          /spam|inappropriate|fake/i,
+            Reporter:        /.+/,
+            Description:     /.+/,
+            Date:            /\d{4}|\d+ (hours?|days?|minutes?) ago/,
           }
 
-          for (const [label, pattern] of Object.entries(reportInfo)) {
+          for(const [label, pattern] of Object.entries(reportInfo)) {
             const field = reportModal.locator('.field, .detail-row').filter({ hasText: label })
             if (await field.isVisible({ timeout: 1000 }).catch(() => false)) {
               const value = await field.textContent()
@@ -182,7 +183,7 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
 
           // Common batch actions
           const actions = ['Resolve All', 'Dismiss All', 'Assign To']
-          for (const action of actions) {
+          for(const action of actions) {
             const actionButton = actionButtons.filter({ hasText: action })
             if (await actionButton.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Batch action: ${action}`)
@@ -213,7 +214,7 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
           { label: 'Response Time', selector: '[data-testid*="response"]' },
         ]
 
-        for (const stat of stats) {
+        for(const stat of stats) {
           const statElement = statsSection.locator(stat.selector)
           if (await statElement.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await statElement.textContent()
@@ -347,7 +348,7 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
           // Check available formats
           const formats = ['CSV', 'PDF', 'Excel']
 
-          for (const format of formats) {
+          for(const format of formats) {
             const formatOption = exportOptions.locator('button, a').filter({ hasText: format })
             if (await formatOption.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Export format: ${format}`)

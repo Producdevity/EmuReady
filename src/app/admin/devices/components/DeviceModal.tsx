@@ -51,7 +51,7 @@ function DeviceModal(props: Props) {
       const deviceData = {
         brandId,
         modelName,
-        socId: socId || undefined,
+        socId: socId || null,
       }
 
       if (props.editId) {
@@ -60,17 +60,17 @@ function DeviceModal(props: Props) {
           ...deviceData,
         } satisfies RouterInput['devices']['update'])
         setSuccess('Device updated!')
+        props.onSuccess()
       } else {
         await createDevice.mutateAsync(deviceData satisfies RouterInput['devices']['create'])
         setSuccess('Device created!')
+        props.onSuccess()
       }
 
       // Reset form
       setBrandId('')
       setModelName('')
       setSocId('')
-
-      props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save device.'))
     }

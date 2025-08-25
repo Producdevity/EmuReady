@@ -405,12 +405,12 @@ export class NotificationAnalyticsService {
     startDate?: Date,
     endDate?: Date,
   ): Promise<
-    Array<{
+    {
       type: NotificationType
       totalSent: number
       openRate: number
       clickRate: number
-    }>
+    }[]
   > {
     const cacheKey = this.generateCacheKey('getTopPerformingTypes', {
       limit,
@@ -420,12 +420,12 @@ export class NotificationAnalyticsService {
 
     const cached = notificationAnalyticsCache.get(cacheKey)
     if (cached) {
-      return cached as Array<{
+      return cached as {
         type: NotificationType
         totalSent: number
         openRate: number
         clickRate: number
-      }>
+      }[]
     }
 
     const whereClause = this.buildDateFilter(startDate, endDate)

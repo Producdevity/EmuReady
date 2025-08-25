@@ -152,7 +152,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       if (newType === CustomFieldType.SELECT) {
         if (input.hasOwnProperty('options')) {
           if (input.options && input.options.length > 0) {
-            optionsToSave = input.options as Prisma.JsonArray
+            optionsToSave = input.options
           } else if (input.options && input.options.length === 0) {
             ValidationError.emptyOptions('SELECT')
           } else {

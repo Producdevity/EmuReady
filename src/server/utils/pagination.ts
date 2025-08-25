@@ -163,8 +163,8 @@ export type SortDirection = 'asc' | 'desc'
  */
 export function buildOrderBy<T>(
   sortConfig: Record<string, (direction: SortDirection) => T | T[]>,
-  sortField?: string,
-  sortDirection?: SortDirection,
+  sortField?: string | null,
+  sortDirection?: SortDirection | null,
   defaultOrderBy?: T | T[],
 ): T[] {
   const orderBy: T[] = []
@@ -191,7 +191,7 @@ export function buildOrderBy<T>(
  */
 function shouldApplyDefaultSort<T>(
   orderBy: T[],
-  sortField?: string,
+  sortField?: string | null,
   defaultOrderBy?: T | T[],
 ): defaultOrderBy is NonNullable<T | T[]> {
   if (!defaultOrderBy) return false
@@ -211,7 +211,7 @@ function shouldApplyDefaultSort<T>(
  */
 export function buildSearchConditions<T = unknown>(
   searchTerm: string,
-  fields: Array<(term: string) => T>,
+  fields: ((term: string) => T)[],
 ): T[] {
   return fields.map((fieldConfig) => fieldConfig(searchTerm))
 }

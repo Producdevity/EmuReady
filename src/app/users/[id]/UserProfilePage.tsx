@@ -14,7 +14,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { isArray, isString } from 'remeda'
 import { z } from 'zod'
 import { SystemIcon } from '@/components/icons'
@@ -27,6 +27,7 @@ import {
   Pagination,
   LocalizedDate,
 } from '@/components/ui'
+import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
@@ -61,11 +62,8 @@ function UserDetailsPage() {
   const [systemFilter, setSystemFilter] = useState(searchParams.get('system') || '')
   const [emulatorFilter, setEmulatorFilter] = useState(searchParams.get('emulator') || '')
 
-  const [debouncedSearch, setDebouncedSearch] = useState(searchFilter)
-  useMemo(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchFilter), 300)
-    return () => clearTimeout(timer)
-  }, [searchFilter])
+  // Use proper debouncing - not useMemo with setTimeout
+  const debouncedSearch = useDebouncedValue(searchFilter, 300)
 
   const userQuery = api.users.getUserById.useQuery({
     userId,

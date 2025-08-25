@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Admin Permissions Tests - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/permissions')
     // Verify admin access - test should fail if not admin

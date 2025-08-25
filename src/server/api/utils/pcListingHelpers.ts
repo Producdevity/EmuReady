@@ -41,6 +41,15 @@ export const pcListingAdminInclude = {
   processedByUser: true,
 } as const
 
+// Type exports for PC listings with includes
+export type PcListingWithInclude = Prisma.PcListingGetPayload<{ include: typeof pcListingInclude }>
+export type PcListingWithDetailInclude = Prisma.PcListingGetPayload<{
+  include: typeof pcListingDetailInclude
+}>
+export type PcListingWithAdminInclude = Prisma.PcListingGetPayload<{
+  include: typeof pcListingAdminInclude
+}>
+
 /**
  * Builds orderBy array for PC listings based on sort field and direction
  */

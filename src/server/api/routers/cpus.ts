@@ -12,164 +12,61 @@ import {
   manageDevicesProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
-import { Prisma } from '@orm'
+import { CpusRepository } from '@/server/repositories/cpus.repository'
+import { DeviceBrandsRepository } from '@/server/repositories/device-brands.repository'
 
 export const cpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
-    const { search, brandId, limit = 20, offset = 0, page, sortField, sortDirection } = input ?? {}
-
-    // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : offset
-    const mode = Prisma.QueryMode.insensitive
-
-    // Build where clause for filtering
-    const where: Prisma.CpuWhereInput = {
-      ...(brandId ? { brandId } : {}),
-      ...(search
-        ? {
-            OR: [
-              // Exact match for model name (highest priority)
-              { modelName: { equals: search, mode } },
-              // Exact match for brand name
-              { brand: { name: { equals: search, mode } } },
-              // Contains match for model name
-              { modelName: { contains: search, mode } },
-              // Contains match for brand name
-              { brand: { name: { contains: search, mode } } },
-              // Brand + Model combination search (e.g., "Intel Core i7")
-              ...(search.includes(' ')
-                ? [
-                    {
-                      AND: [
-                        {
-                          brand: {
-                            name: {
-                              contains: search.split(' ')[0],
-                              mode,
-                            },
-                          },
-                        },
-                        {
-                          modelName: {
-                            contains: search.split(' ').slice(1).join(' '),
-                            mode,
-                          },
-                        },
-                      ],
-                    },
-                  ]
-                : []),
-            ],
-          }
-        : {}),
-    }
-
-    const orderBy: Prisma.CpuOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'brand':
-          orderBy.push({ brand: { name: sortDirection } })
-          break
-        case 'modelName':
-          orderBy.push({ modelName: sortDirection })
-          break
-        case 'pcListings':
-          orderBy.push({ pcListings: { _count: sortDirection } })
-          break
-      }
-    }
-
-    // Default ordering if no sort specified - prioritize exact matches when searching
-    if (!orderBy.length) {
-      orderBy.push({ brand: { name: 'asc' } }, { modelName: 'asc' })
-    }
-
-    const [cpus, total] = await Promise.all([
-      ctx.prisma.cpu.findMany({
-        where,
-        include: { brand: true, _count: { select: { pcListings: true } } },
-        orderBy,
-        skip: actualOffset,
-        take: limit,
-      }),
-      ctx.prisma.cpu.count({ where }),
-    ])
-
-    return {
-      cpus,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        offset: actualOffset,
-        limit: limit,
-      },
-    }
+    const repository = new CpusRepository(ctx.prisma)
+    return repository.getPaginated(input ?? {})
   }),
 
   byId: publicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {
-    const cpu = await ctx.prisma.cpu.findUnique({
-      where: { id: input.id },
-      include: { brand: true, _count: { select: { pcListings: true } } },
-    })
-
+    const repository = new CpusRepository(ctx.prisma)
+    const cpu = await repository.byIdWithCounts(input.id)
     return cpu ?? ResourceError.cpu.notFound()
   }),
 
   create: manageDevicesProcedure.input(CreateCpuSchema).mutation(async ({ ctx, input }) => {
+    const repository = new CpusRepository(ctx.prisma)
+
     const brand = await ctx.prisma.deviceBrand.findUnique({
       where: { id: input.brandId },
     })
 
     if (!brand) return ResourceError.deviceBrand.notFound()
 
-    const existingCpu = await ctx.prisma.cpu.findFirst({
-      where: {
-        brandId: input.brandId,
-        modelName: { equals: input.modelName, mode: 'insensitive' },
-      },
-    })
+    const exists = await repository.existsByModelName(input.modelName)
+    if (exists) return ResourceError.cpu.alreadyExists(input.modelName)
 
-    if (existingCpu) return ResourceError.cpu.alreadyExists(input.modelName)
-
-    return ctx.prisma.cpu.create({
-      data: input,
-      include: { brand: true, _count: { select: { pcListings: true } } },
-    })
+    // Create and then fetch with counts for web
+    const created = await repository.create(input)
+    return repository.byIdWithCounts(created.id)
   }),
 
   update: manageDevicesProcedure.input(UpdateCpuSchema).mutation(async ({ ctx, input }) => {
+    const cpusRepository = new CpusRepository(ctx.prisma)
+    const deviceBrandsRepository = new DeviceBrandsRepository(ctx.prisma)
     const { id, ...data } = input
 
-    const cpu = await ctx.prisma.cpu.findUnique({ where: { id } })
-
+    const cpu = await cpusRepository.byId(id)
     if (!cpu) return ResourceError.cpu.notFound()
 
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.brandId },
-    })
+    const brand = await deviceBrandsRepository.byId(input.brandId)
 
     if (!brand) return ResourceError.deviceBrand.notFound()
 
-    const existingCpu = await ctx.prisma.cpu.findFirst({
-      where: {
-        brandId: input.brandId,
-        modelName: { equals: input.modelName, mode: 'insensitive' },
-        id: { not: id },
-      },
-    })
+    const exists = await cpusRepository.existsByModelName(input.modelName, id)
+    if (exists) return ResourceError.cpu.alreadyExists(input.modelName)
 
-    if (existingCpu) return ResourceError.cpu.alreadyExists(input.modelName)
-
-    return ctx.prisma.cpu.update({
-      where: { id },
-      data,
-      include: { brand: true, _count: { select: { pcListings: true } } },
-    })
+    // Update and then fetch with counts for web
+    const updated = await cpusRepository.update(id, data)
+    return cpusRepository.byIdWithCounts(updated.id)
   }),
 
   delete: manageDevicesProcedure.input(DeleteCpuSchema).mutation(async ({ ctx, input }) => {
+    const repository = new CpusRepository(ctx.prisma)
+
     const existingCpu = await ctx.prisma.cpu.findUnique({
       where: { id: input.id },
       include: { _count: { select: { pcListings: true } } },
@@ -183,18 +80,18 @@ export const cpusRouter = createTRPCRouter({
       )
     }
 
-    return ctx.prisma.cpu.delete({ where: { id: input.id } })
+    await repository.delete(input.id)
+    return existingCpu // Return the deleted CPU
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
-    const [total, withListings, withoutListings] = await Promise.all([
-      ctx.prisma.cpu.count(),
+    const [withListings, withoutListings] = await Promise.all([
       ctx.prisma.cpu.count({ where: { pcListings: { some: {} } } }),
       ctx.prisma.cpu.count({ where: { pcListings: { none: {} } } }),
     ])
 
     return {
-      total,
+      total: withListings + withoutListings,
       withListings,
       withoutListings,
     }

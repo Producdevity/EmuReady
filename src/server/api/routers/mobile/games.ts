@@ -2,189 +2,54 @@ import { AppError } from '@/lib/errors'
 import {
   GetGameByIdSchema,
   GetGamesSchema,
-  type GetGamesInput,
   SearchGamesSchema,
   FindSwitchTitleIdMobileSchema,
   GetBestSwitchTitleIdMobileSchema,
   GetSwitchGamesStatsMobileSchema,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { GamesRepository } from '@/server/repositories/games.repository'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
   getSwitchGamesStats,
 } from '@/server/utils/switchGameSearch'
-import { ApprovalStatus } from '@orm'
-import type { PrismaClient } from '@orm'
-
-// Shared function for getting games
-async function getGamesQuery(
-  ctx: {
-    prisma: PrismaClient
-    session?: { user?: { showNsfw?: boolean } } | null
-  },
-  input: GetGamesInput,
-) {
-  const search = input?.search
-  const systemId = input?.systemId
-  const page = input?.page ?? 1
-  const limit = input?.limit ?? 20
-  const skip = (page - 1) * limit
-
-  const whereClause: Record<string, unknown> = {
-    status: ApprovalStatus.APPROVED,
-  }
-
-  if (systemId) {
-    whereClause.systemId = systemId
-  }
-
-  if (search) {
-    whereClause.title = {
-      contains: search,
-      mode: 'insensitive',
-    }
-  }
-
-  // Filter NSFW content based on user preferences (default to hiding NSFW if no user session)
-  const showNsfw = ctx.session?.user?.showNsfw ?? false
-  if (!showNsfw) whereClause.isErotic = false
-
-  const [games, total] = await Promise.all([
-    ctx.prisma.game.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        title: true,
-        systemId: true,
-        imageUrl: true,
-        boxartUrl: true,
-        bannerUrl: true,
-        tgdbGameId: true,
-        isErotic: true,
-        status: true,
-        createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
-      },
-      orderBy: [{ listings: { _count: 'desc' } }, { createdAt: 'desc' }, { title: 'asc' }],
-      skip,
-      take: limit,
-    }),
-    ctx.prisma.game.count({ where: whereClause }),
-  ])
-
-  const totalPages = Math.ceil(total / limit)
-
-  return {
-    games,
-    pagination: {
-      total,
-      pages: totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1,
-    },
-  }
-}
 
 export const mobileGamesRouter = createMobileTRPCRouter({
   /**
    * Get games with search and filtering
    */
-  get: mobilePublicProcedure
-    .input(GetGamesSchema)
-    .query(async ({ ctx, input }) => getGamesQuery(ctx, input)),
+  get: mobilePublicProcedure.input(GetGamesSchema).query(async ({ ctx, input }) => {
+    const repository = new GamesRepository(ctx.prisma)
+    return repository.getMobile({
+      ...input,
+      showNsfw: ctx.session?.user?.showNsfw ?? false,
+    })
+  }),
 
   /**
    * Get popular games
    */
   getPopularGames: mobilePublicProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.game.findMany({
-      where: { status: ApprovalStatus.APPROVED },
-      select: {
-        id: true,
-        title: true,
-        systemId: true,
-        imageUrl: true,
-        boxartUrl: true,
-        bannerUrl: true,
-        tgdbGameId: true,
-        isErotic: true,
-        status: true,
-        createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
-        _count: {
-          select: { listings: { where: { status: ApprovalStatus.APPROVED } } },
-        },
-      },
-      orderBy: { listings: { _count: 'desc' } },
-      take: 20,
-    })
+    const repository = new GamesRepository(ctx.prisma)
+    return repository.getPopularMobile(ctx.session?.user?.showNsfw ?? false)
   }),
 
   /**
    * Search games
    */
   searchGames: mobilePublicProcedure.input(SearchGamesSchema).query(async ({ ctx, input }) => {
-    return await ctx.prisma.game.findMany({
-      where: {
-        status: ApprovalStatus.APPROVED,
-        title: { contains: input.query, mode: 'insensitive' },
-      },
-      select: {
-        id: true,
-        title: true,
-        systemId: true,
-        imageUrl: true,
-        boxartUrl: true,
-        bannerUrl: true,
-        tgdbGameId: true,
-        isErotic: true,
-        status: true,
-        createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
-      },
-      orderBy: [{ listings: { _count: 'desc' } }, { createdAt: 'desc' }, { title: 'asc' }],
-      take: 20,
-    })
+    const repository = new GamesRepository(ctx.prisma)
+    return repository.searchMobile(input.query, ctx.session?.user?.showNsfw ?? false)
   }),
 
   /**
    * Get game by ID
+   * TODO: change to byId and deprecate getGameById
    */
   getGameById: mobilePublicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
-    return await ctx.prisma.game.findUnique({
-      where: { id: input.id },
-      select: {
-        id: true,
-        title: true,
-        systemId: true,
-        imageUrl: true,
-        boxartUrl: true,
-        bannerUrl: true,
-        tgdbGameId: true,
-        isErotic: true,
-        status: true,
-        createdAt: true,
-        system: { select: { id: true, name: true, key: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
-      },
-    })
+    const repository = new GamesRepository(ctx.prisma)
+    return repository.getByIdMobile(input.id)
   }),
 
   /**

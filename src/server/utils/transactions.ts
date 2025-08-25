@@ -25,7 +25,7 @@ interface BatchOptions {
 
 interface BatchResult<T> {
   successful: T[]
-  failed: Array<{ index: number; error: unknown }>
+  failed: { index: number; error: unknown }[]
   totalProcessed: number
   successCount: number
   errorCount: number
@@ -162,14 +162,14 @@ export async function withOptimisticLock<T>(
  * Batch operations for better performance
  */
 export async function batchOperations<T>(
-  operations: Array<() => Promise<T>>,
+  operations: (() => Promise<T>)[],
   options?: BatchOptions,
 ): Promise<BatchResult<T>> {
   const batchSize = options?.batchSize ?? 100
   const parallel = options?.parallel ?? false
 
   const results: T[] = []
-  const errors: Array<{ index: number; error: unknown }> = []
+  const errors: { index: number; error: unknown }[] = []
 
   if (parallel) {
     for (let i = 0; i < operations.length; i += batchSize) {

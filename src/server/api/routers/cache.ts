@@ -9,7 +9,7 @@ import {
   suggestIndexes,
   analyzeQueryComplexity,
 } from '@/server/utils/query-performance'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus, ReportStatus } from '@orm'
 
 export const cacheRouter = createTRPCRouter({
   /**
@@ -191,7 +191,7 @@ export const cacheRouter = createTRPCRouter({
       {
         name: 'Reports by status',
         model: 'listingReport',
-        where: { status: 'PENDING' },
+        where: { status: ReportStatus.PENDING },
         orderBy: { createdAt: 'desc' },
       },
     ]

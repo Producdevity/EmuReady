@@ -28,6 +28,38 @@ export const TRUST_ACTIONS = {
     weight: -1,
     description: 'Received a downvote on a listing',
   },
+  [TrustAction.LISTING_DEVELOPER_VERIFIED]: {
+    weight: 14,
+    description: 'Listing was verified by a developer',
+  },
+  [TrustAction.COMMENT_RECEIVED_UPVOTE]: {
+    weight: 2,
+    description: 'Received an upvote on a comment',
+  },
+  [TrustAction.COMMENT_RECEIVED_DOWNVOTE]: {
+    weight: -1,
+    description: 'Received a downvote on a comment',
+  },
+  [TrustAction.REPORT_CONFIRMED]: {
+    weight: 5,
+    description: 'Reported inappropriate content that was confirmed by moderators',
+  },
+  [TrustAction.FALSE_REPORT]: {
+    weight: -10,
+    description: 'Submitted a false or malicious report',
+  },
+  [TrustAction.GAME_SUBMISSION_APPROVED]: {
+    weight: 3,
+    description: 'Submitted a new game that was approved',
+  },
+  [TrustAction.GAME_SUBMISSION_REJECTED]: {
+    weight: -2,
+    description: 'Submitted a game that was rejected (duplicate, invalid, etc.)',
+  },
+  [TrustAction.HELPFUL_COMMENT]: {
+    weight: 3,
+    description: 'Comment received significant upvotes (5+ threshold)',
+  },
   [TrustAction.ADMIN_ADJUSTMENT_POSITIVE]: {
     weight: 0, // Dynamic weight set by admin
     description: 'Manual trust score increase by admin',

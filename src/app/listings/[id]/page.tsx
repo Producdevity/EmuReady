@@ -9,8 +9,8 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-// Revalidate every 30 minutes
-export const revalidate = 1800
+// Revalidate every 30 seconds for fresh voting data
+export const revalidate = 30
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params

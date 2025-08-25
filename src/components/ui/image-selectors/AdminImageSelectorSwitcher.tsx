@@ -1,16 +1,17 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Database, Zap, Link, X, Check } from 'lucide-react'
+import { Database, Zap, Link, X, Check, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
-import { Button, Input, Toggle } from '@/components/ui'
+import { Button, Input } from '@/components/ui'
 import getImageUrl from '@/utils/getImageUrl'
 import {
   validateImageUrl,
   getImageValidationError,
   IMAGE_EXTENSIONS,
 } from '@/utils/imageValidation'
+import { IGDBImageSelector } from './providers/IGDBImageSelector'
 import { RawgImageSelector } from './providers/RawgImageSelector'
 import { TGDBImageSelector } from './providers/TGDBImageSelector'
 
@@ -26,12 +27,13 @@ interface Props {
   placeholder?: string
 }
 
-type ImageService = 'url' | 'rawg' | 'tgdb'
+type ImageService = 'url' | 'rawg' | 'tgdb' | 'igdb'
 
 const imageServiceMap: Record<ImageService, ImageService> = {
   url: 'url',
   rawg: 'rawg',
   tgdb: 'tgdb',
+  igdb: 'igdb',
 }
 
 export function AdminImageSelectorSwitcher(props: Props) {
@@ -96,82 +98,125 @@ export function AdminImageSelectorSwitcher(props: Props) {
 
       {/* Service Selector */}
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Link className="h-5 w-5 text-gray-500" />
-              <span
-                className={`font-medium transition-colors ${
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              onClick={() => setSelectedService('url')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                selectedService === 'url'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Link
+                className={`h-5 w-5 mx-auto mb-1 ${
+                  selectedService === 'url' ? 'text-blue-500' : 'text-gray-500'
+                }`}
+              />
+              <div
+                className={`text-sm font-medium ${
                   selectedService === 'url'
                     ? 'text-blue-600 dark:text-blue-400'
                     : 'text-gray-700 dark:text-gray-300'
                 }`}
               >
                 Manual URL
-              </span>
-            </div>
-
-            <Toggle
-              checked={selectedService !== 'url'}
-              onChange={(checked) =>
-                setSelectedService(checked ? imageServiceMap.rawg : imageServiceMap.url)
-              }
-              size="md"
-            />
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-orange-500" />
-                <span
-                  className={`font-medium transition-colors ${
-                    selectedService === 'rawg'
-                      ? 'text-orange-600 dark:text-orange-400'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  RAWG.io
-                </span>
               </div>
+            </button>
 
-              <Toggle
-                checked={selectedService === 'tgdb'}
-                onChange={(checked) => setSelectedService(checked ? 'tgdb' : 'rawg')}
-                size="md"
-                disabled={selectedService === 'url'}
+            <button
+              onClick={() => setSelectedService('rawg')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                selectedService === 'rawg'
+                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Zap
+                className={`h-5 w-5 mx-auto mb-1 ${
+                  selectedService === 'rawg' ? 'text-orange-500' : 'text-gray-500'
+                }`}
               />
-
-              <div className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-blue-500" />
-                <span
-                  className={`font-medium transition-colors ${
-                    selectedService === 'tgdb'
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  TheGamesDB
-                </span>
-                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-                  Experimental
-                </span>
+              <div
+                className={`text-sm font-medium ${
+                  selectedService === 'rawg'
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                RAWG.io
               </div>
-            </div>
+            </button>
+
+            <button
+              onClick={() => setSelectedService('tgdb')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                selectedService === 'tgdb'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Database
+                className={`h-5 w-5 mx-auto mb-1 ${
+                  selectedService === 'tgdb' ? 'text-blue-500' : 'text-gray-500'
+                }`}
+              />
+              <div
+                className={`text-sm font-medium ${
+                  selectedService === 'tgdb'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                TheGamesDB
+              </div>
+            </button>
+
+            <button
+              onClick={() => setSelectedService('igdb')}
+              className={`p-3 rounded-lg border-2 transition-all relative ${
+                selectedService === 'igdb'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Sparkles
+                className={`h-5 w-5 mx-auto mb-1 ${
+                  selectedService === 'igdb' ? 'text-purple-500' : 'text-gray-500'
+                }`}
+              />
+              <div
+                className={`text-sm font-medium ${
+                  selectedService === 'igdb'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                IGDB
+              </div>
+              <span className="absolute -top-1 -right-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1 rounded text-[10px]">
+                NEW
+              </span>
+            </button>
           </div>
 
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
             {selectedService === 'url' && 'Enter image URL manually'}
             {selectedService === 'rawg' && 'Using RAWG.io for game images'}
             {selectedService === 'tgdb' && 'Using TheGamesDB for game images'}
+            {selectedService === 'igdb' && 'Using IGDB for comprehensive game media'}
           </div>
-        </div>
 
-        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          {selectedService === 'url' &&
-            `Paste any image URL (${IMAGE_EXTENSIONS.join(', ')}) from the web`}
-          {selectedService === 'rawg' &&
-            'RAWG.io provides comprehensive game data with screenshots and backgrounds'}
-          {selectedService === 'tgdb' &&
-            'TheGamesDB offers high-quality boxart and game media from the community'}
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            {selectedService === 'url' &&
+              `Paste any image URL (${IMAGE_EXTENSIONS.join(', ')}) from the web`}
+            {selectedService === 'rawg' &&
+              'RAWG.io provides comprehensive game data with screenshots and backgrounds'}
+            {selectedService === 'tgdb' &&
+              'TheGamesDB offers high-quality boxart and game media from the community'}
+            {selectedService === 'igdb' &&
+              'IGDB provides rich media including covers, artworks, and screenshots with detailed metadata'}
+          </div>
         </div>
       </div>
 
@@ -275,6 +320,22 @@ export function AdminImageSelectorSwitcher(props: Props) {
               <RawgImageSelector
                 gameTitle={props.gameTitle}
                 systemName={props.systemName}
+                selectedImageUrl={props.selectedImageUrl}
+                onImageSelect={props.onImageSelect}
+                onError={props.onError}
+              />
+            </motion.div>
+          ) : selectedService === 'igdb' ? (
+            <motion.div
+              key="igdb"
+              custom={2}
+              variants={slideVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <IGDBImageSelector
+                gameTitle={props.gameTitle}
                 selectedImageUrl={props.selectedImageUrl}
                 onImageSelect={props.onImageSelect}
                 onError={props.onError}

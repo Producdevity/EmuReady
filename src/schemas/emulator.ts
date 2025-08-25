@@ -43,3 +43,9 @@ export const UpdateSupportedSystemsSchema = z.object({
   emulatorId: z.string().uuid(),
   systemIds: z.array(z.string().uuid()),
 })
+
+// Type exports for repository use
+export type GetEmulatorsInput = z.input<typeof GetEmulatorsSchema>
+export type CreateEmulatorInput = z.infer<typeof CreateEmulatorSchema>
+export type UpdateEmulatorInput = z.infer<typeof UpdateEmulatorSchema>
+export type UpdateSupportedSystemsInput = z.infer<typeof UpdateSupportedSystemsSchema>

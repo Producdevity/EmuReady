@@ -10,6 +10,8 @@ interface Props {
   onUploadSuccess?: (imageUrl: string) => void
 }
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+
 function ProfileUpload(props: Props) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,16 +31,14 @@ function ProfileUpload(props: Props) {
     }
 
     // 5MB max size
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_IMAGE_SIZE) {
       setError('Image size must be less than 5MB')
       return
     }
 
     // Preview the image
     const reader = new FileReader()
-    reader.onload = (event) => {
-      setPreviewUrl(event.target?.result as string)
-    }
+    reader.onload = (event) => setPreviewUrl(event.target?.result as string)
     reader.readAsDataURL(file)
 
     // Upload the image
@@ -46,23 +46,17 @@ function ProfileUpload(props: Props) {
     setError(null)
     uploadProfileImage(file)
       .then((imageUrl) => {
-        if (props.onUploadSuccess) {
-          props.onUploadSuccess(imageUrl)
-        }
+        if (props.onUploadSuccess) props.onUploadSuccess(imageUrl)
       })
       .catch((err) => {
         setError(getErrorMessage(err, 'An error occurred during upload'))
         setPreviewUrl(null)
         console.error('Error uploading profile image:', err)
       })
-      .finally(() => {
-        setIsUploading(false)
-      })
+      .finally(() => setIsUploading(false))
   }
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click()
-  }
+  const triggerFileInput = () => fileInputRef.current?.click()
 
   return (
     <div className="flex flex-col items-center">

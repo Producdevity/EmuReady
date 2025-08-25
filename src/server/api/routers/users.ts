@@ -175,7 +175,7 @@ export const usersRouter = createTRPCRouter({
     // Build where clauses for listings filtering
     const listingsWhere: Prisma.ListingWhereInput = {}
     if (!ctx.session?.user?.showNsfw) {
-      listingsWhere.game = { isErotic: false } as Prisma.GameWhereInput
+      listingsWhere.game = { isErotic: false }
     }
 
     // Filter by approval status based on user permissions

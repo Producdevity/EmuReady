@@ -24,7 +24,7 @@ describe('Error Handling System', () => {
 
       it('should throw insufficient permissions error with role', () => {
         expect(() => AppError.insufficientRole('ADMIN')).toThrow(
-          'You need Admin permissions to perform this action',
+          'You need Admin role to perform this action',
         )
       })
     })

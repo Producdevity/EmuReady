@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { convertToEdenConfig, serializeEdenConfig, type EdenConfigInput } from './eden-converter'
-import type { EdenConfigSection } from './types/eden'
+import type {
+  EdenConfigSection,
+  BooleanConfigValue,
+  IntConfigValue,
+  StringConfigValue,
+} from './types/eden'
 
 describe('Eden Converter', () => {
   describe('GPU Driver Edge Cases', () => {
@@ -570,9 +575,16 @@ describe('Eden Converter', () => {
         }
 
         const config = convertToEdenConfig(input)
-        const configSection = config[section as keyof typeof config] as any
-        expect(configSection![key]!.value).toBe(true)
-        expect(configSection![key]!.use_global).toBe(false)
+        const configSection = config[section as keyof typeof config]
+        if (configSection && typeof configSection === 'object' && key in configSection) {
+          const configValue = (
+            configSection as Record<string, BooleanConfigValue | IntConfigValue | StringConfigValue>
+          )[key]
+          expect(configValue?.value).toBe(true)
+          expect(configValue?.use_global).toBe(false)
+        } else {
+          throw new Error(`Config section ${section} or key ${key} not found`)
+        }
       })
 
       it(`should convert ${field} false to 'false' string`, () => {
@@ -592,9 +604,16 @@ describe('Eden Converter', () => {
         }
 
         const config = convertToEdenConfig(input)
-        const configSection = config[section as keyof typeof config] as any
-        expect(configSection![key]!.value).toBe(false)
-        expect(configSection![key]!.use_global).toBe(false)
+        const configSection = config[section as keyof typeof config]
+        if (configSection && typeof configSection === 'object' && key in configSection) {
+          const configValue = (
+            configSection as Record<string, BooleanConfigValue | IntConfigValue | StringConfigValue>
+          )[key]
+          expect(configValue?.value).toBe(false)
+          expect(configValue?.use_global).toBe(false)
+        } else {
+          throw new Error(`Config section ${section} or key ${key} not found`)
+        }
       })
     })
   })
@@ -1323,8 +1342,12 @@ describe('Eden Converter', () => {
       // No custom fields should be set
       Object.values(config).forEach((section) => {
         Object.values(section as EdenConfigSection).forEach((setting) => {
-          const configValue = setting as any
-          if (configValue?.use_global === false) {
+          const configValue = setting as
+            | BooleanConfigValue
+            | IntConfigValue
+            | StringConfigValue
+            | undefined
+          if (configValue && 'use_global' in configValue && configValue.use_global === false) {
             // Should not have any non-global settings from these fields
             expect(configValue).toBeUndefined()
           }

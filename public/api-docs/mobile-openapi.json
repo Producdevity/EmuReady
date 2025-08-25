@@ -519,7 +519,15 @@
                   "systemId": {
                     "type": "string",
                     "format": "uuid",
-                    "description": "Filter by system ID"
+                    "description": "Filter by single system ID (deprecated - use systemIds)"
+                  },
+                  "systemIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Filter by multiple system IDs"
                   },
                   "deviceId": {
                     "type": "string",
@@ -533,6 +541,20 @@
                       "format": "uuid"
                     },
                     "description": "Filter by emulator IDs"
+                  },
+                  "performanceIds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "description": "Filter by performance IDs"
                   },
                   "search": {
                     "type": "string",
@@ -1303,142 +1325,6 @@
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "GetPcPresetsSchema": {
-        "$ref": "#/definitions/GetPcPresetsSchema",
-        "definitions": {
-          "GetPcPresetsSchema": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 50,
-                "default": 20
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "CreatePcPresetSchema": {
-        "$ref": "#/definitions/CreatePcPresetSchema",
-        "definitions": {
-          "CreatePcPresetSchema": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "cpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "gpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "memorySize": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 256
-              },
-              "os": {
-                "type": "string",
-                "enum": [
-                  "WINDOWS",
-                  "LINUX",
-                  "MACOS"
-                ]
-              },
-              "osVersion": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "name",
-              "cpuId",
-              "gpuId",
-              "memorySize",
-              "os",
-              "osVersion"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "UpdatePcPresetSchema": {
-        "$ref": "#/definitions/UpdatePcPresetSchema",
-        "definitions": {
-          "UpdatePcPresetSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "name": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "cpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "gpuId": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "memorySize": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 256
-              },
-              "os": {
-                "type": "string",
-                "enum": [
-                  "WINDOWS",
-                  "LINUX",
-                  "MACOS"
-                ]
-              },
-              "osVersion": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "DeletePcPresetSchema": {
-        "$ref": "#/definitions/DeletePcPresetSchema",
-        "definitions": {
-          "DeletePcPresetSchema": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "$schema": "http://json-schema.org/draft-07/schema#"
       }
     }
   },
@@ -1525,7 +1411,7 @@
     }
   ],
   "paths": {
-    "/api/mobile/trpc/auth.validateToken": {
+    "/auth.validateToken": {
       "get": {
         "summary": "Validate JWT token",
         "description": "Validate JWT token",
@@ -1665,7 +1551,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/auth.updateProfile": {
+    "/auth.updateProfile": {
       "post": {
         "summary": "Update mobile profile",
         "description": "Update mobile profile",
@@ -1810,7 +1696,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/auth.deleteAccount": {
+    "/auth.deleteAccount": {
       "post": {
         "summary": "Delete account",
         "description": "Delete account",
@@ -1957,7 +1843,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/cpus.get": {
+    "/cpus.get": {
       "get": {
         "summary": "Get CPUs with search, filtering, and pagination",
         "description": "Get CPUs with search, filtering, and pagination",
@@ -2096,7 +1982,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/cpus.getById": {
+    "/cpus.getById": {
       "get": {
         "summary": "Get CPU by ID",
         "description": "Get CPU by ID",
@@ -2221,7 +2107,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/customFieldDefinitions.getByEmulator": {
+    "/customFieldDefinitions.getByEmulator": {
       "get": {
         "summary": "Get custom field definitions by emulator (for mobile listing creation)",
         "description": "Get custom field definitions by emulator (for mobile listing creation)",
@@ -2349,7 +2235,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/developers.isVerifiedDeveloper": {
+    "/developers.isVerifiedDeveloper": {
       "get": {
         "summary": "Check if a user is a verified developer for an emulator",
         "description": "Check if a user is a verified developer for an emulator",
@@ -2492,7 +2378,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/deviceBrands.get": {
+    "/deviceBrands.get": {
       "get": {
         "summary": "Get device brands with search and sorting",
         "description": "Get device brands with search and sorting",
@@ -2620,7 +2506,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/deviceBrands.getById": {
+    "/deviceBrands.getById": {
       "get": {
         "summary": "Get device brand by ID",
         "description": "Get device brand by ID",
@@ -2745,10 +2631,10 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/devices.get": {
+    "/devices.get": {
       "get": {
-        "summary": "Get devices with search and filtering",
-        "description": "Get devices with search and filtering",
+        "summary": "Get devices with optional search, brand filtering, and pagination",
+        "description": "Get devices with optional search, brand filtering, and pagination",
         "tags": [
           "devices"
         ],
@@ -2886,10 +2772,10 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/devices.brands": {
+    "/devices.brands": {
       "get": {
-        "summary": "Get device brands",
-        "description": "Get device brands",
+        "summary": "Get all device brands sorted alphabetically",
+        "description": "Get all device brands sorted alphabetically",
         "tags": [
           "devices"
         ],
@@ -3016,7 +2902,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/devices.socs": {
+    "/devices.socs": {
       "get": {
         "summary": "Get SOCs (System on Chips)",
         "description": "Get SOCs (System on Chips)",
@@ -3146,7 +3032,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/devices.byId": {
+    "/devices.byId": {
       "get": {
         "summary": "Get device by ID",
         "description": "Get device by ID",
@@ -3276,7 +3162,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/emulators.get": {
+    "/emulators.get": {
       "get": {
         "summary": "Get emulators with search and filtering",
         "description": "Get emulators with search and filtering",
@@ -3416,7 +3302,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/emulators.byId": {
+    "/emulators.byId": {
       "get": {
         "summary": "Get emulator by ID",
         "description": "Get emulator by ID",
@@ -3556,7 +3442,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.get": {
+    "/games.get": {
       "get": {
         "summary": "Get games with search and filtering",
         "description": "Get games with search and filtering",
@@ -3705,7 +3591,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.getPopularGames": {
+    "/games.getPopularGames": {
       "get": {
         "summary": "Get popular games",
         "description": "Get popular games",
@@ -3843,7 +3729,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.searchGames": {
+    "/games.searchGames": {
       "get": {
         "summary": "Search games",
         "description": "Search games",
@@ -3985,7 +3871,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.getGameById": {
+    "/games.getGameById": {
       "get": {
         "summary": "Get game by ID",
         "description": "Get game by ID",
@@ -4129,7 +4015,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.findSwitchTitleId": {
+    "/games.findSwitchTitleId": {
       "get": {
         "summary": "Find Nintendo Switch title IDs by game name (fuzzy search)",
         "description": "Find Nintendo Switch title IDs by game name (fuzzy search)",
@@ -4271,7 +4157,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.getBestSwitchTitleId": {
+    "/games.getBestSwitchTitleId": {
       "get": {
         "summary": "Get the best matching Nintendo Switch title ID for a game name",
         "description": "Get the best matching Nintendo Switch title ID for a game name",
@@ -4420,7 +4306,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/games.getSwitchGamesStats": {
+    "/games.getSwitchGamesStats": {
       "get": {
         "summary": "Get Nintendo Switch games cache statistics",
         "description": "Get Nintendo Switch games cache statistics",
@@ -4569,7 +4455,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/general.stats": {
+    "/general.stats": {
       "get": {
         "summary": "Get app statistics",
         "description": "Get app statistics",
@@ -4697,7 +4583,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/general.systems": {
+    "/general.systems": {
       "get": {
         "summary": "Get all systems",
         "description": "Get all systems",
@@ -4825,7 +4711,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/general.performanceScales": {
+    "/general.performanceScales": {
       "get": {
         "summary": "Get performance scales",
         "description": "Get performance scales",
@@ -4953,7 +4839,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/general.searchSuggestions": {
+    "/general.searchSuggestions": {
       "get": {
         "summary": "Get search suggestions",
         "description": "Get search suggestions",
@@ -5092,7 +4978,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/general.trustLevels": {
+    "/general.trustLevels": {
       "get": {
         "summary": "Get trust levels (for mobile trust system integration)",
         "description": "Get trust levels (for mobile trust system integration)",
@@ -5220,7 +5106,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/gpus.get": {
+    "/gpus.get": {
       "get": {
         "summary": "Get GPUs with search, filtering, and pagination",
         "description": "Get GPUs with search, filtering, and pagination",
@@ -5359,7 +5245,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/gpus.getById": {
+    "/gpus.getById": {
       "get": {
         "summary": "Get GPU by ID",
         "description": "Get GPU by ID",
@@ -5484,7 +5370,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listingReports.create": {
+    "/listingReports.create": {
       "post": {
         "summary": "Create a new listing report (user-facing)",
         "description": "Create a new listing report (user-facing)",
@@ -5616,7 +5502,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listingReports.checkUserHasReports": {
+    "/listingReports.checkUserHasReports": {
       "get": {
         "summary": "Check if a user has reports (for showing warnings)",
         "description": "Check if a user has reports (for showing warnings)",
@@ -5744,7 +5630,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.get": {
+    "/listings.get": {
       "get": {
         "summary": "Get listings with pagination and filtering",
         "description": "Get listings with pagination and filtering",
@@ -5888,7 +5774,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.getListings": {
+    "/listings.getListings": {
       "get": {
         "summary": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
         "description": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
@@ -6069,7 +5955,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.featured": {
+    "/listings.featured": {
       "get": {
         "summary": "Get featured listings",
         "description": "Get featured listings",
@@ -6202,7 +6088,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.byGame": {
+    "/listings.byGame": {
       "get": {
         "summary": "Get listings by game",
         "description": "Get listings by game",
@@ -6346,7 +6232,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.byId": {
+    "/listings.byId": {
       "get": {
         "summary": "Get listing by ID",
         "description": "Get listing by ID",
@@ -6490,7 +6376,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.byUser": {
+    "/listings.byUser": {
       "get": {
         "summary": "Get user listings",
         "description": "Get user listings",
@@ -6638,7 +6524,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.create": {
+    "/listings.create": {
       "post": {
         "summary": "Create a new listing",
         "description": "Create a new listing",
@@ -6792,7 +6678,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.update": {
+    "/listings.update": {
       "post": {
         "summary": "Update a listing",
         "description": "Update a listing",
@@ -6943,7 +6829,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.delete": {
+    "/listings.delete": {
       "post": {
         "summary": "Delete a listing",
         "description": "Delete a listing",
@@ -7094,7 +6980,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.vote": {
+    "/listings.vote": {
       "post": {
         "summary": "Vote on a listing",
         "description": "Vote on a listing",
@@ -7246,7 +7132,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.userVote": {
+    "/listings.userVote": {
       "get": {
         "summary": "Get user's vote on a listing",
         "description": "Get user's vote on a listing",
@@ -7293,45 +7179,18 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from listings.userVote",
+                          "data": {
                             "id": "uuid-listing",
                             "gameId": "uuid-game",
                             "deviceId": "uuid-device",
                             "emulatorId": "uuid-emulator",
                             "performanceId": 1,
                             "notes": "Runs perfectly at 60fps",
-                            "status": "APPROVED",
-                            "game": {
-                              "id": "uuid-game",
-                              "title": "Super Mario Bros"
-                            },
-                            "device": {
-                              "id": "uuid-device",
-                              "modelName": "Steam Deck",
-                              "brand": {
-                                "name": "Valve"
-                              }
-                            },
-                            "emulator": {
-                              "id": "uuid-emulator",
-                              "name": "RetroArch"
-                            },
-                            "performance": {
-                              "id": 1,
-                              "label": "Perfect",
-                              "rank": 1
-                            },
-                            "author": {
-                              "id": "uuid-user",
-                              "name": "GameTester"
-                            },
-                            "_count": {
-                              "votes": 12,
-                              "comments": 3
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -7421,7 +7280,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.comments": {
+    "/listings.comments": {
       "get": {
         "summary": "Get listing comments",
         "description": "Get listing comments",
@@ -7469,52 +7328,15 @@
                     "value": {
                       "result": {
                         "data": {
-                          "listingss": [
-                            {
-                              "id": "uuid-listing",
-                              "gameId": "uuid-game",
-                              "deviceId": "uuid-device",
-                              "emulatorId": "uuid-emulator",
-                              "performanceId": 1,
-                              "notes": "Runs perfectly at 60fps",
-                              "status": "APPROVED",
-                              "game": {
-                                "id": "uuid-game",
-                                "title": "Super Mario Bros"
-                              },
-                              "device": {
-                                "id": "uuid-device",
-                                "modelName": "Steam Deck",
-                                "brand": {
-                                  "name": "Valve"
-                                }
-                              },
-                              "emulator": {
-                                "id": "uuid-emulator",
-                                "name": "RetroArch"
-                              },
-                              "performance": {
-                                "id": 1,
-                                "label": "Perfect",
-                                "rank": 1
-                              },
-                              "author": {
-                                "id": "uuid-user",
-                                "name": "GameTester"
-                              },
-                              "_count": {
-                                "votes": 12,
-                                "comments": 3
-                              }
-                            }
-                          ],
-                          "pagination": {
-                            "total": 156,
-                            "pages": 8,
-                            "currentPage": 1,
-                            "limit": 20,
-                            "hasNextPage": true,
-                            "hasPreviousPage": false
+                          "message": "Response from listings.comments",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
                           }
                         }
                       }
@@ -7602,7 +7424,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/listings.createComment": {
+    "/listings.createComment": {
       "post": {
         "summary": "Create a comment",
         "description": "Create a comment",
@@ -7754,7 +7576,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.updateComment": {
+    "/listings.updateComment": {
       "post": {
         "summary": "Update a comment",
         "description": "Update a comment",
@@ -7906,7 +7728,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.deleteComment": {
+    "/listings.deleteComment": {
       "post": {
         "summary": "Delete a comment",
         "description": "Delete a comment",
@@ -8057,7 +7879,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/listings.getEmulatorConfig": {
+    "/listings.getEmulatorConfig": {
       "get": {
         "summary": "Delete a comment",
         "description": "Delete a comment",
@@ -8201,7 +8023,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/notifications.get": {
+    "/notifications.get": {
       "get": {
         "summary": "Get notifications with pagination",
         "description": "Get notifications with pagination",
@@ -8347,7 +8169,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/notifications.unreadCount": {
+    "/notifications.unreadCount": {
       "get": {
         "summary": "Get unread notification count",
         "description": "Get unread notification count",
@@ -8482,7 +8304,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/notifications.markAsRead": {
+    "/notifications.markAsRead": {
       "post": {
         "summary": "Mark notification as read",
         "description": "Mark notification as read",
@@ -8631,7 +8453,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/notifications.markAllAsRead": {
+    "/notifications.markAllAsRead": {
       "post": {
         "summary": "Mark all notifications as read",
         "description": "Mark all notifications as read",
@@ -8766,7 +8588,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/pcListings.get": {
+    "/pcListings.get": {
       "get": {
         "summary": "Get PC listings with pagination and filtering",
         "description": "Get PC listings with pagination and filtering",
@@ -8905,7 +8727,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/pcListings.create": {
+    "/pcListings.create": {
       "post": {
         "summary": "Create a new PC listing",
         "description": "Create a new PC listing",
@@ -9058,7 +8880,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/pcListings.update": {
+    "/pcListings.update": {
       "post": {
         "summary": "Update a PC listing",
         "description": "Update a PC listing",
@@ -9204,7 +9026,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/pcListings.cpus": {
+    "/pcListings.cpus": {
       "get": {
         "summary": "Get CPUs for mobile",
         "description": "Get CPUs for mobile",
@@ -9343,7 +9165,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/pcListings.gpus": {
+    "/pcListings.gpus": {
       "get": {
         "summary": "Get GPUs for mobile",
         "description": "Get GPUs for mobile",
@@ -9482,25 +9304,14 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/preferences.get": {
+    "/preferences.get": {
       "get": {
-        "summary": "PC Presets nested router",
-        "description": "PC Presets nested router",
+        "summary": "Get user preferences",
+        "description": "Get user preferences",
         "tags": [
           "preferences"
         ],
-        "parameters": [
-          {
-            "name": "input",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "description": "SuperJSON wrapped input object"
-            },
-            "description": "SuperJSON wrapped input matching GetPcPresetsSchema schema. See components/schemas/GetPcPresetsSchema for structure.",
-            "example": "{\"json\":{\"limit\":10}}"
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Successful tRPC response",
@@ -9625,10 +9436,10 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.update": {
+    "/preferences.update": {
       "post": {
-        "summary": "PC Presets nested router",
-        "description": "PC Presets nested router",
+        "summary": "Update user preferences",
+        "description": "Update user preferences",
         "tags": [
           "preferences"
         ],
@@ -9638,11 +9449,9 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdatePcPresetSchema"
+                "$ref": "#/components/schemas/UpdateUserPreferencesSchema"
               },
-              "example": {
-                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              }
+              "example": {}
             }
           },
           "description": "Input data for mutation procedure."
@@ -9771,7 +9580,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.addDevice": {
+    "/preferences.addDevice": {
       "post": {
         "summary": "Add device preference",
         "description": "Add device preference",
@@ -9917,7 +9726,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.removeDevice": {
+    "/preferences.removeDevice": {
       "post": {
         "summary": "Remove device preference",
         "description": "Remove device preference",
@@ -10063,7 +9872,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.bulkUpdateDevices": {
+    "/preferences.bulkUpdateDevices": {
       "post": {
         "summary": "Bulk update device preferences",
         "description": "Bulk update device preferences",
@@ -10207,7 +10016,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.bulkUpdateSocs": {
+    "/preferences.bulkUpdateSocs": {
       "post": {
         "summary": "Bulk update SOC preferences",
         "description": "Bulk update SOC preferences",
@@ -10351,7 +10160,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.currentProfile": {
+    "/preferences.currentProfile": {
       "get": {
         "summary": "Get current user's profile",
         "description": "Get current user's profile",
@@ -10483,7 +10292,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.profile": {
+    "/preferences.profile": {
       "get": {
         "summary": "Get user profile by ID",
         "description": "Get user profile by ID",
@@ -10626,7 +10435,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.updateProfile": {
+    "/preferences.updateProfile": {
       "post": {
         "summary": "Update profile",
         "description": "Update profile",
@@ -10770,304 +10579,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/preferences.create": {
-      "post": {
-        "summary": "PC Presets nested router",
-        "description": "PC Presets nested router",
-        "tags": [
-          "preferences"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePcPresetSchema"
-              },
-              "example": {
-                "name": "example",
-                "cpuId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                "gpuId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                "memorySize": 1,
-                "os": "example",
-                "osVersion": "example"
-              }
-            }
-          },
-          "description": "Input data for mutation procedure."
-        },
-        "responses": {
-          "200": {
-            "description": "Successful tRPC response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "description": "tRPC result wrapper containing the actual response data",
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "description": "Response data from preferences.create"
-                        }
-                      }
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                },
-                "examples": {
-                  "success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "result": {
-                        "data": {
-                          "message": "Response from preferences.create",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input parameters or malformed JSON",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                },
-                "examples": {
-                  "invalidInput": {
-                    "summary": "Invalid input example",
-                    "value": {
-                      "error": {
-                        "json": {
-                          "message": "Input validation failed",
-                          "code": -32600,
-                          "data": {
-                            "code": "BAD_REQUEST",
-                            "httpStatus": 400,
-                            "path": "preferences.create",
-                            "zodError": {
-                              "formErrors": [
-                                "Required"
-                              ],
-                              "fieldErrors": {}
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ClerkAuth": []
-          }
-        ]
-      }
-    },
-    "/api/mobile/trpc/preferences.delete": {
-      "post": {
-        "summary": "PC Presets nested router",
-        "description": "PC Presets nested router",
-        "tags": [
-          "preferences"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeletePcPresetSchema"
-              },
-              "example": {
-                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              }
-            }
-          },
-          "description": "Input data for mutation procedure."
-        },
-        "responses": {
-          "200": {
-            "description": "Successful tRPC response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "description": "tRPC result wrapper containing the actual response data",
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "description": "Response data from preferences.delete"
-                        }
-                      }
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                },
-                "examples": {
-                  "success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "result": {
-                        "data": {
-                          "message": "Response from preferences.delete",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input parameters or malformed JSON",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                },
-                "examples": {
-                  "invalidInput": {
-                    "summary": "Invalid input example",
-                    "value": {
-                      "error": {
-                        "json": {
-                          "message": "Input validation failed",
-                          "code": -32600,
-                          "data": {
-                            "code": "BAD_REQUEST",
-                            "httpStatus": 400,
-                            "path": "preferences.delete",
-                            "zodError": {
-                              "formErrors": [
-                                "Required"
-                              ],
-                              "fieldErrors": {}
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TRPCError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ClerkAuth": []
-          }
-        ]
-      }
-    },
-    "/api/mobile/trpc/rawg.searchGameImages": {
+    "/rawg.searchGameImages": {
       "get": {
         "summary": "Search for game images in RAWG database",
         "description": "Search for game images in RAWG database",
@@ -11195,7 +10707,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/rawg.searchGames": {
+    "/rawg.searchGames": {
       "get": {
         "summary": "Search for games in RAWG database",
         "description": "Search for games in RAWG database",
@@ -11334,7 +10846,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/rawg.getGameImages": {
+    "/rawg.getGameImages": {
       "get": {
         "summary": "Get game images by ID",
         "description": "Get game images by ID",
@@ -11462,7 +10974,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/socs.get": {
+    "/socs.get": {
       "get": {
         "summary": "Get SoCs with search, filtering, and pagination",
         "description": "Get SoCs with search, filtering, and pagination",
@@ -11590,7 +11102,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/socs.getById": {
+    "/socs.getById": {
       "get": {
         "summary": "Get SoC by ID",
         "description": "Get SoC by ID",
@@ -11715,7 +11227,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/tgdb.searchGameImages": {
+    "/tgdb.searchGameImages": {
       "get": {
         "summary": "Search for game images in TGDB database",
         "description": "Search for game images in TGDB database",
@@ -11843,7 +11355,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/tgdb.searchGames": {
+    "/tgdb.searchGames": {
       "get": {
         "summary": "Search for games in TGDB database",
         "description": "Search for games in TGDB database",
@@ -11982,7 +11494,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/tgdb.getGameImageUrls": {
+    "/tgdb.getGameImageUrls": {
       "get": {
         "summary": "Get game image URLs for a specific game",
         "description": "Get game image URLs for a specific game",
@@ -12110,7 +11622,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/tgdb.getGameImages": {
+    "/tgdb.getGameImages": {
       "get": {
         "summary": "Get game images by game IDs",
         "description": "Get game images by game IDs",
@@ -12238,7 +11750,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/tgdb.getPlatforms": {
+    "/tgdb.getPlatforms": {
       "get": {
         "summary": "Get available platforms from TGDB",
         "description": "Get available platforms from TGDB",
@@ -12366,7 +11878,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/trust.myInfo": {
+    "/trust.myInfo": {
       "get": {
         "summary": "Get current user's trust score and level",
         "description": "Get current user's trust score and level",
@@ -12498,7 +12010,7 @@
         ]
       }
     },
-    "/api/mobile/trpc/trust.userInfo": {
+    "/trust.userInfo": {
       "get": {
         "summary": "Get trust info for a specific user (public)",
         "description": "Get trust info for a specific user (public)",
@@ -12626,7 +12138,7 @@
         "security": []
       }
     },
-    "/api/mobile/trpc/users.byId": {
+    "/users.byId": {
       "get": {
         "summary": "Get user profile by ID (public user profiles)",
         "description": "Get user profile by ID (public user profiles)",

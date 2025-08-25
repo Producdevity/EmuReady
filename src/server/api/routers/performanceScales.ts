@@ -7,125 +7,80 @@ import {
   DeletePerformanceScaleSchema,
 } from '@/schemas/performanceScale'
 import { createTRPCRouter, publicProcedure, permissionProcedure } from '@/server/api/trpc'
+import { PerformanceScalesRepository } from '@/server/repositories/performance-scales.repository'
 import { PERMISSIONS } from '@/utils/permission-system'
 
 export const performanceScalesRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
-    const [total, usedInListings] = await Promise.all([
-      ctx.prisma.performanceScale.count(),
-      ctx.prisma.performanceScale.count({
-        where: { listings: { some: {} } },
-      }),
-    ])
-
-    return {
-      total,
-      usedInListings,
-      unused: total - usedInListings,
-    }
+    const repository = new PerformanceScalesRepository(ctx.prisma)
+    return repository.getStats()
   }),
 
   get: publicProcedure.input(GetPerformanceScalesSchema).query(async ({ ctx, input }) => {
-    const { search, sortField, sortDirection } = input ?? {}
-
-    let orderBy: { label?: 'asc' | 'desc'; rank?: 'asc' | 'desc' } = {
-      rank: 'desc',
-    }
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'label':
-          orderBy = { label: sortDirection }
-          break
-        case 'rank':
-          orderBy = { rank: sortDirection }
-          break
-      }
-    }
-
-    return ctx.prisma.performanceScale.findMany({
-      where: search
-        ? {
-            OR: [
-              { label: { contains: search, mode: 'insensitive' } },
-              { description: { contains: search, mode: 'insensitive' } },
-            ],
-          }
-        : undefined,
-      orderBy,
-    })
+    const repository = new PerformanceScalesRepository(ctx.prisma)
+    return repository.get(input ?? {})
   }),
 
   byId: publicProcedure.input(GetPerformanceScaleByIdSchema).query(async ({ ctx, input }) => {
-    const scale = await ctx.prisma.performanceScale.findUnique({
-      where: { id: input.id },
-    })
-
-    if (!scale) ResourceError.performanceScale.notFound()
-
-    return scale
+    const repository = new PerformanceScalesRepository(ctx.prisma)
+    const scale = await repository.byNumericId(input.id)
+    return scale ? scale : ResourceError.performanceScale.notFound()
   }),
 
   create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(CreatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
-      const existingScale = await ctx.prisma.performanceScale.findFirst({
-        where: {
-          OR: [{ label: { equals: input.label, mode: 'insensitive' } }, { rank: input.rank }],
-        },
-      })
+      const repository = new PerformanceScalesRepository(ctx.prisma)
 
-      if (existingScale) {
-        if (existingScale.label.toLowerCase() === input.label.toLowerCase()) {
-          ResourceError.performanceScale.labelExists(input.label)
-        }
-        if (existingScale.rank === input.rank) {
-          ResourceError.performanceScale.rankExists(input.rank)
-        }
-      }
+      const existingByLabel = await repository.byLabel(input.label)
+      if (existingByLabel) return ResourceError.performanceScale.labelExists(input.label)
 
-      return ctx.prisma.performanceScale.create({ data: input })
+      const existingByRank = await repository.byRank(input.rank)
+      if (existingByRank) return ResourceError.performanceScale.rankExists(input.rank)
+
+      return repository.create(input)
     }),
 
   update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(UpdatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
+      const repository = new PerformanceScalesRepository(ctx.prisma)
 
-      const scale = await ctx.prisma.performanceScale.findUnique({
-        where: { id },
-      })
+      const scale = await repository.byNumericId(id)
+      if (!scale) return ResourceError.performanceScale.notFound()
 
-      if (!scale) ResourceError.performanceScale.notFound()
-
-      const existingScale = await ctx.prisma.performanceScale.findFirst({
-        where: {
-          OR: [{ label: { equals: input.label, mode: 'insensitive' } }, { rank: input.rank }],
-          id: { not: id },
-        },
-      })
-
-      if (existingScale) {
-        if (existingScale.label.toLowerCase() === input.label.toLowerCase()) {
-          ResourceError.performanceScale.labelExists(input.label)
-        }
-        if (existingScale.rank === input.rank) {
-          ResourceError.performanceScale.rankExists(input.rank)
+      if (input.label && input.label !== scale.label) {
+        const existingByLabel = await repository.byLabel(input.label)
+        if (existingByLabel && existingByLabel.id !== id) {
+          return ResourceError.performanceScale.labelExists(input.label)
         }
       }
 
-      return ctx.prisma.performanceScale.update({ where: { id }, data })
+      if (input.rank && input.rank !== scale.rank) {
+        const existingByRank = await repository.byRank(input.rank)
+        if (existingByRank && existingByRank.id !== id) {
+          return ResourceError.performanceScale.rankExists(input.rank)
+        }
+      }
+
+      return repository.updateByNumericId(id, data)
     }),
 
   delete: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(DeletePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
-      const listingsCount = await ctx.prisma.listing.count({
-        where: { performanceId: input.id },
-      })
+      const repository = new PerformanceScalesRepository(ctx.prisma)
 
-      if (listingsCount > 0) ResourceError.performanceScale.inUse(listingsCount)
+      const [listingsCount, pcListingsCount] = await Promise.all([
+        ctx.prisma.listing.count({ where: { performanceId: input.id } }),
+        ctx.prisma.pcListing.count({ where: { performanceId: input.id } }),
+      ])
 
-      return ctx.prisma.performanceScale.delete({ where: { id: input.id } })
+      const totalCount = listingsCount + pcListingsCount
+      if (totalCount > 0) return ResourceError.performanceScale.inUse(totalCount)
+
+      await repository.deleteByNumericId(input.id)
+      return { success: true }
     }),
 })

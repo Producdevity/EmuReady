@@ -8,6 +8,17 @@ export const AdminTableParamsSchema = z.object({
   sortDirection: z.enum(['asc', 'desc']).nullable().default(null),
 })
 
+export const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JsonValueSchema),
+    z.record(JsonValueSchema),
+  ]),
+)
+
 // Column visibility (array of visible column keys)
 export const ColumnVisibilitySchema = z.array(z.string())
 

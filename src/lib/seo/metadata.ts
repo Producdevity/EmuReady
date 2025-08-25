@@ -172,7 +172,7 @@ interface StructuredDataBase {
   emulatorName?: string
   deviceName?: string
   numberOfItems?: number
-  items?: Array<{ url: string; name: string }>
+  items?: { url: string; name: string }[]
 }
 
 export function generateStructuredData(
@@ -295,9 +295,7 @@ export function generateStructuredData(
   }
 }
 
-export function generateBreadcrumbStructuredData(
-  breadcrumbs: Array<{ name: string; url: string }>,
-) {
+export function generateBreadcrumbStructuredData(breadcrumbs: { name: string; url: string }[]) {
   return generateStructuredData('BreadcrumbList', {
     items: breadcrumbs,
   })

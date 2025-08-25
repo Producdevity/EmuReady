@@ -2,7 +2,7 @@ import { z } from 'zod'
 import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
 import { validateData } from '@/server/utils/validation'
-import { TrustAction, type Prisma } from '@orm'
+import { TrustAction, type Prisma, type PrismaClient } from '@orm'
 import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
 
 interface TrustActionContext {
@@ -12,6 +12,7 @@ interface TrustActionContext {
   adminUserId?: string
   reason?: string
   voterId?: string
+  metadata?: Record<string, unknown>
 }
 
 interface ApplyTrustActionParams {
@@ -354,5 +355,133 @@ export async function getTrustActionStats(userId?: string) {
     totalActions,
     actionBreakdown,
     recentActions,
+  }
+}
+
+type PrismaTransaction = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>
+
+/**
+ * TrustService class for managing trust actions
+ */
+export class TrustService {
+  constructor(private readonly prisma: PrismaClient | PrismaTransaction) {}
+
+  async logAction(params: {
+    userId: string
+    action: TrustAction
+    targetUserId?: string
+    metadata?: Record<string, unknown>
+  }): Promise<void> {
+    const { userId, action, metadata } = params
+
+    if (!TRUST_ACTIONS[action]) {
+      throw new Error(`Invalid trust action: ${action}`)
+    }
+
+    const weight = TRUST_ACTIONS[action].weight
+
+    // Handle both regular prisma client and transaction context
+    const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
+      const currentUser = await prismaCtx.user.findUnique({
+        where: { id: userId },
+        select: { trustScore: true },
+      })
+
+      const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
+      const newTrustScore = (currentUser?.trustScore || 0) + weight
+      const newTrustLevel = getTrustLevel(newTrustScore)
+
+      await prismaCtx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: newTrustScore,
+          lastActiveAt: new Date(),
+        },
+      })
+
+      await prismaCtx.trustActionLog.create({
+        data: {
+          userId,
+          action,
+          weight,
+          metadata: metadata as Prisma.InputJsonValue,
+        },
+      })
+
+      // Track analytics
+      analytics.trust.trustScoreChanged({
+        userId,
+        oldScore: currentUser?.trustScore || 0,
+        newScore: newTrustScore,
+        action,
+        weight,
+      })
+
+      if (currentTrustLevel && currentTrustLevel.name !== newTrustLevel.name) {
+        analytics.trust.trustLevelChanged({
+          userId,
+          oldLevel: currentTrustLevel.name,
+          newLevel: newTrustLevel.name,
+          score: newTrustScore,
+        })
+      }
+    }
+
+    // If already in a transaction, use it; otherwise create a new one
+    if ('$transaction' in this.prisma) {
+      await this.prisma.$transaction(executeInTransaction)
+    } else {
+      await executeInTransaction(this.prisma)
+    }
+  }
+
+  async reverseAction(params: {
+    userId: string
+    action: TrustAction
+    metadata?: Record<string, unknown>
+  }): Promise<void> {
+    const { userId, action, metadata } = params
+
+    if (!TRUST_ACTIONS[action]) {
+      throw new Error(`Invalid trust action: ${action}`)
+    }
+
+    const weight = -TRUST_ACTIONS[action].weight // Reverse the weight
+
+    const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
+      const currentUser = await prismaCtx.user.findUnique({
+        where: { id: userId },
+        select: { trustScore: true },
+      })
+
+      const newTrustScore = Math.max(0, (currentUser?.trustScore || 0) + weight)
+
+      await prismaCtx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: newTrustScore,
+          lastActiveAt: new Date(),
+        },
+      })
+
+      await prismaCtx.trustActionLog.create({
+        data: {
+          userId,
+          action,
+          weight,
+          metadata: metadata as Prisma.InputJsonValue,
+        },
+      })
+    }
+
+    // If already in a transaction, use it; otherwise create a new one
+    if ('$transaction' in this.prisma) {
+      await this.prisma.$transaction(executeInTransaction)
+    } else {
+      await executeInTransaction(this.prisma)
+    }
   }
 }

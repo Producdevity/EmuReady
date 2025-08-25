@@ -1,4 +1,5 @@
 import { createTRPCRouter } from '@/server/api/trpc'
+import { activityRouter } from './routers/admin/activity'
 import { badgesRouter } from './routers/badges'
 import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
@@ -9,6 +10,7 @@ import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { gamesRouter } from './routers/games'
 import { gpusRouter } from './routers/gpus'
+import { igdbRouter } from './routers/igdb'
 import { listingReportsRouter } from './routers/listingReports'
 import { listingsRouter } from './routers/listings'
 import { listingVerificationsRouter } from './routers/listingVerifications'
@@ -29,6 +31,7 @@ import { usersRouter } from './routers/users'
 import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 
 export const appRouter = createTRPCRouter({
+  activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
   devices: devicesRouter,
@@ -53,6 +56,7 @@ export const appRouter = createTRPCRouter({
   trust: trustRouter,
   rawg: rawgRouter,
   tgdb: tgdbRouter,
+  igdb: igdbRouter,
   mobile: mobileRouter,
   verifiedDevelopers: verifiedDevelopersRouter,
   listingVerifications: listingVerificationsRouter,

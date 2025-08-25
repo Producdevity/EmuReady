@@ -1,4 +1,5 @@
 import { ResourceError } from '@/lib/errors'
+import { TrustService } from '@/lib/trust/service'
 import {
   CreateListingReportSchema,
   DeleteReportSchema,
@@ -16,7 +17,7 @@ import {
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, type Prisma, ReportStatus } from '@orm'
+import { ApprovalStatus, type Prisma, ReportStatus, TrustAction } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
@@ -210,6 +211,36 @@ export const listingReportsRouter = createTRPCRouter({
             processedAt: new Date(),
             processedByUserId: reviewerId,
             processedNotes: `Rejected due to report: ${reviewNotes || 'No additional notes'}`,
+          },
+        })
+      }
+
+      // Award trust points based on report outcome
+      const trustService = new TrustService(ctx.prisma)
+
+      if (status === ReportStatus.RESOLVED) {
+        // Report was confirmed - reward the reporter
+        await trustService.logAction({
+          userId: report.reportedById,
+          action: TrustAction.REPORT_CONFIRMED,
+          metadata: {
+            reportId: id,
+            listingId: report.listingId,
+            reviewedBy: reviewerId,
+            reason: report.reason,
+          },
+        })
+      } else if (status === ReportStatus.DISMISSED) {
+        // Report was false/malicious - penalize the reporter
+        await trustService.logAction({
+          userId: report.reportedById,
+          action: TrustAction.FALSE_REPORT,
+          metadata: {
+            reportId: id,
+            listingId: report.listingId,
+            reviewedBy: reviewerId,
+            reason: report.reason,
+            reviewNotes,
           },
         })
       }

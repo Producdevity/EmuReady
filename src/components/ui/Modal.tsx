@@ -1,7 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-import { useEffect, type ReactNode, type MouseEvent } from 'react'
+import { useEffect, type PropsWithChildren, type MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 const sizeClasses = {
@@ -13,11 +13,10 @@ const sizeClasses = {
   '3xl': 'w-full max-w-3xl',
 }
 
-interface Props {
+interface Props extends PropsWithChildren {
   isOpen: boolean
   onClose: () => void
   title?: string
-  children: ReactNode
   size?: keyof typeof sizeClasses
   className?: string
   hideCloseButton?: boolean
