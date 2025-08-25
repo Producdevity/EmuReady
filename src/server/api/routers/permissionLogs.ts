@@ -42,12 +42,9 @@ export const permissionLogsRouter = createTRPCRouter({
       if (permissionId) where.permissionId = permissionId
 
       if (dateFrom || dateTo) {
-        where.createdAt = {}
-        if (dateFrom) {
-          ;(where.createdAt as Record<string, unknown>).gte = new Date(dateFrom)
-        }
-        if (dateTo) {
-          ;(where.createdAt as Record<string, unknown>).lte = new Date(dateTo)
+        where.createdAt = {
+          ...(dateFrom && { gte: new Date(dateFrom) }),
+          ...(dateTo && { lte: new Date(dateTo) }),
         }
       }
 
@@ -228,12 +225,9 @@ export const permissionLogsRouter = createTRPCRouter({
       if (action) where.action = action
 
       if (dateFrom || dateTo) {
-        where.createdAt = {}
-        if (dateFrom) {
-          ;(where.createdAt as Record<string, unknown>).gte = new Date(dateFrom)
-        }
-        if (dateTo) {
-          ;(where.createdAt as Record<string, unknown>).lte = new Date(dateTo)
+        where.createdAt = {
+          ...(dateFrom && { gte: new Date(dateFrom) }),
+          ...(dateTo && { lte: new Date(dateTo) }),
         }
       }
 

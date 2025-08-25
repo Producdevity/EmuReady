@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/nextjs'
-import { keys } from 'remeda'
 import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
@@ -28,14 +26,9 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
-import { calculateOffset, createPaginationResult, buildOrderBy } from '@/server/utils/pagination'
-import {
-  buildShadowBanFilter,
-  buildApprovalStatusFilter,
-  buildNsfwFilter,
-  buildArrayFilter,
-} from '@/server/utils/query-builders'
+import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { withSavepoint } from '@/server/utils/transactions'
+import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
@@ -44,416 +37,98 @@ import { validateCustomFields } from './validation'
 
 const EDIT_TIME_LIMIT_MINUTES = 60
 const EDIT_TIME_LIMIT = ms.minutes(EDIT_TIME_LIMIT_MINUTES)
-const mode = Prisma.QueryMode.insensitive
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure.input(GetListingsSchema).query(async ({ ctx, input }) => {
-    const skip = calculateOffset({ page: input.page }, input.limit)
+    const repository = new ListingsRepository(ctx.prisma)
     const userRole = ctx.session?.user?.role
     const userId = ctx.session?.user?.id
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
-    // Build game filters
-    const gameFilter: Prisma.GameWhereInput = {
-      ...(buildArrayFilter(input.systemIds, 'systemId') || {}),
-      ...(buildNsfwFilter(ctx.session?.user?.showNsfw) || {}),
-      // Games have their own approval logic, not using buildApprovalStatusFilter
+    // Map input to repository filters (convert null to undefined)
+    const filters = {
+      systemIds: input.systemIds || undefined,
+      deviceIds: input.deviceIds || undefined,
+      socIds: input.socIds || undefined,
+      emulatorIds: input.emulatorIds || undefined,
+      performanceIds: input.performanceIds || undefined,
+      search: input.searchTerm || undefined,
+      page: input.page,
+      limit: input.limit,
+      sortField: input.sortField || undefined,
+      sortDirection: input.sortDirection || undefined,
+      approvalStatus: input.approvalStatus || undefined,
+      myListings: input.myListings || undefined,
+      userId,
+      userRole,
+      showNsfw: ctx.session?.user?.showNsfw,
     }
 
-    const filters: Prisma.ListingWhereInput = {
-      ...(buildArrayFilter(input.emulatorIds, 'emulatorId') || {}),
-      ...(buildArrayFilter(input.performanceIds, 'performanceId') || {}),
-    }
+    // Use the repository for the main listing logic
+    const result = await repository.getListings(filters)
 
-    // Handle device and SoC filters with OR logic
-    const deviceSocConditions: Prisma.ListingWhereInput[] = []
+    // Batch fetch additional data to avoid N+1 queries
+    const listingIds = result.listings.map((l) => l.id)
+    const authorEmulatorPairs = result.listings.map((l) => ({
+      userId: l.authorId,
+      emulatorId: l.emulatorId,
+    }))
+    const authorIds = [...new Set(result.listings.map((l) => l.authorId))]
 
-    const deviceFilter = buildArrayFilter(input.deviceIds, 'deviceId')
-    if (deviceFilter && Object.keys(deviceFilter).length > 0) {
-      deviceSocConditions.push(deviceFilter)
-    }
-
-    if (input.socIds && input.socIds.length > 0) {
-      deviceSocConditions.push({ device: { socId: { in: input.socIds } } })
-    }
-
-    // Add OR condition for devices/SoCs if any are specified
-    if (deviceSocConditions.length > 0) {
-      filters.OR = deviceSocConditions
-    }
-
-    // Status filtering: show approved listings for everyone, plus pending listings for the current user
-    let statusFilter: Prisma.ListingWhereInput
-    if (input.approvalStatus) {
-      statusFilter = { status: input.approvalStatus }
-    } else {
-      const approvalFilter = buildApprovalStatusFilter(userRole, userId)
-      if (Array.isArray(approvalFilter)) {
-        statusFilter = { OR: approvalFilter }
-      } else {
-        statusFilter = approvalFilter || {}
-      }
-    }
-
-    // Add myListings filter if requested and user is authenticated
-    if (input.myListings && ctx.session?.user?.id) {
-      filters.authorId = ctx.session.user.id
-    }
-
-    // Combine all filters using AND logic
-    const combinedFilters: Prisma.ListingWhereInput = {
-      ...filters,
-      ...statusFilter,
-    }
-
-    // If we have device/SoC OR conditions and status OR conditions, combine them properly
-    if (deviceSocConditions.length > 0 && statusFilter.OR) {
-      combinedFilters.AND = [
-        { OR: deviceSocConditions },
-        statusFilter,
-        // Add other filters from the filters object
-        ...(filters.emulatorId ? [{ emulatorId: filters.emulatorId }] : []),
-        ...(filters.performanceId ? [{ performanceId: filters.performanceId }] : []),
-        ...(filters.authorId ? [{ authorId: filters.authorId }] : []),
-      ]
-      // Remove the conflicting OR properties
-      delete combinedFilters.OR
-      delete combinedFilters.status
-      delete combinedFilters.emulatorId
-      delete combinedFilters.performanceId
-      delete combinedFilters.authorId
-    }
-
-    // Add search filters if provided
-    if (input.searchTerm) {
-      const searchFilters: Prisma.ListingWhereInput[] = [
-        keys(gameFilter).length
-          ? {
-              game: {
-                is: {
-                  ...gameFilter,
-                  title: { contains: input.searchTerm, mode },
-                },
-              },
-            }
-          : {
-              game: { is: { title: { contains: input.searchTerm, mode } } },
-            },
-        {
-          notes: { contains: input.searchTerm, mode },
-        },
-        {
-          device: {
-            OR: [
-              { modelName: { contains: input.searchTerm, mode } },
-              { brand: { name: { contains: input.searchTerm, mode } } },
-            ],
-          },
-        },
-        {
-          emulator: { name: { contains: input.searchTerm, mode } },
-        },
-      ]
-
-      // Build AND conditions array
-      const andConditions: Prisma.ListingWhereInput[] = [statusFilter, { OR: searchFilters }]
-
-      // Add device/SoC OR conditions if they exist
-      if (deviceSocConditions.length > 0) {
-        andConditions.push({ OR: deviceSocConditions })
-      }
-
-      // Add other filters (emulators, performance) to AND conditions
-      if (input.emulatorIds && input.emulatorIds.length > 0) {
-        andConditions.push({ emulatorId: { in: input.emulatorIds } })
-      }
-      if (input.performanceIds && input.performanceIds.length > 0) {
-        andConditions.push({ performanceId: { in: input.performanceIds } })
-      }
-      if (input.myListings && ctx.session?.user?.id) {
-        andConditions.push({ authorId: ctx.session.user.id })
-      }
-
-      combinedFilters.AND = andConditions
-
-      // Remove the duplicate filters from the root level
-      delete combinedFilters.status
-      delete combinedFilters.OR
-      delete combinedFilters.emulatorId
-      delete combinedFilters.performanceId
-      delete combinedFilters.authorId
-    } else if (keys(gameFilter).length) {
-      combinedFilters.game = { is: gameFilter }
-    }
-
-    // Shadow ban logic: Hide listings from banned users for non-moderators
-    const shadowBanFilter = buildShadowBanFilter(userRole, userId)
-    if (shadowBanFilter) {
-      combinedFilters.author = shadowBanFilter
-    }
-
-    const total = await ctx.prisma.listing.count({ where: combinedFilters })
-
-    // Build orderBy based on sortField and sortDirection
-    const isSortingBySuccessRate = input.sortField === 'successRate'
-
-    const sortConfig = {
-      'game.title': (dir: 'asc' | 'desc') => ({ game: { title: dir } }),
-      'game.system.name': (dir: 'asc' | 'desc') => ({
-        game: { system: { name: dir } },
-      }),
-      device: (dir: 'asc' | 'desc') => [
-        { device: { brand: { name: dir } } },
-        { device: { modelName: dir } },
-      ],
-      'emulator.name': (dir: 'asc' | 'desc') => ({ emulator: { name: dir } }),
-      'performance.rank': (dir: 'asc' | 'desc') => ({
-        performance: { rank: dir },
-      }),
-      'author.name': (dir: 'asc' | 'desc') => ({ author: { name: dir } }),
-      createdAt: (dir: 'asc' | 'desc') => ({ createdAt: dir }),
-    }
-
-    const orderBy = isSortingBySuccessRate
-      ? ([] as Prisma.ListingOrderByWithRelationInput[])
-      : buildOrderBy<Prisma.ListingOrderByWithRelationInput>(
-          sortConfig,
-          input.sortField,
-          input.sortDirection ?? undefined,
-          { createdAt: 'desc' },
-        )
-
-    // For success rate sorting, we need to fetch ALL listings, calculate rates, sort, then paginate
-    if (isSortingBySuccessRate) {
-      const allListings = await Sentry.startSpan(
-        {
-          op: 'db.query',
-          name: 'listings.fetchAllForSuccessRateSort',
-        },
-        async (span) => {
-          span.setAttribute('filters.count', Object.keys(combinedFilters).length)
-
-          const listings = await ctx.prisma.listing.findMany({
-            where: combinedFilters,
-            include: {
-              game: { include: { system: true } },
-              device: { include: { brand: true, soc: true } },
-              emulator: true,
-              performance: true,
-              author: {
-                select: {
-                  id: true,
-                  name: true,
-                  userBans: canSeeBannedUsers
-                    ? {
-                        where: {
-                          isActive: true,
-                          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                        },
-                        select: { id: true, reason: true, bannedAt: true },
-                      }
-                    : false,
-                },
-              },
-              developerVerifications: {
-                include: { developer: { select: { id: true, name: true } } },
-              },
-              _count: { select: { votes: true, comments: true } },
-              votes: ctx.session
-                ? {
-                    where: { userId: ctx.session.user.id },
-                    select: { value: true },
-                  }
-                : undefined,
-            },
-            orderBy: { createdAt: 'desc' }, // fallback ordering
+    const [verifiedDevelopers, developerVerifications, userBans] = await Promise.all([
+      // Batch fetch verified developers
+      authorEmulatorPairs.length > 0
+        ? ctx.prisma.verifiedDeveloper.findMany({
+            where: { OR: authorEmulatorPairs },
           })
-
-          span.setAttribute('listings.totalFetched', listings.length)
-          return listings
-        },
-      )
-
-      // Calculate success rates for all listings
-      const allListingsWithStats = await Promise.all(
-        allListings.map(async (listing) => {
-          // Count upvotes
-          const upVotes = await ctx.prisma.vote.count({
-            where: { listingId: listing.id, value: true },
+        : [],
+      // Batch fetch developer verifications
+      listingIds.length > 0
+        ? ctx.prisma.listingDeveloperVerification.findMany({
+            where: { listingId: { in: listingIds } },
+            include: { developer: { select: { id: true, name: true } } },
           })
-
-          const totalVotes = listing._count.votes
-          const downVotes = totalVotes - upVotes
-          const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-
-          const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
-
-          // Check if the author is a verified developer for this emulator
-          const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
+        : [],
+      // Batch fetch user ban information (only for moderators)
+      canSeeBannedUsers && authorIds.length > 0
+        ? ctx.prisma.userBan.findMany({
             where: {
-              userId_emulatorId: {
-                userId: listing.authorId,
-                emulatorId: listing.emulatorId,
-              },
+              userId: { in: authorIds },
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
+            select: { id: true, reason: true, bannedAt: true, userId: true },
           })
+        : [],
+    ])
 
-          return {
-            ...listing,
-            successRate,
-            upVotes,
-            downVotes,
-            totalVotes,
-            userVote,
-            isVerifiedDeveloper: !!isVerifiedDeveloper,
-            // Remove the raw votes array from the response
-            votes: undefined,
-          }
-        }),
-      )
-
-      // Sort by success rate with vote count as secondary criteria
-      allListingsWithStats.sort((a, b) => {
-        if (input.sortDirection === 'asc') {
-          // For ascending (low to high success rate = most negative first)
-          // 1. Listings with no votes go last
-          if (a.totalVotes === 0 && b.totalVotes === 0) return 0
-          if (a.totalVotes === 0) return 1
-          if (b.totalVotes === 0) return -1
-
-          // 2. Compare success rates first
-          if (Math.abs(a.successRate - b.successRate) > 0.001) {
-            return a.successRate - b.successRate
-          }
-
-          // 3. If success rates are equal, prioritize by total vote count (more votes = more significant)
-          if (a.totalVotes !== b.totalVotes) {
-            return b.totalVotes - a.totalVotes
-          }
-
-          // 4. If vote counts are equal, prioritize by downvotes (more downvotes = more negative)
-          return b.downVotes - a.downVotes
-        } else {
-          // For descending (high to low success rate = most positive first)
-          // 1. Listings with no votes go last
-          if (a.totalVotes === 0 && b.totalVotes === 0) return 0
-          if (a.totalVotes === 0) return 1
-          if (b.totalVotes === 0) return -1
-
-          // 2. Compare success rates first
-          if (Math.abs(a.successRate - b.successRate) > 0.001) {
-            return b.successRate - a.successRate
-          }
-
-          // 3. If success rates are equal, prioritize by total vote count (more votes = more significant)
-          if (a.totalVotes !== b.totalVotes) return b.totalVotes - a.totalVotes
-
-          // 4. If vote counts are equal, prioritize by upvotes (more upvotes = more positive)
-          return b.upVotes - a.upVotes
-        }
-      })
-
-      // Apply pagination manually
-      const startIndex = skip
-      const endIndex = skip + input.limit
-      const paginatedListings = allListingsWithStats.slice(startIndex, endIndex)
-
-      return {
-        listings: paginatedListings,
-        pagination: {
-          total,
-          pages: Math.ceil(total / input.limit),
-          page: input.page,
-          limit: input.limit,
-        },
-      }
-    }
-
-    // Regular database sorting for other fields
-    const listings = await ctx.prisma.listing.findMany({
-      where: combinedFilters,
-      include: {
-        game: { include: { system: true } },
-        device: { include: { brand: true, soc: true } },
-        emulator: true,
-        performance: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            userBans: canSeeBannedUsers
-              ? {
-                  where: {
-                    isActive: true,
-                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                  },
-                  select: { id: true, reason: true, bannedAt: true },
-                }
-              : false,
-          },
-        },
-        developerVerifications: {
-          include: {
-            developer: {
-              select: { id: true, name: true },
-            },
-          },
-        },
-        _count: { select: { votes: true, comments: true } },
-        votes: ctx.session
-          ? {
-              where: { userId: ctx.session.user.id },
-              select: { value: true },
-            }
-          : undefined,
-      },
-      orderBy,
-      skip,
-      take: input.limit,
+    // Create lookup maps for efficient access
+    const verifiedDevMap = new Set(verifiedDevelopers.map((vd) => `${vd.userId}_${vd.emulatorId}`))
+    const devVerificationMap = new Map<string, typeof developerVerifications>()
+    developerVerifications.forEach((dv) => {
+      const existing = devVerificationMap.get(dv.listingId) || []
+      devVerificationMap.set(dv.listingId, [...existing, dv])
+    })
+    const userBanMap = new Map<string, typeof userBans>()
+    userBans.forEach((ban) => {
+      const existing = userBanMap.get(ban.userId) || []
+      userBanMap.set(ban.userId, [...existing, ban])
     })
 
-    // For each listing calculate success rate
-    const listingsWithStats = await Promise.all(
-      listings.map(async (listing) => {
-        // Count upvotes
-        const upVotes = await ctx.prisma.vote.count({
-          where: { listingId: listing.id, value: true },
-        })
-
-        const totalVotes = listing._count.votes
-        const downVotes = totalVotes - upVotes
-        const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
-
-        const userVote =
-          ctx.session && listing.votes && listing.votes.length > 0 ? listing.votes[0].value : null
-
-        // Check if the author is a verified developer for this emulator
-        const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-          where: {
-            userId_emulatorId: {
-              userId: listing.authorId,
-              emulatorId: listing.emulatorId,
-            },
-          },
-        })
-
-        return {
-          ...listing,
-          successRate,
-          upVotes,
-          downVotes,
-          totalVotes,
-          userVote,
-          isVerifiedDeveloper: !!isVerifiedDeveloper,
-          // Remove the raw votes array from the response
-          votes: undefined,
-        }
-      }),
-    )
+    // Enhance listings with batched data
+    const enhancedListings = result.listings.map((listing) => ({
+      ...listing,
+      isVerifiedDeveloper: verifiedDevMap.has(`${listing.authorId}_${listing.emulatorId}`),
+      developerVerifications: devVerificationMap.get(listing.id) || [],
+      author: {
+        ...listing.author,
+        ...(canSeeBannedUsers && { userBans: userBanMap.get(listing.authorId) || [] }),
+      },
+    }))
 
     return {
-      listings: listingsWithStats,
-      pagination: createPaginationResult(total, { page: input.page }, input.limit, skip),
+      listings: enhancedListings,
+      pagination: result.pagination,
     }
   }),
 
@@ -536,14 +211,11 @@ export const coreRouter = createTRPCRouter({
       throw AppError.forbidden('This listing is not accessible.')
     }
 
-    // Count upvotes
-    const upVotes = await ctx.prisma.vote.count({
-      where: { listingId: listing.id, value: true },
-    })
-
-    const totalVotes = listing._count.votes
-    const downVotes = totalVotes - upVotes
-    const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
+    // Use materialized vote counts
+    const upVotes = listing.upvoteCount
+    const downVotes = listing.downvoteCount
+    const totalVotes = listing.voteCount
+    const successRate = listing.successRate
 
     const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
 
@@ -666,7 +338,7 @@ export const coreRouter = createTRPCRouter({
           data: customFieldValues.map((cfv) => ({
             listingId: newListing.id,
             customFieldDefinitionId: cfv.customFieldDefinitionId,
-            value: cfv.value === null ? Prisma.JsonNull : (cfv.value as Prisma.InputJsonValue),
+            value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
           })),
         })
       }
@@ -780,9 +452,15 @@ export const coreRouter = createTRPCRouter({
 
       if (!listing) return ResourceError.listing.notFound()
 
-      // Create new vote
-      const vote = await ctx.prisma.vote.create({
-        data: { value: input.value, userId, listingId: input.listingId },
+      // Create new vote and update counts in transaction
+      const vote = await ctx.prisma.$transaction(async (tx) => {
+        const newVote = await tx.vote.create({
+          data: { value: input.value, userId, listingId: input.listingId },
+        })
+
+        await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
+
+        return newVote
       })
 
       // Apply trust action for the voter
@@ -846,8 +524,12 @@ export const coreRouter = createTRPCRouter({
 
       if (!listingForRemoval) return AppError.notFound('Listing')
 
-      await ctx.prisma.vote.delete({
-        where: { userId_listingId: { userId, listingId: input.listingId } },
+      await ctx.prisma.$transaction(async (tx) => {
+        await tx.vote.delete({
+          where: { userId_listingId: { userId, listingId: input.listingId } },
+        })
+
+        await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
       })
 
       // Reverse trust action for the voter
@@ -886,9 +568,15 @@ export const coreRouter = createTRPCRouter({
       AppError.notFound('Listing')
     }
 
-    const updatedVote = await ctx.prisma.vote.update({
-      where: { userId_listingId: { userId, listingId: input.listingId } },
-      data: { value: input.value },
+    const updatedVote = await ctx.prisma.$transaction(async (tx) => {
+      const vote = await tx.vote.update({
+        where: { userId_listingId: { userId, listingId: input.listingId } },
+        data: { value: input.value },
+      })
+
+      await updateListingVoteCounts(tx, input.listingId, 'update', input.value, existingVote.value)
+
+      return vote
     })
 
     // Apply trust action for vote change (properly reverse old, add new) for voter
@@ -1001,37 +689,28 @@ export const coreRouter = createTRPCRouter({
       },
     })
 
-    async function calculateSuccessRate(listing: (typeof listings)[0]) {
-      // Count upvotes
-      const upVotes = await ctx.prisma.vote.count({
-        where: { listingId: listing.id, value: true },
-      })
+    // Get all verified developer statuses in a single query
+    const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
+      where: {
+        OR: listings.map((l) => ({
+          userId: l.authorId,
+          emulatorId: l.emulatorId,
+        })),
+      },
+      select: { userId: true, emulatorId: true },
+    })
 
-      const totalVotes = listing._count.votes
-      const downVotes = totalVotes - upVotes
-      const successRate = totalVotes > 0 ? upVotes / totalVotes : 0
+    const verifiedSet = new Set(verifiedDevelopers.map((v) => `${v.userId}_${v.emulatorId}`))
 
-      // Check if the author is a verified developer for this emulator
-      const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId: listing.authorId,
-            emulatorId: listing.emulatorId,
-          },
-        },
-      })
-
-      return {
-        ...listing,
-        successRate,
-        upVotes,
-        downVotes,
-        totalVotes,
-        isVerifiedDeveloper: !!isVerifiedDeveloper,
-      }
-    }
-
-    return await Promise.all(listings.map(calculateSuccessRate))
+    // Use materialized vote counts
+    return listings.map((listing) => ({
+      ...listing,
+      successRate: listing.successRate,
+      upVotes: listing.upvoteCount,
+      downVotes: listing.downvoteCount,
+      totalVotes: listing.voteCount,
+      isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
+    }))
   }),
 
   canEdit: protectedProcedure.input(GetListingForUserEditSchema).query(async ({ ctx, input }) => {
@@ -1185,7 +864,7 @@ export const coreRouter = createTRPCRouter({
             data: input.customFieldValues.map((cfv) => ({
               listingId: input.id,
               customFieldDefinitionId: cfv.customFieldDefinitionId,
-              value: cfv.value,
+              value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
             })),
           })
         }

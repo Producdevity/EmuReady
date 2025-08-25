@@ -93,6 +93,7 @@ function AdminSoCsPage() {
   }
 
   const handleModalSuccess = () => {
+    // Invalidate queries to refetch fresh data
     utils.socs.get.invalidate().catch(console.error)
     utils.socs.stats.invalidate().catch(console.error)
     closeModal()

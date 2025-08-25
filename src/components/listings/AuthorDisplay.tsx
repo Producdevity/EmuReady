@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui'
 interface Author {
   id?: string | null
   name?: string | null
-  userBans?: Array<{ id: string }> | null
+  userBans?: { id: string }[] | null
 }
 
 interface Props {

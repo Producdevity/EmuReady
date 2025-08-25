@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Admin Moderation Tests - Requires Admin Role', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
   test.beforeEach(async ({ page }) => {
     // Try primary moderation path first
     await page.goto('/admin/moderation')
@@ -8,7 +9,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
     // If not found, try alternative paths
     if (!page.url().includes('moderation')) {
       const alternativePaths = ['/admin/approvals', '/admin/pending']
-      for (const path of alternativePaths) {
+      for(const path of alternativePaths) {
         await page.goto(path)
         if (page.url().includes('admin')) break
       }
@@ -60,7 +61,7 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
       if (await typeFilters.isVisible({ timeout: 3000 })) {
         const types = ['Listings', 'Comments', 'Games', 'Images']
 
-        for (const type of types) {
+        for(const type of types) {
           const typeButton = typeFilters.locator('button, label').filter({ hasText: type })
           if (await typeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
             await typeButton.click()
@@ -93,13 +94,13 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
         if (await previewModal.isVisible({ timeout: 3000 })) {
           // Check content sections
           const contentSections = {
-            Title: '.title, [data-testid*="title"]',
+            Title:       '.title, [data-testid*="title"]',
             Description: '.description, [data-testid*="description"]',
-            Author: '.author, [data-testid*="author"]',
-            Date: 'time, .date',
+            Author:      '.author, [data-testid*="author"]',
+            Date:        'time, .date',
           }
 
-          for (const [label, selector] of Object.entries(contentSections)) {
+          for(const [label, selector] of Object.entries(contentSections)) {
             const element = previewModal.locator(selector)
             if (await element.isVisible({ timeout: 1000 }).catch(() => false)) {
               console.log(`✓ Preview shows ${label}`)
@@ -325,13 +326,13 @@ test.describe('Admin Moderation Tests - Requires Admin Role', () => {
 
       if (await metricsSection.isVisible({ timeout: 3000 })) {
         const metrics = {
-          Pending: '[data-testid*="pending-count"]',
-          'Approved Today': '[data-testid*="approved-today"]',
-          'Rejected Today': '[data-testid*="rejected-today"]',
+          Pending:             '[data-testid*="pending-count"]',
+          'Approved Today':    '[data-testid*="approved-today"]',
+          'Rejected Today':    '[data-testid*="rejected-today"]',
           'Avg Response Time': '[data-testid*="response-time"]',
         }
 
-        for (const [label, selector] of Object.entries(metrics)) {
+        for(const [label, selector] of Object.entries(metrics)) {
           const metric = metricsSection.locator(selector)
           if (await metric.isVisible({ timeout: 1000 }).catch(() => false)) {
             const value = await metric.textContent()

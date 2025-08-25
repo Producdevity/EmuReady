@@ -107,6 +107,7 @@ function AdminGpusPage() {
   }
 
   const handleModalSuccess = () => {
+    // Invalidate queries to refetch fresh data
     utils.gpus.get.invalidate().catch(console.error)
     utils.gpus.stats.invalidate().catch(console.error)
     closeModal()

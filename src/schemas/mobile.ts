@@ -100,6 +100,21 @@ export const DeleteCommentSchema = z.object({
   commentId: z.string().uuid(),
 })
 
+export const VoteCommentSchema = z.object({
+  commentId: z.string().uuid(),
+  value: z.boolean().nullable(), // true = upvote, false = downvote, null = remove vote
+})
+
+export const GetUserVotesSchema = z.object({
+  commentIds: z.array(z.string().uuid()).min(1).max(100),
+})
+
+export const ReportCommentSchema = z.object({
+  commentId: z.string().uuid(),
+  reason: z.enum(['INAPPROPRIATE_CONTENT', 'SPAM', 'MISLEADING_INFORMATION', 'OTHER']),
+  description: z.string().max(1000).optional(),
+})
+
 export const UpdateProfileSchema = z.object({
   name: z.string().optional(),
   bio: z.string().optional(),
@@ -110,9 +125,18 @@ export const GetListingsSchema = z
     page: z.number().min(1).default(1).describe('Page number for pagination'),
     limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
     gameId: z.string().uuid().optional().describe('Filter by game ID'),
-    systemId: z.string().uuid().optional().describe('Filter by system ID'),
+    systemId: z
+      .string()
+      .uuid()
+      .optional()
+      .describe('Filter by single system ID (deprecated - use systemIds)'),
+    systemIds: z.array(z.string().uuid()).optional().describe('Filter by multiple system IDs'),
     deviceId: z.string().uuid().optional().describe('Filter by device ID'),
     emulatorIds: z.array(z.string().uuid()).optional().describe('Filter by emulator IDs'),
+    performanceIds: z
+      .array(z.union([z.number(), z.string().transform(Number)]))
+      .optional()
+      .describe('Filter by performance IDs'),
     search: z.string().optional().describe('Search listings by game name'),
   })
   .optional()

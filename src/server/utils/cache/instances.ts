@@ -48,12 +48,12 @@ export const notificationAnalyticsCache = new MemoryCache<
   | TypeMetrics
   | UserEngagementMetrics[]
   | TimeSeriesData[]
-  | Array<{
+  | {
       type: NotificationType
       totalSent: number
       openRate: number
       clickRate: number
-    }>
+    }[]
 >({
   ttl: 10 * 60 * 1000, // 10 minutes - analytics can be slightly stale
   maxSize: 200, // Analytics queries with different date ranges and params

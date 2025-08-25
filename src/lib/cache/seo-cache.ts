@@ -220,7 +220,7 @@ export function clearCache(): void {
  * Warm cache with popular content
  */
 export async function warmCache<T>(
-  items: Array<{ key: string; fetchFn: () => Promise<T | null> }>,
+  items: { key: string; fetchFn: () => Promise<T | null> }[],
   options: CacheOptions = {},
 ): Promise<void> {
   console.log(`[SEO Cache] Warming cache with ${items.length} items`)

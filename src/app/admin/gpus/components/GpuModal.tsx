@@ -55,16 +55,16 @@ function GpuModal(props: Props) {
           ...gpuData,
         } satisfies RouterInput['gpus']['update'])
         setSuccess('GPU updated!')
+        props.onSuccess()
       } else {
         await createGpu.mutateAsync(gpuData satisfies RouterInput['gpus']['create'])
         setSuccess('GPU created!')
+        props.onSuccess()
       }
 
       // Reset form
       setBrandId('')
       setModelName('')
-
-      props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save GPU.'))
     }

@@ -45,8 +45,8 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   rightIcon?: ReactNode
   disabled?: boolean
   className?: string
-  minCharsToTrigger?: number // Renamed from minCharsToSearch for clarity
-  debounceTime?: number // Renamed from searchDebounce
+  minCharsToTrigger?: number
+  debounceTime?: number
 }
 
 export function Autocomplete<T extends AutocompleteOptionBase>({
@@ -82,7 +82,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const [hasSearched, setHasSearched] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLUListElement>(null) // Changed to ul
+  const listRef = useRef<HTMLUListElement>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load initial items from server if loadItems is provided (only once)

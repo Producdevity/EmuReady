@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
 import { Autocomplete } from '@/components/ui/form'
 import { api } from '@/lib/api'
@@ -50,12 +50,11 @@ function VerifyDeveloperModal(props: Props) {
   }, [props.isOpen])
 
   const loadUsers = async (query: string): Promise<UserOption[]> => {
-    const result = await utils.users.searchUsers.fetch({
-      query: query,
+    return await utils.users.searchUsers.fetch({
+      query,
       limit: 20,
       minRole: Role.DEVELOPER, // Only load users with DEVELOPER role or higher
     })
-    return result
   }
 
   const handleSubmit = async (ev: FormEvent) => {
@@ -108,7 +107,7 @@ function VerifyDeveloperModal(props: Props) {
             loadItems={loadUsers}
             optionToValue={(user) => user.id}
             optionToLabel={(user) => user.name || user.email}
-            customOptionRenderer={(user, _isHighlighted) => (
+            customOptionRenderer={(user) => (
               <div className="flex items-center justify-between w-full">
                 <div>
                   <div className="font-medium">{user.name || user.email}</div>

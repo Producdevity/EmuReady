@@ -2,80 +2,41 @@ import { ResourceError } from '@/lib/errors'
 import { GetDeviceByIdSchema } from '@/schemas/device'
 import { GetDevicesSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { ApprovalStatus } from '@orm'
+import { DeviceBrandsRepository } from '@/server/repositories/device-brands.repository'
+import { DevicesRepository } from '@/server/repositories/devices.repository'
+import { SoCsRepository } from '@/server/repositories/socs.repository'
 
 export const mobileDevicesRouter = createMobileTRPCRouter({
   /**
-   * Get devices with search and filtering
+   * Get devices with optional search, brand filtering, and pagination
    */
   get: mobilePublicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
-    const { brandId, search, limit } = input ?? {}
-    const baseWhere: Record<string, unknown> = {}
-    if (brandId) baseWhere.brandId = brandId
-
-    // Add search filtering at database level
-    if (search) {
-      baseWhere.OR = [
-        { modelName: { contains: search, mode: 'insensitive' } },
-        { brand: { name: { contains: search, mode: 'insensitive' } } },
-      ]
-    }
-
-    return await ctx.prisma.device.findMany({
-      where: baseWhere,
-      include: {
-        brand: { select: { id: true, name: true } },
-        soc: { select: { id: true, name: true, manufacturer: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
-      },
-      orderBy: [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-      take: limit,
-    })
+    const repository = new DevicesRepository(ctx.prisma)
+    return repository.getMobile(input ?? {})
   }),
 
   /**
-   * Get device brands
+   * Get all device brands sorted alphabetically
    */
-  brands: mobilePublicProcedure.query(
-    async ({ ctx }) =>
-      await ctx.prisma.deviceBrand.findMany({
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      }),
-  ),
+  brands: mobilePublicProcedure.query(async ({ ctx }) => {
+    const repository = new DeviceBrandsRepository(ctx.prisma)
+    return repository.getAllForMobile()
+  }),
 
   /**
    * Get SOCs (System on Chips)
    */
-  socs: mobilePublicProcedure.query(
-    async ({ ctx }) =>
-      await ctx.prisma.soC.findMany({
-        select: { id: true, name: true, manufacturer: true },
-        orderBy: [{ manufacturer: 'asc' }, { name: 'asc' }],
-      }),
-  ),
+  socs: mobilePublicProcedure.query(async ({ ctx }) => {
+    const repository = new SoCsRepository(ctx.prisma)
+    return repository.getAllForMobile()
+  }),
 
   /**
    * Get device by ID
    */
   byId: mobilePublicProcedure.input(GetDeviceByIdSchema).query(async ({ ctx, input }) => {
-    const device = await ctx.prisma.device.findUnique({
-      where: { id: input.id },
-      include: {
-        brand: { select: { id: true, name: true } },
-        soc: { select: { id: true, name: true, manufacturer: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
-      },
-    })
-
-    return device || ResourceError.device.notFound()
+    const repository = new DevicesRepository(ctx.prisma)
+    const device = await repository.getByIdMobile(input.id)
+    return device ?? ResourceError.device.notFound()
   }),
 })

@@ -76,6 +76,7 @@ const eslintConfig = [
     },
     rules: {
       ...typescriptEslint.configs.recommended.rules,
+      '@typescript-eslint/array-type': ['error', { default: 'array' }],
       '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',

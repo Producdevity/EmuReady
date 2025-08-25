@@ -1,13 +1,11 @@
 'use client'
 
 import { motion, useMotionValue, useTransform } from 'framer-motion'
-import { useState } from 'react'
+import { type PropsWithChildren, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { PanInfo } from 'framer-motion'
-import type { ReactNode } from 'react'
 
-interface SwipeableCardProps {
-  children: ReactNode
+interface Props extends PropsWithChildren {
   onSwipeLeft?: () => void
   onSwipeRight?: () => void
   onClick?: () => void
@@ -16,7 +14,7 @@ interface SwipeableCardProps {
   enableHaptics?: boolean
 }
 
-export function SwipeableCard(props: SwipeableCardProps) {
+export function SwipeableCard(props: Props) {
   const swipeThreshold = props.swipeThreshold ?? 100
   const enableHaptics = props.enableHaptics ?? true
 
@@ -27,11 +25,6 @@ export function SwipeableCard(props: SwipeableCardProps) {
   const opacity = useTransform(x, [-swipeThreshold * 2, 0, swipeThreshold * 2], [0.5, 1, 0.5])
 
   const rotate = useTransform(x, [-swipeThreshold * 2, 0, swipeThreshold * 2], [-8, 0, 8])
-
-  // Handle drag start
-  const handleDragStart = () => {
-    setIsSwiping(true)
-  }
 
   // Handle drag end
   const handleDragEnd = (_event: unknown, _info: PanInfo) => {
@@ -52,9 +45,7 @@ export function SwipeableCard(props: SwipeableCardProps) {
       props.onSwipeRight()
 
       // Trigger haptic feedback if available
-      if (enableHaptics && navigator.vibrate) {
-        navigator.vibrate(50)
-      }
+      if (enableHaptics && navigator.vibrate) navigator.vibrate(50)
     }
 
     setIsSwiping(false)
@@ -63,9 +54,7 @@ export function SwipeableCard(props: SwipeableCardProps) {
   // Handle click
   const handleClick = () => {
     // Only trigger click if we're not swiping
-    if (!isSwiping && props.onClick) {
-      props.onClick()
-    }
+    if (!isSwiping && props.onClick) props.onClick()
   }
 
   return (
@@ -80,7 +69,7 @@ export function SwipeableCard(props: SwipeableCardProps) {
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.1}
-      onDragStart={handleDragStart}
+      onDragStart={() => setIsSwiping(true)}
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       whileTap={{ scale: isSwiping ? 1 : 0.98 }}

@@ -16,18 +16,13 @@ export const SortDirection = z.enum(['asc', 'desc'])
 
 export const GetAllUsersSchema = z
   .object({
-    search: z.string().optional(),
-    sortField: UserSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    search: z.string().nullable().optional(),
+    sortField: UserSortField.nullable().optional(),
+    sortDirection: SortDirection.nullable().optional(),
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   })
   .optional()
-
-export const RegisterUserSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-})
 
 export const GetUserByIdSchema = z.object({
   userId: z.string().uuid(),

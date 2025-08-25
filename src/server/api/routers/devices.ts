@@ -12,125 +12,23 @@ import {
   manageDevicesProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
-import { calculateOffset, createPaginationResult, buildOrderBy } from '@/server/utils/pagination'
-import type { Prisma } from '@orm'
+import { DevicesRepository } from '@/server/repositories/devices.repository'
 
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
-    const {
-      search,
-      brandId,
-      socId,
-      limit = 20,
-      offset = 0,
-      page,
-      sortField,
-      sortDirection,
-    } = input ?? {}
-
-    // Calculate actual offset based on page or use provided offset
-    const actualOffset = calculateOffset({ page, offset }, limit)
-
-    // Build where clause for filtering
-    const where: Prisma.DeviceWhereInput = {
-      ...(brandId ? { brandId } : {}),
-      ...(socId ? { socId } : {}),
-      ...(search
-        ? {
-            OR: [
-              // Exact match for model name (highest priority)
-              { modelName: { equals: search, mode: 'insensitive' } },
-              // Exact match for brand name
-              { brand: { name: { equals: search, mode: 'insensitive' } } },
-              // Contains match for model name
-              { modelName: { contains: search, mode: 'insensitive' } },
-              // Contains match for brand name
-              { brand: { name: { contains: search, mode: 'insensitive' } } },
-              // SoC name search
-              { soc: { name: { contains: search, mode: 'insensitive' } } },
-              // SoC manufacturer search
-              {
-                soc: {
-                  manufacturer: { contains: search, mode: 'insensitive' },
-                },
-              },
-              // Brand + Model combination search (e.g., "Retroid Pocket 5")
-              ...(search.includes(' ')
-                ? [
-                    {
-                      AND: [
-                        {
-                          brand: {
-                            name: {
-                              contains: search.split(' ')[0],
-                              mode: 'insensitive' as const,
-                            },
-                          },
-                        },
-                        {
-                          modelName: {
-                            contains: search.split(' ').slice(1).join(' '),
-                            mode: 'insensitive' as const,
-                          },
-                        },
-                      ],
-                    },
-                  ]
-                : []),
-            ],
-          }
-        : {}),
-    }
-
-    const sortConfig = {
-      brand: (dir: 'asc' | 'desc') => ({ brand: { name: dir } }),
-      modelName: (dir: 'asc' | 'desc') => ({ modelName: dir }),
-      soc: (dir: 'asc' | 'desc') => ({ soc: { name: dir } }),
-      listings: (dir: 'asc' | 'desc') => ({ listings: { _count: dir } }),
-    }
-
-    const orderBy = buildOrderBy<Prisma.DeviceOrderByWithRelationInput>(
-      sortConfig,
-      sortField,
-      sortDirection,
-      [{ brand: { name: 'asc' } }, { modelName: 'asc' }],
-    )
-
-    const total = await ctx.prisma.device.count({ where })
-
-    // Get devices with pagination
-    const devices = await ctx.prisma.device.findMany({
-      where,
-      include: {
-        brand: true,
-        soc: true,
-        _count: { select: { listings: true } },
-      },
-      orderBy,
-      skip: actualOffset,
-      take: limit,
-    })
-
-    return {
-      devices,
-      pagination: createPaginationResult(total, { page, offset }, limit, actualOffset),
-    }
+    const repository = new DevicesRepository(ctx.prisma)
+    return repository.getPaginated(input ?? {})
   }),
 
   byId: publicProcedure.input(GetDeviceByIdSchema).query(async ({ ctx, input }) => {
-    const device = await ctx.prisma.device.findUnique({
-      where: { id: input.id },
-      include: {
-        brand: true,
-        soc: true,
-        _count: { select: { listings: true } },
-      },
-    })
-
+    const repository = new DevicesRepository(ctx.prisma)
+    const device = await repository.byIdWithCounts(input.id)
     return device ?? ResourceError.device.notFound()
   }),
 
   create: manageDevicesProcedure.input(CreateDeviceSchema).mutation(async ({ ctx, input }) => {
+    const repository = new DevicesRepository(ctx.prisma)
+
     const brand = await ctx.prisma.deviceBrand.findUnique({
       where: { id: input.brandId },
     })
@@ -146,34 +44,21 @@ export const devicesRouter = createTRPCRouter({
       if (!soc) return AppError.notFound('SoC')
     }
 
-    const existingDevice = await ctx.prisma.device.findFirst({
-      where: {
-        brandId: input.brandId,
-        modelName: { equals: input.modelName, mode: 'insensitive' },
-      },
-    })
-
-    if (existingDevice) {
+    const exists = await repository.existsByModelAndBrand(input.modelName, input.brandId)
+    if (exists) {
       return ResourceError.device.alreadyExists(input.modelName)
     }
 
-    return ctx.prisma.device.create({
-      data: input,
-      include: {
-        brand: true,
-        soc: true,
-        _count: { select: { listings: true } },
-      },
-    })
+    // Create and then fetch with counts for web
+    const created = await repository.create(input)
+    return repository.byIdWithCounts(created.id)
   }),
 
   update: manageDevicesProcedure.input(UpdateDeviceSchema).mutation(async ({ ctx, input }) => {
+    const repository = new DevicesRepository(ctx.prisma)
     const { id, ...data } = input
 
-    const device = await ctx.prisma.device.findUnique({
-      where: { id },
-    })
-
+    const device = await repository.byId(id)
     if (!device) return ResourceError.device.notFound()
 
     const brand = await ctx.prisma.deviceBrand.findUnique({
@@ -191,30 +76,19 @@ export const devicesRouter = createTRPCRouter({
       if (!soc) return AppError.notFound('SoC')
     }
 
-    const existingDevice = await ctx.prisma.device.findFirst({
-      where: {
-        brandId: input.brandId,
-        modelName: { equals: input.modelName, mode: 'insensitive' },
-        id: { not: id },
-      },
-    })
-
-    if (existingDevice) {
+    const exists = await repository.existsByModelAndBrand(input.modelName, input.brandId)
+    if (exists) {
       return ResourceError.device.alreadyExists(input.modelName)
     }
 
-    return ctx.prisma.device.update({
-      where: { id },
-      data,
-      include: {
-        brand: true,
-        soc: true,
-        _count: { select: { listings: true } },
-      },
-    })
+    // Update and then fetch with counts for web
+    const updated = await repository.update(id, data)
+    return repository.byIdWithCounts(updated.id)
   }),
 
   delete: manageDevicesProcedure.input(DeleteDeviceSchema).mutation(async ({ ctx, input }) => {
+    const repository = new DevicesRepository(ctx.prisma)
+
     const existingDevice = await ctx.prisma.device.findUnique({
       where: { id: input.id },
       include: { _count: { select: { listings: true } } },
@@ -228,7 +102,8 @@ export const devicesRouter = createTRPCRouter({
       )
     }
 
-    return ctx.prisma.device.delete({ where: { id: input.id } })
+    await repository.delete(input.id)
+    return existingDevice // Return the deleted device
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

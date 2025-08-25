@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useState, useEffect, useCallback, Suspense, type ChangeEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense, type ChangeEvent } from 'react'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
@@ -13,6 +13,8 @@ import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import GameCard from './components/GameCard'
 import GameFilters from './components/GameFilters'
+
+const ABOVE_FOLD_IMAGE_COUNT = 4 // First row on largest grid (xl:grid-cols-4)
 
 function GamesContent() {
   const { user } = useUser()
@@ -87,15 +89,9 @@ function GamesContent() {
       }
 
       // Apply updates
-      if (updates.search !== undefined) {
-        setParam('search', updates.search.trim(), '')
-      }
-      if (updates.systemId !== undefined) {
-        setParam('systemId', updates.systemId, '')
-      }
-      if (updates.page !== undefined) {
-        setParam('page', updates.page.toString(), '1')
-      }
+      if (updates.search !== undefined) setParam('search', updates.search.trim(), '')
+      if (updates.systemId !== undefined) setParam('systemId', updates.systemId, '')
+      if (updates.page !== undefined) setParam('page', updates.page.toString(), '1')
       if (updates.hideNoListings !== undefined) {
         setParam('hideNoListings', updates.hideNoListings.toString(), 'true')
       }
@@ -138,13 +134,32 @@ function GamesContent() {
   }, [debouncedSearch, search, updateUrlParams])
 
   // Update input when URL changes (browser back/forward)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const isTypingRef = useRef(false)
+  const prevSearchRef = useRef(search)
+
   useEffect(() => {
-    setInputValue(search)
+    // Only sync from URL if it's an external change (browser navigation)
+    if (search !== prevSearchRef.current && !isTypingRef.current) {
+      setInputValue(search)
+    }
+    prevSearchRef.current = search
   }, [search])
 
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
     const newInputValue = ev.target.value
     setInputValue(newInputValue)
+    isTypingRef.current = true
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // Set new timeout to clear typing flag
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false
+    }, 600)
   }
 
   const handleSystemChange = (value: string | null) => {
@@ -206,8 +221,8 @@ function GamesContent() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {games.map((game) => (
-                <GameCard key={game.id} game={game} />
+              {games.map((game, index) => (
+                <GameCard key={game.id} game={game} priority={index < ABOVE_FOLD_IMAGE_COUNT} />
               ))}
             </div>
 

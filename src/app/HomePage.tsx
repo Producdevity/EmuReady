@@ -89,7 +89,7 @@ function Home() {
               >
                 <span className="relative z-10 flex items-center gap-2">
                   <Gamepad2 className="w-5 h-5" />
-                  Browse Compatibility Reports
+                  Browse PC & Handheld Compatibility
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </span>
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-600 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
@@ -161,8 +161,8 @@ function Home() {
             >
               {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
-                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto"></div>
+                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto" />
                 </div>
               ) : (
                 <>

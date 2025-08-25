@@ -112,12 +112,12 @@ function DeviceAndSocPreferences(props: Props) {
 
   const handleDevicesChange = useCallback(
     (
-      devices: Array<{
+      devices: {
         id: string
         modelName: string
         brand: { id: string; name: string }
         soc?: { id: string; name: string; manufacturer: string } | null
-      }>,
+      }[],
     ) => {
       const deviceIds = devices.map((device) => device.id)
 

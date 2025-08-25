@@ -13,7 +13,7 @@ export const mobileTgdbRouter = createMobileTRPCRouter({
    * Search for game images in TGDB database
    */
   searchGameImages: mobilePublicProcedure.input(SearchGameImagesSchema).query(async ({ input }) => {
-    const result = await tgdb.searchGameImages(input.query, input.tgdbPlatformId)
+    const result = await tgdb.searchGameImages(input.query, input.systemKey)
 
     // Convert Map to a plain object for serialization
     const serializedResult: Record<string, GameImageOption[]> = {}
@@ -29,7 +29,7 @@ export const mobileTgdbRouter = createMobileTRPCRouter({
    */
   searchGames: mobilePublicProcedure.input(SearchGamesSchema).query(async ({ input }) => {
     // Just return the search results with boxart included - no additional API calls
-    return tgdb.searchGames(input.query, input.tgdbPlatformId, input.page)
+    return tgdb.searchGames(input.query, input.systemKey, input.page)
   }),
 
   /**

@@ -102,12 +102,12 @@ function AdminListingsPage() {
   const listingsQuery = api.listings.getAllListings.useQuery({
     page: table.page,
     limit: table.limit,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
-    search: isEmpty(table.search) ? undefined : table.search,
-    statusFilter: statusFilter || undefined,
-    systemFilter: systemFilter || undefined,
-    emulatorFilter: emulatorFilter || undefined,
+    sortField: table.sortField ?? null,
+    sortDirection: table.sortDirection ?? null,
+    search: isEmpty(table.search) ? null : table.search,
+    statusFilter: statusFilter || null,
+    systemFilter: systemFilter || null,
+    emulatorFilter: emulatorFilter || null,
   })
 
   const listingStatsQuery = api.listings.getStats.useQuery()

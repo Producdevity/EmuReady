@@ -14,7 +14,7 @@ import {
 import { pcListingInclude, buildPcListingWhere } from '@/server/api/utils/pcListingHelpers'
 import { createPaginationResult } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
-import { ApprovalStatus } from '@orm'
+import { Prisma, ApprovalStatus } from '@orm'
 
 export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
@@ -35,6 +35,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       maxMemory,
     } = input
     const skip = (page - 1) * limit
+    const mode = Prisma.QueryMode.insensitive
 
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
@@ -55,7 +56,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     if (os) baseWhere.os = os
     if (systemId) {
       baseWhere.game = {
-        ...(baseWhere.game as Record<string, unknown>),
+        ...(baseWhere.game || {}),
         systemId,
       }
     }
@@ -71,20 +72,8 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     // Add search filtering at database level
     if (search) {
       baseWhere.OR = [
-        {
-          game: {
-            title: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
-        {
-          notes: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
+        { game: { title: { contains: search, mode } } },
+        { notes: { contains: search, mode } },
       ]
     }
 
@@ -139,7 +128,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
           ? {
               create: input.customFieldValues.map((cfv) => ({
                 customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value,
+                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
               })),
             }
           : undefined,
@@ -187,17 +176,13 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
               deleteMany: {},
               create: customFieldValues.map((cfv) => ({
                 customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value,
+                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
               })),
             }
           : undefined,
       },
       include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
         cpu: { include: { brand: { select: { id: true, name: true } } } },
         gpu: { include: { brand: { select: { id: true, name: true } } } },
         emulator: { select: { id: true, name: true, logo: true } },
@@ -212,29 +197,23 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
    * Get CPUs for mobile
    */
   cpus: mobilePublicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
-    const { search, brandId, limit } = input
+    const mode = Prisma.QueryMode.insensitive
 
     const where = {
-      ...(search && {
+      ...(input.search && {
         OR: [
-          { modelName: { contains: search, mode: 'insensitive' as const } },
-          {
-            brand: {
-              name: { contains: search, mode: 'insensitive' as const },
-            },
-          },
+          { modelName: { contains: input.search, mode } },
+          { brand: { name: { contains: input.search, mode } } },
         ],
       }),
-      ...(brandId && { brandId }),
+      ...(input.brandId && { brandId: input.brandId }),
     }
 
     const cpus = await ctx.prisma.cpu.findMany({
       where,
-      take: limit,
+      take: input.limit,
       orderBy: { modelName: 'asc' },
-      include: {
-        brand: { select: { id: true, name: true } },
-      },
+      include: { brand: { select: { id: true, name: true } } },
     })
 
     return { cpus }
@@ -244,17 +223,14 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
    * Get GPUs for mobile
    */
   gpus: mobilePublicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
+    const mode = Prisma.QueryMode.insensitive
     const { search, brandId, limit } = input
 
     const where = {
       ...(search && {
         OR: [
-          { modelName: { contains: search, mode: 'insensitive' as const } },
-          {
-            brand: {
-              name: { contains: search, mode: 'insensitive' as const },
-            },
-          },
+          { modelName: { contains: search, mode } },
+          { brand: { name: { contains: search, mode } } },
         ],
       }),
       ...(brandId && { brandId }),
@@ -264,9 +240,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       where,
       take: limit,
       orderBy: { modelName: 'asc' },
-      include: {
-        brand: { select: { id: true, name: true } },
-      },
+      include: { brand: { select: { id: true, name: true } } },
     })
 
     return { gpus }

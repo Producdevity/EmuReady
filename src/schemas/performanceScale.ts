@@ -27,3 +27,8 @@ export const UpdatePerformanceScaleSchema = z.object({
 })
 
 export const DeletePerformanceScaleSchema = z.object({ id: z.number() })
+
+// Type exports for repository use
+export type GetPerformanceScalesInput = z.input<typeof GetPerformanceScalesSchema>
+export type CreatePerformanceScaleInput = z.infer<typeof CreatePerformanceScaleSchema>
+export type UpdatePerformanceScaleInput = z.infer<typeof UpdatePerformanceScaleSchema>

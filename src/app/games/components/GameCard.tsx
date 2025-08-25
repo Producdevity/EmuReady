@@ -9,6 +9,7 @@ interface Props {
     system?: { name: string } | null
     _count: { listings: number; pcListings: number }
   }
+  priority?: boolean
 }
 
 function GameCard(props: Props) {
@@ -25,7 +26,7 @@ function GameCard(props: Props) {
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          priority={false}
+          priority={props.priority ?? false}
           unoptimized
         />
       </div>

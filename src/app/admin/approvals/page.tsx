@@ -87,9 +87,9 @@ function AdminApprovalsPage() {
   const pendingListingsQuery = api.listings.getPending.useQuery({
     page: table.page,
     limit: table.limit,
-    sortField: table.sortField ?? undefined,
-    sortDirection: table.sortDirection ?? undefined,
-    search: isEmpty(table.search) ? undefined : table.search,
+    sortField: table.sortField ?? null,
+    sortDirection: table.sortDirection ?? null,
+    search: isEmpty(table.search) ? null : table.search,
   })
 
   const gameStatsQuery = api.games.getStats.useQuery()
@@ -146,7 +146,7 @@ function AdminApprovalsPage() {
       analytics.admin.listingRejected({
         listingId: variables.listingId,
         adminId: currentUserQuery.data?.id ?? 'unknown',
-        reason: variables.notes,
+        reason: variables.notes ?? undefined,
         gameId: selectedListingForApproval?.game.id,
         systemId: selectedListingForApproval?.game.system.id,
       })
@@ -168,7 +168,7 @@ function AdminApprovalsPage() {
         operation: 'approve',
         entityType: 'listing',
         count: variables.listingIds.length,
-        adminId: 'current-admin', // Replace with actual admin ID
+        adminId: currentUserQuery.data?.id ?? 'unknown',
       })
 
       await invalidateQueries()
@@ -188,7 +188,7 @@ function AdminApprovalsPage() {
         operation: 'reject',
         entityType: 'listing',
         count: variables.listingIds.length,
-        adminId: 'current-admin', // Replace with actual admin ID
+        adminId: currentUserQuery.data?.id ?? 'unknown',
       })
 
       await invalidateQueries()
@@ -275,7 +275,7 @@ function AdminApprovalsPage() {
     if (approvalDecision === ApprovalStatus.REJECTED) {
       return rejectMutation.mutate({
         listingId: selectedListingForApproval.id,
-        notes: approvalNotes || undefined,
+        notes: approvalNotes || null,
       } satisfies RouterInput['listings']['rejectListing'])
     }
   }

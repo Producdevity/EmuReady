@@ -8,8 +8,8 @@ export const metadata: Metadata = generatePageMetadata(
   '/games',
 )
 
-// Revalidate every 30 minutes to show new games
-export const revalidate = 1800
+// Revalidate every 10 seconds for near real-time updates
+export const revalidate = 10
 
 export default function Page() {
   return <GamesPage />

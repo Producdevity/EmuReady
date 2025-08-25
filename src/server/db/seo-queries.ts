@@ -33,7 +33,7 @@ export async function getGameForSEO(id: string) {
         `seo:game:${id}`,
         async () => {
           try {
-            const game = await prisma.game.findUnique({
+            return await prisma.game.findUnique({
               where: { id },
               select: {
                 id: true,
@@ -42,8 +42,6 @@ export async function getGameForSEO(id: string) {
                 system: { select: { name: true } },
               },
             })
-
-            return game
           } catch {
             return null
           }
@@ -65,7 +63,7 @@ export async function getListingForSEO(id: string) {
         `seo:listing:${id}`,
         async () => {
           try {
-            const listing = await prisma.listing.findUnique({
+            return await prisma.listing.findUnique({
               where: { id },
               select: {
                 id: true,
@@ -83,8 +81,6 @@ export async function getListingForSEO(id: string) {
                 author: { select: { name: true } },
               },
             })
-
-            return listing
           } catch {
             return null
           }
@@ -106,7 +102,7 @@ export async function getPcListingForSEO(id: string) {
         `seo:pclisting:${id}`,
         async () => {
           try {
-            const pcListing = await prisma.pcListing.findUnique({
+            return await prisma.pcListing.findUnique({
               where: { id },
               select: {
                 id: true,
@@ -129,8 +125,6 @@ export async function getPcListingForSEO(id: string) {
                 author: { select: { name: true } },
               },
             })
-
-            return pcListing
           } catch {
             return null
           }
@@ -152,12 +146,10 @@ export async function getUserForSEO(id: string) {
         `seo:user:${id}`,
         async () => {
           try {
-            const user = await prisma.user.findUnique({
+            return await prisma.user.findUnique({
               where: { id },
               select: { id: true, name: true, profileImage: true },
             })
-
-            return user
           } catch {
             return null
           }
@@ -180,14 +172,12 @@ export async function getApprovedGamesForSitemap(limit = 1000) {
         `seo:sitemap:games:${limit}`,
         async () => {
           try {
-            const games = await prisma.game.findMany({
+            return await prisma.game.findMany({
               where: { status: ApprovalStatus.APPROVED },
               select: { id: true, createdAt: true },
               orderBy: { createdAt: 'desc' },
               take: limit,
             })
-
-            return games
           } catch {
             return []
           }
@@ -209,14 +199,12 @@ export async function getApprovedListingsForSitemap(limit = 500) {
         `seo:sitemap:listings:${limit}`,
         async () => {
           try {
-            const listings = await prisma.listing.findMany({
+            return await prisma.listing.findMany({
               where: { status: ApprovalStatus.APPROVED },
               select: { id: true, createdAt: true },
               orderBy: { createdAt: 'desc' },
               take: limit,
             })
-
-            return listings
           } catch {
             return []
           }
@@ -238,14 +226,12 @@ export async function getApprovedPcListingsForSitemap(limit = 500) {
         `seo:sitemap:pclistings:${limit}`,
         async () => {
           try {
-            const pcListings = await prisma.pcListing.findMany({
+            return await prisma.pcListing.findMany({
               where: { status: ApprovalStatus.APPROVED },
               select: { id: true, createdAt: true },
               orderBy: { createdAt: 'desc' },
               take: limit,
             })
-
-            return pcListings
           } catch {
             return []
           }

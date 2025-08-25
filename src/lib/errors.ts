@@ -71,7 +71,7 @@ export class AppError {
   static insufficientRole(requiredRole?: Role): never {
     const formattedRole = requiredRole ? formatUserRole(requiredRole) : null
     const message = formattedRole
-      ? `You need ${formattedRole} permissions to perform this action`
+      ? `You need ${formattedRole} role to perform this action`
       : ERROR_MESSAGES.INSUFFICIENT_PERMISSIONS
 
     throw new TRPCError({ code: ERROR_CODES.FORBIDDEN, message })

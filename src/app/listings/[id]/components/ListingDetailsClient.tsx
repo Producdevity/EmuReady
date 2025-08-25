@@ -108,10 +108,10 @@ function ListingDetailsClient(props: Props) {
         // For select fields, try to find the label from options
         if (Array.isArray(fieldValue.customFieldDefinition.options)) {
           const option = (
-            fieldValue.customFieldDefinition.options as Array<{
+            fieldValue.customFieldDefinition.options as {
               value: string
               label: string
-            }>
+            }[]
           ).find((opt) => opt.value === String(fieldValue.value))
           return option?.label ?? String(fieldValue.value)
         }

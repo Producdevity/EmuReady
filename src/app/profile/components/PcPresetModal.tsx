@@ -8,12 +8,15 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { PcOs } from '@orm'
 
 type PcPreset = RouterOutput['pcListings']['presets']['get'][number]
+type PcPresetMutationResult =
+  | RouterOutput['pcListings']['presets']['create']
+  | RouterOutput['pcListings']['presets']['update']
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   preset: PcPreset | null
-  onSuccess: () => void
+  onSuccess: (data?: PcPresetMutationResult) => void
 }
 
 const OS_OPTIONS = [
@@ -25,8 +28,8 @@ const OS_OPTIONS = [
 function PcPresetModal(props: Props) {
   const createPreset = api.pcListings.presets.create.useMutation()
   const updatePreset = api.pcListings.presets.update.useMutation()
-  const cpusQuery = api.cpus.get.useQuery({ limit: 500 })
-  const gpusQuery = api.gpus.get.useQuery({ limit: 500 })
+  const cpusQuery = api.cpus.get.useQuery({ limit: 500 }) // TODO: make this async
+  const gpusQuery = api.gpus.get.useQuery({ limit: 500 }) // TODO: make this async
 
   const [name, setName] = useState('')
   const [cpuId, setCpuId] = useState('')
@@ -80,16 +83,18 @@ function PcPresetModal(props: Props) {
       }
 
       if (props.preset) {
-        await updatePreset.mutateAsync({
+        const updated = await updatePreset.mutateAsync({
           id: props.preset.id,
           ...presetData,
         } satisfies RouterInput['pcListings']['presets']['update'])
         setSuccess('PC preset updated!')
+        props.onSuccess(updated)
       } else {
-        await createPreset.mutateAsync(
+        const created = await createPreset.mutateAsync(
           presetData satisfies RouterInput['pcListings']['presets']['create'],
         )
         setSuccess('PC preset created!')
+        props.onSuccess(created)
       }
 
       // Reset form
@@ -99,8 +104,6 @@ function PcPresetModal(props: Props) {
       setMemorySize('')
       setOs(PcOs.WINDOWS)
       setOsVersion('')
-
-      props.onSuccess()
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save PC preset.'))
     }

@@ -19,6 +19,7 @@ import { Modal, Button, ApprovalStatusBadge, Code, LocalizedDate } from '@/compo
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { getTgdbGameId } from '@/schemas/gameMetadata'
 import { type RouterOutput } from '@/types/trpc'
 import { type Maybe, type Nullable } from '@/types/utils'
 import { copyToClipboard } from '@/utils/copyToClipboard'
@@ -66,6 +67,9 @@ function GameDetailsModal(props: Props) {
 
   // Create local reference for type safety
   const selectedGame = props.selectedGame
+
+  // Get tgdbGameId with backward compatibility (tgdbGameId field first, then metadata.tgdbId)
+  const tgdbGameId = getTgdbGameId(selectedGame)
 
   const handleImageError = (imageType: string) => {
     setImageError((prev) => ({ ...prev, [imageType]: true }))
@@ -140,10 +144,10 @@ function GameDetailsModal(props: Props) {
           <div className="absolute bottom-4 left-6 right-6">
             <div className="flex items-center gap-3 mb-2">
               <ApprovalStatusBadge status={selectedGame.status} />
-              {selectedGame.tgdbGameId && (
+              {tgdbGameId && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-black/30 rounded-full text-xs text-white">
                   <Database className="w-3 h-3" />
-                  TGDB ID: {selectedGame.tgdbGameId}
+                  TGDB ID: {tgdbGameId}
                 </div>
               )}
             </div>
@@ -407,18 +411,18 @@ function GameDetailsModal(props: Props) {
                         </button>
                       </div>
                     </div>
-                    {selectedGame.tgdbGameId && (
+                    {tgdbGameId && (
                       <div className="flex items-center">
                         <span className="text-xs text-gray-500 dark:text-gray-400">TGDB ID:</span>
                         <div className="flex items-center gap-1 ml-4">
                           <Code
-                            value={selectedGame.tgdbGameId}
-                            label={selectedGame.tgdbGameId ?? 'N/A'}
+                            value={tgdbGameId.toString()}
+                            label={tgdbGameId?.toString() ?? 'N/A'}
                           />
                           <button
                             type="button"
                             onClick={() =>
-                              handleCopyToClipboard(selectedGame.tgdbGameId, 'TheGamesDB ID')
+                              handleCopyToClipboard(tgdbGameId.toString(), 'TheGamesDB ID')
                             }
                             className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             title="Copy Game ID"

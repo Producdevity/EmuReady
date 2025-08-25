@@ -57,3 +57,8 @@ export const UpdateSoCSchema = z.object({
 export const DeleteSoCSchema = z.object({
   id: z.string(),
 })
+
+// Type exports for repository use
+export type GetSoCsInput = z.input<typeof GetSoCsSchema>
+export type CreateSoCInput = z.infer<typeof CreateSoCSchema>
+export type UpdateSoCInput = z.infer<typeof UpdateSoCSchema>
