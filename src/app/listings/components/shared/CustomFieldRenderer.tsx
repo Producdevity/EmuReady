@@ -1,7 +1,7 @@
 'use client'
 
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
-import { isEmpty, isString } from 'remeda'
+import { isString } from 'remeda'
 import CustomFieldTypeDriverVersion from '@/app/listings/components/shared/custom-fields/CustomFieldTypeDriverVersion'
 import { CustomFieldType } from '@orm'
 import {
@@ -59,9 +59,14 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
             // Boolean fields are always valid
             if (props.fieldDef.type === CustomFieldType.BOOLEAN) return true
 
-            return !value || (isString(value) && value.trim() === '') || isEmpty(value)
-              ? `${props.fieldDef.label} is required`
-              : true
+            // Check if value is empty
+            const isValueEmpty =
+              !value ||
+              (isString(value) && value.trim() === '') ||
+              (Array.isArray(value) && value.length === 0) ||
+              (typeof value === 'object' && value !== null && Object.keys(value).length === 0)
+
+            return isValueEmpty ? `${props.fieldDef.label} is required` : true
           }
         : undefined,
     }
