@@ -250,10 +250,32 @@ export class ResourceError {
   }
 
   static listing = {
-    notFound: () => AppError.notFound('Listing'),
+    notFound: () => AppError.notFound('Report'),
     alreadyExists: () =>
-      AppError.conflict('A listing for this game, device, and emulator combination already exists'),
-    notPending: () => AppError.notFound('Pending listing not found or already processed'),
+      AppError.conflict('A report for this game, device, and emulator combination already exists'),
+    notPending: () => AppError.notFound('Pending report not found or already processed'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own report'),
+    cannotEditRejected: () => AppError.badRequest('Rejected reports cannot be edited'),
+    editTimeExpired: (timeLimitMinutes: number) =>
+      AppError.badRequest(
+        `You can only edit listings within ${timeLimitMinutes} minutes of approval`,
+      ),
+  }
+
+  static pcListing = {
+    notFound: () => AppError.notFound('PC Report'),
+    alreadyExists: () =>
+      AppError.conflict(
+        'A PC report for this game, CPU, GPU, and emulator combination already exists',
+      ),
+    notPending: () => AppError.notFound('Pending PC report not found or already processed'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC report'),
+    cannotEditRejected: () => AppError.badRequest('Rejected PC reports cannot be edited'),
+    editTimeExpired: (timeLimitMinutes: number) =>
+      AppError.badRequest(
+        `You can only edit PC reports within ${timeLimitMinutes} minutes of approval`,
+      ),
+    approvalTimeNotFound: () => AppError.internalError('Approval time not found for PC report'),
   }
 
   static notification = {
@@ -353,15 +375,6 @@ export class ResourceError {
     inUse: (count: number) => AppError.resourceInUse('GPU', count),
   }
 
-  static pcListing = {
-    notFound: () => AppError.notFound('PC listing'),
-    alreadyExists: () =>
-      AppError.conflict(
-        'A PC listing for this game, CPU, GPU, and emulator combination already exists',
-      ),
-    notPending: () => AppError.notFound('Pending PC listing not found or already processed'),
-  }
-
   static pcPreset = {
     notFound: () => AppError.notFound('PC preset'),
     alreadyExists: (name: string) =>
@@ -374,5 +387,11 @@ export class ResourceError {
 
   static verifiedDeveloper = {
     notFound: () => AppError.notFound('Verified Developer'),
+    mustBeVerifiedToVerify: (emulatorName: string) =>
+      AppError.badRequest(
+        `You must be a verified developer for ${emulatorName} to verify reports for this emulator`,
+      ),
+    cannotVerifyOwnListings: () => AppError.forbidden('You cannot verify your own reports'),
+    alreadyVerifiedListing: () => AppError.conflict('You have already verified this report'),
   }
 }

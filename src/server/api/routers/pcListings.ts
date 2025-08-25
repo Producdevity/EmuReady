@@ -357,44 +357,38 @@ export const pcListingsRouter = createTRPCRouter({
       select: { authorId: true, status: true, processedAt: true },
     })
 
-    if (!pcListing) {
-      throw ResourceError.pcListing.notFound()
-    }
+    if (!pcListing) return ResourceError.pcListing.notFound()
 
     // Only allow owners or moderators to edit
     if (
       pcListing.authorId !== ctx.session.user.id &&
       !hasPermission(ctx.session.user.role, Role.MODERATOR)
     ) {
-      throw AppError.forbidden('You can only edit your own PC listings')
+      return ResourceError.pcListing.canOnlyEditOwn()
     }
 
     // Check edit permissions based on PC listing status
     switch (pcListing.status) {
       case ApprovalStatus.REJECTED:
-        throw AppError.badRequest(
-          'Rejected PC listings cannot be edited. Please create a new listing.',
-        )
+        // Moderators can edit rejected listings
+        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+          return ResourceError.pcListing.cannotEditRejected()
+        }
+        break
 
       case ApprovalStatus.APPROVED:
         // Moderators can always edit approved listings
-        if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-          break
-        }
+        if (hasPermission(ctx.session.user.role, Role.MODERATOR)) break
 
         // Regular users have a time limit for editing approved listings
-        if (!pcListing.processedAt) {
-          throw AppError.badRequest('PC listing approval time not found')
-        }
+        if (!pcListing.processedAt) return ResourceError.pcListing.approvalTimeNotFound()
 
         const now = new Date()
         const timeSinceApproval = now.getTime() - pcListing.processedAt.getTime()
         const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
 
         if (timeSinceApproval > timeLimit) {
-          throw AppError.badRequest(
-            `You can only edit PC listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
-          )
+          return ResourceError.pcListing.editTimeExpired(EDIT_TIME_LIMIT_MINUTES)
         }
         break
 
@@ -408,9 +402,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Validate referenced entities exist
     const [performance] = await Promise.all([
-      ctx.prisma.performanceScale.findUnique({
-        where: { id: input.performanceId },
-      }),
+      ctx.prisma.performanceScale.findUnique({ where: { id: input.performanceId } }),
     ])
 
     if (!performance) throw ResourceError.performanceScale.notFound()
@@ -435,9 +427,7 @@ export const pcListingsRouter = createTRPCRouter({
     // Handle custom field values if provided
     if (customFieldValues) {
       // Delete existing custom field values
-      await ctx.prisma.pcListingCustomFieldValue.deleteMany({
-        where: { pcListingId: id },
-      })
+      await ctx.prisma.pcListingCustomFieldValue.deleteMany({ where: { pcListingId: id } })
 
       // Create new custom field values
       if (customFieldValues.length > 0) {
