@@ -3,8 +3,15 @@
 import { AlertCircle } from 'lucide-react'
 import { type FieldErrors, type FieldValues } from 'react-hook-form'
 
+interface CustomFieldDefinition {
+  id: string
+  label: string
+  name: string
+}
+
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   errors: FieldErrors<TFieldValues>
+  customFieldDefinitions?: CustomFieldDefinition[]
 }
 
 function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
@@ -26,8 +33,10 @@ function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
           if (fieldError?.value?.message) {
             errorMessages.push(fieldError.value.message)
           } else if (fieldError?.value) {
-            // Generic message if value error exists but no message
-            errorMessages.push(`Custom field ${index + 1} has an error`)
+            // Try to get field name from definitions if available
+            const fieldName =
+              props.customFieldDefinitions?.[index]?.label || `Custom field ${index + 1}`
+            errorMessages.push(`${fieldName} has an error`)
           }
         })
       } else if (error && typeof error === 'object' && 'message' in error && error.message) {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ReportReason, ReportStatus, PcOs } from '@orm'
 
 export const GetGameByIdSchema = z.object({
   id: z.string().uuid(),
@@ -111,14 +112,7 @@ export const GetUserVotesSchema = z.object({
 
 export const ReportCommentSchema = z.object({
   commentId: z.string().uuid(),
-  reason: z.enum([
-    'INAPPROPRIATE_CONTENT',
-    'SPAM',
-    'MISLEADING_INFORMATION',
-    'FAKE_LISTING',
-    'COPYRIGHT_VIOLATION',
-    'OTHER',
-  ]),
+  reason: z.nativeEnum(ReportReason),
   description: z.string().max(1000).optional(),
 })
 
@@ -260,7 +254,7 @@ export const CreatePcListingSchema = z.object({
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
   memorySize: z.number().min(1).max(256),
-  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']),
+  os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
   notes: z.string().optional(),
   customFieldValues: z
@@ -281,7 +275,7 @@ export const UpdatePcListingSchema = z.object({
   emulatorId: z.string().uuid().optional(),
   performanceId: z.number().optional(),
   memorySize: z.number().min(1).max(256).optional(),
-  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
+  os: z.nativeEnum(PcOs).optional(),
   osVersion: z.string().min(1).optional(),
   notes: z.string().optional(),
   customFieldValues: z
@@ -302,7 +296,7 @@ export const GetPcListingsSchema = z.object({
   cpuId: z.string().uuid().optional(),
   gpuId: z.string().uuid().optional(),
   emulatorId: z.string().uuid().optional(),
-  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
+  os: z.nativeEnum(PcOs).optional(),
   search: z.string().optional(),
   minMemory: z.number().min(1).max(256).optional(),
   maxMemory: z.number().min(1).max(256).optional(),
@@ -329,7 +323,7 @@ export const CreatePcPresetSchema = z.object({
   cpuId: z.string().uuid(),
   gpuId: z.string().uuid(),
   memorySize: z.number().min(1).max(256),
-  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']),
+  os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
 })
 
@@ -339,7 +333,7 @@ export const UpdatePcPresetSchema = z.object({
   cpuId: z.string().uuid().optional(),
   gpuId: z.string().uuid().optional(),
   memorySize: z.number().min(1).max(256).optional(),
-  os: z.enum(['WINDOWS', 'LINUX', 'MACOS']).optional(),
+  os: z.nativeEnum(PcOs).optional(),
   osVersion: z.string().min(1).optional(),
 })
 
@@ -387,7 +381,7 @@ export const MobileAdminRejectGameSchema = z.object({
 
 export const MobileAdminGetReportsSchema = z
   .object({
-    status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']).optional(),
+    status: z.nativeEnum(ReportStatus).optional(),
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(100).default(20),
   })
@@ -395,7 +389,7 @@ export const MobileAdminGetReportsSchema = z
 
 export const MobileAdminUpdateReportStatusSchema = z.object({
   reportId: z.string().uuid(),
-  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']),
+  status: z.nativeEnum(ReportStatus),
   notes: z.string().min(1).max(500).optional(),
 })
 

@@ -218,9 +218,7 @@ export class ResourceError {
   static device = {
     notFound: () => AppError.notFound('Device'),
     alreadyExists: (modelName: string) =>
-      AppError.conflict(
-        `Permission with this key already exists A device with model name "${modelName}" already exists for this brand`,
-      ),
+      AppError.conflict(`A device with model name "${modelName}" already exists for this brand`),
     inUse: (count: number) => AppError.resourceInUse('device', count),
   }
 

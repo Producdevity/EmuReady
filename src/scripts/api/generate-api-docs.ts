@@ -360,6 +360,30 @@ function generateExampleFromSchema(jsonSchema: Record<string, unknown>): Record<
         case 'boolean':
           example[propName] = propSchema.default ?? false
           break
+        case 'array':
+          // Handle array types
+          const items = propSchema.items as Record<string, unknown> | undefined
+          if (items) {
+            const itemType = items.type as string
+            const itemFormat = items.format as string | undefined
+
+            if (itemType === 'string' && itemFormat === 'uuid') {
+              // For UUID arrays like commentIds
+              example[propName] = [
+                '11111111-1111-1111-1111-111111111111',
+                '22222222-2222-2222-2222-222222222222',
+              ]
+            } else if (itemType === 'string') {
+              example[propName] = ['example1', 'example2']
+            } else if (itemType === 'number' || itemType === 'integer') {
+              example[propName] = [1, 2]
+            } else {
+              example[propName] = []
+            }
+          } else {
+            example[propName] = []
+          }
+          break
         default:
           if (propSchema.default !== undefined) {
             example[propName] = propSchema.default
@@ -488,8 +512,9 @@ function convertJsonSchemaToOpenApi30(schema: Record<string, unknown>): Record<s
   // If schema has definitions with a $ref pointing to it, flatten it
   if (converted.definitions && converted.$ref) {
     const refPath = (converted.$ref as string).split('/').pop()
-    if (refPath && converted.definitions[refPath]) {
-      const definition = converted.definitions[refPath] as Record<string, unknown>
+    const definitions = converted.definitions as Record<string, unknown>
+    if (refPath && definitions[refPath]) {
+      const definition = definitions[refPath] as Record<string, unknown>
       // Copy all properties from the definition to the root
       Object.assign(converted, definition)
       // Remove JSON Schema specific properties

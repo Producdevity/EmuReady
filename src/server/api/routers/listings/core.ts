@@ -684,10 +684,12 @@ export const coreRouter = createTRPCRouter({
     })
 
     // Get all verified developer statuses in a single query
-    const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
-      where: { OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })) },
-      select: { userId: true, emulatorId: true },
-    })
+    const verifiedDevelopers = listings.length
+      ? await ctx.prisma.verifiedDeveloper.findMany({
+          where: { OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })) },
+          select: { userId: true, emulatorId: true },
+        })
+      : []
 
     const verifiedSet = new Set(verifiedDevelopers.map((v) => `${v.userId}_${v.emulatorId}`))
 
@@ -703,15 +705,6 @@ export const coreRouter = createTRPCRouter({
   }),
 
   canEdit: protectedProcedure.input(GetListingForUserEditSchema).query(async ({ ctx, input }) => {
-    // Moderators and higher can always edit any listing
-    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return {
-        canEdit: true,
-        isOwner: true,
-        reason: 'Moderators can edit any listing',
-      }
-    }
-
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.id },
       select: { authorId: true, status: true, processedAt: true },
@@ -721,6 +714,16 @@ export const coreRouter = createTRPCRouter({
 
     // Check ownership
     const isOwner = listing.authorId === ctx.session.user.id
+
+    // Moderators and higher can always edit any listing (but still reflect true ownership)
+    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      return {
+        canEdit: true,
+        isOwner,
+        reason: 'Moderators can edit any listing',
+      }
+    }
+
     if (!isOwner) return { canEdit: false, isOwner: false, reason: 'Not your listing' }
 
     // PENDING listings can always be edited by the author

@@ -376,7 +376,7 @@ export const pcListingsRouter = createTRPCRouter({
         }
         break
 
-      case ApprovalStatus.APPROVED:
+      case ApprovalStatus.APPROVED: {
         // Moderators can always edit approved listings
         if (hasPermission(ctx.session.user.role, Role.MODERATOR)) break
 
@@ -391,6 +391,7 @@ export const pcListingsRouter = createTRPCRouter({
           return ResourceError.pcListing.editTimeExpired(EDIT_TIME_LIMIT_MINUTES)
         }
         break
+      }
 
       case ApprovalStatus.PENDING:
         // Pending listings can always be edited by their author
