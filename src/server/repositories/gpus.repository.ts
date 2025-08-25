@@ -105,11 +105,7 @@ export class GpusRepository extends BaseRepository {
     Prisma.GpuGetPayload<{
       include: {
         brand: true
-        _count: {
-          select: {
-            pcListings: true
-          }
-        }
+        _count: { select: { pcListings: true } }
       }
     }>[]
   > {
@@ -128,11 +124,7 @@ export class GpusRepository extends BaseRepository {
     gpus: Prisma.GpuGetPayload<{
       include: {
         brand: true
-        _count: {
-          select: {
-            pcListings: true
-          }
-        }
+        _count: { select: { pcListings: true } }
       }
     }>[]
     pagination: PaginationResult

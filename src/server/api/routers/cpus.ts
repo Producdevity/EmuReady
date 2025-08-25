@@ -1,4 +1,4 @@
-import { ResourceError, AppError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   GetCpusSchema,
   GetCpuByIdSchema,
@@ -59,7 +59,6 @@ export const cpusRouter = createTRPCRouter({
     const exists = await cpusRepository.existsByModelName(input.modelName, id)
     if (exists) return ResourceError.cpu.alreadyExists(input.modelName)
 
-    // Update and then fetch with counts for web
     const updated = await cpusRepository.update(id, data)
     return cpusRepository.byIdWithCounts(updated.id)
   }),
@@ -75,9 +74,7 @@ export const cpusRouter = createTRPCRouter({
     if (!existingCpu) return ResourceError.cpu.notFound()
 
     if (existingCpu._count.pcListings > 0) {
-      return AppError.conflict(
-        `Cannot delete CPU "${existingCpu.modelName}" because it has ${existingCpu._count.pcListings} active PC listing(s). Please remove all PC listings for this CPU first.`,
-      )
+      return ResourceError.cpu.inUse(existingCpu._count.pcListings)
     }
 
     await repository.delete(input.id)
