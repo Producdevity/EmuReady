@@ -309,7 +309,6 @@ export class ResourceError {
     notFound: () => AppError.notFound('User'),
     emailExists: () => AppError.alreadyExists('User', 'this email'),
     usernameExists: () => AppError.alreadyExists('User', 'this username'),
-    invalidPassword: () => AppError.custom('UNAUTHORIZED', 'Current password is incorrect'),
     cannotDeleteSelf: () => AppError.forbidden('You cannot delete your own account'),
     cannotDemoteSelf: () => AppError.forbidden('You cannot demote yourself from the admin role'),
     notInDatabase: (userId: string) =>
