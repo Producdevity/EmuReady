@@ -58,6 +58,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { listingStatsCache } from '@/server/utils/cache'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
@@ -69,6 +70,9 @@ export const pcListingsRouter = createTRPCRouter({
     const repository = new PcListingsRepository(ctx.prisma)
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
+    // Validate and sanitize pagination parameters
+    const { page, limit } = validatePagination(input.page, input.limit, 50)
+
     const result = await repository.getPcListings({
       ...input,
       sortDirection: input.sortDirection ?? undefined,
@@ -77,8 +81,8 @@ export const pcListingsRouter = createTRPCRouter({
       showNsfw: ctx.session?.user?.showNsfw,
       canSeeBannedUsers,
       approvalStatus: input.approvalStatus || ApprovalStatus.APPROVED,
-      page: input.page || 1,
-      limit: input.limit || 10,
+      page,
+      limit,
     })
 
     return {
@@ -286,7 +290,7 @@ export const pcListingsRouter = createTRPCRouter({
         memorySize: input.memorySize,
         os: input.os,
         osVersion: input.osVersion,
-        notes: input.notes,
+        notes: input.notes ? sanitizeInput(input.notes) : input.notes,
         authorId: ctx.session.user.id,
         status: listingStatus,
         ...((canAutoApprove || isAuthorOrHigher) && {
@@ -795,12 +799,16 @@ export const pcListingsRouter = createTRPCRouter({
       const { id, ...data } = input
       const repository = new UserPcPresetsRepository(ctx.prisma)
 
-      return await repository.update(id, ctx.session.user.id, data)
+      return await repository.update(id, ctx.session.user.id, data, {
+        requestingUserRole: ctx.session.user.role,
+      })
     }),
 
     delete: protectedProcedure.input(DeletePcPresetSchema).mutation(async ({ ctx, input }) => {
       const repository = new UserPcPresetsRepository(ctx.prisma)
-      await repository.delete(input.id, ctx.session.user.id)
+      await repository.delete(input.id, ctx.session.user.id, {
+        requestingUserRole: ctx.session.user.role,
+      })
       return { success: true }
     }),
   },

@@ -42,6 +42,11 @@ import { calculateOffset, createPaginationResult, buildOrderBy } from '@/server/
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import {
+  validatePagination,
+  sanitizeInput,
+  validateNonEmptyArray,
+} from '@/server/utils/security-validation'
+import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
   getSwitchGamesStats,
@@ -131,14 +136,19 @@ export const gamesRouter = createTRPCRouter({
     const effectiveListingFilter =
       input?.listingFilter ?? (input?.hideGamesWithNoListings ? 'withListings' : 'all')
 
+    // Validate pagination
+    const { limit } = validatePagination(undefined, input?.limit, 100)
+
     // For empty search with offset 0, we can optimize by returning fewer results initially
     const effectiveLimit =
-      !input?.search && input?.offset === 0 && !input?.page
-        ? Math.min(input?.limit ?? 100, 50)
-        : (input?.limit ?? 100)
+      !input?.search && input?.offset === 0 && !input?.page ? Math.min(limit, 50) : limit
+
+    // Sanitize search term (plain text, not markdown)
+    const sanitizedSearch = input?.search ? sanitizeInput(input.search) : undefined
 
     const filters = {
       ...input,
+      search: sanitizedSearch,
       listingFilter: effectiveListingFilter,
       limit: effectiveLimit,
       userRole: ctx.session?.user?.role,
@@ -602,6 +612,9 @@ export const gamesRouter = createTRPCRouter({
       const { gameIds } = input
       const adminUserId = ctx.session.user.id
 
+      // Validate array is not empty
+      validateNonEmptyArray(gameIds, 'gameIds')
+
       // First validate games exist and are pending
       const gamesToApprove = await ctx.prisma.game.findMany({
         where: {
@@ -677,6 +690,9 @@ export const gamesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { gameIds } = input
       const adminUserId = ctx.session.user.id
+
+      // Validate array is not empty
+      validateNonEmptyArray(gameIds, 'gameIds')
 
       return ctx.prisma.$transaction(async (tx) => {
         // Get all games to reject and verify they are pending

@@ -35,7 +35,7 @@ export interface ListingFilters {
 
   // User context
   userId?: string
-  userRole?: string
+  userRole?: Role
   showNsfw?: boolean
 }
 
@@ -149,40 +149,19 @@ export class ListingsRepository extends BaseRepository {
       performance: true,
       author: { select: { id: true, name: true, profileImage: true } },
       votes: true,
-      _count: {
-        select: {
-          votes: true,
-          comments: true,
-        },
-      },
+      _count: { select: { votes: true, comments: true } },
     } satisfies Prisma.ListingInclude,
 
     full: {
-      game: {
-        include: {
-          system: { select: { id: true, name: true, key: true } },
-        },
-      },
+      game: { include: { system: { select: { id: true, name: true, key: true } } } },
       device: { include: { brand: true, soc: true } },
       emulator: true,
       performance: true,
       author: true,
       votes: true,
-      comments: {
-        include: {
-          user: { select: { id: true, name: true, profileImage: true } },
-        },
-      },
-      customFieldValues: {
-        include: {
-          customFieldDefinition: true,
-        },
-      },
-      developerVerifications: {
-        include: {
-          developer: { select: { id: true, name: true } },
-        },
-      },
+      comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
+      customFieldValues: { include: { customFieldDefinition: true } },
+      developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
     } satisfies Prisma.ListingInclude,
   } as const
 
@@ -194,6 +173,7 @@ export class ListingsRepository extends BaseRepository {
    */
   private buildWhereClause(filters: ListingFilters): Prisma.ListingWhereInput {
     const where: Prisma.ListingWhereInput = {}
+    let gameFilter: Prisma.GameWhereInput = {}
 
     // Basic filters
     if (filters.gameId) where.gameId = filters.gameId
@@ -231,7 +211,10 @@ export class ListingsRepository extends BaseRepository {
 
     // System filtering through game relationship
     if (filters.systemIds && filters.systemIds.length > 0) {
-      where.game = { ...(where.game as Prisma.GameWhereInput), systemId: { in: filters.systemIds } }
+      gameFilter = {
+        ...gameFilter,
+        systemId: { in: filters.systemIds },
+      }
     }
 
     // Build comprehensive search conditions
@@ -256,7 +239,7 @@ export class ListingsRepository extends BaseRepository {
 
     // Approval status (default to APPROVED for public access)
     const statusFilter = buildApprovalStatusFilter(
-      filters.userRole as Role | undefined,
+      filters.userRole,
       filters.userId,
       filters.approvalStatus,
       'authorId',
@@ -264,17 +247,19 @@ export class ListingsRepository extends BaseRepository {
     if (statusFilter) Object.assign(where, statusFilter)
 
     // NSFW filtering on games
-    where.game = {
-      ...(where.game as Prisma.GameWhereInput),
+    gameFilter = {
+      ...gameFilter,
       status: ApprovalStatus.APPROVED,
       ...buildNsfwFilter(filters.showNsfw),
     }
 
+    // Apply game filter if any conditions were added
+    if (Object.keys(gameFilter).length > 0) {
+      where.game = gameFilter
+    }
+
     // Shadow ban filtering
-    const shadowBanFilter = buildShadowBanFilter(
-      filters.userRole as Role | undefined,
-      filters.userId,
-    )
+    const shadowBanFilter = buildShadowBanFilter(filters.userRole, filters.userId)
     if (shadowBanFilter) where.author = shadowBanFilter
 
     // My listings filter
@@ -388,7 +373,7 @@ export class ListingsRepository extends BaseRepository {
     sortField?: string,
     sortDirection?: 'asc' | 'desc',
   ): Prisma.ListingOrderByWithRelationInput | Prisma.ListingOrderByWithRelationInput[] {
-    const direction = (sortDirection as Prisma.SortOrder) || this.sortOrder
+    const direction: Prisma.SortOrder = sortDirection || this.sortOrder
 
     switch (sortField) {
       case 'game.title':

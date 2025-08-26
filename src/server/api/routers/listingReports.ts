@@ -16,8 +16,9 @@ import {
 } from '@/server/api/trpc'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
+import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, type Prisma, ReportStatus, TrustAction } from '@orm'
+import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
@@ -54,24 +55,28 @@ export const listingReportsRouter = createTRPCRouter({
         reason,
         sortField = 'createdAt',
         sortDirection = 'desc',
-        page = 1,
-        limit = 20,
       } = input ?? {}
+
+      // Validate pagination
+      const { page, limit } = validatePagination(input?.page, input?.limit, 50)
+
+      // Sanitize search term (plain text, not markdown)
+      const sanitizedSearch = search ? sanitizeInput(search) : undefined
 
       const offset = calculateOffset({ page }, limit)
 
       // Build where clause
       const where: Prisma.ListingReportWhereInput = {}
 
-      if (search) {
+      if (sanitizedSearch) {
         where.OR = [
           {
             listing: {
-              game: { title: { contains: search, mode: 'insensitive' } },
+              game: { title: { contains: sanitizedSearch, mode: 'insensitive' } },
             },
           },
-          { reportedBy: { name: { contains: search, mode: 'insensitive' } } },
-          { description: { contains: search, mode: 'insensitive' } },
+          { reportedBy: { name: { contains: sanitizedSearch, mode: 'insensitive' } } },
+          { description: { contains: sanitizedSearch, mode: 'insensitive' } },
         ]
       }
 
@@ -139,6 +144,12 @@ export const listingReportsRouter = createTRPCRouter({
     const { listingId, reason, description } = input
     const userId = ctx.session.user.id
 
+    // Validate reason enum
+    validateEnum(reason, Object.values(ReportReason), 'reason')
+
+    // Sanitize description if provided (plain text, not markdown)
+    const sanitizedDescription = description ? sanitizeInput(description) : description
+
     // Check if listing exists
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
@@ -171,7 +182,7 @@ export const listingReportsRouter = createTRPCRouter({
         listingId,
         reportedById: userId,
         reason,
-        description,
+        description: sanitizedDescription,
       },
       include: {
         listing: {
@@ -189,6 +200,9 @@ export const listingReportsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, status, reviewNotes } = input
       const reviewerId = ctx.session.user.id
+
+      // Validate status enum
+      validateEnum(status, Object.values(ReportStatus), 'status')
 
       const report = await ctx.prisma.listingReport.findUnique({
         where: { id },

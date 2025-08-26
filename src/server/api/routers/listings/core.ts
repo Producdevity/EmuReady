@@ -27,6 +27,7 @@ import {
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -45,6 +46,12 @@ export const coreRouter = createTRPCRouter({
     const userId = ctx.session?.user?.id
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
+    // Validate and sanitize pagination
+    const { page, limit } = validatePagination(input.page, input.limit, 100)
+
+    // Sanitize search term (plain text, not markdown)
+    const sanitizedSearchTerm = input.searchTerm ? sanitizeInput(input.searchTerm) : undefined
+
     // Map input to repository filters (convert null to undefined)
     const filters = {
       systemIds: input.systemIds || undefined,
@@ -52,9 +59,9 @@ export const coreRouter = createTRPCRouter({
       socIds: input.socIds || undefined,
       emulatorIds: input.emulatorIds || undefined,
       performanceIds: input.performanceIds || undefined,
-      search: input.searchTerm || undefined,
-      page: input.page,
-      limit: input.limit,
+      search: sanitizedSearchTerm,
+      page,
+      limit,
       sortField: input.sortField || undefined,
       sortDirection: input.sortDirection || undefined,
       approvalStatus: input.approvalStatus || undefined,
@@ -149,6 +156,7 @@ export const coreRouter = createTRPCRouter({
             id: true,
             name: true,
             profileImage: true,
+            verifiedDeveloperBy: true,
             // Include ban status for moderators to show banned user indication
             ...(canSeeBannedUsers && {
               userBans: {
@@ -161,13 +169,7 @@ export const coreRouter = createTRPCRouter({
             }),
           },
         },
-        developerVerifications: {
-          include: {
-            developer: {
-              select: { id: true, name: true },
-            },
-          },
-        },
+        developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
         customFieldValues: {
           include: { customFieldDefinition: true },
           orderBy: { customFieldDefinition: { name: 'asc' } },
@@ -201,14 +203,12 @@ export const coreRouter = createTRPCRouter({
         select: { id: true },
       })
 
-      if (authorBanStatus) {
-        throw AppError.forbidden('This listing is not accessible.')
-      }
+      if (authorBanStatus) return AppError.forbidden('This listing is not accessible.')
     }
 
     // CRITICAL: Check approval status - REJECTED listings should NEVER be visible to regular users
     if (!canSeeBannedUsers && listing.status === ApprovalStatus.REJECTED) {
-      throw AppError.forbidden('This listing is not accessible.')
+      return AppError.forbidden('This listing is not accessible.')
     }
 
     // Use materialized vote counts
@@ -220,14 +220,9 @@ export const coreRouter = createTRPCRouter({
     const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
 
     // Check if the author is a verified developer for this emulator
-    const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-      where: {
-        userId_emulatorId: {
-          userId: listing.authorId,
-          emulatorId: listing.emulatorId,
-        },
-      },
-    })
+    const isVerifiedDeveloper =
+      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
+      false
 
     return {
       ...listing,
@@ -236,9 +231,8 @@ export const coreRouter = createTRPCRouter({
       downVotes,
       totalVotes,
       userVote,
-      isVerifiedDeveloper: !!isVerifiedDeveloper,
-      // Remove the raw votes array from the response
-      votes: undefined,
+      isVerifiedDeveloper,
+      votes: undefined, // Remove the raw votes array from the response
     }
   }),
 
@@ -882,7 +876,7 @@ export const coreRouter = createTRPCRouter({
         },
       })
 
-      if (!listing) throw ResourceError.listing.notFound()
+      if (!listing) return ResourceError.listing.notFound()
 
       // Moderators and higher can edit any listing
       const userRole = ctx.session.user.role

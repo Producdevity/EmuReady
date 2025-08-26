@@ -9,6 +9,8 @@ import {
   contains,
 } from './pagination'
 
+type TestOrderBy = Record<string, unknown>
+
 describe('pagination utilities', () => {
   describe('calculateOffset', () => {
     it('should calculate offset from page number', () => {
@@ -149,13 +151,13 @@ describe('pagination utilities', () => {
     }
 
     it('should build orderBy from sort config', () => {
-      expect(buildOrderBy<any>(sortConfig, 'title', 'asc')).toEqual([{ title: 'asc' }])
+      expect(buildOrderBy<TestOrderBy>(sortConfig, 'title', 'asc')).toEqual([{ title: 'asc' }])
 
-      expect(buildOrderBy<any>(sortConfig, 'user.name', 'desc')).toEqual([
+      expect(buildOrderBy<TestOrderBy>(sortConfig, 'user.name', 'desc')).toEqual([
         { user: { name: 'desc' } },
       ])
 
-      expect(buildOrderBy<any>(sortConfig, 'device', 'asc')).toEqual([
+      expect(buildOrderBy<TestOrderBy>(sortConfig, 'device', 'asc')).toEqual([
         { brand: { name: 'asc' } },
         { modelName: 'asc' },
       ])
@@ -163,14 +165,14 @@ describe('pagination utilities', () => {
 
     it('should return default orderBy when no sort specified', () => {
       const defaultOrderBy = { createdAt: 'desc' }
-      expect(buildOrderBy<any>(sortConfig, undefined, undefined, defaultOrderBy)).toEqual([
+      expect(buildOrderBy<TestOrderBy>(sortConfig, undefined, undefined, defaultOrderBy)).toEqual([
         { createdAt: 'desc' },
       ])
     })
 
     it('should add default as secondary sort when sorting by different field', () => {
       const defaultOrderBy = { createdAt: 'desc' }
-      expect(buildOrderBy<any>(sortConfig, 'title', 'asc', defaultOrderBy)).toEqual([
+      expect(buildOrderBy<TestOrderBy>(sortConfig, 'title', 'asc', defaultOrderBy)).toEqual([
         { title: 'asc' },
         { createdAt: 'desc' },
       ])
@@ -184,7 +186,7 @@ describe('pagination utilities', () => {
       const defaultOrderBy = { createdAt: 'desc' }
 
       expect(
-        buildOrderBy<any>(sortConfigWithCreatedAt, 'createdAt', 'asc', defaultOrderBy),
+        buildOrderBy<TestOrderBy>(sortConfigWithCreatedAt, 'createdAt', 'asc', defaultOrderBy),
       ).toEqual([{ createdAt: 'asc' }])
     })
   })
@@ -196,7 +198,7 @@ describe('pagination utilities', () => {
         name: (dir: 'asc' | 'desc') => ({ name: dir }),
       }
 
-      const result = buildOrderBy<any>(sortConfig, null, 'asc', { createdAt: 'desc' })
+      const result = buildOrderBy<TestOrderBy>(sortConfig, null, 'asc', { createdAt: 'desc' })
       expect(result).toEqual([{ createdAt: 'desc' }])
     })
 
@@ -205,7 +207,7 @@ describe('pagination utilities', () => {
         title: (dir: 'asc' | 'desc') => ({ title: dir }),
       }
 
-      const result = buildOrderBy<any>(sortConfig, 'title', null, { createdAt: 'desc' })
+      const result = buildOrderBy<TestOrderBy>(sortConfig, 'title', null, { createdAt: 'desc' })
       expect(result).toEqual([{ createdAt: 'desc' }])
     })
 
@@ -214,7 +216,7 @@ describe('pagination utilities', () => {
         title: (dir: 'asc' | 'desc') => ({ title: dir }),
       }
 
-      const result = buildOrderBy<any>(sortConfig, null, null, { createdAt: 'desc' })
+      const result = buildOrderBy<TestOrderBy>(sortConfig, null, null, { createdAt: 'desc' })
       expect(result).toEqual([{ createdAt: 'desc' }])
     })
 
@@ -223,7 +225,9 @@ describe('pagination utilities', () => {
         title: (dir: 'asc' | 'desc') => ({ title: dir }),
       }
 
-      const result = buildOrderBy<any>(sortConfig, undefined, undefined, { createdAt: 'desc' })
+      const result = buildOrderBy<TestOrderBy>(sortConfig, undefined, undefined, {
+        createdAt: 'desc',
+      })
       expect(result).toEqual([{ createdAt: 'desc' }])
     })
 
@@ -232,7 +236,7 @@ describe('pagination utilities', () => {
         title: (dir: 'asc' | 'desc') => ({ title: dir }),
       }
 
-      const result = buildOrderBy<any>(sortConfig, null, null)
+      const result = buildOrderBy<TestOrderBy>(sortConfig, null, null)
       expect(result).toEqual([])
     })
   })

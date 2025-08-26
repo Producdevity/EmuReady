@@ -39,7 +39,10 @@ export const mobilePcPresetsRouter = createMobileTRPCRouter({
   update: mobileProtectedProcedure.input(UpdatePcPresetSchema).mutation(async ({ ctx, input }) => {
     const { id, ...updateData } = input
     const repository = new UserPcPresetsRepository(ctx.prisma)
-    return await repository.update(id, ctx.session.user.id, updateData, { limited: true })
+    return await repository.update(id, ctx.session.user.id, updateData, {
+      limited: true,
+      requestingUserRole: ctx.session.user.role,
+    })
   }),
 
   /**
@@ -47,7 +50,9 @@ export const mobilePcPresetsRouter = createMobileTRPCRouter({
    */
   delete: mobileProtectedProcedure.input(DeletePcPresetSchema).mutation(async ({ ctx, input }) => {
     const repository = new UserPcPresetsRepository(ctx.prisma)
-    await repository.delete(input.id, ctx.session.user.id)
+    await repository.delete(input.id, ctx.session.user.id, {
+      requestingUserRole: ctx.session.user.role,
+    })
     return { success: true }
   }),
 })

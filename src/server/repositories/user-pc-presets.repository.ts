@@ -1,6 +1,11 @@
 import { ResourceError } from '@/lib/errors'
+import {
+  validateRequired,
+  validateStringFormat,
+  ValidationPatterns,
+} from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { type Prisma, Role, type PcOs } from '@orm'
+import { type Prisma, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 
 /**
@@ -93,18 +98,48 @@ export class UserPcPresetsRepository extends BaseRepository {
   }
 
   /**
+   * Validate ownership and permissions for preset operations
+   */
+  private async validateOwnershipAndPermissions(
+    id: string,
+    requestingUserId: string,
+    requestingUserRole?: Role,
+    operation: 'edit' | 'delete' = 'edit',
+  ): Promise<
+    Prisma.UserPcPresetGetPayload<{
+      include: typeof UserPcPresetsRepository.includes.full
+    }>
+  > {
+    validateRequired(id, 'preset id')
+    validateRequired(requestingUserId, 'requesting user id')
+    validateStringFormat(id, ValidationPatterns.UUID, 'preset id', 'UUID format')
+    validateStringFormat(
+      requestingUserId,
+      ValidationPatterns.UUID,
+      'requesting user id',
+      'UUID format',
+    )
+
+    const preset = await this.byId(id)
+    if (!preset) return ResourceError.pcPreset.notFound()
+
+    const isAdmin = requestingUserRole && roleIncludesRole(requestingUserRole, Role.ADMIN)
+    if (preset.userId !== requestingUserId && !isAdmin) {
+      return operation === 'edit'
+        ? ResourceError.pcPreset.canOnlyEditOwn()
+        : ResourceError.pcPreset.canOnlyDeleteOwn()
+    }
+
+    return preset as Prisma.UserPcPresetGetPayload<{
+      include: typeof UserPcPresetsRepository.includes.full
+    }>
+  }
+
+  /**
    * Create a new preset
    */
   async create(
-    data: {
-      userId: string
-      name: string
-      cpuId: string
-      gpuId?: string | null
-      memorySize: number
-      os: PcOs
-      osVersion: string
-    },
+    data: Omit<Prisma.UserPcPresetUncheckedCreateInput, 'id' | 'createdAt' | 'updatedAt'>,
     options: { limited?: boolean } = {},
   ): Promise<
     Prisma.UserPcPresetGetPayload<{
@@ -113,11 +148,13 @@ export class UserPcPresetsRepository extends BaseRepository {
         | typeof UserPcPresetsRepository.includes.limited
     }>
   > {
+    validateRequired(data.userId, 'userId')
+    validateRequired(data.name, 'preset name')
+    validateStringFormat(data.userId, ValidationPatterns.UUID, 'userId', 'UUID format')
+
     // Check for duplicate name
     const exists = await this.existsByName(data.userId, data.name)
-    if (exists) {
-      return ResourceError.pcPreset.alreadyExists(data.name)
-    }
+    if (exists) return ResourceError.pcPreset.alreadyExists(data.name)
 
     // Validate CPU and GPU exist
     const [cpu, gpu] = await Promise.all([
@@ -141,16 +178,14 @@ export class UserPcPresetsRepository extends BaseRepository {
    */
   async update(
     id: string,
-    userId: string,
-    data: Partial<{
-      name: string
-      cpuId: string
-      gpuId: string | null
-      memorySize: number
-      os: PcOs
-      osVersion: string
-    }>,
-    options: { limited?: boolean } = {},
+    requestingUserId: string,
+    data: Partial<
+      Omit<Prisma.UserPcPresetUncheckedCreateInput, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+    >,
+    options: {
+      limited?: boolean
+      requestingUserRole?: Role
+    } = {},
   ): Promise<
     Prisma.UserPcPresetGetPayload<{
       include:
@@ -158,16 +193,16 @@ export class UserPcPresetsRepository extends BaseRepository {
         | typeof UserPcPresetsRepository.includes.limited
     }>
   > {
-    // Check ownership
-    const preset = await this.byId(id)
-    if (!preset) return ResourceError.pcPreset.notFound()
-    if (preset.userId !== userId) {
-      return ResourceError.pcPreset.canOnlyEditOwn()
-    }
+    const preset = await this.validateOwnershipAndPermissions(
+      id,
+      requestingUserId,
+      options.requestingUserRole,
+      'edit',
+    )
 
     // Check for duplicate name if name is being updated
     if (data.name) {
-      const exists = await this.existsByName(userId, data.name, id)
+      const exists = await this.existsByName(preset.userId, data.name, id)
       if (exists) return ResourceError.pcPreset.alreadyExists(data.name)
     }
 
@@ -178,11 +213,9 @@ export class UserPcPresetsRepository extends BaseRepository {
     }
 
     // Validate GPU if being updated
-    if (data.gpuId !== undefined) {
-      if (data.gpuId) {
-        const gpu = await this.prisma.gpu.findUnique({ where: { id: data.gpuId } })
-        if (!gpu) return ResourceError.gpu.notFound()
-      }
+    if (data.gpuId) {
+      const gpu = await this.prisma.gpu.findUnique({ where: { id: data.gpuId } })
+      if (!gpu) return ResourceError.gpu.notFound()
     }
 
     return this.prisma.userPcPreset.update({
@@ -197,10 +230,17 @@ export class UserPcPresetsRepository extends BaseRepository {
   /**
    * Delete a preset
    */
-  async delete(id: string, userId: string): Promise<void> {
-    const preset = await this.byId(id)
-    if (!preset) return ResourceError.pcPreset.notFound()
-    if (preset.userId !== userId) return ResourceError.pcPreset.canOnlyDeleteOwn()
+  async delete(
+    id: string,
+    requestingUserId: string,
+    options: { requestingUserRole?: Role } = {},
+  ): Promise<void> {
+    await this.validateOwnershipAndPermissions(
+      id,
+      requestingUserId,
+      options.requestingUserRole,
+      'delete',
+    )
 
     await this.prisma.userPcPreset.delete({ where: { id } })
   }

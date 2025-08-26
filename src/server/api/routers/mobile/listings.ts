@@ -35,13 +35,13 @@ import {
   serializeGameNativeConfig,
 } from '@/server/utils/emulator-config/gamenative-converter'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
-import { ApprovalStatus, type PrismaClient, Prisma } from '@orm'
+import { ApprovalStatus, type PrismaClient, Prisma, type Role } from '@orm'
 
 // Helper for getting listings using the repository
 async function getListingsHelper(
   ctx: {
     prisma: PrismaClient
-    session?: { user?: { id: string; showNsfw?: boolean; role?: string } } | null
+    session?: { user?: { id: string; showNsfw?: boolean; role?: Role } } | null
   },
   input: GetListingsInput,
 ) {
