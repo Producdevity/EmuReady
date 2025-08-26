@@ -156,7 +156,7 @@ export const emulatorsRouter = createTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden('You can only manage emulators you are verified for')
+        return ResourceError.emulator.canOnlyManageVerified()
       }
     }
 
@@ -182,7 +182,7 @@ export const emulatorsRouter = createTRPCRouter({
   delete: manageEmulatorsProcedure.input(DeleteEmulatorSchema).mutation(async ({ ctx, input }) => {
     // Developers can NEVER delete emulators
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You do not have permission to delete emulators')
+      return ResourceError.emulator.requiresPermissionToDelete()
     }
 
     const repository = new EmulatorsRepository(ctx.prisma)

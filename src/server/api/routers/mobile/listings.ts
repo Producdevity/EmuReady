@@ -191,7 +191,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     if (!existing) return ResourceError.listing.notFound()
 
     if (existing.authorId !== ctx.session.user.id) {
-      return AppError.forbidden('You can only edit your own listings')
+      return ResourceError.listing.canOnlyEditOwn()
     }
 
     return await ctx.prisma.listing.update({
@@ -236,7 +236,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     if (!existing) return ResourceError.listing.notFound()
 
     return existing.authorId !== ctx.session.user.id
-      ? AppError.forbidden('You can only delete your own listings')
+      ? ResourceError.listing.canOnlyEditOwn()
       : await ctx.prisma.listing.delete({ where: { id: input.id } })
   }),
 
@@ -359,7 +359,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       if (!existing) return ResourceError.comment.notFound()
 
       if (existing.userId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only edit your own comments')
+        return ResourceError.comment.noPermission('edit')
       }
 
       return await ctx.prisma.comment.update({
@@ -384,7 +384,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       if (!existing) return ResourceError.comment.notFound()
 
       return existing.userId !== ctx.session.user.id
-        ? AppError.forbidden('You can only delete your own comments')
+        ? ResourceError.comment.noPermission('delete')
         : await ctx.prisma.comment.delete({ where: { id: input.commentId } })
     }),
 

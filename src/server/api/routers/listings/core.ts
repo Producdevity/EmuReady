@@ -31,7 +31,6 @@ import { validatePagination, sanitizeInput } from '@/server/utils/security-valid
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
@@ -203,12 +202,12 @@ export const coreRouter = createTRPCRouter({
         select: { id: true },
       })
 
-      if (authorBanStatus) return AppError.forbidden('This listing is not accessible.')
+      if (authorBanStatus) return ResourceError.listing.notAccessible()
     }
 
     // CRITICAL: Check approval status - REJECTED listings should NEVER be visible to regular users
     if (!canSeeBannedUsers && listing.status === ApprovalStatus.REJECTED) {
-      return AppError.forbidden('This listing is not accessible.')
+      return ResourceError.listing.notAccessible()
     }
 
     // Use materialized vote counts
@@ -279,7 +278,7 @@ export const coreRouter = createTRPCRouter({
 
       // Check if user's listing can be auto-approved
       const canAutoApprove = await canUserAutoApprove(authorId)
-      const isAuthorOrHigher = hasPermission(ctx.session.user.role, Role.AUTHOR)
+      const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
       const listingStatus =
         canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
 
@@ -710,7 +709,7 @@ export const coreRouter = createTRPCRouter({
     const isOwner = listing.authorId === ctx.session.user.id
 
     // Moderators and higher can always edit any listing (but still reflect true ownership)
-    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (roleIncludesRole(ctx.session.user.role, Role.MODERATOR)) {
       return {
         canEdit: true,
         isOwner,
@@ -786,7 +785,7 @@ export const coreRouter = createTRPCRouter({
     if (!listing) return ResourceError.listing.notFound()
 
     const userRole = ctx.session.user.role
-    const isModerator = hasPermission(userRole, Role.MODERATOR)
+    const isModerator = roleIncludesRole(userRole, Role.MODERATOR)
 
     // Check ownership unless user is a moderator or higher
     if (!isModerator && listing.authorId !== ctx.session.user.id) {
@@ -880,7 +879,7 @@ export const coreRouter = createTRPCRouter({
 
       // Moderators and higher can edit any listing
       const userRole = ctx.session.user.role
-      const isModerator = hasPermission(userRole, Role.MODERATOR)
+      const isModerator = roleIncludesRole(userRole, Role.MODERATOR)
 
       if (!isModerator && listing.authorId !== ctx.session.user.id) {
         return ResourceError.listing.canOnlyEditOwn()

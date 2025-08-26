@@ -60,7 +60,7 @@ import { listingStatsCache } from '@/server/utils/cache'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
-import { PERMISSIONS } from '@/utils/permission-system'
+import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
 import { type Prisma, ApprovalStatus, Role, ReportStatus, TrustAction } from '@orm'
 
@@ -220,9 +220,9 @@ export const pcListingsRouter = createTRPCRouter({
       // Only allow owners or moderators to fetch for editing
       if (
         pcListing.authorId !== ctx.session.user.id &&
-        !hasPermission(ctx.session.user.role, Role.MODERATOR)
+        !roleIncludesRole(ctx.session.user.role, Role.MODERATOR)
       ) {
-        throw AppError.forbidden('You can only edit your own PC listings')
+        return ResourceError.pcListing.canOnlyEditOwn()
       }
 
       return pcListing
@@ -275,7 +275,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Check if user can auto-approve
     const canAutoApprove = await canUserAutoApprove(authorId)
-    const isAuthorOrHigher = hasPermission(ctx.session.user.role, Role.AUTHOR)
+    const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
     const listingStatus =
       canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
 
@@ -340,7 +340,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Only author can delete their own PC listing
     if (pcListing.authorId !== ctx.session.user.id) {
-      return AppError.forbidden('You can only delete your own PC listings')
+      return ResourceError.pcListing.canOnlyDeleteOwn()
     }
 
     const deletedListing = await ctx.prisma.pcListing.delete({
@@ -457,7 +457,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to view pending PC listings')
+      return ResourceError.pcListing.requiresDeveloperToView()
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
@@ -505,7 +505,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to approve PC listings')
+      return ResourceError.pcListing.requiresDeveloperToApprove()
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
@@ -525,9 +525,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!isVerified) {
-        return AppError.forbidden(
-          'You can only approve PC listings for emulators you are verified for',
-        )
+        return ResourceError.pcListing.mustBeVerifiedToApprove()
       }
     }
 
@@ -546,7 +544,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to reject PC listings')
+      return ResourceError.pcListing.requiresDeveloperToReject()
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
@@ -566,9 +564,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!isVerified) {
-        return AppError.forbidden(
-          'You can only reject PC listings for emulators you are verified for',
-        )
+        return ResourceError.pcListing.mustBeVerifiedToReject()
       }
     }
 
@@ -593,7 +589,7 @@ export const pcListingsRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden('You need to be at least a Developer to approve PC listings')
+        return ResourceError.pcListing.requiresDeveloperToApprove()
       }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
@@ -622,7 +618,7 @@ export const pcListingsRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden('You need to be at least a Developer to reject PC listings')
+        return ResourceError.pcListing.requiresDeveloperToReject()
       }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
@@ -1038,7 +1034,7 @@ export const pcListingsRouter = createTRPCRouter({
       const canEdit = canEditComment(ctx.session.user.role, comment.user.id, ctx.session.user.id)
 
       if (!canEdit) {
-        AppError.forbidden('You do not have permission to edit this comment')
+        throw ResourceError.comment.noPermission('edit')
       }
 
       return ctx.prisma.pcListingComment.update({
@@ -1074,7 +1070,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!canDelete) {
-        AppError.forbidden('You do not have permission to delete this comment')
+        throw ResourceError.comment.noPermission('delete')
       }
 
       return ctx.prisma.pcListingComment.update({
@@ -1371,7 +1367,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       // Only allow the verifier or admin to remove verification
       if (verification.verifiedBy !== ctx.session.user.id && !isModerator(ctx.session.user.role)) {
-        AppError.forbidden('You can only remove your own verifications')
+        throw ResourceError.verification.canOnlyRemoveOwn()
       }
 
       return ctx.prisma.pcListingDeveloperVerification.delete({

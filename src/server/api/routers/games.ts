@@ -53,7 +53,6 @@ import {
 } from '@/server/utils/switchGameSearch'
 import { transactionalBatch } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role, TrustAction } from '@orm'
 import type { Prisma } from '@orm'
 
@@ -249,7 +248,7 @@ export const gamesRouter = createTRPCRouter({
       }
 
       // Apply same approval logic as the get query
-      if (hasPermission(ctx.session?.user?.role, Role.ADMIN)) {
+      if (roleIncludesRole(ctx.session?.user?.role, Role.ADMIN)) {
         // Admins can see all games including pending/rejected
       } else if (ctx.session?.user) {
         // Authenticated users see approved games + their own pending games
@@ -308,7 +307,7 @@ export const gamesRouter = createTRPCRouter({
       throw error
     }
 
-    const isAuthor = hasPermission(ctx.session.user.role, Role.AUTHOR)
+    const isAuthor = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
 
     try {
       const { igdbGameId, ...gameData } = input
@@ -405,11 +404,11 @@ export const gamesRouter = createTRPCRouter({
 
       // Verify ownership and pending status
       if (existingGame!.submittedBy !== ctx.session.user.id) {
-        throw AppError.forbidden('You can only edit your own games')
+        throw ResourceError.game.canOnlyEditOwn()
       }
 
       if (existingGame!.status !== ApprovalStatus.PENDING) {
-        throw AppError.forbidden('You can only edit pending games')
+        throw ResourceError.game.canOnlyEditPending()
       }
 
       await validateGameConflicts(ctx.prisma, id, data, existingGame!)

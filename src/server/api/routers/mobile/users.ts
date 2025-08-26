@@ -1,4 +1,4 @@
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { GetUserByIdSchema } from '@/schemas/user'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -46,7 +46,7 @@ export const mobileUsersRouter = createMobileTRPCRouter({
     const canViewBannedUsers = roleIncludesRole(currentUserRole, Role.MODERATOR)
 
     if (isBanned && !canViewBannedUsers) {
-      return AppError.forbidden('This user profile is not accessible.')
+      return ResourceError.user.profileNotAccessible()
     }
 
     // Build where clauses for listings filtering

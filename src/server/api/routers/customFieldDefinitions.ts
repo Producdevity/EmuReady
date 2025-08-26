@@ -36,9 +36,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         })
 
         if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage custom fields for emulators you are verified for',
-          )
+          return ResourceError.customField.canOnlyManageVerified()
         }
       }
 
@@ -140,9 +138,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         })
 
         if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage custom fields for emulators you are verified for',
-          )
+          return ResourceError.customField.canOnlyManageVerified()
         }
       }
 
@@ -234,9 +230,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         })
 
         if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage custom fields for emulators you are verified for',
-          )
+          return ResourceError.customField.canOnlyManageVerified()
         }
       }
 

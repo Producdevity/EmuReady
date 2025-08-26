@@ -1,4 +1,4 @@
-import { ResourceError, AppError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   CheckUserBanStatusSchema,
   CreateUserBanSchema,
@@ -127,7 +127,7 @@ export const userBansRouter = createTRPCRouter({
   create: protectedProcedure.input(CreateUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to create bans
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You need to be at least a Moderator to ban users')
+      return ResourceError.userBan.requiresModerator()
     }
     const { userId, reason, notes, expiresAt } = input
     const bannedById = ctx.session.user.id
@@ -178,7 +178,7 @@ export const userBansRouter = createTRPCRouter({
   update: protectedProcedure.input(UpdateUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to update bans
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You need to be at least a Moderator to update bans')
+      return ResourceError.userBan.requiresModeratorToUpdate()
     }
     const { id, ...data } = input
 
@@ -200,7 +200,7 @@ export const userBansRouter = createTRPCRouter({
   lift: protectedProcedure.input(LiftUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to lift bans
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You need to be at least a Moderator to lift bans')
+      return ResourceError.userBan.requiresModeratorToLift()
     }
     const { id, notes } = input
     const unbannedById = ctx.session.user.id
@@ -248,7 +248,7 @@ export const userBansRouter = createTRPCRouter({
   delete: protectedProcedure.input(DeleteUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to delete bans
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You need to be at least a Moderator to delete bans')
+      return ResourceError.userBan.requiresModeratorToDelete()
     }
     const ban = await ctx.prisma.userBan.findUnique({
       where: { id: input.id },

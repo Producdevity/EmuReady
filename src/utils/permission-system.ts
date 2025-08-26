@@ -137,6 +137,7 @@ export const PERMISSIONS = {
 
   // System Management
   MANAGE_SYSTEMS: 'manage_systems',
+  MANAGE_PERFORMANCE_SCALES: 'manage_performance_scales',
 } as const
 
 // Type for permission keys

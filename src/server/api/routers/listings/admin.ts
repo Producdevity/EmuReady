@@ -184,7 +184,7 @@ export const adminRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to approve listings')
+      return ResourceError.listing.requiresDeveloperToApprove()
     }
     const { listingId } = input
     const adminUserId = ctx.session.user.id
@@ -230,9 +230,7 @@ export const adminRouter = createTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden(
-          'You can only approve listings for emulators you are verified for',
-        )
+        return ResourceError.listing.mustBeVerifiedToApprove()
       }
     }
 
@@ -311,7 +309,7 @@ export const adminRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to reject listings')
+      return ResourceError.listing.requiresDeveloperToReject()
     }
     const { listingId, notes } = input
     const adminUserId = ctx.session.user.id
@@ -344,7 +342,7 @@ export const adminRouter = createTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden('You can only reject listings for emulators you are verified for')
+        return ResourceError.listing.mustBeVerifiedToReject()
       }
     }
 
@@ -510,7 +508,7 @@ export const adminRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden('You need to be at least a Developer to approve listings')
+        return ResourceError.listing.requiresDeveloperToApprove()
       }
       const { listingIds } = input
       const adminUserId = ctx.session.user.id
@@ -559,9 +557,7 @@ export const adminRouter = createTRPCRouter({
           )
 
           if (unauthorizedListings.length > 0) {
-            return AppError.forbidden(
-              `You can only approve listings for emulators you are verified for. ${unauthorizedListings.length} listings are for unauthorized emulators.`,
-            )
+            return ResourceError.listing.mustBeVerifiedToApprove()
           }
         }
 
@@ -711,7 +707,7 @@ export const adminRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden('You need to be at least a Developer to reject listings')
+        return ResourceError.listing.requiresDeveloperToReject()
       }
       const { listingIds, notes } = input
       const adminUserId = ctx.session.user.id
@@ -744,9 +740,7 @@ export const adminRouter = createTRPCRouter({
           )
 
           if (unauthorizedListings.length > 0) {
-            return AppError.forbidden(
-              `You can only reject listings for emulators you are verified for. ${unauthorizedListings.length} listings are for unauthorized emulators.`,
-            )
+            return ResourceError.listing.mustBeVerifiedToReject()
           }
         }
 
@@ -961,7 +955,7 @@ export const adminRouter = createTRPCRouter({
   getForEdit: protectedProcedure.input(GetListingForEditSchema).query(async ({ ctx, input }) => {
     // Allow moderators and above to edit listings
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You need to be at least a Moderator to edit listings')
+      return ResourceError.listing.requiresModeratorToEdit()
     }
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.id },
@@ -987,7 +981,7 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Allow moderators and above to update listings
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-        return AppError.forbidden('You need to be at least a Moderator to update listings')
+        return ResourceError.listing.requiresModeratorToUpdate()
       }
       const { id, customFieldValues, ...updateData } = input
       const adminUserId = ctx.session.user.id
@@ -1042,7 +1036,7 @@ export const adminRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isAdmin && !isDeveloper) {
-      return AppError.forbidden('Admin or Developer access required')
+      return ResourceError.listing.requiresAdminOrDeveloper()
     }
 
     const listing = await ctx.prisma.listing.findUnique({
@@ -1088,7 +1082,7 @@ export const adminRouter = createTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden('You can only view configs for emulators you are verified for')
+        return ResourceError.listing.mustBeVerifiedToViewConfigs()
       }
     }
 

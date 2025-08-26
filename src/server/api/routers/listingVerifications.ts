@@ -1,4 +1,4 @@
-import { AppError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { TrustService } from '@/lib/trust/service'
 import {
   VerifyListingSchema,
@@ -25,7 +25,7 @@ export const listingVerificationsRouter = createTRPCRouter({
     })
 
     if (!listing) {
-      throw AppError.notFound('Listing not found')
+      throw ResourceError.listing.notFound()
     }
 
     // Check if user is a verified developer for this emulator
@@ -39,7 +39,7 @@ export const listingVerificationsRouter = createTRPCRouter({
     })
 
     if (!verifiedDeveloper) {
-      throw AppError.forbidden(`You are not a verified developer for ${listing.emulator.name}`)
+      throw ResourceError.verifiedDeveloper.mustBeVerifiedToVerify(listing.emulator.name)
     }
 
     // Check if already verified by this developer
@@ -53,7 +53,7 @@ export const listingVerificationsRouter = createTRPCRouter({
     })
 
     if (existingVerification) {
-      throw AppError.conflict('You have already verified this listing')
+      throw ResourceError.verifiedDeveloper.alreadyVerifiedListing()
     }
 
     const verification = await ctx.prisma.listingDeveloperVerification.create({
@@ -101,11 +101,11 @@ export const listingVerificationsRouter = createTRPCRouter({
       })
 
       if (!verification) {
-        throw AppError.notFound('Verification not found')
+        throw ResourceError.verification.notFound()
       }
 
       if (verification.verifiedBy !== userId) {
-        throw AppError.forbidden('You can only remove your own verifications')
+        throw ResourceError.verification.canOnlyRemoveOwn()
       }
 
       await ctx.prisma.listingDeveloperVerification.delete({

@@ -1,4 +1,4 @@
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   CreatePcListingSchema,
   GetCpusSchema,
@@ -164,7 +164,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     if (!existing) return ResourceError.pcListing.notFound()
 
     if (existing.authorId !== ctx.session.user.id) {
-      return AppError.forbidden('You can only edit your own PC listings')
+      return ResourceError.pcListing.canOnlyEditOwn()
     }
 
     return await ctx.prisma.pcListing.update({

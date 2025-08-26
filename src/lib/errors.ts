@@ -213,6 +213,7 @@ export class ResourceError {
   static permission = {
     notFound: () => AppError.notFound('Permission'),
     alreadyExists: (name: string) => AppError.alreadyExists('Permission', `key "${name}"`),
+    systemCannotBeDeleted: () => AppError.forbidden('System permissions cannot be deleted'),
   }
 
   static device = {
@@ -239,12 +240,18 @@ export class ResourceError {
     alreadyExists: (title: string, systemName: string) =>
       AppError.conflict(`A game titled "${title}" already exists for the system "${systemName}"`),
     alreadyProcessed: () => AppError.badRequest('Game has already been processed'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own games'),
+    canOnlyEditPending: () => AppError.forbidden('You can only edit pending games'),
   }
 
   static emulator = {
     notFound: () => AppError.notFound('Emulator'),
     alreadyExists: (name: string) => AppError.alreadyExists('Emulator', `name "${name}"`),
     inUse: (count: number) => AppError.resourceInUse('emulator', count),
+    canOnlyManageVerified: () =>
+      AppError.forbidden('You can only manage emulators you are verified for'),
+    requiresPermissionToDelete: () =>
+      AppError.forbidden('You do not have permission to delete emulators'),
   }
 
   static listing = {
@@ -254,10 +261,26 @@ export class ResourceError {
     notPending: () => AppError.notFound('Pending report not found or already processed'),
     canOnlyEditOwn: () => AppError.forbidden('You can only edit your own report'),
     cannotEditRejected: () => AppError.badRequest('Rejected reports cannot be edited'),
+    notAccessible: () => AppError.forbidden('This listing is not accessible.'),
     editTimeExpired: (timeLimitMinutes: number) =>
       AppError.badRequest(
         `You can only edit listings within ${timeLimitMinutes} minutes of approval`,
       ),
+    requiresDeveloperToApprove: () =>
+      AppError.forbidden('You need to be at least a Developer to approve listings'),
+    requiresDeveloperToReject: () =>
+      AppError.forbidden('You need to be at least a Developer to reject listings'),
+    requiresModeratorToEdit: () =>
+      AppError.forbidden('You need to be at least a Moderator to edit listings'),
+    requiresModeratorToUpdate: () =>
+      AppError.forbidden('You need to be at least a Moderator to update listings'),
+    requiresAdminOrDeveloper: () => AppError.forbidden('Admin or Developer access required'),
+    mustBeVerifiedToApprove: () =>
+      AppError.forbidden('You can only approve listings for emulators you are verified for'),
+    mustBeVerifiedToReject: () =>
+      AppError.forbidden('You can only reject listings for emulators you are verified for'),
+    mustBeVerifiedToViewConfigs: () =>
+      AppError.forbidden('You can only view configs for emulators you are verified for'),
   }
 
   static pcListing = {
@@ -268,16 +291,29 @@ export class ResourceError {
       ),
     notPending: () => AppError.notFound('Pending PC report not found or already processed'),
     canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC report'),
+    canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC listings'),
     cannotEditRejected: () => AppError.badRequest('Rejected PC reports cannot be edited'),
     editTimeExpired: (timeLimitMinutes: number) =>
       AppError.badRequest(
         `You can only edit PC reports within ${timeLimitMinutes} minutes of approval`,
       ),
     approvalTimeNotFound: () => AppError.internalError('Approval time not found for PC report'),
+    requiresDeveloperToView: () =>
+      AppError.forbidden('You need to be at least a Developer to view pending PC listings'),
+    requiresDeveloperToApprove: () =>
+      AppError.forbidden('You need to be at least a Developer to approve PC listings'),
+    requiresDeveloperToReject: () =>
+      AppError.forbidden('You need to be at least a Developer to reject PC listings'),
+    mustBeVerifiedToApprove: () =>
+      AppError.forbidden('You can only approve PC listings for emulators you are verified for'),
+    mustBeVerifiedToReject: () =>
+      AppError.forbidden('You can only reject PC listings for emulators you are verified for'),
   }
 
   static notification = {
     notFound: () => AppError.notFound('Notification'),
+    canOnlyMarkOwnAsRead: () =>
+      AppError.forbidden('You can only mark your own notifications as read'),
   }
 
   static customField = {
@@ -288,6 +324,8 @@ export class ResourceError {
       AppError.badRequest(
         `Invalid custom field definition ID: ${fieldId} for emulator ${emulatorId}`,
       ),
+    canOnlyManageVerified: () =>
+      AppError.forbidden('You can only manage custom fields for emulators you are verified for'),
   }
 
   static customFieldTemplate = {
@@ -309,6 +347,11 @@ export class ResourceError {
     usernameExists: () => AppError.alreadyExists('User', 'this username'),
     cannotDeleteSelf: () => AppError.forbidden('You cannot delete your own account'),
     cannotDemoteSelf: () => AppError.forbidden('You cannot demote yourself from the admin role'),
+    profileNotAccessible: () => AppError.forbidden('This user profile is not accessible.'),
+    needsPermissionToModifySuperAdmin: () =>
+      AppError.forbidden('You need permission to modify super admin users'),
+    needsPermissionToAssignSuperAdmin: () =>
+      AppError.forbidden('You need permission to assign super admin role'),
     notInDatabase: (userId: string) =>
       AppError.internalError(`User with ID ${userId} not found in database`),
   }
@@ -346,6 +389,13 @@ export class ResourceError {
     cannotBanHigherRole: () =>
       AppError.forbidden('You cannot ban a user with equal or higher role than yours'),
     alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
+    requiresModerator: () => AppError.forbidden('You need to be at least a Moderator to ban users'),
+    requiresModeratorToUpdate: () =>
+      AppError.forbidden('You need to be at least a Moderator to update bans'),
+    requiresModeratorToLift: () =>
+      AppError.forbidden('You need to be at least a Moderator to lift bans'),
+    requiresModeratorToDelete: () =>
+      AppError.forbidden('You need to be at least a Moderator to delete bans'),
   }
 
   static badge = {
@@ -383,6 +433,7 @@ export class ResourceError {
 
   static verification = {
     notFound: () => AppError.notFound('Verification'),
+    canOnlyRemoveOwn: () => AppError.forbidden('You can only remove your own verifications'),
   }
 
   static verifiedDeveloper = {
@@ -393,5 +444,13 @@ export class ResourceError {
       ),
     cannotVerifyOwnListings: () => AppError.forbidden('You cannot verify your own reports'),
     alreadyVerifiedListing: () => AppError.conflict('You have already verified this report'),
+    userMustBeDeveloper: (userName: string, currentRole: string) =>
+      AppError.forbidden(
+        `${userName} must have the DEVELOPER role or higher to be verified as a developer. Current role: ${currentRole}`,
+      ),
+    userMustBeDeveloperToRemove: (userName: string, currentRole: string) =>
+      AppError.forbidden(
+        `${userName} must have the DEVELOPER role or higher to be removed as a verified developer. Current role: ${currentRole}`,
+      ),
   }
 }

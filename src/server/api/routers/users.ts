@@ -21,7 +21,6 @@ import { buildOrderBy, calculateOffset, createPaginationResult } from '@/server/
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
-import { withOptimisticLock } from '@/server/utils/transactions'
 import { hasPermissionInContext, PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
 import { ApprovalStatus, Role } from '@orm'
@@ -169,7 +168,7 @@ export const usersRouter = createTRPCRouter({
     const canViewBannedUsers = roleIncludesRole(currentUserRole, Role.MODERATOR)
 
     if (isBanned && !canViewBannedUsers) {
-      throw AppError.forbidden('This user profile is not accessible.')
+      throw ResourceError.user.profileNotAccessible()
     }
 
     // Build where clauses for listings filtering
@@ -430,39 +429,30 @@ export const usersRouter = createTRPCRouter({
       }
     }
 
-    // Update user in database with optimistic locking using lastActiveAt as version field
-
-    return await withOptimisticLock(
-      ctx.prisma,
-      ctx.prisma.user,
-      userId,
-      'lastActiveAt',
-      async (currentUser, tx) => {
-        const result = await tx.user.update({
-          where: { id: userId },
-          data: {
-            ...(name !== undefined && { name: name?.trim() || null }),
-            ...(email && { email }),
-            ...(profileImage && { profileImage }),
-            ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
-            lastActiveAt: new Date(), // Update lastActiveAt for versioning
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            bio: true,
-            profileImage: true,
-            role: true,
-          },
-        })
-
-        // Invalidate SEO cache for user profile
-        await invalidateUser(userId)
-
-        return result
+    // Update user in database
+    const result = await ctx.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(name !== undefined && { name: name?.trim() || null }),
+        ...(email && { email }),
+        ...(profileImage && { profileImage }),
+        ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
+        lastActiveAt: new Date(),
       },
-    )
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        bio: true,
+        profileImage: true,
+        role: true,
+      },
+    })
+
+    // Invalidate SEO cache for user profile
+    await invalidateUser(userId)
+
+    return result
   }),
 
   // Admin-only routes
@@ -592,7 +582,7 @@ export const usersRouter = createTRPCRouter({
         targetUser.role === Role.SUPER_ADMIN &&
         !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        return AppError.forbidden('You need permission to modify super admin users')
+        return ResourceError.user.needsPermissionToModifySuperAdmin()
       }
 
       // Only users with MODIFY_SUPER_ADMIN_USERS permission can assign SUPER_ADMIN role
@@ -600,7 +590,7 @@ export const usersRouter = createTRPCRouter({
         role === Role.SUPER_ADMIN &&
         !hasPermissionInContext(ctx, PERMISSIONS.MODIFY_SUPER_ADMIN_USERS)
       ) {
-        return AppError.forbidden('You need permission to assign super admin role')
+        return ResourceError.user.needsPermissionToAssignSuperAdmin()
       }
 
       // Use the role sync utility to update both database and Clerk
