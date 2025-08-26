@@ -9,7 +9,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-    return repository.getMobile(input ?? {})
+    return repository.getPaginated(input ?? {}, { limited: true })
   }),
 
   /**
@@ -17,7 +17,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
    */
   getById: mobilePublicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-    const cpu = await repository.getByIdMobile(input.id)
+    const cpu = await repository.byIdWithCounts(input.id, { limited: true })
     return cpu || ResourceError.cpu.notFound()
   }),
 })

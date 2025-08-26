@@ -1,4 +1,5 @@
 import { PAGINATION } from '@/data/constants'
+import { ResourceError } from '@/lib/errors'
 import {
   calculateOffset,
   createPaginationResult,
@@ -18,6 +19,10 @@ export class GpusRepository extends BaseRepository {
       brand: true,
     } satisfies Prisma.GpuInclude,
 
+    limited: {
+      brand: { select: { id: true, name: true } },
+    } satisfies Prisma.GpuInclude,
+
     withCounts: {
       brand: true,
       _count: {
@@ -26,35 +31,59 @@ export class GpusRepository extends BaseRepository {
         },
       },
     } satisfies Prisma.GpuInclude,
+
+    withCountsLimited: {
+      brand: { select: { id: true, name: true } },
+      _count: {
+        select: {
+          pcListings: true,
+        },
+      },
+    } satisfies Prisma.GpuInclude,
   } as const
 
-  async byId(id: string): Promise<Prisma.GpuGetPayload<{ include: { brand: true } }> | null> {
+  async byId(
+    id: string,
+    options: { limited?: boolean } = {},
+  ): Promise<Prisma.GpuGetPayload<{
+    include: typeof GpusRepository.includes.default | typeof GpusRepository.includes.limited
+  }> | null> {
     return this.prisma.gpu.findUnique({
       where: { id },
-      include: GpusRepository.includes.default,
+      include: options.limited ? GpusRepository.includes.limited : GpusRepository.includes.default,
     })
   }
 
   /**
-   * Get GPU by ID with counts (for web)
+   * Get GPU by ID with counts
    */
-  async byIdWithCounts(id: string): Promise<Prisma.GpuGetPayload<{
-    include: {
-      brand: true
-      _count: {
-        select: {
-          pcListings: true
-        }
-      }
-    }
+  async byIdWithCounts(
+    id: string,
+    options: { limited?: boolean } = {},
+  ): Promise<Prisma.GpuGetPayload<{
+    include:
+      | typeof GpusRepository.includes.withCounts
+      | typeof GpusRepository.includes.withCountsLimited
   }> | null> {
     return this.prisma.gpu.findUnique({
       where: { id },
-      include: GpusRepository.includes.withCounts,
+      include: options.limited
+        ? GpusRepository.includes.withCountsLimited
+        : GpusRepository.includes.withCounts,
     })
   }
 
   async create(data: CreateGpuInput): Promise<Prisma.GpuGetPayload<{ include: { brand: true } }>> {
+    // Validate brand exists
+    const brand = await this.prisma.deviceBrand.findUnique({
+      where: { id: data.brandId },
+    })
+    if (!brand) return ResourceError.deviceBrand.notFound()
+
+    // Check for duplicate model name
+    const exists = await this.existsByModelName(data.modelName)
+    if (exists) return ResourceError.gpu.alreadyExists(data.modelName)
+
     return this.prisma.gpu.create({
       data,
       include: GpusRepository.includes.default,
@@ -65,6 +94,24 @@ export class GpusRepository extends BaseRepository {
     id: string,
     data: Partial<UpdateGpuInput>,
   ): Promise<Prisma.GpuGetPayload<{ include: { brand: true } }>> {
+    // Check if GPU exists
+    const gpu = await this.byId(id)
+    if (!gpu) return ResourceError.gpu.notFound()
+
+    // Validate brand exists if being updated
+    if (data.brandId) {
+      const brand = await this.prisma.deviceBrand.findUnique({
+        where: { id: data.brandId },
+      })
+      if (!brand) return ResourceError.deviceBrand.notFound()
+    }
+
+    // Check for duplicate model name if being updated
+    if (data.modelName) {
+      const exists = await this.existsByModelName(data.modelName, id)
+      if (exists) return ResourceError.gpu.alreadyExists(data.modelName)
+    }
+
     return this.prisma.gpu.update({
       where: { id },
       data,
@@ -73,6 +120,19 @@ export class GpusRepository extends BaseRepository {
   }
 
   async delete(id: string): Promise<void> {
+    // Check if GPU exists and get usage count
+    const existingGpu = await this.prisma.gpu.findUnique({
+      where: { id },
+      include: { _count: { select: { pcListings: true } } },
+    })
+
+    if (!existingGpu) return ResourceError.gpu.notFound()
+
+    // Check if GPU is in use
+    if (existingGpu._count.pcListings > 0) {
+      return ResourceError.gpu.inUse(existingGpu._count.pcListings)
+    }
+
     await this.prisma.gpu.delete({ where: { id } })
   }
 
@@ -117,15 +177,17 @@ export class GpusRepository extends BaseRepository {
   }
 
   /**
-   * Get GPUs with pagination metadata (includes counts for web)
-   * This is the main method that web routers should use
+   * Get GPUs with pagination metadata
+   * Supports both web and mobile usage via options
    */
-  async getPaginated(filters: GetGpusInput = {}): Promise<{
+  async getPaginated(
+    filters: GetGpusInput = {},
+    options: { limited?: boolean } = {},
+  ): Promise<{
     gpus: Prisma.GpuGetPayload<{
-      include: {
-        brand: true
-        _count: { select: { pcListings: true } }
-      }
+      include:
+        | typeof GpusRepository.includes.withCounts
+        | typeof GpusRepository.includes.withCountsLimited
     }>[]
     pagination: PaginationResult
   }> {
@@ -146,7 +208,9 @@ export class GpusRepository extends BaseRepository {
     const [gpus, total] = await Promise.all([
       this.prisma.gpu.findMany({
         where,
-        include: GpusRepository.includes.withCounts,
+        include: options.limited
+          ? GpusRepository.includes.withCountsLimited
+          : GpusRepository.includes.withCounts,
         orderBy,
         take: limit,
         skip: actualOffset,
@@ -157,62 +221,6 @@ export class GpusRepository extends BaseRepository {
     const pagination = createPaginationResult(total, { page, offset }, limit, actualOffset)
 
     return { gpus, pagination }
-  }
-
-  /**
-   * Get GPUs for mobile (with limited brand info)
-   */
-  async getMobile(filters: GetGpusInput = {}): Promise<{
-    gpus: Prisma.GpuGetPayload<{
-      include: {
-        brand: { select: { id: true; name: true } }
-      }
-    }>[]
-    pagination: PaginationResult
-  }> {
-    const {
-      search,
-      brandId,
-      limit = PAGINATION.DEFAULT_LIMIT,
-      offset = 0,
-      page,
-      sortField,
-      sortDirection,
-    } = filters
-
-    const actualOffset = calculateOffset({ page, offset }, limit)
-    const where = this.buildWhereClause(search, brandId)
-    const orderBy = this.buildOrderBy(sortField, sortDirection)
-
-    const [gpus, total] = await Promise.all([
-      this.prisma.gpu.findMany({
-        where,
-        include: { brand: { select: { id: true, name: true } } },
-        orderBy,
-        take: limit,
-        skip: actualOffset,
-      }),
-      this.prisma.gpu.count({ where }),
-    ])
-
-    const pagination = createPaginationResult(total, { page, offset }, limit, actualOffset)
-
-    return { gpus, pagination }
-  }
-
-  /**
-   * Build where clause matching router logic exactly
-   */
-  /**
-   * Get GPU by ID for mobile with limited brand info
-   */
-  async getByIdMobile(id: string): Promise<Prisma.GpuGetPayload<{
-    include: { brand: { select: { id: true; name: true } } }
-  }> | null> {
-    return this.prisma.gpu.findUnique({
-      where: { id },
-      include: { brand: { select: { id: true, name: true } } },
-    })
   }
 
   private buildWhereClause(search?: string, brandId?: string): Prisma.GpuWhereInput {

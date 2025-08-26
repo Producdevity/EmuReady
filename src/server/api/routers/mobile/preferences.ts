@@ -7,10 +7,6 @@ import {
   RemoveDevicePreferenceSchema,
   UpdateProfileSchema,
   UpdateUserPreferencesSchema,
-  GetPcPresetsSchema,
-  CreatePcPresetSchema,
-  UpdatePcPresetSchema,
-  DeletePcPresetSchema,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
 import { sanitizeBio } from '@/utils/sanitization'
@@ -385,79 +381,4 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
         select: { id: true, name: true, bio: true, createdAt: true },
       })
     }),
-
-  /**
-   * PC Presets nested router
-   */
-  pcPresets: createMobileTRPCRouter({
-    get: mobileProtectedProcedure.input(GetPcPresetsSchema).query(async ({ ctx, input }) => {
-      return await ctx.prisma.userPcPreset.findMany({
-        where: { userId: ctx.session.user.id },
-        take: input.limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          cpu: { include: { brand: { select: { id: true, name: true } } } },
-          gpu: { include: { brand: { select: { id: true, name: true } } } },
-        },
-      })
-    }),
-
-    create: mobileProtectedProcedure
-      .input(CreatePcPresetSchema)
-      .mutation(async ({ ctx, input }) => {
-        return await ctx.prisma.userPcPreset.create({
-          data: {
-            ...input,
-            userId: ctx.session.user.id,
-          },
-          include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
-          },
-        })
-      }),
-
-    update: mobileProtectedProcedure
-      .input(UpdatePcPresetSchema)
-      .mutation(async ({ ctx, input }) => {
-        const { id, ...updateData } = input
-
-        // Check if user owns the preset
-        const existing = await ctx.prisma.userPcPreset.findUnique({
-          where: { id },
-          select: { userId: true },
-        })
-
-        if (!existing) return ResourceError.pcPreset.notFound()
-
-        if (existing.userId !== ctx.session.user.id) {
-          return AppError.forbidden('You can only edit your own PC presets')
-        }
-
-        return await ctx.prisma.userPcPreset.update({
-          where: { id },
-          data: updateData,
-          include: {
-            cpu: { include: { brand: { select: { id: true, name: true } } } },
-            gpu: { include: { brand: { select: { id: true, name: true } } } },
-          },
-        })
-      }),
-
-    delete: mobileProtectedProcedure
-      .input(DeletePcPresetSchema)
-      .mutation(async ({ ctx, input }) => {
-        // Check if user owns the preset
-        const existing = await ctx.prisma.userPcPreset.findUnique({
-          where: { id: input.id },
-          select: { userId: true },
-        })
-
-        if (!existing) return ResourceError.pcPreset.notFound()
-
-        return existing.userId !== ctx.session.user.id
-          ? AppError.forbidden('You can only delete your own PC presets')
-          : await ctx.prisma.userPcPreset.delete({ where: { id: input.id } })
-      }),
-  }),
 })

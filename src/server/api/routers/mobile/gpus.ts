@@ -9,7 +9,7 @@ export const mobileGpusRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-    return repository.getMobile(input ?? {})
+    return repository.getPaginated(input ?? {}, { limited: true })
   }),
 
   /**
@@ -17,7 +17,7 @@ export const mobileGpusRouter = createMobileTRPCRouter({
    */
   getById: mobilePublicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-    const gpu = await repository.getByIdMobile(input.id)
+    const gpu = await repository.byIdWithCounts(input.id, { limited: true })
     return gpu || ResourceError.gpu.notFound()
   }),
 })

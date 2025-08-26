@@ -779,19 +779,14 @@ export class PcListingsRepository extends BaseRepository {
    */
   async isDeveloperVerifiedForEmulator(userId: string, emulatorId: string): Promise<boolean> {
     const verified = await this.prisma.verifiedDeveloper.findUnique({
-      where: {
-        userId_emulatorId: {
-          userId,
-          emulatorId,
-        },
-      },
+      where: { userId_emulatorId: { userId, emulatorId } },
     })
     return !!verified
   }
 }
 
 // Use Prisma's type inference for the full listing type
-type PcListingWithRelations = Prisma.PcListingGetPayload<{
+export type PcListingWithRelations = Prisma.PcListingGetPayload<{
   include: typeof PcListingsRepository.includes.default & {
     game: {
       include: {
@@ -815,9 +810,6 @@ type PcListingWithRelations = Prisma.PcListingGetPayload<{
   }
 }>
 
-type PcListingDefault = Prisma.PcListingGetPayload<{
+export type PcListingDefault = Prisma.PcListingGetPayload<{
   include: typeof PcListingsRepository.includes.default
 }>
-
-// Export types for external use
-export type { PcListingWithRelations, PcListingDefault }

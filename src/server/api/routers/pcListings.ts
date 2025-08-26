@@ -55,6 +55,7 @@ import {
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { listingStatsCache } from '@/server/utils/cache'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
@@ -767,128 +768,40 @@ export const pcListingsRouter = createTRPCRouter({
   // PC Preset procedures
   presets: {
     get: protectedProcedure.input(GetPcPresetsSchema).query(async ({ ctx, input }) => {
+      const repository = new UserPcPresetsRepository(ctx.prisma)
       const userId = input.userId ?? ctx.session.user.id
 
-      // Only allow users to see their own presets unless admin
-      if (
-        userId !== ctx.session.user.id &&
-        ctx.session.user.role !== Role.ADMIN &&
-        ctx.session.user.role !== Role.SUPER_ADMIN
-      ) {
-        return AppError.forbidden('You can only view your own PC presets')
-      }
-
-      return await ctx.prisma.userPcPreset.findMany({
-        where: { userId },
-        include: {
-          cpu: { include: { brand: true } },
-          gpu: { include: { brand: true } },
-        },
-        orderBy: { createdAt: 'desc' },
+      return await repository.getByUserId(userId, {
+        requestingUserId: ctx.session.user.id,
+        userRole: ctx.session.user.role,
       })
     }),
 
     create: protectedProcedure.input(CreatePcPresetSchema).mutation(async ({ ctx, input }) => {
-      // Check if user already has a preset with this name
-      const existingPreset = await ctx.prisma.userPcPreset.findFirst({
-        where: { userId: ctx.session.user.id, name: input.name },
-      })
+      const repository = new UserPcPresetsRepository(ctx.prisma)
 
-      if (existingPreset) {
-        return ResourceError.pcPreset.alreadyExists(input.name)
-      }
-
-      // Validate CPU and GPU exist
-      const [cpu, gpu] = await Promise.all([
-        ctx.prisma.cpu.findUnique({ where: { id: input.cpuId } }),
-        input.gpuId ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }) : null,
-      ])
-
-      if (!cpu) return ResourceError.cpu.notFound()
-      if (input.gpuId && !gpu) return ResourceError.gpu.notFound() // Only check GPU if provided
-
-      return ctx.prisma.userPcPreset.create({
-        data: {
-          userId: ctx.session.user.id,
-          name: input.name,
-          cpuId: input.cpuId,
-          ...(input.gpuId ? { gpuId: input.gpuId } : {}), // Handle optional GPU
-          memorySize: input.memorySize,
-          os: input.os,
-          osVersion: input.osVersion,
-        },
-        include: {
-          cpu: { include: { brand: true } },
-          gpu: { include: { brand: true } },
-        },
+      return await repository.create({
+        userId: ctx.session.user.id,
+        name: input.name,
+        cpuId: input.cpuId,
+        gpuId: input.gpuId,
+        memorySize: input.memorySize,
+        os: input.os,
+        osVersion: input.osVersion,
       })
     }),
 
     update: protectedProcedure.input(UpdatePcPresetSchema).mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
+      const repository = new UserPcPresetsRepository(ctx.prisma)
 
-      const preset = await ctx.prisma.userPcPreset.findUnique({
-        where: { id },
-      })
-
-      if (!preset) return ResourceError.pcPreset.notFound()
-
-      // Only allow users to edit their own presets
-      if (preset.userId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only edit your own PC presets')
-      }
-
-      // Check if name conflicts with another preset
-      const existingPreset = await ctx.prisma.userPcPreset.findFirst({
-        where: {
-          userId: ctx.session.user.id,
-          name: data.name,
-          id: { not: id },
-        },
-      })
-
-      if (existingPreset) {
-        return ResourceError.pcPreset.alreadyExists(data.name)
-      }
-
-      // Validate CPU and GPU exist
-      const [cpu, gpu] = await Promise.all([
-        ctx.prisma.cpu.findUnique({ where: { id: data.cpuId } }),
-        ctx.prisma.gpu.findUnique({ where: { id: data.gpuId } }),
-      ])
-
-      if (!cpu) return ResourceError.cpu.notFound()
-      if (!gpu) return ResourceError.gpu.notFound()
-
-      return ctx.prisma.userPcPreset.update({
-        where: { id },
-        data,
-        include: {
-          cpu: {
-            include: { brand: true },
-          },
-          gpu: {
-            include: { brand: true },
-          },
-        },
-      })
+      return await repository.update(id, ctx.session.user.id, data)
     }),
 
     delete: protectedProcedure.input(DeletePcPresetSchema).mutation(async ({ ctx, input }) => {
-      const preset = await ctx.prisma.userPcPreset.findUnique({
-        where: { id: input.id },
-      })
-
-      if (!preset) return ResourceError.pcPreset.notFound()
-
-      // Only allow users to delete their own presets
-      if (preset.userId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only delete your own PC presets')
-      }
-
-      return ctx.prisma.userPcPreset.delete({
-        where: { id: input.id },
-      })
+      const repository = new UserPcPresetsRepository(ctx.prisma)
+      await repository.delete(input.id, ctx.session.user.id)
+      return { success: true }
     }),
   },
 

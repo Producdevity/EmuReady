@@ -376,6 +376,9 @@ export class ResourceError {
     notFound: () => AppError.notFound('PC preset'),
     alreadyExists: (name: string) =>
       AppError.conflict(`A PC preset with name "${name}" already exists for this user`),
+    canOnlyViewOwn: () => AppError.forbidden('You can only view your own PC presets'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC presets'),
+    canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC presets'),
   }
 
   static verification = {

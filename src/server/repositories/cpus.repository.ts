@@ -1,4 +1,5 @@
 import { PAGINATION } from '@/data/constants'
+import { ResourceError } from '@/lib/errors'
 import {
   calculateOffset,
   createPaginationResult,
@@ -18,39 +19,63 @@ export class CpusRepository extends BaseRepository {
       brand: true,
     } satisfies Prisma.CpuInclude,
 
+    limited: {
+      brand: { select: { id: true, name: true } },
+    } satisfies Prisma.CpuInclude,
+
     withCounts: {
       brand: true,
       _count: { select: { pcListings: true } },
     } satisfies Prisma.CpuInclude,
+
+    withCountsLimited: {
+      brand: { select: { id: true, name: true } },
+      _count: { select: { pcListings: true } },
+    } satisfies Prisma.CpuInclude,
   } as const
 
-  async byId(id: string): Promise<Prisma.CpuGetPayload<{ include: { brand: true } }> | null> {
+  async byId(
+    id: string,
+    options: { limited?: boolean } = {},
+  ): Promise<Prisma.CpuGetPayload<{
+    include: typeof CpusRepository.includes.default | typeof CpusRepository.includes.limited
+  }> | null> {
     return this.prisma.cpu.findUnique({
       where: { id },
-      include: CpusRepository.includes.default,
+      include: options.limited ? CpusRepository.includes.limited : CpusRepository.includes.default,
     })
   }
 
   /**
-   * Get CPU by ID with counts (for web)
+   * Get CPU by ID with counts
    */
-  async byIdWithCounts(id: string): Promise<Prisma.CpuGetPayload<{
-    include: {
-      brand: true
-      _count: {
-        select: {
-          pcListings: true
-        }
-      }
-    }
+  async byIdWithCounts(
+    id: string,
+    options: { limited?: boolean } = {},
+  ): Promise<Prisma.CpuGetPayload<{
+    include:
+      | typeof CpusRepository.includes.withCounts
+      | typeof CpusRepository.includes.withCountsLimited
   }> | null> {
     return this.prisma.cpu.findUnique({
       where: { id },
-      include: CpusRepository.includes.withCounts,
+      include: options.limited
+        ? CpusRepository.includes.withCountsLimited
+        : CpusRepository.includes.withCounts,
     })
   }
 
   async create(data: CreateCpuInput): Promise<Prisma.CpuGetPayload<{ include: { brand: true } }>> {
+    // Validate brand exists
+    const brand = await this.prisma.deviceBrand.findUnique({
+      where: { id: data.brandId },
+    })
+    if (!brand) return ResourceError.deviceBrand.notFound()
+
+    // Check for duplicate model name
+    const exists = await this.existsByModelName(data.modelName)
+    if (exists) return ResourceError.cpu.alreadyExists(data.modelName)
+
     return this.prisma.cpu.create({
       data,
       include: CpusRepository.includes.default,
@@ -61,6 +86,24 @@ export class CpusRepository extends BaseRepository {
     id: string,
     data: Partial<UpdateCpuInput>,
   ): Promise<Prisma.CpuGetPayload<{ include: { brand: true } }>> {
+    // Check if CPU exists
+    const cpu = await this.byId(id)
+    if (!cpu) return ResourceError.cpu.notFound()
+
+    // Validate brand exists if being updated
+    if (data.brandId) {
+      const brand = await this.prisma.deviceBrand.findUnique({
+        where: { id: data.brandId },
+      })
+      if (!brand) return ResourceError.deviceBrand.notFound()
+    }
+
+    // Check for duplicate model name if being updated
+    if (data.modelName) {
+      const exists = await this.existsByModelName(data.modelName, id)
+      if (exists) return ResourceError.cpu.alreadyExists(data.modelName)
+    }
+
     return this.prisma.cpu.update({
       where: { id },
       data,
@@ -69,6 +112,19 @@ export class CpusRepository extends BaseRepository {
   }
 
   async delete(id: string): Promise<void> {
+    // Check if CPU exists and get usage count
+    const existingCpu = await this.prisma.cpu.findUnique({
+      where: { id },
+      include: { _count: { select: { pcListings: true } } },
+    })
+
+    if (!existingCpu) return ResourceError.cpu.notFound()
+
+    // Check if CPU is in use
+    if (existingCpu._count.pcListings > 0) {
+      return ResourceError.cpu.inUse(existingCpu._count.pcListings)
+    }
+
     await this.prisma.cpu.delete({ where: { id } })
   }
 
@@ -117,19 +173,17 @@ export class CpusRepository extends BaseRepository {
   }
 
   /**
-   * Get CPUs with pagination metadata (includes counts for web)
-   * This is the main method that web routers should use
+   * Get CPUs with pagination metadata
+   * Supports both web and mobile usage via options
    */
-  async getPaginated(filters: GetCpusInput = {}): Promise<{
+  async getPaginated(
+    filters: GetCpusInput = {},
+    options: { limited?: boolean } = {},
+  ): Promise<{
     cpus: Prisma.CpuGetPayload<{
-      include: {
-        brand: true
-        _count: {
-          select: {
-            pcListings: true
-          }
-        }
-      }
+      include:
+        | typeof CpusRepository.includes.withCounts
+        | typeof CpusRepository.includes.withCountsLimited
     }>[]
     pagination: PaginationResult
   }> {
@@ -150,7 +204,9 @@ export class CpusRepository extends BaseRepository {
     const [cpus, total] = await Promise.all([
       this.prisma.cpu.findMany({
         where,
-        include: CpusRepository.includes.withCounts,
+        include: options.limited
+          ? CpusRepository.includes.withCountsLimited
+          : CpusRepository.includes.withCounts,
         orderBy,
         take: limit,
         skip: actualOffset,
@@ -161,59 +217,6 @@ export class CpusRepository extends BaseRepository {
     const pagination = createPaginationResult(total, { page, offset }, limit, actualOffset)
 
     return { cpus, pagination }
-  }
-
-  /**
-   * Get CPUs for mobile (with limited brand info)
-   */
-  async getMobile(filters: GetCpusInput = {}): Promise<{
-    cpus: Prisma.CpuGetPayload<{
-      include: {
-        brand: { select: { id: true; name: true } }
-      }
-    }>[]
-    pagination: PaginationResult
-  }> {
-    const {
-      search,
-      brandId,
-      limit = PAGINATION.DEFAULT_LIMIT,
-      offset = 0,
-      page,
-      sortField,
-      sortDirection,
-    } = filters
-
-    const actualOffset = calculateOffset({ page, offset }, limit)
-    const where = this.buildWhereClause(search, brandId)
-    const orderBy = this.buildOrderBy(sortField, sortDirection)
-
-    const [cpus, total] = await Promise.all([
-      this.prisma.cpu.findMany({
-        where,
-        include: { brand: { select: { id: true, name: true } } },
-        orderBy,
-        take: limit,
-        skip: actualOffset,
-      }),
-      this.prisma.cpu.count({ where }),
-    ])
-
-    const pagination = createPaginationResult(total, { page, offset }, limit, actualOffset)
-
-    return { cpus, pagination }
-  }
-
-  /**
-   * Get CPU by ID for mobile with limited brand info
-   */
-  async getByIdMobile(id: string): Promise<Prisma.CpuGetPayload<{
-    include: { brand: { select: { id: true; name: true } } }
-  }> | null> {
-    return this.prisma.cpu.findUnique({
-      where: { id },
-      include: { brand: { select: { id: true, name: true } } },
-    })
   }
 
   /**
@@ -222,9 +225,7 @@ export class CpusRepository extends BaseRepository {
   private buildWhereClause(search?: string, brandId?: string): Prisma.CpuWhereInput {
     const where: Prisma.CpuWhereInput = {}
 
-    if (brandId) {
-      where.brandId = brandId
-    }
+    if (brandId) where.brandId = brandId
 
     if (search) {
       where.OR = [

@@ -12,7 +12,6 @@ import {
   manageDevicesProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
-import { DeviceBrandsRepository } from '@/server/repositories/device-brands.repository'
 import { GpusRepository } from '@/server/repositories/gpus.repository'
 
 export const gpusRouter = createTRPCRouter({
@@ -48,34 +47,14 @@ export const gpusRouter = createTRPCRouter({
 
   create: manageDevicesProcedure.input(CreateGpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-    const deviceBrandsRepository = new DeviceBrandsRepository(ctx.prisma)
 
-    const brand = deviceBrandsRepository.byId(input.brandId)
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    const exists = await repository.existsByModelName(input.modelName)
-    if (exists) return ResourceError.gpu.alreadyExists(input.modelName)
-
-    // Create and then fetch with counts for web
     const created = await repository.create(input)
     return repository.byIdWithCounts(created.id)
   }),
 
   update: manageDevicesProcedure.input(UpdateGpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-    const deviceBrandsRepository = new DeviceBrandsRepository(ctx.prisma)
     const { id, ...data } = input
-
-    const gpu = await repository.byId(id)
-    if (!gpu) return ResourceError.gpu.notFound()
-
-    const brand = deviceBrandsRepository.byId(input.brandId)
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    const exists = await repository.existsByModelName(input.modelName, id)
-    if (exists) return ResourceError.gpu.alreadyExists(input.modelName)
 
     const updated = await repository.update(id, data)
     return repository.byIdWithCounts(updated.id)
@@ -83,20 +62,8 @@ export const gpusRouter = createTRPCRouter({
 
   delete: manageDevicesProcedure.input(DeleteGpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-
-    const existingGpu = await ctx.prisma.gpu.findUnique({
-      where: { id: input.id },
-      include: { _count: { select: { pcListings: true } } },
-    })
-
-    if (!existingGpu) return ResourceError.gpu.notFound()
-
-    if (existingGpu._count.pcListings > 0) {
-      return ResourceError.gpu.inUse(existingGpu._count.pcListings)
-    }
-
     await repository.delete(input.id)
-    return existingGpu
+    return { success: true }
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

@@ -1,11 +1,11 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-08-25T23:34:38.725Z*
+*Auto-generated on: 2025-08-26T09:31:13.333Z*
 
 ## Summary
-- **Total Endpoints**: 81
+- **Total Endpoints**: 85
 - **Public Endpoints**: 49
-- **Protected Endpoints**: 32
+- **Protected Endpoints**: 36
 - **OpenAPI Version**: 3.0.0
 
 ## Base URL
@@ -562,13 +562,48 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 #### 23. **get**
 - **Method**: GET
+- **Path**: `/pcPresets.get`
+- **Description**: Get current user's PC presets
+- **Tags**: pcPresets
+
+- **Authentication**: Bearer token required
+
+#### 24. **create**
+- **Method**: POST
+- **Path**: `/pcPresets.create`
+- **Description**: Create a new PC preset
+- **Tags**: pcPresets
+- **Request Body**: JSON object required
+- **Content-Type**: application/json
+- **Authentication**: Bearer token required
+
+#### 25. **update**
+- **Method**: POST
+- **Path**: `/pcPresets.update`
+- **Description**: Update an existing PC preset
+- **Tags**: pcPresets
+- **Request Body**: JSON object required
+- **Content-Type**: application/json
+- **Authentication**: Bearer token required
+
+#### 26. **delete**
+- **Method**: POST
+- **Path**: `/pcPresets.delete`
+- **Description**: Delete a PC preset
+- **Tags**: pcPresets
+- **Request Body**: JSON object required
+- **Content-Type**: application/json
+- **Authentication**: Bearer token required
+
+#### 27. **get**
+- **Method**: GET
 - **Path**: `/preferences.get`
 - **Description**: Get user preferences
 - **Tags**: preferences
 
 - **Authentication**: Bearer token required
 
-#### 24. **update**
+#### 28. **update**
 - **Method**: POST
 - **Path**: `/preferences.update`
 - **Description**: Update user preferences
@@ -577,7 +612,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 25. **addDevice**
+#### 29. **addDevice**
 - **Method**: POST
 - **Path**: `/preferences.addDevice`
 - **Description**: Add device preference
@@ -586,7 +621,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 26. **removeDevice**
+#### 30. **removeDevice**
 - **Method**: POST
 - **Path**: `/preferences.removeDevice`
 - **Description**: Remove device preference
@@ -595,7 +630,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 27. **bulkUpdateDevices**
+#### 31. **bulkUpdateDevices**
 - **Method**: POST
 - **Path**: `/preferences.bulkUpdateDevices`
 - **Description**: Bulk update device preferences
@@ -604,7 +639,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 28. **bulkUpdateSocs**
+#### 32. **bulkUpdateSocs**
 - **Method**: POST
 - **Path**: `/preferences.bulkUpdateSocs`
 - **Description**: Bulk update SOC preferences
@@ -613,7 +648,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 29. **currentProfile**
+#### 33. **currentProfile**
 - **Method**: GET
 - **Path**: `/preferences.currentProfile`
 - **Description**: Get current user's profile
@@ -621,7 +656,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 30. **profile**
+#### 34. **profile**
 - **Method**: GET
 - **Path**: `/preferences.profile`
 - **Description**: Get user profile by ID
@@ -629,7 +664,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 
 - **Authentication**: Bearer token required
 
-#### 31. **updateProfile**
+#### 35. **updateProfile**
 - **Method**: POST
 - **Path**: `/preferences.updateProfile`
 - **Description**: Update profile
@@ -638,7 +673,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 32. **myInfo**
+#### 36. **myInfo**
 - **Method**: GET
 - **Path**: `/trust.myInfo`
 - **Description**: Get current user's trust score and level
