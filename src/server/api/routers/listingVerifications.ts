@@ -1,10 +1,10 @@
 import { ResourceError } from '@/lib/errors'
 import { TrustService } from '@/lib/trust/service'
 import {
-  VerifyListingSchema,
-  RemoveVerificationSchema,
   GetListingVerificationsSchema,
   GetMyVerificationsSchema,
+  RemoveVerificationSchema,
+  VerifyListingSchema,
 } from '@/schemas/listingVerification'
 import { TrustAction } from '@orm'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
@@ -118,7 +118,7 @@ export const listingVerificationsRouter = createTRPCRouter({
   getListingVerifications: protectedProcedure
     .input(GetListingVerificationsSchema)
     .query(async ({ ctx, input }) => {
-      const verifications = await ctx.prisma.listingDeveloperVerification.findMany({
+      return await ctx.prisma.listingDeveloperVerification.findMany({
         where: { listingId: input.listingId },
         include: {
           developer: {
@@ -131,8 +131,6 @@ export const listingVerificationsRouter = createTRPCRouter({
         },
         orderBy: { verifiedAt: 'desc' },
       })
-
-      return verifications
     }),
 
   getMyVerifications: protectedProcedure
