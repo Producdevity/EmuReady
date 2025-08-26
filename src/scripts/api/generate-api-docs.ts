@@ -610,10 +610,8 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
           const jsonSchema = zodToJsonSchema(schema as never, schemaName) as Record<string, unknown>
 
           // Convert to OpenAPI 3.0 format (handles nullable properly)
-          const openApiSchema = convertJsonSchemaToOpenApi30(jsonSchema)
-
           // Add schema to components/schemas
-          schemas[schemaName] = openApiSchema
+          schemas[schemaName] = convertJsonSchemaToOpenApi30(jsonSchema)
 
           if (method === 'post') {
             // Mutations use POST with request body
