@@ -82,14 +82,19 @@ function ProfilePage() {
       )
 
       if (hasCompletedProfile) {
-        // Store in sessionStorage to prevent duplicate tracking
-        const storageKey = `profile_completed_${user?.id}`
-        if (!sessionStorage.getItem(storageKey)) {
-          analytics.conversion.goalCompleted({
-            goalType: 'profile_completed',
-            userId: user?.id,
-          })
-          sessionStorage.setItem(storageKey, 'true')
+        try {
+          // Store in sessionStorage to prevent duplicate tracking
+          const storageKey = `profile_completed_${user?.id}`
+          if (!sessionStorage.getItem(storageKey)) {
+            analytics.conversion.goalCompleted({
+              goalType: 'profile_completed',
+              userId: user?.id,
+            })
+            sessionStorage.setItem(storageKey, 'true')
+          }
+        } catch (error) {
+          // SessionStorage might be unavailable (private mode, quota exceeded)
+          console.warn('Failed to track profile completion:', error)
         }
       }
     }
