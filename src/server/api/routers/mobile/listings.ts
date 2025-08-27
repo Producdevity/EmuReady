@@ -65,7 +65,7 @@ async function getListingsHelper(
   // Convert single deviceId to array format for consistency
   const deviceIds = deviceId ? [deviceId] : undefined
 
-  const result = await repository.getListings({
+  const result = await repository.list({
     gameId,
     systemIds: effectiveSystemIds,
     deviceIds,
@@ -114,7 +114,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   featured: mobilePublicProcedure.query(async ({ ctx }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    return await repository.getFeaturedListings(10)
+    return await repository.listFeatured(10)
   }),
 
   /**
@@ -122,7 +122,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   byGame: mobilePublicProcedure.input(GetListingsByGameSchema).query(async ({ ctx, input }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    const result = await repository.getListingsByGame(input.gameId, ctx.session?.user?.id)
+    const result = await repository.listByGameId(input.gameId, ctx.session?.user?.id)
     return result.listings
   }),
 
@@ -131,7 +131,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   byId: mobilePublicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    return await repository.getListingById(input.id, ctx.session?.user?.id)
+    return await repository.byId(input.id, ctx.session?.user?.id)
   }),
 
   /**
@@ -139,7 +139,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   byUser: mobileProtectedProcedure.input(GetUserListingsSchema).query(async ({ ctx, input }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    const result = await repository.getUserListings(input.userId, false)
+    const result = await repository.listByUserId(input.userId, false)
     return result.listings
   }),
 
@@ -325,7 +325,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   comments: mobilePublicProcedure.input(GetListingCommentsSchema).query(async ({ ctx, input }) => {
     const repository = new CommentsRepository(ctx.prisma)
-    return repository.getForListing(input.listingId, ctx.session?.user?.role)
+    return repository.listByListing(input.listingId, ctx.session?.user?.role)
   }),
 
   /**
@@ -498,9 +498,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         select: { userId: true },
       })
 
-      if (!comment) {
-        throw ResourceError.comment.notFound()
-      }
+      if (!comment) return ResourceError.comment.notFound()
 
       // Check for existing vote
       const existingVote = await ctx.prisma.commentVote.findUnique({
@@ -537,23 +535,13 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .input(GetUserVotesSchema)
     .query(async ({ ctx, input }) => {
       const votes = await ctx.prisma.commentVote.findMany({
-        where: {
-          userId: ctx.session.user.id,
-          commentId: { in: input.commentIds },
-        },
-        select: {
-          commentId: true,
-          value: true,
-        },
+        where: { userId: ctx.session.user.id, commentId: { in: input.commentIds } },
+        select: { commentId: true, value: true },
       })
 
       const voteMap: Record<string, boolean | null> = {}
-      input.commentIds.forEach((id) => {
-        voteMap[id] = null
-      })
-      votes.forEach((vote) => {
-        voteMap[vote.commentId] = vote.value
-      })
+      input.commentIds.forEach((id) => (voteMap[id] = null))
+      votes.forEach((vote) => (voteMap[vote.commentId] = vote.value))
 
       return voteMap
     }),
@@ -570,9 +558,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         select: { id: true },
       })
 
-      if (!comment) {
-        throw ResourceError.comment.notFound()
-      }
+      if (!comment) return ResourceError.comment.notFound()
 
       // For now, return a success response since we don't have CommentReport model
       // TODO: Implement when CommentReport model is added to schema

@@ -73,7 +73,7 @@ export const pcListingsRouter = createTRPCRouter({
     // Validate and sanitize pagination parameters
     const { page, limit } = validatePagination(input.page, input.limit, 50)
 
-    const result = await repository.getPcListings({
+    const result = await repository.list({
       ...input,
       sortDirection: input.sortDirection ?? undefined,
       userId: ctx.session?.user?.id,
@@ -215,7 +215,7 @@ export const pcListingsRouter = createTRPCRouter({
         },
       })
 
-      if (!pcListing) throw ResourceError.pcListing.notFound()
+      if (!pcListing) return ResourceError.pcListing.notFound()
 
       // Only allow owners or moderators to fetch for editing
       if (
@@ -270,7 +270,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isSystemCompatible = emulator.systems.some((system) => system.id === game.systemId)
 
     if (!isSystemCompatible) {
-      throw AppError.badRequest("The selected emulator does not support this game's system")
+      return AppError.badRequest("The selected emulator does not support this game's system")
     }
 
     // Check if user can auto-approve
@@ -403,7 +403,7 @@ export const pcListingsRouter = createTRPCRouter({
         break
 
       default:
-        throw AppError.badRequest('Invalid PC listing status')
+        return AppError.badRequest('Invalid PC listing status')
     }
 
     // Validate referenced entities exist
@@ -411,7 +411,7 @@ export const pcListingsRouter = createTRPCRouter({
       ctx.prisma.performanceScale.findUnique({ where: { id: input.performanceId } }),
     ])
 
-    if (!performance) throw ResourceError.performanceScale.notFound()
+    if (!performance) return ResourceError.performanceScale.notFound()
 
     // Update PC listing and handle custom field values
     const { id, customFieldValues, ...updateData } = input
@@ -759,7 +759,7 @@ export const pcListingsRouter = createTRPCRouter({
     if (cached) return cached
 
     const repository = new PcListingsRepository(ctx.prisma)
-    const stats = await repository.getStats()
+    const stats = await repository.stats()
 
     listingStatsCache.set(STATS_CACHE_KEY, stats)
     return stats
@@ -771,7 +771,7 @@ export const pcListingsRouter = createTRPCRouter({
       const repository = new UserPcPresetsRepository(ctx.prisma)
       const userId = input.userId ?? ctx.session.user.id
 
-      return await repository.getByUserId(userId, {
+      return await repository.listByUserId(userId, {
         requestingUserId: ctx.session.user.id,
         userRole: ctx.session.user.role,
       })
@@ -1034,7 +1034,7 @@ export const pcListingsRouter = createTRPCRouter({
       const canEdit = canEditComment(ctx.session.user.role, comment.user.id, ctx.session.user.id)
 
       if (!canEdit) {
-        throw ResourceError.comment.noPermission('edit')
+        return ResourceError.comment.noPermission('edit')
       }
 
       return ctx.prisma.pcListingComment.update({
@@ -1070,7 +1070,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!canDelete) {
-        throw ResourceError.comment.noPermission('delete')
+        return ResourceError.comment.noPermission('delete')
       }
 
       return ctx.prisma.pcListingComment.update({
@@ -1149,7 +1149,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!pcListing) {
-        throw ResourceError.pcListing.notFound()
+        return ResourceError.pcListing.notFound()
       }
 
       // Prevent users from reporting their own listings
@@ -1241,7 +1241,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!report) {
-        throw ResourceError.listingReport.notFound()
+        return ResourceError.listingReport.notFound()
       }
 
       // If resolving the report and marking listing as rejected
@@ -1362,12 +1362,12 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!verification) {
-        throw ResourceError.verification.notFound()
+        return ResourceError.verification.notFound()
       }
 
       // Only allow the verifier or admin to remove verification
       if (verification.verifiedBy !== ctx.session.user.id && !isModerator(ctx.session.user.role)) {
-        throw ResourceError.verification.canOnlyRemoveOwn()
+        return ResourceError.verification.canOnlyRemoveOwn()
       }
 
       return ctx.prisma.pcListingDeveloperVerification.delete({

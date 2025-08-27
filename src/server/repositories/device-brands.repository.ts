@@ -1,3 +1,4 @@
+import { ResourceError } from '@/lib/errors'
 import { Prisma, type DeviceBrand } from '@orm'
 import { BaseRepository } from './base.repository'
 import type {
@@ -10,7 +11,20 @@ import type {
  * Repository for DeviceBrand data access
  */
 export class DeviceBrandsRepository extends BaseRepository {
-  async get(filters: GetDeviceBrandsInput = {}): Promise<DeviceBrand[]> {
+  static readonly includes = {
+    default: {} satisfies Prisma.DeviceBrandInclude,
+
+    withCounts: {
+      _count: {
+        select: { devices: true },
+      },
+    } satisfies Prisma.DeviceBrandInclude,
+  } as const
+  async list(
+    filters: GetDeviceBrandsInput = {},
+  ): Promise<
+    Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>[]
+  > {
     const { search, limit = 50, sortField = 'name', sortDirection } = filters
 
     const where: Prisma.DeviceBrandWhereInput = {
@@ -27,6 +41,7 @@ export class DeviceBrandsRepository extends BaseRepository {
 
     return this.prisma.deviceBrand.findMany({
       where,
+      include: DeviceBrandsRepository.includes.withCounts,
       orderBy,
       take: limit,
     })
@@ -37,15 +52,49 @@ export class DeviceBrandsRepository extends BaseRepository {
   }
 
   async create(data: CreateDeviceBrandInput): Promise<DeviceBrand> {
-    return this.prisma.deviceBrand.create({ data })
+    // Check for duplicate
+    const exists = await this.existsByName(data.name)
+    if (exists) throw ResourceError.deviceBrand.alreadyExists(data.name)
+
+    return this.handleDatabaseOperation(
+      () => this.prisma.deviceBrand.create({ data }),
+      'DeviceBrand',
+    )
   }
 
   async update(id: string, data: Partial<UpdateDeviceBrandInput>): Promise<DeviceBrand> {
-    return this.prisma.deviceBrand.update({ where: { id }, data })
+    // Check if brand exists
+    const brand = await this.byId(id)
+    if (!brand) throw ResourceError.deviceBrand.notFound()
+
+    // Check for duplicate name if being updated
+    if (data.name) {
+      const exists = await this.existsByName(data.name, id)
+      if (exists) throw ResourceError.deviceBrand.alreadyExists(data.name)
+    }
+
+    return this.handleDatabaseOperation(
+      () => this.prisma.deviceBrand.update({ where: { id }, data }),
+      'DeviceBrand',
+    )
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.deviceBrand.delete({ where: { id } })
+    // Check if brand exists and has devices
+    const brand = await this.prisma.deviceBrand.findUnique({
+      where: { id },
+      include: { _count: { select: { devices: true } } },
+    })
+
+    if (!brand) throw ResourceError.deviceBrand.notFound()
+    if (brand._count.devices > 0) {
+      throw ResourceError.deviceBrand.inUse(brand._count.devices)
+    }
+
+    await this.handleDatabaseOperation(
+      () => this.prisma.deviceBrand.delete({ where: { id } }),
+      'DeviceBrand',
+    )
   }
 
   /**
@@ -79,26 +128,42 @@ export class DeviceBrandsRepository extends BaseRepository {
   /**
    * Get brands with device counts
    */
-  async getWithDeviceCounts(): Promise<(DeviceBrand & { _count: { devices: number } })[]> {
+  async listWithCounts(): Promise<
+    Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>[]
+  > {
     return this.prisma.deviceBrand.findMany({
-      include: {
-        _count: {
-          select: { devices: true },
-        },
-      },
-      orderBy: {
-        devices: { _count: Prisma.SortOrder.desc },
-      },
+      include: DeviceBrandsRepository.includes.withCounts,
+      orderBy: { devices: { _count: Prisma.SortOrder.desc } },
     })
   }
 
   /**
    * Get all brands for mobile (simple list sorted alphabetically)
    */
-  async getAllForMobile(): Promise<{ id: string; name: string }[]> {
+  async listForMobile(): Promise<{ id: string; name: string }[]> {
     return this.prisma.deviceBrand.findMany({
       select: { id: true, name: true },
       orderBy: { name: this.sortOrder },
     })
+  }
+
+  /**
+   * Get statistics about brands
+   */
+  async stats(): Promise<{
+    total: number
+    withDevices: number
+    withoutDevices: number
+  }> {
+    const [withDevices, withoutDevices] = await Promise.all([
+      this.prisma.deviceBrand.count({ where: { devices: { some: {} } } }),
+      this.prisma.deviceBrand.count({ where: { devices: { none: {} } } }),
+    ])
+
+    return {
+      total: withDevices + withoutDevices,
+      withDevices,
+      withoutDevices,
+    }
   }
 }

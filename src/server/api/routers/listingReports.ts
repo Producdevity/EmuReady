@@ -23,18 +23,10 @@ import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const [pending, underReview, resolved, dismissed] = await batchQueries([
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.PENDING },
-      }),
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.UNDER_REVIEW },
-      }),
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.RESOLVED },
-      }),
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.DISMISSED },
-      }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.PENDING } }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.UNDER_REVIEW } }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.RESOLVED } }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.DISMISSED } }),
     ])
 
     return {
@@ -70,11 +62,7 @@ export const listingReportsRouter = createTRPCRouter({
 
       if (sanitizedSearch) {
         where.OR = [
-          {
-            listing: {
-              game: { title: { contains: sanitizedSearch, mode: 'insensitive' } },
-            },
-          },
+          { listing: { game: { title: { contains: sanitizedSearch, mode: 'insensitive' } } } },
           { reportedBy: { name: { contains: sanitizedSearch, mode: 'insensitive' } } },
           { description: { contains: sanitizedSearch, mode: 'insensitive' } },
         ]
@@ -85,9 +73,7 @@ export const listingReportsRouter = createTRPCRouter({
       if (reason) where.reason = reason
 
       const orderBy: Prisma.ListingReportOrderByWithRelationInput = {}
-      if (sortField && sortDirection) {
-        orderBy[sortField] = sortDirection
-      }
+      if (sortField && sortDirection) orderBy[sortField] = sortDirection
 
       const [reports, total] = await batchQueries([
         ctx.prisma.listingReport.findMany({
@@ -212,7 +198,7 @@ export const listingReportsRouter = createTRPCRouter({
       })
 
       if (!report) {
-        throw ResourceError.listingReport.notFound()
+        return ResourceError.listingReport.notFound()
       }
 
       // If resolving the report and marking listing as rejected
@@ -300,18 +286,10 @@ export const listingReportsRouter = createTRPCRouter({
       const { userId } = input
 
       const [reportedListingsCount, totalReports] = await batchQueries([
+        ctx.prisma.listingReport.count({ where: { listing: { authorId: userId } } }),
         ctx.prisma.listingReport.count({
           where: {
-            listing: {
-              authorId: userId,
-            },
-          },
-        }),
-        ctx.prisma.listingReport.count({
-          where: {
-            listing: {
-              authorId: userId,
-            },
+            listing: { authorId: userId },
             status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
           },
         }),
@@ -329,9 +307,7 @@ export const listingReportsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const reportCount = await ctx.prisma.listingReport.count({
         where: {
-          listing: {
-            authorId: input.userId,
-          },
+          listing: { authorId: input.userId },
           status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
         },
       })

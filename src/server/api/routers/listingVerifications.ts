@@ -24,9 +24,7 @@ export const listingVerificationsRouter = createTRPCRouter({
       },
     })
 
-    if (!listing) {
-      throw ResourceError.listing.notFound()
-    }
+    if (!listing) return ResourceError.listing.notFound()
 
     // Check if user is a verified developer for this emulator
     const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
@@ -39,7 +37,7 @@ export const listingVerificationsRouter = createTRPCRouter({
     })
 
     if (!verifiedDeveloper) {
-      throw ResourceError.verifiedDeveloper.mustBeVerifiedToVerify(listing.emulator.name)
+      return ResourceError.verifiedDeveloper.mustBeVerifiedToVerify(listing.emulator.name)
     }
 
     // Check if already verified by this developer
@@ -52,9 +50,7 @@ export const listingVerificationsRouter = createTRPCRouter({
       },
     })
 
-    if (existingVerification) {
-      throw ResourceError.verifiedDeveloper.alreadyVerifiedListing()
-    }
+    if (existingVerification) return ResourceError.verifiedDeveloper.alreadyVerifiedListing()
 
     const verification = await ctx.prisma.listingDeveloperVerification.create({
       data: {
@@ -64,11 +60,7 @@ export const listingVerificationsRouter = createTRPCRouter({
       },
       include: {
         developer: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-          },
+          select: { id: true, name: true, profileImage: true },
         },
       },
     })
@@ -100,12 +92,10 @@ export const listingVerificationsRouter = createTRPCRouter({
         where: { id: input.verificationId },
       })
 
-      if (!verification) {
-        throw ResourceError.verification.notFound()
-      }
+      if (!verification) return ResourceError.verification.notFound()
 
       if (verification.verifiedBy !== userId) {
-        throw ResourceError.verification.canOnlyRemoveOwn()
+        return ResourceError.verification.canOnlyRemoveOwn()
       }
 
       await ctx.prisma.listingDeveloperVerification.delete({
@@ -120,15 +110,7 @@ export const listingVerificationsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return await ctx.prisma.listingDeveloperVerification.findMany({
         where: { listingId: input.listingId },
-        include: {
-          developer: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
-          },
-        },
+        include: { developer: { select: { id: true, name: true, profileImage: true } } },
         orderBy: { verifiedAt: 'desc' },
       })
     }),
@@ -150,11 +132,7 @@ export const listingVerificationsRouter = createTRPCRouter({
               include: {
                 game: { select: { title: true } },
                 emulator: { select: { name: true } },
-                device: {
-                  include: {
-                    brand: { select: { name: true } },
-                  },
-                },
+                device: { include: { brand: { select: { name: true } } } },
               },
             },
           },

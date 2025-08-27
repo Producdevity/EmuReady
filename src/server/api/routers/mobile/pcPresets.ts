@@ -13,7 +13,7 @@ export const mobilePcPresetsRouter = createMobileTRPCRouter({
    */
   get: mobileProtectedProcedure.input(GetPcPresetsSchema).query(async ({ ctx, input }) => {
     const repository = new UserPcPresetsRepository(ctx.prisma)
-    return await repository.getByUserId(ctx.session.user.id, {
+    return await repository.listByUserId(ctx.session.user.id, {
       limited: true,
       limit: input.limit,
     })

@@ -226,12 +226,14 @@ export class ResourceError {
   static soc = {
     notFound: () => AppError.notFound('SoC'),
     alreadyExists: (name: string) => AppError.alreadyExists('SoC', `name "${name}"`),
+    inUse: (count: number) => AppError.resourceInUse('SoC', count),
   }
 
   static system = {
     notFound: () => AppError.notFound('System'),
     alreadyExists: (name: string) => AppError.alreadyExists('System', `name "${name}"`),
     hasGames: (count: number) => AppError.resourceInUse('system', count),
+    inUse: (count: number) => AppError.resourceInUse('system', count),
   }
 
   static game = {
@@ -281,6 +283,8 @@ export class ResourceError {
       AppError.forbidden('You can only reject listings for emulators you are verified for'),
     mustBeVerifiedToViewConfigs: () =>
       AppError.forbidden('You can only view configs for emulators you are verified for'),
+    cannotApproveBannedUser: (banReason: string) =>
+      AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`),
   }
 
   static pcListing = {
@@ -326,18 +330,27 @@ export class ResourceError {
       ),
     canOnlyManageVerified: () =>
       AppError.forbidden('You can only manage custom fields for emulators you are verified for'),
+    rangeMinMaxRequired: () =>
+      AppError.badRequest('Range minimum and maximum are required for RANGE type fields'),
+    rangeMinLessThanMax: () => AppError.badRequest('Range minimum must be less than maximum'),
   }
 
   static customFieldTemplate = {
     notFound: () => AppError.notFound('Custom field template'),
     alreadyExists: (name: string) =>
       AppError.conflict(`A custom field template with name "${name}" already exists`),
+    fieldNamesMustBeUnique: () =>
+      AppError.badRequest('Field names must be unique within a template'),
   }
 
   static performanceScale = {
     notFound: () => AppError.notFound('Performance scale'),
     labelExists: (label: string) => AppError.alreadyExists('Performance scale', `label "${label}"`),
     rankExists: (rank: number) => AppError.alreadyExists('Performance scale', `rank ${rank}`),
+    rankAlreadyExists: (rank: number) =>
+      AppError.alreadyExists('Performance scale', `rank ${rank}`),
+    alreadyExists: (label: string) =>
+      AppError.alreadyExists('Performance scale', `label "${label}"`),
     inUse: (count: number) => AppError.resourceInUse('performance scale', count),
   }
 
@@ -388,6 +401,8 @@ export class ResourceError {
     alreadyBanned: () => AppError.conflict('User already has an active ban'),
     cannotBanHigherRole: () =>
       AppError.forbidden('You cannot ban a user with equal or higher role than yours'),
+    insufficientPermissions: () =>
+      AppError.forbidden('You do not have sufficient permissions to ban this user'),
     alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
     requiresModerator: () => AppError.forbidden('You need to be at least a Moderator to ban users'),
     requiresModeratorToUpdate: () =>

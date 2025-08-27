@@ -1,8 +1,22 @@
-import { AppError } from '@/lib/errors'
+import { AppError, ResourceError, ValidationError } from '@/lib/errors'
 import { Prisma, type PrismaClient } from '@orm'
 
 /**
- * Base repository class with common properties and methods
+ * Base repository class with common properties and methods.
+ *
+ * IMPORTANT Repository Pattern Rules:
+ * 1. Repositories ALWAYS THROW errors (never return them)
+ * 2. Use static readonly includes with satisfies for query shapes
+ * 3. Method naming conventions:
+ *    - byId(id) - get single item by ID
+ *    - list(filters) - get paginated list
+ *    - create(data) - create new item
+ *    - update(id, data) - update existing item
+ *    - delete(id) - delete item
+ *    - stats() - get statistics
+ *    - Additional methods should follow pattern: byX, listX, etc.
+ * 4. NO type namespaces - define types inline or export separately
+ * 5. Use handleDatabaseOperation for all database calls to ensure proper error handling
  */
 export abstract class BaseRepository {
   protected readonly prisma: PrismaClient
@@ -14,8 +28,9 @@ export abstract class BaseRepository {
   }
 
   /**
-   * Wrap async database operations with error handling
-   * Converts Prisma errors to AppErrors
+   * Wrap async database operations with error handling.
+   * Converts Prisma errors to AppErrors.
+   * ALWAYS use this for database operations to ensure consistent error handling.
    */
   protected async handleDatabaseOperation<T>(
     operation: () => Promise<T>,
@@ -37,7 +52,15 @@ export abstract class BaseRepository {
             throw AppError.databaseError(context)
         }
       }
-      // Re-throw if it's already an AppError
+      // Re-throw if it's already an AppError or ResourceError
+      if (
+        error instanceof AppError ||
+        error instanceof ResourceError ||
+        error instanceof ValidationError
+      ) {
+        throw error
+      }
+      // Re-throw if it's already a TRPCError
       if (error instanceof Error && error.name === 'TRPCError') {
         throw error
       }

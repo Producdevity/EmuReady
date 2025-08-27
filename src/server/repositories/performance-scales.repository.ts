@@ -1,3 +1,4 @@
+import { ResourceError } from '@/lib/errors'
 import { Prisma, type PerformanceScale } from '@orm'
 import { BaseRepository } from './base.repository'
 import type {
@@ -12,7 +13,16 @@ import type {
  * We override the base class methods to use number instead of string for IDs
  */
 export class PerformanceScalesRepository extends BaseRepository {
-  async get(filters: GetPerformanceScalesInput = {}): Promise<PerformanceScale[]> {
+  // Static query shapes for this repository
+  static readonly includes = {
+    default: {} satisfies Prisma.PerformanceScaleInclude,
+
+    withCounts: {
+      _count: { select: { listings: true, pcListings: true } },
+    } satisfies Prisma.PerformanceScaleInclude,
+  } as const
+
+  async list(filters: GetPerformanceScalesInput = {}): Promise<PerformanceScale[]> {
     const { search, sortField = 'rank', sortDirection } = filters
 
     const where: Prisma.PerformanceScaleWhereInput = {
@@ -46,7 +56,18 @@ export class PerformanceScalesRepository extends BaseRepository {
   }
 
   async create(data: CreatePerformanceScaleInput): Promise<PerformanceScale> {
-    return this.prisma.performanceScale.create({ data })
+    // Check for duplicate rank
+    const rankExists = await this.existsByRank(data.rank)
+    if (rankExists) throw ResourceError.performanceScale.rankAlreadyExists(data.rank)
+
+    // Check for duplicate label
+    const labelExists = await this.existsByLabel(data.label)
+    if (labelExists) throw ResourceError.performanceScale.alreadyExists(data.label)
+
+    return this.handleDatabaseOperation(
+      () => this.prisma.performanceScale.create({ data }),
+      'PerformanceScale',
+    )
   }
 
   // Override base class method to use string ID (will convert internally)
@@ -61,7 +82,26 @@ export class PerformanceScalesRepository extends BaseRepository {
     id: number,
     data: Partial<UpdatePerformanceScaleInput>,
   ): Promise<PerformanceScale> {
-    return this.prisma.performanceScale.update({ where: { id }, data })
+    // Check if scale exists
+    const scale = await this.byNumericId(id)
+    if (!scale) throw ResourceError.performanceScale.notFound()
+
+    // Check for duplicate rank if being updated
+    if (data.rank !== undefined) {
+      const rankExists = await this.existsByRank(data.rank, id)
+      if (rankExists) throw ResourceError.performanceScale.rankAlreadyExists(data.rank)
+    }
+
+    // Check for duplicate label if being updated
+    if (data.label) {
+      const labelExists = await this.existsByLabel(data.label, id)
+      if (labelExists) throw ResourceError.performanceScale.alreadyExists(data.label)
+    }
+
+    return this.handleDatabaseOperation(
+      () => this.prisma.performanceScale.update({ where: { id }, data }),
+      'PerformanceScale',
+    )
   }
 
   // Override base class method to use string ID (will convert internally)
@@ -73,7 +113,23 @@ export class PerformanceScalesRepository extends BaseRepository {
 
   // Numeric ID version for internal use
   async deleteByNumericId(id: number): Promise<void> {
-    await this.prisma.performanceScale.delete({ where: { id } })
+    // Check if scale exists and has listings
+    const scale = await this.prisma.performanceScale.findUnique({
+      where: { id },
+      include: { _count: { select: { listings: true, pcListings: true } } },
+    })
+
+    if (!scale) throw ResourceError.performanceScale.notFound()
+
+    const totalListings = scale._count.listings + scale._count.pcListings
+    if (totalListings > 0) {
+      throw ResourceError.performanceScale.inUse(totalListings)
+    }
+
+    await this.handleDatabaseOperation(
+      () => this.prisma.performanceScale.delete({ where: { id } }),
+      'PerformanceScale',
+    )
   }
 
   /**
@@ -120,11 +176,13 @@ export class PerformanceScalesRepository extends BaseRepository {
   /**
    * Get performance scales with listing counts
    */
-  async getWithListingCounts(): Promise<
-    (PerformanceScale & { _count: { listings: number; pcListings: number } })[]
+  async listWithCounts(): Promise<
+    Prisma.PerformanceScaleGetPayload<{
+      include: typeof PerformanceScalesRepository.includes.withCounts
+    }>[]
   > {
     return this.prisma.performanceScale.findMany({
-      include: { _count: { select: { listings: true, pcListings: true } } },
+      include: PerformanceScalesRepository.includes.withCounts,
       orderBy: { rank: this.sortOrder },
     })
   }
@@ -175,7 +233,7 @@ export class PerformanceScalesRepository extends BaseRepository {
   /**
    * Get statistics about performance scales
    */
-  async getStats(): Promise<{
+  async stats(): Promise<{
     total: number
     withListings: number
     withoutListings: number

@@ -73,16 +73,18 @@ export class GpusRepository extends BaseRepository {
     })
   }
 
-  async create(data: CreateGpuInput): Promise<Prisma.GpuGetPayload<{ include: { brand: true } }>> {
+  async create(
+    data: CreateGpuInput,
+  ): Promise<Prisma.GpuGetPayload<{ include: typeof GpusRepository.includes.default }>> {
     // Validate brand exists
     const brand = await this.prisma.deviceBrand.findUnique({
       where: { id: data.brandId },
     })
-    if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) throw ResourceError.deviceBrand.notFound()
 
     // Check for duplicate model name
     const exists = await this.existsByModelName(data.modelName)
-    if (exists) return ResourceError.gpu.alreadyExists(data.modelName)
+    if (exists) throw ResourceError.gpu.alreadyExists(data.modelName)
 
     return this.prisma.gpu.create({
       data,
@@ -93,23 +95,23 @@ export class GpusRepository extends BaseRepository {
   async update(
     id: string,
     data: Partial<UpdateGpuInput>,
-  ): Promise<Prisma.GpuGetPayload<{ include: { brand: true } }>> {
+  ): Promise<Prisma.GpuGetPayload<{ include: typeof GpusRepository.includes.default }>> {
     // Check if GPU exists
     const gpu = await this.byId(id)
-    if (!gpu) return ResourceError.gpu.notFound()
+    if (!gpu) throw ResourceError.gpu.notFound()
 
     // Validate brand exists if being updated
     if (data.brandId) {
       const brand = await this.prisma.deviceBrand.findUnique({
         where: { id: data.brandId },
       })
-      if (!brand) return ResourceError.deviceBrand.notFound()
+      if (!brand) throw ResourceError.deviceBrand.notFound()
     }
 
     // Check for duplicate model name if being updated
     if (data.modelName) {
       const exists = await this.existsByModelName(data.modelName, id)
-      if (exists) return ResourceError.gpu.alreadyExists(data.modelName)
+      if (exists) throw ResourceError.gpu.alreadyExists(data.modelName)
     }
 
     return this.prisma.gpu.update({
@@ -126,11 +128,11 @@ export class GpusRepository extends BaseRepository {
       include: { _count: { select: { pcListings: true } } },
     })
 
-    if (!existingGpu) return ResourceError.gpu.notFound()
+    if (!existingGpu) throw ResourceError.gpu.notFound()
 
     // Check if GPU is in use
     if (existingGpu._count.pcListings > 0) {
-      return ResourceError.gpu.inUse(existingGpu._count.pcListings)
+      throw ResourceError.gpu.inUse(existingGpu._count.pcListings)
     }
 
     await this.prisma.gpu.delete({ where: { id } })
@@ -161,14 +163,9 @@ export class GpusRepository extends BaseRepository {
   /**
    * Get GPUs with PC listing counts
    */
-  async getWithListingCounts(limit: number = 10): Promise<
-    Prisma.GpuGetPayload<{
-      include: {
-        brand: true
-        _count: { select: { pcListings: true } }
-      }
-    }>[]
-  > {
+  async listWithCounts(
+    limit: number = 10,
+  ): Promise<Prisma.GpuGetPayload<{ include: typeof GpusRepository.includes.withCounts }>[]> {
     return this.prisma.gpu.findMany({
       include: GpusRepository.includes.withCounts,
       orderBy: { pcListings: { _count: Prisma.SortOrder.desc } },
@@ -180,7 +177,7 @@ export class GpusRepository extends BaseRepository {
    * Get GPUs with pagination metadata
    * Supports both web and mobile usage via options
    */
-  async getPaginated(
+  async list(
     filters: GetGpusInput = {},
     options: { limited?: boolean } = {},
   ): Promise<{

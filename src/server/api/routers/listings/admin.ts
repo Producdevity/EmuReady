@@ -247,9 +247,10 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
-      AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`)
+      ResourceError.listing.cannotApproveBannedUser(banReason)
     }
 
+    // Update listing status
     const updatedListing = await ctx.prisma.listing.update({
       where: { id: listingId },
       data: {
@@ -346,6 +347,7 @@ export const adminRouter = createTRPCRouter({
       }
     }
 
+    // Update listing status
     const updatedListing = await ctx.prisma.listing.update({
       where: { id: listingId },
       data: {
@@ -356,7 +358,7 @@ export const adminRouter = createTRPCRouter({
       },
     })
 
-    // Apply trust action for listing rejection to the author
+    // Apply trust action for listing rejection
     if (listingToReject.authorId) {
       await applyTrustAction({
         userId: listingToReject.authorId,
@@ -1074,16 +1076,11 @@ export const adminRouter = createTRPCRouter({
     if (isDeveloper && !isAdmin) {
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: {
-          userId_emulatorId: {
-            userId: ctx.session.user.id,
-            emulatorId: listing.emulatorId,
-          },
+          userId_emulatorId: { userId: ctx.session.user.id, emulatorId: listing.emulatorId },
         },
       })
 
-      if (!verifiedDeveloper) {
-        return ResourceError.listing.mustBeVerifiedToViewConfigs()
-      }
+      if (!verifiedDeveloper) return ResourceError.listing.mustBeVerifiedToViewConfigs()
     }
 
     try {
@@ -1111,7 +1108,7 @@ export const adminRouter = createTRPCRouter({
       }
     } catch (error) {
       console.error('Error generating config:', error)
-      throw AppError.internalError(
+      return AppError.internalError(
         `Failed to generate config: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }

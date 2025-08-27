@@ -17,7 +17,7 @@ import { CpusRepository } from '@/server/repositories/cpus.repository'
 export const cpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-    return repository.getPaginated(input ?? {})
+    return repository.list(input ?? {})
   }),
 
   byId: publicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {

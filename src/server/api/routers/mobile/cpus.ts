@@ -9,7 +9,7 @@ export const mobileCpusRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-    return repository.getPaginated(input ?? {}, { limited: true })
+    return repository.list(input ?? {}, { limited: true })
   }),
 
   /**

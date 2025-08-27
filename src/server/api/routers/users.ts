@@ -167,15 +167,11 @@ export const usersRouter = createTRPCRouter({
     const currentUserRole = ctx.session?.user?.role
     const canViewBannedUsers = roleIncludesRole(currentUserRole, Role.MODERATOR)
 
-    if (isBanned && !canViewBannedUsers) {
-      throw ResourceError.user.profileNotAccessible()
-    }
+    if (isBanned && !canViewBannedUsers) return ResourceError.user.profileNotAccessible()
 
     // Build where clauses for listings filtering
     const listingsWhere: Prisma.ListingWhereInput = {}
-    if (!ctx.session?.user?.showNsfw) {
-      listingsWhere.game = { isErotic: false }
-    }
+    if (!ctx.session?.user?.showNsfw) listingsWhere.game = { isErotic: false }
 
     // Filter by approval status based on user permissions
     if (canViewBannedUsers) {
@@ -183,9 +179,7 @@ export const usersRouter = createTRPCRouter({
       // No additional filtering needed
     } else if (ctx.session?.user?.id === userId) {
       // Users can see their own approved and pending listings, but NOT rejected
-      listingsWhere.status = {
-        in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
-      }
+      listingsWhere.status = { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] }
     } else {
       // Regular users (including signed out) can ONLY see approved listings from others
       listingsWhere.status = ApprovalStatus.APPROVED
@@ -196,15 +190,9 @@ export const usersRouter = createTRPCRouter({
       'device.modelName',
       'emulator.name',
     ])
-    if (listingsSearchConditions) {
-      listingsWhere.OR = listingsSearchConditions
-    }
-    if (listingsSystem) {
-      listingsWhere.device = { brand: { name: listingsSystem } }
-    }
-    if (listingsEmulator) {
-      listingsWhere.emulator = { name: listingsEmulator }
-    }
+    if (listingsSearchConditions) listingsWhere.OR = listingsSearchConditions
+    if (listingsSystem) listingsWhere.device = { brand: { name: listingsSystem } }
+    if (listingsEmulator) listingsWhere.emulator = { name: listingsEmulator }
 
     // Build where clauses for votes filtering
     const votesWhere: Prisma.VoteWhereInput = {}
@@ -219,9 +207,7 @@ export const usersRouter = createTRPCRouter({
       'listing.device.modelName',
       'listing.emulator.name',
     ])
-    if (votesSearchConditions) {
-      votesWhere.OR = votesSearchConditions
-    }
+    if (votesSearchConditions) votesWhere.OR = votesSearchConditions
 
     // Get user basic info
     const user = await ctx.prisma.user.findUnique({
@@ -261,13 +247,7 @@ export const usersRouter = createTRPCRouter({
             assignedAt: true,
             color: true,
             badge: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                color: true,
-                icon: true,
-              },
+              select: { id: true, name: true, description: true, color: true, icon: true },
             },
           },
           orderBy: { assignedAt: 'desc' },
@@ -285,17 +265,9 @@ export const usersRouter = createTRPCRouter({
           id: true,
           createdAt: true,
           status: true,
-          device: {
-            select: {
-              brand: { select: { id: true, name: true } },
-              modelName: true,
-            },
-          },
+          device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
           game: {
-            select: {
-              title: true,
-              system: { select: { id: true, name: true, key: true } },
-            },
+            select: { title: true, system: { select: { id: true, name: true, key: true } } },
           },
           emulator: { select: { name: true } },
           performance: { select: { label: true, rank: true } },
@@ -304,9 +276,7 @@ export const usersRouter = createTRPCRouter({
         skip: listingsSkip,
         take: listingsLimit,
       }),
-      ctx.prisma.listing.count({
-        where: { authorId: userId, ...listingsWhere },
-      }),
+      ctx.prisma.listing.count({ where: { authorId: userId, ...listingsWhere } }),
     ])
 
     // Get paginated votes with filtering
@@ -321,10 +291,7 @@ export const usersRouter = createTRPCRouter({
             select: {
               id: true,
               device: {
-                select: {
-                  brand: { select: { id: true, name: true } },
-                  modelName: true,
-                },
+                select: { brand: { select: { id: true, name: true } }, modelName: true },
               },
               game: {
                 select: {

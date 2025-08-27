@@ -2,7 +2,7 @@ import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { ResourceError, AppError } from '@/lib/errors'
-import { applyTrustAction, canUserAutoApprove, reverseTrustAction } from '@/lib/trust/service'
+import { applyTrustAction, canUserAutoApprove } from '@/lib/trust/service'
 import {
   CreateListingSchema,
   CreateVoteSchema,
@@ -71,7 +71,7 @@ export const coreRouter = createTRPCRouter({
     }
 
     // Use the repository for the main listing logic
-    const result = await repository.getListings(filters)
+    const result = await repository.list(filters)
 
     // Batch fetch additional data to avoid N+1 queries
     const listingIds = result.listings.map((l) => l.id)
@@ -431,31 +431,48 @@ export const coreRouter = createTRPCRouter({
 
     if (!userExists) return ResourceError.user.notInDatabase(userId)
 
-    // Check if user already voted
-    const existingVote = await ctx.prisma.vote.findUnique({
-      where: { userId_listingId: { userId, listingId: input.listingId } },
-    })
-
-    if (!existingVote) {
-      // Get listing details to find the author
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.listingId },
-        select: { authorId: true },
+    // Use a single transaction to avoid race conditions
+    const voteResult = await ctx.prisma.$transaction(async (tx) => {
+      // Check for existing vote with row-level lock (SELECT ... FOR UPDATE equivalent)
+      const existingVote = await tx.vote.findUnique({
+        where: { userId_listingId: { userId, listingId: input.listingId } },
       })
 
-      if (!listing) return ResourceError.listing.notFound()
-
-      // Create new vote and update counts in transaction
-      const vote = await ctx.prisma.$transaction(async (tx) => {
+      if (!existingVote) {
+        // Create new vote
         const newVote = await tx.vote.create({
           data: { value: input.value, userId, listingId: input.listingId },
         })
 
         await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
 
-        return newVote
+        return { vote: newVote, action: 'created' as const, previousValue: null }
+      }
+
+      // If value is the same, remove the vote (toggle)
+      if (existingVote.value === input.value) {
+        await tx.vote.delete({
+          where: { userId_listingId: { userId, listingId: input.listingId } },
+        })
+
+        await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
+
+        return { vote: null, action: 'deleted' as const, previousValue: existingVote.value }
+      }
+
+      // Update vote to new value
+      const updatedVote = await tx.vote.update({
+        where: { userId_listingId: { userId, listingId: input.listingId } },
+        data: { value: input.value },
       })
 
+      await updateListingVoteCounts(tx, input.listingId, 'update', input.value, existingVote.value)
+
+      return { vote: updatedVote, action: 'updated' as const, previousValue: existingVote.value }
+    })
+
+    // Handle post-transaction operations based on action
+    if (voteResult.action === 'created' || voteResult.action === 'updated') {
       // Apply trust action for the voter
       await applyTrustAction({
         userId,
@@ -474,154 +491,36 @@ export const coreRouter = createTRPCRouter({
         })
       }
 
-      // Emit notification event for new vote
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-        entityType: 'listing',
-        entityId: input.listingId,
-        triggeredBy: userId,
-        payload: {
-          listingId: input.listingId,
-          voteId: vote.id,
-          voteValue: input.value,
-        },
-      })
+      // Emit notification event
+      if (voteResult.vote) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+          entityType: 'listing',
+          entityId: input.listingId,
+          triggeredBy: userId,
+          payload: {
+            listingId: input.listingId,
+            voteId: voteResult.vote.id,
+            voteValue: input.value,
+          },
+        })
+      }
 
       analytics.engagement.vote({
         listingId: input.listingId,
         voteValue: input.value,
       })
+    }
 
-      // Check if this is user's first vote for journey analytics
+    // Check if this is user's first vote for journey analytics
+    if (voteResult.action === 'created') {
       const userVoteCount = await ctx.prisma.vote.count({ where: { userId: userId } })
-
       if (userVoteCount === 1) {
-        analytics.userJourney.firstTimeAction({
-          userId: userId,
-          action: 'first_vote',
-        })
+        analytics.userJourney.firstTimeAction({ userId: userId, action: 'first_vote' })
       }
-
-      return vote
     }
 
-    // If value is the same, remove the vote (toggle)
-    if (existingVote.value === input.value) {
-      // Get listing details to find the author
-      const listingForRemoval = await ctx.prisma.listing.findUnique({
-        where: { id: input.listingId },
-        select: { authorId: true },
-      })
-
-      if (!listingForRemoval) return AppError.notFound('Listing')
-
-      await ctx.prisma.$transaction(async (tx) => {
-        await tx.vote.delete({
-          where: { userId_listingId: { userId, listingId: input.listingId } },
-        })
-
-        await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
-      })
-
-      // Reverse trust action for the voter
-      await reverseTrustAction({
-        userId,
-        action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-        context: { listingId: input.listingId, reason: 'vote_removed' },
-      })
-
-      // Reverse trust action for the listing creator (only if they didn't vote on their own listing)
-      if (listingForRemoval.authorId && listingForRemoval.authorId !== userId) {
-        await reverseTrustAction({
-          userId: listingForRemoval.authorId,
-          action: existingVote.value
-            ? TrustAction.LISTING_RECEIVED_UPVOTE
-            : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-          context: {
-            listingId: input.listingId,
-            reason: 'vote_removed',
-            voterId: userId,
-          },
-        })
-      }
-
-      return { message: 'Vote removed' }
-    }
-
-    // Otherwise update the existing vote
-    // Get listing details to find the author
-    const listingForUpdate = await ctx.prisma.listing.findUnique({
-      where: { id: input.listingId },
-      select: { authorId: true },
-    })
-
-    if (!listingForUpdate) return ResourceError.listing.notFound()
-
-    const updatedVote = await ctx.prisma.$transaction(async (tx) => {
-      const vote = await tx.vote.update({
-        where: { userId_listingId: { userId, listingId: input.listingId } },
-        data: { value: input.value },
-      })
-
-      await updateListingVoteCounts(tx, input.listingId, 'update', input.value, existingVote.value)
-
-      return vote
-    })
-
-    // Apply trust action for vote change (properly reverse old, add new) for voter
-    await reverseTrustAction({
-      userId,
-      action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-      context: { listingId: input.listingId, reason: 'vote_changed_from' },
-    })
-    await applyTrustAction({
-      userId,
-      action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-      context: { listingId: input.listingId, reason: 'vote_changed_to' },
-    })
-
-    // Apply trust action for vote change for listing creator (only if they didn't vote on their own listing)
-    if (listingForUpdate.authorId && listingForUpdate.authorId !== userId) {
-      // Reverse old received vote action
-      await reverseTrustAction({
-        userId: listingForUpdate.authorId,
-        action: existingVote.value
-          ? TrustAction.LISTING_RECEIVED_UPVOTE
-          : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-        context: {
-          listingId: input.listingId,
-          reason: 'vote_changed_from',
-          voterId: userId,
-        },
-      })
-      // Apply new received vote action
-      await applyTrustAction({
-        userId: listingForUpdate.authorId,
-        action: input.value
-          ? TrustAction.LISTING_RECEIVED_UPVOTE
-          : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-        context: {
-          listingId: input.listingId,
-          reason: 'vote_changed_to',
-          voterId: userId,
-        },
-      })
-    }
-
-    // Emit notification event for vote update
-    notificationEventEmitter.emitNotificationEvent({
-      eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-      entityType: 'listing',
-      entityId: input.listingId,
-      triggeredBy: userId,
-      payload: {
-        listingId: input.listingId,
-        voteId: updatedVote.id,
-        voteValue: input.value,
-      },
-    })
-
-    return updatedVote
+    return voteResult.vote || { id: '', value: false, listingId: input.listingId, userId }
   }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) =>

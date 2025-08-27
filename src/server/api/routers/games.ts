@@ -154,7 +154,7 @@ export const gamesRouter = createTRPCRouter({
       userId: ctx.session?.user?.id,
     }
 
-    return repository.getPaginated(filters)
+    return repository.list(filters)
   }),
 
   getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
@@ -162,7 +162,7 @@ export const gamesRouter = createTRPCRouter({
     if (cached) return cached
 
     const repository = new GamesRepository(ctx.prisma)
-    const stats = await repository.getStats()
+    const stats = await repository.stats()
 
     gameStatsCache.set(GAME_STATS_CACHE_KEY, stats)
 
@@ -176,7 +176,7 @@ export const gamesRouter = createTRPCRouter({
 
     // Use repository to get game with built-in filtering
     const repository = new GamesRepository(ctx.prisma)
-    const game = await repository.getById(input.id, canSeeBannedUsers)
+    const game = await repository.byId(input.id, canSeeBannedUsers)
 
     if (!game) return ResourceError.game.notFound()
 
@@ -369,7 +369,7 @@ export const gamesRouter = createTRPCRouter({
       include: { system: true },
     })
 
-    if (!existingGame) throw ResourceError.game.notFound()
+    if (!existingGame) return ResourceError.game.notFound()
 
     await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
@@ -400,15 +400,15 @@ export const gamesRouter = createTRPCRouter({
         include: { system: true },
       })
 
-      if (!existingGame) throw ResourceError.game.notFound()
+      if (!existingGame) return ResourceError.game.notFound()
 
       // Verify ownership and pending status
       if (existingGame!.submittedBy !== ctx.session.user.id) {
-        throw ResourceError.game.canOnlyEditOwn()
+        return ResourceError.game.canOnlyEditOwn()
       }
 
       if (existingGame!.status !== ApprovalStatus.PENDING) {
-        throw ResourceError.game.canOnlyEditPending()
+        return ResourceError.game.canOnlyEditPending()
       }
 
       await validateGameConflicts(ctx.prisma, id, data, existingGame!)
@@ -435,10 +435,10 @@ export const gamesRouter = createTRPCRouter({
       include: { listings: true },
     })
 
-    if (!game) throw ResourceError.game.notFound()
+    if (!game) return ResourceError.game.notFound()
 
     if (game.listings.length > 0) {
-      throw ResourceError.game.inUse(game.listings.length)
+      return ResourceError.game.inUse(game.listings.length)
     }
 
     try {
@@ -452,7 +452,7 @@ export const gamesRouter = createTRPCRouter({
       return result
     } catch (error) {
       if (isPrismaError(error, PRISMA_ERROR_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION)) {
-        throw ResourceError.game.inUse(0)
+        return ResourceError.game.inUse(0)
       }
       throw error
     }
@@ -623,7 +623,7 @@ export const gamesRouter = createTRPCRouter({
       })
 
       if (gamesToApprove.length === 0) {
-        throw AppError.badRequest('No valid pending games found to approve')
+        return AppError.badRequest('No valid pending games found to approve')
       }
 
       await transactionalBatch(ctx.prisma, [
@@ -700,7 +700,7 @@ export const gamesRouter = createTRPCRouter({
         })
 
         if (gamesToReject.length === 0) {
-          throw AppError.badRequest('No valid pending games found to reject')
+          return AppError.badRequest('No valid pending games found to reject')
         }
 
         // Reject all games to
@@ -758,7 +758,7 @@ export const gamesRouter = createTRPCRouter({
       }
     } catch (error) {
       console.error('Error finding Switch title ID:', error)
-      throw AppError.internalError('Failed to search for Switch title ID')
+      return AppError.internalError('Failed to search for Switch title ID')
     }
   }),
 
@@ -777,7 +777,7 @@ export const gamesRouter = createTRPCRouter({
         }
       } catch (error) {
         console.error('Error getting Switch title ID match:', error)
-        throw AppError.internalError('Failed to find Switch title ID match')
+        return AppError.internalError('Failed to find Switch title ID match')
       }
     }),
 
@@ -790,7 +790,7 @@ export const gamesRouter = createTRPCRouter({
       }
     } catch (error) {
       console.error('Error getting Switch games stats:', error)
-      throw AppError.internalError('Failed to get Switch games statistics')
+      return AppError.internalError('Failed to get Switch games statistics')
     }
   }),
 
@@ -805,7 +805,7 @@ export const gamesRouter = createTRPCRouter({
         where: { id: gameId },
       })
 
-      if (!gameToOverride) throw ResourceError.game.notFound()
+      if (!gameToOverride) return ResourceError.game.notFound()
 
       const updatedGame = await ctx.prisma.game.update({
         where: { id: gameId },
@@ -867,7 +867,7 @@ export const gamesRouter = createTRPCRouter({
         where: { id: gameId },
       })
 
-      if (!gameToUpdate) throw ResourceError.game.notFound()
+      if (!gameToUpdate) return ResourceError.game.notFound()
 
       const updatedGame = await ctx.prisma.game.update({
         where: { id: gameId },

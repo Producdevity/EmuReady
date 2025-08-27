@@ -62,7 +62,7 @@ export class UserPcPresetsRepository extends BaseRepository {
   /**
    * Get all presets for a user with optional permission checking
    */
-  async getByUserId(
+  async listByUserId(
     userId: string,
     options: {
       requestingUserId?: string
@@ -82,7 +82,7 @@ export class UserPcPresetsRepository extends BaseRepository {
       if (userId !== options.requestingUserId) {
         const isAdmin = roleIncludesRole(options.userRole, Role.ADMIN)
         if (!isAdmin) {
-          return ResourceError.pcPreset.canOnlyViewOwn()
+          throw ResourceError.pcPreset.canOnlyViewOwn()
         }
       }
     }
@@ -110,29 +110,22 @@ export class UserPcPresetsRepository extends BaseRepository {
       include: typeof UserPcPresetsRepository.includes.full
     }>
   > {
-    validateRequired(id, 'preset id')
-    validateRequired(requestingUserId, 'requesting user id')
-    validateStringFormat(id, ValidationPatterns.UUID, 'preset id', 'UUID format')
-    validateStringFormat(
-      requestingUserId,
-      ValidationPatterns.UUID,
-      'requesting user id',
-      'UUID format',
-    )
+    const preset = await this.prisma.userPcPreset.findUnique({
+      where: { id },
+      include: UserPcPresetsRepository.includes.full,
+    })
 
-    const preset = await this.byId(id)
-    if (!preset) return ResourceError.pcPreset.notFound()
+    if (!preset) throw ResourceError.pcPreset.notFound()
 
+    // Check ownership or admin permissions
     const isAdmin = requestingUserRole && roleIncludesRole(requestingUserRole, Role.ADMIN)
     if (preset.userId !== requestingUserId && !isAdmin) {
-      return operation === 'edit'
+      throw operation === 'edit'
         ? ResourceError.pcPreset.canOnlyEditOwn()
         : ResourceError.pcPreset.canOnlyDeleteOwn()
     }
 
-    return preset as Prisma.UserPcPresetGetPayload<{
-      include: typeof UserPcPresetsRepository.includes.full
-    }>
+    return preset
   }
 
   /**
@@ -154,7 +147,7 @@ export class UserPcPresetsRepository extends BaseRepository {
 
     // Check for duplicate name
     const exists = await this.existsByName(data.userId, data.name)
-    if (exists) return ResourceError.pcPreset.alreadyExists(data.name)
+    if (exists) throw ResourceError.pcPreset.alreadyExists(data.name)
 
     // Validate CPU and GPU exist
     const [cpu, gpu] = await Promise.all([
@@ -162,15 +155,19 @@ export class UserPcPresetsRepository extends BaseRepository {
       data.gpuId ? this.prisma.gpu.findUnique({ where: { id: data.gpuId } }) : null,
     ])
 
-    if (!cpu) return ResourceError.cpu.notFound()
-    if (data.gpuId && !gpu) return ResourceError.gpu.notFound()
+    if (!cpu) throw ResourceError.cpu.notFound()
+    if (data.gpuId && !gpu) throw ResourceError.gpu.notFound()
 
-    return this.prisma.userPcPreset.create({
-      data,
-      include: options.limited
-        ? UserPcPresetsRepository.includes.limited
-        : UserPcPresetsRepository.includes.full,
-    })
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.userPcPreset.create({
+          data,
+          include: options.limited
+            ? UserPcPresetsRepository.includes.limited
+            : UserPcPresetsRepository.includes.full,
+        }),
+      'UserPcPreset',
+    )
   }
 
   /**
@@ -203,28 +200,32 @@ export class UserPcPresetsRepository extends BaseRepository {
     // Check for duplicate name if name is being updated
     if (data.name) {
       const exists = await this.existsByName(preset.userId, data.name, id)
-      if (exists) return ResourceError.pcPreset.alreadyExists(data.name)
+      if (exists) throw ResourceError.pcPreset.alreadyExists(data.name)
     }
 
     // Validate CPU if being updated
     if (data.cpuId) {
       const cpu = await this.prisma.cpu.findUnique({ where: { id: data.cpuId } })
-      if (!cpu) return ResourceError.cpu.notFound()
+      if (!cpu) throw ResourceError.cpu.notFound()
     }
 
     // Validate GPU if being updated
     if (data.gpuId) {
       const gpu = await this.prisma.gpu.findUnique({ where: { id: data.gpuId } })
-      if (!gpu) return ResourceError.gpu.notFound()
+      if (!gpu) throw ResourceError.gpu.notFound()
     }
 
-    return this.prisma.userPcPreset.update({
-      where: { id },
-      data,
-      include: options.limited
-        ? UserPcPresetsRepository.includes.limited
-        : UserPcPresetsRepository.includes.full,
-    })
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.userPcPreset.update({
+          where: { id },
+          data,
+          include: options.limited
+            ? UserPcPresetsRepository.includes.limited
+            : UserPcPresetsRepository.includes.full,
+        }),
+      'UserPcPreset',
+    )
   }
 
   /**
@@ -242,7 +243,10 @@ export class UserPcPresetsRepository extends BaseRepository {
       'delete',
     )
 
-    await this.prisma.userPcPreset.delete({ where: { id } })
+    await this.handleDatabaseOperation(
+      () => this.prisma.userPcPreset.delete({ where: { id } }),
+      'UserPcPreset',
+    )
   }
 
   /**

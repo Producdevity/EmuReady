@@ -65,16 +65,18 @@ export class CpusRepository extends BaseRepository {
     })
   }
 
-  async create(data: CreateCpuInput): Promise<Prisma.CpuGetPayload<{ include: { brand: true } }>> {
+  async create(
+    data: CreateCpuInput,
+  ): Promise<Prisma.CpuGetPayload<{ include: typeof CpusRepository.includes.default }>> {
     // Validate brand exists
     const brand = await this.prisma.deviceBrand.findUnique({
       where: { id: data.brandId },
     })
-    if (!brand) return ResourceError.deviceBrand.notFound()
+    if (!brand) throw ResourceError.deviceBrand.notFound()
 
     // Check for duplicate model name
     const exists = await this.existsByModelName(data.modelName)
-    if (exists) return ResourceError.cpu.alreadyExists(data.modelName)
+    if (exists) throw ResourceError.cpu.alreadyExists(data.modelName)
 
     return this.prisma.cpu.create({
       data,
@@ -85,23 +87,23 @@ export class CpusRepository extends BaseRepository {
   async update(
     id: string,
     data: Partial<UpdateCpuInput>,
-  ): Promise<Prisma.CpuGetPayload<{ include: { brand: true } }>> {
+  ): Promise<Prisma.CpuGetPayload<{ include: typeof CpusRepository.includes.default }>> {
     // Check if CPU exists
     const cpu = await this.byId(id)
-    if (!cpu) return ResourceError.cpu.notFound()
+    if (!cpu) throw ResourceError.cpu.notFound()
 
     // Validate brand exists if being updated
     if (data.brandId) {
       const brand = await this.prisma.deviceBrand.findUnique({
         where: { id: data.brandId },
       })
-      if (!brand) return ResourceError.deviceBrand.notFound()
+      if (!brand) throw ResourceError.deviceBrand.notFound()
     }
 
     // Check for duplicate model name if being updated
     if (data.modelName) {
       const exists = await this.existsByModelName(data.modelName, id)
-      if (exists) return ResourceError.cpu.alreadyExists(data.modelName)
+      if (exists) throw ResourceError.cpu.alreadyExists(data.modelName)
     }
 
     return this.prisma.cpu.update({
@@ -118,11 +120,11 @@ export class CpusRepository extends BaseRepository {
       include: { _count: { select: { pcListings: true } } },
     })
 
-    if (!existingCpu) return ResourceError.cpu.notFound()
+    if (!existingCpu) throw ResourceError.cpu.notFound()
 
     // Check if CPU is in use
     if (existingCpu._count.pcListings > 0) {
-      return ResourceError.cpu.inUse(existingCpu._count.pcListings)
+      throw ResourceError.cpu.inUse(existingCpu._count.pcListings)
     }
 
     await this.prisma.cpu.delete({ where: { id } })
@@ -153,18 +155,9 @@ export class CpusRepository extends BaseRepository {
   /**
    * Get CPUs with PC listing counts - sorted by popularity
    */
-  async getWithListingCounts(limit: number = 10): Promise<
-    Prisma.CpuGetPayload<{
-      include: {
-        brand: true
-        _count: {
-          select: {
-            pcListings: true
-          }
-        }
-      }
-    }>[]
-  > {
+  async listWithCounts(
+    limit: number = 10,
+  ): Promise<Prisma.CpuGetPayload<{ include: typeof CpusRepository.includes.withCounts }>[]> {
     return this.prisma.cpu.findMany({
       include: CpusRepository.includes.withCounts,
       orderBy: { pcListings: { _count: Prisma.SortOrder.desc } },
@@ -176,7 +169,7 @@ export class CpusRepository extends BaseRepository {
    * Get CPUs with pagination metadata
    * Supports both web and mobile usage via options
    */
-  async getPaginated(
+  async list(
     filters: GetCpusInput = {},
     options: { limited?: boolean } = {},
   ): Promise<{

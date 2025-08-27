@@ -20,7 +20,7 @@ export const gpusRouter = createTRPCRouter({
 
     // For web, we need counts - use getWithListingCounts for pcListings sort TODO: clean this up
     if (input?.sortField === 'pcListings' && (input?.limit || 20) <= 100) {
-      const gpus = await repository.getWithListingCounts(input.limit || 20)
+      const gpus = await repository.listWithCounts(input.limit || 20)
       const total = await repository.count({ search: input.search, brandId: input.brandId })
 
       return {
@@ -36,7 +36,7 @@ export const gpusRouter = createTRPCRouter({
     }
 
     // Regular paginated query
-    return repository.getPaginated(input ?? {})
+    return repository.list(input ?? {})
   }),
 
   byId: publicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {

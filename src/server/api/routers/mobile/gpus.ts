@@ -9,7 +9,7 @@ export const mobileGpusRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-    return repository.getPaginated(input ?? {}, { limited: true })
+    return repository.list(input ?? {}, { limited: true })
   }),
 
   /**
